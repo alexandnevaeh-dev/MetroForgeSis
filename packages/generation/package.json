@@ -1,0 +1,32 @@
+{
+  "name": "@metroforge/generation",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@metroforge/ai": "workspace:*",
+    "@metroforge/database": "workspace:*",
+    "@metroforge/godot": "workspace:*",
+    "@metroforge/procedural": "workspace:*",
+    "@metroforge/assets": "workspace:*",
+    "@metroforge/qa": "workspace:*",
+    "@metroforge/schemas": "workspace:*",
+    "@metroforge/shared": "workspace:*",
+    "@metroforge/tools": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

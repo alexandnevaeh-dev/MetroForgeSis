@@ -1,0 +1,54 @@
+{
+  "providers": [
+    {
+      "id": "ollama",
+      "name": "Ollama",
+      "enabled": true,
+      "local": true,
+      "costClass": "free",
+      "license": "MIT (Ollama) + model licenses",
+      "priority": 100,
+      "capabilities": ["text_generation", "code_generation", "json_generation", "narrative"]
+    },
+    {
+      "id": "gemini",
+      "name": "Google Gemini",
+      "enabled": false,
+      "local": false,
+      "costClass": "free",
+      "license": "Google Terms of Service",
+      "priority": 80,
+      "capabilities": ["text_generation", "json_generation", "narrative"]
+    },
+    {
+      "id": "groq",
+      "name": "Groq",
+      "enabled": false,
+      "local": false,
+      "costClass": "free",
+      "license": "Groq Terms of Service",
+      "priority": 75,
+      "capabilities": ["text_generation", "json_generation"]
+    },
+    {
+      "id": "openrouter",
+      "name": "OpenRouter",
+      "enabled": false,
+      "local": false,
+      "costClass": "free",
+      "license": "OpenRouter Terms of Service",
+      "priority": 60,
+      "capabilities": ["text_generation", "json_generation"]
+    },
+    {
+      "id": "huggingface",
+      "name": "Hugging Face",
+      "enabled": false,
+      "local": false,
+      "costClass": "free",
+      "license": "Model-dependent",
+      "priority": 50,
+      "capabilities": ["text_generation", "image_generation"]
+    }
+  ]
+}

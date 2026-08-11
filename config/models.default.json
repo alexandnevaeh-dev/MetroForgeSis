@@ -1,0 +1,43 @@
+{
+  "models": [
+    {
+      "id": "qwen3-coder-next",
+      "provider": "ollama",
+      "capabilities": ["text_generation", "code_generation", "json_generation"],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "Apache-2.0",
+      "contextWindow": 32768,
+      "supportsTools": false,
+      "supportsVision": false,
+      "priority": 100
+    },
+    {
+      "id": "qwen3:8b",
+      "provider": "ollama",
+      "capabilities": ["text_generation", "json_generation", "narrative"],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "Apache-2.0",
+      "contextWindow": 8192,
+      "supportsTools": false,
+      "supportsVision": false,
+      "priority": 70
+    },
+    {
+      "id": "gemini-2.0-flash",
+      "provider": "gemini",
+      "capabilities": ["text_generation", "json_generation", "narrative"],
+      "local": false,
+      "enabled": false,
+      "costClass": "free",
+      "license": "Google Terms of Service",
+      "contextWindow": 1000000,
+      "supportsTools": true,
+      "supportsVision": true,
+      "priority": 80
+    }
+  ]
+}

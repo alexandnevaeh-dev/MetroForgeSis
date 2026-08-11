@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist-electron",
+    "rootDir": "./electron",
+    "module": "ESNext",
+    "moduleResolution": "bundler"
+  },
+  "include": ["electron/**/*"]
+}

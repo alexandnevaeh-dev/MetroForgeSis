@@ -1,0 +1,36 @@
+{
+  "name": "metroforge-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI-powered Metroidvania game generation platform",
+  "type": "module",
+  "engines": {
+    "node": ">=22.5.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "build": "pnpm -r run build",
+    "typecheck": "pnpm -r run typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint . --ext .ts,.tsx",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,json,md}\"",
+    "metroforge": "node apps/cli/dist/index.js",
+    "dev:desktop": "pnpm --filter @metroforge/desktop dev",
+    "dev:cli": "pnpm --filter @metroforge/cli dev"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.16.0",
+    "@types/node": "^22.10.0",
+    "eslint": "^9.16.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.0",
+    "vitest": "^2.1.8"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["electron", "esbuild"]
+  }
+}

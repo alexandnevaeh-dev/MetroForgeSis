@@ -1,0 +1,29 @@
+{
+  "name": "@metroforge/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "metroforge": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@metroforge/core": "workspace:*",
+    "@metroforge/generation": "workspace:*",
+    "@metroforge/schemas": "workspace:*",
+    "@metroforge/shared": "workspace:*",
+    "@metroforge/ai": "workspace:*",
+    "@metroforge/tools": "workspace:*",
+    "@metroforge/qa": "workspace:*",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

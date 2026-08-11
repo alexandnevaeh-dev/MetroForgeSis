@@ -1,0 +1,59 @@
+[gd_scene load_steps=8 format=3 uid="uid://player_scene"]
+
+[ext_resource type="Script" path="res://scripts/player/PlayerController.gd" id="1_player"]
+[ext_resource type="Script" path="res://scripts/combat/HealthComponent.gd" id="2_health"]
+[ext_resource type="Script" path="res://scripts/combat/HurtboxComponent.gd" id="3_hurtbox"]
+[ext_resource type="Script" path="res://scripts/combat/HitboxComponent.gd" id="4_hitbox"]
+[ext_resource type="Script" path="res://scripts/core/AnimatedAssetSprite.gd" id="5_sprite"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(24, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hurt"]
+size = Vector2(20, 36)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hit"]
+size = Vector2(30, 24)
+
+[node name="Player" type="CharacterBody2D" groups=["player"]]
+collision_layer = 2
+collision_mask = 1
+script = ExtResource("1_player")
+
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+script = ExtResource("5_sprite")
+sheet_path = "assets/characters/player_walk.png"
+frame_size = Vector2i(32, 32)
+frame_count = 4
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -20)
+shape = SubResource("RectangleShape2D_body")
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("2_health")
+
+[node name="HurtboxComponent" type="Area2D" parent="."]
+collision_layer = 16
+collision_mask = 8
+script = ExtResource("3_hurtbox")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HurtboxComponent"]
+position = Vector2(0, -18)
+shape = SubResource("RectangleShape2D_hurt")
+
+[node name="AttackHitbox" type="Area2D" parent="."]
+collision_layer = 8
+collision_mask = 16
+script = ExtResource("4_hitbox")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackHitbox"]
+position = Vector2(30, -20)
+shape = SubResource("RectangleShape2D_hit")
+
+[node name="AttackTimer" type="Timer" parent="."]
+one_shot = true
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(0, -20)
+zoom = Vector2(1.5, 1.5)

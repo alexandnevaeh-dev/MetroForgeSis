@@ -1,0 +1,35 @@
+{
+  "name": "@metroforge/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.electron.json && vite build",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.electron.json --noEmit",
+    "preview": "vite preview",
+    "postinstall": "node ./node_modules/electron/install.js"
+  },
+  "dependencies": {
+    "@metroforge/core": "workspace:*",
+    "@metroforge/generation": "workspace:*",
+    "@metroforge/shared": "workspace:*",
+    "@metroforge/ai": "workspace:*",
+    "@metroforge/schemas": "workspace:*",
+    "@metroforge/tools": "workspace:*",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "sql.js": "^1.12.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.14",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^33.2.1",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3",
+    "vite-plugin-electron": "^0.28.8",
+    "vite-plugin-electron-renderer": "^0.14.6"
+  }
+}

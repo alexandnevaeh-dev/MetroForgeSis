@@ -1,0 +1,3 @@
+# Prompt templates directory
+# Versioned prompt templates are loaded from subdirectories:
+# director/, narrative/, world/, code/, art/, audio/, qa/

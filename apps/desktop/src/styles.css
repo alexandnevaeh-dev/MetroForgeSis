@@ -1,0 +1,277 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #0d0f14;
+  --surface: #151922;
+  --border: #2a3142;
+  --text: #e8ecf4;
+  --muted: #8b95a8;
+  --accent: #5b8def;
+  --accent-hover: #4a7de0;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.app {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 220px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 1rem 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.brand {
+  padding: 0 1rem 1rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.5rem;
+}
+
+.brand h1 {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.version {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.nav-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 1rem;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.nav-item:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.nav-item.active {
+  color: var(--accent);
+  background: rgba(91, 141, 239, 0.1);
+}
+
+.content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.create-screen h2,
+.placeholder h2 {
+  margin-bottom: 1rem;
+}
+
+.create-screen label {
+  display: block;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.create-screen textarea,
+.create-screen select,
+.create-screen input[type='number'] {
+  display: block;
+  width: 100%;
+  margin-top: 0.35rem;
+  padding: 0.6rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font: inherit;
+}
+
+.phase-list {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: var(--surface);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.phase-list h3 {
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.phase-item {
+  display: flex;
+  gap: 1rem;
+  padding: 0.35rem 0;
+  font-size: 0.85rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.phase-item:last-child {
+  border-bottom: none;
+}
+
+.phase-name {
+  flex: 1;
+  font-family: monospace;
+}
+
+.phase-status {
+  color: var(--muted);
+  min-width: 80px;
+}
+
+.status-passed .phase-status {
+  color: #4ade80;
+}
+
+.status-failed .phase-status {
+  color: #f87171;
+}
+
+.status-running .phase-status {
+  color: var(--accent);
+}
+
+.result {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.result.success {
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.result.error {
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+.project-list {
+  list-style: none;
+}
+
+.project-card {
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  background: var(--surface);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.project-card code {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.provider-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.provider-table th,
+.provider-table td {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.health-healthy {
+  color: #4ade80;
+}
+
+.health-unavailable {
+  color: var(--muted);
+}
+
+.check-list {
+  list-style: none;
+}
+
+.check-list li {
+  padding: 0.4rem 0;
+  font-size: 0.9rem;
+}
+
+.settings-dl dt {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-top: 0.75rem;
+}
+
+.settings-dl dd {
+  margin-left: 0;
+}
+
+.warnings {
+  margin-top: 0.5rem;
+  color: #fbbf24;
+  font-size: 0.85rem;
+}
+
+.row {
+  display: flex;
+  gap: 1rem;
+}
+
+.row label {
+  flex: 1;
+}
+
+.primary {
+  margin-top: 0.5rem;
+  padding: 0.65rem 1.5rem;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hint {
+  margin-top: 1rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.placeholder p {
+  color: var(--muted);
+}
