@@ -1,7 +1,19 @@
 import type { GameDNA } from '@metroforge/schemas';
 import { GameDNASchema } from '@metroforge/schemas';
 import { PRODUCT, PROFILE_DEFAULTS, type GenerationProfile } from '@metroforge/shared';
-import type { TextGenerationProvider } from '../types.js';
+import type { ProviderHealth, TextGenerationRequest } from '../types.js';
+
+/**
+ * The minimal shape generateGameDNA actually needs — deliberately narrower than the full
+ * `TextGenerationProvider` interface so callers can pass a lightweight adapter (e.g. one
+ * backed by `GenerationRouter.generate()`) without implementing the entire provider
+ * interface just to satisfy the type. Any real `TextGenerationProvider` already structurally
+ * satisfies this, so existing direct-provider callers need no changes.
+ */
+export interface GameDNATextSource {
+  health: ProviderHealth;
+  generateText(request: TextGenerationRequest): Promise<{ text: string }>;
+}
 
 export interface GameDNAInput {
   prompt: string;
@@ -62,7 +74,7 @@ export function createDeterministicGameDNA(input: GameDNAInput): GameDNA {
 
 export async function generateGameDNA(
   input: GameDNAInput,
-  provider: TextGenerationProvider | null,
+  provider: GameDNATextSource | null,
 ): Promise<{ dna: GameDNA; source: 'ai' | 'deterministic' }> {
   if (!provider || provider.health === 'unavailable') {
     return { dna: createDeterministicGameDNA(input), source: 'deterministic' };

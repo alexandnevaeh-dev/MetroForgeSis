@@ -34,6 +34,28 @@ export const ProjectSchema = z.object({
 
 export type Project = z.infer<typeof ProjectSchema>;
 
+/**
+ * Written as `project.json` inside the generated project directory itself — distinct from
+ * the SQLite `projects` table (which is the primary per-machine record, keyed by a local
+ * `.metroforge/metroforge.db` that may not exist on a different machine or a fresh clone of
+ * `GeneratedGames/`). This is what lets `metroforge generate <slug>` reliably recover the
+ * original prompt and reproduce the same generation, without depending on the database.
+ */
+export const ProjectMetadataSchema = z.object({
+  projectId: z.string(),
+  slug: z.string(),
+  prompt: z.string(),
+  profile: GenerationProfileSchema,
+  mode: GenerationModeSchema,
+  seed: z.number().int(),
+  createdAt: z.string().datetime(),
+  lastGeneratedAt: z.string().datetime(),
+  gameDnaVersion: z.string(),
+  generatorVersion: z.string(),
+});
+
+export type ProjectMetadata = z.infer<typeof ProjectMetadataSchema>;
+
 export const GenerationStageSchema = z.object({
   id: z.string(),
   jobId: z.string(),

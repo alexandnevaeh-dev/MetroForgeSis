@@ -31,6 +31,7 @@ shape = SubResource("RectangleShape2D_body")
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("2_health")
 max_health = 200.0
+hit_sfx_id = "boss_hit"
 
 [node name="HurtboxComponent" type="Area2D" parent="."]
 collision_layer = 16

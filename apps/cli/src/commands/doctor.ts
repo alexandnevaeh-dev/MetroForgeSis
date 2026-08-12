@@ -2,11 +2,36 @@ import type { Command } from 'commander';
 import { getVersionString } from '@metroforge/core';
 import { loadConfig } from '@metroforge/shared';
 import { ToolRegistry } from '@metroforge/tools';
+import { NvidiaProvider } from '@metroforge/ai';
 
 interface CheckResult {
   name: string;
   status: 'PASS' | 'WARN' | 'FAIL';
   message: string;
+}
+
+/** Reports configuration + reachability only — never the key itself, per NVIDIA_API_KEY
+ *  handling requirements (secrets must never be printed, logged, or surfaced in the UI). */
+async function checkNvidia(): Promise<CheckResult> {
+  const provider = new NvidiaProvider({
+    apiKey: process.env.NVIDIA_API_KEY,
+    baseUrl: process.env.NVIDIA_API_BASE_URL || 'https://integrate.api.nvidia.com/v1',
+    defaultModel: 'meta/llama-3.1-8b-instruct',
+    enabled: true,
+  });
+
+  const details = await provider.getHealthDetails();
+  if (!details.configured) {
+    return { name: 'NVIDIA NIM', status: 'WARN', message: 'API Key: NOT CONFIGURED' };
+  }
+  if (details.reachable) {
+    return { name: 'NVIDIA NIM', status: 'PASS', message: `API Key: CONFIGURED — API: REACHABLE (${details.latencyMs}ms)` };
+  }
+  return {
+    name: 'NVIDIA NIM',
+    status: 'WARN',
+    message: `API Key: CONFIGURED — API: UNREACHABLE (${details.errorCode ?? 'unknown error'})`,
+  };
 }
 
 async function checkNode(): Promise<CheckResult> {
@@ -54,6 +79,7 @@ export function registerDoctorCommand(program: Command): void {
           status: t.status,
           message: t.message,
         })),
+        await checkNvidia(),
         {
           name: 'Generated games dir',
           status: 'PASS' as const,

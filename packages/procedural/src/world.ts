@@ -28,6 +28,13 @@ const ROOM_ARCHETYPES = [
   'treasure',
 ] as const;
 
+/** The room index where the Nth ability's gate (and pickup) sits — a pure function of ability
+ *  count and room count, shared by node metadata tagging and edge construction so the two never
+ *  drift out of sync. */
+function abilityGateRoomIndex(abilityIndex: number, abilityCount: number, roomCount: number): number {
+  return Math.floor(((abilityIndex + 1) / (abilityCount + 1)) * roomCount);
+}
+
 export function generateWorldTopology(options: WorldGenOptions): WorldGenResult {
   const rng = new SeededRNG(options.seed);
   const roomIds: string[] = [];
@@ -39,6 +46,19 @@ export function generateWorldTopology(options: WorldGenOptions): WorldGenResult 
   const isLarge = options.roomCount >= 50;
   const isMedium = options.roomCount >= 30 && options.roomCount < 150;
 
+  // Each ability is picked up in the room right before the gate it unlocks — a common
+  // Metroidvania pattern (shrine right at the chasm it lets you cross). Tagged on the room node
+  // so validateWorldReachability can prove the real room graph is solvable, not just the
+  // abstract ability-order chain.
+  const grantsAbilitiesByRoom = new Map<string, string[]>();
+  options.abilities.forEach((ability, ai) => {
+    const gateIdx = abilityGateRoomIndex(ai, options.abilities.length, options.roomCount);
+    const roomId = roomIds[gateIdx]!;
+    const list = grantsAbilitiesByRoom.get(roomId) ?? [];
+    list.push(ability);
+    grantsAbilitiesByRoom.set(roomId, list);
+  });
+
   const nodes = roomIds.map((id, i) => ({
     id,
     type: 'room' as const,
@@ -47,6 +67,7 @@ export function generateWorldTopology(options: WorldGenOptions): WorldGenResult 
       archetype: pickArchetype(i, options.roomCount, rng),
       biomeIndex: isMedium || isLarge ? Math.floor(i / Math.ceil(options.roomCount / options.biomeCount)) % options.biomeCount : i % options.biomeCount,
       regionIndex: isLarge ? Math.floor(i / (options.roomCount / options.biomeCount)) : 0,
+      grantsAbilities: grantsAbilitiesByRoom.get(id) ?? [],
     },
   }));
 
@@ -176,12 +197,30 @@ function buildEdges(
 
   // Ability gates distributed across world (vertical shafts require abilities)
   options.abilities.forEach((ability, ai) => {
-    const gateIdx = Math.floor(((ai + 1) / (options.abilities.length + 1)) * roomIds.length);
+    const gateIdx = abilityGateRoomIndex(ai, options.abilities.length, roomIds.length);
     const postIdx = Math.min(gateIdx + 1, roomIds.length - 1);
+    const fromId = roomIds[gateIdx]!;
+    const toId = roomIds[postIdx]!;
+
+    // The gate room is (by construction, see abilityGateRoomIndex) adjacent to the room it
+    // gates, which the main spine (or a vertical shaft) may have already connected with a free,
+    // unconditional edge. Without removing that duplicate, the gate would be pure decoration —
+    // silently walkable without the ability it claims to require. Only the gated edge should
+    // remain between this exact pair.
+    for (let i = edges.length - 1; i >= 0; i--) {
+      const existing = edges[i]!;
+      const sameUndirectedPair =
+        (existing.from === fromId && existing.to === toId) ||
+        (existing.bidirectional && existing.from === toId && existing.to === fromId);
+      if (sameUndirectedPair && existing.requirements.length === 0) {
+        edges.splice(i, 1);
+      }
+    }
+
     edges.push({
       id: generateId('edge'),
-      from: roomIds[gateIdx]!,
-      to: roomIds[postIdx]!,
+      from: fromId,
+      to: toId,
       requirements: [ability],
       optional: false,
       bidirectional: true,
@@ -203,11 +242,11 @@ export function resolveRoomCount(profile: GenerationProfile, seed: number): numb
  * Proves every room in the actual assembled world graph is reachable from the start room via
  * *some* path (bidirectional edges traversable both ways), ignoring ability requirements.
  *
- * This is deliberately a weaker, complementary check to `validateReachability` (which proves the
- * abstract ability-gate chain is solvable in order): `worldGraph` room nodes don't record where
- * abilities are picked up, so there's no data to prove ability-gated room reachability here. What
- * this *does* catch is a real, distinct failure class — a bug in edge construction leaving a room
- * with no path back to the start at all, disconnected regardless of what abilities the player has.
+ * Deliberately weaker than `validateWorldReachability` (below), which additionally proves the
+ * ability-gated edges are satisfiable in order. This one isolates a distinct, simpler failure
+ * class on its own: a pure edge-construction bug leaving a room with no path back to the start
+ * *at all*, independent of ability gating — useful for telling "the topology itself is broken"
+ * apart from "the topology is fine but the ability gates don't line up."
  */
 export function validateWorldConnectivity(graph: WorldGraph): {
   connected: boolean;
@@ -239,6 +278,71 @@ export function validateWorldConnectivity(graph: WorldGraph): {
 
   const unreachableRoomIds = roomIds.filter((id) => !visited.has(id));
   return { connected: unreachableRoomIds.length === 0, unreachableRoomIds };
+}
+
+/**
+ * Proves every room in the real world graph is reachable from the start room, given progressive
+ * ability acquisition — abilities become available once the player reaches whichever room's
+ * `metadata.grantsAbilities` lists them (see `generateWorldTopology`), and each edge's
+ * `requirements` gate traversal until the player has all of them.
+ *
+ * This is the room-level counterpart to `validateReachability` (which only proves the small
+ * abstract ability-order chain is solvable) — it proves the actual generated layout realizes
+ * that chain correctly, catching e.g. an ability gate placed before its own pickup room, or a
+ * pickup room that's itself unreachable.
+ *
+ * Uses a fixed-point iteration rather than a single BFS pass because an ability picked up via
+ * one branch can retroactively unlock a gate on an entirely different, already-visited branch —
+ * a single forward pass could miss that if the branches are explored in the "wrong" order.
+ */
+export function validateWorldReachability(
+  graph: WorldGraph,
+  unlockedAbilities: Set<string> = new Set(),
+): { reachable: boolean; unreachableRoomIds: string[] } {
+  const roomIds = graph.nodes.filter((n) => n.type === 'room').map((n) => n.id);
+  if (roomIds.length === 0) return { reachable: true, unreachableRoomIds: [] };
+
+  const nodeById = new Map(graph.nodes.map((n) => [n.id, n]));
+  const grantsAt = (roomId: string): void => {
+    const grants = nodeById.get(roomId)?.metadata?.grantsAbilities;
+    if (Array.isArray(grants)) {
+      for (const a of grants) if (typeof a === 'string') unlockedAbilities.add(a);
+    }
+  };
+
+  type Traversal = { to: string; requirements: string[] };
+  const adjacency = new Map<string, Traversal[]>();
+  const addEdge = (from: string, to: string, requirements: string[]): void => {
+    const list = adjacency.get(from) ?? [];
+    list.push({ to, requirements });
+    adjacency.set(from, list);
+  };
+  for (const edge of graph.edges) {
+    addEdge(edge.from, edge.to, edge.requirements);
+    if (edge.bidirectional) addEdge(edge.to, edge.from, edge.requirements);
+  }
+
+  const startId = roomIds[0]!;
+  const visited = new Set<string>([startId]);
+  grantsAt(startId);
+
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const roomId of visited) {
+      for (const { to, requirements } of adjacency.get(roomId) ?? []) {
+        if (visited.has(to)) continue;
+        if (requirements.every((r) => unlockedAbilities.has(r))) {
+          visited.add(to);
+          grantsAt(to);
+          changed = true;
+        }
+      }
+    }
+  }
+
+  const unreachableRoomIds = roomIds.filter((id) => !visited.has(id));
+  return { reachable: unreachableRoomIds.length === 0, unreachableRoomIds };
 }
 
 export function validateReachability(

@@ -8,15 +8,16 @@ const SPAWN_MARGIN := 80
 var _current_room: Node2D = null
 var _room_data: Dictionary = {}
 var _transitioning: bool = false
-var _music_player: AudioStreamPlayer = null
 
 func _ready() -> void:
 	add_to_group("world_manager")
-	_music_player = AudioStreamPlayer.new()
-	add_child(_music_player)
 	EventBus.room_entered.connect(_on_room_entered)
 	_load_room_data()
-	_load_room(start_room_id, "left")
+	# SaveManager.load_game() (called from TitleScreen's Continue button, before this scene
+	# is even loaded) sets GameManager.current_room_id to the checkpoint room. A fresh game
+	# leaves it empty, so this correctly falls back to start_room_id.
+	var resume_room_id := GameManager.current_room_id if GameManager.current_room_id != "" else start_room_id
+	_load_room(resume_room_id, "left")
 
 func _load_room_data() -> void:
 	var path := "res://data/rooms/rooms.json"
@@ -75,10 +76,7 @@ func _position_player_for_spawn(player: Node2D, spawn_side: String) -> void:
 func _on_room_entered(room_id: String) -> void:
 	var room_info: Dictionary = _room_data.get(room_id, {})
 	var biome_id: String = room_info.get("biomeId", "biome_0")
-	var music_path := "res://audio/music/%s.wav" % biome_id
-	if ResourceLoader.exists(music_path):
-		_music_player.stream = load(music_path)
-		_music_player.play()
+	AudioManager.play_music(biome_id)
 
 func _move_camera_to_room(player: Node2D) -> void:
 	var camera := player.get_node_or_null("Camera2D")

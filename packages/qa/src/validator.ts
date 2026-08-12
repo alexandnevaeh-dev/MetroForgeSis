@@ -1,10 +1,10 @@
 import { existsSync, readFileSync, readdirSync, writeFileSync, mkdirSync, copyFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
 import type { ValidationResult, WorldGraph } from '@metroforge/schemas';
 import { generateId } from '@metroforge/shared';
-import { validateWorldConnectivity } from '@metroforge/procedural';
+import { validateWorldConnectivity, validateWorldReachability } from '@metroforge/procedural';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..', '..', '..');
@@ -19,6 +19,8 @@ const TEMPLATE_STATIC_FILES = [
   'scenes/world/World.tscn',
   'scenes/player/Player.tscn',
   'scripts/player/PlayerController.gd',
+  'scenes/world/SavePoint.tscn',
+  'scripts/world/SavePoint.gd',
 ];
 
 export interface QAGateResult {
@@ -36,6 +38,7 @@ export interface QAReport {
 
 const REQUIRED_FILES = [
   'project.godot',
+  'project.json',
   'game_dna.json',
   'world_graph.json',
   'progression_graph.json',
@@ -85,20 +88,27 @@ export class QAValidator {
       message: dnaValid ? 'Game DNA valid' : 'Game DNA invalid or missing',
     });
 
-    // Gate: world connectivity — proves every room is reachable from the start room, catching
-    // edge-construction bugs that leave rooms disconnected (a different failure class than
-    // ability-gated reachability, which is checked separately by the progression_graph phase).
+    // Gates: world connectivity and ability-gated reachability, both proven against the real
+    // assembled world graph (not just the small abstract progression chain — see
+    // packages/procedural/src/world.ts for why both checks exist and what each isolates).
     let connected = false;
     let disconnectedCount = 0;
+    let worldReachable = false;
+    let worldUnreachableCount = 0;
     try {
       const worldGraph = JSON.parse(
         readFileSync(join(projectPath, 'world_graph.json'), 'utf-8'),
       ) as WorldGraph;
-      const result = validateWorldConnectivity(worldGraph);
-      connected = result.connected;
-      disconnectedCount = result.unreachableRoomIds.length;
+      const connectivity = validateWorldConnectivity(worldGraph);
+      connected = connectivity.connected;
+      disconnectedCount = connectivity.unreachableRoomIds.length;
+
+      const reachability = validateWorldReachability(worldGraph, new Set());
+      worldReachable = reachability.reachable;
+      worldUnreachableCount = reachability.unreachableRoomIds.length;
     } catch {
       connected = false;
+      worldReachable = false;
     }
     results.push({
       gate: 'world_connectivity',
@@ -106,6 +116,13 @@ export class QAValidator {
       message: connected
         ? 'All rooms reachable from start'
         : `${disconnectedCount} room(s) disconnected from start`,
+    });
+    results.push({
+      gate: 'world_reachability',
+      passed: worldReachable,
+      message: worldReachable
+        ? 'All rooms reachable via progressive ability pickup'
+        : `${worldUnreachableCount} room(s) unreachable via ability pickup`,
     });
 
     // Gate: rooms exist
@@ -118,6 +135,20 @@ export class QAValidator {
       passed: roomCount >= 1,
       message: `${roomCount} room scene(s) found`,
       details: { roomCount },
+    });
+
+    // Gate: every ext_resource path referenced by a scene file actually exists on disk —
+    // catches missing textures/audio/scripts/scenes the asset pipeline or assembler failed to
+    // write (spec §33), which no other gate here checks.
+    const missingReferences = findMissingAssetReferences(projectPath);
+    results.push({
+      gate: 'asset_references_valid',
+      passed: missingReferences.length === 0,
+      message:
+        missingReferences.length === 0
+          ? 'All scene resource references resolve'
+          : `${missingReferences.length} missing resource reference(s)`,
+      details: { missingReferences },
     });
 
     // Gate: input actions
@@ -174,7 +205,27 @@ export class QAValidator {
     return { passed, results, validationResults };
   }
 
+  /** Runs Godot's own headless import pass — required once for any project before
+   *  global `class_name` scripts resolve or textures/audio load as typed resources.
+   *  Without this, a fresh (never-opened) project spuriously reports "Could not find
+   *  type X" / "No loader found for resource" errors that have nothing to do with
+   *  whether the generated project is actually correct. Failure here is tolerated
+   *  (best-effort) — the subsequent gate still runs and will surface any real problem. */
+  private runGodotImport(godotPath: string, projectPath: string): void {
+    try {
+      execSync(`"${godotPath}" --headless --path "${projectPath}" --import`, {
+        encoding: 'utf-8',
+        timeout: 120000,
+        windowsHide: true,
+      });
+    } catch {
+      // best-effort — an import failure will surface as a real error in the gate that follows
+    }
+  }
+
   validateGodotHeadless(godotPath: string, projectPath: string): QAGateResult {
+    this.runGodotImport(godotPath, projectPath);
+
     try {
       const output = execSync(`"${godotPath}" --headless --path "${projectPath}" --quit-after 1`, {
         encoding: 'utf-8',
@@ -203,6 +254,58 @@ export class QAValidator {
         details: { output: output.slice(0, 500) },
       };
     }
+  }
+
+  /** Runs the generated project's own runtime smoke-test scene
+   *  (scripts/test/RuntimeSmokeTest.gd, copied into every project from the template) —
+   *  a real Godot execution that spawns the player, loads rooms, instantiates
+   *  enemies/boss, triggers an ability pickup, proves an ability-gated transition
+   *  actually blocks/unblocks, and exercises save/load. Distinct from
+   *  `validateGodotHeadless`, which only proves the project *imports* — this proves
+   *  core gameplay systems actually run. */
+  validateGodotRuntime(godotPath: string, projectPath: string): QAGateResult {
+    const smokeTestScene = join(projectPath, 'scenes', 'test', 'RuntimeSmokeTest.tscn');
+    if (!existsSync(smokeTestScene)) {
+      return {
+        gate: 'godot_runtime',
+        passed: false,
+        message: 'Runtime smoke test scene not found in project (stale template copy?)',
+      };
+    }
+
+    this.runGodotImport(godotPath, projectPath);
+
+    const command = `"${godotPath}" --headless --path "${projectPath}" res://scenes/test/RuntimeSmokeTest.tscn --quit-after 600`;
+    let output: string;
+    let exitCode = 0;
+    try {
+      output = execSync(command, { encoding: 'utf-8', timeout: 60000, windowsHide: true });
+    } catch (err) {
+      exitCode = 1;
+      output =
+        err instanceof Error && 'stdout' in err
+          ? String((err as { stdout?: string }).stdout ?? err.message)
+          : String(err);
+    }
+
+    const checks = Array.from(output.matchAll(/^(PASS|FAIL|SOFT_FAIL): (.+)$/gm)).map((m) => ({
+      status: m[1] as 'PASS' | 'FAIL' | 'SOFT_FAIL',
+      name: m[2]!,
+    }));
+    const failed = checks.filter((c) => c.status === 'FAIL').map((c) => c.name);
+    const passedCount = checks.filter((c) => c.status === 'PASS').length;
+
+    const ranToCompletion = output.includes('SMOKE_TEST_RESULTS_END');
+    const passed = ranToCompletion && exitCode === 0 && failed.length === 0;
+
+    return {
+      gate: 'godot_runtime',
+      passed,
+      message: ranToCompletion
+        ? `${passedCount}/${checks.length} runtime checks passed${failed.length > 0 ? ` (failed: ${failed.join(', ')})` : ''}`
+        : 'Smoke test did not complete — Godot crashed or hung',
+      details: { checks, output: output.slice(-2000) },
+    };
   }
 }
 
@@ -273,6 +376,51 @@ function extractSection(content: string, sectionHeading: string): string | null 
   const nextHeadingMatch = rest.match(/\n\[[A-Za-z_]+\]\n/);
   const body = nextHeadingMatch ? rest.slice(0, nextHeadingMatch.index) : rest;
   return body.replace(/\s+$/, '');
+}
+
+function listFilesRecursive(dir: string, extension: string): string[] {
+  if (!existsSync(dir)) return [];
+  const results: string[] = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      results.push(...listFilesRecursive(full, extension));
+    } else if (entry.name.endsWith(extension)) {
+      results.push(full);
+    }
+  }
+  return results;
+}
+
+const EXT_RESOURCE_PATH_RE = /\[ext_resource\b[^\]]*\bpath="res:\/\/([^"]+)"/g;
+
+/** Scans every .tscn file under scenes/ for `[ext_resource ... path="res://..."]` declarations
+ *  and reports any whose target file doesn't actually exist in the project. */
+function findMissingAssetReferences(
+  projectPath: string,
+): { scene: string; resource: string }[] {
+  const missing: { scene: string; resource: string }[] = [];
+  const sceneFiles = listFilesRecursive(join(projectPath, 'scenes'), '.tscn');
+
+  for (const sceneFile of sceneFiles) {
+    let content: string;
+    try {
+      content = readFileSync(sceneFile, 'utf-8');
+    } catch {
+      continue;
+    }
+    for (const match of content.matchAll(EXT_RESOURCE_PATH_RE)) {
+      const resourcePath = match[1]!;
+      if (!existsSync(join(projectPath, resourcePath))) {
+        missing.push({
+          scene: relative(projectPath, sceneFile).replace(/\\/g, '/'),
+          resource: resourcePath,
+        });
+      }
+    }
+  }
+
+  return missing;
 }
 
 /** Reads this project's title from its persisted game_dna.json, if present and parseable. */

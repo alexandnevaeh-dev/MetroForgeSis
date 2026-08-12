@@ -120,6 +120,11 @@ export const ModelEntrySchema = z.object({
   local: z.boolean(),
   enabled: z.boolean().default(true),
   costClass: z.enum(['free', 'low', 'medium', 'high']).default('free'),
+  /** Distinguishes a free *development/prototyping* API tier (rate-limited, not meant for
+   *  production load, may change terms) from genuine free production compute. costClass alone
+   *  can't express this — e.g. NVIDIA NIM's hosted developer API is free but explicitly not a
+   *  production SLA. Absent means "no special distinction" (the common case for local models). */
+  usageClass: z.enum(['development_prototyping', 'production']).optional(),
   license: z.string(),
   commercialUse: CommercialUseSchema.default('unknown'),
   parameterCount: z.string().optional(),

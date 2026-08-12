@@ -2,7 +2,9 @@ import type { Command } from 'commander';
 import { GenerationPipeline } from '@metroforge/generation';
 import type { GenerationMode, GenerationProfile } from '@metroforge/shared';
 import { loadConfig, resolveGeneratedGamesPath } from '@metroforge/shared';
+import { ProjectMetadataSchema } from '@metroforge/schemas';
 import { join } from 'node:path';
+import { readFileSync, existsSync } from 'node:fs';
 
 export function registerCreateCommand(program: Command): void {
   program
@@ -99,21 +101,37 @@ export function registerGenerateCommand(program: Command): void {
       const projectPath = join(resolveGeneratedGamesPath(config, process.cwd()), slug);
       const projectJsonPath = join(projectPath, 'project.json');
 
+      // project.json is written by every successful `create`/`generate` run (see
+      // pipeline.ts) — reading it back here is what makes regeneration actually reliable,
+      // rather than falling back to a generic placeholder prompt that loses the user's
+      // original intent. Explicit CLI flags still take priority over the saved metadata.
       let prompt = `Regenerate Metroidvania project ${slug}`;
-      try {
-        const { readFileSync } = await import('node:fs');
-        const meta = JSON.parse(readFileSync(projectJsonPath, 'utf-8'));
-        prompt = meta.description ?? prompt;
-      } catch {
-        // use default prompt
+      let savedProfile: GenerationProfile | undefined;
+      let savedMode: GenerationMode | undefined;
+      let savedSeed: number | undefined;
+
+      if (existsSync(projectJsonPath)) {
+        const parsed = ProjectMetadataSchema.safeParse(
+          JSON.parse(readFileSync(projectJsonPath, 'utf-8')),
+        );
+        if (parsed.success) {
+          prompt = parsed.data.prompt;
+          savedProfile = parsed.data.profile;
+          savedMode = parsed.data.mode;
+          savedSeed = parsed.data.seed;
+        } else {
+          console.log(`Warning: project.json exists but failed validation — using defaults (${parsed.error.issues[0]?.message ?? 'unknown error'})`);
+        }
+      } else {
+        console.log('Warning: no project.json found — regenerating with a generic placeholder prompt.');
       }
 
       const pipeline = new GenerationPipeline();
       const result = await pipeline.run({
         prompt,
-        profile: (opts.profile as GenerationProfile) ?? 'TINY_TEST',
-        mode: (opts.mode as GenerationMode) ?? 'LOCAL_ONLY',
-        seed: opts.seed ? parseInt(opts.seed, 10) : 42,
+        profile: (opts.profile as GenerationProfile) ?? savedProfile ?? 'TINY_TEST',
+        mode: (opts.mode as GenerationMode) ?? savedMode ?? 'LOCAL_ONLY',
+        seed: opts.seed ? parseInt(opts.seed, 10) : (savedSeed ?? 42),
         slug,
         resume: opts.resume,
       });

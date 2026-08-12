@@ -133,6 +133,7 @@ function generateRoomScene(
     hasAbilityPickup: boolean;
     abilityId: string;
     isBossRoom: boolean;
+    hasSavePoint: boolean;
     width: number;
     height: number;
     biomeIndex: number;
@@ -147,6 +148,7 @@ function generateRoomScene(
   let loadSteps = 6;
   if (options.hasTileset) loadSteps += 2;
   if (options.biomeTexturePath) loadSteps += 1;
+  if (options.hasSavePoint) loadSteps += 1;
 
   let scene = `[gd_scene load_steps=${loadSteps} format=3]
 
@@ -156,6 +158,11 @@ function generateRoomScene(
 [ext_resource type="PackedScene" uid="uid://ability_pickup" path="res://scenes/world/AbilityPickup.tscn" id="4_pickup"]
 [ext_resource type="PackedScene" uid="uid://room_transition" path="res://scenes/world/RoomTransition.tscn" id="5_transition"]
 `;
+
+  if (options.hasSavePoint) {
+    scene += `[ext_resource type="PackedScene" uid="uid://save_point" path="res://scenes/world/SavePoint.tscn" id="8_savepoint"]
+`;
+  }
 
   if (options.hasTileset) {
     scene += `[ext_resource type="Script" path="res://scripts/world/RoomTileMap.gd" id="6_tilemap"]
@@ -253,6 +260,13 @@ display_name = "${options.abilityId}"
 `;
   }
 
+  if (options.hasSavePoint) {
+    scene += `
+[node name="SavePoint" parent="." instance=ExtResource("8_savepoint")]
+position = Vector2(150, ${floorY - 16})
+`;
+  }
+
   for (const conn of options.connections) {
     const spawnSide = spawnSideForEntry(conn.direction);
     let x = 0;
@@ -312,6 +326,7 @@ export class GodotProjectAssembler {
       const abilityRoomIndex = Math.floor(input.roomIds.length * 0.3);
       const bossRoomIndex = input.roomIds.length - 1;
       const roomConnections = buildRoomConnections(input.roomIds, input.worldGraph.edges);
+      const worldGraphNodesById = new Map(input.worldGraph.nodes.map((n) => [n.id, n]));
       let enemyCounter = 0;
 
       const roomsData: Record<string, unknown> = {};
@@ -326,6 +341,13 @@ export class GodotProjectAssembler {
         const hasTileset = input.textureFiles?.has(biomeTexRel) ?? false;
         const biomeTexturePath = hasTileset ? biomeTexRel : undefined;
 
+        // The world graph (generateWorldTopology's pickArchetype) already marks certain
+        // rooms 'save' — read that real archetype instead of recomputing a second,
+        // disconnected notion of it here. Boss/ability rooms take priority so a single
+        // room doesn't get overloaded with every special feature at once.
+        const worldGraphArchetype = worldGraphNodesById.get(roomId)?.metadata?.archetype;
+        const hasSavePoint = !isBossRoom && !hasAbilityPickup && worldGraphArchetype === 'save';
+
         const enemyIndex = hasEnemy ? enemyCounter++ : 0;
         const connections = roomConnections.get(roomId) ?? [];
 
@@ -335,6 +357,7 @@ export class GodotProjectAssembler {
           hasAbilityPickup,
           abilityId,
           isBossRoom,
+          hasSavePoint,
           width: 800,
           height: 600,
           biomeIndex,
@@ -350,7 +373,13 @@ export class GodotProjectAssembler {
           id: roomId,
           index: i,
           biomeId: `biome_${biomeIndex}`,
-          archetype: isBossRoom ? 'boss' : hasAbilityPickup ? 'ability_shrine' : 'combat',
+          archetype: isBossRoom
+            ? 'boss'
+            : hasAbilityPickup
+              ? 'ability_shrine'
+              : hasSavePoint
+                ? 'save'
+                : 'combat',
           connections: connections.map((c) => ({
             direction: c.direction,
             targetRoomId: c.targetRoomId,

@@ -33,6 +33,13 @@ func _ready() -> void:
 	_can_dash = GameManager.has_ability("dash")
 	EventBus.ability_acquired.connect(_on_ability_acquired)
 
+	var restored := SaveManager.consume_pending_player_health()
+	if restored.health >= 0.0:
+		if restored.max_health > 0.0:
+			health.max_health = restored.max_health
+		health.current_health = restored.health
+		health.health_changed.emit(health.current_health, health.max_health)
+
 func _physics_process(delta: float) -> void:
 	if _is_dashing:
 		_process_dash(delta)
@@ -55,10 +62,17 @@ func _physics_process(delta: float) -> void:
 	if input_dir != 0:
 		facing = sign(input_dir)
 		sprite.scale.x = abs(sprite.scale.x) * facing
-		if sprite.sprite_frames and sprite.sprite_frames.has_animation("walk"):
+
+	# Let the one-shot attack/hurt animations play out instead of the per-frame walk/idle
+	# logic below immediately overriding them (this loop runs every physics frame).
+	var animation_locked := sprite.sprite_frames \
+		and (sprite.animation == "attack" or sprite.animation == "hurt") \
+		and sprite.is_playing()
+	if not animation_locked:
+		if input_dir != 0 and sprite.sprite_frames and sprite.sprite_frames.has_animation("walk"):
 			sprite.play("walk")
-	elif sprite.sprite_frames and sprite.sprite_frames.has_animation("idle"):
-		sprite.play("idle")
+		elif sprite.sprite_frames and sprite.sprite_frames.has_animation("idle"):
+			sprite.play("idle")
 
 	if Input.is_action_just_pressed("jump"):
 		_jump_buffer_timer = jump_buffer_time
@@ -67,6 +81,7 @@ func _physics_process(delta: float) -> void:
 		velocity.y = jump_velocity
 		_jump_buffer_timer = 0
 		_coyote_timer = 0
+		AudioManager.play_sfx("jump")
 
 	if Input.is_action_just_pressed("attack") and _attack_cooldown <= 0:
 		_perform_attack()
@@ -87,12 +102,15 @@ func _process_dash(delta: float) -> void:
 func _start_dash() -> void:
 	_is_dashing = true
 	_dash_timer = dash_duration
+	AudioManager.play_sfx("dash")
 
 func _perform_attack() -> void:
 	_attack_cooldown = 0.4
 	attack_hitbox.position.x = 30 * facing
 	attack_hitbox.activate()
 	attack_timer.start(0.15)
+	if sprite.sprite_frames and sprite.sprite_frames.has_animation("attack"):
+		sprite.play("attack")
 
 func _on_attack_finished() -> void:
 	attack_hitbox.deactivate()
@@ -101,6 +119,8 @@ func _on_hit_received(damage: float, knockback: Vector2) -> void:
 	health.take_damage(damage)
 	velocity = knockback
 	health.invulnerable = true
+	if sprite.sprite_frames and sprite.sprite_frames.has_animation("hurt"):
+		sprite.play("hurt")
 	await get_tree().create_timer(0.5).timeout
 	health.invulnerable = false
 

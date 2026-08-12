@@ -15,6 +15,15 @@ func defeat_boss(boss_id: String) -> void:
 	if boss_id not in _defeated_bosses:
 		_defeated_bosses.append(boss_id)
 
+func get_defeated_bosses() -> Array[String]:
+	return _defeated_bosses.duplicate()
+
+func restore_defeated_bosses(boss_ids: Array) -> void:
+	_defeated_bosses.clear()
+	for id in boss_ids:
+		if id is String and id not in _defeated_bosses:
+			_defeated_bosses.append(id)
+
 func open_gate(gate_id: String) -> void:
 	if gate_id not in _opened_gates:
 		_opened_gates.append(gate_id)

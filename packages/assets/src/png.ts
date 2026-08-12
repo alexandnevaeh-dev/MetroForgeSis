@@ -139,6 +139,74 @@ export function generateWalkCycleSheet(spec: SpriteSpec, frameCount = 4): Buffer
   return encodePng(width * frameCount, height, sheet);
 }
 
+/** Damage-flash animation: alternates the sprite's real colors with a bright red-white
+ *  tint on every other frame — the classic "took damage" visual cue. Distinct from the
+ *  walk cycle's bob, not a relabeled copy of it. */
+export function generateHurtFlashSheet(spec: SpriteSpec, frameCount = 4): Buffer {
+  const { rgba, width, height } = decodePngRgba(generateProceduralSprite(spec));
+  const sheet = new Uint8Array(width * frameCount * height * 4);
+
+  for (let f = 0; f < frameCount; f++) {
+    const flashed = f % 2 === 1;
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const si = (y * width + x) * 4;
+        const di = (y * width * frameCount + f * width + x) * 4;
+        const alpha = rgba[si + 3]!;
+        if (alpha === 0) {
+          sheet[di + 3] = 0;
+          continue;
+        }
+        if (flashed) {
+          sheet[di] = 255;
+          sheet[di + 1] = 90;
+          sheet[di + 2] = 90;
+        } else {
+          sheet[di] = rgba[si]!;
+          sheet[di + 1] = rgba[si + 1]!;
+          sheet[di + 2] = rgba[si + 2]!;
+        }
+        sheet[di + 3] = alpha;
+      }
+    }
+  }
+
+  return encodePng(width * frameCount, height, sheet);
+}
+
+/** Attack-swing animation: the sprite leans progressively further forward across frames,
+ *  with a brightness pulse on the final "impact" frame — real visual feedback for the
+ *  attack hitbox activating, not a relabeled walk cycle. */
+export function generateAttackSheet(spec: SpriteSpec, frameCount = 4): Buffer {
+  const { rgba, width, height } = decodePngRgba(generateProceduralSprite(spec));
+  const sheet = new Uint8Array(width * frameCount * height * 4);
+  const maxShift = Math.floor(width * 0.15);
+
+  for (let f = 0; f < frameCount; f++) {
+    const shift = Math.floor((maxShift * (f + 1)) / frameCount);
+    const isImpactFrame = f === frameCount - 1;
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const srcX = Math.min(width - 1, Math.max(0, x - shift));
+        const si = (y * width + srcX) * 4;
+        const di = (y * width * frameCount + f * width + x) * 4;
+        const alpha = rgba[si + 3]!;
+        if (alpha === 0) {
+          sheet[di + 3] = 0;
+          continue;
+        }
+        const boost = isImpactFrame ? 60 : 0;
+        sheet[di] = Math.min(255, rgba[si]! + boost);
+        sheet[di + 1] = Math.min(255, rgba[si + 1]! + boost);
+        sheet[di + 2] = Math.min(255, rgba[si + 2]! + boost);
+        sheet[di + 3] = alpha;
+      }
+    }
+  }
+
+  return encodePng(width * frameCount, height, sheet);
+}
+
 function decodePngRgba(png: Buffer): { rgba: Uint8Array; width: number; height: number } {
   if (png[0] !== 137 || png.toString('ascii', 1, 4) !== 'PNG') {
     throw new Error('Not a PNG file');

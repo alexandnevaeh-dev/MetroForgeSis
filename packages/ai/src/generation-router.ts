@@ -1,12 +1,13 @@
-import type { ModelCapability, ModelEntry, GenerationFailureReason } from '@metroforge/schemas';
+import type { ModelCapability, GenerationFailureReason } from '@metroforge/schemas';
 import type { GenerationMode } from '@metroforge/shared';
-import { ModelCatalogService, rankModelsForCapability, type RankedModel } from './model-catalog.js';
-import { HardwareProfiler } from './hardware-profiler.js';
-import { ProviderRegistry, CapabilityRouter, ModelRegistry, FallbackManager } from './registry.js';
-import type { TextGenerationProvider } from './types.js';
+import { CapabilityRouter, FallbackManager } from './registry.js';
+import type { AICapability } from './types.js';
 
 export interface GenerationRequest {
   capability: ModelCapability;
+  /** Human-readable task label for logging/routing context (e.g. "game_dna"). Falls back
+   *  to `capability` itself when omitted. */
+  task?: string;
   projectId?: string;
   jobId?: string;
   prompt: string;
@@ -26,125 +27,106 @@ export interface GenerationResponse {
   fallbackUsed: boolean;
 }
 
-const TEXT_CAPABILITIES: ModelCapability[] = [
-  'TEXT_GENERATION',
-  'REASONING',
-  'NARRATIVE',
-  'JSON_GENERATION',
-  'WORLD_DESIGN',
-  'QA_REASONING',
-  'CODE_GENERATION',
-  'GDSCRIPT',
-  'TYPESCRIPT',
-  'PYTHON',
-  'SHADER_CODE',
-  'CODE_REPAIR',
-  'CLASSIFICATION',
-  'TAGGING',
-  'METADATA',
-  'ROUTING',
-];
+/**
+ * Maps the richer catalog-level `ModelCapability` enum (used by asset/model metadata) down
+ * to the smaller `AICapability` bucket `CapabilityRouter` actually routes text requests on.
+ * Several `ModelCapability` values legitimately collapse to the same bucket — e.g.
+ * REASONING/WORLD_DESIGN/QA_REASONING are all fundamentally "ask a text-generation model,"
+ * just with different intended use at the call site, not different provider requirements.
+ * Capabilities with no entry here (image/audio/vision/etc.) are not yet routed through this
+ * facade — `AssetPipeline` still calls its providers directly (see
+ * docs/METROFORGE_CURRENT_BUILD.md §8 for why, and docs/PROVIDERS.md for current status).
+ */
+const CAPABILITY_TO_AI_CAPABILITY: Partial<Record<ModelCapability, AICapability>> = {
+  TEXT_GENERATION: 'text_generation',
+  REASONING: 'text_generation',
+  NARRATIVE: 'narrative',
+  JSON_GENERATION: 'json_generation',
+  WORLD_DESIGN: 'text_generation',
+  QA_REASONING: 'text_generation',
+  CODE_GENERATION: 'code_generation',
+  GDSCRIPT: 'code_generation',
+  TYPESCRIPT: 'code_generation',
+  PYTHON: 'code_generation',
+  SHADER_CODE: 'code_generation',
+  CODE_REPAIR: 'code_generation',
+  CLASSIFICATION: 'text_generation',
+  TAGGING: 'text_generation',
+  METADATA: 'text_generation',
+  ROUTING: 'text_generation',
+};
 
+/**
+ * The single canonical, model-agnostic entry point for capability-based generation.
+ * Application code should request a CAPABILITY here rather than importing and calling a
+ * specific provider directly (see docs/METROFORGE_CURRENT_BUILD.md §31 for the history of
+ * why this matters — this class previously existed in parallel with `CapabilityRouter` and
+ * `FallbackManager`, fully built but never actually called by the generation pipeline).
+ *
+ * Deliberately a thin facade, not a reimplementation: candidate ranking and retry/fallback
+ * behavior are delegated entirely to the already-proven `CapabilityRouter`/`FallbackManager`
+ * pair (the same instances `bootstrapProviders()` already constructs from the live
+ * `ProviderRegistry`), not reconstructed from `ModelCatalogService` data as the previous
+ * version did. That distinction is what was actually broken before: catalog entries for
+ * hosted providers default to `enabled: false` and nothing flips that flag based on live API
+ * key presence, so a catalog-driven ranker could never route to Gemini/Groq/NVIDIA/etc. even
+ * with a real key configured — only `CapabilityRouter`, which reads the live, correctly
+ * key-gated `ProviderRegistry`, ever could.
+ */
 export class GenerationRouter {
-  private readonly catalog: ModelCatalogService;
-  private readonly hardware: HardwareProfiler;
-  private readonly providers: ProviderRegistry;
+  constructor(
+    private readonly router: CapabilityRouter,
+    private readonly fallback: FallbackManager,
+  ) {}
 
-  constructor(dataDir?: string, providers?: ProviderRegistry) {
-    this.catalog = new ModelCatalogService(dataDir);
-    this.hardware = new HardwareProfiler();
-    this.providers = providers ?? new ProviderRegistry();
-  }
-
-  /** Model-agnostic entry point — request CAPABILITY, not model name */
   async generate(request: GenerationRequest): Promise<GenerationResponse> {
-    const hw = this.hardware.profile();
+    const aiCapability = CAPABILITY_TO_AI_CAPABILITY[request.capability];
+    if (!aiCapability) {
+      throw this.fail(
+        'CAPABILITY_MISMATCH',
+        `Capability ${request.capability} is not yet routed through GenerationRouter (no text-provider mapping — see CAPABILITY_TO_AI_CAPABILITY)`,
+      );
+    }
+
     const mode = request.mode ?? 'LOCAL_ONLY';
-    const ranked = rankModelsForCapability(this.catalog.list(), request.capability, hw, {
+    const routingContext = {
+      task: request.task ?? request.capability,
+      capability: aiCapability,
       freeOnly: mode === 'FREE_ONLY' || mode === 'HYBRID_FREE',
       localOnly: mode === 'LOCAL_ONLY',
-      preferInstalled: true,
-    });
+      qualityTarget: request.qualityTarget ?? ('balanced' as const),
+    };
 
-    if (ranked.length === 0) {
-      throw this.fail('CAPABILITY_MISMATCH', `No models for capability ${request.capability}`);
+    if (this.router.getCandidates(routingContext).length === 0) {
+      throw this.fail(
+        'CAPABILITY_MISMATCH',
+        `No enabled provider supports ${aiCapability} under mode ${mode}`,
+      );
     }
 
-    const errors: Error[] = [];
-
-    for (const candidate of ranked.slice(0, 5)) {
-      try {
-        return await this.executeWithModel(candidate, request);
-      } catch (err) {
-        errors.push(err instanceof Error ? err : new Error(String(err)));
-      }
-    }
-
-    throw this.fail(
-      'GENERATION_FAILED',
-      errors.map((e) => e.message).join('; ') || 'All model candidates failed',
-    );
-  }
-
-  rankCandidates(capability: ModelCapability, mode: GenerationMode = 'LOCAL_ONLY'): RankedModel[] {
-    const hw = this.hardware.profile();
-    return rankModelsForCapability(this.catalog.list(), capability, hw, {
-      freeOnly: mode === 'FREE_ONLY' || mode === 'HYBRID_FREE',
-      localOnly: mode === 'LOCAL_ONLY',
-      preferInstalled: true,
-    });
-  }
-
-  getCatalog(): ModelCatalogService {
-    return this.catalog;
-  }
-
-  private async executeWithModel(
-    ranked: RankedModel,
-    request: GenerationRequest,
-  ): Promise<GenerationResponse> {
-    const { model } = ranked;
     const start = Date.now();
-
-    if (TEXT_CAPABILITIES.includes(request.capability)) {
-      const provider = this.resolveTextProvider(model);
-      if (!provider) {
-        throw this.fail('PROVIDER_OFFLINE', `No provider for model ${model.id}`);
-      }
-
-      const response = await provider.generateText({
-        prompt: request.prompt,
-        systemPrompt: request.systemPrompt,
-        jsonMode: request.jsonMode ?? request.capability === 'JSON_GENERATION',
-      });
-
+    try {
+      const response = await this.fallback.withFallback(routingContext, (provider) =>
+        provider.generateText({
+          prompt: request.prompt,
+          systemPrompt: request.systemPrompt,
+          jsonMode: request.jsonMode ?? request.capability === 'JSON_GENERATION',
+        }),
+      );
       return {
         result: response.text,
-        modelId: model.id,
+        modelId: response.model,
         provider: response.provider,
         capability: request.capability,
         durationMs: Date.now() - start,
-        fallbackUsed: ranked.score < 50,
-      };
-    }
-
-    if (request.capability === 'PROCEDURAL_SFX' || request.capability === 'SFX_GENERATION') {
-      return {
-        result: 'procedural',
-        modelId: model.id,
-        provider: model.provider,
-        capability: request.capability,
-        durationMs: Date.now() - start,
+        // FallbackManager does not currently report which candidate attempt succeeded, and
+        // no caller reads this field today — left honestly false rather than guessed, and
+        // worth extending FallbackManager for (not duplicating here) if a caller ever needs it.
         fallbackUsed: false,
       };
+    } catch (err) {
+      throw this.fail('GENERATION_FAILED', err instanceof Error ? err.message : String(err));
     }
-
-    throw this.fail('CAPABILITY_MISMATCH', `Capability ${request.capability} handler not yet wired`);
-  }
-
-  private resolveTextProvider(model: ModelEntry): TextGenerationProvider | null {
-    if (model.provider === 'ollama') return this.providers.get('ollama') ?? null;
-    return this.providers.get(model.provider) ?? null;
   }
 
   private fail(reason: GenerationFailureReason, message: string): Error {
@@ -155,13 +137,8 @@ export class GenerationRouter {
 }
 
 export function createGenerationRouter(
-  dataDir?: string,
-  providers?: ProviderRegistry,
+  router: CapabilityRouter,
+  fallback: FallbackManager,
 ): GenerationRouter {
-  return new GenerationRouter(dataDir, providers);
-}
-
-/** @deprecated Use GenerationRouter directly — kept for provider bootstrap wiring */
-export function createFallbackManager(providers: ProviderRegistry): FallbackManager {
-  return new FallbackManager(new CapabilityRouter(providers, new ModelRegistry()));
+  return new GenerationRouter(router, fallback);
 }

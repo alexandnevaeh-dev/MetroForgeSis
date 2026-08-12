@@ -16,6 +16,7 @@ import { GeminiProvider } from './providers/gemini.js';
 import { GroqProvider } from './providers/groq.js';
 import { OpenRouterProvider } from './providers/openrouter.js';
 import { HuggingFaceProvider } from './providers/huggingface.js';
+import { NvidiaProvider } from './providers/nvidia.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..', '..', '..');
@@ -45,6 +46,8 @@ export interface ProviderBootstrapConfig {
   groqApiKey?: string;
   openrouterApiKey?: string;
   huggingfaceApiKey?: string;
+  nvidiaApiKey?: string;
+  nvidiaApiBaseUrl?: string;
 }
 
 export interface ProviderBootstrapResult {
@@ -102,6 +105,13 @@ export async function bootstrapProviders(
         enabled: !!config.huggingfaceApiKey,
         priority: providerDefaults.huggingface?.priority,
       }),
+      new NvidiaProvider({
+        apiKey: config.nvidiaApiKey,
+        baseUrl: config.nvidiaApiBaseUrl || 'https://integrate.api.nvidia.com/v1',
+        defaultModel: 'meta/llama-3.1-8b-instruct',
+        enabled: !!config.nvidiaApiKey,
+        priority: providerDefaults.nvidia?.priority,
+      }),
     ];
 
     for (const provider of hosted) {
@@ -118,7 +128,7 @@ export async function bootstrapProviders(
   const router = new CapabilityRouter(registry, models);
   const fallback = new FallbackManager(router);
   const catalog = new ModelCatalogService();
-  const generationRouter = createGenerationRouter(undefined, registry);
+  const generationRouter = createGenerationRouter(router, fallback);
 
   return { registry, models, catalog, router, fallback, generationRouter };
 }

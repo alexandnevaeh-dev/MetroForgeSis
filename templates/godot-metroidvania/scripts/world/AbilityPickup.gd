@@ -10,4 +10,5 @@ func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and not GameManager.has_ability(ability_id):
 		GameManager._on_ability_acquired(ability_id)
 		EventBus.ability_acquired.emit(ability_id)
+		AudioManager.play_sfx("ability")
 		queue_free()

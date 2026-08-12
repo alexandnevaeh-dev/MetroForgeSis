@@ -5,15 +5,18 @@ import {
   generateProceduralSprite,
   generateTilesetSource,
   generateWalkCycleSheet,
+  generateHurtFlashSheet,
+  generateAttackSheet,
   type SpriteSpec,
 } from './png.js';
 import { PixelArtProcessor } from './pixel-art-processor.js';
 import { ComfyUIProvider } from './providers/comfyui.js';
 import { DiffusersProvider } from './providers/diffusers.js';
+import { ImageProviderRegistry } from './image-router.js';
 import { VLMCritic, runDeterministicAssetChecks } from './vlm-critic.js';
 import type { ImageGenerationProfile } from './types/vision.js';
 import type { ImageGenerator } from './types/image-gen.js';
-import type { GenerationProfile } from '@metroforge/shared';
+import type { GenerationMode, GenerationProfile } from '@metroforge/shared';
 import { PROFILE_DEFAULTS } from '@metroforge/shared';
 
 export interface GeneratedAsset {
@@ -40,6 +43,10 @@ export interface AssetPipelineOptions {
   skipImageGen?: boolean;
   /** Reuse already-generated sprite files on disk instead of regenerating them. */
   resume?: boolean;
+  /** Routing constraint for image-provider selection — LOCAL_ONLY excludes any registered
+   *  provider that isn't local (no-op today, since ComfyUI/Diffusers both are; real
+   *  enforcement once a hosted image provider exists). */
+  mode?: GenerationMode;
 }
 
 export interface AssetPipelineResult {
@@ -55,27 +62,39 @@ const BIOME_PALETTES: [number, number, number][][] = [
   [[25, 35, 50], [45, 65, 90], [80, 140, 180], [200, 220, 240]],
 ];
 
+/** Routes image generation through `ImageProviderRegistry` (capability-based selection —
+ *  see image-router.ts) instead of hardcoding "try ComfyUI, then try Diffusers." Priority
+ *  order (ComfyUI over Diffusers) and observable fallback behavior are unchanged from
+ *  before this was routed — only the selection mechanism moved from ad hoc sequential
+ *  `if`s to a registry the same shape as the text-generation routing uses. */
 async function resolveImageGenerator(options: {
   comfyuiUrl?: string;
   diffusersPython?: string;
   diffusersModelId?: string;
+  mode?: GenerationMode;
 }): Promise<{ generator: ImageGenerator | null; warnings: string[] }> {
-  const warnings: string[] = [];
+  const registry = new ImageProviderRegistry();
 
   if (options.comfyuiUrl) {
-    const comfyui = new ComfyUIProvider({ baseUrl: options.comfyuiUrl });
-    if (await comfyui.checkHealth()) return { generator: comfyui, warnings };
-    warnings.push('ComfyUI unavailable');
+    registry.register({
+      provider: new ComfyUIProvider({ baseUrl: options.comfyuiUrl }),
+      local: true,
+      priority: 90,
+    });
   }
 
-  const diffusers = new DiffusersProvider({
-    pythonPath: options.diffusersPython,
-    modelId: options.diffusersModelId,
+  registry.register({
+    provider: new DiffusersProvider({
+      pythonPath: options.diffusersPython,
+      modelId: options.diffusersModelId,
+    }),
+    local: true,
+    priority: 85,
   });
-  if (await diffusers.checkHealth()) return { generator: diffusers, warnings };
-  warnings.push('Diffusers worker unavailable — using procedural assets');
 
-  return { generator: null, warnings };
+  const { generator, warnings } = await registry.selectHealthy({ mode: options.mode });
+  if (generator) return { generator, warnings };
+  return { generator: null, warnings: [...warnings, 'using procedural assets'] };
 }
 
 function checkpointFullPath(outputDir: string, relPath: string): string {
@@ -114,6 +133,7 @@ export class AssetPipeline {
           comfyuiUrl: options.comfyuiUrl,
           diffusersPython: options.diffusersPython,
           diffusersModelId: options.diffusersModelId,
+          mode: options.mode,
         });
     warnings.push(...providerWarnings);
 
@@ -175,6 +195,45 @@ export class AssetPipeline {
       id: 'player_walk_sheet',
       path: 'assets/characters/player_walk.png',
       buffer: walkProcessed.buffer,
+      provider: 'procedural',
+      fallbackGenerated: true,
+      critiquePassed: true,
+      critiqueScore: 100,
+    });
+
+    const playerSpec: SpriteSpec = {
+      id: 'player',
+      width: 32,
+      height: 32,
+      fill: [90, 140, 220, 255],
+      accent: [240, 240, 250, 255],
+      shape: 'humanoid',
+    };
+
+    const attackSheet = this.pixelArt.process(generateAttackSheet(playerSpec, 4), {
+      targetWidth: 128,
+      targetHeight: 32,
+      tileSize,
+    });
+    assets.push({
+      id: 'player_attack_sheet',
+      path: 'assets/characters/player_attack.png',
+      buffer: attackSheet.buffer,
+      provider: 'procedural',
+      fallbackGenerated: true,
+      critiquePassed: true,
+      critiqueScore: 100,
+    });
+
+    const hurtSheet = this.pixelArt.process(generateHurtFlashSheet(playerSpec, 4), {
+      targetWidth: 128,
+      targetHeight: 32,
+      tileSize,
+    });
+    assets.push({
+      id: 'player_hurt_sheet',
+      path: 'assets/characters/player_hurt.png',
+      buffer: hurtSheet.buffer,
       provider: 'procedural',
       fallbackGenerated: true,
       critiquePassed: true,

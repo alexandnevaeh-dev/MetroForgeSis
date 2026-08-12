@@ -21,12 +21,19 @@ func _on_ability_acquired(ability_id: String) -> void:
 	if ability_id not in player_abilities:
 		player_abilities.append(ability_id)
 	ProgressionManager.unlock_ability(ability_id)
+	# Autosave: an ability is a major, hard-won progression milestone — losing it to an
+	# unrelated crash before the next manual save would be a real loss for the player.
+	EventBus.save_triggered.emit()
 
 func _on_boss_defeated(boss_id: String) -> void:
+	ProgressionManager.defeat_boss(boss_id)
 	if boss_id.begins_with("final") or boss_id == "boss_final":
 		game_complete = true
 		current_state = GameState.VICTORY
 		EventBus.game_completed.emit()
+	# Autosave after every boss kill, not just the final one — re-fighting an optional
+	# boss because of a crash immediately afterward would be an even worse experience.
+	EventBus.save_triggered.emit()
 
 func has_ability(ability_id: String) -> bool:
 	return ability_id in player_abilities or ProgressionManager.has_ability(ability_id)

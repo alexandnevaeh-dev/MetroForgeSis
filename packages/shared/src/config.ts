@@ -1,4 +1,17 @@
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { config as loadDotenv } from 'dotenv';
 import { PRODUCT } from './constants.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = join(__dirname, '..', '..', '..');
+
+// Loaded once at module import time, consistent with how every other repo-root config file
+// (config/*.json, the Godot template) is resolved relative to this package's own location
+// rather than process.cwd() — so `.env` is found regardless of which directory `metroforge`
+// is invoked from. Never overrides variables already set in the shell environment (dotenv's
+// default), so explicit env vars always win over the file.
+loadDotenv({ path: join(REPO_ROOT, '.env') });
 
 export interface AppConfig {
   appName: string;

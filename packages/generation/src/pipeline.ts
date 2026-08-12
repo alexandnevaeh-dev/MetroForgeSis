@@ -5,6 +5,7 @@ import {
   createLogger,
   generateId,
   loadConfig,
+  PRODUCT,
   PROFILE_DEFAULTS,
   resolveGeneratedGamesPath,
   slugify,
@@ -12,12 +13,13 @@ import {
 } from '@metroforge/shared';
 import { createDatabase, type MetroForgeDatabase } from '@metroforge/database';
 import { bootstrapProviders } from '@metroforge/ai';
-import { generateGameDNA } from '@metroforge/ai';
-import { GameDNASchema, type GenerationJob } from '@metroforge/schemas';
+import { generateGameDNA, type GameDNATextSource } from '@metroforge/ai';
+import { GameDNASchema, ProjectMetadataSchema, type GenerationJob } from '@metroforge/schemas';
 import {
   generateWorldTopology,
   validateReachability,
   validateWorldConnectivity,
+  validateWorldReachability,
   generateGameContent,
   synthesizeAllSfx,
   resolveRoomCount,
@@ -109,7 +111,7 @@ export class GenerationPipeline {
       dnaSource = 'checkpoint';
       report('game_dna', 'SKIPPED', 'Resumed from existing game_dna.json checkpoint');
     } else {
-      const { router, fallback } = await bootstrapProviders({
+      const { generationRouter } = await bootstrapProviders({
         mode: options.mode,
         ollamaBaseUrl: config.ollamaBaseUrl,
         ollamaDefaultModel: process.env.OLLAMA_DEFAULT_MODEL,
@@ -117,36 +119,38 @@ export class GenerationPipeline {
         groqApiKey: process.env.GROQ_API_KEY,
         openrouterApiKey: process.env.OPENROUTER_API_KEY,
         huggingfaceApiKey: process.env.HUGGINGFACE_API_KEY,
+        nvidiaApiKey: process.env.NVIDIA_API_KEY,
+        nvidiaApiBaseUrl: process.env.NVIDIA_API_BASE_URL,
       });
 
-      const routingCtx = {
-        task: 'game_dna',
-        capability: 'json_generation' as const,
-        freeOnly: options.mode === 'FREE_ONLY' || options.mode === 'HYBRID_FREE',
-        localOnly: options.mode === 'LOCAL_ONLY',
-        qualityTarget: 'balanced' as const,
+      // Routes through the canonical GenerationRouter facade (capability in, text out) rather
+      // than reaching for a specific provider directly. GenerationRouter's own FallbackManager
+      // already retries across up to 3 candidate providers on a transport-level failure —
+      // generateGameDNA separately catches any final failure (including malformed/unparseable
+      // JSON, which surfaces after this adapter already returned successfully) and falls back
+      // to createDeterministicGameDNA(), the same safety net verified live all session.
+      const textSource: GameDNATextSource = {
+        health: 'healthy',
+        async generateText(req) {
+          const result = await generationRouter.generate({
+            capability: 'JSON_GENERATION',
+            task: 'game_dna',
+            prompt: req.prompt,
+            systemPrompt: req.systemPrompt,
+            jsonMode: req.jsonMode,
+            mode: options.mode,
+          });
+          return { text: result.result };
+        },
       };
 
       report('game_dna', 'RUNNING');
-      try {
-        const result = await fallback.withFallback(routingCtx, async (provider) => {
-          const r = await generateGameDNA(
-            { prompt: options.prompt, profile: options.profile, seed: options.seed },
-            provider,
-          );
-          if (r.source === 'ai') return r;
-          throw new Error('Provider returned deterministic fallback');
-        });
-        gameDna = result.dna;
-        dnaSource = result.source;
-      } catch {
-        const result = await generateGameDNA(
-          { prompt: options.prompt, profile: options.profile, seed: options.seed },
-          router.route(routingCtx),
-        );
-        gameDna = result.dna;
-        dnaSource = result.source;
-      }
+      const result = await generateGameDNA(
+        { prompt: options.prompt, profile: options.profile, seed: options.seed },
+        textSource,
+      );
+      gameDna = result.dna;
+      dnaSource = result.source;
       report('game_dna', 'PASSED', `Source: ${dnaSource}`);
       writeFileSync(gameDnaCheckpointPath, JSON.stringify(gameDna, null, 2));
     }
@@ -178,6 +182,42 @@ export class GenerationPipeline {
         status: 'generating',
       });
     }
+
+    // project.json — a portable record inside the generated project directory itself,
+    // distinct from the SQLite `projects` table (which lives in .metroforge/metroforge.db
+    // and may not travel with the project, e.g. after a fresh clone of GeneratedGames/).
+    // This is what lets `metroforge generate <slug>` reliably recover the original prompt.
+    // Preserve the original createdAt across regenerations rather than resetting it.
+    const projectJsonPath = join(outputPath, 'project.json');
+    let projectCreatedAt = new Date().toISOString();
+    if (existsSync(projectJsonPath)) {
+      try {
+        projectCreatedAt = ProjectMetadataSchema.parse(
+          JSON.parse(readFileSync(projectJsonPath, 'utf-8')),
+        ).createdAt;
+      } catch {
+        // corrupt or pre-existing-without-this-file project — treat as freshly created
+      }
+    }
+    writeFileSync(
+      projectJsonPath,
+      JSON.stringify(
+        ProjectMetadataSchema.parse({
+          projectId: project.id,
+          slug,
+          prompt: options.prompt,
+          profile: options.profile,
+          mode: options.mode,
+          seed: options.seed,
+          createdAt: projectCreatedAt,
+          lastGeneratedAt: new Date().toISOString(),
+          gameDnaVersion: gameDna.version,
+          generatorVersion: PRODUCT.generatorVersion,
+        }),
+        null,
+        2,
+      ),
+    );
 
     job = db.jobs.create(project.id, options.profile, options.mode, options.seed);
     stageIdByPhase = new Map(job.stages.map((s) => [s.phase, s.id]));
@@ -215,7 +255,26 @@ export class GenerationPipeline {
     if (!reachable) {
       warnings.push(`Unreachable nodes without abilities pre-granted: ${unreachableNodes.join(', ')}`);
     }
-    report('progression_graph', reachable ? 'PASSED' : 'FAILED');
+    // Also prove the *real* room graph realizes that abstract chain correctly — the abstract
+    // check above only proves the ability order is sound in principle; this proves the actual
+    // generated rooms/edges deliver on it (every room reachable via progressive ability pickup).
+    const { reachable: worldReachable, unreachableRoomIds: worldUnreachableRoomIds } =
+      validateWorldReachability(worldGraph, new Set());
+    if (!worldReachable) {
+      warnings.push(
+        `Rooms unreachable via progressive ability pickup: ${worldUnreachableRoomIds.join(', ')}`,
+      );
+    }
+    const progressionOk = reachable && worldReachable;
+    report(
+      'progression_graph',
+      progressionOk ? 'PASSED' : 'FAILED',
+      progressionOk
+        ? undefined
+        : !reachable
+          ? 'Abstract ability chain unsolvable'
+          : `${worldUnreachableRoomIds.length} room(s) unreachable via ability pickup`,
+    );
 
     report('enemy_families', 'RUNNING');
     const bossRoomId = roomIds[roomIds.length - 1]!;
@@ -263,6 +322,7 @@ export class GenerationPipeline {
       diffusersModelId: process.env.DIFFUSERS_MODEL_ID,
       ollamaBaseUrl: config.ollamaBaseUrl,
       resume: options.resume,
+      mode: options.mode,
     });
     warnings.push(...assetResult.warnings);
     const textureFiles = new Map(assetResult.assets.map((a) => [a.path, a.buffer]));

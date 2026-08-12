@@ -4,6 +4,7 @@ import {
   generateWorldTopology,
   validateReachability,
   validateWorldConnectivity,
+  validateWorldReachability,
 } from '../src/world.js';
 
 describe('SeededRNG', () => {
@@ -98,6 +99,84 @@ describe('validateWorldConnectivity', () => {
     const { connected, unreachableRoomIds } = validateWorldConnectivity(brokenGraph);
     expect(connected).toBe(false);
     expect(unreachableRoomIds).toContain('room_004');
+    expect(unreachableRoomIds.length).toBeGreaterThan(0);
+  });
+});
+
+describe('validateWorldReachability', () => {
+  it('reaches every room from zero starting abilities via progressive pickup', () => {
+    const { worldGraph } = generateWorldTopology({
+      seed: 42,
+      roomCount: 8,
+      biomeCount: 1,
+      abilities: ['dash', 'wall_jump'],
+      bossCount: 1,
+    });
+    const { reachable, unreachableRoomIds } = validateWorldReachability(worldGraph, new Set());
+    expect(reachable).toBe(true);
+    expect(unreachableRoomIds).toHaveLength(0);
+  });
+
+  it('tags exactly one room per ability with grantsAbilities, matching the gate that needs it', () => {
+    const { worldGraph } = generateWorldTopology({
+      seed: 42,
+      roomCount: 8,
+      biomeCount: 1,
+      abilities: ['dash', 'wall_jump'],
+      bossCount: 1,
+    });
+    const grantRooms = worldGraph.nodes.filter(
+      (n) => Array.isArray(n.metadata.grantsAbilities) && n.metadata.grantsAbilities.length > 0,
+    );
+    expect(grantRooms).toHaveLength(2);
+    for (const room of grantRooms) {
+      const ability = (room.metadata.grantsAbilities as string[])[0]!;
+      const gatedEdge = worldGraph.edges.find(
+        (e) => e.from === room.id && e.requirements.includes(ability),
+      );
+      expect(gatedEdge).toBeDefined();
+    }
+  });
+
+  it('catches an ability gate whose pickup room is itself unreachable', () => {
+    const { worldGraph } = generateWorldTopology({
+      seed: 42,
+      roomCount: 8,
+      biomeCount: 1,
+      abilities: ['dash', 'wall_jump'],
+      bossCount: 1,
+    });
+    // Simulate a generation bug: the wall_jump pickup got assigned to a room, but the edges
+    // leading to that room were never actually connected to the rest of the world.
+    const brokenGraph = {
+      ...worldGraph,
+      edges: worldGraph.edges.filter((e) => e.from !== 'room_005' && e.to !== 'room_005'),
+    };
+    const { reachable, unreachableRoomIds } = validateWorldReachability(brokenGraph, new Set());
+    expect(reachable).toBe(false);
+    expect(unreachableRoomIds).toContain('room_005');
+  });
+
+  it('catches an ability gate that is unsolvable because the ability is never granted anywhere', () => {
+    const { worldGraph } = generateWorldTopology({
+      seed: 42,
+      roomCount: 8,
+      biomeCount: 1,
+      abilities: ['dash', 'wall_jump'],
+      bossCount: 1,
+    });
+    // Simulate the pickup-tagging step failing to run: no room grants wall_jump, so its gate
+    // can never be crossed regardless of the room graph's connectivity.
+    const brokenGraph = {
+      ...worldGraph,
+      nodes: worldGraph.nodes.map((n) =>
+        (n.metadata.grantsAbilities as string[] | undefined)?.includes('wall_jump')
+          ? { ...n, metadata: { ...n.metadata, grantsAbilities: [] } }
+          : n,
+      ),
+    };
+    const { reachable, unreachableRoomIds } = validateWorldReachability(brokenGraph, new Set());
+    expect(reachable).toBe(false);
     expect(unreachableRoomIds.length).toBeGreaterThan(0);
   });
 });

@@ -9,7 +9,11 @@ export function registerValidateCommand(program: Command): void {
     .command('validate <slug>')
     .description('Validate a generated Godot project')
     .option('--repair', 'Attempt deterministic repair of any failing gates, then re-validate')
-    .action(async (slug: string, opts: { repair?: boolean }) => {
+    .option(
+      '--runtime',
+      'Also run the real Godot runtime smoke test (player/world/enemies/ability gate/save)',
+    )
+    .action(async (slug: string, opts: { repair?: boolean; runtime?: boolean }) => {
       const config = loadConfig();
       const projectPath = join(resolveGeneratedGamesPath(config, process.cwd()), slug);
       const validator = new QAValidator();
@@ -40,18 +44,36 @@ export function registerValidateCommand(program: Command): void {
       const tools = await toolRegistry.detectAll({ godotPath: config.godotExecutable });
       const godotPath = config.godotExecutable ?? tools.find((t) => t.id === 'godot')?.path ?? null;
 
+      let godotPassed = true;
+      let runtimePassed = true;
+
       if (godotPath) {
         const godotResult = validator.validateGodotHeadless(godotPath, projectPath);
+        godotPassed = godotResult.passed;
         const icon = godotResult.passed ? '✓' : '✗';
         console.log(`[${icon}] ${godotResult.gate}: ${godotResult.message}`);
+
+        if (opts.runtime) {
+          const runtimeResult = validator.validateGodotRuntime(godotPath, projectPath);
+          runtimePassed = runtimeResult.passed;
+          const runtimeIcon = runtimeResult.passed ? '✓' : '✗';
+          console.log(`[${runtimeIcon}] ${runtimeResult.gate}: ${runtimeResult.message}`);
+        }
       } else {
         console.log('[!] godot_imports: Skipped — Godot not detected');
+        if (opts.runtime) {
+          console.log('[!] godot_runtime: Skipped — Godot not detected');
+        }
       }
 
+      const overallPassed = report.passed && godotPassed && runtimePassed;
+
       console.log('');
-      console.log(report.passed ? 'Validation PASSED' : 'Validation FAILED');
-      if (!report.passed) {
-        if (!opts.repair) console.log('Tip: run with --repair to attempt automatic fixes.');
+      console.log(overallPassed ? 'Validation PASSED' : 'Validation FAILED');
+      if (!overallPassed) {
+        if (!report.passed && !opts.repair) {
+          console.log('Tip: run with --repair to attempt automatic fixes.');
+        }
         process.exitCode = 1;
       }
     });

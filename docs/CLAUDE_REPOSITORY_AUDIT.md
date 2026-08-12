@@ -312,10 +312,59 @@ added and completed too:
     MEDIUM-profile world: both the pipeline phase and the standalone `validate` gate correctly
     report full connectivity.
 
+11. **Added `asset_references_valid` QA gate.** Spec §33 explicitly calls out "missing
+    textures/audio dependency checks" as part of static validation; the existing gate set had
+    none. Scans every `.tscn` file under `scenes/` for `[ext_resource ... path="res://..."]`
+    declarations (confirmed this is the actual, consistent pattern the assembler emits — every
+    texture/script/sub-scene reference goes through `ext_resource`) and checks each resolved path
+    exists in the project. Live-verified the full range of behavior against a real fixture
+    project (`crystal-caverns-test`): passes cleanly as-is; deleting a real texture referenced by
+    8 room scenes made the gate correctly report all 8 missing references and fail validation;
+    `validate --repair` correctly declined to fabricate a texture it can't regenerate rather than
+    silently "fixing" it with garbage (restored the file afterward — this fixture isn't tracked by
+    git, `GeneratedGames/` is gitignored, but it's the user's local sample data, not disposable
+    test scratch). Also live-verified no false positives on a fresh 90-room MEDIUM generation
+    (8/8 gates passed). Scoped deliberately to static `ext_resource` declarations only —
+    dynamically-constructed runtime paths (e.g. `WorldManager.gd`'s
+    `"res://audio/music/%s.wav" % biome_id`) aren't checked, since Godot handles those missing at
+    runtime gracefully rather than failing to import, which is a different and lower-severity
+    failure mode than a broken static scene reference. 4 new tests.
+
+12. **Closed item 9, and in doing so found a real gameplay-breaking bug, not just a validation
+    gap.** Added the missing data link: each room's `metadata.grantsAbilities` now records which
+    ability (if any) is picked up there, computed via a helper (`abilityGateRoomIndex`) shared
+    with `buildEdges` so the pickup room and the gate it unlocks can never drift out of sync.
+    Added `validateWorldReachability()` — a fixed-point progressive-unlock BFS over the *real*
+    world graph (not the abstract chain), proving every room is reachable given abilities
+    acquired in the order the layout actually allows.
+
+    **While building the first test for "an unsolvable ability gate should be caught," the test
+    failed in a way that revealed the gate was never actually working:** `buildEdges()` places
+    each ability-gated edge between two rooms that are, by construction, immediately adjacent in
+    the room sequence — and the main spine loop (or a vertical biome shaft) had *already* created
+    a free, unconditional edge between that exact same pair. Confirmed directly by inspecting a
+    real generated graph: `room_002 → room_003` had **two** edges, one requiring `dash`, one
+    requiring nothing at all. Every ability gate this system has ever generated has been silently
+    bypassable by walking the free duplicate — this affects actual generated games, not just QA
+    reporting. Fixed in `buildEdges()`: when adding a gated edge, any pre-existing zero-requirement
+    edge between that exact room pair is removed first, so the gate is the only way through.
+    Confirmed the fix directly (re-inspected the same graph: exactly one edge now, correctly
+    gated) and at scale — a 233-room/8-ability LARGE-profile world has zero gated edges with a
+    surviving free duplicate, verified programmatically over the persisted `world_graph.json`.
+    Wired both the data link and the new check into the `progression_graph` pipeline phase
+    (alongside the existing abstract-chain check) and a new `world_reachability` QA gate.
+    Live-verified 9/9 gates passing across TINY_TEST (8 rooms), MEDIUM (105 rooms), and LARGE
+    (233 rooms). 4 new tests, including one that initially failed for the right reason and led
+    directly to finding the real bug rather than being adjusted to match broken behavior.
+
 Remaining:
 
 Everything under "What is missing entirely" is legitimately P1/P2 breadth work per the spec's own
 priority ordering (§61). All of the smaller, closer-to-the-vertical-slice gaps identified in the
-original audit have now been closed. The one still-open thread is the ability-gated (as opposed to
-pure-connectivity) world-graph reachability proof described in item 9 — it needs generation to
-record which room grants which ability before it can be built correctly.
+original audit have now been closed, including the ability-gated world-graph reachability item.
+One newer, smaller thread: dynamically-constructed runtime asset paths (audio, tileset textures
+loaded by biome/room ID at runtime) aren't covered by the `asset_references_valid` gate — worth a
+follow-up if silent audio/texture loading failures turn out to be a real problem in practice.
+Also worth a look: the 233-room LARGE world above still had 7 duplicate room-pairs among
+non-ability-gated edges (branching shortcuts happening to coincide with vertical shafts) — almost
+certainly harmless (redundant edges, not incorrect ones) but not yet root-caused.

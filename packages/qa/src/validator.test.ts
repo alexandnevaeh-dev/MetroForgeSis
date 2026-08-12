@@ -206,4 +206,45 @@ describe('QAValidator', () => {
 
     rmSync(outputDir, { recursive: true, force: true });
   });
+
+  it('passes asset_references_valid when every ext_resource path resolves', () => {
+    const outputDir = join(tmpdir(), `metroforge-qa-refs-ok-${Date.now()}`);
+    mkdirSync(outputDir, { recursive: true });
+    mkdirSync(join(outputDir, 'scenes', 'rooms'), { recursive: true });
+    mkdirSync(join(outputDir, 'assets', 'tilesets', 'biome_0'), { recursive: true });
+    writeFileSync(join(outputDir, 'assets', 'tilesets', 'biome_0', 'source.png'), 'fake-png');
+    writeFileSync(
+      join(outputDir, 'scenes', 'rooms', 'room_000.tscn'),
+      '[ext_resource type="Texture2D" path="res://assets/tilesets/biome_0/source.png" id="1"]\n',
+    );
+
+    const validator = new QAValidator();
+    const report = validator.validateProject(outputDir, 'proj_test');
+    const gate = report.results.find((r) => r.gate === 'asset_references_valid');
+    expect(gate?.passed).toBe(true);
+
+    rmSync(outputDir, { recursive: true, force: true });
+  });
+
+  it('fails asset_references_valid when a referenced texture is missing on disk', () => {
+    const outputDir = join(tmpdir(), `metroforge-qa-refs-missing-${Date.now()}`);
+    mkdirSync(outputDir, { recursive: true });
+    mkdirSync(join(outputDir, 'scenes', 'rooms'), { recursive: true });
+    // Note: no file written at assets/tilesets/biome_0/source.png — simulates the asset
+    // pipeline silently failing to produce a texture the assembler still referenced.
+    writeFileSync(
+      join(outputDir, 'scenes', 'rooms', 'room_000.tscn'),
+      '[ext_resource type="Texture2D" path="res://assets/tilesets/biome_0/source.png" id="1"]\n',
+    );
+
+    const validator = new QAValidator();
+    const report = validator.validateProject(outputDir, 'proj_test');
+    const gate = report.results.find((r) => r.gate === 'asset_references_valid');
+    expect(gate?.passed).toBe(false);
+    expect(gate?.details?.missingReferences).toEqual([
+      { scene: 'scenes/rooms/room_000.tscn', resource: 'assets/tilesets/biome_0/source.png' },
+    ]);
+
+    rmSync(outputDir, { recursive: true, force: true });
+  });
 });

@@ -25,6 +25,8 @@ script = ExtResource("5_sprite")
 sheet_path = "assets/characters/player_walk.png"
 frame_size = Vector2i(32, 32)
 frame_count = 4
+attack_sheet_path = "assets/characters/player_attack.png"
+hurt_sheet_path = "assets/characters/player_hurt.png"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -20)

@@ -3,6 +3,7 @@ export {
   generateWorldTopology,
   validateReachability,
   validateWorldConnectivity,
+  validateWorldReachability,
   resolveRoomCount,
 } from './world.js';
 export type { WorldGenOptions, WorldGenResult } from './world.js';

@@ -49,6 +49,17 @@
       "license": "Model-dependent",
       "priority": 50,
       "capabilities": ["text_generation", "image_generation"]
+    },
+    {
+      "id": "nvidia",
+      "name": "NVIDIA NIM",
+      "enabled": false,
+      "local": false,
+      "costClass": "free",
+      "usageClass": "development_prototyping",
+      "license": "NVIDIA API Terms of Use",
+      "priority": 70,
+      "capabilities": ["text_generation", "code_generation", "json_generation", "narrative"]
     }
   ]
 }

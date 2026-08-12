@@ -16,6 +16,8 @@ export function registerProvidersCommand(program: Command): void {
         groqApiKey: process.env.GROQ_API_KEY,
         openrouterApiKey: process.env.OPENROUTER_API_KEY,
         huggingfaceApiKey: process.env.HUGGINGFACE_API_KEY,
+        nvidiaApiKey: process.env.NVIDIA_API_KEY,
+        nvidiaApiBaseUrl: process.env.NVIDIA_API_BASE_URL,
       });
 
       const providers = listProviderStatus(registry);
