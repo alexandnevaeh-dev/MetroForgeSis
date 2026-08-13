@@ -8,6 +8,7 @@ class MockProvider implements TextGenerationProvider {
   enabled = true;
   costClass: 'free' | 'low' | 'medium' | 'high' = 'free';
   license = 'test';
+  commercialUse?: 'allowed' | 'restricted' | 'unknown';
   capabilities: AICapability[];
   health: 'healthy' | 'degraded' | 'unavailable' = 'healthy';
   priority: number;
@@ -24,6 +25,7 @@ class MockProvider implements TextGenerationProvider {
       capabilities?: AICapability[];
       response?: string;
       throws?: boolean;
+      commercialUse?: 'allowed' | 'restricted' | 'unknown';
     } = {},
   ) {
     // Defaults to local:true so tests not specifically about LOCAL_ONLY exclusion aren't
@@ -33,6 +35,7 @@ class MockProvider implements TextGenerationProvider {
     this.capabilities = opts.capabilities ?? ['text_generation', 'json_generation'];
     this.response = opts.response ?? 'mock response';
     this.shouldThrow = opts.throws ?? false;
+    this.commercialUse = opts.commercialUse;
   }
 
   async initialize(): Promise<void> {}
@@ -130,6 +133,59 @@ describe('GenerationRouter — mode constraints', () => {
 
     expect(result.provider).toBe('free-provider');
     expect(paid.callCount).toBe(0);
+  });
+
+  it('COMMERCIAL_SAFE excludes providers with commercialUse=unknown', async () => {
+    const unknown = new MockProvider('unknown-license', 'Unknown', {
+      local: true,
+      priority: 100,
+      commercialUse: 'unknown',
+    });
+    const safe = new MockProvider('safe-license', 'Safe', {
+      local: true,
+      priority: 10,
+      commercialUse: 'allowed',
+    });
+    const router = buildRouter([unknown, safe]);
+
+    const result = await router.generate({
+      capability: 'JSON_GENERATION',
+      prompt: 'test',
+      mode: 'COMMERCIAL_SAFE',
+    });
+
+    expect(result.provider).toBe('safe-license');
+    expect(unknown.callCount).toBe(0);
+  });
+
+  it('NVIDIA_ONLY selects only the nvidia provider', async () => {
+    const nvidia = new MockProvider('nvidia', 'NVIDIA NIM', { local: false, priority: 90 });
+    const ollama = new MockProvider('ollama', 'Ollama', { local: true, priority: 10 });
+    const router = buildRouter([nvidia, ollama]);
+
+    const result = await router.generate({
+      capability: 'JSON_GENERATION',
+      prompt: 'test',
+      mode: 'NVIDIA_ONLY',
+    });
+
+    expect(result.provider).toBe('nvidia');
+    expect(ollama.callCount).toBe(0);
+  });
+
+  it('OFFLINE behaves like LOCAL_ONLY for provider selection', async () => {
+    const hosted = new MockProvider('nvidia', 'NVIDIA NIM', { local: false, priority: 90 });
+    const local = new MockProvider('ollama', 'Ollama', { local: true, priority: 10 });
+    const router = buildRouter([hosted, local]);
+
+    const result = await router.generate({
+      capability: 'JSON_GENERATION',
+      prompt: 'test',
+      mode: 'OFFLINE',
+    });
+
+    expect(result.provider).toBe('ollama');
+    expect(hosted.callCount).toBe(0);
   });
 
   it('a disabled provider is never selected as a candidate', async () => {

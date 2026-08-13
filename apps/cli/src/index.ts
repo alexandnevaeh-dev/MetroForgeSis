@@ -7,6 +7,10 @@ import { registerGenerateCommand } from './commands/generate.js';
 import { registerProvidersCommand } from './commands/providers.js';
 import { registerValidateCommand } from './commands/validate.js';
 import { registerModelsCommand, registerScoutCommand } from './commands/models.js';
+import { registerOpenCommand } from './commands/open.js';
+import { registerExportCommand } from './commands/export.js';
+import { registerProjectCommand } from './commands/project.js';
+import { registerAcceptCommand } from './commands/accept.js';
 
 const program = new Command();
 
@@ -22,5 +26,9 @@ registerProvidersCommand(program);
 registerValidateCommand(program);
 registerModelsCommand(program);
 registerScoutCommand(program);
+registerOpenCommand(program);
+registerExportCommand(program);
+registerProjectCommand(program);
+registerAcceptCommand(program);
 
 program.parse();

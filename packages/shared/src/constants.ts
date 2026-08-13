@@ -8,9 +8,30 @@ export const PRODUCT = {
   schemaVersion: '0.1.0',
 } as const;
 
-export type GenerationMode = 'FREE_ONLY' | 'LOCAL_ONLY' | 'HYBRID_FREE' | 'CUSTOM';
+/**
+ * FREE_ONLY/LOCAL_ONLY/HYBRID_FREE/CUSTOM are the original 4 modes — preserved exactly.
+ * NVIDIA_ONLY/COMMERCIAL_SAFE/OFFLINE/FASTEST/HIGHEST_QUALITY/LOW_VRAM/BALANCED are the
+ * generation-mode expansion (packages/ai/src/registry.ts CapabilityRouter, generation-router.ts
+ * GenerationRouter.generate()). Keep in sync with GenerationModeSchema in
+ * packages/schemas/src/core.ts — two independently-maintained definitions of the same set
+ * (a TS type here for compile-time use, a Zod enum there for runtime validation).
+ */
+export type GenerationMode =
+  | 'FREE_ONLY'
+  | 'LOCAL_ONLY'
+  | 'HYBRID_FREE'
+  | 'CUSTOM'
+  | 'NVIDIA_ONLY'
+  | 'COMMERCIAL_SAFE'
+  | 'OFFLINE'
+  | 'FASTEST'
+  | 'HIGHEST_QUALITY'
+  | 'LOW_VRAM'
+  | 'BALANCED';
 
 export type GenerationProfile = 'TINY_TEST' | 'SMALL' | 'MEDIUM' | 'LARGE';
+
+export type GameArchetype = 'SIDE_VIEW_METROIDVANIA' | 'TOP_DOWN_ACTION_ADVENTURE';
 
 export type HardwareProfile = 'LOW_RESOURCE' | 'BALANCED' | 'HIGH_QUALITY';
 
@@ -24,43 +45,29 @@ export type StageStatus =
 
 export type CostClass = 'free' | 'low' | 'medium' | 'high';
 
+/**
+ * Must match exactly the phase strings GenerationPipeline.run() actually calls report() with
+ * (packages/generation/src/pipeline.ts) — this list seeds one `generation_stages` DB row per
+ * entry per job, and any phase here with no matching report() call sits permanently PENDING.
+ * Previously listed 38 aspirational phases (tilesets, vfx, ...) for pipeline stages
+ * that were never implemented; trimmed to the ones that are real. Add a phase here only
+ * alongside a corresponding report() call.
+ */
 export const GENERATION_PHASES = [
   'intake',
   'game_dna',
   'design_bible',
-  'narrative_bible',
   'world_topology',
   'progression_graph',
-  'biomes',
-  'player_mechanics',
-  'combat',
-  'abilities',
-  'room_architecture',
   'enemy_families',
   'bosses',
-  'npcs',
   'quests',
-  'items_economy',
-  'art_direction',
-  'environment_assets',
-  'tilesets',
-  'character_assets',
-  'enemy_assets',
-  'boss_assets',
-  'animation',
-  'ui_assets',
-  'vfx',
+  'npcs',
   'audio',
-  'godot_data',
-  'godot_scenes',
-  'gdscript',
+  'environment_assets',
   'project_assembly',
-  'import_validation',
   'static_validation',
-  'gameplay_validation',
   'automated_repair',
-  'balance',
-  'polish',
   'final_qa',
   'export',
 ] as const;

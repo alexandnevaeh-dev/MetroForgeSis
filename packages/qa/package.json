@@ -16,6 +16,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@metroforge/assets": "workspace:*",
+    "@metroforge/godot": "workspace:*",
     "@metroforge/procedural": "workspace:*",
     "@metroforge/schemas": "workspace:*",
     "@metroforge/shared": "workspace:*"

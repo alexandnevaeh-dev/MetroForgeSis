@@ -416,6 +416,7 @@
       "license": "MIT",
       "commercialUse": "allowed",
       "runtime": "piper",
+      "downloadSizeMb": 63,
       "priority": 70,
       "tags": ["speech", "optional"]
     },
@@ -433,6 +434,7 @@
       "parameterCount": "74M",
       "recommendedRamMb": 2048,
       "runtime": "whisper.cpp",
+      "downloadSizeMb": 148,
       "priority": 65,
       "tags": ["speech"]
     },
@@ -550,7 +552,25 @@
       "commercialUse": "allowed",
       "contextWindow": 128000,
       "priority": 75,
-      "tags": ["hosted-free"]
+      "tags": ["image", "low-vram"]
+    },
+    {
+      "id": "meta/llama-3.2-11b-vision-instruct",
+      "name": "Llama 3.2 11B Vision Instruct (NVIDIA NIM)",
+      "provider": "nvidia",
+      "modality": "vision",
+      "capabilities": ["VISION_ANALYSIS", "IMAGE_CRITIQUE", "ASSET_TAGGING"],
+      "local": false,
+      "enabled": false,
+      "costClass": "free",
+      "usageClass": "development_prototyping",
+      "license": "Llama 3.2 Community License",
+      "commercialUse": "allowed",
+      "supportsVision": true,
+      "specializationScores": { "VISION": 85, "QA": 78 },
+      "runtime": "nvidia-nim",
+      "priority": 80,
+      "tags": ["hosted-free", "nvidia-nim", "vision", "recommended"]
     },
     {
       "id": "meta/llama-3.1-8b-instruct",

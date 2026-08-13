@@ -2,13 +2,35 @@ import { cpSync, mkdirSync, writeFileSync, readFileSync, existsSync } from 'node
 import { join, dirname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { GameDNA, ProgressionGraph, WorldGraph } from '@metroforge/schemas';
-import type { GameContent } from '@metroforge/procedural';
-import { PRODUCT } from '@metroforge/shared';
-import { execSync } from 'node:child_process';
+import type { GameContent, TopDownOverworld } from '@metroforge/procedural';
+import {
+  attachPlaytestPersona,
+  defaultPlaytestPersonaForProfile,
+  validateMovementFeasibility,
+  planVictoryRoute,
+  generateTopDownWorld,
+} from '@metroforge/procedural';
+import {
+  PRODUCT,
+  buildMovementJson,
+  movementFeasibilityStats,
+  getGameArchetypePlugin,
+  isTopDownArchetype,
+  resolveGameArchetype,
+  DEFAULT_TOP_DOWN_MOVEMENT,
+} from '@metroforge/shared';
+import {
+  buildRoomAssemblyOptions,
+  buildPublishedRoomRecord,
+  generateRoomScene,
+  prepareRoomAssemblyContext,
+  recompileRooms,
+  type RecompileRoomsInput,
+  type RecompileRoomsResult,
+} from './room-assembler.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..', '..', '..');
-const TEMPLATE_PATH = join(REPO_ROOT, 'templates', 'godot-metroidvania');
 
 export interface AssetManifestEntry {
   id: string;
@@ -18,6 +40,8 @@ export interface AssetManifestEntry {
   fallbackGenerated: boolean;
   critiquePassed?: boolean;
   critiqueScore?: number;
+  license?: string;
+  commercialUse?: 'allowed' | 'restricted' | 'unknown';
 }
 
 export interface AssemblyInput {
@@ -30,6 +54,7 @@ export interface AssemblyInput {
   audioFiles?: Map<string, Buffer>;
   textureFiles?: Map<string, Buffer>;
   assetMetadata?: AssetManifestEntry[];
+  overworld?: TopDownOverworld;
 }
 
 export interface AssemblyResult {
@@ -39,352 +64,78 @@ export interface AssemblyResult {
   warnings: string[];
 }
 
-interface RoomConnection {
-  direction: 'left' | 'right' | 'up' | 'down';
-  targetRoomId: string;
-  optional?: boolean;
-  requirements: string[];
-}
-
-function spawnSideForEntry(exitDirection: RoomConnection['direction']): string {
-  switch (exitDirection) {
-    case 'up':
-      return 'bottom';
-    case 'down':
-      return 'top';
-    case 'right':
-      return 'left';
-    case 'left':
-      return 'right';
-  }
-}
-
-function reverseDirection(
-  direction: RoomConnection['direction'],
-): RoomConnection['direction'] {
-  switch (direction) {
-    case 'up':
-      return 'down';
-    case 'down':
-      return 'up';
-    case 'left':
-      return 'right';
-    case 'right':
-      return 'left';
-  }
-}
-
-function inferHorizontalDirection(fromIdx: number, toIdx: number): 'left' | 'right' {
-  return toIdx > fromIdx ? 'right' : 'left';
-}
-
-function buildRoomConnections(
-  roomIds: string[],
-  edges: WorldGraph['edges'],
-): Map<string, RoomConnection[]> {
-  const indexMap = new Map(roomIds.map((id, i) => [id, i]));
-  const connections = new Map<string, RoomConnection[]>();
-
-  for (const roomId of roomIds) {
-    connections.set(roomId, []);
-  }
-
-  for (const edge of edges) {
-    const fromIdx = indexMap.get(edge.from);
-    const toIdx = indexMap.get(edge.to);
-    if (fromIdx === undefined || toIdx === undefined) continue;
-
-    const outDirection =
-      edge.transition ?? inferHorizontalDirection(fromIdx, toIdx);
-
-    const fromList = connections.get(edge.from)!;
-    if (!fromList.some((c) => c.targetRoomId === edge.to && c.direction === outDirection)) {
-      fromList.push({
-        direction: outDirection,
-        targetRoomId: edge.to,
-        optional: edge.optional,
-        requirements: edge.requirements ?? [],
-      });
-    }
-
-    if (edge.bidirectional) {
-      const inDirection = reverseDirection(outDirection);
-      const toList = connections.get(edge.to)!;
-      if (!toList.some((c) => c.targetRoomId === edge.from && c.direction === inDirection)) {
-        toList.push({
-          direction: inDirection,
-          targetRoomId: edge.from,
-          optional: edge.optional,
-          requirements: edge.requirements ?? [],
-        });
-      }
-    }
-  }
-
-  return connections;
-}
-
-function generateRoomScene(
-  roomId: string,
-  index: number,
-  options: {
-    hasEnemy: boolean;
-    enemyIndex: number;
-    hasAbilityPickup: boolean;
-    abilityId: string;
-    isBossRoom: boolean;
-    hasSavePoint: boolean;
-    width: number;
-    height: number;
-    biomeIndex: number;
-    connections: RoomConnection[];
-    biomeTexturePath?: string;
-    hasTileset: boolean;
-    tileSize: number;
-  },
-): string {
-  const floorY = options.height - 64;
-  const platformWidth = options.width;
-  let loadSteps = 6;
-  if (options.hasTileset) loadSteps += 2;
-  if (options.biomeTexturePath) loadSteps += 1;
-  if (options.hasSavePoint) loadSteps += 1;
-
-  let scene = `[gd_scene load_steps=${loadSteps} format=3]
-
-[ext_resource type="PackedScene" uid="uid://player_scene" path="res://scenes/player/Player.tscn" id="1_player"]
-[ext_resource type="PackedScene" uid="uid://enemy_scene" path="res://scenes/enemies/Enemy.tscn" id="2_enemy"]
-[ext_resource type="PackedScene" uid="uid://boss_scene" path="res://scenes/bosses/Boss.tscn" id="3_boss"]
-[ext_resource type="PackedScene" uid="uid://ability_pickup" path="res://scenes/world/AbilityPickup.tscn" id="4_pickup"]
-[ext_resource type="PackedScene" uid="uid://room_transition" path="res://scenes/world/RoomTransition.tscn" id="5_transition"]
-`;
-
-  if (options.hasSavePoint) {
-    scene += `[ext_resource type="PackedScene" uid="uid://save_point" path="res://scenes/world/SavePoint.tscn" id="8_savepoint"]
-`;
-  }
-
-  if (options.hasTileset) {
-    scene += `[ext_resource type="Script" path="res://scripts/world/RoomTileMap.gd" id="6_tilemap"]
-`;
-  }
-
-  if (options.biomeTexturePath) {
-    scene += `[ext_resource type="Texture2D" path="res://${options.biomeTexturePath}" id="7_biome"]
-`;
-  }
-
-  scene += `
-[sub_resource type="RectangleShape2D" id="floor_shape"]
-size = Vector2(${platformWidth}, 64)
-
-[node name="${roomId}" type="Node2D"]
-
-`;
-
-  if (options.hasTileset) {
-    scene += `[node name="Ground" type="TileMapLayer" parent="."]
-z_index = -1
-script = ExtResource("6_tilemap")
-biome_id = "biome_${options.biomeIndex}"
-room_width = ${platformWidth}
-room_height = ${options.height}
-tile_size = ${options.tileSize}
-
-`;
-  }
-
-  if (options.biomeTexturePath) {
-    scene += `[node name="Background" type="TextureRect" parent="."]
-z_index = -2
-offset_right = ${options.width}.0
-offset_bottom = ${options.height}.0
-texture = ExtResource("7_biome")
-expand_mode = 1
-stretch_mode = 6
-
-`;
-  } else {
-    scene += `[node name="Background" type="ColorRect" parent="."]
-offset_right = ${options.width}.0
-offset_bottom = ${options.height}.0
-color = Color(${0.1 + (index % 3) * 0.05}, ${0.12 + (index % 2) * 0.03}, ${0.18 + (index % 4) * 0.02}, 1)
-
-`;
-  }
-
-  scene += `[node name="Floor" type="StaticBody2D" parent="."]
-position = Vector2(${platformWidth / 2}, ${floorY})
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Floor"]
-shape = SubResource("floor_shape")
-
-[node name="FloorVisual" type="ColorRect" parent="Floor"]
-offset_left = -${platformWidth / 2}.0
-offset_top = -32.0
-offset_right = ${platformWidth / 2}.0
-offset_bottom = 32.0
-color = Color(0.3, 0.32, 0.38, 1)
-
-[node name="Player" parent="." instance=ExtResource("1_player")]
-position = Vector2(100, ${floorY - 50})
-`;
-
-  if (options.hasEnemy && !options.isBossRoom) {
-    const enemyId = `enemy_${options.enemyIndex.toString().padStart(3, '0')}`;
-    scene += `
-[node name="Enemy" parent="." instance=ExtResource("2_enemy")]
-position = Vector2(${platformWidth - 150}, ${floorY - 30})
-enemy_id = "${enemyId}"
-
-[node name="Sprite" parent="Enemy"]
-sheet_path = "assets/enemies/${enemyId}_walk.png"
-frame_size = Vector2i(32, 32)
-frame_count = 4
-`;
-  }
-
-  if (options.isBossRoom) {
-    scene += `
-[node name="Boss" parent="." instance=ExtResource("3_boss")]
-position = Vector2(${platformWidth / 2}, ${floorY - 40})
-`;
-  }
-
-  if (options.hasAbilityPickup) {
-    scene += `
-[node name="AbilityPickup" parent="." instance=ExtResource("4_pickup")]
-position = Vector2(${platformWidth / 2}, ${floorY - 60})
-ability_id = "${options.abilityId}"
-display_name = "${options.abilityId}"
-`;
-  }
-
-  if (options.hasSavePoint) {
-    scene += `
-[node name="SavePoint" parent="." instance=ExtResource("8_savepoint")]
-position = Vector2(150, ${floorY - 16})
-`;
-  }
-
-  for (const conn of options.connections) {
-    const spawnSide = spawnSideForEntry(conn.direction);
-    let x = 0;
-    let y = floorY - 80;
-    switch (conn.direction) {
-      case 'up':
-        x = platformWidth / 2 - 12;
-        y = 48;
-        break;
-      case 'down':
-        x = platformWidth / 2 - 12;
-        y = floorY - 96;
-        break;
-      case 'right':
-        x = platformWidth - 24;
-        y = floorY - 80;
-        break;
-      case 'left':
-        x = 0;
-        y = floorY - 80;
-        break;
-    }
-    scene += `
-[node name="Transition_${conn.direction}_${conn.targetRoomId}" parent="." instance=ExtResource("5_transition")]
-position = Vector2(${x}, ${y})
-target_room_id = "${conn.targetRoomId}"
-spawn_side = "${spawnSide}"
-transition_direction = "${conn.direction}"
-is_optional = ${conn.optional ? 'true' : 'false'}${conn.requirements.length > 0 ? `\nrequired_abilities = PackedStringArray(${conn.requirements.map((r) => `"${r}"`).join(', ')})` : ''}
-`;
-  }
-
-  return scene;
-}
+export type { RecompileRoomsInput, RecompileRoomsResult };
 
 export class GodotProjectAssembler {
+  recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult {
+    return recompileRooms(input);
+  }
+
   assemble(input: AssemblyInput): AssemblyResult {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    if (!existsSync(TEMPLATE_PATH)) {
+    const templatePath = getTemplatePath(input.gameDna.archetype);
+    if (!existsSync(templatePath)) {
       return {
         success: false,
         projectPath: input.outputDir,
-        errors: [`Template not found: ${TEMPLATE_PATH}`],
+        errors: [`Template not found: ${templatePath}`],
         warnings,
       };
     }
 
     try {
-      cpSync(TEMPLATE_PATH, input.outputDir, { recursive: true });
+      cpSync(templatePath, input.outputDir, { recursive: true });
 
       const roomsDir = join(input.outputDir, 'scenes', 'rooms');
       mkdirSync(roomsDir, { recursive: true });
-
-      const abilityId = input.gameDna.abilities.find((a) => a.enabled)?.id ?? 'dash';
-      const abilityRoomIndex = Math.floor(input.roomIds.length * 0.3);
-      const bossRoomIndex = input.roomIds.length - 1;
-      const roomConnections = buildRoomConnections(input.roomIds, input.worldGraph.edges);
-      const worldGraphNodesById = new Map(input.worldGraph.nodes.map((n) => [n.id, n]));
-      let enemyCounter = 0;
-
       const roomsData: Record<string, unknown> = {};
+
+      if (isTopDownArchetype(input.gameDna.archetype)) {
+        const overworld =
+          input.overworld ??
+          generateTopDownWorld({
+            seed: input.gameDna.seed,
+            profile: input.gameDna.profile,
+            tileSize: input.gameDna.technical.tileSize,
+          }).overworld;
+        writeTopDownWorld(input.outputDir, overworld);
+        for (const area of overworld.areas) {
+          roomsData[area.id] = {
+            id: area.id,
+            name: area.name,
+            archetype: area.kind === 'overworld' ? 'hub' : 'combat',
+            width: area.widthTiles * area.tileSize,
+            height: area.heightTiles * area.tileSize,
+            collectibles: area.pois.filter((p) => p.kind === 'chest').map((p) => String(p.metadata.itemId ?? '')),
+          };
+        }
+      } else {
+      const roomConnections = prepareRoomAssemblyContext(
+        input.worldGraph,
+        input.gameContent,
+        input.roomIds,
+      );
+      const enemyCounter = { value: 0 };
+      const textureExists = (rel: string) =>
+        (input.textureFiles?.has(rel) ?? false) || existsSync(join(input.outputDir, rel));
 
       for (let i = 0; i < input.roomIds.length; i++) {
         const roomId = input.roomIds[i]!;
-        const isBossRoom = i === bossRoomIndex;
-        const hasAbilityPickup = i === abilityRoomIndex;
-        const hasEnemy = i > 0 && i < bossRoomIndex && i % 2 === 0;
-        const biomeIndex = i % input.gameDna.world.biomeCount;
-        const biomeTexRel = `assets/tilesets/biome_${biomeIndex}/source.png`;
-        const hasTileset = input.textureFiles?.has(biomeTexRel) ?? false;
-        const biomeTexturePath = hasTileset ? biomeTexRel : undefined;
-
-        // The world graph (generateWorldTopology's pickArchetype) already marks certain
-        // rooms 'save' — read that real archetype instead of recomputing a second,
-        // disconnected notion of it here. Boss/ability rooms take priority so a single
-        // room doesn't get overloaded with every special feature at once.
-        const worldGraphArchetype = worldGraphNodesById.get(roomId)?.metadata?.archetype;
-        const hasSavePoint = !isBossRoom && !hasAbilityPickup && worldGraphArchetype === 'save';
-
-        const enemyIndex = hasEnemy ? enemyCounter++ : 0;
-        const connections = roomConnections.get(roomId) ?? [];
-
-        const sceneContent = generateRoomScene(roomId, i, {
-          hasEnemy,
-          enemyIndex,
-          hasAbilityPickup,
-          abilityId,
-          isBossRoom,
-          hasSavePoint,
-          width: 800,
-          height: 600,
-          biomeIndex,
-          connections,
-          biomeTexturePath,
-          hasTileset,
-          tileSize: input.gameDna.technical.tileSize,
-        });
-
+        const opts = buildRoomAssemblyOptions(
+          roomId,
+          i,
+          roomConnections,
+          input.gameDna,
+          input.gameContent,
+          enemyCounter,
+          textureExists,
+        );
+        const sceneContent = generateRoomScene(roomId, i, opts);
         writeFileSync(join(roomsDir, `${roomId}.tscn`), sceneContent);
-
-        roomsData[roomId] = {
-          id: roomId,
-          index: i,
-          biomeId: `biome_${biomeIndex}`,
-          archetype: isBossRoom
-            ? 'boss'
-            : hasAbilityPickup
-              ? 'ability_shrine'
-              : hasSavePoint
-                ? 'save'
-                : 'combat',
-          connections: connections.map((c) => ({
-            direction: c.direction,
-            targetRoomId: c.targetRoomId,
-          })),
-        };
+        roomsData[roomId] = buildPublishedRoomRecord(roomId, i, opts);
+      }
       }
 
       writeFileSync(
@@ -401,10 +152,60 @@ export class GodotProjectAssembler {
         join(input.outputDir, 'world_graph.json'),
         JSON.stringify(input.worldGraph, null, 2),
       );
+      mkdirSync(join(input.outputDir, 'data', 'world'), { recursive: true });
+      writeFileSync(
+        join(input.outputDir, 'data', 'world', 'world_graph.json'),
+        JSON.stringify(input.worldGraph, null, 2),
+      );
 
       writeFileSync(
         join(input.outputDir, 'progression_graph.json'),
         JSON.stringify(input.progressionGraph, null, 2),
+      );
+
+      const finalBoss =
+        input.gameContent?.bosses.find((b) => b.id === 'boss_final') ??
+        input.gameContent?.bosses[input.gameContent.bosses.length - 1];
+      const playtestRoute = attachPlaytestPersona(
+        planVictoryRoute(input.worldGraph, {
+          victoryRoomId: finalBoss?.arenaRoomId ?? input.roomIds[input.roomIds.length - 1],
+          victoryBossId: finalBoss?.id ?? 'boss_final',
+        }),
+        defaultPlaytestPersonaForProfile(input.gameDna.profile),
+      );
+      const movementJson = isTopDownArchetype(input.gameDna.archetype)
+        ? {
+            ...buildMovementJson({
+              ...input.gameDna.movement,
+              walkSpeed: DEFAULT_TOP_DOWN_MOVEMENT.walkSpeed,
+              runSpeed: DEFAULT_TOP_DOWN_MOVEMENT.runSpeed,
+              acceleration: DEFAULT_TOP_DOWN_MOVEMENT.acceleration,
+              deceleration: DEFAULT_TOP_DOWN_MOVEMENT.deceleration,
+              knockbackDecay: DEFAULT_TOP_DOWN_MOVEMENT.knockbackDecay,
+            }),
+            movementDirections: input.gameDna.topDown?.movementDirections ?? 8,
+            worldStyle: input.gameDna.topDown?.worldStyle ?? 'continuous',
+          }
+        : buildMovementJson(input.gameDna.movement);
+      const movementFeasibility = validateMovementFeasibility(
+        input.worldGraph,
+        movementFeasibilityStats(movementJson),
+      );
+      writeFileSync(
+        join(input.outputDir, 'playtest_route.json'),
+        JSON.stringify(
+          {
+            ...playtestRoute,
+            movementFeasibility: {
+              feasible: movementFeasibility.feasible,
+              issueCount: movementFeasibility.issues.length,
+              issues: movementFeasibility.issues,
+              metrics: movementFeasibility.metrics,
+            },
+          },
+          null,
+          2,
+        ),
       );
 
       if (input.gameContent) {
@@ -413,6 +214,34 @@ export class GodotProjectAssembler {
         mkdirSync(join(dataDir, 'bosses'), { recursive: true });
         mkdirSync(join(dataDir, 'quests'), { recursive: true });
         mkdirSync(join(dataDir, 'items'), { recursive: true });
+        mkdirSync(join(dataDir, 'npcs'), { recursive: true });
+        mkdirSync(join(dataDir, 'dialogues'), { recursive: true });
+        mkdirSync(join(dataDir, 'shops'), { recursive: true });
+        mkdirSync(join(dataDir, 'player'), { recursive: true });
+        mkdirSync(join(dataDir, 'abilities'), { recursive: true });
+
+        writeFileSync(
+          join(dataDir, 'player', 'movement.json'),
+          JSON.stringify(movementJson, null, 2),
+        );
+
+        writeFileSync(
+          join(dataDir, 'abilities', 'abilities.json'),
+          JSON.stringify(
+            {
+              abilities: input.gameDna.abilities
+                .filter((a) => a.enabled)
+                .map((a) => ({
+                  id: a.id,
+                  displayName: a.name,
+                  category: a.category,
+                  enabled: true,
+                })),
+            },
+            null,
+            2,
+          ),
+        );
 
         writeFileSync(
           join(dataDir, 'enemies', 'enemies.json'),
@@ -430,17 +259,33 @@ export class GodotProjectAssembler {
           join(dataDir, 'items', 'items.json'),
           JSON.stringify({ items: input.gameContent.items }, null, 2),
         );
+        writeFileSync(
+          join(dataDir, 'npcs', 'npcs.json'),
+          JSON.stringify({ npcs: input.gameContent.npcs }, null, 2),
+        );
+        writeFileSync(
+          join(dataDir, 'dialogues', 'dialogues.json'),
+          JSON.stringify({ dialogues: input.gameContent.dialogues }, null, 2),
+        );
+        writeFileSync(
+          join(dataDir, 'shops', 'shops.json'),
+          JSON.stringify({ shops: input.gameContent.shops }, null, 2),
+        );
       }
 
       if (input.audioFiles && input.audioFiles.size > 0) {
         const sfxDir = join(input.outputDir, 'audio', 'sfx');
         const musicDir = join(input.outputDir, 'audio', 'music');
+        const voiceDir = join(input.outputDir, 'audio', 'voice');
         mkdirSync(sfxDir, { recursive: true });
         mkdirSync(musicDir, { recursive: true });
+        mkdirSync(voiceDir, { recursive: true });
         for (const [id, buffer] of input.audioFiles) {
-          const dest = id.startsWith('music_')
-            ? join(musicDir, `${id.replace(/^music_/, '')}.wav`)
-            : join(sfxDir, `${id}.wav`);
+          const dest = id.startsWith('voice_')
+            ? join(voiceDir, `${id.replace(/^voice_/, '')}.wav`)
+            : id.startsWith('music_')
+              ? join(musicDir, `${id.replace(/^music_/, '')}.wav`)
+              : join(sfxDir, `${id}.wav`);
           writeFileSync(dest, buffer);
         }
       }
@@ -465,15 +310,21 @@ export class GodotProjectAssembler {
       const artifacts: AssetManifestEntry[] = [...(input.assetMetadata ?? [])];
       if (input.audioFiles) {
         for (const id of input.audioFiles.keys()) {
-          const relPath = id.startsWith('music_')
-            ? `audio/music/${id.replace(/^music_/, '')}.wav`
-            : `audio/sfx/${id}.wav`;
+          const relPath = id.startsWith('voice_')
+            ? `audio/voice/${id.replace(/^voice_/, '')}.wav`
+            : id.startsWith('music_')
+              ? `audio/music/${id.replace(/^music_/, '')}.wav`
+              : `audio/sfx/${id}.wav`;
           artifacts.push({
             id,
             path: relPath,
             type: 'audio',
-            provider: 'procedural',
-            fallbackGenerated: true,
+            provider: id.startsWith('voice_') ? 'piper' : 'procedural',
+            fallbackGenerated: !id.startsWith('voice_'),
+            license: id.startsWith('voice_')
+              ? 'Piper TTS (MIT) + generated dialogue text'
+              : 'MetroForge Procedural Generator (original work)',
+            commercialUse: 'allowed',
           });
         }
       }
@@ -520,29 +371,14 @@ export class GodotProjectAssembler {
       return { success: false, projectPath: input.outputDir, errors, warnings };
     }
   }
-
-  validate(godotPath: string | null, projectPath: string): { passed: boolean; output: string } {
-    if (!godotPath) {
-      return { passed: false, output: 'Godot executable not configured' };
-    }
-
-    try {
-      const output = execSync(`"${godotPath}" --headless --path "${projectPath}" --quit-after 1`, {
-        encoding: 'utf-8',
-        timeout: 60000,
-        windowsHide: true,
-      });
-      return { passed: true, output };
-    } catch (err) {
-      const output =
-        err instanceof Error && 'stdout' in err
-          ? String((err as { stdout?: string }).stdout)
-          : String(err);
-      return { passed: false, output };
-    }
-  }
 }
 
-export function getTemplatePath(): string {
-  return TEMPLATE_PATH;
+export function getTemplatePath(archetype?: string): string {
+  const plugin = getGameArchetypePlugin(resolveGameArchetype(archetype));
+  return join(REPO_ROOT, plugin.runtimeTemplate);
+}
+
+function writeTopDownWorld(outputDir: string, overworld: TopDownOverworld): void {
+  mkdirSync(join(outputDir, 'data', 'world'), { recursive: true });
+  writeFileSync(join(outputDir, 'data', 'world', 'overworld.json'), JSON.stringify(overworld, null, 2));
 }

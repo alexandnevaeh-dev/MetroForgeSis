@@ -7,6 +7,7 @@ import type { GameDNA, ProgressionGraph, WorldGraph } from '@metroforge/schemas'
 
 const minimalDna: GameDNA = {
   version: '0.1.0',
+  archetype: 'SIDE_VIEW_METROIDVANIA',
   identity: {
     title: 'Test Game',
     genre: 'Metroidvania',
@@ -81,6 +82,15 @@ describe('GodotProjectAssembler', () => {
       worldGraph,
       progressionGraph,
       roomIds,
+      gameContent: {
+        enemies: [],
+        bosses: [],
+        quests: [],
+        items: [],
+        npcs: [{ id: 'npc_000', name: 'Test NPC', role: 'lore', roomId: 'room_001', dialogueIds: [], questIds: [] }],
+        dialogues: [],
+        shops: [],
+      },
       textureFiles: new Map([
         ['assets/characters/player.png', Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])],
         ['assets/tilesets/biome_0/source.png', Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])],
@@ -94,6 +104,42 @@ describe('GodotProjectAssembler', () => {
     expect(room0).toContain('target_room_id = "room_001"');
     expect(room0).toContain('TextureRect');
     expect(existsSync(join(outputDir, 'assets_manifest.json'))).toBe(true);
+
+    const room1 = readFileSync(join(outputDir, 'scenes', 'rooms', 'room_001.tscn'), 'utf-8');
+    expect(room1).toContain('instance=ExtResource("9_npc")');
+    expect(room1).toContain('npc_id = "npc_000"');
+    expect(room1).toContain('npc_name = "Test NPC"');
+    expect(room1).toContain('sheet_path = "assets/npcs/npc_000_walk.png"');
+    expect(readFileSync(join(outputDir, 'scenes', 'world', 'NPC.tscn'), 'utf-8')).toContain(
+      'AnimatedSprite2D',
+    );
+
+    const roomsData = JSON.parse(readFileSync(join(outputDir, 'data', 'rooms', 'rooms.json'), 'utf-8'));
+    expect(roomsData.rooms.room_001.archetype).toBe('npc');
+
+    const npcsData = JSON.parse(readFileSync(join(outputDir, 'data', 'npcs', 'npcs.json'), 'utf-8'));
+    expect(npcsData.npcs).toHaveLength(1);
+    expect(npcsData.npcs[0].id).toBe('npc_000');
+
+    const dialoguesData = JSON.parse(
+      readFileSync(join(outputDir, 'data', 'dialogues', 'dialogues.json'), 'utf-8'),
+    );
+    expect(Array.isArray(dialoguesData.dialogues)).toBe(true);
+    const shopsData = JSON.parse(readFileSync(join(outputDir, 'data', 'shops', 'shops.json'), 'utf-8'));
+    expect(Array.isArray(shopsData.shops)).toBe(true);
+
+    const playtestRoute = JSON.parse(readFileSync(join(outputDir, 'playtest_route.json'), 'utf-8'));
+    expect(playtestRoute.reachable).toBe(true);
+    expect(playtestRoute.transitions.length).toBeGreaterThan(0);
+    expect(playtestRoute.persona?.id).toBe('victory_rusher');
+
+    const movementJson = JSON.parse(
+      readFileSync(join(outputDir, 'data', 'player', 'movement.json'), 'utf-8'),
+    );
+    expect(movementJson.grappleSpeed).toBe(620);
+    expect(movementJson.swimSpeed).toBe(180);
+    expect(movementJson.phaseDuration).toBe(0.22);
+    expect(movementJson.dashSpeed).toBe(500);
 
     rmSync(outputDir, { recursive: true, force: true });
   });

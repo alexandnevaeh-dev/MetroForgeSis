@@ -1,16 +1,30 @@
 import { app, BrowserWindow } from 'electron';
+import { existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { registerIpcHandlers } from './handlers.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+/** Monorepo root — Electron's cwd is apps/desktop when launched via vite. */
+function resolveRepoRoot(): string {
+  return join(__dirname, '..', '..', '..');
+}
+
+function resolvePreloadPath(): string {
+  const mjs = join(__dirname, 'preload.mjs');
+  const js = join(__dirname, 'preload.js');
+  if (existsSync(mjs)) return mjs;
+  if (existsSync(js)) return js;
+  return mjs;
+}
+
 function createWindow(): void {
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
     webPreferences: {
-      preload: join(__dirname, 'preload.js'),
+      preload: resolvePreloadPath(),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -24,7 +38,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  registerIpcHandlers(process.cwd());
+  registerIpcHandlers(resolveRepoRoot());
   createWindow();
 });
 

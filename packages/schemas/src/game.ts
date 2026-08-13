@@ -210,6 +210,8 @@ export const BossSchema = z.object({
   rewardItemId: z.string().optional(),
   musicId: z.string().optional(),
   spriteId: z.string().optional(),
+  /** Unique image-generation prompt for this boss — drives per-boss AI art in the asset pipeline. */
+  visualPrompt: z.string().optional(),
 });
 
 export type Boss = z.infer<typeof BossSchema>;
@@ -282,3 +284,49 @@ export const ItemSchema = z.object({
 });
 
 export type Item = z.infer<typeof ItemSchema>;
+
+export const DialogueChoiceSchema = z.object({
+  /** Stable id for Choice quest objectives and telemetry. */
+  id: z.string().optional(),
+  text: z.string(),
+  /** Jump to another dialogue block (starts at line 0). */
+  nextDialogueId: z.string().optional(),
+  /** End the conversation after this choice. */
+  end: z.boolean().optional(),
+  /** Optional gameplay action triggered when this choice is picked. */
+  action: z.enum(['accept_quest', 'open_shop']).optional(),
+});
+
+export const DialogueLineSchema = z.object({
+  speaker: z.string().optional(),
+  text: z.string(),
+  /** Optional portrait key — rendered as a colored panel in the dialogue overlay. */
+  portrait: z.string().optional(),
+  /** Optional pre-generated voice line (res:// path to a WAV under audio/voice/). */
+  voicePath: z.string().optional(),
+  choices: z.array(DialogueChoiceSchema).optional(),
+});
+
+export const DialogueSchema = z.object({
+  id: z.string(),
+  lines: z.array(DialogueLineSchema).min(1),
+});
+
+export type DialogueChoice = z.infer<typeof DialogueChoiceSchema>;
+export type DialogueLine = z.infer<typeof DialogueLineSchema>;
+export type Dialogue = z.infer<typeof DialogueSchema>;
+
+export const ShopEntrySchema = z.object({
+  itemId: z.string(),
+  price: z.number().int().nonnegative(),
+  stock: z.number().int().positive().optional(),
+});
+
+export const ShopSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  currencyId: z.string().default('scrap'),
+  entries: z.array(ShopEntrySchema).min(1),
+});
+
+export type Shop = z.infer<typeof ShopSchema>;

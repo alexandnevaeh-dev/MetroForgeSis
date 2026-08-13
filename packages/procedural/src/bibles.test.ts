@@ -4,6 +4,7 @@ import type { GameDNA } from '@metroforge/schemas';
 
 const dna: GameDNA = {
   version: '0.1.0',
+  archetype: 'SIDE_VIEW_METROIDVANIA',
   identity: {
     title: 'Test',
     genre: 'Metroidvania',

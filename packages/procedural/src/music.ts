@@ -267,6 +267,21 @@ export function generateMusicFromAudioBible(
   };
   audio.set('music_title', synthesizeBiomeLoop(titleTheme, seed + 999, 12));
 
+  const bossTheme = audioBible.biomeThemes.find((t) => t.mood === 'tense') ??
+    audioBible.biomeThemes[0] ??
+    titleTheme;
+  const bossTrack = {
+    biomeId: 'boss',
+    mood: 'tense' as const,
+    tempo: 'fast' as const,
+    key: bossTheme.key,
+  };
+  const bossPattern = generateTrackerPattern(bossTrack, seed + 500);
+  patterns.set('boss', bossPattern);
+  audio.set('music_boss', synthesizeBiomeLoop(bossTrack, seed + 777));
+  midi.set('boss', exportPatternToMidi(bossPattern, 'boss_combat'));
+  furnace.set('boss', exportFurnaceModule(bossPattern, 'boss_combat'));
+
   return { audio, patterns, midi, furnace };
 }
 

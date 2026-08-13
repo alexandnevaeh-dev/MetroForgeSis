@@ -2,6 +2,7 @@ import type { ModelCapability, GenerationFailureReason } from '@metroforge/schem
 import type { GenerationMode } from '@metroforge/shared';
 import { CapabilityRouter, FallbackManager } from './registry.js';
 import type { AICapability } from './types.js';
+import { buildTextRoutingContext } from './mode-routing.js';
 
 export interface GenerationRequest {
   capability: ModelCapability;
@@ -37,7 +38,10 @@ export interface GenerationResponse {
  * facade — `AssetPipeline` still calls its providers directly (see
  * docs/METROFORGE_CURRENT_BUILD.md §8 for why, and docs/PROVIDERS.md for current status).
  */
-const CAPABILITY_TO_AI_CAPABILITY: Partial<Record<ModelCapability, AICapability>> = {
+// Exported so bootstrap.ts can apply the exact same rich-catalog -> AICapability mapping when
+// reconciling config/models.catalog.json into the live ModelRegistry — one mapping table, not
+// a second copy that could drift.
+export const CAPABILITY_TO_AI_CAPABILITY: Partial<Record<ModelCapability, AICapability>> = {
   TEXT_GENERATION: 'text_generation',
   REASONING: 'text_generation',
   NARRATIVE: 'narrative',
@@ -89,13 +93,14 @@ export class GenerationRouter {
     }
 
     const mode = request.mode ?? 'LOCAL_ONLY';
-    const routingContext = {
-      task: request.task ?? request.capability,
-      capability: aiCapability,
-      freeOnly: mode === 'FREE_ONLY' || mode === 'HYBRID_FREE',
-      localOnly: mode === 'LOCAL_ONLY',
-      qualityTarget: request.qualityTarget ?? ('balanced' as const),
-    };
+    const routingContext = buildTextRoutingContext(
+      mode,
+      {
+        task: request.task ?? request.capability,
+        capability: aiCapability,
+      },
+      request.qualityTarget ? { qualityTarget: request.qualityTarget } : undefined,
+    );
 
     if (this.router.getCandidates(routingContext).length === 0) {
       throw this.fail(

@@ -14,8 +14,11 @@
   "dependencies": {
     "@metroforge/core": "workspace:*",
     "@metroforge/generation": "workspace:*",
+    "@metroforge/database": "workspace:*",
+    "@metroforge/godot": "workspace:*",
     "@metroforge/shared": "workspace:*",
     "@metroforge/ai": "workspace:*",
+    "@metroforge/assets": "workspace:*",
     "@metroforge/schemas": "workspace:*",
     "@metroforge/tools": "workspace:*",
     "react": "^18.3.1",

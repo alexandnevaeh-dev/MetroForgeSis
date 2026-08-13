@@ -2,7 +2,6 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { GenerationMode } from '@metroforge/shared';
-import type { ModelMetadata } from './types.js';
 import {
   ProviderRegistry,
   ModelRegistry,
@@ -11,6 +10,8 @@ import {
 } from './registry.js';
 import { ModelCatalogService } from './model-catalog.js';
 import { createGenerationRouter, type GenerationRouter } from './generation-router.js';
+import { reconcileModelCatalog } from './catalog-reconciliation.js';
+import { modeRegistersHostedProviders } from './mode-routing.js';
 import { OllamaProvider } from './providers/ollama.js';
 import { GeminiProvider } from './providers/gemini.js';
 import { GroqProvider } from './providers/groq.js';
@@ -20,7 +21,6 @@ import { NvidiaProvider } from './providers/nvidia.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..', '..', '..');
-const MODELS_CONFIG = join(REPO_ROOT, 'config', 'models.default.json');
 const PROVIDERS_CONFIG = join(REPO_ROOT, 'config', 'providers.default.json');
 
 interface ProviderDefaultsEntry {
@@ -75,7 +75,7 @@ export async function bootstrapProviders(
   await ollama.initialize();
   registry.register(ollama);
 
-  if (config.mode === 'HYBRID_FREE' || config.mode === 'FREE_ONLY' || config.mode === 'CUSTOM') {
+  if (modeRegistersHostedProviders(config.mode)) {
     const hosted = [
       new GeminiProvider({
         apiKey: config.geminiApiKey,
@@ -114,20 +114,22 @@ export async function bootstrapProviders(
       }),
     ];
 
-    for (const provider of hosted) {
+    const toRegister =
+      config.mode === 'NVIDIA_ONLY'
+        ? hosted.filter((provider) => provider.id === 'nvidia')
+        : hosted;
+
+    for (const provider of toRegister) {
       await provider.initialize();
       if (provider.enabled) registry.register(provider);
     }
   }
 
-  if (existsSync(MODELS_CONFIG)) {
-    const raw = JSON.parse(readFileSync(MODELS_CONFIG, 'utf-8')) as { models: ModelMetadata[] };
-    models.load(raw.models);
-  }
+  const catalog = new ModelCatalogService();
+  models.load(reconcileModelCatalog(catalog, new Set(registry.listEnabled().map((p) => p.id))));
 
   const router = new CapabilityRouter(registry, models);
   const fallback = new FallbackManager(router);
-  const catalog = new ModelCatalogService();
   const generationRouter = createGenerationRouter(router, fallback);
 
   return { registry, models, catalog, router, fallback, generationRouter };

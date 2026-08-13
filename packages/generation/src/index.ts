@@ -1,2 +1,65 @@
 export { GenerationPipeline } from './pipeline.js';
 export type { GenerateOptions, GenerateResult } from './pipeline.js';
+export * from './events.js';
+export * from './progress.js';
+export * from './world-edit.js';
+export { generateManualAsset } from './manual-asset.js';
+export type { ManualAssetRequest, ManualAssetResult, ManualAssetType } from './manual-asset.js';
+export { loadProjectContext } from './project-loader.js';
+export type {
+  LoadedProject,
+  PlaytestRouteSummary,
+  PlaytestTelemetryRecord,
+  ProjectMemorySummary,
+} from './project-loader.js';
+export { buildDependencyGraph, findAssetUsages } from './dependency-graph.js';
+export { scanGodotResourceGraph, assetPathToResPath } from './godot-resource-graph.js';
+export type { GodotResourceGraph, GodotResourceReference } from './godot-resource-graph.js';
+export { EditHistory } from './edit-history.js';
+export {
+  applyWorldEditAndRecompile,
+  applyRoomEditAndRecompile,
+  regenerateRoom,
+} from './project-edit-service.js';
+export * from './interactive-generation.js';
+export { parseProjectCommand } from './ai-commands.js';
+export type { ProjectCommand, CommandContext } from './ai-commands.js';
+export { recordAssetVersion, listAssetHistory, restoreAssetVersion } from './asset-history.js';
+export type { AssetVersionRecord } from './asset-history.js';
+export { assessPreviewReadiness } from './preview-readiness.js';
+export type { PreviewReadiness } from './preview-readiness.js';
+export {
+  createProjectCheckpoint,
+  listProjectCheckpoints,
+  restoreProjectCheckpoint,
+  deleteProjectCheckpoint,
+} from './project-checkpoint.js';
+export type { ProjectCheckpoint } from './project-checkpoint.js';
+export { analyzeProjectCompletion } from './project-completion.js';
+export type { ProjectCompletionStatus, CompletionChecklistItem } from './project-completion.js';
+export { buildAssetCoverageReport } from './asset-coverage.js';
+export type { AssetCoverageReport, AssetCoverageEntry } from './asset-coverage.js';
+export { runProjectAcceptance, formatAcceptanceReport } from './run-acceptance.js';
+export type { AcceptanceReport, RunProjectAcceptanceOptions } from './run-acceptance.js';
+export {
+  GenerationCancelledError,
+  mergeAbortSignal,
+  throwIfCancelled,
+} from '@metroforge/shared';
+export { parseProjectCommandWithLlm } from './ai-commands-llm.js';
+export type { LlmCommandSource, LlmCommandContext } from './ai-commands-llm.js';
+export { buildProjectMemoryChunks } from './project-memory-chunks.js';
+export {
+  buildProjectMemoryIndex,
+  loadProjectMemoryIndex,
+  queryProjectMemory,
+  queryProjectMemoryWithIndex,
+  PROJECT_MEMORY_FILENAME,
+} from './project-memory-service.js';
+export {
+  synthesizeDialogueVoices,
+  resolvePiperModelPath,
+  voiceFileKey,
+  voiceResPath,
+} from './dialogue-voice.js';
+export type { DialogueVoiceResult, SynthesizeDialogueVoicesOptions } from './dialogue-voice.js';

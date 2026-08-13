@@ -3,6 +3,7 @@ import { mkdirSync, rmSync, readFileSync, writeFileSync, existsSync } from 'node
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { generateWorldTopology } from '@metroforge/procedural';
+import { encodePng } from '@metroforge/assets';
 import { QAValidator, RepairEngineer } from './validator.js';
 
 describe('RepairEngineer', () => {
@@ -56,9 +57,12 @@ describe('RepairEngineer', () => {
 
     expect(result.repaired).toBe(true);
     const patched = readFileSync(join(outputDir, 'project.godot'), 'utf-8');
-    for (const action of ['move_left', 'move_right', 'jump', 'attack', 'dash', 'pause']) {
+    for (const action of ['move_left', 'move_right', 'move_up', 'move_down', 'jump', 'attack', 'dash', 'pause', 'interact']) {
       expect(patched).toContain(`${action}=`);
     }
+    expect(patched).toContain('InputEventJoypadButton');
+    expect(patched).toContain('InputEventJoypadMotion');
+    expect(patched).toContain('InputEventMouseButton');
     // The other sections must survive the patch untouched.
     expect(patched).toContain('run/main_scene="res://scenes/boot/Main.tscn"');
     expect(patched).toContain('window/size/viewport_width=1920');
@@ -244,6 +248,74 @@ describe('QAValidator', () => {
     expect(gate?.details?.missingReferences).toEqual([
       { scene: 'scenes/rooms/room_000.tscn', resource: 'assets/tilesets/biome_0/source.png' },
     ]);
+
+    rmSync(outputDir, { recursive: true, force: true });
+  });
+});
+
+describe('QAValidator gameplay screenshot gate', () => {
+  it('skips when no screenshot was captured', () => {
+    const outputDir = join(tmpdir(), `metroforge-qa-shot-missing-${Date.now()}`);
+    mkdirSync(outputDir, { recursive: true });
+
+    const validator = new QAValidator();
+    const gate = validator.validateGameplayScreenshot(outputDir);
+    expect(gate.gate).toBe('gameplay_screenshot_qa');
+    expect(gate.passed).toBe(true);
+    expect(gate.state).toBe('SKIPPED');
+
+    rmSync(outputDir, { recursive: true, force: true });
+  });
+
+  it('skips blank headless frames', () => {
+    const outputDir = join(tmpdir(), `metroforge-qa-shot-blank-${Date.now()}`);
+    mkdirSync(join(outputDir, 'qa'), { recursive: true });
+    const rgba = new Uint8Array(160 * 90 * 4);
+    writeFileSync(join(outputDir, 'qa', 'screenshot_gameplay.png'), encodePng(160, 90, rgba));
+
+    const validator = new QAValidator();
+    const gate = validator.validateGameplayScreenshot(outputDir);
+    expect(gate.passed).toBe(true);
+    expect(gate.state).toBe('SKIPPED');
+    expect(gate.message.toLowerCase()).toContain('blank');
+
+    rmSync(outputDir, { recursive: true, force: true });
+  });
+
+  it('passes a structured HUD + world screenshot', () => {
+    const outputDir = join(tmpdir(), `metroforge-qa-shot-ok-${Date.now()}`);
+    mkdirSync(join(outputDir, 'qa'), { recursive: true });
+    const width = 160;
+    const height = 90;
+    const rgba = new Uint8Array(width * height * 4);
+    const fill = (
+      x0: number,
+      y0: number,
+      x1: number,
+      y1: number,
+      color: [number, number, number, number],
+    ) => {
+      for (let y = y0; y < y1; y++) {
+        for (let x = x0; x < x1; x++) {
+          const i = (y * width + x) * 4;
+          rgba[i] = color[0];
+          rgba[i + 1] = color[1];
+          rgba[i + 2] = color[2];
+          rgba[i + 3] = color[3];
+        }
+      }
+    };
+    fill(0, 0, width, height, [18, 22, 40, 255]);
+    fill(0, 68, width, height, [92, 58, 36, 255]);
+    fill(4, 2, 70, 10, [48, 190, 72, 255]);
+    fill(48, 46, 60, 68, [90, 150, 230, 255]);
+    writeFileSync(join(outputDir, 'qa', 'screenshot_gameplay.png'), encodePng(width, height, rgba));
+
+    const validator = new QAValidator();
+    const gate = validator.validateGameplayScreenshot(outputDir);
+    expect(gate.passed).toBe(true);
+    expect(gate.state).toBe('PASS');
+    expect(existsSync(join(outputDir, 'qa', 'screenshot_critique.json'))).toBe(true);
 
     rmSync(outputDir, { recursive: true, force: true });
   });

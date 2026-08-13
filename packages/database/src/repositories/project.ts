@@ -10,21 +10,21 @@ export class ProjectRepository {
     this.db
       .prepare(
         `INSERT INTO projects (id, slug, title, description, profile, mode, seed, output_path, status, created_at, updated_at)
-         VALUES (@id, @slug, @title, @description, @profile, @mode, @seed, @outputPath, @status, @createdAt, @updatedAt)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
-      .run({
-        id: parsed.id,
-        slug: parsed.slug,
-        title: parsed.title,
-        description: parsed.description,
-        profile: parsed.profile,
-        mode: parsed.mode,
-        seed: parsed.seed,
-        outputPath: parsed.outputPath,
-        status: parsed.status,
-        createdAt: parsed.createdAt,
-        updatedAt: parsed.updatedAt,
-      });
+      .run(
+        parsed.id,
+        parsed.slug,
+        parsed.title,
+        parsed.description,
+        parsed.profile,
+        parsed.mode,
+        parsed.seed,
+        parsed.outputPath,
+        parsed.status,
+        parsed.createdAt,
+        parsed.updatedAt,
+      );
     return parsed;
   }
 

@@ -116,9 +116,59 @@ export function generateProceduralSprite(spec: SpriteSpec): Buffer {
   return encodePng(width, height, rgba);
 }
 
+export interface VfxSpec {
+  id: string;
+  size: number;
+  core: [number, number, number, number];
+  edge: [number, number, number, number];
+  style?: 'burst' | 'streak';
+}
+
+/** Small radial or streak VFX sprites for hit/dash/pickup/death feedback. */
+export function generateVfxTexture(spec: VfxSpec): Buffer {
+  const { size, core, edge, style = 'burst' } = spec;
+  const rgba = new Uint8Array(size * size * 4);
+  const cx = size / 2;
+  const cy = size / 2;
+
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const i = (y * size + x) * 4;
+      let alpha = 0.0;
+      if (style === 'streak') {
+        const dx = (x - cx + 0.5) / (size * 0.45);
+        const dy = (y - cy + 0.5) / (size * 0.22);
+        const d = Math.hypot(dx, dy);
+        if (d <= 1) alpha = Math.pow(1 - d, 1.2);
+      } else {
+        const d = Math.hypot(x - cx + 0.5, y - cy + 0.5) / (size * 0.5);
+        if (d <= 1) alpha = Math.pow(1 - d, 1.5);
+      }
+
+      if (alpha <= 0) {
+        rgba[i] = 0;
+        rgba[i + 1] = 0;
+        rgba[i + 2] = 0;
+        rgba[i + 3] = 0;
+        continue;
+      }
+
+      const t = 1 - alpha;
+      rgba[i] = Math.round(core[0]! * alpha + edge[0]! * t);
+      rgba[i + 1] = Math.round(core[1]! * alpha + edge[1]! * t);
+      rgba[i + 2] = Math.round(core[2]! * alpha + edge[2]! * t);
+      rgba[i + 3] = Math.round(255 * alpha * (core[3]! / 255));
+    }
+  }
+
+  return encodePng(size, size, rgba);
+}
+
 /** Horizontal walk-cycle spritesheet (frameCount frames) */
-export function generateWalkCycleSheet(spec: SpriteSpec, frameCount = 4): Buffer {
-  const { rgba, width, height } = decodePngRgba(generateProceduralSprite(spec));
+export function generateWalkCycleSheet(spec: SpriteSpec, frameCount = 4, sourcePng?: Buffer): Buffer {
+  const { rgba, width, height } = sourcePng
+    ? decodePngRgba(sourcePng)
+    : decodePngRgba(generateProceduralSprite(spec));
   const sheet = new Uint8Array(width * frameCount * height * 4);
 
   for (let f = 0; f < frameCount; f++) {
@@ -142,8 +192,10 @@ export function generateWalkCycleSheet(spec: SpriteSpec, frameCount = 4): Buffer
 /** Damage-flash animation: alternates the sprite's real colors with a bright red-white
  *  tint on every other frame — the classic "took damage" visual cue. Distinct from the
  *  walk cycle's bob, not a relabeled copy of it. */
-export function generateHurtFlashSheet(spec: SpriteSpec, frameCount = 4): Buffer {
-  const { rgba, width, height } = decodePngRgba(generateProceduralSprite(spec));
+export function generateHurtFlashSheet(spec: SpriteSpec, frameCount = 4, sourcePng?: Buffer): Buffer {
+  const { rgba, width, height } = sourcePng
+    ? decodePngRgba(sourcePng)
+    : decodePngRgba(generateProceduralSprite(spec));
   const sheet = new Uint8Array(width * frameCount * height * 4);
 
   for (let f = 0; f < frameCount; f++) {
@@ -177,8 +229,10 @@ export function generateHurtFlashSheet(spec: SpriteSpec, frameCount = 4): Buffer
 /** Attack-swing animation: the sprite leans progressively further forward across frames,
  *  with a brightness pulse on the final "impact" frame — real visual feedback for the
  *  attack hitbox activating, not a relabeled walk cycle. */
-export function generateAttackSheet(spec: SpriteSpec, frameCount = 4): Buffer {
-  const { rgba, width, height } = decodePngRgba(generateProceduralSprite(spec));
+export function generateAttackSheet(spec: SpriteSpec, frameCount = 4, sourcePng?: Buffer): Buffer {
+  const { rgba, width, height } = sourcePng
+    ? decodePngRgba(sourcePng)
+    : decodePngRgba(generateProceduralSprite(spec));
   const sheet = new Uint8Array(width * frameCount * height * 4);
   const maxShift = Math.floor(width * 0.15);
 
@@ -207,7 +261,7 @@ export function generateAttackSheet(spec: SpriteSpec, frameCount = 4): Buffer {
   return encodePng(width * frameCount, height, sheet);
 }
 
-function decodePngRgba(png: Buffer): { rgba: Uint8Array; width: number; height: number } {
+export function decodePngRgba(png: Buffer): { rgba: Uint8Array; width: number; height: number } {
   if (png[0] !== 137 || png.toString('ascii', 1, 4) !== 'PNG') {
     throw new Error('Not a PNG file');
   }

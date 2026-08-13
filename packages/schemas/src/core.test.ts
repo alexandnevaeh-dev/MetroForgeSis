@@ -5,6 +5,7 @@ describe('GameDNASchema', () => {
   it('validates minimal game DNA', () => {
     const dna = {
       version: '0.1.0',
+      archetype: 'SIDE_VIEW_METROIDVANIA' as const,
       identity: {
         title: 'Test Game',
         genre: 'Metroidvania',
@@ -19,6 +20,45 @@ describe('GameDNASchema', () => {
       },
       combat: { style: 'fast melee', meleeEnabled: true, rangedEnabled: false },
       movement: { walkSpeed: 200, runSpeed: 350, jumpHeight: 120, gravity: 980 },
+      abilities: [{ id: 'dash', name: 'Dash', category: 'movement', enabled: true }],
+      world: { biomeCount: 1, roomCount: 8 },
+      narrative: {
+        premise: 'A forgotten machine civilization',
+        protagonist: 'The Wanderer',
+        centralConflict: 'Restore the core',
+      },
+      seed: 42,
+      profile: 'TINY_TEST' as const,
+    };
+    expect(GameDNASchema.parse(dna)).toEqual(dna);
+  });
+
+  it('validates movement overrides on Game DNA', () => {
+    const dna = {
+      version: '0.1.0',
+      archetype: 'SIDE_VIEW_METROIDVANIA' as const,
+      identity: {
+        title: 'Test Game',
+        genre: 'Metroidvania',
+        tone: 'dark',
+        visualStyle: 'HD pixel art',
+      },
+      technical: {
+        resolution: { width: 1920, height: 1080 },
+        tileSize: 16,
+        targetPlaytimeHours: 4,
+        difficulty: 'normal' as const,
+      },
+      combat: { style: 'fast melee', meleeEnabled: true, rangedEnabled: false },
+      movement: {
+        walkSpeed: 200,
+        runSpeed: 350,
+        jumpHeight: 120,
+        gravity: 980,
+        grappleSpeed: 700,
+        swimSpeed: 210,
+        phaseDuration: 0.28,
+      },
       abilities: [{ id: 'dash', name: 'Dash', category: 'movement', enabled: true }],
       world: { biomeCount: 1, roomCount: 8 },
       narrative: {

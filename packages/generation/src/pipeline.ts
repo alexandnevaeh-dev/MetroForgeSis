@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
-import type { GenerationMode, GenerationProfile } from '@metroforge/shared';
+import type { GenerationMode, GenerationProfile, GameArchetype } from '@metroforge/shared';
 import {
   createLogger,
   generateId,
@@ -8,11 +8,14 @@ import {
   PRODUCT,
   PROFILE_DEFAULTS,
   resolveGeneratedGamesPath,
+  resolveProjectPathSafe,
   slugify,
   type StageStatus,
+  isTopDownArchetype,
+  inferGameArchetypeFromPrompt,
 } from '@metroforge/shared';
 import { createDatabase, type MetroForgeDatabase } from '@metroforge/database';
-import { bootstrapProviders } from '@metroforge/ai';
+import { bootstrapProviders, licenseFieldsForProvider, OllamaEmbeddingProvider } from '@metroforge/ai';
 import { generateGameDNA, type GameDNATextSource } from '@metroforge/ai';
 import { GameDNASchema, ProjectMetadataSchema, type GenerationJob } from '@metroforge/schemas';
 import {
@@ -26,11 +29,25 @@ import {
   generateDesignBible,
   generateMusicFromAudioBible,
   enhanceMusicWithStableAudio,
+  generateTopDownWorld,
 } from '@metroforge/procedural';
 import { AssetPipeline } from '@metroforge/assets';
 import { GodotProjectAssembler } from '@metroforge/godot';
-import { ToolRegistry } from '@metroforge/tools';
-import { QAValidator, RepairEngineer } from '@metroforge/qa';
+import { ToolRegistry, exportProject } from '@metroforge/tools';
+import { QAValidator, RepairEngineer, deriveValidationLevel, type QAReport, type QAGateResult } from '@metroforge/qa';
+import { withCategory, type GenerationEvent } from './events.js';
+import {
+  shouldPauseAtMilestone,
+  writeReviewState,
+  type GenerationControlMode,
+  type ReviewMilestone,
+  type ReviewPauseContext,
+} from './interactive-generation.js';
+import { loadProjectContext } from './project-loader.js';
+import { buildProjectMemoryIndex } from './project-memory-service.js';
+import { synthesizeDialogueVoices } from './dialogue-voice.js';
+import { buildAssetCoverageReport } from './asset-coverage.js';
+import { GenerationCancelledError, throwIfCancelled } from '@metroforge/shared';
 
 export interface GenerateOptions {
   prompt: string;
@@ -39,19 +56,51 @@ export interface GenerateOptions {
   seed: number;
   slug?: string;
   cwd?: string;
+  archetype?: GameArchetype;
   /** Skip the AI/network-dependent Game DNA phase if a checkpoint already exists on disk. */
   resume?: boolean;
+  /** Skip Godot runtime smoke validation (import/static still run when Godot is available). */
+  skipRuntimeValidation?: boolean;
+  /** Skip staging a packaged copy under Exports/<slug>/ after final QA. */
+  skipExport?: boolean;
   onPhase?: (phase: string, status: string, message?: string) => void;
+  /** Typed live-generation events for studio UI / IPC subscribers. */
+  onEvent?: (event: GenerationEvent) => void;
+  /** Pause at review milestones for studio approve/continue flow. */
+  generationControl?: GenerationControlMode;
+  reviewMilestones?: ReviewMilestone[];
+  waitForReview?: (ctx: ReviewPauseContext) => Promise<'approve' | 'cancel'>;
+  /** When aborted, pipeline stops at the next phase boundary and returns `cancelled: true`. */
+  signal?: AbortSignal;
 }
 
 export interface GenerateResult {
+  /** True whenever project files were assembled to disk — distinct from `validationPassed`,
+   *  which reflects whether QA/Godot runtime validation actually passed. A project can be
+   *  `success: true, validationPassed: false` (files exist, but a real gameplay defect was
+   *  caught by the runtime smoke test) — check `validationPassed`/`projectStatus`, not just
+   *  `success`, before treating a generation run as genuinely done. */
   success: boolean;
+  /** True when the run was stopped via `signal` abort (distinct from review-gate cancel). */
+  cancelled?: boolean;
   projectSlug: string;
   outputPath: string;
   jobId: string;
   errors: string[];
   warnings: string[];
   phases: { phase: string; status: string; message?: string }[];
+  /** Whether every QA gate (static + Godot headless + Godot runtime, when available) passed
+   *  after the repair loop completed. */
+  validationPassed?: boolean;
+  /** Mirrors the Project.status written to the database: 'complete' or 'validation_failed'. */
+  projectStatus?: string;
+  /** Granular validation outcome — see ValidationLevel in @metroforge/qa. */
+  validationLevel?: import('@metroforge/qa').ValidationLevel;
+  /** One entry per repair attempt (max 3), recording which gates were failing going in and
+   *  whether the project passed after that attempt's deterministic repair + revalidation. */
+  repairAttempts?: { attempt: number; failedGates: string[]; actions: string[]; passedAfter: boolean }[];
+  /** Staged export folder (or zip) when the export phase ran successfully. */
+  exportPath?: string;
 }
 
 export class GenerationPipeline {
@@ -70,31 +119,150 @@ export class GenerationPipeline {
     let db: MetroForgeDatabase | null = null;
     let job: GenerationJob | null = null;
     let stageIdByPhase = new Map<string, string>();
+    // intake/game_dna/design_bible necessarily report() before db.jobs.create() can run (job
+    // creation needs project.id, which needs gameDna.identity.title) — buffer their updates
+    // here and flush once stageIdByPhase is populated, rather than silently dropping them and
+    // leaving those stage rows permanently PENDING.
+    const pendingDbUpdates: { phase: string; status: string; message?: string }[] = [];
+
+    const toDbStatus = (status: string): StageStatus | null =>
+      status === 'RUNNING'
+        ? 'RUNNING'
+        : status === 'PASSED' || status === 'WARN'
+          ? 'PASSED'
+          : status === 'SKIPPED'
+            ? 'SKIPPED'
+            : status === 'FAILED'
+              ? 'FAILED'
+              : status === 'CANCELLED'
+                ? 'FAILED'
+                : null;
+
+    const writeStageStatus = (phase: string, status: string, message?: string) => {
+      const stageId = stageIdByPhase.get(phase);
+      if (!db || !stageId) return;
+      const dbStatus = toDbStatus(status);
+      if (dbStatus) db.jobs.updateStageStatus(stageId, dbStatus, status === 'FAILED' ? (message ?? 'Failed') : null);
+    };
 
     const report = (phase: string, status: string, message?: string) => {
+      throwIfCancelled(options.signal);
       phases.push({ phase, status, message });
       options.onPhase?.(phase, status, message);
 
-      const stageId = stageIdByPhase.get(phase);
-      if (!db || !stageId) return;
-      const dbStatus: StageStatus | null =
-        status === 'RUNNING'
-          ? 'RUNNING'
-          : status === 'PASSED' || status === 'WARN'
-            ? 'PASSED'
-            : status === 'SKIPPED'
-              ? 'SKIPPED'
-              : status === 'FAILED'
-                ? 'FAILED'
-                : null;
-      if (dbStatus) db.jobs.updateStageStatus(stageId, dbStatus, status === 'FAILED' ? (message ?? 'Failed') : null);
+      if (status === 'RUNNING') {
+        emit({ type: 'PhaseStarted', phase, status, message });
+      } else if (['PASSED', 'FAILED', 'SKIPPED', 'WARN', 'REPAIRING', 'CANCELLED'].includes(status)) {
+        emit({ type: 'PhaseCompleted', phase, status, message });
+      } else {
+        emit({ type: 'PhaseProgress', phase, status, message });
+      }
+
+      if (stageIdByPhase.size === 0) {
+        pendingDbUpdates.push({ phase, status, message });
+        return;
+      }
+      writeStageStatus(phase, status, message);
     };
 
     const slug = options.slug ?? (slugify(options.prompt.slice(0, 60)) || 'untitled-game');
     const outputBase = resolveGeneratedGamesPath(config, cwd);
-    const outputPath = join(outputBase, slug);
+    // Defense-in-depth on top of the CLI-layer check (apps/cli/src/commands/create.ts) — this
+    // is the actual filesystem-writing entry point, and GenerationPipeline.run() is a public
+    // API any future caller (a test, a future HTTP endpoint) could invoke directly without
+    // going through the CLI's own validation first.
+    const outputPath = resolveProjectPathSafe(outputBase, slug);
     mkdirSync(outputPath, { recursive: true });
 
+    let emitJobId: string | undefined;
+    const emit = (partial: Record<string, unknown> & { type: GenerationEvent['type'] }) => {
+      options.onEvent?.(
+        withCategory({
+          ...partial,
+          timestamp: new Date().toISOString(),
+          jobId: emitJobId,
+          projectSlug: slug,
+          projectPath: outputPath,
+        } as GenerationEvent),
+      );
+    };
+
+    emit({
+      type: 'GenerationStarted',
+      profile: options.profile,
+      mode: options.mode,
+      seed: options.seed,
+      prompt: options.prompt,
+    });
+
+    const maybePause = async (
+      milestone: ReviewMilestone,
+      phase: string,
+      message: string,
+    ): Promise<boolean> => {
+      throwIfCancelled(options.signal);
+      if (!shouldPauseAtMilestone(options.generationControl, options.reviewMilestones, milestone)) {
+        return true;
+      }
+      const ctx: ReviewPauseContext = { milestone, phase, projectPath: outputPath, message };
+      writeReviewState(outputPath, {
+        status: 'paused',
+        milestone,
+        phase,
+        timestamp: new Date().toISOString(),
+        message,
+      });
+      emit({ type: 'ReviewPauseStarted', milestone, phase, message });
+      const decision = options.waitForReview ? await options.waitForReview(ctx) : 'approve';
+      if (decision === 'cancel') {
+        emit({ type: 'GenerationFailed', reason: `Cancelled at ${milestone} review`, phase });
+        return false;
+      }
+      writeReviewState(outputPath, {
+        status: 'approved',
+        milestone,
+        phase,
+        timestamp: new Date().toISOString(),
+        message,
+      });
+      emit({ type: 'ReviewApproved', milestone, phase });
+      return true;
+    };
+
+    const finalizeCancellation = (message: string): GenerateResult => {
+      for (let i = phases.length - 1; i >= 0; i--) {
+        const entry = phases[i]!;
+        if (entry.status === 'RUNNING') {
+          phases[i] = { phase: entry.phase, status: 'CANCELLED', message };
+          writeStageStatus(entry.phase, 'CANCELLED', message);
+          emit({ type: 'PhaseCompleted', phase: entry.phase, status: 'CANCELLED', message });
+          break;
+        }
+      }
+      if (db && job) {
+        const proj = db.projects.findBySlug(slug);
+        if (proj) db.projects.updateStatus(proj.id, 'cancelled');
+        db.jobs.updateJobStatus(job.id, 'cancelled', phases.at(-1)?.phase ?? null);
+      }
+      db?.close();
+      emit({
+        type: 'GenerationFailed',
+        reason: message,
+        phase: phases.at(-1)?.phase ?? 'unknown',
+      });
+      return {
+        success: false,
+        cancelled: true,
+        projectSlug: slug,
+        outputPath,
+        jobId: job?.id ?? emitJobId ?? '',
+        errors: [message],
+        warnings,
+        phases,
+      };
+    };
+
+    try {
     const dataDir = config.dataDir || join(cwd, '.metroforge');
     mkdirSync(dataDir, { recursive: true });
     db = await createDatabase(dataDir);
@@ -146,7 +314,12 @@ export class GenerationPipeline {
 
       report('game_dna', 'RUNNING');
       const result = await generateGameDNA(
-        { prompt: options.prompt, profile: options.profile, seed: options.seed },
+        {
+          prompt: options.prompt,
+          profile: options.profile,
+          seed: options.seed,
+          archetype: options.archetype ?? inferGameArchetypeFromPrompt(options.prompt),
+        },
         textSource,
       );
       gameDna = result.dna;
@@ -162,6 +335,10 @@ export class GenerationPipeline {
       JSON.stringify(designBible, null, 2),
     );
     report('design_bible', 'PASSED', `${designBible.art.palette.length} palette colors, ${designBible.audio.biomeThemes.length} biome themes`);
+    if (!(await maybePause('game_dna', 'design_bible', 'Review Game DNA and design bible'))) {
+      db?.close();
+      return { success: false, projectSlug: slug, outputPath, jobId: emitJobId ?? '', errors: ['Cancelled at review gate'], warnings, phases };
+    }
 
     let project = db.projects.findBySlug(slug);
     if (project) {
@@ -213,6 +390,7 @@ export class GenerationPipeline {
           lastGeneratedAt: new Date().toISOString(),
           gameDnaVersion: gameDna.version,
           generatorVersion: PRODUCT.generatorVersion,
+          archetype: gameDna.archetype,
         }),
         null,
         2,
@@ -220,19 +398,41 @@ export class GenerationPipeline {
     );
 
     job = db.jobs.create(project.id, options.profile, options.mode, options.seed);
+    emitJobId = job.id;
     stageIdByPhase = new Map(job.stages.map((s) => [s.phase, s.id]));
+    for (const update of pendingDbUpdates) {
+      writeStageStatus(update.phase, update.status, update.message);
+    }
+    pendingDbUpdates.length = 0;
 
     report('world_topology', 'RUNNING');
     const defaults = PROFILE_DEFAULTS[options.profile];
     const abilityIds = gameDna.abilities.filter((a) => a.enabled).map((a) => a.id);
-    const roomCount = resolveRoomCount(options.profile, options.seed);
-    const { worldGraph, progressionGraph, roomIds } = generateWorldTopology({
-      seed: options.seed,
-      roomCount,
+    const topDownWorld = isTopDownArchetype(gameDna.archetype)
+      ? generateTopDownWorld({
+          seed: options.seed,
+          profile: options.profile,
+          tileSize: gameDna.technical.tileSize,
+        })
+      : null;
+    const roomCount = topDownWorld ? topDownWorld.roomIds.length : resolveRoomCount(options.profile, options.seed);
+    const { worldGraph, progressionGraph, roomIds } = topDownWorld
+      ? topDownWorld
+      : generateWorldTopology({
+          seed: options.seed,
+          roomCount,
+          biomeCount: defaults.biomes,
+          abilities: abilityIds,
+          bossCount: defaults.bosses,
+          profile: options.profile,
+        });
+    writeFileSync(join(outputPath, 'world_graph.json'), JSON.stringify(worldGraph, null, 2));
+    writeFileSync(join(outputPath, 'progression_graph.json'), JSON.stringify(progressionGraph, null, 2));
+    emit({
+      type: 'WorldGraphUpdated',
+      roomCount: worldGraph.nodes.filter((n) => n.type === 'room').length,
+      edgeCount: worldGraph.edges.length,
       biomeCount: defaults.biomes,
-      abilities: abilityIds,
-      bossCount: defaults.bosses,
-      profile: options.profile,
     });
     const { connected, unreachableRoomIds } = validateWorldConnectivity(worldGraph);
     if (!connected) {
@@ -275,13 +475,26 @@ export class GenerationPipeline {
           ? 'Abstract ability chain unsolvable'
           : `${worldUnreachableRoomIds.length} room(s) unreachable via ability pickup`,
     );
+    if (!(await maybePause('world_layout', 'progression_graph', 'Review world layout and progression'))) {
+      db.projects.updateStatus(project.id, 'cancelled');
+      db.jobs.updateJobStatus(job.id, 'cancelled', 'progression_graph');
+      db.close();
+      return { success: false, projectSlug: slug, outputPath, jobId: job.id, errors: ['Cancelled at review gate'], warnings, phases };
+    }
 
     report('enemy_families', 'RUNNING');
     const bossRoomId = roomIds[roomIds.length - 1]!;
-    const gameContent = generateGameContent(gameDna, options.profile, options.seed, bossRoomId);
+    const gameContent = generateGameContent(gameDna, options.profile, options.seed, bossRoomId, roomIds);
     report('enemy_families', 'PASSED', `${gameContent.enemies.length} enemies`);
     report('bosses', 'PASSED', `${gameContent.bosses.length} bosses`);
+    if (!(await maybePause('bosses', 'bosses', 'Review boss encounters before asset generation'))) {
+      db.projects.updateStatus(project.id, 'cancelled');
+      db.jobs.updateJobStatus(job.id, 'cancelled', 'bosses');
+      db.close();
+      return { success: false, projectSlug: slug, outputPath, jobId: job.id, errors: ['Cancelled at review gate'], warnings, phases };
+    }
     report('quests', 'PASSED', `${gameContent.quests.length} quests`);
+    report('npcs', 'PASSED', `${gameContent.npcs.length} NPCs`);
 
     report('audio', 'RUNNING');
     const audioFiles = synthesizeAllSfx();
@@ -303,10 +516,21 @@ export class GenerationPipeline {
     for (const [biomeId, mid] of musicResult.midi) {
       writeFileSync(join(outputPath, 'audio', 'midi', `${biomeId}.mid`), mid);
     }
+
+    const voiceResult = await synthesizeDialogueVoices(gameContent, options.profile);
+    for (const [id, buffer] of voiceResult.voiceFiles) {
+      audioFiles.set(id, buffer);
+    }
+    if (voiceResult.warnings.length > 0) {
+      warnings.push(...voiceResult.warnings);
+    }
+
     report(
       'audio',
       'PASSED',
-      `${audioFiles.size} audio files (${musicResult.midi.size} MIDI, ${musicResult.furnace.size} Furnace)`,
+      `${audioFiles.size} audio files (${musicResult.midi.size} MIDI, ${musicResult.furnace.size} Furnace${
+        voiceResult.synthesizedCount > 0 ? `, ${voiceResult.synthesizedCount} dialogue voice lines` : ''
+      })`,
     );
 
     report('environment_assets', 'RUNNING');
@@ -316,13 +540,77 @@ export class GenerationPipeline {
       profile: options.profile,
       seed: options.seed,
       outputDir: outputPath,
+      bosses: gameContent.bosses.map((b) => ({
+        id: b.id,
+        name: b.name,
+        lore: b.lore,
+        visualPrompt: b.visualPrompt,
+        isFinal: b.id === 'boss_final',
+        attacks: b.phases[0]?.attacks ?? [],
+      })),
+      npcs: gameContent.npcs.map((n) => ({
+        id: n.id,
+        name: n.name,
+        role: n.role,
+      })),
       artBible: designBible.art,
       comfyuiUrl: process.env.COMFYUI_BASE_URL,
       diffusersPython: process.env.DIFFUSERS_PYTHON,
       diffusersModelId: process.env.DIFFUSERS_MODEL_ID,
+      nvidiaApiKey: process.env.NVIDIA_API_KEY,
+      nvidiaApiBaseUrl: process.env.NVIDIA_API_BASE_URL,
+      nvidiaImageModel: process.env.NVIDIA_IMAGE_MODEL,
+      nvidiaVisionModel: process.env.NVIDIA_VISION_MODEL,
       ollamaBaseUrl: config.ollamaBaseUrl,
       resume: options.resume,
       mode: options.mode,
+      signal: options.signal,
+      onTaskStarted: (task, message) => {
+        emit({ type: 'TaskStarted', phase: 'environment_assets', task, message });
+      },
+      onTaskProgress: (task, current, total, message) => {
+        emit({ type: 'TaskProgress', phase: 'environment_assets', task, current, total, message });
+      },
+      onArtifact: (asset, assetType) => {
+        emit({
+          type: 'ArtifactGenerated',
+          artifactId: asset.id,
+          path: asset.path,
+          assetType,
+          provider: asset.provider,
+          fallbackGenerated: asset.fallbackGenerated,
+          critiquePassed: asset.critiquePassed,
+          critiqueScore: asset.critiqueScore,
+        });
+        if (asset.critiquePassed) {
+          emit({
+            type: 'ArtifactValidated',
+            artifactId: asset.id,
+            path: asset.path,
+            passed: true,
+            score: asset.critiqueScore,
+          });
+        } else {
+          emit({
+            type: 'ArtifactRejected',
+            artifactId: asset.id,
+            path: asset.path,
+            reason: 'Asset critique failed',
+          });
+        }
+        if (db && job) {
+          db.artifacts.create({
+            jobId: job.id,
+            type: assetType,
+            path: asset.path,
+            provider: asset.provider,
+            seed: options.seed,
+            validationState: asset.critiquePassed ? 'passed' : 'failed',
+            fallbackGenerated: asset.fallbackGenerated,
+            metadata: { id: asset.id, critiqueScore: asset.critiqueScore },
+          });
+        }
+      },
     });
     warnings.push(...assetResult.warnings);
     const textureFiles = new Map(assetResult.assets.map((a) => [a.path, a.buffer]));
@@ -334,6 +622,7 @@ export class GenerationPipeline {
       fallbackGenerated: a.fallbackGenerated,
       critiquePassed: a.critiquePassed,
       critiqueScore: a.critiqueScore,
+      ...licenseFieldsForProvider(a.provider),
     }));
     const assetPassCount = assetResult.assets.filter((a) => a.critiquePassed).length;
     report(
@@ -341,6 +630,12 @@ export class GenerationPipeline {
       'PASSED',
       `${assetResult.assets.length} assets (${assetPassCount} passed critique)`,
     );
+    if (!(await maybePause('biome_art', 'environment_assets', 'Review biome art and player concept'))) {
+      db.projects.updateStatus(project.id, 'cancelled');
+      db.jobs.updateJobStatus(job.id, 'cancelled', 'environment_assets');
+      db.close();
+      return { success: false, projectSlug: slug, outputPath, jobId: job.id, errors: ['Cancelled at review gate'], warnings, phases };
+    }
 
     report('project_assembly', 'RUNNING');
     const assemblyResult = this.assembler.assemble({
@@ -353,19 +648,49 @@ export class GenerationPipeline {
       audioFiles,
       textureFiles,
       assetMetadata,
+      overworld: topDownWorld?.overworld,
     });
 
     if (!assemblyResult.success) {
       errors.push(...assemblyResult.errors);
       report('project_assembly', 'FAILED');
+      emit({ type: 'GenerationFailed', reason: assemblyResult.errors.join('; '), phase: 'project_assembly' });
       db.projects.updateStatus(project.id, 'failed');
       db.close();
       return { success: false, projectSlug: slug, outputPath, jobId: job.id, errors, warnings, phases };
     }
     report('project_assembly', 'PASSED');
+    for (const roomId of roomIds) {
+      emit({ type: 'RoomGenerated', roomId });
+    }
+
+    try {
+      const coverage = buildAssetCoverageReport(loadProjectContext(outputPath));
+      writeFileSync(join(outputPath, 'asset_coverage.json'), JSON.stringify(coverage, null, 2));
+    } catch {
+      warnings.push('asset_coverage.json could not be written');
+    }
+
+    try {
+      const embedder = new OllamaEmbeddingProvider({
+        baseUrl: config.ollamaBaseUrl ?? 'http://127.0.0.1:11434',
+      });
+      if (await embedder.checkHealth()) {
+        await buildProjectMemoryIndex(outputPath, embedder, embedder.model);
+      }
+    } catch {
+      warnings.push('project_memory.json could not be built (Ollama embeddings unavailable)');
+    }
+
+    if (!(await maybePause('final_qa', 'project_assembly', 'Review assembled project before final QA'))) {
+      db.projects.updateStatus(project.id, 'cancelled');
+      db.jobs.updateJobStatus(job.id, 'cancelled', 'project_assembly');
+      db.close();
+      return { success: false, projectSlug: slug, outputPath, jobId: job.id, errors: ['Cancelled at review gate'], warnings, phases };
+    }
 
     report('static_validation', 'RUNNING');
-    let qaReport = this.qa.validateProject(outputPath, project.id);
+    emit({ type: 'QAStarted', gate: 'static_validation' });
     const toolRegistry = new ToolRegistry();
     const tools = await toolRegistry.detectAll({
       godotPath: config.godotExecutable,
@@ -374,37 +699,216 @@ export class GenerationPipeline {
     const godotTool = tools.find((t) => t.id === 'godot');
     const godotPath = config.godotExecutable ?? godotTool?.path ?? null;
 
-    if (godotPath) {
-      const godotGate = this.qa.validateGodotHeadless(godotPath, outputPath);
-      qaReport.results.push(godotGate);
-      qaReport.validationResults.push({
+    const pushGate = (target: QAReport, gate: QAGateResult) => {
+      target.results.push(gate);
+      const entry = {
         id: generateId('val'),
-        projectId: project.id,
-        gate: godotGate.gate,
-        passed: godotGate.passed,
-        message: godotGate.message,
-        details: godotGate.details,
+        projectId: project!.id,
+        gate: gate.gate,
+        passed: gate.passed,
+        message: gate.message,
+        details: gate.details,
         timestamp: new Date().toISOString(),
+      };
+      target.validationResults.push(entry);
+      db!.validationResults.create({
+        projectId: project!.id,
+        gate: gate.gate,
+        passed: gate.passed,
+        message: gate.message,
+        details: gate.details,
       });
-      qaReport.passed = qaReport.results.every((r) => r.passed);
-    }
+    };
+
+    db.validationResults.deleteByProject(project.id);
+
+    // Runtime validation (§42 of the audit) is now a mandatory part of normal generation
+    // whenever Godot is available — previously it only ran via a separate, easy-to-forget
+    // `metroforge validate --runtime` invocation, so every automatic `create`/`generate` run
+    // was only ever proven to *parse*, never to actually *play*. When Godot genuinely isn't
+    // installed, generation still proceeds (it always could, for local-only text generation),
+    // but the skip is recorded as an explicit SKIPPED gate with reason GODOT_NOT_AVAILABLE
+    // rather than silently treating the project as fully validated.
+    const runGodotGates = (target: QAReport): void => {
+      if (!godotPath) {
+        pushGate(target, {
+          gate: 'godot_imports',
+          passed: true,
+          state: 'SKIPPED',
+          message: 'NEEDS_RUNTIME_VALIDATION: GODOT_NOT_AVAILABLE',
+        });
+        pushGate(target, {
+          gate: 'godot_runtime',
+          passed: true,
+          state: 'SKIPPED',
+          message: 'NEEDS_RUNTIME_VALIDATION: GODOT_NOT_AVAILABLE',
+        });
+        pushGate(target, {
+          gate: 'godot_playtest',
+          passed: true,
+          state: 'SKIPPED',
+          message: 'NEEDS_RUNTIME_VALIDATION: GODOT_NOT_AVAILABLE',
+        });
+        pushGate(target, {
+          gate: 'gameplay_screenshot_qa',
+          passed: true,
+          state: 'SKIPPED',
+          message: 'NEEDS_RUNTIME_VALIDATION: GODOT_NOT_AVAILABLE',
+        });
+        return;
+      }
+
+      const headlessGate = this.qa.validateGodotHeadless(godotPath, outputPath);
+      pushGate(target, headlessGate);
+
+      if (!headlessGate.passed) {
+        pushGate(target, {
+          gate: 'godot_runtime',
+          passed: true,
+          state: 'SKIPPED',
+          message: 'RUNTIME_VALIDATION_SKIPPED: godot_imports failed, runtime smoke test not attempted',
+        });
+        pushGate(target, {
+          gate: 'godot_playtest',
+          passed: true,
+          state: 'SKIPPED',
+          message: 'PLAYTEST_SKIPPED: godot_imports failed',
+        });
+        pushGate(target, {
+          gate: 'gameplay_screenshot_qa',
+          passed: true,
+          state: 'SKIPPED',
+          message: 'SCREENSHOT_QA_SKIPPED: godot_imports failed',
+        });
+        return;
+      }
+
+      if (options.skipRuntimeValidation) {
+        pushGate(target, {
+          gate: 'godot_runtime',
+          passed: true,
+          state: 'SKIPPED',
+          message: 'RUNTIME_VALIDATION_SKIPPED: --skip-runtime-validation',
+        });
+        pushGate(target, {
+          gate: 'godot_playtest',
+          passed: true,
+          state: 'SKIPPED',
+          message: 'PLAYTEST_SKIPPED: --skip-runtime-validation',
+        });
+        pushGate(target, {
+          gate: 'gameplay_screenshot_qa',
+          passed: true,
+          state: 'SKIPPED',
+          message: 'SCREENSHOT_QA_SKIPPED: --skip-runtime-validation',
+        });
+        return;
+      }
+
+      emit({ type: 'RuntimeValidationStarted' });
+      const runtimeGate = this.qa.validateGodotRuntime(godotPath, outputPath);
+      pushGate(target, runtimeGate);
+      emit({
+        type: 'RuntimeValidationCompleted',
+        passed: runtimeGate.passed,
+        message: runtimeGate.message,
+      });
+      pushGate(target, this.qa.validateGameplayScreenshot(outputPath));
+
+      if (runtimeGate.passed) {
+        const playtestGate = this.qa.validateGodotPlaytest(godotPath, outputPath);
+        pushGate(target, playtestGate);
+      } else {
+        pushGate(target, {
+          gate: 'godot_playtest',
+          passed: true,
+          state: 'SKIPPED',
+          message: 'PLAYTEST_SKIPPED: runtime smoke test failed',
+        });
+      }
+    };
+
+    let qaReport = this.qa.validateProject(outputPath, project.id);
+    runGodotGates(qaReport);
+    qaReport.passed = qaReport.results.every((r) => r.passed);
+
+    // Bounded repair loop (max 3 attempts) — each attempt re-runs the *full* gate set
+    // (static + Godot) so a fix for one gate is verified against everything, not just
+    // re-checked in isolation. Stops early if a deterministic-repair pass makes no changes,
+    // since retrying an unchanged project would just reproduce the same failure forever.
+    const MAX_REPAIR_ATTEMPTS = 3;
+    const repairAttempts: {
+      attempt: number;
+      failedGates: string[];
+      actions: string[];
+      passedAfter: boolean;
+    }[] = [];
 
     if (!qaReport.passed) {
       report('automated_repair', 'RUNNING');
-      const repairResult = this.repair.repair(outputPath, qaReport);
-      if (repairResult.repaired) {
-        warnings.push(...repairResult.actions);
+      let attempt = 0;
+      while (!qaReport.passed && attempt < MAX_REPAIR_ATTEMPTS) {
+        attempt++;
+        const failedGates = qaReport.results.filter((r) => !r.passed).map((r) => r.gate);
+        emit({ type: 'RepairStarted', attempt, failedGates });
+        const repairResult = this.repair.repair(outputPath, qaReport);
+        if (repairResult.repaired) warnings.push(...repairResult.actions);
+
         qaReport = this.qa.validateProject(outputPath, project.id);
+        runGodotGates(qaReport);
+        qaReport.passed = qaReport.results.every((r) => r.passed);
+
+        repairAttempts.push({
+          attempt,
+          failedGates,
+          actions: repairResult.actions,
+          passedAfter: qaReport.passed,
+        });
+
+        emit({
+          type: 'RepairCompleted',
+          attempt,
+          passed: qaReport.passed,
+          actions: repairResult.actions,
+        });
+
+        if (!repairResult.repaired) break;
       }
-      report('automated_repair', repairResult.repaired ? 'PASSED' : 'SKIPPED');
+      report(
+        'automated_repair',
+        qaReport.passed ? 'PASSED' : 'FAILED',
+        repairAttempts
+          .map((a) => `#${a.attempt} [${a.failedGates.join(',')}] -> ${a.passedAfter ? 'passed' : 'still failing'}`)
+          .join('; '),
+      );
+    } else {
+      // Completed jobs must not leave this stage unexplained-PENDING — SKIPPED with a reason
+      // is meaningfully different from "never ran," and a clean job never invokes repair at all.
+      report('automated_repair', 'SKIPPED', 'No repair needed — all QA gates passed on first validation');
     }
+
+    const staticGateResults = qaReport.results.filter(
+      (r) => r.gate !== 'godot_imports' && r.gate !== 'godot_runtime',
+    );
+    const staticPassed = staticGateResults.every((r) => r.passed);
+    const importGate = qaReport.results.find((r) => r.gate === 'godot_imports');
+    const runtimeGateResult = qaReport.results.find((r) => r.gate === 'godot_runtime');
+    const validationLevel = deriveValidationLevel({
+      staticPassed,
+      importGate,
+      runtimeGate: runtimeGateResult,
+      godotAvailable: Boolean(godotPath),
+      skipRuntimeValidation: options.skipRuntimeValidation,
+    });
 
     writeFileSync(
       join(outputPath, 'validation_report.json'),
       JSON.stringify(
         {
           passed: qaReport.passed,
+          validationLevel,
           results: qaReport.results,
+          repairAttempts,
           timestamp: new Date().toISOString(),
         },
         null,
@@ -412,24 +916,85 @@ export class GenerationPipeline {
       ),
     );
 
+    // `qaReport.passed` treats SKIPPED Godot gates as non-blocking; `validationLevel` is the
+    // authoritative product outcome — do not claim RUNTIME_VALIDATED / complete when Godot was
+    // never available or runtime hard-failed.
+    const validationPassed =
+      validationLevel === 'RUNTIME_VALIDATED' ||
+      (validationLevel === 'IMPORT_VALIDATED' && Boolean(options.skipRuntimeValidation));
+
     report(
       'final_qa',
-      qaReport.passed ? 'PASSED' : 'WARN',
-      `${qaReport.results.filter((r) => r.passed).length}/${qaReport.results.length} gates passed`,
+      validationPassed ? 'PASSED' : validationLevel === 'NEEDS_RUNTIME_VALIDATION' ? 'SKIPPED' : 'WARN',
+      `${validationLevel}: ${qaReport.results.filter((r) => r.passed).length}/${qaReport.results.length} gates passed`,
     );
 
-    if (godotPath) {
-      report('static_validation', qaReport.results.find((r) => r.gate === 'godot_imports')?.passed ? 'PASSED' : 'WARN');
+    if (!godotPath) {
+      report('static_validation', 'SKIPPED', 'NEEDS_RUNTIME_VALIDATION: GODOT_NOT_AVAILABLE');
+      warnings.push('NEEDS_RUNTIME_VALIDATION: GODOT_NOT_AVAILABLE — Godot binary not detected, static validation only');
+    } else if (options.skipRuntimeValidation) {
+      report('static_validation', importGate?.passed ? 'PASSED' : 'WARN');
+      warnings.push('RUNTIME_VALIDATION_SKIPPED: --skip-runtime-validation');
     } else {
-      report('static_validation', 'SKIPPED', 'Godot not detected');
-      warnings.push('Godot not detected for headless validation');
+      report('static_validation', importGate?.passed ? 'PASSED' : 'WARN');
+    }
+    if (validationLevel === 'NEEDS_RUNTIME_VALIDATION') {
+      warnings.push('NEEDS_RUNTIME_VALIDATION: install Godot and re-run validate or regenerate to reach RUNTIME_VALIDATED');
+    }
+    if (runtimeGateResult?.state === 'FAIL') {
+      errors.push(`RUNTIME_VALIDATION_FAILED: ${runtimeGateResult.message}`);
+    } else if (runtimeGateResult?.state === 'UNKNOWN') {
+      warnings.push(`Runtime validation result UNKNOWN: ${runtimeGateResult.message}`);
     }
 
-    db.projects.updateStatus(project.id, 'complete');
-    db.jobs.updateJobStatus(job.id, 'complete', 'export');
+    let exportPath: string | undefined;
+    report('export', 'RUNNING');
+    if (options.skipExport) {
+      report('export', 'SKIPPED', 'EXPORT_SKIPPED: skipExport');
+    } else {
+      try {
+        const exportResult = exportProject({
+          projectPath: outputPath,
+          zip: false,
+          requireValidation: false,
+          requireCommercialSafe: options.mode === 'COMMERCIAL_SAFE',
+        });
+        warnings.push(...exportResult.warnings);
+        if (!exportResult.success) {
+          warnings.push(...exportResult.errors);
+          report('export', 'WARN', exportResult.errors[0] ?? 'Export failed');
+        } else {
+          exportPath = exportResult.archivePath;
+          report(
+            'export',
+            'PASSED',
+            exportResult.archivePath ?? exportResult.manifestPath ?? 'staged',
+          );
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        warnings.push(`Export failed: ${msg}`);
+        report('export', 'WARN', msg);
+      }
+    }
+
+    // A project whose files were all assembled but that never passed QA/runtime validation is
+    // not the same outcome as a genuinely complete one — most importantly, a hard runtime
+    // failure (real gameplay code broken, not just a soft-fail/skip) must never be silently
+    // reported as COMPLETE.
+    const finalStatus = validationPassed ? 'complete' : 'validation_failed';
+    db.projects.updateStatus(project.id, finalStatus);
+    db.jobs.updateJobStatus(job.id, finalStatus, 'export');
     db.close();
 
-    this.logger.info('Generation complete', { slug, outputPath, jobId: job.id });
+    this.logger.info('Generation complete', { slug, outputPath, jobId: job.id, status: finalStatus });
+
+    emit({
+      type: 'GenerationCompleted',
+      success: true,
+      validationPassed,
+      validationLevel,
+    });
 
     return {
       success: true,
@@ -439,6 +1004,17 @@ export class GenerationPipeline {
       errors,
       warnings,
       phases,
+      validationPassed,
+      validationLevel,
+      projectStatus: finalStatus,
+      repairAttempts,
+      exportPath,
     };
+    } catch (err) {
+      if (err instanceof GenerationCancelledError) {
+        return finalizeCancellation(err.message);
+      }
+      throw err;
+    }
   }
 }

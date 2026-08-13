@@ -18,6 +18,29 @@ export const ModelModalitySchema = z.enum([
 
 export const CommercialUseSchema = z.enum(['allowed', 'restricted', 'unknown']);
 
+/** Richer, per-model license detail beyond the coarse `commercialUse`/`license` fields —
+ *  entirely optional, since most catalog entries only have `license`/`commercialUse` actually
+ *  verified today. Populate a field only when it's genuinely been confirmed for that model;
+ *  LicenseRouter (packages/ai/src/license-router.ts) degrades honestly to a less specific
+ *  classification (or UNKNOWN) when this is absent rather than assuming a default. */
+export const LicenseDetailSchema = z.object({
+  licenseId: z.string().optional(),
+  licenseUrl: z.string().optional(),
+  /** Free-text description of a revenue/usage threshold beyond which the license requires a
+   *  separate commercial agreement (e.g. "free under $1M annual revenue") — a string because
+   *  real license revenue clauses aren't expressible as a single number/currency uniformly. */
+  revenueLimit: z.string().optional(),
+  attributionRequired: z.boolean().optional(),
+  distributionRestrictions: z.string().optional(),
+  weightsRedistributable: z.boolean().optional(),
+  outputRestrictions: z.string().optional(),
+  /** ISO date this license detail was last manually verified against the model's real terms —
+   *  license terms change; a stale verifiedDate is a signal to re-check, not itself enforced. */
+  verifiedDate: z.string().optional(),
+});
+
+export type LicenseDetail = z.infer<typeof LicenseDetailSchema>;
+
 export const ModelHealthSchema = z.enum(['healthy', 'degraded', 'unavailable', 'unknown']);
 
 export const CapabilityScoreKeySchema = z.enum([
@@ -127,6 +150,7 @@ export const ModelEntrySchema = z.object({
   usageClass: z.enum(['development_prototyping', 'production']).optional(),
   license: z.string(),
   commercialUse: CommercialUseSchema.default('unknown'),
+  licenseDetail: LicenseDetailSchema.optional(),
   parameterCount: z.string().optional(),
   quantization: z.string().optional(),
   minRamMb: z.number().int().nonnegative().optional(),

@@ -1,6 +1,5 @@
 import type { Command } from 'commander';
-import { join } from 'node:path';
-import { loadConfig, resolveGeneratedGamesPath } from '@metroforge/shared';
+import { loadConfig, resolveGeneratedGamesPath, resolveProjectPathSafe, UnsafeProjectPathError } from '@metroforge/shared';
 import { QAValidator, RepairEngineer } from '@metroforge/qa';
 import { ToolRegistry } from '@metroforge/tools';
 
@@ -9,13 +8,17 @@ export function registerValidateCommand(program: Command): void {
     .command('validate <slug>')
     .description('Validate a generated Godot project')
     .option('--repair', 'Attempt deterministic repair of any failing gates, then re-validate')
-    .option(
-      '--runtime',
-      'Also run the real Godot runtime smoke test (player/world/enemies/ability gate/save)',
-    )
-    .action(async (slug: string, opts: { repair?: boolean; runtime?: boolean }) => {
+    .option('--no-runtime', 'Skip Godot runtime smoke test (import/static still run when Godot is available)')
+    .action(async (slug: string, opts: { repair?: boolean; noRuntime?: boolean }) => {
       const config = loadConfig();
-      const projectPath = join(resolveGeneratedGamesPath(config, process.cwd()), slug);
+      let projectPath: string;
+      try {
+        projectPath = resolveProjectPathSafe(resolveGeneratedGamesPath(config, process.cwd()), slug);
+      } catch (err) {
+        console.log(err instanceof UnsafeProjectPathError ? `✗ ${err.message}` : `✗ ${String(err)}`);
+        process.exitCode = 1;
+        return;
+      }
       const validator = new QAValidator();
 
       console.log(`Validating: ${projectPath}\n`);
@@ -53,15 +56,17 @@ export function registerValidateCommand(program: Command): void {
         const icon = godotResult.passed ? '✓' : '✗';
         console.log(`[${icon}] ${godotResult.gate}: ${godotResult.message}`);
 
-        if (opts.runtime) {
+        if (!opts.noRuntime) {
           const runtimeResult = validator.validateGodotRuntime(godotPath, projectPath);
           runtimePassed = runtimeResult.passed;
           const runtimeIcon = runtimeResult.passed ? '✓' : '✗';
           console.log(`[${runtimeIcon}] ${runtimeResult.gate}: ${runtimeResult.message}`);
+        } else {
+          console.log('[·] godot_runtime: Skipped — --no-runtime');
         }
       } else {
         console.log('[!] godot_imports: Skipped — Godot not detected');
-        if (opts.runtime) {
+        if (!opts.noRuntime) {
           console.log('[!] godot_runtime: Skipped — Godot not detected');
         }
       }

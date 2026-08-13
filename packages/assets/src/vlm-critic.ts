@@ -1,4 +1,5 @@
 import type { VisionAnalysisResponse } from './types/vision.js';
+import { deterministicCritique } from './vision-critic-shared.js';
 
 export interface VLMCriticConfig {
   ollamaBaseUrl: string;
@@ -9,14 +10,21 @@ export interface AssetCritiqueRequest {
   image: Buffer;
   assetType: 'character' | 'enemy' | 'boss' | 'tile' | 'icon' | 'background';
   artDirection?: string;
+  frameCount?: number;
+  animationKind?: 'walk' | 'hurt' | 'attack' | 'tileset';
+  tileSize?: number;
 }
 
-/** Independent VLM critic — image generators must not self-approve */
+/** Independent VLM critic — image generators must not self-approve (Ollama llava backend). */
 export class VLMCritic {
   private model: string;
 
   constructor(private readonly config: VLMCriticConfig) {
     this.model = config.model ?? 'llava:7b';
+  }
+
+  backendId(): string {
+    return 'ollama-vision';
   }
 
   async isAvailable(): Promise<boolean> {
@@ -38,6 +46,7 @@ export class VLMCritic {
     const base64 = request.image.toString('base64');
     const prompt = `You are a game asset QA critic. Analyze this ${request.assetType} sprite/image for a Metroidvania game.
 ${request.artDirection ? `Art direction: ${request.artDirection}` : ''}
+${request.animationKind ? `This is a horizontal ${request.animationKind} animation strip with ${request.frameCount ?? 'multiple'} frames. Check cross-frame consistency: same silhouette/palette, real motion, no corrupted frames.` : ''}
 Respond in JSON only: {"passed": boolean, "score": 0-100, "issues": string[], "tags": string[], "description": string}
 Check: clear subject, appropriate dimensions, no corruption, no unwanted text, suitable for pixel art game.`;
 
@@ -73,17 +82,7 @@ Check: clear subject, appropriate dimensions, no corruption, no unwanted text, s
   }
 }
 
-function deterministicCritique(request: AssetCritiqueRequest): VisionAnalysisResponse {
-  const size = request.image.length;
-  const passed = size > 100 && size < 10_000_000;
-  return {
-    passed,
-    score: passed ? 75 : 30,
-    issues: passed ? [] : ['Image buffer invalid or empty'],
-    tags: [request.assetType, 'deterministic-check'],
-    description: 'Deterministic validation (VLM unavailable)',
-  };
-}
+export { deterministicCritique } from './vision-critic-shared.js';
 
 export interface DeterministicAssetChecks {
   passed: boolean;

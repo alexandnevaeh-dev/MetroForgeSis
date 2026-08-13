@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ProgressionGraphSchema, WorldGraphSchema, RoomSchema, AbilitySchema } from '../src/game.js';
+import { ProgressionGraphSchema, WorldGraphSchema, RoomSchema, AbilitySchema, DialogueSchema } from '../src/game.js';
 
 describe('game schemas', () => {
   it('validates room', () => {
@@ -52,5 +52,22 @@ describe('game schemas', () => {
       criticalPath: ['room_000', 'room_007'],
     };
     expect(ProgressionGraphSchema.parse(graph)).toEqual(graph);
+  });
+
+  it('validates branching dialogue with choices and portraits', () => {
+    const dialogue = DialogueSchema.parse({
+      id: 'dlg_test',
+      lines: [
+        { speaker: 'Guide', portrait: 'lore', text: 'Hello.' },
+        {
+          text: 'What next?',
+          choices: [
+            { text: 'Continue', nextDialogueId: 'dlg_next' },
+            { text: 'Accept quest', end: true, action: 'accept_quest' },
+          ],
+        },
+      ],
+    });
+    expect(dialogue.lines[1]?.choices).toHaveLength(2);
   });
 });

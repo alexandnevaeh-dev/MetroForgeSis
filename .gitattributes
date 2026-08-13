@@ -1,0 +1,2 @@
+# Godot 4 rejects CR-only line endings in GDScript ("Stray carriage return" parse error).
+*.gd text eol=lf

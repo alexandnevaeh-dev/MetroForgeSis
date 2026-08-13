@@ -3,8 +3,12 @@ import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
 import type { ValidationResult, WorldGraph } from '@metroforge/schemas';
-import { generateId } from '@metroforge/shared';
-import { validateWorldConnectivity, validateWorldReachability } from '@metroforge/procedural';
+import { generateId, isRegisteredAbilityId } from '@metroforge/shared';
+import { validateWorldConnectivity, validateWorldReachability, validateMovementFeasibility, movementStatsFromJson } from '@metroforge/procedural';
+import { auditRoomArchetypeFidelity } from '@metroforge/godot';
+import { critiqueGameplayScreenshot } from '@metroforge/assets';
+import { parseSmokeTestOutput } from './smoke-output.js';
+import { parsePlaytestOutput, summarizePlaytestBalance } from './playtest-output.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..', '..', '..');
@@ -19,15 +23,85 @@ const TEMPLATE_STATIC_FILES = [
   'scenes/world/World.tscn',
   'scenes/player/Player.tscn',
   'scripts/player/PlayerController.gd',
+  'scripts/player/AbilityController.gd',
+  'scripts/player/AbilityRegistry.gd',
+  'scripts/player/PlayerAbility.gd',
+  'scripts/player/PlayerMovementConfig.gd',
+  'scripts/player/abilities/DashAbility.gd',
+  'scripts/player/abilities/DoubleJumpAbility.gd',
+  'scripts/player/abilities/WallSlideAbility.gd',
+  'scripts/player/abilities/WallJumpAbility.gd',
+  'scripts/player/abilities/AirDashAbility.gd',
+  'scripts/player/abilities/GroundSlamAbility.gd',
+  'scripts/player/abilities/GrappleAbility.gd',
+  'scripts/player/abilities/SwimAbility.gd',
+  'scripts/player/abilities/PhaseAbility.gd',
+  'scenes/world/WeakFloor.tscn',
+  'scripts/world/WeakFloor.gd',
+  'scenes/world/GrapplePoint.tscn',
+  'scripts/world/GrapplePoint.gd',
+  'scenes/world/WaterZone.tscn',
+  'scripts/world/WaterZone.gd',
+  'scenes/world/PhaseBarrier.tscn',
+  'scripts/world/PhaseBarrier.gd',
   'scenes/world/SavePoint.tscn',
   'scripts/world/SavePoint.gd',
+  'scenes/world/PauseMenu.tscn',
+  'scripts/UI/PauseMenu.gd',
+  'scripts/UI/QuestPanel.gd',
+  'scripts/UI/QuestTrackerPanel.gd',
+  'scripts/UI/WorldMapPanel.gd',
+  'scripts/UI/MinimapPanel.gd',
+  'scripts/UI/GameHUD.gd',
+  'scripts/world/WorldManager.gd',
+  'scripts/UI/InventoryPanel.gd',
+  'scripts/core/SettingsManager.gd',
+  'scripts/core/SaveManager.gd',
+  'scripts/core/MapManager.gd',
+  'scripts/core/InventoryManager.gd',
+  'scripts/core/EventBus.gd',
+  'scripts/UI/TitleScreen.gd',
+  'scripts/test/RuntimeSmokeTest.gd',
+  'scenes/test/RuntimeSmokeTest.tscn',
+  'scenes/world/NPC.tscn',
+  'scripts/world/NPC.gd',
+  'scripts/core/QuestManager.gd',
+  'scripts/core/DialogueManager.gd',
+  'scripts/UI/DialogueOverlay.gd',
+  'scenes/world/DialogueOverlay.tscn',
+  'scripts/core/ShopManager.gd',
+  'scripts/core/VFXManager.gd',
+  'scripts/UI/ShopOverlay.gd',
+  'scenes/world/ShopOverlay.tscn',
+  'scenes/world/ItemPickup.tscn',
+  'scripts/world/ItemPickup.gd',
+  'scenes/enemies/Projectile.tscn',
+  'scripts/combat/Projectile.gd',
+  'scripts/test/PlaytestAgent.gd',
+  'scripts/test/PlaytestRunner.gd',
+  'scenes/test/PlaytestRunner.tscn',
 ];
+
+/** Richer than `passed` alone: SOFT_FAIL/SKIPPED both count as `passed: true` (they don't
+ *  block completion) but callers that need to distinguish "genuinely verified" from
+ *  "couldn't be verified" or "had a non-blocking issue" should read this instead of just
+ *  `passed`. Optional so existing call sites/tests that construct a QAGateResult literal
+ *  without it keep compiling — callers should treat a missing `state` as `passed ? 'PASS' :
+ *  'FAIL'`. */
+export type QAGateState = 'PASS' | 'FAIL' | 'SOFT_FAIL' | 'SKIPPED' | 'UNKNOWN';
 
 export interface QAGateResult {
   gate: string;
   passed: boolean;
   message: string;
+  state?: QAGateState;
   details?: Record<string, unknown>;
+}
+
+/** `result.state` if set, else derived from `passed` for older call sites/test literals that
+ *  predate the `state` field. */
+export function gateState(result: QAGateResult): QAGateState {
+  return result.state ?? (result.passed ? 'PASS' : 'FAIL');
 }
 
 export interface QAReport {
@@ -43,19 +117,50 @@ const REQUIRED_FILES = [
   'world_graph.json',
   'progression_graph.json',
   'generation_manifest.json',
+  'data/player/movement.json',
   'scenes/boot/Main.tscn',
   'scenes/world/World.tscn',
   'scenes/player/Player.tscn',
   'scripts/player/PlayerController.gd',
+  'scenes/world/PauseMenu.tscn',
+  'scripts/UI/PauseMenu.gd',
+  'scripts/core/MapManager.gd',
+  'scripts/UI/WorldMapPanel.gd',
+  'scripts/UI/MinimapPanel.gd',
+  'scripts/core/InventoryManager.gd',
+  'scripts/UI/InventoryPanel.gd',
+  'scripts/UI/QuestPanel.gd',
+  'scripts/UI/QuestTrackerPanel.gd',
+  'scripts/core/SettingsManager.gd',
+  'scenes/world/NPC.tscn',
+  'scripts/world/NPC.gd',
+  'scripts/core/QuestManager.gd',
+  'scripts/core/EventBus.gd',
+  'scripts/core/DialogueManager.gd',
+  'scripts/UI/DialogueOverlay.gd',
+  'scenes/world/DialogueOverlay.tscn',
+  'scripts/core/ShopManager.gd',
+  'scripts/core/VFXManager.gd',
+  'scripts/UI/ShopOverlay.gd',
+  'scenes/world/ShopOverlay.tscn',
+  'scenes/world/ItemPickup.tscn',
+  'scripts/world/ItemPickup.gd',
+  'scenes/enemies/Projectile.tscn',
+  'scripts/combat/Projectile.gd',
+  'scenes/world/WeakFloor.tscn',
+  'scripts/world/WeakFloor.gd',
 ];
 
 const REQUIRED_INPUT_ACTIONS = [
   'move_left',
   'move_right',
+  'move_up',
+  'move_down',
   'jump',
   'attack',
   'dash',
   'pause',
+  'interact',
 ];
 
 export class QAValidator {
@@ -76,9 +181,13 @@ export class QAValidator {
 
     // Gate: game DNA valid
     let dnaValid = false;
+    let dnaAbilities: string[] = [];
     try {
       const dna = JSON.parse(readFileSync(join(projectPath, 'game_dna.json'), 'utf-8'));
       dnaValid = !!dna.identity?.title && !!dna.world?.roomCount;
+      dnaAbilities = (dna.abilities ?? [])
+        .filter((a: { enabled?: boolean }) => a.enabled !== false)
+        .map((a: { id: string }) => a.id);
     } catch {
       dnaValid = false;
     }
@@ -86,6 +195,17 @@ export class QAValidator {
       gate: 'game_dna_valid',
       passed: dnaValid,
       message: dnaValid ? 'Game DNA valid' : 'Game DNA invalid or missing',
+    });
+
+    const unknownAbilities = dnaAbilities.filter((id) => !isRegisteredAbilityId(id));
+    results.push({
+      gate: 'registered_abilities_valid',
+      passed: unknownAbilities.length === 0,
+      message:
+        unknownAbilities.length === 0
+          ? 'All generated abilities have runtime implementations'
+          : `Unimplemented ability IDs: ${unknownAbilities.join(', ')}`,
+      details: { unknownAbilities, abilityIds: dnaAbilities },
     });
 
     // Gates: world connectivity and ability-gated reachability, both proven against the real
@@ -124,6 +244,71 @@ export class QAValidator {
         ? 'All rooms reachable via progressive ability pickup'
         : `${worldUnreachableCount} room(s) unreachable via ability pickup`,
     });
+
+    let movementFeasible = true;
+    let movementIssueCount = 0;
+    try {
+      const worldGraph = JSON.parse(
+        readFileSync(join(projectPath, 'world_graph.json'), 'utf-8'),
+      ) as WorldGraph;
+      const movementPath = join(projectPath, 'data', 'player', 'movement.json');
+      const movementRaw = existsSync(movementPath)
+        ? (JSON.parse(readFileSync(movementPath, 'utf-8')) as Record<string, unknown>)
+        : {};
+      const feasibility = validateMovementFeasibility(
+        worldGraph,
+        movementStatsFromJson(movementRaw),
+      );
+      movementFeasible = feasibility.feasible;
+      movementIssueCount = feasibility.issues.length;
+      results.push({
+        gate: 'movement_feasibility',
+        passed: movementFeasible,
+        message: movementFeasible
+          ? 'Ability gates align with jump/dash reach and transition axes'
+          : `${movementIssueCount} movement-infeasible gate(s): ${feasibility.issues
+              .slice(0, 3)
+              .map((i) => i.reason)
+              .join('; ')}`,
+        details: {
+          issues: feasibility.issues,
+          metrics: feasibility.metrics,
+        },
+      });
+    } catch {
+      results.push({
+        gate: 'movement_feasibility',
+        passed: false,
+        message: 'Could not evaluate movement feasibility',
+      });
+    }
+
+    try {
+      const worldGraph = JSON.parse(
+        readFileSync(join(projectPath, 'world_graph.json'), 'utf-8'),
+      ) as WorldGraph;
+      const roomsJson = JSON.parse(
+        readFileSync(join(projectPath, 'data', 'rooms', 'rooms.json'), 'utf-8'),
+      ) as { rooms?: Record<string, { archetype?: string; worldArchetype?: string }> };
+      const fidelity = auditRoomArchetypeFidelity(worldGraph, roomsJson.rooms ?? {});
+      results.push({
+        gate: 'room_archetype_fidelity',
+        passed: fidelity.passed,
+        message: fidelity.passed
+          ? `Room archetypes preserved (${fidelity.preserved} matched, ${fidelity.overridden} intentional overrides)`
+          : `${fidelity.issues.length} archetype collapse(s): ${fidelity.issues
+              .slice(0, 3)
+              .map((i) => `${i.roomId} ${i.worldArchetype}->${i.publishedArchetype}`)
+              .join('; ')}`,
+        details: fidelity,
+      });
+    } catch {
+      results.push({
+        gate: 'room_archetype_fidelity',
+        passed: false,
+        message: 'Could not evaluate room archetype fidelity',
+      });
+    }
 
     // Gate: rooms exist
     const roomsDir = join(projectPath, 'scenes', 'rooms');
@@ -189,6 +374,59 @@ export class QAValidator {
       message: mainSceneValid ? 'Main scene configured' : 'Main scene invalid',
     });
 
+    const readAttackPaths = (relativeJson: string, key: string, prefix: string): string[] => {
+      const jsonPath = join(projectPath, relativeJson);
+      if (!existsSync(jsonPath)) return [];
+      try {
+        const data = JSON.parse(readFileSync(jsonPath, 'utf-8')) as Record<string, Array<{ id: string }>>;
+        return (data[key] ?? []).map((entry) => `${prefix}/${entry.id}_attack.png`);
+      } catch {
+        return [];
+      }
+    };
+
+    const attackSheets = [
+      'assets/characters/player_attack.png',
+      ...readAttackPaths('data/enemies/enemies.json', 'enemies', 'assets/enemies'),
+      ...readAttackPaths('data/bosses/bosses.json', 'bosses', 'assets/bosses'),
+    ];
+    const missingAttackSheets = attackSheets.filter((p) => !existsSync(join(projectPath, p)));
+    results.push({
+      gate: 'attack_sheets_exist',
+      passed: missingAttackSheets.length === 0,
+      message:
+        missingAttackSheets.length === 0
+          ? `${attackSheets.length} attack sheet(s) present`
+          : `${missingAttackSheets.length} attack sheet(s) missing`,
+      details: { missingAttackSheets },
+    });
+
+    const vfxTextures = [
+      'assets/vfx/hit_spark.png',
+      'assets/vfx/death_puff.png',
+      'assets/vfx/dash_trail.png',
+      'assets/vfx/pickup_spark.png',
+      'assets/vfx/ability_unlock.png',
+      'assets/vfx/boss_phase_shift.png',
+      'assets/vfx/area_burst.png',
+      'assets/vfx/slam_shock.png',
+    ];
+    const missingVfx = vfxTextures.filter((p) => !existsSync(join(projectPath, p)));
+    results.push({
+      gate: 'vfx_textures_exist',
+      passed: missingVfx.length === 0,
+      message:
+        missingVfx.length === 0
+          ? `${vfxTextures.length} VFX texture(s) present`
+          : `${missingVfx.length} VFX texture(s) missing`,
+      details: { missingVfx },
+    });
+
+    // All static gates above are plain pass/fail — fill in `state` uniformly here.
+    for (const r of results) {
+      r.state ??= r.passed ? 'PASS' : 'FAIL';
+    }
+
     const passed = results.every((r) => r.passed);
     const now = new Date().toISOString();
 
@@ -239,6 +477,7 @@ export class QAValidator {
       return {
         gate: 'godot_imports',
         passed: !hasParseError,
+        state: hasParseError ? 'FAIL' : 'PASS',
         message: hasParseError ? 'Godot reported errors' : 'Godot headless OK',
         details: { output: output.slice(0, 500) },
       };
@@ -250,6 +489,7 @@ export class QAValidator {
       return {
         gate: 'godot_imports',
         passed: false,
+        state: 'FAIL',
         message: 'Godot headless failed',
         details: { output: output.slice(0, 500) },
       };
@@ -269,6 +509,7 @@ export class QAValidator {
       return {
         gate: 'godot_runtime',
         passed: false,
+        state: 'UNKNOWN',
         message: 'Runtime smoke test scene not found in project (stale template copy?)',
       };
     }
@@ -288,23 +529,161 @@ export class QAValidator {
           : String(err);
     }
 
-    const checks = Array.from(output.matchAll(/^(PASS|FAIL|SOFT_FAIL): (.+)$/gm)).map((m) => ({
-      status: m[1] as 'PASS' | 'FAIL' | 'SOFT_FAIL',
-      name: m[2]!,
-    }));
-    const failed = checks.filter((c) => c.status === 'FAIL').map((c) => c.name);
-    const passedCount = checks.filter((c) => c.status === 'PASS').length;
-
-    const ranToCompletion = output.includes('SMOKE_TEST_RESULTS_END');
-    const passed = ranToCompletion && exitCode === 0 && failed.length === 0;
+    const parsed = parseSmokeTestOutput(output);
+    const { checks, ranToCompletion, passedCount, failed } = parsed;
+    const softFailed = parsed.softFailed.length > 0;
+    // A soft-fail (e.g. "this seed happened to generate zero projectile-type enemies, so
+    // there was nothing to test") must never be conflated with a hard failure — it's still a
+    // PASS for completion purposes, just flagged distinctly so a human/log can see it. A run
+    // that didn't reach the results marker at all (crash/hang/timeout) is UNKNOWN, not a
+    // silent pass — we genuinely don't know whether the gameplay it never got to exercise
+    // actually works.
+    const state: QAGateState = !ranToCompletion
+      ? 'UNKNOWN'
+      : failed.length > 0 || exitCode !== 0
+        ? 'FAIL'
+        : softFailed
+          ? 'SOFT_FAIL'
+          : 'PASS';
+    const passed = state === 'PASS' || state === 'SOFT_FAIL';
 
     return {
       gate: 'godot_runtime',
       passed,
+      state,
       message: ranToCompletion
         ? `${passedCount}/${checks.length} runtime checks passed${failed.length > 0 ? ` (failed: ${failed.join(', ')})` : ''}`
         : 'Smoke test did not complete — Godot crashed or hung',
-      details: { checks, output: output.slice(-2000) },
+      details: { checks: parsed.checks, output: output.slice(-2000) },
+    };
+  }
+
+  /** Critiques `qa/screenshot_gameplay.png` written by RuntimeSmokeTest. Blank headless
+   *  frames are SKIPPED (not a generation failure). Structured frames that fail the
+   *  critic are SOFT_FAIL so vision issues never block a playable project. */
+  validateGameplayScreenshot(projectPath: string): QAGateResult {
+    const screenshotPath = join(projectPath, 'qa', 'screenshot_gameplay.png');
+    if (!existsSync(screenshotPath)) {
+      return {
+        gate: 'gameplay_screenshot_qa',
+        passed: true,
+        state: 'SKIPPED',
+        message: 'No gameplay screenshot (capture missing or runtime smoke did not run)',
+      };
+    }
+
+    const png = readFileSync(screenshotPath);
+    const critique = critiqueGameplayScreenshot(png);
+    const critiquePath = join(projectPath, 'qa', 'screenshot_critique.json');
+    try {
+      mkdirSync(join(projectPath, 'qa'), { recursive: true });
+      writeFileSync(critiquePath, JSON.stringify(critique, null, 2));
+    } catch {
+      /* best-effort sidecar */
+    }
+
+    if (critique.blank) {
+      return {
+        gate: 'gameplay_screenshot_qa',
+        passed: true,
+        state: 'SKIPPED',
+        message: 'Gameplay screenshot is blank (typical of GPU-less Godot --headless)',
+        details: { ...critique },
+      };
+    }
+
+    if (!critique.passed) {
+      return {
+        gate: 'gameplay_screenshot_qa',
+        passed: true,
+        state: 'SOFT_FAIL',
+        message: `Gameplay screenshot QA score ${critique.score}: ${critique.description}`,
+        details: { ...critique },
+      };
+    }
+
+    return {
+      gate: 'gameplay_screenshot_qa',
+      passed: true,
+      state: 'PASS',
+      message: `Gameplay screenshot QA score ${critique.score}`,
+      details: { ...critique },
+    };
+  }
+
+  /** Runs the generated project's input-simulating PlaytestRunner — walks the planned
+   *  victory route with simulated movement/attack input instead of calling internal methods. */
+  validateGodotPlaytest(godotPath: string, projectPath: string): QAGateResult {
+    const playtestScene = join(projectPath, 'scenes', 'test', 'PlaytestRunner.tscn');
+    const routePath = join(projectPath, 'playtest_route.json');
+    if (!existsSync(playtestScene)) {
+      return {
+        gate: 'godot_playtest',
+        passed: true,
+        state: 'SKIPPED',
+        message: 'Playtest runner scene not found in project (stale template copy?)',
+      };
+    }
+    if (!existsSync(routePath)) {
+      return {
+        gate: 'godot_playtest',
+        passed: true,
+        state: 'SKIPPED',
+        message: 'playtest_route.json missing — regenerate project to enable playtest bot',
+      };
+    }
+
+    this.runGodotImport(godotPath, projectPath);
+
+    const command = `"${godotPath}" --headless --path "${projectPath}" res://scenes/test/PlaytestRunner.tscn --quit-after 600`;
+    let output: string;
+    let exitCode = 0;
+    try {
+      output = execSync(command, { encoding: 'utf-8', timeout: 90000, windowsHide: true });
+    } catch (err) {
+      exitCode = 1;
+      output =
+        err instanceof Error && 'stdout' in err
+          ? String((err as { stdout?: string }).stdout ?? err.message)
+          : String(err);
+    }
+
+    const parsed = parsePlaytestOutput(output);
+    const { checks, ranToCompletion, passedCount, failed, telemetry } = parsed;
+    const state: QAGateState = !ranToCompletion
+      ? 'UNKNOWN'
+      : failed.length > 0 || exitCode !== 0
+        ? 'FAIL'
+        : 'PASS';
+    const passed = state === 'PASS';
+
+    if (telemetry) {
+      writeFileSync(
+        join(projectPath, 'playtest_telemetry.json'),
+        JSON.stringify(
+          {
+            ...telemetry,
+            balanceSummary: summarizePlaytestBalance(telemetry),
+          },
+          null,
+          2,
+        ),
+      );
+    }
+
+    return {
+      gate: 'godot_playtest',
+      passed,
+      state,
+      message: ranToCompletion
+        ? `${passedCount}/${checks.length} playtest checks passed${failed.length > 0 ? ` (failed: ${failed.join(', ')})` : ''}${telemetry ? ` — persona ${telemetry.personaId}, ${telemetry.elapsedMs}ms` : ''}`
+        : 'Playtest did not complete — Godot crashed or hung',
+      details: {
+        checks: parsed.checks,
+        telemetry,
+        balanceSummary: telemetry ? summarizePlaytestBalance(telemetry) : undefined,
+        output: output.slice(-2000),
+      },
     };
   }
 }

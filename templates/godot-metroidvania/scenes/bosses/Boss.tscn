@@ -22,6 +22,8 @@ script = ExtResource("5_sprite")
 sheet_path = "assets/bosses/boss_final_walk.png"
 frame_size = Vector2i(48, 48)
 frame_count = 3
+hurt_sheet_path = "assets/bosses/boss_final_hurt.png"
+attack_sheet_path = "assets/bosses/boss_final_attack.png"
 fallback_color = Color(0.7, 0.15, 0.7, 1)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]

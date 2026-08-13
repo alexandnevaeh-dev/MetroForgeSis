@@ -3,7 +3,8 @@ import { existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ImageGenRequest, ImageGenResult, ImageGenerator } from '../types/image-gen.js';
-
+import { GenerationCancelledError, throwIfCancelled } from '@metroforge/shared';
+import { conditioningPayload } from '../image-conditioning.js';
 export type { ImageGenRequest, ImageGenResult };
 
 export interface DiffusersConfig {
@@ -52,17 +53,22 @@ export class DiffusersProvider implements ImageGenerator {
   }
 
   async generateImage(request: ImageGenRequest): Promise<ImageGenResult> {
+    throwIfCancelled(request.signal);
     const seed = request.seed ?? Math.floor(Math.random() * 2 ** 31);
-    const res = await this.runWorker({
-      action: 'generate',
-      model_id: this.modelId,
-      profile: request.profile,
-      prompt: request.prompt,
-      negative_prompt: request.negativePrompt,
-      width: request.width,
-      height: request.height,
-      seed,
-    });
+    const res = await this.runWorker(
+      {
+        action: 'generate',
+        model_id: this.modelId,
+        profile: request.profile,
+        prompt: request.prompt,
+        negative_prompt: request.negativePrompt,
+        width: request.width,
+        height: request.height,
+        seed,
+        ...(request.conditioning ? conditioningPayload(request.conditioning) : {}),
+      },
+      { timeoutMs: 120_000, signal: request.signal },
+    );
 
     if (!res.ok || !res.image_base64) {
       throw new Error(res.error ?? 'Diffusers worker failed');
@@ -77,7 +83,11 @@ export class DiffusersProvider implements ImageGenerator {
     };
   }
 
-  private runWorker(payload: Record<string, unknown>, timeoutMs = 4000): Promise<WorkerResponse> {
+  private runWorker(
+    payload: Record<string, unknown>,
+    options: { timeoutMs?: number; signal?: AbortSignal } = {},
+  ): Promise<WorkerResponse> {
+    const timeoutMs = options.timeoutMs ?? 4000;
     return new Promise((resolve, reject) => {
       const proc = spawn(this.pythonPath, [this.workerPath], {
         stdio: ['pipe', 'pipe', 'pipe'],
@@ -86,10 +96,26 @@ export class DiffusersProvider implements ImageGenerator {
 
       let stdout = '';
       let stderr = '';
+      let settled = false;
+      const finish = (fn: () => void) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        options.signal?.removeEventListener('abort', onAbort);
+        fn();
+      };
+
+      const onAbort = () => {
+        proc.kill();
+        finish(() => reject(new GenerationCancelledError()));
+      };
+
       const timer = setTimeout(() => {
         proc.kill();
-        reject(new Error('Diffusers worker timed out'));
+        finish(() => reject(new Error('Diffusers worker timed out')));
       }, timeoutMs);
+
+      options.signal?.addEventListener('abort', onAbort, { once: true });
 
       proc.stdout.on('data', (chunk: Buffer) => {
         stdout += chunk.toString();
@@ -99,19 +125,17 @@ export class DiffusersProvider implements ImageGenerator {
       });
 
       proc.on('error', (err) => {
-        clearTimeout(timer);
-        reject(err);
+        finish(() => reject(err));
       });
       proc.on('close', (code) => {
-        clearTimeout(timer);
         if (code !== 0 && !stdout.trim()) {
-          reject(new Error(stderr || `Diffusers worker exited with code ${code}`));
+          finish(() => reject(new Error(stderr || `Diffusers worker exited with code ${code}`)));
           return;
         }
         try {
-          resolve(JSON.parse(stdout) as WorkerResponse);
+          finish(() => resolve(JSON.parse(stdout) as WorkerResponse));
         } catch {
-          reject(new Error(stderr || 'Invalid diffusers worker response'));
+          finish(() => reject(new Error(stderr || 'Invalid diffusers worker response')));
         }
       });
 

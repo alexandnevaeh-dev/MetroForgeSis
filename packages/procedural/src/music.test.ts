@@ -24,11 +24,13 @@ const audioBible: AudioBible = {
 describe('generateMusicFromAudioBible', () => {
   it('generates biome loops, MIDI, and Furnace modules', () => {
     const result = generateMusicFromAudioBible(audioBible, 42);
-    expect(result.audio.size).toBeGreaterThanOrEqual(3);
-    expect(result.patterns.size).toBe(2);
-    expect(result.midi.size).toBe(2);
-    expect(result.furnace.size).toBe(2);
+    expect(result.audio.size).toBeGreaterThanOrEqual(4);
+    expect(result.audio.has('music_boss')).toBe(true);
+    expect(result.patterns.size).toBe(3);
+    expect(result.midi.size).toBe(3);
+    expect(result.furnace.size).toBe(3);
     expect(result.midi.get('biome_0')![0]).toBe(0x4d); // 'M' from MThd
+    expect(result.midi.has('boss')).toBe(true);
   });
 
   it('tracker pattern is deterministic', () => {

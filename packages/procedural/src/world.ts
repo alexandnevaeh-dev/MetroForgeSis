@@ -1,6 +1,11 @@
 import type { ProgressionGraph, WorldGraph } from '@metroforge/schemas';
 import { generateId, PROFILE_DEFAULTS, type GenerationProfile } from '@metroforge/shared';
 import { SeededRNG } from './rng.js';
+import {
+  abilityGateRoomIndex,
+  assignRoomArchetypes,
+  npcCountForProfile,
+} from './room-archetypes.js';
 
 export interface WorldGenOptions {
   seed: number;
@@ -17,23 +22,8 @@ export interface WorldGenResult {
   roomIds: string[];
 }
 
-const ROOM_ARCHETYPES = [
-  'connector',
-  'traversal',
-  'combat',
-  'arena',
-  'ability_gate',
-  'save',
-  'boss',
-  'treasure',
-] as const;
-
-/** The room index where the Nth ability's gate (and pickup) sits — a pure function of ability
- *  count and room count, shared by node metadata tagging and edge construction so the two never
- *  drift out of sync. */
-function abilityGateRoomIndex(abilityIndex: number, abilityCount: number, roomCount: number): number {
-  return Math.floor(((abilityIndex + 1) / (abilityCount + 1)) * roomCount);
-}
+/** Re-export for tests and content placement alignment. */
+export { abilityGateRoomIndex } from './room-archetypes.js';
 
 export function generateWorldTopology(options: WorldGenOptions): WorldGenResult {
   const rng = new SeededRNG(options.seed);
@@ -59,12 +49,20 @@ export function generateWorldTopology(options: WorldGenOptions): WorldGenResult 
     grantsAbilitiesByRoom.set(roomId, list);
   });
 
+  const roomArchetypes = assignRoomArchetypes({
+    roomCount: options.roomCount,
+    abilityCount: options.abilities.length,
+    npcCount: npcCountForProfile(options.profile),
+    biomeCount: options.biomeCount,
+    seed: options.seed,
+  });
+
   const nodes = roomIds.map((id, i) => ({
     id,
     type: 'room' as const,
     label: `Room ${i}`,
     metadata: {
-      archetype: pickArchetype(i, options.roomCount, rng),
+      archetype: roomArchetypes[i]!,
       biomeIndex: isMedium || isLarge ? Math.floor(i / Math.ceil(options.roomCount / options.biomeCount)) % options.biomeCount : i % options.biomeCount,
       regionIndex: isLarge ? Math.floor(i / (options.roomCount / options.biomeCount)) : 0,
       grantsAbilities: grantsAbilitiesByRoom.get(id) ?? [],
@@ -125,15 +123,6 @@ export function generateWorldTopology(options: WorldGenOptions): WorldGenResult 
   };
 
   return { worldGraph, progressionGraph, roomIds };
-}
-
-function pickArchetype(index: number, total: number, rng: SeededRNG): string {
-  if (index === 0) return 'tutorial';
-  if (index === total - 1) return 'boss';
-  if (index === Math.floor(total * 0.3)) return 'ability_shrine';
-  if (index % 7 === 0) return 'save';
-  if (index % 5 === 0) return 'treasure';
-  return rng.pick([...ROOM_ARCHETYPES]);
 }
 
 function buildEdges(
@@ -224,11 +213,35 @@ function buildEdges(
       requirements: [ability],
       optional: false,
       bidirectional: true,
-      transition: ai % 2 === 1 ? 'up' : undefined,
+      transition: transitionForAbilityGate(ability),
     });
   });
 
   return edges;
+}
+
+function transitionForAbilityGate(
+  ability: string,
+): 'up' | 'down' | 'left' | 'right' | undefined {
+  switch (ability) {
+    case 'ground_slam':
+      return 'down';
+    case 'grapple':
+      return 'up';
+    case 'swim':
+      return 'down';
+    case 'phase':
+      return 'right';
+    case 'wall_slide':
+    case 'wall_jump':
+      return 'up';
+    case 'dash':
+    case 'double_jump':
+    case 'air_dash':
+      return 'right';
+    default:
+      return 'right';
+  }
 }
 
 export function resolveRoomCount(profile: GenerationProfile, seed: number): number {

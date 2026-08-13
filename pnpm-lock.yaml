@@ -72,12 +72,21 @@ importers:
       '@metroforge/ai':
         specifier: workspace:*
         version: link:../../packages/ai
+      '@metroforge/assets':
+        specifier: workspace:*
+        version: link:../../packages/assets
       '@metroforge/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@metroforge/database':
+        specifier: workspace:*
+        version: link:../../packages/database
       '@metroforge/generation':
         specifier: workspace:*
         version: link:../../packages/generation
+      '@metroforge/godot':
+        specifier: workspace:*
+        version: link:../../packages/godot
       '@metroforge/schemas':
         specifier: workspace:*
         version: link:../../packages/schemas
@@ -254,6 +263,12 @@ importers:
 
   packages/qa:
     dependencies:
+      '@metroforge/assets':
+        specifier: workspace:*
+        version: link:../assets
+      '@metroforge/godot':
+        specifier: workspace:*
+        version: link:../godot
       '@metroforge/procedural':
         specifier: workspace:*
         version: link:../procedural
@@ -296,6 +311,9 @@ importers:
 
   packages/tools:
     dependencies:
+      '@metroforge/ai':
+        specifier: workspace:*
+        version: link:../ai
       '@metroforge/shared':
         specifier: workspace:*
         version: link:../shared

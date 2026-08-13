@@ -5,9 +5,34 @@ export const GenerationModeSchema = z.enum([
   'LOCAL_ONLY',
   'HYBRID_FREE',
   'CUSTOM',
+  'NVIDIA_ONLY',
+  'COMMERCIAL_SAFE',
+  'OFFLINE',
+  'FASTEST',
+  'HIGHEST_QUALITY',
+  'LOW_VRAM',
+  'BALANCED',
 ]);
 
 export const GenerationProfileSchema = z.enum(['TINY_TEST', 'SMALL', 'MEDIUM', 'LARGE']);
+
+/** Gameplay genre plugin. Distinct from room `archetype` (tutorial/boss/shop). */
+export const GameArchetypeSchema = z.enum(['SIDE_VIEW_METROIDVANIA', 'TOP_DOWN_ACTION_ADVENTURE']);
+
+export type GameArchetype = z.infer<typeof GameArchetypeSchema>;
+
+export const TopDownConfigSchema = z.object({
+  movementDirections: z.union([z.literal(4), z.literal(8)]).default(8),
+  worldStyle: z.enum(['continuous', 'screen_by_screen']).default('continuous'),
+  dungeonCount: z.number().int().positive().optional(),
+  townCount: z.number().int().nonnegative().optional(),
+  worldVariantEnabled: z.boolean().default(false),
+  dungeonItemProgression: z.boolean().default(true),
+  puzzleDensity: z.number().min(0).max(1).default(0.35),
+  secretDensity: z.number().min(0).max(1).default(0.15),
+});
+
+export type TopDownConfig = z.infer<typeof TopDownConfigSchema>;
 
 export const StageStatusSchema = z.enum([
   'PENDING',
@@ -29,7 +54,10 @@ export const ProjectSchema = z.object({
   outputPath: z.string(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
-  status: z.enum(['draft', 'generating', 'complete', 'failed', 'cancelled']),
+  // 'validation_failed': assembly succeeded (files exist on disk) but QA/Godot runtime
+  // validation did not pass — distinct from 'failed', which means generation itself crashed
+  // before producing a project directory at all.
+  status: z.enum(['draft', 'generating', 'complete', 'failed', 'validation_failed', 'cancelled']),
 });
 
 export type Project = z.infer<typeof ProjectSchema>;
@@ -52,6 +80,7 @@ export const ProjectMetadataSchema = z.object({
   lastGeneratedAt: z.string().datetime(),
   gameDnaVersion: z.string(),
   generatorVersion: z.string(),
+  archetype: GameArchetypeSchema.default('SIDE_VIEW_METROIDVANIA'),
 });
 
 export type ProjectMetadata = z.infer<typeof ProjectMetadataSchema>;
@@ -76,7 +105,7 @@ export const GenerationJobSchema = z.object({
   profile: GenerationProfileSchema,
   mode: GenerationModeSchema,
   seed: z.number().int(),
-  status: z.enum(['pending', 'running', 'paused', 'complete', 'failed', 'cancelled']),
+  status: z.enum(['pending', 'running', 'paused', 'complete', 'failed', 'validation_failed', 'cancelled']),
   currentPhase: z.string().nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
@@ -106,12 +135,32 @@ export const GameDNASchema = z.object({
     meleeEnabled: z.boolean(),
     rangedEnabled: z.boolean(),
   }),
-  movement: z.object({
-    walkSpeed: z.number(),
-    runSpeed: z.number(),
-    jumpHeight: z.number(),
-    gravity: z.number(),
-  }),
+  movement: z
+    .object({
+      walkSpeed: z.number(),
+      runSpeed: z.number(),
+      jumpHeight: z.number(),
+      gravity: z.number(),
+    })
+    .extend({
+      coyoteTime: z.number().optional(),
+      jumpBufferTime: z.number().optional(),
+      acceleration: z.number().optional(),
+      deceleration: z.number().optional(),
+      airAcceleration: z.number().optional(),
+      maxFallSpeed: z.number().optional(),
+      dashSpeed: z.number().optional(),
+      dashDuration: z.number().optional(),
+      dashCooldown: z.number().optional(),
+      airDashSpeed: z.number().optional(),
+      wallSlideSpeed: z.number().optional(),
+      wallJumpHorizontal: z.number().optional(),
+      wallJumpVertical: z.number().optional(),
+      groundSlamSpeed: z.number().optional(),
+      grappleSpeed: z.number().optional(),
+      swimSpeed: z.number().optional(),
+      phaseDuration: z.number().optional(),
+    }),
   abilities: z.array(
     z.object({
       id: z.string(),
@@ -139,6 +188,8 @@ export const GameDNASchema = z.object({
     .optional(),
   seed: z.number().int(),
   profile: GenerationProfileSchema,
+  archetype: GameArchetypeSchema.default('SIDE_VIEW_METROIDVANIA'),
+  topDown: TopDownConfigSchema.optional(),
 });
 
 export type GameDNA = z.infer<typeof GameDNASchema>;

@@ -143,6 +143,44 @@ export interface EmbeddingProvider {
   embed(texts: string[]): Promise<number[][]>;
 }
 
+export interface SpeechGenerationRequest {
+  text: string;
+  voiceId?: string;
+  speed?: number;
+}
+
+export interface SpeechGenerationResponse {
+  audio: Buffer;
+  modelId: string;
+  provider: string;
+  format: 'wav';
+}
+
+export interface SpeechGenerationProvider {
+  id: string;
+  checkHealth(): Promise<boolean>;
+  synthesize(request: SpeechGenerationRequest): Promise<SpeechGenerationResponse>;
+}
+
+export interface SpeechRecognitionRequest {
+  audio: Buffer;
+  format?: 'wav';
+  language?: string;
+}
+
+export interface SpeechRecognitionResponse {
+  text: string;
+  modelId: string;
+  provider: string;
+  language?: string;
+}
+
+export interface SpeechRecognitionProvider {
+  id: string;
+  checkHealth(): Promise<boolean>;
+  transcribe(request: SpeechRecognitionRequest): Promise<SpeechRecognitionResponse>;
+}
+
 /** Map legacy AICapability to new ModelCapability where needed */
 export const LEGACY_CAPABILITY_MAP: Partial<Record<AICapability, string>> = {
   text_generation: 'TEXT_GENERATION',

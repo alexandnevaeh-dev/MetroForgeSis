@@ -8,6 +8,7 @@
   "references": [
     { "path": "../shared" },
     { "path": "../schemas" },
-    { "path": "../procedural" }
+    { "path": "../procedural" },
+    { "path": "../assets" }
   ]
 }

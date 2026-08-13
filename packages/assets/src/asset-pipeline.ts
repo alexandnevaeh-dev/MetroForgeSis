@@ -7,17 +7,23 @@ import {
   generateWalkCycleSheet,
   generateHurtFlashSheet,
   generateAttackSheet,
+  generateVfxTexture,
   type SpriteSpec,
+  type VfxSpec,
 } from './png.js';
 import { PixelArtProcessor } from './pixel-art-processor.js';
 import { ComfyUIProvider } from './providers/comfyui.js';
 import { DiffusersProvider } from './providers/diffusers.js';
+import { NvidiaImageProvider } from './providers/nvidia-image.js';
 import { ImageProviderRegistry } from './image-router.js';
-import { VLMCritic, runDeterministicAssetChecks } from './vlm-critic.js';
+import type { VisionCritic } from './vision-critic-factory.js';
+import { createVisionCritic } from './vision-critic-factory.js';
+import { runDeterministicAssetChecks } from './vlm-critic.js';
+import { critiqueAnimationSheet, critiqueTilesetSheet } from './animation-critic.js';
 import type { ImageGenerationProfile } from './types/vision.js';
-import type { ImageGenerator } from './types/image-gen.js';
+import type { ImageGenerator, ImageConditioning } from './types/image-gen.js';
 import type { GenerationMode, GenerationProfile } from '@metroforge/shared';
-import { PROFILE_DEFAULTS } from '@metroforge/shared';
+import { PROFILE_DEFAULTS, throwIfCancelled } from '@metroforge/shared';
 
 export interface GeneratedAsset {
   id: string;
@@ -38,15 +44,39 @@ export interface AssetPipelineOptions {
   comfyuiUrl?: string;
   diffusersPython?: string;
   diffusersModelId?: string;
+  nvidiaApiKey?: string;
+  nvidiaApiBaseUrl?: string;
+  nvidiaImageModel?: string;
+  nvidiaVisionModel?: string;
   ollamaBaseUrl?: string;
   skipVlm?: boolean;
   skipImageGen?: boolean;
+  /** Per-NPC art metadata from generated game content. */
+  npcs?: Array<{
+    id: string;
+    name?: string;
+    role?: string;
+  }>;
+  /** Per-boss art metadata from generated game content. */
+  bosses?: Array<{
+    id: string;
+    name?: string;
+    lore?: string;
+    visualPrompt?: string;
+    isFinal?: boolean;
+    attacks?: string[];
+  }>;
   /** Reuse already-generated sprite files on disk instead of regenerating them. */
   resume?: boolean;
   /** Routing constraint for image-provider selection — LOCAL_ONLY excludes any registered
    *  provider that isn't local (no-op today, since ComfyUI/Diffusers both are; real
    *  enforcement once a hosted image provider exists). */
   mode?: GenerationMode;
+  /** When aborted, generation stops at the next cooperative checkpoint. */
+  signal?: AbortSignal;
+  onTaskStarted?: (task: string, message: string) => void;
+  onTaskProgress?: (task: string, current: number, total: number, message: string) => void;
+  onArtifact?: (asset: GeneratedAsset, assetType: string) => void;
 }
 
 export interface AssetPipelineResult {
@@ -54,12 +84,108 @@ export interface AssetPipelineResult {
   warnings: string[];
 }
 
+const NPC_ROLE_COLORS: Record<string, [number, number, number]> = {
+  quest_giver: [220, 180, 70],
+  merchant: [70, 170, 120],
+  lore: [150, 90, 200],
+  companion: [90, 160, 220],
+  neutral: [180, 140, 100],
+};
+
+const NPC_ROLES = ['quest_giver', 'merchant', 'lore', 'neutral'] as const;
+
 const BIOME_PALETTES: [number, number, number][][] = [
   [[40, 45, 55], [70, 75, 90], [100, 130, 200], [180, 100, 80]],
   [[30, 50, 35], [55, 90, 60], [90, 160, 100], [200, 180, 60]],
   [[50, 30, 60], [90, 50, 110], [160, 80, 180], [240, 200, 255]],
   [[55, 40, 30], [100, 70, 45], [180, 120, 60], [220, 200, 160]],
   [[25, 35, 50], [45, 65, 90], [80, 140, 180], [200, 220, 240]],
+];
+
+function buildNpcImagePrompt(
+  npc: NonNullable<AssetPipelineOptions['npcs']>[number],
+  gameDna: GameDNA,
+  artBible: ArtBible | undefined,
+): string {
+  const role = npc.role ?? 'neutral';
+  const guideline = artBible?.characterGuidelines.npc;
+  if (guideline) {
+    return `${guideline}, ${role} NPC named ${npc.name ?? npc.id}, ${gameDna.identity.visualStyle} pixel art`;
+  }
+  return `${gameDna.identity.visualStyle} pixel art humanoid NPC sprite, ${role} named ${npc.name ?? npc.id}, ${gameDna.identity.tone} tone, ${gameDna.narrative.premise}`;
+}
+
+function buildBossImagePrompt(
+  boss: NonNullable<AssetPipelineOptions['bosses']>[number],
+  gameDna: GameDNA,
+  artBible: ArtBible | undefined,
+  isFinal: boolean,
+): string {
+  if (boss.visualPrompt) return boss.visualPrompt;
+  if (isFinal && artBible?.characterGuidelines.boss) return artBible.characterGuidelines.boss;
+  const attackHint =
+    boss.attacks && boss.attacks.length > 0 ? `, attacks: ${boss.attacks.join(', ')}` : '';
+  const role = isFinal ? 'final boss' : `mini boss ${boss.name ?? boss.id}`;
+  return `${gameDna.identity.visualStyle} pixel art game boss sprite, ${role}, ${boss.lore ?? gameDna.narrative.centralConflict}${attackHint}, ${gameDna.identity.tone} tone`;
+}
+
+const VFX_TEXTURES: VfxSpec[] = [
+  {
+    id: 'hit_spark',
+    size: 16,
+    core: [255, 240, 120, 255],
+    edge: [255, 80, 40, 255],
+    style: 'burst',
+  },
+  {
+    id: 'death_puff',
+    size: 24,
+    core: [210, 210, 230, 220],
+    edge: [90, 90, 110, 0],
+    style: 'burst',
+  },
+  {
+    id: 'dash_trail',
+    size: 20,
+    core: [120, 200, 255, 220],
+    edge: [40, 120, 255, 0],
+    style: 'streak',
+  },
+  {
+    id: 'pickup_spark',
+    size: 16,
+    core: [255, 220, 80, 255],
+    edge: [255, 255, 200, 0],
+    style: 'burst',
+  },
+  {
+    id: 'ability_unlock',
+    size: 20,
+    core: [140, 220, 255, 255],
+    edge: [255, 255, 255, 0],
+    style: 'burst',
+  },
+  {
+    id: 'boss_phase_shift',
+    size: 32,
+    core: [255, 120, 220, 255],
+    edge: [120, 40, 180, 0],
+    style: 'burst',
+  },
+  {
+    id: 'area_burst',
+    size: 24,
+    core: [255, 180, 60, 255],
+    edge: [255, 60, 20, 0],
+    style: 'burst',
+  },
+  {
+    id: 'slam_shock',
+    size: 28,
+    core: [220, 220, 255, 240],
+    edge: [80, 80, 140, 0],
+    style: 'streak',
+  },
 ];
 
 /** Routes image generation through `ImageProviderRegistry` (capability-based selection —
@@ -71,6 +197,9 @@ async function resolveImageGenerator(options: {
   comfyuiUrl?: string;
   diffusersPython?: string;
   diffusersModelId?: string;
+  nvidiaApiKey?: string;
+  nvidiaApiBaseUrl?: string;
+  nvidiaImageModel?: string;
   mode?: GenerationMode;
 }): Promise<{ generator: ImageGenerator | null; warnings: string[] }> {
   const registry = new ImageProviderRegistry();
@@ -80,6 +209,18 @@ async function resolveImageGenerator(options: {
       provider: new ComfyUIProvider({ baseUrl: options.comfyuiUrl }),
       local: true,
       priority: 90,
+    });
+  }
+
+  if (options.nvidiaApiKey) {
+    registry.register({
+      provider: new NvidiaImageProvider({
+        apiKey: options.nvidiaApiKey,
+        baseUrl: options.nvidiaApiBaseUrl,
+        modelId: options.nvidiaImageModel,
+      }),
+      local: false,
+      priority: 88,
     });
   }
 
@@ -117,12 +258,78 @@ function writeCheckpoint(outputDir: string, relPath: string, buffer: Buffer): vo
   writeFileSync(full, buffer);
 }
 
+function inferAssetTypeFromPath(path: string): string {
+  if (path.includes('/vfx/')) return 'vfx';
+  if (path.includes('/tilesets/')) return path.includes('/tiles/') ? 'tile' : 'tileset';
+  if (path.includes('/bosses/')) return 'boss';
+  if (path.includes('/enemies/')) return 'enemy';
+  if (path.includes('/npcs/')) {
+    return path.includes('_walk') ? 'animation' : 'npc';
+  }
+  if (path.includes('/characters/')) return path.includes('_walk') || path.includes('_hurt') || path.includes('_attack') ? 'animation' : 'player';
+  return 'texture';
+}
+
+function loadManifestArtifacts(outputDir: string): GeneratedAsset[] | null {
+  const manifestPath = join(outputDir, 'generation_manifest.json');
+  if (!existsSync(manifestPath)) return null;
+  try {
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8')) as {
+      artifacts?: Array<Record<string, unknown>>;
+    };
+    const artifacts = manifest.artifacts ?? [];
+    if (artifacts.length === 0) return null;
+
+    const loaded: GeneratedAsset[] = [];
+    for (const artifact of artifacts) {
+      const relPath = String(artifact.path ?? '').replace(/\\/g, '/');
+      if (!relPath || !relPath.endsWith('.png')) continue;
+      const fullPath = join(outputDir, relPath);
+      if (!existsSync(fullPath)) return null;
+      loaded.push({
+        id: String(artifact.id ?? relPath),
+        path: relPath,
+        buffer: readFileSync(fullPath),
+        provider: String(artifact.provider ?? 'checkpoint'),
+        fallbackGenerated: Boolean(artifact.fallbackGenerated),
+        critiquePassed: artifact.critiquePassed !== false,
+        critiqueScore: Number(artifact.critiqueScore ?? 100),
+      });
+    }
+    return loaded.length > 0 ? loaded : null;
+  } catch {
+    return null;
+  }
+}
+
 export class AssetPipeline {
   private readonly pixelArt = new PixelArtProcessor();
 
   async generate(options: AssetPipelineOptions): Promise<AssetPipelineResult> {
     const assets: GeneratedAsset[] = [];
     const warnings: string[] = [];
+    const checkCancelled = () => throwIfCancelled(options.signal);
+    const recordAsset = (asset: GeneratedAsset, assetType: string) => {
+      assets.push(asset);
+      options.onArtifact?.(asset, assetType);
+    };
+
+    checkCancelled();
+
+    if (options.resume) {
+      const cachedAssets = loadManifestArtifacts(options.outputDir);
+      if (cachedAssets) {
+        options.onTaskStarted?.('environment_assets', 'Resuming from generation_manifest.json');
+        for (const asset of cachedAssets) {
+          recordAsset(asset, inferAssetTypeFromPath(asset.path));
+        }
+        warnings.push(
+          `Resumed ${cachedAssets.length} asset(s) from generation_manifest.json — skipped regeneration`,
+        );
+        return { assets, warnings };
+      }
+    }
+
     const defaults = PROFILE_DEFAULTS[options.profile];
     const tileSize = options.gameDna.technical.tileSize;
     const negativePrompt = options.artBible?.negativePrompts.join(', ');
@@ -133,14 +340,20 @@ export class AssetPipeline {
           comfyuiUrl: options.comfyuiUrl,
           diffusersPython: options.diffusersPython,
           diffusersModelId: options.diffusersModelId,
+          nvidiaApiKey: options.nvidiaApiKey,
+          nvidiaApiBaseUrl: options.nvidiaApiBaseUrl,
+          nvidiaImageModel: options.nvidiaImageModel,
           mode: options.mode,
         });
     warnings.push(...providerWarnings);
 
-    const vlm = options.ollamaBaseUrl
-      ? new VLMCritic({ ollamaBaseUrl: options.ollamaBaseUrl })
-      : null;
-    const vlmAvailable = vlm ? await vlm.isAvailable() : false;
+    const vlm: VisionCritic = createVisionCritic({
+      ollamaBaseUrl: options.ollamaBaseUrl,
+      nvidiaApiKey: options.nvidiaApiKey,
+      nvidiaApiBaseUrl: options.nvidiaApiBaseUrl,
+      nvidiaVisionModel: options.nvidiaVisionModel,
+    });
+    const vlmAvailable = options.skipVlm ? false : await vlm.isAvailable();
     if (!vlmAvailable && !options.skipVlm) {
       warnings.push('VLM critic unavailable — using deterministic asset checks');
     }
@@ -149,7 +362,9 @@ export class AssetPipeline {
       options.artBible?.characterGuidelines.player ??
       `${options.gameDna.identity.visualStyle} player character ${options.gameDna.narrative.protagonist}`;
 
-    assets.push(
+    options.onTaskStarted?.('player_sprite', 'Generating player character sprite');
+    checkCancelled();
+    recordAsset(
       await this.generateSprite({
         id: 'player',
         path: 'assets/characters/player.png',
@@ -172,34 +387,10 @@ export class AssetPipeline {
         seed: options.seed,
         outputDir: options.outputDir,
         resume: options.resume,
+        signal: options.signal,
       }),
+      'player',
     );
-
-    const walkSheet = generateWalkCycleSheet(
-      {
-        id: 'player',
-        width: 32,
-        height: 32,
-        fill: [90, 140, 220, 255],
-        accent: [240, 240, 250, 255],
-        shape: 'humanoid',
-      },
-      4,
-    );
-    const walkProcessed = this.pixelArt.process(walkSheet, {
-      targetWidth: 128,
-      targetHeight: 32,
-      tileSize,
-    });
-    assets.push({
-      id: 'player_walk_sheet',
-      path: 'assets/characters/player_walk.png',
-      buffer: walkProcessed.buffer,
-      provider: 'procedural',
-      fallbackGenerated: true,
-      critiquePassed: true,
-      critiqueScore: 100,
-    });
 
     const playerSpec: SpriteSpec = {
       id: 'player',
@@ -210,37 +401,21 @@ export class AssetPipeline {
       shape: 'humanoid',
     };
 
-    const attackSheet = this.pixelArt.process(generateAttackSheet(playerSpec, 4), {
-      targetWidth: 128,
-      targetHeight: 32,
-      tileSize,
-    });
-    assets.push({
-      id: 'player_attack_sheet',
-      path: 'assets/characters/player_attack.png',
-      buffer: attackSheet.buffer,
-      provider: 'procedural',
-      fallbackGenerated: true,
-      critiquePassed: true,
-      critiqueScore: 100,
-    });
-
-    const hurtSheet = this.pixelArt.process(generateHurtFlashSheet(playerSpec, 4), {
-      targetWidth: 128,
-      targetHeight: 32,
-      tileSize,
-    });
-    assets.push({
-      id: 'player_hurt_sheet',
-      path: 'assets/characters/player_hurt.png',
-      buffer: hurtSheet.buffer,
-      provider: 'procedural',
-      fallbackGenerated: true,
-      critiquePassed: true,
-      critiqueScore: 100,
-    });
+    recordAsset(
+      this.buildWalkSheetAsset('player', playerSpec, 'assets/characters/player_walk.png', 4, tileSize),
+      'animation',
+    );
+    recordAsset(
+      this.buildAttackSheetAsset('player', playerSpec, 'assets/characters/player_attack.png', 4, tileSize),
+      'animation',
+    );
+    recordAsset(
+      this.buildHurtSheetAsset('player', playerSpec, 'assets/characters/player_hurt.png', 4, tileSize),
+      'animation',
+    );
 
     for (let i = 0; i < defaults.enemies; i++) {
+      checkCancelled();
       const palette = BIOME_PALETTES[i % BIOME_PALETTES.length]!;
       const enemyId = `enemy_${i.toString().padStart(3, '0')}`;
       const enemySpec: SpriteSpec = {
@@ -251,7 +426,14 @@ export class AssetPipeline {
         shape: 'enemy',
       };
 
-      assets.push(
+      options.onTaskProgress?.(
+        'enemy_sprite',
+        i + 1,
+        defaults.enemies,
+        `Generating enemy ${i + 1} / ${defaults.enemies}`,
+      );
+
+      recordAsset(
         await this.generateSprite({
           id: enemyId,
           path: `assets/enemies/${enemyId}.png`,
@@ -267,48 +449,180 @@ export class AssetPipeline {
           seed: options.seed + i,
           outputDir: options.outputDir,
           resume: options.resume,
+          signal: options.signal,
         }),
+        'enemy',
       );
 
-      assets.push(
+      recordAsset(
         this.buildWalkSheetAsset(enemyId, enemySpec, `assets/enemies/${enemyId}_walk.png`, 4, tileSize),
+        'animation',
+      );
+      recordAsset(
+        this.buildHurtSheetAsset(enemyId, enemySpec, `assets/enemies/${enemyId}_hurt.png`, 4, tileSize),
+        'animation',
+      );
+      recordAsset(
+        this.buildAttackSheetAsset(enemyId, enemySpec, `assets/enemies/${enemyId}_attack.png`, 4, tileSize),
+        'animation',
       );
     }
 
-    const bossSpec: SpriteSpec = {
-      id: 'boss_final',
-      width: 48,
-      height: 48,
-      fill: [180, 60, 180, 255],
-      shape: 'boss',
-    };
+    const npcList =
+      options.npcs && options.npcs.length > 0
+        ? options.npcs
+        : Array.from({ length: defaults.npcs }, (_, i) => ({
+            id: `npc_${i.toString().padStart(3, '0')}`,
+            name: `NPC ${i + 1}`,
+            role: NPC_ROLES[i % NPC_ROLES.length],
+          }));
 
-    assets.push(
-      await this.generateSprite({
-        id: 'boss_final',
-        path: 'assets/bosses/boss_final.png',
-        spec: bossSpec,
-        profile: 'BOSS',
-        prompt:
-          options.artBible?.characterGuidelines.boss ??
-          `final boss ${options.gameDna.narrative.centralConflict}`,
+    for (let ni = 0; ni < npcList.length; ni++) {
+      checkCancelled();
+      const npc = npcList[ni]!;
+      const npcId = npc.id;
+      const role = npc.role ?? NPC_ROLES[ni % NPC_ROLES.length]!;
+      const color = NPC_ROLE_COLORS[role] ?? NPC_ROLE_COLORS.neutral!;
+      const npcSpec: SpriteSpec = {
+        id: npcId,
+        width: 32,
+        height: 32,
+        fill: [color[0], color[1], color[2], 255],
+        shape: 'humanoid',
+      };
+
+      options.onTaskProgress?.(
+        'npc_sprite',
+        ni + 1,
+        npcList.length,
+        `Generating NPC ${ni + 1} / ${npcList.length}: ${npc.name ?? npcId}`,
+      );
+
+      const npcAsset = await this.generateSprite({
+        id: npcId,
+        path: `assets/npcs/${npcId}.png`,
+        spec: npcSpec,
+        profile: 'CHARACTER',
+        prompt: buildNpcImagePrompt(npc, options.gameDna, options.artBible),
         imageGen,
         negativePrompt,
         vlm,
         vlmAvailable,
         artDirection: options.gameDna.identity.visualStyle,
         tileSize,
-        seed: options.seed + 999,
+        seed: options.seed + 7000 + ni,
         outputDir: options.outputDir,
         resume: options.resume,
-      }),
-    );
+        signal: options.signal,
+      });
+      recordAsset(npcAsset, 'npc');
+      recordAsset(
+        this.buildWalkSheetAsset(
+          npcId,
+          npcSpec,
+          `assets/npcs/${npcId}_walk.png`,
+          4,
+          tileSize,
+          npcAsset.buffer,
+        ),
+        'animation',
+      );
+    }
 
-    assets.push(
-      this.buildWalkSheetAsset('boss_final', bossSpec, 'assets/bosses/boss_final_walk.png', 3, tileSize),
-    );
+    const bossList =
+      options.bosses && options.bosses.length > 0
+        ? options.bosses
+        : Array.from({ length: defaults.bosses }, (_, i) => ({
+            id: i === defaults.bosses - 1 ? 'boss_final' : `boss_${i.toString().padStart(3, '0')}`,
+            name: i === defaults.bosses - 1 ? 'Final Boss' : `Boss ${i + 1}`,
+          }));
+
+    for (let bi = 0; bi < bossList.length; bi++) {
+      checkCancelled();
+      const boss = bossList[bi]!;
+      const bossId = boss.id;
+      const isFinal = bossId === 'boss_final' || bi === bossList.length - 1;
+      const palette = BIOME_PALETTES[(bi + 2) % BIOME_PALETTES.length]!;
+      const bossSize = isFinal ? 48 : 40;
+      const bossSpec: SpriteSpec = {
+        id: bossId,
+        width: bossSize,
+        height: bossSize,
+        fill: [palette[2]![0], palette[2]![1], palette[2]![2], 255],
+        shape: 'boss',
+      };
+
+      options.onTaskProgress?.(
+        'boss_sprite',
+        bi + 1,
+        bossList.length,
+        `Generating boss ${bi + 1} / ${bossList.length}: ${boss.name ?? bossId}`,
+      );
+
+      const bossPrompt = buildBossImagePrompt(boss, options.gameDna, options.artBible, isFinal);
+
+      const bossAsset = await this.generateSprite({
+        id: bossId,
+        path: `assets/bosses/${bossId}.png`,
+        spec: bossSpec,
+        profile: 'BOSS',
+        prompt: bossPrompt,
+        imageGen,
+        negativePrompt,
+        vlm,
+        vlmAvailable,
+        artDirection: options.gameDna.identity.visualStyle,
+        tileSize,
+        seed: options.seed + 999 + bi * 17,
+        outputDir: options.outputDir,
+        resume: options.resume,
+        signal: options.signal,
+      });
+      recordAsset(bossAsset, 'boss');
+
+      recordAsset(
+        this.buildWalkSheetAsset(
+          bossId,
+          bossSpec,
+          `assets/bosses/${bossId}_walk.png`,
+          3,
+          tileSize,
+          bossAsset.buffer,
+        ),
+        'animation',
+      );
+      recordAsset(
+        this.buildHurtSheetAsset(
+          bossId,
+          bossSpec,
+          `assets/bosses/${bossId}_hurt.png`,
+          3,
+          tileSize,
+          bossAsset.buffer,
+        ),
+        'animation',
+      );
+      recordAsset(
+        this.buildAttackSheetAsset(
+          bossId,
+          bossSpec,
+          `assets/bosses/${bossId}_attack.png`,
+          3,
+          tileSize,
+          bossAsset.buffer,
+        ),
+        'animation',
+      );
+    }
 
     for (let b = 0; b < defaults.biomes; b++) {
+      checkCancelled();
+      options.onTaskProgress?.(
+        'tileset',
+        b + 1,
+        defaults.biomes,
+        `Generating biome tileset ${b + 1} / ${defaults.biomes}`,
+      );
       const tilesetPath = `assets/tilesets/biome_${b}/source.png`;
       const cachedTileset = options.resume ? loadCheckpoint(options.outputDir, tilesetPath) : null;
 
@@ -331,6 +645,7 @@ export class AssetPipeline {
 
         if (imageGen) {
           try {
+            checkCancelled();
             const tilePrompt =
               options.artBible?.environmentGuidelines.tileStyle ??
               `${options.gameDna.identity.visualStyle} biome ${b} ground and wall tiles`;
@@ -341,6 +656,7 @@ export class AssetPipeline {
               width: 128,
               height: 128,
               seed: options.seed + b,
+              signal: options.signal,
             });
             tileBuffer = result.image;
             fallback = result.fallbackGenerated;
@@ -359,10 +675,12 @@ export class AssetPipeline {
         processedBuffer = processed.buffer;
 
         const detCheck = runDeterministicAssetChecks(processedBuffer, 128, 128);
-        critiquePassed = detCheck.passed;
-        critiqueScore = 75;
+        const sceneCheck = critiqueTilesetSheet(processedBuffer, tileSize);
+        critiquePassed = detCheck.passed && sceneCheck.passed;
+        critiqueScore = Math.min(detCheck.passed ? 75 : 50, sceneCheck.score);
 
-        if (vlm && vlmAvailable) {
+        if (vlmAvailable) {
+          checkCancelled();
           const critique = await vlm.critique({
             image: processedBuffer,
             assetType: 'tile',
@@ -375,27 +693,62 @@ export class AssetPipeline {
         writeCheckpoint(options.outputDir, tilesetPath, processedBuffer);
       }
 
-      assets.push({
-        id: `tileset_biome_${b}`,
-        path: tilesetPath,
-        buffer: processedBuffer,
-        provider,
-        fallbackGenerated: fallback,
-        critiquePassed,
-        critiqueScore,
-      });
+      recordAsset(
+        {
+          id: `tileset_biome_${b}`,
+          path: tilesetPath,
+          buffer: processedBuffer,
+          provider,
+          fallbackGenerated: fallback,
+          critiquePassed,
+          critiqueScore,
+        },
+        'tileset',
+      );
 
       const tiles = this.pixelArt.sliceTiles(processedBuffer, tileSize);
       for (const [tileId, tileBuf] of tiles) {
-        assets.push({
-          id: `biome_${b}_${tileId}`,
-          path: `assets/tilesets/biome_${b}/tiles/${tileId}.png`,
-          buffer: tileBuf,
-          provider: 'pixel-art-processor',
-          fallbackGenerated: true,
+        recordAsset(
+          {
+            id: `biome_${b}_${tileId}`,
+            path: `assets/tilesets/biome_${b}/tiles/${tileId}.png`,
+            buffer: tileBuf,
+            provider: 'pixel-art-processor',
+            fallbackGenerated: true,
+            critiquePassed: true,
+            critiqueScore: 100,
+          },
+          'tile',
+        );
+      }
+    }
+
+    options.onTaskStarted?.('vfx_textures', 'Generating gameplay VFX textures');
+    for (let vi = 0; vi < VFX_TEXTURES.length; vi++) {
+      checkCancelled();
+      const vfx = VFX_TEXTURES[vi]!;
+      options.onTaskProgress?.(
+        'vfx_texture',
+        vi + 1,
+        VFX_TEXTURES.length,
+        `Generating VFX ${vi + 1} / ${VFX_TEXTURES.length}: ${vfx.id}`,
+      );
+      const vfxPath = `assets/vfx/${vfx.id}.png`;
+      const cachedVfx = options.resume ? loadCheckpoint(options.outputDir, vfxPath) : null;
+      recordAsset(
+        {
+          id: vfx.id,
+          path: vfxPath,
+          buffer: cachedVfx ?? generateVfxTexture(vfx),
+          provider: cachedVfx ? 'checkpoint' : 'procedural',
+          fallbackGenerated: !cachedVfx,
           critiquePassed: true,
           critiqueScore: 100,
-        });
+        },
+        'vfx',
+      );
+      if (!cachedVfx) {
+        writeCheckpoint(options.outputDir, vfxPath, assets[assets.length - 1]!.buffer);
       }
     }
 
@@ -408,12 +761,19 @@ export class AssetPipeline {
     path: string,
     frameCount: number,
     tileSize: number,
+    sourcePng?: Buffer,
   ): GeneratedAsset {
-    const sheet = generateWalkCycleSheet(spec, frameCount);
+    const sheet = generateWalkCycleSheet(spec, frameCount, sourcePng);
     const processed = this.pixelArt.process(sheet, {
       targetWidth: spec.width * frameCount,
       targetHeight: spec.height,
       tileSize,
+    });
+    const critique = critiqueAnimationSheet(processed.buffer, {
+      frameCount,
+      expectedFrameWidth: spec.width,
+      expectedFrameHeight: spec.height,
+      kind: 'walk',
     });
     return {
       id: `${id}_walk`,
@@ -421,8 +781,70 @@ export class AssetPipeline {
       buffer: processed.buffer,
       provider: 'procedural',
       fallbackGenerated: true,
-      critiquePassed: true,
-      critiqueScore: 100,
+      critiquePassed: critique.passed,
+      critiqueScore: critique.score,
+    };
+  }
+
+  private buildHurtSheetAsset(
+    id: string,
+    spec: SpriteSpec,
+    path: string,
+    frameCount: number,
+    tileSize: number,
+    sourcePng?: Buffer,
+  ): GeneratedAsset {
+    const sheet = generateHurtFlashSheet(spec, frameCount, sourcePng);
+    const processed = this.pixelArt.process(sheet, {
+      targetWidth: spec.width * frameCount,
+      targetHeight: spec.height,
+      tileSize,
+    });
+    const critique = critiqueAnimationSheet(processed.buffer, {
+      frameCount,
+      expectedFrameWidth: spec.width,
+      expectedFrameHeight: spec.height,
+      kind: 'hurt',
+    });
+    return {
+      id: `${id}_hurt`,
+      path,
+      buffer: processed.buffer,
+      provider: 'procedural',
+      fallbackGenerated: true,
+      critiquePassed: critique.passed,
+      critiqueScore: critique.score,
+    };
+  }
+
+  private buildAttackSheetAsset(
+    id: string,
+    spec: SpriteSpec,
+    path: string,
+    frameCount: number,
+    tileSize: number,
+    sourcePng?: Buffer,
+  ): GeneratedAsset {
+    const sheet = generateAttackSheet(spec, frameCount, sourcePng);
+    const processed = this.pixelArt.process(sheet, {
+      targetWidth: spec.width * frameCount,
+      targetHeight: spec.height,
+      tileSize,
+    });
+    const critique = critiqueAnimationSheet(processed.buffer, {
+      frameCount,
+      expectedFrameWidth: spec.width,
+      expectedFrameHeight: spec.height,
+      kind: 'attack',
+    });
+    return {
+      id: `${id}_attack`,
+      path,
+      buffer: processed.buffer,
+      provider: 'procedural',
+      fallbackGenerated: true,
+      critiquePassed: critique.passed,
+      critiqueScore: critique.score,
     };
   }
 
@@ -434,13 +856,15 @@ export class AssetPipeline {
     prompt: string;
     imageGen: ImageGenerator | null;
     negativePrompt?: string;
-    vlm: VLMCritic | null;
+    vlm: VisionCritic;
     vlmAvailable: boolean;
     artDirection: string;
     tileSize: number;
     seed: number;
     outputDir: string;
     resume?: boolean;
+    signal?: AbortSignal;
+    conditioning?: ImageConditioning;
   }): Promise<GeneratedAsset> {
     if (opts.resume) {
       const cached = loadCheckpoint(opts.outputDir, opts.path);
@@ -463,6 +887,7 @@ export class AssetPipeline {
 
     if (opts.imageGen) {
       try {
+        throwIfCancelled(opts.signal);
         const result = await opts.imageGen.generateImage({
           profile: opts.profile,
           prompt: opts.prompt,
@@ -470,6 +895,8 @@ export class AssetPipeline {
           width: opts.spec.width * 4,
           height: opts.spec.height * 4,
           seed: opts.seed,
+          signal: opts.signal,
+          conditioning: opts.conditioning,
         });
         buffer = result.image;
         provider = result.provider;
@@ -489,7 +916,8 @@ export class AssetPipeline {
     let critiquePassed = det.passed;
     let critiqueScore = 70;
 
-    if (opts.vlm && opts.vlmAvailable) {
+    if (opts.vlmAvailable) {
+      throwIfCancelled(opts.signal);
       const assetType =
         opts.profile === 'BOSS' ? 'boss' : opts.profile === 'ENEMY' ? 'enemy' : 'character';
       const critique = await opts.vlm.critique({
@@ -512,5 +940,155 @@ export class AssetPipeline {
       critiquePassed,
       critiqueScore,
     };
+  }
+
+  /** Project-aware single-asset generation for the manual asset workspace. */
+  async generateManual(opts: {
+    gameDna: GameDNA;
+    artBible?: ArtBible;
+    description: string;
+    assetType: string;
+    assetId: string;
+    relPath: string;
+    outputDir: string;
+    seed: number;
+    mode?: GenerationMode;
+    comfyuiUrl?: string;
+    diffusersPython?: string;
+    diffusersModelId?: string;
+    nvidiaApiKey?: string;
+    nvidiaApiBaseUrl?: string;
+    nvidiaImageModel?: string;
+    nvidiaVisionModel?: string;
+    ollamaBaseUrl?: string;
+  }): Promise<GeneratedAsset> {
+    const tileSize = opts.gameDna.technical.tileSize;
+    const negativePrompt = opts.artBible?.negativePrompts.join(', ');
+    const { generator: imageGen } = await resolveImageGenerator({
+      comfyuiUrl: opts.comfyuiUrl,
+      diffusersPython: opts.diffusersPython,
+      diffusersModelId: opts.diffusersModelId,
+      nvidiaApiKey: opts.nvidiaApiKey,
+      nvidiaApiBaseUrl: opts.nvidiaApiBaseUrl,
+      nvidiaImageModel: opts.nvidiaImageModel,
+      mode: opts.mode,
+    });
+    const vlm = createVisionCritic({
+      ollamaBaseUrl: opts.ollamaBaseUrl,
+      nvidiaApiKey: opts.nvidiaApiKey,
+      nvidiaApiBaseUrl: opts.nvidiaApiBaseUrl,
+      nvidiaVisionModel: opts.nvidiaVisionModel,
+    });
+    const vlmAvailable = await vlm.isAvailable();
+
+    let profile: ImageGenerationProfile = 'CHARACTER';
+    let width = 32;
+    let height = 32;
+    let shape: SpriteSpec['shape'] = 'humanoid';
+
+    switch (opts.assetType) {
+      case 'enemy':
+        profile = 'ENEMY';
+        shape = 'enemy';
+        break;
+      case 'npc':
+        profile = 'CHARACTER';
+        shape = 'humanoid';
+        break;
+      case 'boss':
+        profile = 'BOSS';
+        width = 48;
+        height = 48;
+        shape = 'boss';
+        break;
+      case 'weapon':
+      case 'item':
+      case 'prop':
+        width = 16;
+        height = 16;
+        shape = 'item';
+        break;
+      case 'tileset':
+      case 'tile':
+        profile = 'TILE_SOURCE';
+        width = 128;
+        height = 128;
+        shape = 'tile';
+        break;
+      default:
+        break;
+    }
+
+    const styleHint =
+      opts.artBible?.characterGuidelines.player ??
+      opts.gameDna.identity.visualStyle;
+    const prompt = `${opts.description}. Art style: ${styleHint}. Pixel art for ${opts.gameDna.identity.title}.`;
+
+    const existingFullPath = join(opts.outputDir, opts.relPath);
+    const conditioning: ImageConditioning | undefined = existsSync(existingFullPath)
+      ? { mode: 'ip_adapter', image: readFileSync(existingFullPath), strength: 0.55 }
+      : undefined;
+
+    if (opts.assetType === 'tileset' || opts.assetType === 'tile') {
+      let tileBuffer = generateTilesetSource(opts.seed, 128);
+      let provider = 'procedural';
+      let fallback = true;
+      if (imageGen) {
+        try {
+          const result = await imageGen.generateImage({
+            profile: 'TILE_SOURCE',
+            prompt,
+            negativePrompt,
+            width: 128,
+            height: 128,
+            seed: opts.seed,
+            conditioning,
+          });
+          tileBuffer = result.image;
+          fallback = result.fallbackGenerated;
+          provider = fallback ? 'procedural' : imageGen.id;
+        } catch {
+          /* procedural fallback */
+        }
+      }
+      const processed = this.pixelArt.process(tileBuffer, {
+        targetWidth: 128,
+        targetHeight: 128,
+        tileSize,
+      });
+      writeCheckpoint(opts.outputDir, opts.relPath, processed.buffer);
+      return {
+        id: opts.assetId,
+        path: opts.relPath,
+        buffer: processed.buffer,
+        provider,
+        fallbackGenerated: fallback,
+        critiquePassed: true,
+        critiqueScore: 80,
+      };
+    }
+
+    return this.generateSprite({
+      id: opts.assetId,
+      path: opts.relPath,
+      spec: {
+        id: opts.assetId,
+        width,
+        height,
+        fill: [120, 100, 200, 255],
+        shape,
+      },
+      profile,
+      prompt,
+      imageGen,
+      negativePrompt,
+      vlm,
+      vlmAvailable,
+      artDirection: opts.gameDna.identity.visualStyle,
+      tileSize,
+      seed: opts.seed,
+      outputDir: opts.outputDir,
+      conditioning,
+    });
   }
 }
