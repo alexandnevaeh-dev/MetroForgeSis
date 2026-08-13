@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useStudio } from './StudioContext.js';
+import { ConcurrencyMeters } from './ConcurrencyMeters.js';
 
 export function StatusBar({
   version,
@@ -9,8 +11,9 @@ export function StatusBar({
   bridgeReady: boolean | null;
   activeNav: string;
 }) {
-  const [hardware, setHardware] = useState<string>('—');
-  const [providers, setProviders] = useState<string>('—');
+  const { selectedProject, navigate } = useStudio();
+  const [hardware, setHardware] = useState('—');
+  const [providers, setProviders] = useState('—');
   const [queue, setQueue] = useState(0);
 
   useEffect(() => {
@@ -48,11 +51,25 @@ export function StatusBar({
       <span className="status-sep" />
       <span>{activeNav}</span>
       <span className="status-sep" />
-      <span>{hardware}</span>
+      <button type="button" className="status-link" onClick={() => navigate('Dashboard')}>
+        {selectedProject?.title ?? selectedProject?.slug ?? 'No project'}
+      </button>
       <span className="status-sep" />
-      <span>{providers}</span>
+      <button type="button" className="status-link" onClick={() => navigate('Models')}>
+        {hardware}
+      </button>
+      <span className="status-sep" />
+      <button type="button" className="status-link" onClick={() => navigate('Providers')}>
+        {providers}
+      </button>
+      <span className="status-sep" />
+      <button type="button" className="status-link" onClick={() => navigate('Settings')} title="Worker pool">
+        <ConcurrencyMeters compact />
+      </button>
       <span className="status-grow" />
-      <span>{queue > 0 ? `${queue} generation job${queue === 1 ? '' : 's'}` : 'Idle'}</span>
+      <button type="button" className="status-link" onClick={() => navigate('Studio')}>
+        {queue > 0 ? `${queue} generation job${queue === 1 ? '' : 's'}` : 'Idle'}
+      </button>
       <span className="status-hint">Ctrl+K to jump</span>
     </footer>
   );

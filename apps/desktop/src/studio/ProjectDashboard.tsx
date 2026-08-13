@@ -1,5 +1,14 @@
 import { useEffect, useState } from 'react';
-import type { StudioProject } from './types';
+import { ScreenHeader } from './ScreenHeader.js';
+import { ProjectSelect } from './ProjectSelect.js';
+import { NoProjectHint } from './NoProjectHint.js';
+import { useStudio } from './StudioContext.js';
+import type { NavId } from './nav.js';
+import {
+  AssetProductionGatePanel,
+  type AssetProductionGateView,
+} from './AssetProductionGatePanel.js';
+import { AllowPlaceholdersControl } from './AllowPlaceholdersControl.js';
 
 type PlaytestRouteSummary = {
   reachable: boolean;
@@ -55,6 +64,7 @@ type DashboardData = {
     blockers: string[];
     warnings: string[];
     checklist: Array<{ id: string; label: string; passed: boolean; detail?: string }>;
+    assetProductionGate?: AssetProductionGateView;
   };
   assetCoverage?: {
     coveragePercent: number;
@@ -84,41 +94,62 @@ function formatDuration(ms: number): string {
 }
 
 export function ProjectDashboard() {
-  const [projects, setProjects] = useState<StudioProject[]>([]);
-  const [selectedPath, setSelectedPath] = useState('');
+  const { selectedPath, hasActiveProject, navigate, openRoom } = useStudio();
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [godotError, setGodotError] = useState<string | null>(null);
   const [acceptResult, setAcceptResult] = useState<string | null>(null);
+  const [remapResult, setRemapResult] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const jump = (id: NavId) => navigate(id);
+
+  const refreshDashboard = async (path = selectedPath) => {
+    if (!path || !window.metroforge?.getProjectDashboard) {
+      setDashboard(null);
+      return;
+    }
+    setLoading(true);
+    try {
+      setDashboard((await window.metroforge.getProjectDashboard(path)) as DashboardData);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    window.metroforge?.listProjects().then((list) => {
-      setProjects(list);
-      if (list.length > 0) setSelectedPath((p) => p || list[0]!.path);
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!selectedPath || !window.metroforge?.getProjectDashboard) return;
-    window.metroforge.getProjectDashboard(selectedPath).then(setDashboard);
+    void refreshDashboard(selectedPath);
   }, [selectedPath]);
 
   return (
-    <section>
-      <h2>Project Dashboard</h2>
-      <label>
-        Project
-        <select value={selectedPath} onChange={(e) => setSelectedPath(e.target.value)}>
-          {projects.map((p) => (
-            <option key={p.slug} value={p.path}>
-              {p.title ?? p.slug}
-            </option>
-          ))}
-        </select>
-      </label>
+    <section className="dashboard-screen">
+      <ScreenHeader
+        eyebrow="Create"
+        title="Project Dashboard"
+        description="Live counts, completion, playtest telemetry, and QA from getProjectDashboard."
+        actions={
+          <div className="row">
+            <ProjectSelect />
+            <button type="button" disabled={!hasActiveProject || loading} onClick={() => void refreshDashboard()}>
+              {loading ? 'Refreshing…' : 'Refresh'}
+            </button>
+          </div>
+        }
+      />
+      <NoProjectHint />
+
+      {hasActiveProject && !dashboard && loading && <p className="hint">Loading dashboard…</p>}
+      {hasActiveProject && !dashboard && !loading && (
+        <div className="empty-state panel-l1">
+          <p>Dashboard data is unavailable for this project.</p>
+          <button type="button" onClick={() => void refreshDashboard()}>
+            Try again
+          </button>
+        </div>
+      )}
 
       {dashboard && (
         <div className="dashboard-grid">
-          <div className="panel dashboard-stat">
+          <div className="panel-l2 dashboard-stat">
             <h3>{dashboard.title}</h3>
             <p className="hint">
               {dashboard.profile} · seed {dashboard.seed}
@@ -129,7 +160,7 @@ export function ProjectDashboard() {
             <p>{dashboard.overallProgress ?? 0}% generation progress</p>
           </div>
 
-          <div className="panel dashboard-stat">
+          <div className="panel-l1 dashboard-stat">
             <h4>World</h4>
             <ul className="stat-list">
               <li>{dashboard.roomCount} rooms</li>
@@ -139,7 +170,7 @@ export function ProjectDashboard() {
             </ul>
           </div>
 
-          <div className="panel dashboard-stat">
+          <div className="panel-l1 dashboard-stat">
             <h4>Completion</h4>
             {dashboard.completion ? (
               <>
@@ -163,10 +194,26 @@ export function ProjectDashboard() {
                   ))}
                 </ul>
                 {dashboard.completion.blockers.length > 0 && (
-                  <p className="result error">{dashboard.completion.blockers.join('; ')}</p>
+                  <ul className="check-list">
+                    {dashboard.completion.blockers.map((blocker) => (
+                      <li key={blocker} className="check-warn">
+                        {blocker}
+                      </li>
+                    ))}
+                  </ul>
                 )}
+                <AssetProductionGatePanel gate={dashboard.completion.assetProductionGate} />
+                <div style={{ marginTop: '0.65rem' }}>
+                  <AllowPlaceholdersControl onChanged={() => void refreshDashboard()} />
+                </div>
                 {dashboard.completion.warnings.length > 0 && (
-                  <p className="hint">{dashboard.completion.warnings.join('; ')}</p>
+                  <ul className="check-list" style={{ marginTop: '0.5rem' }}>
+                    {dashboard.completion.warnings.map((warning) => (
+                      <li key={warning} className="hint">
+                        {warning}
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </>
             ) : (
@@ -174,7 +221,7 @@ export function ProjectDashboard() {
             )}
           </div>
 
-          <div className="panel dashboard-stat">
+          <div className="panel-l1 dashboard-stat">
             <h4>Assets & QA</h4>
             <ul className="stat-list">
               <li>{dashboard.assetCount} manifest artifacts</li>
@@ -196,7 +243,7 @@ export function ProjectDashboard() {
             </ul>
           </div>
 
-          <div className="panel dashboard-stat">
+          <div className="panel-l1 dashboard-stat">
             <h4>Project Memory (RAG)</h4>
             {dashboard.projectMemory ? (
               <>
@@ -220,7 +267,7 @@ export function ProjectDashboard() {
             )}
           </div>
 
-          <div className="panel dashboard-stat">
+          <div className="panel-l1 dashboard-stat">
             <h4>Playtest</h4>
             {dashboard.playtestRoute || dashboard.playtestTelemetry ? (
               <>
@@ -231,7 +278,13 @@ export function ProjectDashboard() {
                       {dashboard.playtestRoute.transitionCount} transitions
                     </li>
                     <li>
-                      {dashboard.playtestRoute.startRoomId} → {dashboard.playtestRoute.victoryRoomId}
+                      <button type="button" className="status-link" onClick={() => openRoom(dashboard.playtestRoute!.startRoomId)}>
+                        {dashboard.playtestRoute.startRoomId}
+                      </button>
+                      {' → '}
+                      <button type="button" className="status-link" onClick={() => openRoom(dashboard.playtestRoute!.victoryRoomId)}>
+                        {dashboard.playtestRoute.victoryRoomId}
+                      </button>
                     </li>
                     {dashboard.playtestRoute.personaDisplayName && (
                       <li>
@@ -274,7 +327,22 @@ export function ProjectDashboard() {
                         <li>Abilities: {dashboard.playtestTelemetry.abilitiesAfterRun.join(', ')}</li>
                       )}
                       {dashboard.playtestTelemetry.roomsVisited.length > 0 && (
-                        <li>Rooms visited: {dashboard.playtestTelemetry.roomsVisited.length}</li>
+                        <li>
+                          Rooms visited:{' '}
+                          {dashboard.playtestTelemetry.roomsVisited.slice(0, 8).map((roomId) => (
+                            <button
+                              key={roomId}
+                              type="button"
+                              className="tab"
+                              onClick={() => openRoom(roomId)}
+                            >
+                              {roomId}
+                            </button>
+                          ))}
+                          {dashboard.playtestTelemetry.roomsVisited.length > 8
+                            ? ` +${dashboard.playtestTelemetry.roomsVisited.length - 8}`
+                            : ''}
+                        </li>
                       )}
                     </ul>
                     {(dashboard.playtestTelemetry.balanceSummary?.length ??
@@ -299,7 +367,22 @@ export function ProjectDashboard() {
             )}
           </div>
 
-          <div className="panel dashboard-actions row">
+          <div className="panel-l1 dashboard-actions row">
+            <button type="button" onClick={() => jump('Studio')}>
+              Generation Studio
+            </button>
+            <button type="button" onClick={() => jump('World')}>
+              World Editor
+            </button>
+            <button type="button" onClick={() => jump('Assets')}>
+              Asset Gallery
+            </button>
+            <button type="button" onClick={() => jump('Rooms')}>
+              Room Editor
+            </button>
+            <button type="button" onClick={() => jump('QA')}>
+              QA
+            </button>
             <button
               type="button"
               className="primary"
@@ -319,12 +402,40 @@ export function ProjectDashboard() {
                 if (!selectedPath || !window.metroforge?.runProjectAcceptance) return;
                 const r = await window.metroforge.runProjectAcceptance(selectedPath);
                 setAcceptResult(r.formatted);
-                if (window.metroforge?.getProjectDashboard) {
-                  window.metroforge.getProjectDashboard(selectedPath).then(setDashboard);
-                }
+                await refreshDashboard(selectedPath);
               }}
             >
               Run Acceptance
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                setRemapResult(null);
+                setGodotError(null);
+                if (!selectedPath || !window.metroforge?.remapProjectAbilities) return;
+                const r = await window.metroforge.remapProjectAbilities(selectedPath);
+                if (!r.success) {
+                  setGodotError(r.errors.join('; ') || 'Remap failed');
+                  return;
+                }
+                const parts = [
+                  r.changed ? 'Updated project abilities / refs' : 'No ability changes',
+                  `${r.abilityCount} abilities`,
+                ];
+                if (r.remapped.length) {
+                  parts.push(`remapped: ${r.remapped.map((x) => `${x.from}→${x.to}`).join(', ')}`);
+                }
+                if (r.removed.length) {
+                  parts.push(`removed: ${r.removed.join(', ')}`);
+                }
+                if (r.referenceFilesUpdated?.length) {
+                  parts.push(`refs: ${r.referenceFilesUpdated.join(', ')}`);
+                }
+                setRemapResult(parts.join(' · '));
+                await refreshDashboard(selectedPath);
+              }}
+            >
+              Remap Abilities
             </button>
             <button
               type="button"
@@ -351,22 +462,25 @@ export function ProjectDashboard() {
       )}
 
       {godotError && <p className="result error">{godotError}</p>}
+      {remapResult && <p className="hint">{remapResult}</p>}
       {acceptResult && (
-        <pre className="panel" style={{ marginTop: '1rem', whiteSpace: 'pre-wrap' }}>
+        <pre className="panel-l1" style={{ marginTop: '1rem', whiteSpace: 'pre-wrap' }}>
           {acceptResult}
         </pre>
       )}
 
       {dashboard?.recentEvents && dashboard.recentEvents.length > 0 && (
-        <div className="panel" style={{ marginTop: '1rem' }}>
+        <div className="panel-l1" style={{ marginTop: '1rem' }}>
           <h4>Recent Activity</h4>
           <ul className="activity-feed">
             {dashboard.recentEvents
               .slice()
               .reverse()
               .map((e, i) => (
-                <li key={i}>
-                  {new Date(e.timestamp).toLocaleTimeString()} — {e.type}
+                <li key={`${e.timestamp}-${e.type}-${i}`}>
+                  <button type="button" className="activity-row" onClick={() => jump('Studio')}>
+                    {new Date(e.timestamp).toLocaleTimeString()} — {e.type}
+                  </button>
                 </li>
               ))}
           </ul>

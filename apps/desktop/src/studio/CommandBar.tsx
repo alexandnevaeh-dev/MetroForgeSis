@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { blobToWavBase64, startSpeechRecording } from './speech-capture';
+import { blobToWavBase64, startSpeechRecording } from './speech-capture.js';
 
 interface CommandBarProps {
   projectPath: string;

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { ModelEntry } from '@metroforge/schemas';
-import { ScreenHeader } from './ScreenHeader';
-import type { RankedModel } from './metroforge-api';
+import { ScreenHeader } from './ScreenHeader.js';
+import type { ModelRoutingExplanation } from './metroforge-api.js';
+import { useStudio } from './StudioContext.js';
 
 const CAPABILITIES = [
   'REASONING',
@@ -20,46 +20,50 @@ const CAPABILITIES = [
   'EMBEDDING',
 ] as const;
 
-function rejectionReason(model: ModelEntry, capability: string, rankedIds: Set<string>): string {
-  if (rankedIds.has(model.id)) return '';
-  if (!model.enabled) return 'Disabled in catalog';
-  if (!model.capabilities?.includes(capability as ModelEntry['capabilities'][number])) {
-    return 'Missing requested capability';
-  }
-  if (model.health === 'unavailable') return 'Provider health unavailable';
-  if (model.minRamMb) return `Hardware filter (min ${model.minRamMb} MB RAM)`;
-  if (model.minVramMb) return `Hardware filter (min ${model.minVramMb} MB VRAM)`;
-  return 'Filtered by ranker (license, locality, or score gate)';
+const IMAGE_CAPABILITIES = new Set([
+  'IMAGE_GENERATION',
+  'CONCEPT_ART',
+  'CHARACTER_CONCEPT',
+  'ENVIRONMENT',
+  'BACKGROUND',
+  'TILE_SOURCE',
+  'VFX_TEXTURE',
+  'UI_ART',
+  'ITEM_ICON',
+  'PIXEL_ART_PROCESS',
+  'TEXTURE_GENERATION',
+]);
+
+function localityLabel(reasons: string[]): string {
+  const hit = reasons.find((r) => /local|remote|hosted|VRAM N\/A/i.test(r));
+  if (!hit) return '—';
+  if (/remote|hosted|VRAM N\/A/i.test(hit)) return 'remote (VRAM N/A)';
+  if (/local/i.test(hit)) return 'local';
+  return hit;
+}
+
+function healthLabel(reasons: string[]): string {
+  const hit = reasons.find((r) => /health/i.test(r));
+  return hit ?? '—';
 }
 
 export function RoutingInspector() {
+  const { navigate } = useStudio();
   const [capability, setCapability] = useState<string>('IMAGE_GENERATION');
-  const [ranked, setRanked] = useState<RankedModel[]>([]);
-  const [catalog, setCatalog] = useState<ModelEntry[]>([]);
-  const [hardware, setHardware] = useState<{
-    profile: string;
-    totalRamMb: number;
-    vramMb?: number;
-  } | null>(null);
+  const [query, setQuery] = useState('');
+  const [trace, setTrace] = useState<ModelRoutingExplanation | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const inspect = useCallback(async (cap: string) => {
-    if (!window.metroforge?.rankModels || !window.metroforge.listModels) {
-      setError('Routing IPC is unavailable — restart the desktop app.');
+    if (!window.metroforge?.explainModelRouting) {
+      setError('explainModelRouting is unavailable — restart the desktop app after the latest preload build.');
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      const [ranks, models, hw] = await Promise.all([
-        window.metroforge.rankModels(cap),
-        window.metroforge.listModels({ capability: cap }),
-        window.metroforge.getHardwareProfile(),
-      ]);
-      setRanked(Array.isArray(ranks) ? ranks : []);
-      setCatalog(models ?? []);
-      setHardware(hw);
+      setTrace(await window.metroforge.explainModelRouting(cap));
     } catch (err) {
       setError(String(err));
     } finally {
@@ -68,19 +72,34 @@ export function RoutingInspector() {
   }, []);
 
   useEffect(() => {
-    inspect(capability);
+    void inspect(capability);
   }, [capability, inspect]);
 
-  const rankedIds = useMemo(() => new Set(ranked.map((r) => r.model.id)), [ranked]);
-  const selected = ranked[0];
-  const rejected = catalog.filter((m) => !rankedIds.has(m.id));
+  const q = query.trim().toLowerCase();
+  const matches = (id: string, provider: string) =>
+    !q || id.toLowerCase().includes(q) || provider.toLowerCase().includes(q);
+  const candidates = useMemo(
+    () => (trace?.candidates ?? []).filter((entry) => matches(entry.modelId, entry.provider)),
+    [trace, q],
+  );
+  const rejected = useMemo(
+    () => (trace?.rejected ?? []).filter((entry) => matches(entry.modelId, entry.provider)),
+    [trace, q],
+  );
+  const selected = trace?.selected;
+  const hardware = trace?.hardware;
+  const isImageCapability = IMAGE_CAPABILITIES.has(capability);
 
   return (
     <section className="routing-inspector">
       <ScreenHeader
         eyebrow="AI orchestration"
         title="Routing Inspector"
-        description="Shows how MetroForge ranks real catalog models for a capability. Candidates and scores come from rankModels; rejected rows are catalog entries that the ranker did not return."
+        description={
+          isImageCapability
+            ? 'IMAGE path merges ImageProviderRegistry (ComfyUI / NVIDIA / Diffusers) with catalog image models — same AssetPipeline registry, not a second image router.'
+            : 'Structured routing trace from explainModelRouting — selected model, scored candidates, and explicit reject reasons.'
+        }
       />
 
       <div className="toolbar">
@@ -94,12 +113,35 @@ export function RoutingInspector() {
             ))}
           </select>
         </label>
-        <button type="button" className="primary" onClick={() => inspect(capability)} disabled={loading}>
+        <button type="button" className="primary" onClick={() => void inspect(capability)} disabled={loading}>
           {loading ? 'Inspecting…' : 'Refresh routing'}
         </button>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Filter candidates…"
+          aria-label="Filter routing results"
+        />
+        <button type="button" onClick={() => navigate('Models')}>
+          Open catalog
+        </button>
+        {isImageCapability && (
+          <button type="button" onClick={() => navigate('Providers')}>
+            Image providers
+          </button>
+        )}
       </div>
 
       {error && <p className="result error">{error}</p>}
+
+      {isImageCapability && trace?.degradedFallback && (
+        <div className="panel" style={{ marginBottom: '0.85rem' }}>
+          <p className="check-warn">
+            No healthy image provider — AssetPipeline would use procedural PLACEHOLDER art and mark the phase
+            DEGRADED (not SUCCESS). This is not a separate image pipeline.
+          </p>
+        </div>
+      )}
 
       <div className="routing-layout">
         <aside className="panel">
@@ -109,65 +151,78 @@ export function RoutingInspector() {
             <dd>
               <code>{capability}</code>
             </dd>
+            <dt>Requirements</dt>
+            <dd>{(trace?.requirements ?? []).join(' · ') || '—'}</dd>
             <dt>Hardware</dt>
             <dd>
               {hardware
-                ? `${hardware.profile} · ${hardware.totalRamMb} MB RAM${hardware.vramMb ? ` · ${hardware.vramMb} MB VRAM` : ''}`
+                ? `${hardware.profile} · ${hardware.ramMb} MB RAM${hardware.vramMb ? ` · ${hardware.vramMb} MB VRAM` : ''}`
                 : '—'}
+              {hardware?.note ? (
+                <>
+                  <br />
+                  <span className="hint">{hardware.note}</span>
+                </>
+              ) : null}
             </dd>
-            <dt>Workflow</dt>
-            <dd>Capability → catalog filter → hardware gates → score → first candidate</dd>
+            <dt>License filter</dt>
+            <dd>{trace?.license ?? '—'}</dd>
           </dl>
         </aside>
 
         <div className="panel routing-selected">
-          <h3>Selected model</h3>
+          <h3>{isImageCapability ? 'Selected image provider / model' : 'Selected model'}</h3>
           {selected ? (
             <>
-              <p className="routing-winner">{selected.model.name}</p>
+              <p className="routing-winner">{selected.modelId}</p>
               <dl className="settings-dl">
                 <dt>Provider</dt>
-                <dd>{selected.model.provider}</dd>
+                <dd>{selected.provider}</dd>
                 <dt>Score</dt>
                 <dd>{selected.score.toFixed(1)}</dd>
-                <dt>License</dt>
-                <dd>
-                  {selected.model.license} · {selected.model.commercialUse}
-                </dd>
-                <dt>Local</dt>
-                <dd>{selected.model.local ? 'yes' : 'hosted'}</dd>
-                <dt>Installed</dt>
-                <dd>{selected.model.installed ? 'yes' : 'no'}</dd>
-                <dt>Reasons</dt>
-                <dd>{selected.reasons.join(' · ') || 'priority only'}</dd>
+                {selected.workflow && (
+                  <>
+                    <dt>Workflow</dt>
+                    <dd>{selected.workflow}</dd>
+                  </>
+                )}
               </dl>
             </>
           ) : (
-            <p className="hint">No routable model for this capability on the current hardware/keys.</p>
+            <p className="hint">
+              {isImageCapability
+                ? 'No healthy image provider — procedural PLACEHOLDER fallback (DEGRADED).'
+                : 'No routable model for this capability on the current hardware/keys.'}
+            </p>
           )}
         </div>
 
         <aside className="panel">
           <h3>Fallbacks</h3>
-          {ranked.length > 1 ? (
+          {(trace?.fallbacks?.length ?? 0) > 0 ? (
             <ol className="routing-fallbacks">
-              {ranked.slice(1, 6).map((entry) => (
-                <li key={entry.model.id}>
-                  <strong>{entry.model.name}</strong>
-                  <span>
-                    {entry.model.provider} · {entry.score.toFixed(1)}
-                  </span>
+              {trace!.fallbacks.map((entry) => (
+                <li key={`${entry.provider}-${entry.modelId}`}>
+                  <strong>{entry.modelId}</strong>
+                  <span>{entry.provider}</span>
                 </li>
               ))}
             </ol>
           ) : (
-            <p className="hint">No scored fallbacks returned.</p>
+            <p className="hint">
+              {isImageCapability && trace?.degradedFallback
+                ? 'Procedural PLACEHOLDER is the only remaining path.'
+                : 'No scored fallbacks returned.'}
+            </p>
           )}
         </aside>
       </div>
 
       <div className="panel" style={{ marginTop: '1rem' }}>
-        <h3>Candidates ({ranked.length})</h3>
+        <h3>
+          Candidates ({candidates.length}
+          {q ? ` of ${trace?.candidates.length ?? 0}` : ''})
+        </h3>
         <div className="table-wrap">
           <table className="provider-table">
             <thead>
@@ -175,27 +230,40 @@ export function RoutingInspector() {
                 <th>Rank</th>
                 <th>Model</th>
                 <th>Provider</th>
+                <th>Locality</th>
+                <th>Health</th>
                 <th>Score</th>
-                <th>License</th>
-                <th>Hardware</th>
                 <th>Reasons</th>
               </tr>
             </thead>
             <tbody>
-              {ranked.map((entry, index) => (
-                <tr key={entry.model.id} className={index === 0 ? 'row-selected' : undefined}>
-                  <td>{index + 1}</td>
-                  <td>{entry.model.name}</td>
-                  <td>{entry.model.provider}</td>
-                  <td>{entry.score.toFixed(1)}</td>
-                  <td>{entry.model.license}</td>
-                  <td>
-                    {entry.model.recommendedRamMb ? `${entry.model.recommendedRamMb} MB RAM` : '—'}
-                    {entry.model.minVramMb ? ` / ${entry.model.minVramMb} VRAM` : ''}
+              {candidates.length === 0 ? (
+                <tr>
+                  <td colSpan={7}>
+                    <span className="hint">
+                      {isImageCapability
+                        ? 'No accepted image providers/models — see Rejected for ComfyUI / NVIDIA / Diffusers health reasons.'
+                        : 'No accepted candidates.'}
+                    </span>
                   </td>
-                  <td>{entry.reasons.join(', ') || '—'}</td>
                 </tr>
-              ))}
+              ) : (
+                candidates.map((entry, index) => (
+                  <tr key={`${entry.provider}-${entry.modelId}`} className={index === 0 && !q ? 'row-selected' : undefined}>
+                    <td>
+                      {(trace?.candidates.findIndex(
+                        (c) => c.modelId === entry.modelId && c.provider === entry.provider,
+                      ) ?? index) + 1}
+                    </td>
+                    <td>{entry.modelId}</td>
+                    <td>{entry.provider}</td>
+                    <td>{localityLabel(entry.reasons)}</td>
+                    <td>{healthLabel(entry.reasons)}</td>
+                    <td>{entry.score.toFixed(1)}</td>
+                    <td>{entry.reasons.join(', ') || '—'}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -204,8 +272,9 @@ export function RoutingInspector() {
       <div className="panel" style={{ marginTop: '1rem' }}>
         <h3>Rejected ({rejected.length})</h3>
         <p className="hint">
-          Inferred from catalog minus ranker output. Explicit rejection traces are listed as a backend
-          requirement if Claude exposes `explainModelRouting`.
+          {isImageCapability
+            ? 'Image providers and catalog IMAGE models with accept/reject reasons (health, LOCAL_ONLY, locality). Remote providers are never VRAM-gated.'
+            : 'Explicit reject reasons from explainModelRouting (license, locality, hardware, capability).'}
         </p>
         <div className="table-wrap">
           <table className="provider-table">
@@ -213,17 +282,29 @@ export function RoutingInspector() {
               <tr>
                 <th>Model</th>
                 <th>Provider</th>
-                <th>Likely reason</th>
+                <th>Locality</th>
+                <th>Health</th>
+                <th>Reasons</th>
               </tr>
             </thead>
             <tbody>
-              {rejected.slice(0, 40).map((model) => (
-                <tr key={model.id}>
-                  <td>{model.name}</td>
-                  <td>{model.provider}</td>
-                  <td>{rejectionReason(model, capability, rankedIds)}</td>
+              {rejected.length === 0 ? (
+                <tr>
+                  <td colSpan={5}>
+                    <span className="hint">No rejected entries.</span>
+                  </td>
                 </tr>
-              ))}
+              ) : (
+                rejected.map((entry) => (
+                  <tr key={`${entry.provider}-${entry.modelId}-${entry.reasons.join('|')}`}>
+                    <td>{entry.modelId}</td>
+                    <td>{entry.provider}</td>
+                    <td>{localityLabel(entry.reasons)}</td>
+                    <td>{healthLabel(entry.reasons)}</td>
+                    <td>{entry.reasons.join(' · ') || '—'}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

@@ -16,6 +16,7 @@
     "@metroforge/generation": "workspace:*",
     "@metroforge/database": "workspace:*",
     "@metroforge/godot": "workspace:*",
+    "@metroforge/procedural": "workspace:*",
     "@metroforge/shared": "workspace:*",
     "@metroforge/ai": "workspace:*",
     "@metroforge/assets": "workspace:*",

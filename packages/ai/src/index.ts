@@ -47,8 +47,14 @@ export {
 } from './generators/game-dna.js';
 export type { GameDNAInput, GameDNATextSource } from './generators/game-dna.js';
 export { HardwareProfiler, getStarterPack } from './hardware-profiler.js';
-export { ModelCatalogService, rankModelsForCapability } from './model-catalog.js';
-export type { RankedModel } from './model-catalog.js';
+export { ModelCatalogService, rankModelsForCapability, explainModelRouting } from './model-catalog.js';
+export type {
+  RankedModel,
+  RoutableModelEntry,
+  ModelRoutingExplanation,
+  ModelRoutingCandidate,
+  ModelRoutingRejection,
+} from './model-catalog.js';
 export { ModelScout } from './model-scout.js';
 export type { ScoutOptions } from './model-scout.js';
 export { ModelBenchmarkService } from './model-benchmark.js';

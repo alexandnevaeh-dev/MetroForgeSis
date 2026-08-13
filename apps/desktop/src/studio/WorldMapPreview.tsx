@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+
 type WorldGraphPreview = {
   nodes?: Array<{ id: string; label?: string; metadata?: Record<string, unknown> }>;
   edges?: Array<{ from: string; to: string; requirements?: string[] }>;
@@ -65,34 +67,75 @@ export function WorldMapPreview({
   view = 'graph',
   selectedId,
   onSelect,
+  onActivate,
 }: {
   worldGraph?: WorldGraphPreview | null;
   view?: ViewMode;
   selectedId?: string;
   onSelect?: (id: string) => void;
+  onActivate?: (id: string) => void;
 }) {
-  if (!worldGraph?.nodes?.length) {
+  const nodes = worldGraph?.nodes ?? [];
+  const edges = worldGraph?.edges ?? [];
+  const cols = Math.max(1, Math.ceil(Math.sqrt(Math.max(nodes.length, 1))));
+  const spacing = nodes.length > 80 ? 56 : 80;
+  const progression = useMemo(
+    () => (view === 'progression' ? progressionDepths(nodes, edges) : new Map<string, number>()),
+    [view, worldGraph],
+  );
+  const positions = useMemo(() => {
+    const map = new Map<string, { x: number; y: number }>();
+    nodes.forEach((node, i) => {
+      map.set(node.id, nodePos(node, i, cols, spacing, view, progression));
+    });
+    return map;
+  }, [worldGraph, cols, spacing, view, progression]);
+
+  if (!nodes.length) {
     return <p className="hint">No world graph data yet.</p>;
   }
-
-  const nodes = worldGraph.nodes;
-  const edges = worldGraph.edges ?? [];
-  const cols = Math.max(1, Math.ceil(Math.sqrt(nodes.length)));
-  const spacing = nodes.length > 80 ? 56 : 80;
-  const progression = view === 'progression' ? progressionDepths(nodes, edges) : new Map<string, number>();
-  const positions = new Map<string, { x: number; y: number }>();
-  nodes.forEach((node, i) => {
-    positions.set(node.id, nodePos(node, i, cols, spacing, view, progression));
-  });
 
   const xs = [...positions.values()].map((p) => p.x);
   const ys = [...positions.values()].map((p) => p.y);
   const width = Math.max(cols * spacing + 40, Math.max(...xs) + 48);
   const height = Math.max(Math.ceil(nodes.length / cols) * spacing + 40, Math.max(...ys) + 48);
   const showLabels = nodes.length <= 64;
+  const interactive = Boolean(onSelect || onActivate);
+  const activeIndex = Math.max(
+    0,
+    nodes.findIndex((node) => node.id === selectedId),
+  );
+
+  const moveSelection = (delta: number) => {
+    if (!onSelect || nodes.length === 0) return;
+    const next = (activeIndex + delta + nodes.length) % nodes.length;
+    onSelect(nodes[next]!.id);
+  };
 
   return (
-    <div className="map-preview-wrap">
+    <div
+      className="map-preview-wrap"
+      tabIndex={interactive ? 0 : undefined}
+      role={interactive ? 'listbox' : undefined}
+      aria-label={interactive ? 'World map rooms' : undefined}
+      aria-activedescendant={interactive && selectedId ? `map-node-${selectedId}` : undefined}
+      onKeyDown={(event) => {
+        if (!interactive) return;
+        if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+          event.preventDefault();
+          moveSelection(1);
+        } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+          event.preventDefault();
+          moveSelection(-1);
+        } else if (event.key === 'Enter' || event.key === ' ') {
+          const id = selectedId || nodes[0]?.id;
+          if (!id) return;
+          event.preventDefault();
+          if (event.key === 'Enter' && onActivate) onActivate(id);
+          else onSelect?.(id);
+        }
+      }}
+    >
       <svg className="map-preview" width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
         {edges.map((edge, i) => {
           const from = positions.get(edge.from);
@@ -127,9 +170,13 @@ export function WorldMapPreview({
           return (
             <g
               key={node.id}
+              id={`map-node-${node.id}`}
+              role={interactive ? 'option' : undefined}
+              aria-selected={interactive ? selected : undefined}
               className={selected ? 'map-node-selected' : undefined}
               onClick={() => onSelect?.(node.id)}
-              style={{ cursor: onSelect ? 'pointer' : 'default' }}
+              onDoubleClick={() => onActivate?.(node.id)}
+              style={{ cursor: interactive ? 'pointer' : 'default' }}
             >
               <circle cx={pos.x} cy={pos.y} r={selected ? 16 : 13} className={cls} />
               {showLabels && (

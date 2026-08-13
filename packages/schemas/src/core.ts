@@ -224,6 +224,19 @@ export const ModelSchema = z.object({
 
 export type Model = z.infer<typeof ModelSchema>;
 
+/** Visual/audio artifact maturity ladder — optional so older manifests remain valid. */
+export const AssetMaturitySchema = z.enum([
+  'PLACEHOLDER',
+  'BLOCKOUT',
+  'GENERATED_SOURCE',
+  'COMPILED',
+  'QA_REVIEW',
+  'PRODUCTION_READY',
+  'REJECTED',
+]);
+
+export type AssetMaturity = z.infer<typeof AssetMaturitySchema>;
+
 export const ArtifactSchema = z.object({
   id: z.string(),
   jobId: z.string(),
@@ -237,6 +250,12 @@ export const ArtifactSchema = z.object({
   timestamp: z.string().datetime(),
   validationState: z.enum(['pending', 'passed', 'failed']).default('pending'),
   fallbackGenerated: z.boolean().default(false),
+  /** Explicit maturity — procedural/test art must be PLACEHOLDER/BLOCKOUT, never PRODUCTION_READY. */
+  maturity: AssetMaturitySchema.optional(),
+  productionReady: z.boolean().optional(),
+  sourceType: z
+    .enum(['ai_generated', 'procedural', 'checkpoint', 'manual', 'compiled', 'unknown'])
+    .optional(),
   metadata: z.record(z.unknown()).default({}),
 });
 

@@ -2,6 +2,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { GenerationMode } from '@metroforge/shared';
+import { isProviderUserEnabled } from '@metroforge/shared';
 import {
   ProviderRegistry,
   ModelRegistry,
@@ -48,6 +49,8 @@ export interface ProviderBootstrapConfig {
   huggingfaceApiKey?: string;
   nvidiaApiKey?: string;
   nvidiaApiBaseUrl?: string;
+  /** Per-provider user toggles from app settings (missing ⇒ enabled). */
+  providerEnabled?: Record<string, boolean>;
 }
 
 export interface ProviderBootstrapResult {
@@ -65,11 +68,12 @@ export async function bootstrapProviders(
   const registry = new ProviderRegistry();
   const models = new ModelRegistry();
   const providerDefaults = loadProviderDefaults();
+  const userEnabled = (id: string) => isProviderUserEnabled(config.providerEnabled, id);
 
   const ollama = new OllamaProvider({
     baseUrl: config.ollamaBaseUrl,
     defaultModel: config.ollamaDefaultModel ?? 'qwen3-coder-next',
-    enabled: providerDefaults.ollama?.enabled ?? true,
+    enabled: (providerDefaults.ollama?.enabled ?? true) && userEnabled('ollama'),
     priority: providerDefaults.ollama?.priority,
   });
   await ollama.initialize();
@@ -81,35 +85,35 @@ export async function bootstrapProviders(
         apiKey: config.geminiApiKey,
         baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
         defaultModel: 'gemini-2.0-flash',
-        enabled: !!config.geminiApiKey,
+        enabled: !!config.geminiApiKey && userEnabled('gemini'),
         priority: providerDefaults.gemini?.priority,
       }),
       new GroqProvider({
         apiKey: config.groqApiKey,
         baseUrl: 'https://api.groq.com/openai/v1',
         defaultModel: 'llama-3.3-70b-versatile',
-        enabled: !!config.groqApiKey,
+        enabled: !!config.groqApiKey && userEnabled('groq'),
         priority: providerDefaults.groq?.priority,
       }),
       new OpenRouterProvider({
         apiKey: config.openrouterApiKey,
         baseUrl: 'https://openrouter.ai/api/v1',
         defaultModel: 'google/gemma-2-9b-it:free',
-        enabled: !!config.openrouterApiKey,
+        enabled: !!config.openrouterApiKey && userEnabled('openrouter'),
         priority: providerDefaults.openrouter?.priority,
       }),
       new HuggingFaceProvider({
         apiKey: config.huggingfaceApiKey,
         baseUrl: 'https://api-inference.huggingface.co/models',
         defaultModel: 'Qwen/Qwen2.5-7B-Instruct',
-        enabled: !!config.huggingfaceApiKey,
+        enabled: !!config.huggingfaceApiKey && userEnabled('huggingface'),
         priority: providerDefaults.huggingface?.priority,
       }),
       new NvidiaProvider({
         apiKey: config.nvidiaApiKey,
         baseUrl: config.nvidiaApiBaseUrl || 'https://integrate.api.nvidia.com/v1',
         defaultModel: 'meta/llama-3.1-8b-instruct',
-        enabled: !!config.nvidiaApiKey,
+        enabled: !!config.nvidiaApiKey && userEnabled('nvidia'),
         priority: providerDefaults.nvidia?.priority,
       }),
     ];
@@ -121,7 +125,8 @@ export async function bootstrapProviders(
 
     for (const provider of toRegister) {
       await provider.initialize();
-      if (provider.enabled) registry.register(provider);
+      // Register even when user-disabled so list-providers can show enabled:false.
+      registry.register(provider);
     }
   }
 

@@ -251,6 +251,83 @@ describe('QAValidator', () => {
 
     rmSync(outputDir, { recursive: true, force: true });
   });
+
+  it('passes required_files for TOP_DOWN_ACTION_ADVENTURE with TopDownPlayerController.gd only', () => {
+    const outputDir = join(tmpdir(), `metroforge-qa-topdown-pc-${Date.now()}`);
+    mkdirSync(outputDir, { recursive: true });
+
+    const required = [
+      'project.godot',
+      'project.json',
+      'game_dna.json',
+      'world_graph.json',
+      'progression_graph.json',
+      'generation_manifest.json',
+      'data/player/movement.json',
+      'scenes/boot/Main.tscn',
+      'scenes/world/World.tscn',
+      'scenes/player/Player.tscn',
+      'scenes/world/PauseMenu.tscn',
+      'scripts/UI/PauseMenu.gd',
+      'scripts/core/MapManager.gd',
+      'scripts/UI/WorldMapPanel.gd',
+      'scripts/UI/MinimapPanel.gd',
+      'scripts/core/InventoryManager.gd',
+      'scripts/UI/InventoryPanel.gd',
+      'scripts/UI/QuestPanel.gd',
+      'scripts/UI/QuestTrackerPanel.gd',
+      'scripts/core/SettingsManager.gd',
+      'scenes/world/NPC.tscn',
+      'scripts/world/NPC.gd',
+      'scripts/core/QuestManager.gd',
+      'scripts/core/EventBus.gd',
+      'scripts/core/DialogueManager.gd',
+      'scripts/UI/DialogueOverlay.gd',
+      'scenes/world/DialogueOverlay.tscn',
+      'scripts/core/ShopManager.gd',
+      'scripts/core/VFXManager.gd',
+      'scripts/UI/ShopOverlay.gd',
+      'scenes/world/ShopOverlay.tscn',
+      'scenes/world/ItemPickup.tscn',
+      'scripts/world/ItemPickup.gd',
+      'scenes/enemies/Projectile.tscn',
+      'scripts/combat/Projectile.gd',
+      'scenes/world/WeakFloor.tscn',
+      'scripts/world/WeakFloor.gd',
+      // Archetype-correct controller — deliberately NO side-view PlayerController.gd
+      'scripts/player/TopDownPlayerController.gd',
+    ];
+
+    for (const rel of required) {
+      const full = join(outputDir, rel);
+      mkdirSync(join(full, '..'), { recursive: true });
+      if (rel === 'game_dna.json') {
+        writeFileSync(
+          full,
+          JSON.stringify({
+            archetype: 'TOP_DOWN_ACTION_ADVENTURE',
+            identity: { title: 'Top Down Fixture' },
+            world: { roomCount: 4 },
+          }),
+        );
+      } else {
+        writeFileSync(full, rel.endsWith('.json') ? '{}' : '# stub\n');
+      }
+    }
+
+    // Prove the side-view controller is absent — regression target of this gate.
+    expect(existsSync(join(outputDir, 'scripts/player/PlayerController.gd'))).toBe(false);
+    expect(existsSync(join(outputDir, 'scripts/player/TopDownPlayerController.gd'))).toBe(true);
+
+    const validator = new QAValidator();
+    const report = validator.validateProject(outputDir, 'proj_topdown');
+    const filesGate = report.results.find((r) => r.gate === 'required_files');
+    expect(filesGate?.passed).toBe(true);
+    expect(filesGate?.message).toBe('All required files present');
+    expect(filesGate?.details?.missingFiles).toEqual([]);
+
+    rmSync(outputDir, { recursive: true, force: true });
+  });
 });
 
 describe('QAValidator gameplay screenshot gate', () => {

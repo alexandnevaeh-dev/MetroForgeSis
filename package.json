@@ -18,19 +18,25 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,json,md}\"",
     "metroforge": "node apps/cli/dist/index.js",
     "dev:desktop": "pnpm --filter @metroforge/desktop dev",
-    "dev:cli": "pnpm --filter @metroforge/cli dev"
+    "dev:cli": "pnpm --filter @metroforge/cli dev",
+    "capture:ui": "node scripts/capture-ui-screenshots.mjs",
+    "capture:ui-contact": "node scripts/build-contact-sheet.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.16.0",
     "@types/node": "^22.10.0",
     "eslint": "^9.16.0",
     "eslint-config-prettier": "^9.1.0",
+    "playwright": "1.49.1",
     "prettier": "^3.4.2",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.18.0",
     "vitest": "^2.1.8"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["electron", "esbuild"]
+    "onlyBuiltDependencies": [
+      "electron",
+      "esbuild"
+    ]
   }
 }

@@ -32,7 +32,7 @@ export function computeOverallProgress(phases: PhaseProgressState[]): number {
     const weight = PHASE_WEIGHTS[phase] ?? 0;
     const state = phases.find((p) => p.phase === phase);
     if (!state) continue;
-    if (state.status === 'PASSED' || state.status === 'SKIPPED' || state.status === 'WARN') {
+    if (state.status === 'PASSED' || state.status === 'SKIPPED' || state.status === 'WARN' || state.status === 'DEGRADED') {
       earned += weight;
     } else if (state.status === 'RUNNING') {
       earned += weight * 0.5;

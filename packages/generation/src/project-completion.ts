@@ -1,6 +1,11 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { isRegisteredAbilityId } from '@metroforge/shared';
+import {
+  isRegisteredAbilityId,
+  isNonProductionMaturity,
+  projectAllowsPlaceholders,
+  type AssetMaturity,
+} from '@metroforge/shared';
 import type { LoadedProject } from './project-loader.js';
 
 export interface CompletionChecklistItem {
@@ -8,6 +13,12 @@ export interface CompletionChecklistItem {
   label: string;
   passed: boolean;
   detail?: string;
+}
+
+export interface AssetProductionGateResult {
+  passed: boolean;
+  blockedAssets: Array<{ path: string; maturity: string; reason: string }>;
+  allowPlaceholders: boolean;
 }
 
 export interface ProjectCompletionStatus {
@@ -26,6 +37,7 @@ export interface ProjectCompletionStatus {
   blockers: string[];
   warnings: string[];
   checklist: CompletionChecklistItem[];
+  assetProductionGate?: AssetProductionGateResult;
 }
 
 function fileExists(projectPath: string, rel: string): boolean {
@@ -93,6 +105,61 @@ function collectAttackSheetExpectations(project: LoadedProject): string[] {
   return paths;
 }
 
+function isVisualAssetPath(path: string): boolean {
+  const p = path.replace(/\\/g, '/').toLowerCase();
+  return (
+    p.endsWith('.png') ||
+    p.includes('/characters/') ||
+    p.includes('/enemies/') ||
+    p.includes('/bosses/') ||
+    p.includes('/tilesets/') ||
+    p.includes('/npcs/') ||
+    p.includes('/vfx/')
+  );
+}
+
+/**
+ * Blocks productionReady when required visual assets are PLACEHOLDER / BLOCKOUT / REJECTED
+ * unless the project explicitly allows placeholders (project.json allowPlaceholders).
+ */
+export function evaluateAssetProductionGate(project: LoadedProject): AssetProductionGateResult {
+  const allowPlaceholders = projectAllowsPlaceholders(project.projectMeta);
+  const blockedAssets: AssetProductionGateResult['blockedAssets'] = [];
+
+  for (const artifact of project.manifest.artifacts ?? []) {
+    const path = String(artifact.path ?? '').replace(/\\/g, '/');
+    if (!path || !isVisualAssetPath(path)) continue;
+
+    const maturityRaw =
+      (typeof artifact.maturity === 'string' && artifact.maturity) ||
+      (artifact.fallbackGenerated === true ? 'PLACEHOLDER' : undefined) ||
+      (String(artifact.provider ?? '').toLowerCase() === 'procedural' ? 'PLACEHOLDER' : undefined);
+
+    const maturity = (maturityRaw ?? 'GENERATED_SOURCE') as AssetMaturity | string;
+    const markedNotReady = artifact.productionReady === false;
+    const nonProd = isNonProductionMaturity(maturity) || (artifact.fallbackGenerated === true && maturity !== 'PRODUCTION_READY');
+
+    if (nonProd || (markedNotReady && isNonProductionMaturity(maturity))) {
+      if (isNonProductionMaturity(maturity) || artifact.fallbackGenerated === true) {
+        blockedAssets.push({
+          path,
+          maturity: String(maturity),
+          reason:
+            maturity === 'REJECTED'
+              ? 'Asset critique rejected this visual'
+              : 'Procedural/placeholder visual cannot ship as production-ready',
+        });
+      }
+    }
+  }
+
+  return {
+    passed: allowPlaceholders || blockedAssets.length === 0,
+    blockedAssets,
+    allowPlaceholders,
+  };
+}
+
 /** Analyze whether a generated project is shippable and has a complete victory path. */
 export function analyzeProjectCompletion(project: LoadedProject): ProjectCompletionStatus {
   const blockers: string[] = [];
@@ -145,7 +212,11 @@ export function analyzeProjectCompletion(project: LoadedProject): ProjectComplet
     detail: `${registered.length}/${enabledAbilities.length} registered`,
   });
   if (unknownAbilities.length > 0) {
-    blockers.push(`Unknown abilities: ${unknownAbilities.map((a) => a.id).join(', ')}`);
+    blockers.push(
+      `Unknown abilities (repairable=false): ${unknownAbilities.map((a) => a.id).join(', ')}. ` +
+        `Remap game_dna abilities to registered runtime ids (dash, double_jump, wall_slide, wall_jump, air_dash, ground_slam, grapple, swim, phase). ` +
+        `Do not invent GDScript ability stubs.`,
+    );
   }
 
   const attackExpectations = collectAttackSheetExpectations(project);
@@ -172,8 +243,32 @@ export function analyzeProjectCompletion(project: LoadedProject): ProjectComplet
   });
   if (!worldGraphOk) blockers.push('World graph or rooms missing');
 
+  const assetGate = evaluateAssetProductionGate(project);
+  checklist.push({
+    id: 'asset_maturity',
+    label: 'Visual assets production maturity',
+    passed: assetGate.passed,
+    detail: assetGate.allowPlaceholders
+      ? 'placeholders explicitly allowed'
+      : assetGate.blockedAssets.length === 0
+        ? 'no placeholder/blockout/rejected visuals'
+        : `${assetGate.blockedAssets.length} non-production visual(s)`,
+  });
+  if (!assetGate.passed) {
+    blockers.push(
+      `AssetProductionGate blocked: ${assetGate.blockedAssets
+        .slice(0, 3)
+        .map((a) => `${a.path} (${a.maturity})`)
+        .join(', ')}${assetGate.blockedAssets.length > 3 ? '…' : ''}`,
+    );
+  }
+
   const victoryPathReady = bossExists && victoryQuest.ready && unknownAbilities.length === 0 && worldGraphOk;
-  const productionReady = validationPassed && victoryPathReady && missingAttackSheets.length === 0;
+  const productionReady =
+    validationPassed &&
+    victoryPathReady &&
+    missingAttackSheets.length === 0 &&
+    assetGate.passed;
 
   const passedCount = checklist.filter((c) => c.passed).length;
   const completionScore = checklist.length > 0 ? Math.round((passedCount / checklist.length) * 100) : 0;
@@ -194,5 +289,6 @@ export function analyzeProjectCompletion(project: LoadedProject): ProjectComplet
     blockers,
     warnings,
     checklist,
+    assetProductionGate: assetGate,
   };
 }

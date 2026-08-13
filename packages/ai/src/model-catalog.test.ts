@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { rankModelsForCapability } from '../src/model-catalog.js';
+import { rankModelsForCapability, explainModelRouting, type RoutableModelEntry } from '../src/model-catalog.js';
 import type { ModelEntry, HardwareProfile } from '@metroforge/schemas';
 
 const mockHardware: HardwareProfile = {
@@ -80,5 +80,82 @@ describe('rankModelsForCapability', () => {
     const ranked = rankModelsForCapability(mockModels, 'JSON_GENERATION', lowHw);
     expect(ranked.find((r) => r.model.id === 'big-model')).toBeUndefined();
     expect(ranked[0]?.model.id).toBe('small-model');
+  });
+
+  it('does not reject remote models for low local VRAM (local-only VRAM filter)', () => {
+    const lowVram: HardwareProfile = {
+      ...mockHardware,
+      totalRamMb: 65536,
+      vramMb: 512,
+      profile: 'LOW_RESOURCE',
+    };
+    const models: ModelEntry[] = [
+      {
+        ...mockModels[1]!,
+        id: 'remote-nvidia',
+        provider: 'nvidia',
+        local: false,
+        minVramMb: 8192,
+        recommendedVramMb: 12288,
+        capabilities: ['JSON_GENERATION'],
+        enabled: true,
+      },
+      {
+        ...mockModels[1]!,
+        id: 'local-gpu-hungry',
+        provider: 'ollama',
+        local: true,
+        minVramMb: 8192,
+        capabilities: ['JSON_GENERATION'],
+        enabled: true,
+      },
+    ];
+    const ranked = rankModelsForCapability(models, 'JSON_GENERATION', lowVram);
+    expect(ranked.map((r) => r.model.id)).toContain('remote-nvidia');
+    expect(ranked.map((r) => r.model.id)).not.toContain('local-gpu-hungry');
+
+    const routable: RoutableModelEntry[] = models.map((m) => ({ ...m, providerEnabled: true }));
+    const trace = explainModelRouting(routable, 'JSON_GENERATION', lowVram);
+    expect(trace.candidates.some((c) => c.modelId === 'remote-nvidia')).toBe(true);
+    const rejectedLocal = trace.rejected.find((r) => r.modelId === 'local-gpu-hungry');
+    expect(rejectedLocal?.reasons.some((r) => r.includes('VRAM'))).toBe(true);
+  });
+});
+
+describe('explainModelRouting', () => {
+  const routable: RoutableModelEntry[] = mockModels.map((m) => ({ ...m, providerEnabled: true }));
+
+  it('selects the top-ranked model and lists real candidates', () => {
+    const trace = explainModelRouting(routable, 'JSON_GENERATION', mockHardware, { preferInstalled: false });
+    expect(trace.selected?.modelId).toBe('big-model');
+    expect(trace.candidates.map((c) => c.modelId)).toEqual(['big-model', 'small-model']);
+    expect(trace.rejected).toHaveLength(0);
+    expect(trace.hardware?.ramMb).toBe(mockHardware.totalRamMb);
+  });
+
+  it('explains a hardware rejection with a real, specific reason', () => {
+    const lowHw: HardwareProfile = { ...mockHardware, totalRamMb: 8192, profile: 'LOW_RESOURCE' };
+    const trace = explainModelRouting(routable, 'JSON_GENERATION', lowHw);
+    const rejection = trace.rejected.find((r) => r.modelId === 'big-model');
+    expect(rejection).toBeDefined();
+    expect(rejection?.reasons.some((r) => r.includes('RAM'))).toBe(true);
+    expect(trace.selected?.modelId).toBe('small-model');
+  });
+
+  it('explains a provider-not-configured rejection distinctly from hardware', () => {
+    const unconfigured: RoutableModelEntry[] = [
+      { ...mockModels[0]!, providerEnabled: false, enabled: false },
+      routable[1]!,
+    ];
+    const trace = explainModelRouting(unconfigured, 'JSON_GENERATION', mockHardware);
+    const rejection = trace.rejected.find((r) => r.modelId === 'big-model');
+    expect(rejection?.reasons).toContain('provider not configured or not enabled');
+  });
+
+  it('excludes models with no matching capability entirely, not as a rejection', () => {
+    const trace = explainModelRouting(routable, 'MUSIC_GENERATION', mockHardware);
+    expect(trace.candidates).toHaveLength(0);
+    expect(trace.rejected).toHaveLength(0);
+    expect(trace.selected).toBeUndefined();
   });
 });

@@ -35,8 +35,34 @@ export {
   deleteProjectCheckpoint,
 } from './project-checkpoint.js';
 export type { ProjectCheckpoint } from './project-checkpoint.js';
-export { analyzeProjectCompletion } from './project-completion.js';
-export type { ProjectCompletionStatus, CompletionChecklistItem } from './project-completion.js';
+export { analyzeProjectCompletion, evaluateAssetProductionGate } from './project-completion.js';
+export type {
+  ProjectCompletionStatus,
+  CompletionChecklistItem,
+  AssetProductionGateResult,
+} from './project-completion.js';
+export {
+  backfillArtifactMaturityFields,
+  backfillManifestMaturity,
+  backfillProjectAssetMaturity,
+  artifactNeedsMaturityBackfill,
+} from './backfill-asset-maturity.js';
+export type {
+  BackfillAssetMaturityResult,
+  GenerationManifestFile,
+  ManifestArtifact,
+} from './backfill-asset-maturity.js';
+export { remapProjectAbilities, remapGameDnaAbilities, remapProjectAbilityReferences } from './remap-project-abilities.js';
+export type {
+  RemapProjectAbilitiesResult,
+  RemapGameDnaResult,
+} from './remap-project-abilities.js';
+export {
+  readProjectMeta,
+  getProjectAllowPlaceholders,
+  setProjectAllowPlaceholders,
+} from './project-meta.js';
+export type { ProjectMetaResult } from './project-meta.js';
 export { buildAssetCoverageReport } from './asset-coverage.js';
 export type { AssetCoverageReport, AssetCoverageEntry } from './asset-coverage.js';
 export { runProjectAcceptance, formatAcceptanceReport } from './run-acceptance.js';

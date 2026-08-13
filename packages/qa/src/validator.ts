@@ -3,7 +3,17 @@ import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
 import type { ValidationResult, WorldGraph } from '@metroforge/schemas';
-import { generateId, isRegisteredAbilityId } from '@metroforge/shared';
+import {
+  generateId,
+  isRegisteredAbilityId,
+  isTopDownArchetype,
+  TOP_DOWN_DUNGEON_ITEMS,
+  getGameArchetypePlugin,
+  resolveGameArchetype,
+  type GameArchetype,
+} from '@metroforge/shared';
+
+const TOP_DOWN_ITEM_IDS = new Set<string>(TOP_DOWN_DUNGEON_ITEMS.map((item) => item.id));
 import { validateWorldConnectivity, validateWorldReachability, validateMovementFeasibility, movementStatsFromJson } from '@metroforge/procedural';
 import { auditRoomArchetypeFidelity } from '@metroforge/godot';
 import { critiqueGameplayScreenshot } from '@metroforge/assets';
@@ -12,8 +22,28 @@ import { parsePlaytestOutput, summarizePlaytestBalance } from './playtest-output
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..', '..', '..');
-const TEMPLATE_DIR = join(REPO_ROOT, 'templates', 'godot-metroidvania');
-const TEMPLATE_PROJECT_GODOT = join(TEMPLATE_DIR, 'project.godot');
+const DEFAULT_TEMPLATE_DIR = join(REPO_ROOT, 'templates', 'godot-metroidvania');
+
+/**
+ * Resolves the correct runtime template to repair-restore from, based on the actual project's
+ * own archetype — not a single hardcoded side-view path. A generated TOP_DOWN_ACTION_ADVENTURE
+ * project was previously repaired from templates/godot-metroidvania regardless, which meant a
+ * missing top-down file would incorrectly get "restored" as its unrelated side-view counterpart
+ * (e.g. reintroducing PlayerController.gd's gravity/wall-jump logic into a top-down project that
+ * had already replaced it with TopDownPlayerController.gd). Falls back to side-view when
+ * game_dna.json is missing/unparseable, matching the previous unconditional behavior.
+ */
+function resolveTemplateDir(projectPath: string): string {
+  try {
+    const dna = JSON.parse(readFileSync(join(projectPath, 'game_dna.json'), 'utf-8')) as {
+      archetype?: string;
+    };
+    const plugin = getGameArchetypePlugin(resolveGameArchetype(dna.archetype));
+    return join(REPO_ROOT, plugin.runtimeTemplate);
+  } catch {
+    return DEFAULT_TEMPLATE_DIR;
+  }
+}
 
 /** Static runtime-template files this generator never customizes per-project (unlike
  *  project.godot and Main.tscn, whose title text gets patched with the game's title —
@@ -80,6 +110,19 @@ const TEMPLATE_STATIC_FILES = [
   'scripts/test/PlaytestAgent.gd',
   'scripts/test/PlaytestRunner.gd',
   'scenes/test/PlaytestRunner.tscn',
+  // TOP_DOWN_ACTION_ADVENTURE-only entries — harmlessly skipped for side-view projects via
+  // restoreTemplateFile's existsSync(src) guard, since these paths don't exist in that template.
+  // No per-area .tscn files here: OverworldManager.gd spawns everything at runtime from
+  // data/world/overworld.json instead of loading a pre-baked scene per room (see assembler.ts).
+  'scripts/player/TopDownPlayerController.gd',
+  'scripts/player/TopDownCamera.gd',
+  'scripts/world/OverworldManager.gd',
+  'scripts/world/ChestPickup.gd',
+  'scripts/world/LockedDoor.gd',
+  'scripts/world/ItemGate.gd',
+  'scripts/world/AreaPortal.gd',
+  'scripts/world/FloorSwitch.gd',
+  'scripts/world/VictoryShrine.gd',
 ];
 
 /** Richer than `passed` alone: SOFT_FAIL/SKIPPED both count as `passed: true` (they don't
@@ -121,7 +164,6 @@ const REQUIRED_FILES = [
   'scenes/boot/Main.tscn',
   'scenes/world/World.tscn',
   'scenes/player/Player.tscn',
-  'scripts/player/PlayerController.gd',
   'scenes/world/PauseMenu.tscn',
   'scripts/UI/PauseMenu.gd',
   'scripts/core/MapManager.gd',
@@ -167,8 +209,17 @@ export class QAValidator {
   validateProject(projectPath: string, projectId: string): QAReport {
     const results: QAGateResult[] = [];
 
-    // Gate: required files
-    const missingFiles = REQUIRED_FILES.filter((f) => !existsSync(join(projectPath, f)));
+    // Gate: required files. The player controller filename genuinely differs by archetype
+    // (PlayerController.gd for side-view, TopDownPlayerController.gd for top-down) — read here
+    // early since REQUIRED_FILES itself can't hardcode one or the other.
+    const earlyArchetype = readProjectArchetype(projectPath);
+    const requiredFiles = [
+      ...REQUIRED_FILES,
+      isTopDownArchetype(earlyArchetype)
+        ? 'scripts/player/TopDownPlayerController.gd'
+        : 'scripts/player/PlayerController.gd',
+    ];
+    const missingFiles = requiredFiles.filter((f) => !existsSync(join(projectPath, f)));
     results.push({
       gate: 'required_files',
       passed: missingFiles.length === 0,
@@ -182,12 +233,14 @@ export class QAValidator {
     // Gate: game DNA valid
     let dnaValid = false;
     let dnaAbilities: string[] = [];
+    let dnaArchetype: string | undefined;
     try {
       const dna = JSON.parse(readFileSync(join(projectPath, 'game_dna.json'), 'utf-8'));
       dnaValid = !!dna.identity?.title && !!dna.world?.roomCount;
       dnaAbilities = (dna.abilities ?? [])
         .filter((a: { enabled?: boolean }) => a.enabled !== false)
         .map((a: { id: string }) => a.id);
+      dnaArchetype = dna.archetype;
     } catch {
       dnaValid = false;
     }
@@ -197,15 +250,28 @@ export class QAValidator {
       message: dnaValid ? 'Game DNA valid' : 'Game DNA invalid or missing',
     });
 
-    const unknownAbilities = dnaAbilities.filter((id) => !isRegisteredAbilityId(id));
+    // TOP_DOWN_ACTION_ADVENTURE's GameDNA.abilities holds dungeon tool items
+    // (pickTopDownDungeonItems() — see generators/game-dna.ts), not movement ability IDs, so
+    // this gate checks each id against the right registry for the project's actual archetype
+    // rather than always assuming side-view REGISTERED_ABILITIES.
+    const isTopDown = isTopDownArchetype(dnaArchetype as GameArchetype | undefined);
+    const unknownAbilities = dnaAbilities.filter((id) =>
+      isTopDown ? !TOP_DOWN_ITEM_IDS.has(id) : !isRegisteredAbilityId(id),
+    );
     results.push({
       gate: 'registered_abilities_valid',
       passed: unknownAbilities.length === 0,
       message:
         unknownAbilities.length === 0
           ? 'All generated abilities have runtime implementations'
-          : `Unimplemented ability IDs: ${unknownAbilities.join(', ')}`,
-      details: { unknownAbilities, abilityIds: dnaAbilities },
+          : `Unimplemented ${isTopDown ? 'dungeon item' : 'ability'} IDs (repairable=false): ${unknownAbilities.join(', ')}. ` +
+            `Remap to registered runtime ids — do not invent GDScript stubs.`,
+      details: {
+        unknownAbilities,
+        abilityIds: dnaAbilities,
+        archetype: dnaArchetype,
+        repairable: false,
+      },
     });
 
     // Gates: world connectivity and ability-gated reachability, both proven against the real
@@ -310,16 +376,30 @@ export class QAValidator {
       });
     }
 
-    // Gate: rooms exist
-    const roomsDir = join(projectPath, 'scenes', 'rooms');
-    const roomCount = existsSync(roomsDir)
-      ? readdirSync(roomsDir).filter((f) => f.endsWith('.tscn')).length
-      : 0;
+    // Gate: rooms exist. TOP_DOWN_ACTION_ADVENTURE has no per-room .tscn files at all —
+    // OverworldManager.gd reads data/world/overworld.json directly at runtime and spawns
+    // ground/collision/POIs from that data instead of loading a pre-baked scene per area — so
+    // "required scenes" for that archetype means the overworld data file, not scenes/rooms/*.tscn.
+    let roomCount = 0;
+    let scenesPassed: boolean;
+    if (isTopDown) {
+      scenesPassed = existsSync(join(projectPath, 'data', 'world', 'overworld.json'));
+    } else {
+      const roomsDir = join(projectPath, 'scenes', 'rooms');
+      roomCount = existsSync(roomsDir)
+        ? readdirSync(roomsDir).filter((f) => f.endsWith('.tscn')).length
+        : 0;
+      scenesPassed = roomCount >= 1;
+    }
     results.push({
       gate: 'required_scenes_exist',
-      passed: roomCount >= 1,
-      message: `${roomCount} room scene(s) found`,
-      details: { roomCount },
+      passed: scenesPassed,
+      message: isTopDown
+        ? scenesPassed
+          ? 'Top-down overworld data present'
+          : 'Missing data/world/overworld.json'
+        : `${roomCount} room scene(s) found`,
+      details: { roomCount, isTopDown },
     });
 
     // Gate: every ext_resource path referenced by a scene file actually exists on disk —
@@ -691,6 +771,7 @@ export class QAValidator {
 export class RepairEngineer {
   repair(projectPath: string, report: QAReport): { repaired: boolean; actions: string[] } {
     const actions: string[] = [];
+    const notes: string[] = [];
 
     for (const result of report.results) {
       if (result.passed) continue;
@@ -725,9 +806,15 @@ export class RepairEngineer {
           actions.push('Restored missing project.godot from runtime template');
         }
       }
+
+      if (result.gate === 'registered_abilities_valid') {
+        notes.push(
+          'Skipped auto-repair for unknown abilities (repairable=false) — remap game_dna.json to registered runtime ability ids; do not invent GDScript',
+        );
+      }
     }
 
-    return { repaired: actions.length > 0, actions };
+    return { repaired: actions.length > 0, actions: [...actions, ...notes] };
   }
 }
 
@@ -802,6 +889,21 @@ function findMissingAssetReferences(
   return missing;
 }
 
+/** Reads this project's archetype from its persisted game_dna.json, if present and parseable. */
+function readProjectArchetype(projectPath: string): GameArchetype | undefined {
+  try {
+    const dna = JSON.parse(readFileSync(join(projectPath, 'game_dna.json'), 'utf-8')) as {
+      archetype?: string;
+    };
+    // Always normalize through resolveGameArchetype so unknown/legacy strings cannot
+    // fall through as a raw cast and pick the wrong required player controller file.
+    if (!dna.archetype) return undefined;
+    return resolveGameArchetype(dna.archetype);
+  } catch {
+    return undefined;
+  }
+}
+
 /** Reads this project's title from its persisted game_dna.json, if present and parseable. */
 function readProjectTitle(projectPath: string): string | null {
   try {
@@ -815,7 +917,7 @@ function readProjectTitle(projectPath: string): string | null {
 /** Restores a static runtime-template file verbatim if it's missing from the generated project. */
 function restoreTemplateFile(projectPath: string, relPath: string): boolean {
   const dest = join(projectPath, relPath);
-  const src = join(TEMPLATE_DIR, relPath);
+  const src = join(resolveTemplateDir(projectPath), relPath);
   if (existsSync(dest) || !existsSync(src)) return false;
   mkdirSync(dirname(dest), { recursive: true });
   copyFileSync(src, dest);
@@ -826,7 +928,7 @@ function restoreTemplateFile(projectPath: string, relPath: string): boolean {
  *  text patch (the assembler replaces the placeholder title on every normal generation run). */
 function restoreMainScene(projectPath: string): boolean {
   const dest = join(projectPath, 'scenes', 'boot', 'Main.tscn');
-  const src = join(TEMPLATE_DIR, 'scenes', 'boot', 'Main.tscn');
+  const src = join(resolveTemplateDir(projectPath), 'scenes', 'boot', 'Main.tscn');
   if (existsSync(dest) || !existsSync(src)) return false;
 
   mkdirSync(dirname(dest), { recursive: true });
@@ -840,10 +942,11 @@ function restoreMainScene(projectPath: string): boolean {
  *  patch (the assembler replaces the placeholder name on every normal generation run). */
 function restoreProjectGodot(projectPath: string): boolean {
   const dest = join(projectPath, 'project.godot');
-  if (existsSync(dest) || !existsSync(TEMPLATE_PROJECT_GODOT)) return false;
+  const templateProjectGodot = join(resolveTemplateDir(projectPath), 'project.godot');
+  if (existsSync(dest) || !existsSync(templateProjectGodot)) return false;
 
   const title = readProjectTitle(projectPath);
-  const content = readFileSync(TEMPLATE_PROJECT_GODOT, 'utf-8');
+  const content = readFileSync(templateProjectGodot, 'utf-8');
   writeFileSync(
     dest,
     title
@@ -857,13 +960,14 @@ function restoreProjectGodot(projectPath: string): boolean {
  *  canonical runtime template, in case the [input] section was corrupted or manually edited. */
 function repairInputActions(projectPath: string, requiredActions: string[]): boolean {
   const projectGodotPath = join(projectPath, 'project.godot');
-  if (!existsSync(projectGodotPath) || !existsSync(TEMPLATE_PROJECT_GODOT)) return false;
+  const templateProjectGodot = join(resolveTemplateDir(projectPath), 'project.godot');
+  if (!existsSync(projectGodotPath) || !existsSync(templateProjectGodot)) return false;
 
   const current = readFileSync(projectGodotPath, 'utf-8').replace(/\r\n/g, '\n');
   const missing = requiredActions.filter((a) => !current.includes(`${a}=`));
   if (missing.length === 0) return false;
 
-  const template = readFileSync(TEMPLATE_PROJECT_GODOT, 'utf-8').replace(/\r\n/g, '\n');
+  const template = readFileSync(templateProjectGodot, 'utf-8').replace(/\r\n/g, '\n');
   const templateInputSection = extractSection(template, '[input]');
   if (!templateInputSection) return false;
 

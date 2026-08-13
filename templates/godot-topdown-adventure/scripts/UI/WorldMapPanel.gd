@@ -1,3 +1,4 @@
+class_name WorldMapPanel
 extends Control
 
 const ARCHETYPE_COLORS := {
@@ -37,7 +38,7 @@ func _draw() -> void:
 
 	for room_id in positions.keys():
 		var pos: Vector2 = positions[room_id]
-		var known := room_id in discovered or room_id == current
+		var known: bool = (room_id in discovered) or room_id == current
 		var rect := Rect2(pos + Vector2(4, 4), Vector2(20, 20))
 		var archetype: String = MapManager.get_room_archetype(room_id)
 		if room_id == current:
@@ -47,7 +48,7 @@ func _draw() -> void:
 		else:
 			draw_rect(rect, Color(0.15, 0.18, 0.22, 1.0))
 		if known:
-			var label := room_id.replace("room_", "")
+			var label: String = String(room_id).replace("room_", "")
 			if archetype == "shop":
 				label = "$"
 			elif archetype == "boss":

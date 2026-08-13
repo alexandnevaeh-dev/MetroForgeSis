@@ -1,13 +1,37 @@
-import { useEffect, useState } from 'react';
-import { WorldMapPreview } from './WorldMapPreview';
-import { CommandBar } from './CommandBar';
-import { EditStatusBadge } from './EditStatusBadge';
-import type { StudioProject } from './types';
+import { useEffect, useMemo, useState } from 'react';
+import { WorldMapPreview } from './WorldMapPreview.js';
+import { CommandBar } from './CommandBar.js';
+import { EditStatusBadge } from './EditStatusBadge.js';
+import { ScreenHeader } from './ScreenHeader.js';
+import type { OverworldMapPreview, WorldGraphPreview } from './metroforge-api.js';
+import { ProjectSelect } from './ProjectSelect.js';
+import { NoProjectHint } from './NoProjectHint.js';
+import { useStudio } from './StudioContext.js';
+
+function overworldToGraph(map: OverworldMapPreview | null): WorldGraphPreview | null {
+  if (!map?.nodes?.length) return null;
+  return {
+    nodes: map.nodes.map((node) => ({
+      id: node.id,
+      label: node.id,
+      metadata: {
+        archetype: node.kind,
+        kind: node.kind,
+        x: node.x,
+        y: node.y,
+        dungeonId: node.dungeonId,
+      },
+    })),
+    edges: map.edges ?? [],
+  };
+}
 
 export function WorldEditor() {
-  const [projects, setProjects] = useState<StudioProject[]>([]);
-  const [selectedPath, setSelectedPath] = useState('');
-  const [worldGraph, setWorldGraph] = useState<Parameters<typeof WorldMapPreview>[0]['worldGraph']>(null);
+  const { selectedPath, hasActiveProject, openRoom, navigate } = useStudio();
+  const [worldGraph, setWorldGraph] = useState<WorldGraphPreview | null>(null);
+  const [overworld, setOverworld] = useState<OverworldMapPreview | null>(null);
+  const [selectedId, setSelectedId] = useState('');
+  const [view, setView] = useState<'progression' | 'graph' | 'spatial'>('progression');
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [canUndo, setCanUndo] = useState(false);
@@ -34,31 +58,33 @@ export function WorldEditor() {
     if (!window.metroforge?.getWorldGraph) return;
     const graph = await window.metroforge.getWorldGraph(path);
     setWorldGraph(graph);
-    if (graph?.nodes?.[0]?.id) {
-      setConnectFrom(graph.nodes[0].id);
-      setConnectTo(graph.nodes[1]?.id ?? graph.nodes[0].id);
-      setDisconnectFrom(graph.nodes[0].id);
-      setDisconnectTo(graph.nodes[1]?.id ?? graph.nodes[0].id);
+    const start = graph?.nodes?.[0];
+    if (start?.id) {
+      setSelectedId((prev) => prev || start.id);
+      setConnectFrom(start.id);
+      setConnectTo(graph?.nodes?.[1]?.id ?? start.id);
+      setDisconnectFrom(start.id);
+      setDisconnectTo(graph?.nodes?.[1]?.id ?? start.id);
+    }
+    if (window.metroforge.getOverworldMap) {
+      const map = await window.metroforge.getOverworldMap(path);
+      setOverworld(map?.error ? { ...map, nodes: [] } : map);
+    } else {
+      setOverworld(null);
     }
   };
 
   useEffect(() => {
-    window.metroforge?.listProjects().then((list) => {
-      setProjects(list);
-      if (list.length > 0) {
-        const first = list[0]!.path;
-        setSelectedPath((p) => p || first);
-      }
-    });
-  }, []);
-
-  useEffect(() => {
     if (selectedPath) {
-      loadGraph(selectedPath);
-      refreshHistory();
-      refreshCheckpoints();
+      void loadGraph(selectedPath);
+      void refreshHistory();
+      void refreshCheckpoints();
     }
   }, [selectedPath]);
+
+  const spatialGraph = useMemo(() => overworldToGraph(overworld) ?? worldGraph, [overworld, worldGraph]);
+  const previewGraph = view === 'spatial' ? spatialGraph : worldGraph;
+  const hasDedicatedOverworld = Boolean(overworld?.nodes?.length);
 
   const handleAddRoom = async () => {
     if (!selectedPath || !connectFrom || !window.metroforge?.updateWorldGraph) return;
@@ -137,24 +163,90 @@ export function WorldEditor() {
 
   return (
     <section>
-      <h2>World Editor <EditStatusBadge projectPath={selectedPath} /></h2>
-      <p className="hint">
-        View and edit the real WorldGraph. Layout is visual-only; topology changes go through validated commands.
-      </p>
-      <label>
-        Project
-        <select value={selectedPath} onChange={(e) => setSelectedPath(e.target.value)}>
-          {projects.map((p) => (
-            <option key={p.slug} value={p.path}>
-              {p.title ?? p.slug}
-            </option>
-          ))}
-        </select>
-      </label>
+      <ScreenHeader
+        eyebrow="World"
+        title="World Editor"
+        description="Canonical WorldGraph from the project. Layout is visual; topology changes go through validated updateWorldGraph commands."
+        actions={
+          <>
+            <ProjectSelect />
+            <EditStatusBadge projectPath={selectedPath} />
+          </>
+        }
+      />
+      <NoProjectHint />
 
+      {hasActiveProject && (
+        <>
       <CommandBar projectPath={selectedPath} onSuccess={() => loadGraph(selectedPath)} />
 
-      <WorldMapPreview worldGraph={worldGraph} />
+      <div className="editor-toolbar">
+        <button type="button" className={view === 'progression' ? 'tab active' : 'tab'} onClick={() => setView('progression')}>
+          Progression
+        </button>
+        <button type="button" className={view === 'graph' ? 'tab active' : 'tab'} onClick={() => setView('graph')}>
+          Graph
+        </button>
+        <button type="button" className={view === 'spatial' ? 'tab active' : 'tab'} onClick={() => setView('spatial')}>
+          Spatial / overworld
+        </button>
+      </div>
+      {view === 'spatial' && (
+        <p className="contract-note">
+          {hasDedicatedOverworld
+            ? `Spatial view uses getOverworldMap (${overworld?.regions?.[0]?.name ?? overworld?.archetype ?? 'overworld'}).`
+            : overworld?.error
+              ? `${overworld.error} Falling back to world_graph node metadata x/y when present.`
+              : 'Spatial layout uses node metadata x/y when present. Dedicated overworld maps appear when getOverworldMap returns data.'}
+        </p>
+      )}
+      <div className="editor-workspace world-workspace">
+        <div className="panel editor-canvas">
+          <WorldMapPreview
+            worldGraph={previewGraph}
+            view={view}
+            selectedId={selectedId}
+            onSelect={(id) => {
+              setSelectedId(id);
+              setConnectFrom(id);
+              setDisconnectFrom(id);
+            }}
+            onActivate={openRoom}
+          />
+        </div>
+        <aside className="panel editor-inspector">
+          <h3>Inspector</h3>
+          {previewGraph?.nodes?.find((n) => n.id === selectedId) ? (
+            <dl className="settings-dl">
+              <dt>Room</dt>
+              <dd>{previewGraph.nodes.find((n) => n.id === selectedId)?.label ?? selectedId}</dd>
+              <dt>Id</dt>
+              <dd>
+                <code>{selectedId}</code>
+              </dd>
+              <dt>Archetype</dt>
+              <dd>{String(previewGraph.nodes.find((n) => n.id === selectedId)?.metadata?.archetype ?? 'room')}</dd>
+              <dt>Outbound</dt>
+              <dd>
+                {(previewGraph.edges ?? [])
+                  .filter((e) => e.from === selectedId)
+                  .map((e) => `${e.to}${e.requirements?.length ? ` (${e.requirements.join(', ')})` : ''}`)
+                  .join(' · ') || 'none'}
+              </dd>
+            </dl>
+          ) : (
+            <p className="hint">Select a room on the map.</p>
+          )}
+          <div className="row" style={{ marginTop: '0.75rem' }}>
+            <button type="button" className="primary" disabled={!selectedId} onClick={() => openRoom(selectedId)}>
+              Open in Room Editor
+            </button>
+            <button type="button" onClick={() => navigate('Dungeon')}>
+              Dungeon
+            </button>
+          </div>
+        </aside>
+      </div>
 
       <div className="world-edit panel">
         <h3>Add Optional Room</h3>
@@ -230,6 +322,8 @@ export function WorldEditor() {
           ))}
         </ul>
       </div>
+        </>
+      )}
     </section>
   );
 }

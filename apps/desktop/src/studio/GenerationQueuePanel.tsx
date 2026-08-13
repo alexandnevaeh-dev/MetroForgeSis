@@ -13,12 +13,12 @@ export function GenerationQueuePanel() {
   const [jobs, setJobs] = useState<QueueJob[]>([]);
 
   const refresh = () => {
-    window.metroforge?.listGenerationQueue?.().then(setJobs);
+    window.metroforge?.listGenerationQueue?.().then((list) => setJobs(Array.isArray(list) ? list : []));
   };
 
   useEffect(() => {
     refresh();
-    const id = window.setInterval(refresh, 2000);
+    const id = window.setInterval(refresh, 1500);
     return () => window.clearInterval(id);
   }, []);
 
@@ -34,7 +34,7 @@ export function GenerationQueuePanel() {
               <strong>{job.label}</strong>
               <span>{job.type}</span>
               <span>{job.status}</span>
-              {job.status === 'queued' && (
+              {(job.status === 'queued' || job.status === 'running') && (
                 <button type="button" onClick={() => window.metroforge?.cancelGenerationJob?.(job.id).then(refresh)}>
                   Cancel
                 </button>

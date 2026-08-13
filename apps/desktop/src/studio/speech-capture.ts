@@ -96,33 +96,34 @@ export function startSpeechRecording(maxMs = 8000): { stop: () => void; done: Pr
 
   const done = (async () => {
     stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    recorder = new MediaRecorder(stream);
+    const rec = new MediaRecorder(stream);
+    recorder = rec;
     const chunks: BlobPart[] = [];
 
     return new Promise<Blob>((resolve, reject) => {
       timeout = window.setTimeout(() => {
-        if (recorder && recorder.state !== 'inactive') {
-          recorder.stop();
+        if (rec.state !== 'inactive') {
+          rec.stop();
         }
       }, maxMs);
 
-      recorder.ondataavailable = (event) => {
+      rec.ondataavailable = (event) => {
         if (event.data.size > 0) {
           chunks.push(event.data);
         }
       };
-      recorder.onerror = () => {
+      rec.onerror = () => {
         window.clearTimeout(timeout);
         stream?.getTracks().forEach((track) => track.stop());
         reject(new Error('Microphone recording failed'));
       };
-      recorder.onstop = () => {
+      rec.onstop = () => {
         window.clearTimeout(timeout);
         stream?.getTracks().forEach((track) => track.stop());
-        resolve(new Blob(chunks, { type: recorder?.mimeType || 'audio/webm' }));
+        resolve(new Blob(chunks, { type: rec.mimeType || 'audio/webm' }));
       };
 
-      recorder.start();
+      rec.start();
     });
   })();
 

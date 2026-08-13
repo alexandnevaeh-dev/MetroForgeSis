@@ -6,6 +6,11 @@ import { PRODUCT } from './constants.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..', '..', '..');
 
+/** Absolute path to the monorepo root (where `.env` and `GeneratedGames` live). */
+export function getRepoRoot(): string {
+  return REPO_ROOT;
+}
+
 // Loaded once at module import time, consistent with how every other repo-root config file
 // (config/*.json, the Godot template) is resolved relative to this package's own location
 // rather than process.cwd() — so `.env` is found regardless of which directory `metroforge`

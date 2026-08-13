@@ -14,6 +14,7 @@ import {
   isTopDownArchetype,
   inferGameArchetypeFromPrompt,
 } from '@metroforge/shared';
+import { remapGameDnaAbilities } from './remap-project-abilities.js';
 import { createDatabase, type MetroForgeDatabase } from '@metroforge/database';
 import { bootstrapProviders, licenseFieldsForProvider, OllamaEmbeddingProvider } from '@metroforge/ai';
 import { generateGameDNA, type GameDNATextSource } from '@metroforge/ai';
@@ -72,6 +73,12 @@ export interface GenerateOptions {
   waitForReview?: (ctx: ReviewPauseContext) => Promise<'approve' | 'cancel'>;
   /** When aborted, pipeline stops at the next phase boundary and returns `cancelled: true`. */
   signal?: AbortSignal;
+  /** Per-provider Settings toggles (missing ⇒ enabled). */
+  providerEnabled?: Record<string, boolean>;
+  /** Override NVIDIA_IMAGE_MODEL (Settings prefs / CLI). */
+  nvidiaImageModel?: string;
+  /** When LOW_RESOURCE, prefer remote image providers over local VRAM runtimes. */
+  hardwareProfile?: string;
 }
 
 export interface GenerateResult {
@@ -128,7 +135,7 @@ export class GenerationPipeline {
     const toDbStatus = (status: string): StageStatus | null =>
       status === 'RUNNING'
         ? 'RUNNING'
-        : status === 'PASSED' || status === 'WARN'
+        : status === 'PASSED' || status === 'WARN' || status === 'DEGRADED'
           ? 'PASSED'
           : status === 'SKIPPED'
             ? 'SKIPPED'
@@ -152,7 +159,7 @@ export class GenerationPipeline {
 
       if (status === 'RUNNING') {
         emit({ type: 'PhaseStarted', phase, status, message });
-      } else if (['PASSED', 'FAILED', 'SKIPPED', 'WARN', 'REPAIRING', 'CANCELLED'].includes(status)) {
+      } else if (['PASSED', 'FAILED', 'SKIPPED', 'WARN', 'DEGRADED', 'REPAIRING', 'CANCELLED'].includes(status)) {
         emit({ type: 'PhaseCompleted', phase, status, message });
       } else {
         emit({ type: 'PhaseProgress', phase, status, message });
@@ -289,6 +296,7 @@ export class GenerationPipeline {
         huggingfaceApiKey: process.env.HUGGINGFACE_API_KEY,
         nvidiaApiKey: process.env.NVIDIA_API_KEY,
         nvidiaApiBaseUrl: process.env.NVIDIA_API_BASE_URL,
+        providerEnabled: options.providerEnabled,
       });
 
       // Routes through the canonical GenerationRouter facade (capability in, text out) rather
@@ -326,6 +334,22 @@ export class GenerationPipeline {
       dnaSource = result.source;
       report('game_dna', 'PASSED', `Source: ${dnaSource}`);
       writeFileSync(gameDnaCheckpointPath, JSON.stringify(gameDna, null, 2));
+    }
+
+    // Normalize LLM/deterministic ability ids onto registered runtime implementations.
+    const abilityRemap = remapGameDnaAbilities(gameDna);
+    gameDna = abilityRemap.dna;
+    if (abilityRemap.changed) {
+      writeFileSync(gameDnaCheckpointPath, JSON.stringify(gameDna, null, 2));
+      for (const pair of abilityRemap.remapped) {
+        warnings.push(`Remapped ability "${pair.from}" → "${pair.to}"`);
+      }
+      for (const id of abilityRemap.removed) {
+        warnings.push(`Removed unknown ability "${id}" (no registered runtime implementation)`);
+      }
+      for (const w of abilityRemap.warnings) {
+        if (!warnings.includes(w)) warnings.push(w);
+      }
     }
 
     report('design_bible', 'RUNNING');
@@ -559,12 +583,14 @@ export class GenerationPipeline {
       diffusersModelId: process.env.DIFFUSERS_MODEL_ID,
       nvidiaApiKey: process.env.NVIDIA_API_KEY,
       nvidiaApiBaseUrl: process.env.NVIDIA_API_BASE_URL,
-      nvidiaImageModel: process.env.NVIDIA_IMAGE_MODEL,
+      nvidiaImageModel: options.nvidiaImageModel ?? process.env.NVIDIA_IMAGE_MODEL,
       nvidiaVisionModel: process.env.NVIDIA_VISION_MODEL,
       ollamaBaseUrl: config.ollamaBaseUrl,
       resume: options.resume,
       mode: options.mode,
+      hardwareProfile: options.hardwareProfile,
       signal: options.signal,
+      providerEnabled: options.providerEnabled,
       onTaskStarted: (task, message) => {
         emit({ type: 'TaskStarted', phase: 'environment_assets', task, message });
       },
@@ -578,6 +604,7 @@ export class GenerationPipeline {
           path: asset.path,
           assetType,
           provider: asset.provider,
+          modelId: asset.modelId,
           fallbackGenerated: asset.fallbackGenerated,
           critiquePassed: asset.critiquePassed,
           critiqueScore: asset.critiqueScore,
@@ -604,10 +631,23 @@ export class GenerationPipeline {
             type: assetType,
             path: asset.path,
             provider: asset.provider,
+            model: asset.modelId,
             seed: options.seed,
             validationState: asset.critiquePassed ? 'passed' : 'failed',
             fallbackGenerated: asset.fallbackGenerated,
-            metadata: { id: asset.id, critiqueScore: asset.critiqueScore },
+            metadata: {
+              id: asset.id,
+              critiqueScore: asset.critiqueScore,
+              maturity: asset.maturity,
+              productionReady: asset.productionReady,
+              sourceType: asset.sourceType,
+              fallbackDepth: asset.fallbackDepth,
+              fallbackReason: asset.fallbackReason,
+              selectedProvider: asset.selectedProvider,
+              selectedModel: asset.selectedModel,
+              requestedCapability: asset.requestedCapability,
+              productionAllowed: asset.productionAllowed,
+            },
           });
         }
       },
@@ -619,16 +659,38 @@ export class GenerationPipeline {
       path: a.path,
       type: 'texture' as const,
       provider: a.provider,
+      modelId: a.modelId,
       fallbackGenerated: a.fallbackGenerated,
       critiquePassed: a.critiquePassed,
       critiqueScore: a.critiqueScore,
+      maturity: a.maturity,
+      productionReady: a.productionReady,
+      sourceType: a.sourceType,
+      fallbackDepth: a.fallbackDepth,
+      fallbackReason: a.fallbackReason,
+      selectedProvider: a.selectedProvider,
+      selectedModel: a.selectedModel,
+      requestedCapability: a.requestedCapability ?? 'IMAGE_GENERATION',
+      productionAllowed: a.productionAllowed,
       ...licenseFieldsForProvider(a.provider),
     }));
     const assetPassCount = assetResult.assets.filter((a) => a.critiquePassed).length;
+    const placeholderCount = assetResult.assets.filter(
+      (a) => a.fallbackGenerated || a.maturity === 'PLACEHOLDER' || a.maturity === 'BLOCKOUT',
+    ).length;
+    const assetsDegraded = assetResult.degraded || placeholderCount > 0;
+    if (assetsDegraded) {
+      warnings.push(
+        `environment_assets DEGRADED: ${placeholderCount}/${assetResult.assets.length} assets are procedural placeholders` +
+          (assetResult.fallbackReason ? ` (${assetResult.fallbackReason})` : ''),
+      );
+    }
     report(
       'environment_assets',
-      'PASSED',
-      `${assetResult.assets.length} assets (${assetPassCount} passed critique)`,
+      assetsDegraded ? 'DEGRADED' : 'PASSED',
+      assetsDegraded
+        ? `DEGRADED — ${assetResult.assets.length} assets (${assetPassCount} critique pass, ${placeholderCount} placeholder/blockout; not production-ready)`
+        : `${assetResult.assets.length} assets (${assetPassCount} passed critique)`,
     );
     if (!(await maybePause('biome_art', 'environment_assets', 'Review biome art and player concept'))) {
       db.projects.updateStatus(project.id, 'cancelled');

@@ -30,6 +30,12 @@ contextBridge.exposeInMainWorld('metroforge', {
   getHardwareProfile: () => ipcRenderer.invoke('get-hardware-profile'),
   scoutModels: (opts?: { benchmark?: boolean }) => ipcRenderer.invoke('scout-models', opts),
   rankModels: (capability: string) => ipcRenderer.invoke('rank-models', capability),
+  explainModelRouting: (capability: string) => ipcRenderer.invoke('explain-model-routing', capability),
+  getOverworldMap: (projectPath: string) => ipcRenderer.invoke('get-overworld-map', projectPath),
+  getDungeonGraph: (projectPath: string, dungeonId?: string) =>
+    ipcRenderer.invoke('get-dungeon-graph', projectPath, dungeonId),
+  getRoomCollision: (projectPath: string, roomId: string) =>
+    ipcRenderer.invoke('get-room-collision', projectPath, roomId),
   listProjects: () => ipcRenderer.invoke('list-projects'),
   getProjectPreview: (projectPath: string) => ipcRenderer.invoke('get-project-preview', projectPath),
   getProjectDashboard: (projectPath: string) => ipcRenderer.invoke('get-project-dashboard', projectPath),
@@ -72,6 +78,7 @@ contextBridge.exposeInMainWorld('metroforge', {
     mode: string;
     seed: number;
     generationControl?: string;
+    archetype?: string;
   }) => ipcRenderer.invoke('generate-game', opts),
   onGenerationProgress: (
     callback: (data: { phase: string; status: string; message?: string }) => void,
@@ -134,5 +141,37 @@ contextBridge.exposeInMainWorld('metroforge', {
     ipcRenderer.invoke('run-project-acceptance', projectPath, opts) as Promise<{
       report: { accepted: boolean; blockers: string[] };
       formatted: string;
+    }>,
+  getProjectAllowPlaceholders: (projectPath: string) =>
+    ipcRenderer.invoke('get-project-allow-placeholders', projectPath) as Promise<{
+      success: boolean;
+      allowPlaceholders: boolean;
+      errors: string[];
+    }>,
+  setProjectAllowPlaceholders: (projectPath: string, allowPlaceholders: boolean) =>
+    ipcRenderer.invoke('set-project-allow-placeholders', projectPath, allowPlaceholders) as Promise<{
+      success: boolean;
+      allowPlaceholders: boolean;
+      errors: string[];
+    }>,
+  remapProjectAbilities: (projectPath: string, opts?: { dryRun?: boolean }) =>
+    ipcRenderer.invoke('remap-project-abilities', projectPath, opts) as Promise<{
+      success: boolean;
+      abilityCount: number;
+      remapped: Array<{ from: string; to: string }>;
+      removed: string[];
+      warnings: string[];
+      dryRun: boolean;
+      changed: boolean;
+      errors: string[];
+    }>,
+  backfillAssetMaturity: (projectPath: string, opts?: { dryRun?: boolean }) =>
+    ipcRenderer.invoke('backfill-asset-maturity', projectPath, opts) as Promise<{
+      success: boolean;
+      artifactCount: number;
+      updatedCount: number;
+      skippedCount: number;
+      dryRun: boolean;
+      errors: string[];
     }>,
 });

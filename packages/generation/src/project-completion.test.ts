@@ -72,4 +72,74 @@ describe('analyzeProjectCompletion', () => {
     expect(status.missingAttackSheets.length).toBeGreaterThan(0);
     expect(status.productionReady).toBe(false);
   });
+
+  it('blocks productionReady when visual assets are PLACEHOLDER unless allowPlaceholders', () => {
+    const blocked = analyzeProjectCompletion(
+      stubProject({
+        manifest: {
+          artifacts: [
+            {
+              path: 'assets/characters/player_attack.png',
+              fallbackGenerated: true,
+              maturity: 'PLACEHOLDER',
+              provider: 'procedural',
+            },
+            {
+              path: 'assets/enemies/enemy_000_attack.png',
+              maturity: 'GENERATED_SOURCE',
+              provider: 'comfyui',
+            },
+            {
+              path: 'assets/bosses/boss_final_attack.png',
+              maturity: 'GENERATED_SOURCE',
+              provider: 'comfyui',
+            },
+          ],
+        },
+      }),
+    );
+    expect(blocked.assetProductionGate?.passed).toBe(false);
+    expect(blocked.productionReady).toBe(false);
+    expect(blocked.blockers.some((b) => b.includes('AssetProductionGate'))).toBe(true);
+
+    const allowed = analyzeProjectCompletion(
+      stubProject({
+        projectMeta: { allowPlaceholders: true },
+        manifest: {
+          artifacts: [
+            {
+              path: 'assets/characters/player_attack.png',
+              fallbackGenerated: true,
+              maturity: 'PLACEHOLDER',
+              provider: 'procedural',
+            },
+            { path: 'assets/enemies/enemy_000_attack.png', maturity: 'QA_REVIEW' },
+            { path: 'assets/bosses/boss_final_attack.png', maturity: 'QA_REVIEW' },
+          ],
+        },
+      }),
+    );
+    expect(allowed.assetProductionGate?.passed).toBe(true);
+    expect(allowed.assetProductionGate?.allowPlaceholders).toBe(true);
+    expect(allowed.productionReady).toBe(true);
+  });
+
+  it('blocks unknown abilities with repairable=false guidance', () => {
+    const status = analyzeProjectCompletion(
+      stubProject({
+        gameDna: {
+          ...stubProject().gameDna,
+          abilities: [
+            { id: 'dash', name: 'Dash', category: 'movement', enabled: true },
+            { id: 'wind_disc', name: 'Wind Disc', category: 'movement', enabled: true },
+          ],
+        } as unknown as LoadedProject['gameDna'],
+      }),
+    );
+    expect(status.victoryPathReady).toBe(false);
+    expect(status.blockers.some((b) => b.includes('repairable=false') && b.includes('wind_disc'))).toBe(
+      true,
+    );
+    expect(status.blockers.some((b) => b.includes('Do not invent GDScript'))).toBe(true);
+  });
 });

@@ -23,16 +23,46 @@ import { critiqueAnimationSheet, critiqueTilesetSheet } from './animation-critic
 import type { ImageGenerationProfile } from './types/vision.js';
 import type { ImageGenerator, ImageConditioning } from './types/image-gen.js';
 import type { GenerationMode, GenerationProfile } from '@metroforge/shared';
-import { PROFILE_DEFAULTS, throwIfCancelled } from '@metroforge/shared';
+import {
+  PROFILE_DEFAULTS,
+  throwIfCancelled,
+  inferAssetMaturity,
+  isProviderUserEnabled,
+  critiqueEffectivelyPassed,
+} from '@metroforge/shared';
+import type { AssetMaturity, AssetSourceType } from '@metroforge/shared';
 
 export interface GeneratedAsset {
   id: string;
   path: string;
   buffer: Buffer;
   provider: string;
+  /** The specific model id an image-generation provider reported for this asset
+   *  (ImageGenResult.modelId) — absent for procedural/checkpoint/pixel-art-processor assets,
+   *  which genuinely have no underlying model to name. */
+  modelId?: string;
   fallbackGenerated: boolean;
   critiquePassed: boolean;
   critiqueScore: number;
+  maturity: AssetMaturity;
+  productionReady: boolean;
+  sourceType: AssetSourceType;
+  /** Sidecar AI/full-res PNG kept when `path` holds the pixel-art compiled output. */
+  sourcePath?: string;
+  fallbackDepth?: number;
+  fallbackReason?: string;
+  selectedProvider?: string;
+  selectedModel?: string;
+  requestedCapability?: string;
+  productionAllowed?: boolean;
+}
+
+/** `assets/foo/bar.png` → `assets/foo/bar_source.png` (never overwrites the compiled path). */
+export function derivedSourceRelPath(relPath: string): string {
+  const normalized = relPath.replace(/\\/g, '/');
+  const dot = normalized.lastIndexOf('.');
+  if (dot <= 0) return `${normalized}_source`;
+  return `${normalized.slice(0, dot)}_source${normalized.slice(dot)}`;
 }
 
 export interface AssetPipelineOptions {
@@ -69,11 +99,14 @@ export interface AssetPipelineOptions {
   /** Reuse already-generated sprite files on disk instead of regenerating them. */
   resume?: boolean;
   /** Routing constraint for image-provider selection — LOCAL_ONLY excludes any registered
-   *  provider that isn't local (no-op today, since ComfyUI/Diffusers both are; real
-   *  enforcement once a hosted image provider exists). */
+   *  provider that isn't local. Remote providers are never rejected for low local VRAM. */
   mode?: GenerationMode;
+  /** When LOW_RESOURCE, ImageProviderRegistry prefers remote/hosted image providers. */
+  hardwareProfile?: string;
   /** When aborted, generation stops at the next cooperative checkpoint. */
   signal?: AbortSignal;
+  /** Per-provider Settings toggles (missing ⇒ enabled). */
+  providerEnabled?: Record<string, boolean>;
   onTaskStarted?: (task: string, message: string) => void;
   onTaskProgress?: (task: string, current: number, total: number, message: string) => void;
   onArtifact?: (asset: GeneratedAsset, assetType: string) => void;
@@ -82,6 +115,11 @@ export interface AssetPipelineOptions {
 export interface AssetPipelineResult {
   assets: GeneratedAsset[];
   warnings: string[];
+  /** True when any required visual asset used procedural/placeholder fallback. */
+  degraded: boolean;
+  fallbackDepth: number;
+  fallbackReason?: string;
+  selectedProvider?: string;
 }
 
 const NPC_ROLE_COLORS: Record<string, [number, number, number]> = {
@@ -201,10 +239,19 @@ async function resolveImageGenerator(options: {
   nvidiaApiBaseUrl?: string;
   nvidiaImageModel?: string;
   mode?: GenerationMode;
-}): Promise<{ generator: ImageGenerator | null; warnings: string[] }> {
+  hardwareProfile?: string;
+  providerEnabled?: Record<string, boolean>;
+}): Promise<{
+  generator: ImageGenerator | null;
+  warnings: string[];
+  fallbackDepth: number;
+  fallbackReason?: string;
+  selectedProvider?: string;
+}> {
   const registry = new ImageProviderRegistry();
+  const allow = (id: string) => isProviderUserEnabled(options.providerEnabled, id);
 
-  if (options.comfyuiUrl) {
+  if (options.comfyuiUrl && allow('comfyui')) {
     registry.register({
       provider: new ComfyUIProvider({ baseUrl: options.comfyuiUrl }),
       local: true,
@@ -212,30 +259,72 @@ async function resolveImageGenerator(options: {
     });
   }
 
-  if (options.nvidiaApiKey) {
+  if (options.nvidiaApiKey && allow('nvidia-image')) {
     registry.register({
       provider: new NvidiaImageProvider({
         apiKey: options.nvidiaApiKey,
         baseUrl: options.nvidiaApiBaseUrl,
         modelId: options.nvidiaImageModel,
+        pythonPath: options.diffusersPython,
       }),
       local: false,
       priority: 88,
     });
   }
 
-  registry.register({
-    provider: new DiffusersProvider({
-      pythonPath: options.diffusersPython,
-      modelId: options.diffusersModelId,
-    }),
-    local: true,
-    priority: 85,
-  });
+  if (allow('diffusers')) {
+    registry.register({
+      provider: new DiffusersProvider({
+        pythonPath: options.diffusersPython,
+        modelId: options.diffusersModelId,
+      }),
+      local: true,
+      priority: 85,
+    });
+  }
 
-  const { generator, warnings } = await registry.selectHealthy({ mode: options.mode });
-  if (generator) return { generator, warnings };
-  return { generator: null, warnings: [...warnings, 'using procedural assets'] };
+  const selected = await registry.selectHealthy({
+    mode: options.mode,
+    hardwareProfile: options.hardwareProfile,
+  });
+  if (selected.generator) {
+    return {
+      generator: selected.generator,
+      warnings: selected.warnings,
+      fallbackDepth: selected.fallbackDepth,
+      fallbackReason: selected.fallbackReason,
+      selectedProvider: selected.selectedProvider,
+    };
+  }
+  return {
+    generator: null,
+    warnings: [...selected.warnings, 'using procedural assets'],
+    fallbackDepth: selected.fallbackDepth,
+    fallbackReason: selected.fallbackReason,
+    selectedProvider: undefined,
+  };
+}
+
+function withMaturity(
+  asset: Omit<GeneratedAsset, 'maturity' | 'productionReady' | 'sourceType' | 'critiquePassed' | 'critiqueScore'> &
+    Partial<Pick<GeneratedAsset, 'maturity' | 'productionReady' | 'sourceType' | 'critiquePassed' | 'critiqueScore'>>,
+): GeneratedAsset {
+  const inferred = inferAssetMaturity({
+    fallbackGenerated: asset.fallbackGenerated,
+    provider: asset.provider,
+    critiquePassed: asset.critiquePassed,
+    critiqueScore: asset.critiqueScore,
+    sourceType: asset.sourceType,
+  });
+  return {
+    ...asset,
+    critiquePassed: asset.critiquePassed ?? false,
+    critiqueScore: asset.critiqueScore ?? 0,
+    maturity: asset.maturity ?? inferred.maturity,
+    productionReady: asset.productionReady ?? inferred.productionReady,
+    sourceType: asset.sourceType ?? inferred.sourceType,
+    productionAllowed: asset.productionAllowed ?? !asset.fallbackGenerated,
+  };
 }
 
 function checkpointFullPath(outputDir: string, relPath: string): string {
@@ -286,15 +375,20 @@ function loadManifestArtifacts(outputDir: string): GeneratedAsset[] | null {
       if (!relPath || !relPath.endsWith('.png')) continue;
       const fullPath = join(outputDir, relPath);
       if (!existsSync(fullPath)) return null;
-      loaded.push({
-        id: String(artifact.id ?? relPath),
-        path: relPath,
-        buffer: readFileSync(fullPath),
-        provider: String(artifact.provider ?? 'checkpoint'),
-        fallbackGenerated: Boolean(artifact.fallbackGenerated),
-        critiquePassed: artifact.critiquePassed !== false,
-        critiqueScore: Number(artifact.critiqueScore ?? 100),
-      });
+      loaded.push(
+        withMaturity({
+          id: String(artifact.id ?? relPath),
+          path: relPath,
+          buffer: readFileSync(fullPath),
+          provider: String(artifact.provider ?? 'checkpoint'),
+          fallbackGenerated: Boolean(artifact.fallbackGenerated),
+          critiquePassed: artifact.critiquePassed !== false,
+          critiqueScore: Number(artifact.critiqueScore ?? 100),
+          maturity: typeof artifact.maturity === 'string' ? (artifact.maturity as GeneratedAsset['maturity']) : undefined,
+          productionReady: typeof artifact.productionReady === 'boolean' ? artifact.productionReady : undefined,
+          sourceType: typeof artifact.sourceType === 'string' ? (artifact.sourceType as GeneratedAsset['sourceType']) : undefined,
+        }),
+      );
     }
     return loaded.length > 0 ? loaded : null;
   } catch {
@@ -309,9 +403,11 @@ export class AssetPipeline {
     const assets: GeneratedAsset[] = [];
     const warnings: string[] = [];
     const checkCancelled = () => throwIfCancelled(options.signal);
-    const recordAsset = (asset: GeneratedAsset, assetType: string) => {
-      assets.push(asset);
-      options.onArtifact?.(asset, assetType);
+    const recordAsset = (asset: Omit<GeneratedAsset, 'maturity' | 'productionReady' | 'sourceType'> &
+      Partial<Pick<GeneratedAsset, 'maturity' | 'productionReady' | 'sourceType'>>, assetType: string) => {
+      const finalized = withMaturity(asset);
+      assets.push(finalized);
+      options.onArtifact?.(finalized, assetType);
     };
 
     checkCancelled();
@@ -326,7 +422,14 @@ export class AssetPipeline {
         warnings.push(
           `Resumed ${cachedAssets.length} asset(s) from generation_manifest.json — skipped regeneration`,
         );
-        return { assets, warnings };
+        const degraded = cachedAssets.some((a) => a.fallbackGenerated || a.maturity === 'PLACEHOLDER');
+        return {
+          assets,
+          warnings,
+          degraded,
+          fallbackDepth: degraded ? 1 : 0,
+          fallbackReason: degraded ? 'Resumed assets include procedural placeholders' : undefined,
+        };
       }
     }
 
@@ -334,8 +437,14 @@ export class AssetPipeline {
     const tileSize = options.gameDna.technical.tileSize;
     const negativePrompt = options.artBible?.negativePrompts.join(', ');
 
-    const { generator: imageGen, warnings: providerWarnings } = options.skipImageGen
-      ? { generator: null, warnings: [] as string[] }
+    const imageRoute = options.skipImageGen
+      ? {
+          generator: null as ImageGenerator | null,
+          warnings: [] as string[],
+          fallbackDepth: 0,
+          fallbackReason: 'Image generation skipped',
+          selectedProvider: undefined as string | undefined,
+        }
       : await resolveImageGenerator({
           comfyuiUrl: options.comfyuiUrl,
           diffusersPython: options.diffusersPython,
@@ -344,7 +453,11 @@ export class AssetPipeline {
           nvidiaApiBaseUrl: options.nvidiaApiBaseUrl,
           nvidiaImageModel: options.nvidiaImageModel,
           mode: options.mode,
+          hardwareProfile: options.hardwareProfile,
+          providerEnabled: options.providerEnabled,
         });
+    const imageGen = imageRoute.generator;
+    const providerWarnings = imageRoute.warnings;
     warnings.push(...providerWarnings);
 
     const vlm: VisionCritic = createVisionCritic({
@@ -631,6 +744,7 @@ export class AssetPipeline {
       let critiqueScore: number;
       let provider: string;
       let fallback: boolean;
+      let modelId: string | undefined;
 
       if (cachedTileset) {
         processedBuffer = cachedTileset;
@@ -638,10 +752,12 @@ export class AssetPipeline {
         critiqueScore = 100;
         provider = 'checkpoint';
         fallback = false;
+        modelId = undefined;
       } else {
         let tileBuffer = generateTilesetSource(options.seed + b * 100, 128);
         fallback = true;
         provider = 'procedural';
+        modelId = undefined;
 
         if (imageGen) {
           try {
@@ -661,6 +777,7 @@ export class AssetPipeline {
             tileBuffer = result.image;
             fallback = result.fallbackGenerated;
             provider = fallback ? 'procedural' : imageGen.id;
+            modelId = fallback ? undefined : result.modelId;
           } catch {
             warnings.push(`Image gen tileset biome ${b} failed — procedural fallback`);
           }
@@ -686,8 +803,10 @@ export class AssetPipeline {
             assetType: 'tile',
             artDirection: options.gameDna.identity.visualStyle,
           });
-          critiquePassed = critique.passed;
-          critiqueScore = critique.score;
+          // Soft-pass: score >= 70 counts even when a strict VLM sets passed:false.
+          critiquePassed =
+            detCheck.passed && critiqueEffectivelyPassed(critique.passed, critique.score);
+          critiqueScore = Math.min(critique.score, detCheck.passed ? 100 : 50);
         }
 
         writeCheckpoint(options.outputDir, tilesetPath, processedBuffer);
@@ -699,6 +818,7 @@ export class AssetPipeline {
           path: tilesetPath,
           buffer: processedBuffer,
           provider,
+          modelId,
           fallbackGenerated: fallback,
           critiquePassed,
           critiqueScore,
@@ -752,7 +872,16 @@ export class AssetPipeline {
       }
     }
 
-    return { assets, warnings };
+    return {
+      assets,
+      warnings,
+      degraded:
+        !imageGen ||
+        assets.some((a) => a.fallbackGenerated || a.maturity === 'PLACEHOLDER' || a.maturity === 'BLOCKOUT'),
+      fallbackDepth: imageRoute.fallbackDepth + (imageGen ? 0 : 1),
+      fallbackReason: imageRoute.fallbackReason,
+      selectedProvider: imageRoute.selectedProvider ?? imageGen?.id,
+    };
   }
 
   private buildWalkSheetAsset(
@@ -775,7 +904,7 @@ export class AssetPipeline {
       expectedFrameHeight: spec.height,
       kind: 'walk',
     });
-    return {
+    return withMaturity({
       id: `${id}_walk`,
       path,
       buffer: processed.buffer,
@@ -783,7 +912,7 @@ export class AssetPipeline {
       fallbackGenerated: true,
       critiquePassed: critique.passed,
       critiqueScore: critique.score,
-    };
+    });
   }
 
   private buildHurtSheetAsset(
@@ -806,7 +935,7 @@ export class AssetPipeline {
       expectedFrameHeight: spec.height,
       kind: 'hurt',
     });
-    return {
+    return withMaturity({
       id: `${id}_hurt`,
       path,
       buffer: processed.buffer,
@@ -814,7 +943,7 @@ export class AssetPipeline {
       fallbackGenerated: true,
       critiquePassed: critique.passed,
       critiqueScore: critique.score,
-    };
+    });
   }
 
   private buildAttackSheetAsset(
@@ -837,7 +966,7 @@ export class AssetPipeline {
       expectedFrameHeight: spec.height,
       kind: 'attack',
     });
-    return {
+    return withMaturity({
       id: `${id}_attack`,
       path,
       buffer: processed.buffer,
@@ -845,7 +974,7 @@ export class AssetPipeline {
       fallbackGenerated: true,
       critiquePassed: critique.passed,
       critiqueScore: critique.score,
-    };
+    });
   }
 
   private async generateSprite(opts: {
@@ -869,7 +998,7 @@ export class AssetPipeline {
     if (opts.resume) {
       const cached = loadCheckpoint(opts.outputDir, opts.path);
       if (cached) {
-        return {
+        return withMaturity({
           id: opts.id,
           path: opts.path,
           buffer: cached,
@@ -877,13 +1006,14 @@ export class AssetPipeline {
           fallbackGenerated: false,
           critiquePassed: true,
           critiqueScore: 100,
-        };
+        });
       }
     }
 
     let buffer = generateProceduralSprite(opts.spec);
     let provider = 'procedural';
     let fallback = true;
+    let modelId: string | undefined;
 
     if (opts.imageGen) {
       try {
@@ -900,10 +1030,19 @@ export class AssetPipeline {
         });
         buffer = result.image;
         provider = result.provider;
+        modelId = result.modelId;
         fallback = false;
       } catch {
         // keep procedural
       }
+    }
+
+    // Preserve full AI bytes beside the compiled game sprite — never overwrite source with
+    // the downscaled pixel-art output.
+    let sourcePath: string | undefined;
+    if (!fallback) {
+      sourcePath = derivedSourceRelPath(opts.path);
+      writeCheckpoint(opts.outputDir, sourcePath, buffer);
     }
 
     const processed = this.pixelArt.process(buffer, {
@@ -920,26 +1059,112 @@ export class AssetPipeline {
       throwIfCancelled(opts.signal);
       const assetType =
         opts.profile === 'BOSS' ? 'boss' : opts.profile === 'ENEMY' ? 'enemy' : 'character';
+      // Critique the full source when available — tiny quantized sprites often false-fail.
+      const critiqueImage = !fallback ? buffer : processed.buffer;
       const critique = await opts.vlm.critique({
-        image: processed.buffer,
+        image: critiqueImage,
         assetType,
         artDirection: opts.artDirection,
       });
-      critiquePassed = critique.passed && det.passed;
+      // Soft-pass: remote gens with score >= 70 are QA_REVIEW, not REJECTED, when critic is strict.
+      // Hard fail remains when deterministic checks fail (blank/corrupt/wrong dims).
+      critiquePassed = det.passed && critiqueEffectivelyPassed(critique.passed, critique.score);
       critiqueScore = Math.min(critique.score, det.passed ? 100 : 50);
     }
 
     writeCheckpoint(opts.outputDir, opts.path, processed.buffer);
 
-    return {
+    return withMaturity({
       id: opts.id,
       path: opts.path,
       buffer: processed.buffer,
       provider,
+      modelId,
       fallbackGenerated: fallback,
       critiquePassed,
       critiqueScore,
-    };
+      // Compiled game sprite; source sidecar kept when AI succeeded.
+      sourceType: fallback ? undefined : 'compiled',
+      sourcePath,
+      fallbackDepth: fallback ? 1 : 0,
+      fallbackReason: fallback ? 'Image provider unavailable or failed — procedural placeholder' : undefined,
+      selectedProvider: provider,
+      selectedModel: modelId,
+      requestedCapability: 'IMAGE_GENERATION',
+      productionAllowed: !fallback,
+    });
+  }
+
+  /**
+   * Compile an existing AI/full-res source PNG through PixelArtProcessor without regenerating.
+   * Writes compiled bytes to `compiledRelPath` and optionally re-persists `sourceRelPath`.
+   */
+  compileFromSource(opts: {
+    id: string;
+    sourcePng: Buffer;
+    compiledRelPath: string;
+    sourceRelPath?: string;
+    outputDir: string;
+    targetWidth: number;
+    targetHeight: number;
+    tileSize?: number;
+    provider?: string;
+    modelId?: string;
+    critiquePassed?: boolean;
+    critiqueScore?: number;
+  }): GeneratedAsset {
+    const sourceRel = opts.sourceRelPath ?? derivedSourceRelPath(opts.compiledRelPath);
+    writeCheckpoint(opts.outputDir, sourceRel, opts.sourcePng);
+
+    const processed = this.pixelArt.process(opts.sourcePng, {
+      targetWidth: opts.targetWidth,
+      targetHeight: opts.targetHeight,
+      tileSize: opts.tileSize,
+    });
+    writeCheckpoint(opts.outputDir, opts.compiledRelPath, processed.buffer);
+
+    const det = runDeterministicAssetChecks(
+      processed.buffer,
+      opts.targetWidth,
+      opts.targetHeight,
+    );
+    if (!det.passed) {
+      return withMaturity({
+        id: opts.id,
+        path: opts.compiledRelPath,
+        buffer: processed.buffer,
+        provider: opts.provider ?? 'pixel-art-processor',
+        modelId: opts.modelId,
+        fallbackGenerated: false,
+        critiquePassed: false,
+        critiqueScore: 40,
+        sourceType: 'compiled',
+        sourcePath: sourceRel,
+        selectedProvider: opts.provider,
+        selectedModel: opts.modelId,
+        requestedCapability: 'PIXEL_ART_PROCESS',
+        productionAllowed: true,
+      });
+    }
+
+    // No VLM on offline compile → COMPILED (not auto QA_REVIEW / PRODUCTION_READY).
+    // Caller may pass critiquePassed/score to promote to QA_REVIEW via soft-pass.
+    return withMaturity({
+      id: opts.id,
+      path: opts.compiledRelPath,
+      buffer: processed.buffer,
+      provider: opts.provider ?? 'pixel-art-processor',
+      modelId: opts.modelId,
+      fallbackGenerated: false,
+      critiquePassed: opts.critiquePassed,
+      critiqueScore: opts.critiqueScore,
+      sourceType: 'compiled',
+      sourcePath: sourceRel,
+      selectedProvider: opts.provider,
+      selectedModel: opts.modelId,
+      requestedCapability: 'PIXEL_ART_PROCESS',
+      productionAllowed: true,
+    });
   }
 
   /** Project-aware single-asset generation for the manual asset workspace. */
@@ -953,6 +1178,7 @@ export class AssetPipeline {
     outputDir: string;
     seed: number;
     mode?: GenerationMode;
+    hardwareProfile?: string;
     comfyuiUrl?: string;
     diffusersPython?: string;
     diffusersModelId?: string;
@@ -961,6 +1187,7 @@ export class AssetPipeline {
     nvidiaImageModel?: string;
     nvidiaVisionModel?: string;
     ollamaBaseUrl?: string;
+    providerEnabled?: Record<string, boolean>;
   }): Promise<GeneratedAsset> {
     const tileSize = opts.gameDna.technical.tileSize;
     const negativePrompt = opts.artBible?.negativePrompts.join(', ');
@@ -972,6 +1199,8 @@ export class AssetPipeline {
       nvidiaApiBaseUrl: opts.nvidiaApiBaseUrl,
       nvidiaImageModel: opts.nvidiaImageModel,
       mode: opts.mode,
+      hardwareProfile: opts.hardwareProfile,
+      providerEnabled: opts.providerEnabled,
     });
     const vlm = createVisionCritic({
       ollamaBaseUrl: opts.ollamaBaseUrl,
@@ -1024,15 +1253,22 @@ export class AssetPipeline {
       opts.gameDna.identity.visualStyle;
     const prompt = `${opts.description}. Art style: ${styleHint}. Pixel art for ${opts.gameDna.identity.title}.`;
 
+    const sourceCandidate = join(opts.outputDir, derivedSourceRelPath(opts.relPath));
     const existingFullPath = join(opts.outputDir, opts.relPath);
-    const conditioning: ImageConditioning | undefined = existsSync(existingFullPath)
-      ? { mode: 'ip_adapter', image: readFileSync(existingFullPath), strength: 0.55 }
+    const conditioningPath = existsSync(sourceCandidate)
+      ? sourceCandidate
+      : existsSync(existingFullPath)
+        ? existingFullPath
+        : null;
+    const conditioning: ImageConditioning | undefined = conditioningPath
+      ? { mode: 'ip_adapter', image: readFileSync(conditioningPath), strength: 0.55 }
       : undefined;
 
     if (opts.assetType === 'tileset' || opts.assetType === 'tile') {
       let tileBuffer = generateTilesetSource(opts.seed, 128);
       let provider = 'procedural';
       let fallback = true;
+      let modelId: string | undefined;
       if (imageGen) {
         try {
           const result = await imageGen.generateImage({
@@ -1047,6 +1283,7 @@ export class AssetPipeline {
           tileBuffer = result.image;
           fallback = result.fallbackGenerated;
           provider = fallback ? 'procedural' : imageGen.id;
+          modelId = fallback ? undefined : result.modelId;
         } catch {
           /* procedural fallback */
         }
@@ -1057,15 +1294,22 @@ export class AssetPipeline {
         tileSize,
       });
       writeCheckpoint(opts.outputDir, opts.relPath, processed.buffer);
-      return {
+      return withMaturity({
         id: opts.assetId,
         path: opts.relPath,
         buffer: processed.buffer,
         provider,
+        modelId,
         fallbackGenerated: fallback,
         critiquePassed: true,
         critiqueScore: 80,
-      };
+        fallbackDepth: fallback ? 1 : 0,
+        fallbackReason: fallback ? 'Image provider unavailable or failed — procedural placeholder' : undefined,
+        selectedProvider: provider,
+        selectedModel: modelId,
+        requestedCapability: 'IMAGE_GENERATION',
+        productionAllowed: !fallback,
+      });
     }
 
     return this.generateSprite({

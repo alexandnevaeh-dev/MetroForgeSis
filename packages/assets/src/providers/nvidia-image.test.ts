@@ -13,30 +13,83 @@ describe('NvidiaImageProvider', () => {
   it('checkHealth returns false without an API key', async () => {
     const provider = new NvidiaImageProvider({ apiKey: undefined, enabled: false });
     await expect(provider.checkHealth()).resolves.toBe(false);
+    const details = await provider.getHealthDetails();
+    expect(details.status).toBe('MISCONFIGURED');
+    expect(details.reason).toMatch(/NVIDIA_API_KEY/i);
+    expect(details.reason).not.toMatch(/nvapi-/i);
   });
 
-  it('checkHealth returns true when models endpoint responds', async () => {
-    vi.mocked(fetch).mockResolvedValueOnce(
-      new Response(JSON.stringify({ data: [{ id: 'black-forest-labs/flux.1-schnell' }] }), {
-        status: 200,
-      }),
-    );
+  it('checkHealth returns true when models + genai path respond', async () => {
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes('/models')) {
+        return new Response(JSON.stringify({ data: [{ id: 'meta/llama-3.1-8b-instruct' }] }), {
+          status: 200,
+        });
+      }
+      // GET genai/{model} → 405 means path exists (POST-only)
+      return new Response('method not allowed', { status: 405 });
+    });
 
-    const provider = new NvidiaImageProvider({ apiKey: 'nvapi-test-key' });
+    const provider = new NvidiaImageProvider({
+      apiKey: 'nvapi-test-key',
+      modelId: 'black-forest-labs/flux.1-dev',
+    });
+    const details = await provider.getHealthDetails();
+    expect(details.status).toBe('HEALTHY');
     await expect(provider.checkHealth()).resolves.toBe(true);
   });
 
-  it('generateImage posts to /images/generations and returns decoded PNG bytes', async () => {
-    const pngBytes = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  it('maps HTTP 401 to AUTH_FAILED without echoing the API key', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(new Response('unauthorized', { status: 401 }));
+    const provider = new NvidiaImageProvider({ apiKey: 'nvapi-secret-should-not-leak' });
+    const details = await provider.getHealthDetails();
+    expect(details.status).toBe('AUTH_FAILED');
+    expect(details.reason).not.toContain('nvapi-secret');
+    await expect(provider.checkHealth()).resolves.toBe(false);
+  });
+
+  it('maps HTTP 429 to RATE_LIMITED', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(new Response('slow down', { status: 429 }));
+    const provider = new NvidiaImageProvider({ apiKey: 'nvapi-test-key' });
+    const details = await provider.getHealthDetails();
+    expect(details.status).toBe('RATE_LIMITED');
+  });
+
+  it('marks MODEL_UNAVAILABLE when genai path 404s', async () => {
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes('/models')) {
+        return new Response(JSON.stringify({ data: [{ id: 'meta/llama-3.1-8b-instruct' }] }), {
+          status: 200,
+        });
+      }
+      return new Response('not found', { status: 404 });
+    });
+    const provider = new NvidiaImageProvider({
+      apiKey: 'nvapi-test-key',
+      modelId: 'black-forest-labs/flux.1-schnell',
+    });
+    // Known model id but genai 404 → still DEGRADED/MODEL path; known ids with 404 → MODEL_UNAVAILABLE
+    const details = await provider.getHealthDetails();
+    expect(['MODEL_UNAVAILABLE', 'DEGRADED']).toContain(details.status);
+    expect(details.suggestedModelIds?.length).toBeGreaterThan(0);
+    expect(details.reason).not.toMatch(/nvapi-/i);
+  });
+
+  it('generateImage posts to genai endpoint with NVCF-POLL-SECONDS and returns PNG bytes', async () => {
+    // Minimal valid PNG
+    const pngBytes = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 0]);
     vi.mocked(fetch).mockResolvedValueOnce(
-      new Response(JSON.stringify({ data: [{ b64_json: pngBytes.toString('base64') }] }), {
+      new Response(JSON.stringify({ artifacts: [{ base64: pngBytes.toString('base64') }] }), {
         status: 200,
+        headers: { 'nvcf-status': 'fulfilled' },
       }),
     );
 
     const provider = new NvidiaImageProvider({
       apiKey: 'nvapi-test-key',
-      modelId: 'black-forest-labs/flux.1-schnell',
+      modelId: 'black-forest-labs/flux.1-dev',
     });
 
     const result = await provider.generateImage({
@@ -48,13 +101,19 @@ describe('NvidiaImageProvider', () => {
     });
 
     expect(result.provider).toBe('nvidia-image');
-    expect(result.modelId).toBe('black-forest-labs/flux.1-schnell');
-    expect(result.image.equals(pngBytes)).toBe(true);
+    expect(result.modelId).toBe('black-forest-labs/flux.1-dev');
+    expect(result.image[0]).toBe(137);
 
     const [url, init] = vi.mocked(fetch).mock.calls[0]!;
-    expect(String(url)).toContain('/images/generations');
+    expect(String(url)).toContain('/v1/genai/black-forest-labs/flux.1-dev');
+    expect(String(url)).not.toContain('/images/generations');
+    const headers = init?.headers as Record<string, string>;
+    expect(headers['NVCF-POLL-SECONDS']).toBe('120');
     const body = JSON.parse(String(init?.body));
-    expect(body.model).toBe('black-forest-labs/flux.1-schnell');
-    expect(body.response_format).toBe('b64_json');
+    expect(body.prompt).toBe('pixel art hero');
+    expect(body.seed).toBe(42);
+    expect(body.width).toBe(1024);
+    expect(body.height).toBe(1024);
+    expect(body.model).toBeUndefined();
   });
 });

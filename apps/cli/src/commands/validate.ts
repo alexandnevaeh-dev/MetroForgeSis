@@ -8,8 +8,10 @@ export function registerValidateCommand(program: Command): void {
     .command('validate <slug>')
     .description('Validate a generated Godot project')
     .option('--repair', 'Attempt deterministic repair of any failing gates, then re-validate')
+    // Commander treats `--no-runtime` as the negation of `runtime` (default true).
+    // Reading `opts.noRuntime` never works — use `opts.runtime === false`.
     .option('--no-runtime', 'Skip Godot runtime smoke test (import/static still run when Godot is available)')
-    .action(async (slug: string, opts: { repair?: boolean; noRuntime?: boolean }) => {
+    .action(async (slug: string, opts: { repair?: boolean; runtime?: boolean }) => {
       const config = loadConfig();
       let projectPath: string;
       try {
@@ -56,7 +58,7 @@ export function registerValidateCommand(program: Command): void {
         const icon = godotResult.passed ? '✓' : '✗';
         console.log(`[${icon}] ${godotResult.gate}: ${godotResult.message}`);
 
-        if (!opts.noRuntime) {
+        if (opts.runtime !== false) {
           const runtimeResult = validator.validateGodotRuntime(godotPath, projectPath);
           runtimePassed = runtimeResult.passed;
           const runtimeIcon = runtimeResult.passed ? '✓' : '✗';
@@ -66,7 +68,7 @@ export function registerValidateCommand(program: Command): void {
         }
       } else {
         console.log('[!] godot_imports: Skipped — Godot not detected');
-        if (!opts.noRuntime) {
+        if (opts.runtime !== false) {
           console.log('[!] godot_runtime: Skipped — Godot not detected');
         }
       }

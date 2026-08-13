@@ -1,8 +1,30 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { AssetRecord } from './types';
+import type { AssetRecord } from './types.js';
 
 const CARD_HEIGHT = 168;
 const OVERSCAN = 4;
+
+function maturityLabel(asset: AssetRecord): string {
+  const raw = (asset.maturity ?? (asset.fallbackGenerated ? 'PLACEHOLDER' : '')).toUpperCase();
+  switch (raw) {
+    case 'PLACEHOLDER':
+      return 'Placeholder';
+    case 'BLOCKOUT':
+      return 'Blockout';
+    case 'GENERATED_SOURCE':
+      return 'Generated';
+    case 'COMPILED':
+      return 'Compiled';
+    case 'QA_REVIEW':
+      return 'Needs Review';
+    case 'PRODUCTION_READY':
+      return 'Production Ready';
+    case 'REJECTED':
+      return 'Rejected';
+    default:
+      return asset.fallbackGenerated ? 'Placeholder' : 'Unknown';
+  }
+}
 
 interface VirtualizedAssetGridProps {
   assets: AssetRecord[];
@@ -59,12 +81,21 @@ export function VirtualizedAssetGrid({ assets, selectedId, onSelect }: Virtualiz
                 height: CARD_HEIGHT - 8,
               }}
               onClick={() => onSelect(asset)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  onSelect(asset);
+                }
+              }}
             >
               {asset.dataUrl ? (
                 <img src={asset.dataUrl} alt={asset.id} />
               ) : (
                 <div className="asset-placeholder">{asset.category}</div>
               )}
+              <span className="tag asset-maturity-badge" title="Asset maturity">
+                {maturityLabel(asset)}
+              </span>
               <figcaption>
                 <strong>{asset.id}</strong>
                 <span>{asset.provider ?? 'unknown'}</span>

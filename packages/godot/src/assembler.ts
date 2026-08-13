@@ -37,6 +37,7 @@ export interface AssetManifestEntry {
   path: string;
   type: 'texture' | 'audio';
   provider: string;
+  modelId?: string;
   fallbackGenerated: boolean;
   critiquePassed?: boolean;
   critiqueScore?: number;
@@ -101,11 +102,22 @@ export class GodotProjectAssembler {
             tileSize: input.gameDna.technical.tileSize,
           }).overworld;
         writeTopDownWorld(input.outputDir, overworld);
+        const worldArchetypeById = new Map(
+          input.worldGraph.nodes.map((n) => [n.id, n.metadata?.archetype as string | undefined]),
+        );
+        // No per-area .tscn files here: OverworldManager.gd (the actual scene attached to
+        // World.tscn) reads data/world/overworld.json directly at runtime and spawns everything
+        // — ground, collision, POIs — from that data, rather than loading a pre-baked scene per
+        // room. rooms.json below is still written for the data/rooms.json readers (dashboard,
+        // room_archetype_fidelity, etc.), just without a matching .tscn on disk.
         for (const area of overworld.areas) {
           roomsData[area.id] = {
             id: area.id,
             name: area.name,
-            archetype: area.kind === 'overworld' ? 'hub' : 'combat',
+            // Preserved from the real world-graph node, not collapsed to hub/combat — see
+            // room_archetype_fidelity's audit in packages/godot/src/room-assembler.ts, which
+            // this previously failed for every boss room in a top-down dungeon.
+            archetype: worldArchetypeById.get(area.id) ?? (area.kind === 'overworld' ? 'hub' : 'combat'),
             width: area.widthTiles * area.tileSize,
             height: area.heightTiles * area.tileSize,
             collectibles: area.pois.filter((p) => p.kind === 'chest').map((p) => String(p.metadata.itemId ?? '')),
@@ -257,7 +269,27 @@ export class GodotProjectAssembler {
         );
         writeFileSync(
           join(dataDir, 'items', 'items.json'),
-          JSON.stringify({ items: input.gameContent.items }, null, 2),
+          // Top-down dungeon items (GameDNA.abilities holds pickTopDownDungeonItems() output for
+          // this archetype — see generators/game-dna.ts) merge in here so InventoryManager
+          // (which only knows items it finds in this file) actually recognizes them; without
+          // this, ItemPickup.gd's grant_item() rejects every dungeon-item pickup as unknown.
+          JSON.stringify(
+            {
+              items: isTopDownArchetype(input.gameDna.archetype)
+                ? [
+                    ...input.gameContent.items,
+                    ...input.gameDna.abilities.map((a) => ({
+                      id: a.id,
+                      name: a.name,
+                      category: 'tool',
+                      description: `Dungeon tool: ${a.name}`,
+                    })),
+                  ]
+                : input.gameContent.items,
+            },
+            null,
+            2,
+          ),
         );
         writeFileSync(
           join(dataDir, 'npcs', 'npcs.json'),

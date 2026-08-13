@@ -94,6 +94,9 @@ export interface ArtifactGeneratedEvent extends GenerationEventBase {
   path: string;
   assetType: string;
   provider: string;
+  /** The specific model id the provider reported (GeneratedAsset.modelId) — absent for
+   *  procedural/checkpoint assets, which have no underlying model. */
+  modelId?: string;
   fallbackGenerated: boolean;
   critiquePassed?: boolean;
   critiqueScore?: number;

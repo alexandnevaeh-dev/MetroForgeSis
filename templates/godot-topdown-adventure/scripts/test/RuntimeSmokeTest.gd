@@ -24,19 +24,28 @@ func _ready() -> void:
 	GameManager.start_new_game()
 	await get_tree().process_frame
 
-	var player := get_tree().get_first_node_in_group("player")
-	_check("player_spawns", player != null)
+	var player_node := get_tree().get_first_node_in_group("player")
+	_check("player_spawns", player_node != null)
+	var player := player_node as CharacterBody2D
 	if player:
 		_check("player_is_top_down", player.get_script() != null and String(player.get_script().resource_path).ends_with("TopDownPlayerController.gd"))
-		var start := player.global_position
-		player.velocity = Vector2(80, 40)
-		player.move_and_slide()
+		var start: Vector2 = player.global_position
+		# Simulated real input through the controller's own _physics_process(), not a manual
+		# velocity/move_and_slide() override — that bypassed the controller and, called outside
+		# an actual physics step from _ready(), produced no measurable movement.
+		Input.action_press("move_right")
+		Input.action_press("move_down")
+		await get_tree().physics_frame
+		await get_tree().physics_frame
+		await get_tree().physics_frame
+		Input.action_release("move_right")
+		Input.action_release("move_down")
 		_check("player_moves_diagonally", player.global_position.distance_to(start) > 0.5)
 		if player.has_method("cardinal_facing"):
-			player.facing = Vector2.RIGHT
-			player._start_attack()
-			_check("player_attack_activates_hitbox", player.attack_hitbox.monitoring)
-			player._on_attack_finished()
+			player.set("facing", Vector2.RIGHT)
+			player.call("_start_attack")
+			_check("player_attack_activates_hitbox", player.get("attack_hitbox").monitoring)
+			player.call("_on_attack_finished")
 
 	var overworld_path := "res://data/world/overworld.json"
 	_check("overworld_data_exists", FileAccess.file_exists(overworld_path))
@@ -80,7 +89,10 @@ func _check(name: String, passed: bool) -> void:
 func _finish() -> void:
 	print("SMOKE_TEST_RESULTS_BEGIN")
 	for row in _results:
-		print("%s %s" % ["PASS" if row.passed else "FAIL", row.name])
+		# The colon is load-bearing — parseSmokeTestOutput() (packages/qa/src/smoke-output.ts)
+		# matches "PASS: name" / "FAIL: name", the same format the side-view template's
+		# RuntimeSmokeTest.gd already uses.
+		print("%s: %s" % ["PASS" if row.passed else "FAIL", row.name])
 	print("SMOKE_TEST_RESULTS_END")
 	var failed := false
 	for row in _results:

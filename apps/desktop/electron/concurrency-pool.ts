@@ -25,12 +25,20 @@ export class ConcurrencyPool {
     }
   }
 
-  getStatus(): Record<WorkerCategory, { active: number; limit: number; queued: number }> {
-    const out = {} as Record<WorkerCategory, { active: number; limit: number; queued: number }>;
+  getStatus(): Record<
+    WorkerCategory,
+    { active: number; max: number; limit: number; queued: number }
+  > {
+    const out = {} as Record<
+      WorkerCategory,
+      { active: number; max: number; limit: number; queued: number }
+    >;
     for (const cat of ['llm', 'image', 'audio', 'cpu'] as WorkerCategory[]) {
+      const limit = this.limits[cat];
       out[cat] = {
         active: this.active.get(cat) ?? 0,
-        limit: this.limits[cat],
+        max: limit,
+        limit,
         queued: this.queues.get(cat)?.length ?? 0,
       };
     }

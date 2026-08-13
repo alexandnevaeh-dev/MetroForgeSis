@@ -280,3 +280,44 @@ describe('AssetPipeline procedural path', () => {
     rmSync(outputDir, { recursive: true, force: true });
   });
 });
+
+describe('AssetPipeline compileFromSource', () => {
+  it('persists source alongside compiled and marks COMPILED', async () => {
+    const { derivedSourceRelPath } = await import('../src/asset-pipeline.js');
+    const { generateProceduralSprite } = await import('../src/png.js');
+    const outputDir = join(tmpdir(), `metroforge-compile-${Date.now()}`);
+    mkdirSync(outputDir, { recursive: true });
+
+    const source = generateProceduralSprite({
+      id: 'big',
+      width: 64,
+      height: 64,
+      fill: [90, 140, 220, 255],
+      shape: 'humanoid',
+    });
+    const compiledRel = 'assets/characters/hero.png';
+    const pipeline = new AssetPipeline();
+    const asset = pipeline.compileFromSource({
+      id: 'hero',
+      sourcePng: source,
+      compiledRelPath: compiledRel,
+      outputDir,
+      targetWidth: 32,
+      targetHeight: 32,
+      tileSize: 16,
+      provider: 'nvidia-image',
+      modelId: 'black-forest-labs/flux.1-dev',
+    });
+
+    expect(derivedSourceRelPath(compiledRel)).toBe('assets/characters/hero_source.png');
+    expect(asset.sourcePath).toBe('assets/characters/hero_source.png');
+    expect(asset.sourceType).toBe('compiled');
+    expect(asset.maturity).toBe('COMPILED');
+    expect(asset.productionReady).toBe(false);
+    expect(existsSync(join(outputDir, 'assets/characters/hero_source.png'))).toBe(true);
+    expect(existsSync(join(outputDir, compiledRel))).toBe(true);
+    expect(asset.buffer.length).toBeLessThan(source.length);
+
+    rmSync(outputDir, { recursive: true, force: true });
+  });
+});

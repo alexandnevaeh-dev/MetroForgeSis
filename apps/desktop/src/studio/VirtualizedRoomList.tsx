@@ -39,7 +39,45 @@ export function VirtualizedRoomList<T extends { id: string }>({
   }, []);
 
   return (
-    <ul ref={ref} className="room-list panel virtualized-room-list" onScroll={onScroll}>
+    <ul
+      ref={ref}
+      className="room-list panel virtualized-room-list"
+      tabIndex={0}
+      role="listbox"
+      aria-label="Rooms"
+      aria-activedescendant={selectedId ? `room-row-${selectedId}` : undefined}
+      onScroll={onScroll}
+      onKeyDown={(event) => {
+        if (!items.length) return;
+        const current = Math.max(0, items.findIndex((item) => item.id === selectedId));
+        if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          const next = items[Math.min(items.length - 1, current + 1)];
+          if (next) {
+            onSelect(next);
+            ref.current?.scrollTo({ top: Math.min(items.length - 1, current + 1) * ROW_HEIGHT });
+          }
+        }
+        if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          const prev = items[Math.max(0, current - 1)];
+          if (prev) {
+            onSelect(prev);
+            ref.current?.scrollTo({ top: Math.max(0, current - 1) * ROW_HEIGHT });
+          }
+        }
+        if (event.key === 'Home') {
+          event.preventDefault();
+          onSelect(items[0]!);
+          ref.current?.scrollTo({ top: 0 });
+        }
+        if (event.key === 'End') {
+          event.preventDefault();
+          onSelect(items[items.length - 1]!);
+          ref.current?.scrollTo({ top: (items.length - 1) * ROW_HEIGHT });
+        }
+      }}
+    >
       <div style={{ height: totalHeight, position: 'relative' }}>
         {visible.map((item, index) => {
           const row = start + index;
@@ -48,7 +86,14 @@ export function VirtualizedRoomList<T extends { id: string }>({
               key={item.id}
               style={{ position: 'absolute', top: row * ROW_HEIGHT, left: 0, right: 0, height: ROW_HEIGHT - 4 }}
             >
-              <button type="button" className="room-item-wrap" onClick={() => onSelect(item)}>
+              <button
+                type="button"
+                id={`room-row-${item.id}`}
+                role="option"
+                aria-selected={item.id === selectedId}
+                className="room-item-wrap"
+                onClick={() => onSelect(item)}
+              >
                 {renderItem(item, item.id === selectedId)}
               </button>
             </li>

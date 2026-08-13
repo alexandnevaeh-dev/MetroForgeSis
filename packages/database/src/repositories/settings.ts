@@ -14,6 +14,8 @@ export const APP_SETTING_KEYS = {
   concurrencyLlm: 'app.concurrency.llm',
   concurrencyAudio: 'app.concurrency.audio',
   concurrencyCpu: 'app.concurrency.cpu',
+  /** NVIDIA NIM image model id; overrides NVIDIA_IMAGE_MODEL when set. */
+  nvidiaImageModel: 'app.nvidia.imageModel',
 } as const;
 
 export class SettingsRepository {

@@ -41,4 +41,30 @@ describe('computeOverallProgress', () => {
   it('weights sum to 100', () => {
     expect(Object.values(PHASE_WEIGHTS).reduce((sum, weight) => sum + weight, 0)).toBe(100);
   });
+
+  it('counts DEGRADED and WARN as completed weight (not failure)', () => {
+    const progress = computeOverallProgress([
+      { phase: 'intake', status: 'PASSED' },
+      { phase: 'game_dna', status: 'PASSED' },
+      { phase: 'design_bible', status: 'PASSED' },
+      { phase: 'world_topology', status: 'PASSED' },
+      { phase: 'progression_graph', status: 'PASSED' },
+      { phase: 'enemy_families', status: 'PASSED' },
+      { phase: 'bosses', status: 'PASSED' },
+      { phase: 'quests', status: 'PASSED' },
+      { phase: 'npcs', status: 'PASSED' },
+      { phase: 'audio', status: 'PASSED' },
+      {
+        phase: 'environment_assets',
+        status: 'DEGRADED',
+        message: 'DEGRADED — placeholders; not production-ready',
+      },
+      { phase: 'project_assembly', status: 'PASSED' },
+      { phase: 'static_validation', status: 'PASSED' },
+      { phase: 'automated_repair', status: 'PASSED' },
+      { phase: 'final_qa', status: 'WARN' },
+      { phase: 'export', status: 'PASSED' },
+    ]);
+    expect(progress).toBe(100);
+  });
 });

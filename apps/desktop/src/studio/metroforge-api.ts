@@ -5,12 +5,46 @@ export type StudioProject = {
   path: string;
   title?: string;
   profile?: string;
+  /** Game archetype from game_dna / project.json when available. */
+  archetype?: string;
+};
+
+export type HardwareSnapshot = {
+  profile: string;
+  totalRamMb: number;
+  vramMb?: number;
+  starterPack: string[];
+  gpuModel?: string;
+  gpuVendor?: string;
+  cudaAvailable?: boolean;
+  cpuCores?: number;
+};
+
+export type CatalogModel = ModelEntry & {
+  routable?: boolean;
+  providerEnabled?: boolean;
+  liveListed?: boolean | null;
+  downloadable?: boolean;
 };
 
 export type RankedModel = {
   model: ModelEntry;
   score: number;
   reasons: string[];
+};
+
+export type ConcurrencyLane = {
+  active: number;
+  max: number;
+  /** @deprecated Prefer max — kept for older IPC payloads. */
+  limit?: number;
+};
+
+export type ConcurrencyStatus = {
+  llm?: ConcurrencyLane;
+  image?: ConcurrencyLane;
+  audio?: ConcurrencyLane;
+  cpu?: ConcurrencyLane;
 };
 
 export type GenerationPhaseState = {
@@ -27,6 +61,9 @@ export type AssetListItem = {
   fallbackGenerated?: boolean;
   critiquePassed?: boolean;
   critiqueScore?: number;
+  maturity?: string;
+  productionReady?: boolean;
+  sourceType?: string;
   dataUrl?: string;
   isAnimation?: boolean;
   frameCount?: number;
@@ -55,7 +92,18 @@ export type DesktopConfig = {
     comfyuiUrl: boolean;
     diffusersPython: boolean;
   };
-  imageProviders: { id: string; local: boolean; priority: number; healthy: boolean }[];
+  imageProviders: {
+    id: string;
+    local: boolean;
+    priority: number;
+    healthy: boolean;
+    health?: string;
+    status?: string;
+    reason?: string;
+    userEnabled?: boolean;
+    nearbyModels?: string[];
+    suggestedModelIds?: string[];
+  }[];
 };
 
 export type ProjectPreview = {
@@ -78,6 +126,51 @@ export type WorldGraphPreview = {
   edges?: Array<{ from: string; to: string; requirements?: string[] }>;
 };
 
+export type ModelRoutingExplanation = {
+  capability: string;
+  requirements: string[];
+  selected?: { modelId: string; provider: string; score: number; workflow?: string };
+  candidates: Array<{ modelId: string; provider: string; score: number; reasons: string[] }>;
+  rejected: Array<{ modelId: string; provider: string; reasons: string[] }>;
+  fallbacks: Array<{ modelId: string; provider: string }>;
+  license?: string;
+  hardware?: { profile: string; ramMb: number; vramMb?: number; note?: string };
+  degradedFallback?: boolean;
+};
+
+export type OverworldMapPreview = {
+  archetype?: string;
+  error?: string;
+  regions?: Array<{ id: string; name: string; rect: { x: number; y: number; w: number; h: number } }>;
+  nodes?: Array<{ id: string; x: number; y: number; kind: string; dungeonId?: string }>;
+  edges?: Array<{ from: string; to: string; requirements?: string[] }>;
+};
+
+export type DungeonGraphPreview = {
+  error?: string;
+  dungeonId?: string;
+  rooms?: Array<{
+    id: string;
+    layout?: unknown;
+    kind: 'room' | 'puzzle' | 'key' | 'locked' | 'treasure' | 'mini_boss' | 'boss' | 'item';
+  }>;
+  keys?: string[];
+  doors?: Array<{ from: string; to: string; keyId?: string }>;
+  criticalPath?: string[];
+  dungeonItem?: string;
+  miniBossId?: string;
+  bossId?: string;
+};
+
+export type RoomCollisionPreview = {
+  error?: string;
+  roomId?: string;
+  tileSize?: number;
+  widthTiles?: number;
+  heightTiles?: number;
+  rects?: Array<{ x: number; y: number; w: number; h: number }>;
+};
+
 export type MetroforgeBridge = {
   getVersion: () => Promise<string>;
   getConfig: () => Promise<DesktopConfig>;
@@ -96,14 +189,7 @@ export type MetroforgeBridge = {
       priority: number;
     }[]
   >;
-  listModels: (filter?: { capability?: string; installed?: boolean }) => Promise<
-    (ModelEntry & {
-      routable?: boolean;
-      providerEnabled?: boolean;
-      liveListed?: boolean | null;
-      downloadable?: boolean;
-    })[]
-  >;
+  listModels: (filter?: { capability?: string; installed?: boolean }) => Promise<CatalogModel[]>;
   downloadModel: (modelId: string) => Promise<{
     success: boolean;
     targetPath?: string;
@@ -111,14 +197,13 @@ export type MetroforgeBridge = {
     message?: string;
     error?: string;
   }>;
-  getHardwareProfile: () => Promise<{
-    profile: string;
-    totalRamMb: number;
-    vramMb?: number;
-    starterPack: string[];
-  }>;
+  getHardwareProfile: () => Promise<HardwareSnapshot>;
   scoutModels: (opts?: { benchmark?: boolean }) => Promise<unknown>;
   rankModels: (capability: string) => Promise<RankedModel[]>;
+  explainModelRouting: (capability: string) => Promise<ModelRoutingExplanation>;
+  getOverworldMap: (projectPath: string) => Promise<OverworldMapPreview>;
+  getDungeonGraph: (projectPath: string, dungeonId?: string) => Promise<DungeonGraphPreview>;
+  getRoomCollision: (projectPath: string, roomId: string) => Promise<RoomCollisionPreview>;
   listProjects: () => Promise<StudioProject[]>;
   getProjectPreview: (projectPath: string) => Promise<ProjectPreview>;
   getProjectDashboard: (projectPath: string) => Promise<Record<string, unknown>>;
@@ -160,7 +245,10 @@ export type MetroforgeBridge = {
     projectPath: string,
     assetId: string,
   ) => Promise<{ usedIn?: Array<{ type: string; id: string; detail?: string }> }>;
-  getTilesetPreview: (projectPath: string, biomeId: string) => Promise<{ dataUrl?: string; cells?: unknown }>;
+  getTilesetPreview: (
+    projectPath: string,
+    biomeId: string,
+  ) => Promise<{ dataUrl?: string; cells?: unknown; atlasSize?: number; tileSize?: number }>;
   getAudioPreview: (projectPath: string, relPath: string) => Promise<{ dataUrl?: string }>;
   generateAsset: (request: {
     projectPath: string;
@@ -220,12 +308,7 @@ export type MetroforgeBridge = {
   approveGenerationReview: (projectPath: string, approved: boolean) => Promise<unknown>;
   getGenerationReviewState: (projectPath: string) => Promise<unknown>;
   getPreviewReadiness: (projectPath: string) => Promise<{ ready?: boolean }>;
-  getConcurrencyStatus: () => Promise<{
-    llm?: { active: number; max: number };
-    image?: { active: number; max: number };
-    audio?: { active: number; max: number };
-    cpu?: { active: number; max: number };
-  }>;
+  getConcurrencyStatus: () => Promise<ConcurrencyStatus>;
   getAssetHistory: (
     projectPath: string,
     assetId: string,
@@ -242,7 +325,16 @@ export type MetroforgeBridge = {
   ) => Promise<{ success: boolean; summary?: string; error?: string }>;
   transcribeSpeech: (wavBase64: string) => Promise<{ success: boolean; text?: string; error?: string }>;
   getEditStatus: (projectPath: string) => Promise<{ state: string }>;
-  getValidationResults: (projectPath: string) => Promise<Record<string, unknown>>;
+  getValidationResults: (projectPath: string) => Promise<
+    Array<{
+      id: string;
+      gate: string;
+      passed: boolean;
+      message: string;
+      timestamp: string;
+      details?: unknown;
+    }>
+  >;
   createProjectCheckpoint: (projectPath: string, label: string) => Promise<unknown>;
   listProjectCheckpoints: (
     projectPath: string,
@@ -260,6 +352,39 @@ export type MetroforgeBridge = {
     projectPath: string,
     opts?: { skipRuntime?: boolean },
   ) => Promise<{ report: { accepted: boolean; blockers: string[] }; formatted: string }>;
+  getProjectAllowPlaceholders: (
+    projectPath: string,
+  ) => Promise<{ success: boolean; allowPlaceholders: boolean; errors: string[] }>;
+  setProjectAllowPlaceholders: (
+    projectPath: string,
+    allowPlaceholders: boolean,
+  ) => Promise<{ success: boolean; allowPlaceholders: boolean; errors: string[] }>;
+  remapProjectAbilities: (
+    projectPath: string,
+    opts?: { dryRun?: boolean },
+  ) => Promise<{
+    success: boolean;
+    abilityCount: number;
+    remapped: Array<{ from: string; to: string }>;
+    removed: string[];
+    warnings: string[];
+    dryRun: boolean;
+    changed: boolean;
+    errors: string[];
+    referenceFilesUpdated?: string[];
+    referenceRemaps?: Array<{ from: string; to: string; path: string }>;
+  }>;
+  backfillAssetMaturity: (
+    projectPath: string,
+    opts?: { dryRun?: boolean },
+  ) => Promise<{
+    success: boolean;
+    artifactCount: number;
+    updatedCount: number;
+    skippedCount: number;
+    dryRun: boolean;
+    errors: string[];
+  }>;
 };
 
 declare global {

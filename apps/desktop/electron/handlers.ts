@@ -2,7 +2,7 @@ import { ipcMain, shell } from 'electron';
 import { readdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve as resolvePath, basename } from 'node:path';
 import { getVersionString } from '@metroforge/core';
-import { loadConfig, resolveGeneratedGamesPath, isPathWithinRoot } from '@metroforge/shared';
+import { loadConfig, resolveGeneratedGamesPath, isPathWithinRoot, type GameArchetype, parseProviderEnabledMap, isProviderEnabledSettingKey, isProviderUserEnabled } from '@metroforge/shared';
 import {
   GenerationPipeline,
   computeOverallProgress,
@@ -27,6 +27,10 @@ import {
   createProjectCheckpoint,
   listProjectCheckpoints,
   restoreProjectCheckpoint,
+  getProjectAllowPlaceholders,
+  setProjectAllowPlaceholders,
+  backfillProjectAssetMaturity,
+  remapProjectAbilities,
   type GenerationEvent,
   type WorldEditCommand,
   type GenerationControlMode,
@@ -38,6 +42,7 @@ import {
   fetchLiveModelIdsByProvider,
   reconcileCatalogEntries,
   rankModelsForCapability,
+  explainModelRouting,
   HardwareProfiler,
   OllamaEmbeddingProvider,
   WhisperAsrProvider,
@@ -47,6 +52,7 @@ import {
 } from '@metroforge/ai';
 import { createDatabase, APP_SETTING_KEYS } from '@metroforge/database';
 import { WorldGraphSchema } from '@metroforge/schemas';
+import type { TopDownOverworld, TopDownPoi } from '@metroforge/procedural';
 import {
   ToolRegistry,
   launchGodotEditor,
@@ -59,6 +65,9 @@ import {
   DiffusersProvider,
   NvidiaImageProvider,
   ImageProviderRegistry,
+  explainImageProviderRouting,
+  resolveImageProviderHealth,
+  statusToLegacyHealth,
   createVisionCritic,
 } from '@metroforge/assets';
 import type { GenerationMode, GenerationProfile } from '@metroforge/shared';
@@ -141,59 +150,173 @@ function safeProjectRelativePath(projectPath: string, relPath: string): string {
   return full;
 }
 
-async function probeImageProviders(mode: GenerationMode = 'HYBRID_FREE') {
+async function probeImageProviders(
+  mode: GenerationMode = 'HYBRID_FREE',
+  providerEnabled?: Record<string, boolean>,
+  nvidiaImageModel?: string | null,
+  hardwareProfile?: string,
+) {
   const registry = new ImageProviderRegistry();
+  const disabled: Array<{
+    id: string;
+    local: boolean;
+    priority: number;
+    healthy: boolean;
+    health: string;
+    status: string;
+    reason: string;
+    userEnabled: boolean;
+  }> = [];
+
+  const allow = (id: string) => isProviderUserEnabled(providerEnabled, id);
+
   const comfyuiUrl = process.env.COMFYUI_BASE_URL;
   if (comfyuiUrl) {
-    registry.register({
-      provider: new ComfyUIProvider({ baseUrl: comfyuiUrl }),
-      local: true,
-      priority: 90,
-    });
+    if (allow('comfyui')) {
+      registry.register({
+        provider: new ComfyUIProvider({ baseUrl: comfyuiUrl }),
+        local: true,
+        priority: 90,
+      });
+    } else {
+      disabled.push({
+        id: 'comfyui',
+        local: true,
+        priority: 90,
+        healthy: false,
+        health: 'disabled',
+        status: 'DISABLED',
+        reason: 'Disabled in Settings',
+        userEnabled: false,
+      });
+    }
   }
   if (process.env.NVIDIA_API_KEY) {
+    if (allow('nvidia-image')) {
+      registry.register({
+        provider: new NvidiaImageProvider({
+          apiKey: process.env.NVIDIA_API_KEY,
+          baseUrl: process.env.NVIDIA_API_BASE_URL,
+          modelId: nvidiaImageModel?.trim() || process.env.NVIDIA_IMAGE_MODEL,
+          pythonPath: process.env.DIFFUSERS_PYTHON,
+        }),
+        local: false,
+        priority: 88,
+      });
+    } else {
+      disabled.push({
+        id: 'nvidia-image',
+        local: false,
+        priority: 88,
+        healthy: false,
+        health: 'disabled',
+        status: 'DISABLED',
+        reason: 'Disabled in Settings',
+        userEnabled: false,
+      });
+    }
+  }
+  if (allow('diffusers')) {
     registry.register({
-      provider: new NvidiaImageProvider({
-        apiKey: process.env.NVIDIA_API_KEY,
-        baseUrl: process.env.NVIDIA_API_BASE_URL,
-        modelId: process.env.NVIDIA_IMAGE_MODEL,
+      provider: new DiffusersProvider({
+        pythonPath: process.env.DIFFUSERS_PYTHON,
+        modelId: process.env.DIFFUSERS_MODEL_ID,
       }),
-      local: false,
-      priority: 88,
+      local: true,
+      priority: 85,
+    });
+  } else {
+    disabled.push({
+      id: 'diffusers',
+      local: true,
+      priority: 85,
+      healthy: false,
+      health: 'disabled',
+      status: 'DISABLED',
+      reason: 'Disabled in Settings',
+      userEnabled: false,
     });
   }
-  registry.register({
-    provider: new DiffusersProvider({
-      pythonPath: process.env.DIFFUSERS_PYTHON,
-      modelId: process.env.DIFFUSERS_MODEL_ID,
-    }),
-    local: true,
-    priority: 85,
-  });
 
-  const providers: { id: string; local: boolean; priority: number; healthy: boolean }[] = [];
-  for (const candidate of registry.getCandidates({ mode })) {
+  const providers: Array<{
+    id: string;
+    local: boolean;
+    priority: number;
+    healthy: boolean;
+    health: string;
+    status: string;
+    reason: string;
+    userEnabled: boolean;
+    nearbyModels?: string[];
+    suggestedModelIds?: string[];
+    safeDiagnostic?: string;
+  }> = [...disabled];
+  for (const candidate of registry.getCandidates({ mode, hardwareProfile })) {
+    const report = await resolveImageProviderHealth(candidate.provider);
+    const selectable = report.status === 'HEALTHY' || report.status === 'DEGRADED';
     providers.push({
       id: candidate.provider.id,
       local: candidate.local,
       priority: candidate.priority,
-      healthy: await candidate.provider.checkHealth(),
+      healthy: selectable,
+      health: statusToLegacyHealth(report.status),
+      status: report.status,
+      reason: report.reason,
+      userEnabled: true,
+      nearbyModels: report.nearbyModels,
+      suggestedModelIds: report.suggestedModelIds,
+      safeDiagnostic: report.safeDiagnostic,
     });
   }
-  return providers;
+  // Preserve registration priority in listing; routing order already applied via getCandidates.
+  providers.sort((a, b) => b.priority - a.priority);
+  return { providers, registry };
 }
 
+async function textBootstrapConfig(
+  dataDir: string,
+  mode: GenerationMode,
+  ollamaBaseUrl: string,
+): Promise<Parameters<typeof bootstrapProviders>[0]> {
+  const prefs = await loadAppPreferences(dataDir);
+  return {
+    mode,
+    ollamaBaseUrl,
+    geminiApiKey: process.env.GEMINI_API_KEY,
+    groqApiKey: process.env.GROQ_API_KEY,
+    openrouterApiKey: process.env.OPENROUTER_API_KEY,
+    huggingfaceApiKey: process.env.HUGGINGFACE_API_KEY,
+    nvidiaApiKey: process.env.NVIDIA_API_KEY,
+    nvidiaApiBaseUrl: process.env.NVIDIA_API_BASE_URL,
+    providerEnabled: parseProviderEnabledMap(prefs),
+  };
+}
+
+/** Gallery taxonomy — kept identical to apps/desktop/src/studio/types.ts's categorizeAssetPath
+ *  so the renderer's own re-classification (a defensive fallback for when it can't reach this
+ *  handler's category, per docs/CURSOR_BACKEND_REQUIREMENTS.md #6) always agrees with the
+ *  backend-assigned category instead of silently overriding it. */
 function categorizeAssetPath(path: string): string {
-  const p = path.toLowerCase();
-  if (p.includes('/characters/player')) return 'Player';
-  if (p.includes('/characters/')) return 'Characters';
-  if (p.includes('/enemies/')) return 'Enemies';
-  if (p.includes('/bosses/')) return 'Bosses';
-  if (p.includes('/tilesets/') && p.endsWith('source.png')) return 'Tilesets';
-  if (p.includes('/items/')) return 'Items';
+  const p = path.toLowerCase().replace(/\\/g, '/');
+  if (p.includes('/characters/player') || p.includes('/player/')) return 'Player';
+  if (p.includes('/npc') || p.includes('/characters/npc')) return 'NPC';
+  if (p.includes('/enemies/') || p.includes('/enemy_')) return 'Enemy';
+  if (p.includes('/bosses/') || p.includes('/boss_')) return 'Boss';
+  if (p.includes('/tilesets/') || p.includes('/tiles/')) return 'Tileset';
+  if (p.includes('/background') || p.includes('/parallax')) return 'Background';
+  if (p.includes('/weapons/') || p.includes('weapon')) return 'Weapon';
+  if (p.includes('/items/')) return 'Item';
+  if (p.includes('/icons/')) return 'Icon';
+  if (p.includes('/vfx/') || p.includes('/fx/')) return 'VFX';
   if (p.includes('/ui/')) return 'UI';
-  if (p.includes('_walk') || p.includes('_attack') || p.includes('_hurt')) return 'Animations';
-  return 'Props';
+  if (p.includes('/voice/') || p.includes('/speech/')) return 'Voice';
+  if (p.includes('/music/') || p.endsWith('.mid')) return 'Music';
+  if (p.includes('/audio/') || p.includes('/sfx/') || p.endsWith('.wav')) return 'SFX';
+  if (p.includes('_walk') || p.includes('_attack') || p.includes('_hurt') || p.includes('/anim')) {
+    return 'Animation';
+  }
+  if (p.includes('/props/') || p.includes('/prop')) return 'Prop';
+  return 'Prop';
 }
 
 function readManifestAssets(projectPath: string) {
@@ -215,6 +338,37 @@ function loadAssetThumbnail(projectPath: string, relPath: string): string | unde
   } catch {
     return undefined;
   }
+}
+
+function readTopDownOverworld(projectPath: string): TopDownOverworld | null {
+  try {
+    const raw = readFileSync(join(projectPath, 'data', 'world', 'overworld.json'), 'utf-8');
+    return JSON.parse(raw) as TopDownOverworld;
+  } catch {
+    return null;
+  }
+}
+
+function readWorldGraphEdgesFrom(
+  projectPath: string,
+  fromId: string,
+): Array<{ from: string; to: string; requirements: string[] }> {
+  try {
+    const raw = JSON.parse(readFileSync(join(projectPath, 'world_graph.json'), 'utf-8')) as {
+      edges?: Array<{ from: string; to: string; requirements?: string[] }>;
+    };
+    return (raw.edges ?? [])
+      .filter((e) => e.from === fromId)
+      .map((e) => ({ from: e.from, to: e.to, requirements: e.requirements ?? [] }));
+  } catch {
+    return [];
+  }
+}
+
+/** 'dungeon_000_r2' -> 'dungeon_000' — the dungeon-level id groups multiple per-room area ids
+ *  produced by generateTopDownWorld (packages/procedural/src/topdown/world.ts). */
+function dungeonIdFromAreaId(areaId: string): string {
+  return areaId.replace(/_r\d+$/, '');
 }
 
 function assertProjectPath(projectPath: string, repoRoot: string): void {
@@ -243,12 +397,19 @@ export function registerIpcHandlers(cwd: string): void {
         mode: GenerationMode;
         seed: number;
         generationControl?: GenerationControlMode;
+        archetype?: GameArchetype;
       };
       try {
+        const prefs = await loadAppPreferences(dataDir);
+        const hw = new HardwareProfiler().profile();
         const pipeline = new GenerationPipeline();
         const result = await pipeline.run({
           ...payload,
           cwd,
+          providerEnabled: parseProviderEnabledMap(prefs),
+          nvidiaImageModel:
+            prefs[APP_SETTING_KEYS.nvidiaImageModel]?.trim() || process.env.NVIDIA_IMAGE_MODEL,
+          hardwareProfile: hw.profile,
           signal: job.abortSignal,
           generationControl: payload.generationControl ?? 'autonomous',
           waitForReview: async (ctx) => {
@@ -308,7 +469,18 @@ export function registerIpcHandlers(cwd: string): void {
     const config = loadConfig();
     const dataDir = config.dataDir || join(cwd, '.metroforge');
     const prefs = await loadAppPreferences(dataDir);
-    const imageProviders = await probeImageProviders(config.defaultMode);
+    const providerEnabled = parseProviderEnabledMap(prefs);
+    const nvidiaImageModel =
+      prefs[APP_SETTING_KEYS.nvidiaImageModel]?.trim() ||
+      process.env.NVIDIA_IMAGE_MODEL ||
+      'black-forest-labs/flux.1-dev';
+    const hwConfig = new HardwareProfiler().profile();
+    const { providers: imageProviders } = await probeImageProviders(
+      config.defaultMode,
+      providerEnabled,
+      nvidiaImageModel,
+      hwConfig.profile,
+    );
     const visionCritic = createVisionCritic({
       ollamaBaseUrl: config.ollamaBaseUrl,
       nvidiaApiKey: process.env.NVIDIA_API_KEY,
@@ -326,7 +498,7 @@ export function registerIpcHandlers(cwd: string): void {
       godotExecutable,
       ollamaBaseUrl: config.ollamaBaseUrl,
       repoRoot: cwd,
-      nvidiaImageModel: process.env.NVIDIA_IMAGE_MODEL ?? 'black-forest-labs/flux.1-schnell',
+      nvidiaImageModel,
       concurrency: workerPool.getLimits(),
       appPreferences: prefs,
       envKeys: {
@@ -360,7 +532,10 @@ export function registerIpcHandlers(cwd: string): void {
       const allowed = new Set(Object.values(APP_SETTING_KEYS));
       const filtered: Record<string, string> = {};
       for (const [key, value] of Object.entries(settings)) {
-        if (allowed.has(key as (typeof APP_SETTING_KEYS)[keyof typeof APP_SETTING_KEYS])) {
+        if (
+          allowed.has(key as (typeof APP_SETTING_KEYS)[keyof typeof APP_SETTING_KEYS]) ||
+          isProviderEnabledSettingKey(key)
+        ) {
           filtered[key] = String(value);
         }
       }
@@ -385,17 +560,17 @@ export function registerIpcHandlers(cwd: string): void {
       message: t.message,
     }));
 
-    const { registry: textRegistry } = await bootstrapProviders({
-      mode: 'HYBRID_FREE',
-      ollamaBaseUrl: config.ollamaBaseUrl,
-      geminiApiKey: process.env.GEMINI_API_KEY,
-      groqApiKey: process.env.GROQ_API_KEY,
-      openrouterApiKey: process.env.OPENROUTER_API_KEY,
-      huggingfaceApiKey: process.env.HUGGINGFACE_API_KEY,
-      nvidiaApiKey: process.env.NVIDIA_API_KEY,
-      nvidiaApiBaseUrl: process.env.NVIDIA_API_BASE_URL,
-    });
-    const imageProviders = await probeImageProviders(config.defaultMode);
+    const { registry: textRegistry } = await bootstrapProviders(
+      await textBootstrapConfig(dataDir, 'HYBRID_FREE', config.ollamaBaseUrl),
+    );
+    const prefs = await loadAppPreferences(dataDir);
+    const hwDoctor = new HardwareProfiler().profile();
+    const { providers: imageProviders } = await probeImageProviders(
+      config.defaultMode,
+      parseProviderEnabledMap(prefs),
+      prefs[APP_SETTING_KEYS.nvidiaImageModel],
+      hwDoctor.profile,
+    );
     const visionCritic = createVisionCritic({
       ollamaBaseUrl: config.ollamaBaseUrl,
       nvidiaApiKey: process.env.NVIDIA_API_KEY,
@@ -409,6 +584,9 @@ export function registerIpcHandlers(cwd: string): void {
         id: p.id,
         local: p.local,
         healthy: p.healthy,
+        health: p.health,
+        status: p.status,
+        reason: p.reason,
       })),
       extra: [
         {
@@ -422,8 +600,8 @@ export function registerIpcHandlers(cwd: string): void {
     });
 
     const healthToStatus = (health: string): string => {
-      if (health === 'healthy') return 'OK';
-      if (health === 'degraded') return 'WARN';
+      if (health === 'healthy' || health === 'HEALTHY') return 'OK';
+      if (health === 'degraded' || health === 'DEGRADED') return 'WARN';
       return 'FAIL';
     };
 
@@ -433,36 +611,34 @@ export function registerIpcHandlers(cwd: string): void {
       message: s.message ?? `Health: ${s.health}${s.local ? ' (local)' : ''}`,
     }));
 
+    // Surface richer NVIDIA image reasons beyond boolean healthy/unavailable.
+    for (const p of imageProviders) {
+      if (p.id === 'nvidia-image' || p.status !== 'HEALTHY') {
+        providerResults.push({
+          name: `provider:image/${p.id}:detail`,
+          status: healthToStatus(p.status),
+          message: p.reason,
+        });
+      }
+    }
     return [...toolResults, ...providerResults];
   });
 
   ipcMain.handle('list-providers', async () => {
     const config = loadConfig();
-    const { registry } = await bootstrapProviders({
-      mode: 'HYBRID_FREE',
-      ollamaBaseUrl: config.ollamaBaseUrl,
-      geminiApiKey: process.env.GEMINI_API_KEY,
-      groqApiKey: process.env.GROQ_API_KEY,
-      openrouterApiKey: process.env.OPENROUTER_API_KEY,
-      huggingfaceApiKey: process.env.HUGGINGFACE_API_KEY,
-      nvidiaApiKey: process.env.NVIDIA_API_KEY,
-      nvidiaApiBaseUrl: process.env.NVIDIA_API_BASE_URL,
-    });
+    const dataDir = config.dataDir || join(cwd, '.metroforge');
+    const { registry } = await bootstrapProviders(
+      await textBootstrapConfig(dataDir, 'HYBRID_FREE', config.ollamaBaseUrl),
+    );
     return listProviderStatus(registry);
   });
 
   ipcMain.handle('list-models', async (_event, filter?: { capability?: string; installed?: boolean }) => {
     const config = loadConfig();
-    const { catalog, models, registry } = await bootstrapProviders({
-      mode: 'HYBRID_FREE',
-      ollamaBaseUrl: config.ollamaBaseUrl,
-      geminiApiKey: process.env.GEMINI_API_KEY,
-      groqApiKey: process.env.GROQ_API_KEY,
-      openrouterApiKey: process.env.OPENROUTER_API_KEY,
-      huggingfaceApiKey: process.env.HUGGINGFACE_API_KEY,
-      nvidiaApiKey: process.env.NVIDIA_API_KEY,
-      nvidiaApiBaseUrl: process.env.NVIDIA_API_BASE_URL,
-    });
+    const dataDir = config.dataDir || join(cwd, '.metroforge');
+    const { catalog, models, registry } = await bootstrapProviders(
+      await textBootstrapConfig(dataDir, 'HYBRID_FREE', config.ollamaBaseUrl),
+    );
     const liveIds = await fetchLiveModelIdsByProvider(registry);
     const providerIds = new Set(registry.listEnabled().map((p) => p.id));
     let entries = reconcileCatalogEntries(catalog, models, liveIds, providerIds);
@@ -535,16 +711,10 @@ export function registerIpcHandlers(cwd: string): void {
 
   ipcMain.handle('rank-models', async (_event, capability: string) => {
     const config = loadConfig();
-    const { catalog, models, registry } = await bootstrapProviders({
-      mode: 'HYBRID_FREE',
-      ollamaBaseUrl: config.ollamaBaseUrl,
-      geminiApiKey: process.env.GEMINI_API_KEY,
-      groqApiKey: process.env.GROQ_API_KEY,
-      openrouterApiKey: process.env.OPENROUTER_API_KEY,
-      huggingfaceApiKey: process.env.HUGGINGFACE_API_KEY,
-      nvidiaApiKey: process.env.NVIDIA_API_KEY,
-      nvidiaApiBaseUrl: process.env.NVIDIA_API_BASE_URL,
-    });
+    const dataDir = config.dataDir || join(cwd, '.metroforge');
+    const { catalog, models, registry } = await bootstrapProviders(
+      await textBootstrapConfig(dataDir, 'HYBRID_FREE', config.ollamaBaseUrl),
+    );
     const liveIds = await fetchLiveModelIdsByProvider(registry);
     const providerIds = new Set(registry.listEnabled().map((p) => p.id));
     const entries = reconcileCatalogEntries(catalog, models, liveIds, providerIds);
@@ -555,6 +725,204 @@ export function registerIpcHandlers(cwd: string): void {
       hw,
       { preferInstalled: true },
     );
+  });
+
+  ipcMain.handle('explain-model-routing', async (_event, capability: string) => {
+    const config = loadConfig();
+    const dataDir = config.dataDir || join(cwd, '.metroforge');
+    const prefs = await loadAppPreferences(dataDir);
+    const providerEnabled = parseProviderEnabledMap(prefs);
+    const { catalog, models, registry } = await bootstrapProviders(
+      await textBootstrapConfig(dataDir, 'HYBRID_FREE', config.ollamaBaseUrl),
+    );
+    const liveIds = await fetchLiveModelIdsByProvider(registry);
+    const providerIds = new Set(registry.listEnabled().map((p) => p.id));
+    const entries = reconcileCatalogEntries(catalog, models, liveIds, providerIds);
+    const hw = new HardwareProfiler().profile();
+    const textTrace = explainModelRouting(
+      entries,
+      capability as import('@metroforge/schemas').ModelCapability,
+      hw,
+      { preferInstalled: true },
+    );
+
+    // IMAGE_GENERATION (and siblings) are routed via ImageProviderRegistry, not text
+    // GenerationRouter — reconcile live image providers + catalog image models so the
+    // Routing Inspector does not show an empty candidate list.
+    const imageCapabilities = new Set([
+      'IMAGE_GENERATION',
+      'CONCEPT_ART',
+      'CHARACTER_CONCEPT',
+      'ENVIRONMENT',
+      'BACKGROUND',
+      'TILE_SOURCE',
+      'VFX_TEXTURE',
+      'UI_ART',
+      'ITEM_ICON',
+      'PIXEL_ART_PROCESS',
+      'TEXTURE_GENERATION',
+    ]);
+    if (!imageCapabilities.has(capability)) {
+      return textTrace;
+    }
+
+    const { providers: imageProviders, registry: imageRegistry } = await probeImageProviders(
+      config.defaultMode,
+      providerEnabled,
+      prefs[APP_SETTING_KEYS.nvidiaImageModel],
+      hw.profile,
+    );
+    const imageTrace = await explainImageProviderRouting(imageRegistry, {
+      mode: config.defaultMode,
+      hardware: { profile: hw.profile, ramMb: hw.totalRamMb, vramMb: hw.vramMb },
+    });
+
+    // Map catalog image models onto live image-provider health (comfyui/diffusers/nvidia-image).
+    const providerHealth = new Map(imageProviders.map((p) => [p.id, p]));
+    const catalogProviderAlias: Record<string, string[]> = {
+      comfyui: ['comfyui'],
+      diffusers: ['diffusers'],
+      nvidia: ['nvidia-image', 'nvidia'],
+    };
+    const catalogImageEntries = entries.filter((e) => e.capabilities.includes(capability as never));
+    const catalogCandidates: typeof textTrace.candidates = [];
+    const catalogRejected: typeof textTrace.rejected = [];
+    for (const entry of catalogImageEntries) {
+      const aliases = catalogProviderAlias[entry.provider] ?? [entry.provider];
+      const live = aliases.map((id) => providerHealth.get(id)).find(Boolean);
+      const reasons: string[] = [
+        `capability: ${capability}`,
+        entry.local ? 'local catalog model' : 'remote catalog model (local VRAM N/A)',
+        `license: ${entry.license}`,
+      ];
+      if (!live) {
+        catalogRejected.push({
+          modelId: entry.id,
+          provider: entry.provider,
+          reasons: [...reasons, 'image provider not registered or not configured'],
+        });
+        continue;
+      }
+      reasons.push(`provider health: ${live.status} — ${live.reason}`);
+      if (live.healthy) {
+        catalogCandidates.push({
+          modelId: entry.id,
+          provider: entry.provider,
+          score: entry.priority + (live.status === 'HEALTHY' ? 10 : 0),
+          reasons,
+        });
+      } else {
+        catalogRejected.push({
+          modelId: entry.id,
+          provider: entry.provider,
+          reasons,
+        });
+      }
+    }
+
+    const mergedCandidates = [
+      ...imageTrace.candidates,
+      ...catalogCandidates,
+      ...textTrace.candidates,
+    ].sort((a, b) => b.score - a.score);
+    const mergedRejected = [
+      ...imageTrace.rejected,
+      ...catalogRejected,
+      ...textTrace.rejected,
+    ];
+
+    // Surface expected image backends even when env is missing so Inspector is never empty/misleading.
+    const seenProviderIds = new Set(
+      [...mergedCandidates, ...mergedRejected].map((entry) => entry.provider),
+    );
+    const expectedImageProviders: Array<{
+      id: string;
+      local: boolean;
+      configured: boolean;
+      hint: string;
+    }> = [
+      {
+        id: 'comfyui',
+        local: true,
+        configured: Boolean(process.env.COMFYUI_BASE_URL),
+        hint: 'Set COMFYUI_BASE_URL to register ComfyUI',
+      },
+      {
+        id: 'nvidia-image',
+        local: false,
+        configured: Boolean(process.env.NVIDIA_API_KEY),
+        hint: 'Set NVIDIA_API_KEY to register NVIDIA NIM image',
+      },
+      {
+        id: 'diffusers',
+        local: true,
+        configured: true,
+        hint: 'Diffusers local worker (may still be unhealthy)',
+      },
+    ];
+    for (const expected of expectedImageProviders) {
+      if (seenProviderIds.has(expected.id)) continue;
+      if (expected.configured) continue;
+      mergedRejected.push({
+        modelId: expected.id,
+        provider: expected.id,
+        reasons: [
+          `capability: ${capability}`,
+          expected.local ? 'local runtime' : 'remote/hosted (local VRAM N/A)',
+          `not configured — ${expected.hint}`,
+          'health: UNAVAILABLE — provider not registered',
+        ],
+      });
+      seenProviderIds.add(expected.id);
+    }
+
+    if (imageTrace.degradedFallback) {
+      mergedRejected.push({
+        modelId: 'procedural',
+        provider: 'procedural',
+        reasons: [
+          'not a scored ImageProviderRegistry candidate',
+          'AssetPipeline last-resort PLACEHOLDER path',
+          'environment_assets reports DEGRADED (completed with warning), not SUCCESS',
+          'local VRAM N/A',
+        ],
+      });
+    }
+
+    const top = mergedCandidates[0];
+
+    return {
+      capability,
+      requirements: [
+        ...new Set([
+          ...imageTrace.requirements,
+          ...textTrace.requirements,
+          'image providers OR catalog IMAGE models',
+          'remote image providers: local VRAM filter N/A',
+        ]),
+      ],
+      selected: top
+        ? {
+            modelId: top.modelId,
+            provider: top.provider,
+            score: top.score,
+            workflow: imageTrace.selected?.workflow ?? 'image-provider',
+          }
+        : undefined,
+      candidates: mergedCandidates,
+      rejected: mergedRejected,
+      fallbacks: mergedCandidates.slice(1, 4).map((c) => ({ modelId: c.modelId, provider: c.provider })),
+      license: textTrace.license,
+      hardware: {
+        profile: hw.profile,
+        ramMb: hw.totalRamMb,
+        vramMb: hw.vramMb,
+        note: imageTrace.degradedFallback
+          ? 'No healthy image provider — procedural PLACEHOLDER fallback would be DEGRADED, not SUCCESS'
+          : 'Remote image providers are not filtered by local VRAM',
+      },
+      degradedFallback: imageTrace.degradedFallback,
+    };
   });
 
   ipcMain.handle('get-project-preview', async (_event, projectPath: string) => {
@@ -643,8 +1011,19 @@ export function registerIpcHandlers(cwd: string): void {
           const dna = JSON.parse(readFileSync(join(projectPath, 'game_dna.json'), 'utf-8'));
           meta.title = dna.identity?.title;
           meta.profile = dna.profile;
+          if (typeof dna.archetype === 'string') meta.archetype = dna.archetype;
         } catch {
           meta.title = d.name;
+        }
+        if (!meta.archetype) {
+          try {
+            const projectJson = JSON.parse(readFileSync(join(projectPath, 'project.json'), 'utf-8')) as {
+              archetype?: string;
+            };
+            if (typeof projectJson.archetype === 'string') meta.archetype = projectJson.archetype;
+          } catch {
+            /* optional */
+          }
         }
         return meta;
       });
@@ -670,6 +1049,7 @@ export function registerIpcHandlers(cwd: string): void {
         mode: GenerationMode;
         seed: number;
         generationControl?: GenerationControlMode;
+        archetype?: GameArchetype;
       },
     ) =>
       new Promise((resolve) => {
@@ -742,14 +1122,25 @@ export function registerIpcHandlers(cwd: string): void {
     const results = artifacts.map((artifact) => {
       const path = String(artifact.path ?? '');
       const isAnimation = path.includes('_walk') || path.includes('_attack') || path.includes('_hurt');
+      const meta =
+        artifact.metadata && typeof artifact.metadata === 'object'
+          ? (artifact.metadata as Record<string, unknown>)
+          : {};
       return {
         id: String(artifact.id ?? path),
         path,
         category: categorizeAssetPath(path),
         provider: artifact.provider as string | undefined,
+        modelId: artifact.modelId as string | undefined,
         fallbackGenerated: artifact.fallbackGenerated as boolean | undefined,
         critiquePassed: artifact.critiquePassed as boolean | undefined,
         critiqueScore: artifact.critiqueScore as number | undefined,
+        maturity: (artifact.maturity as string | undefined) ?? (meta.maturity as string | undefined),
+        productionReady:
+          (artifact.productionReady as boolean | undefined) ??
+          (meta.productionReady as boolean | undefined),
+        sourceType:
+          (artifact.sourceType as string | undefined) ?? (meta.sourceType as string | undefined),
         manual: artifact.manual as boolean | undefined,
         prompt: artifact.prompt as string | undefined,
         seed: artifact.seed as number | undefined,
@@ -771,9 +1162,13 @@ export function registerIpcHandlers(cwd: string): void {
           path: relPath,
           category,
           provider: undefined,
+          modelId: undefined,
           fallbackGenerated: undefined,
           critiquePassed: undefined,
           critiqueScore: undefined,
+          maturity: undefined,
+          productionReady: undefined,
+          sourceType: undefined,
           manual: undefined,
           prompt: undefined,
           seed: undefined,
@@ -809,6 +1204,10 @@ export function registerIpcHandlers(cwd: string): void {
       },
     ) => {
       assertProjectPath(request.projectPath, cwd);
+      const prefs = await loadAppPreferences(dataDir);
+      const hw = new HardwareProfiler().profile();
+      const nvidiaImageModel =
+        prefs[APP_SETTING_KEYS.nvidiaImageModel]?.trim() || process.env.NVIDIA_IMAGE_MODEL;
       const variantCount = Math.min(Math.max(request.variants ?? 1, 1), 4);
       const runOne = () =>
         workerPool.run('image', () =>
@@ -819,6 +1218,8 @@ export function registerIpcHandlers(cwd: string): void {
             assetId: request.assetId,
             seed: request.seed,
             generationMode: request.generationMode,
+            nvidiaImageModel,
+            hardwareProfile: hw.profile,
           }),
         );
       if (variantCount === 1) {
@@ -834,6 +1235,8 @@ export function registerIpcHandlers(cwd: string): void {
             assetId: `${request.assetId ?? 'variant'}_${i + 1}`,
             seed: (request.seed ?? Date.now()) + i * 997,
             generationMode: request.generationMode,
+            nvidiaImageModel,
+            hardwareProfile: hw.profile,
           }),
         );
         variants.push(result);
@@ -937,16 +1340,9 @@ export function registerIpcHandlers(cwd: string): void {
         } catch {
           // RAG is optional — fall back to room-id context only.
         }
-        const { generationRouter } = await bootstrapProviders({
-          mode: 'LOCAL_ONLY',
-          ollamaBaseUrl: config.ollamaBaseUrl,
-          geminiApiKey: process.env.GEMINI_API_KEY,
-          groqApiKey: process.env.GROQ_API_KEY,
-          openrouterApiKey: process.env.OPENROUTER_API_KEY,
-          huggingfaceApiKey: process.env.HUGGINGFACE_API_KEY,
-          nvidiaApiKey: process.env.NVIDIA_API_KEY,
-          nvidiaApiBaseUrl: process.env.NVIDIA_API_BASE_URL,
-        });
+        const { generationRouter } = await bootstrapProviders(
+          await textBootstrapConfig(dataDir, 'LOCAL_ONLY', config.ollamaBaseUrl),
+        );
         parsed = await parseProjectCommandWithLlm(
           input,
           { ...ctx, projectPath, ragContext },
@@ -1159,6 +1555,118 @@ export function registerIpcHandlers(cwd: string): void {
     return WorldGraphSchema.parse(raw);
   });
 
+  ipcMain.handle('get-overworld-map', async (_event, projectPath: string) => {
+    assertProjectPath(projectPath, cwd);
+    const overworld = readTopDownOverworld(projectPath);
+    if (!overworld) return { error: 'No top-down overworld data for this project' };
+
+    const overworldArea = overworld.areas.find((a) => a.kind === 'overworld');
+    const worldGraphByEdgeFrom = readWorldGraphEdgesFrom(projectPath, 'overworld');
+
+    const nodes = (overworldArea?.pois ?? []).map((poi: TopDownPoi) => ({
+      id: poi.id,
+      x: poi.x,
+      y: poi.y,
+      kind: poi.kind,
+      dungeonId:
+        poi.kind === 'dungeon_entrance' && typeof poi.metadata.targetAreaId === 'string'
+          ? dungeonIdFromAreaId(String(poi.metadata.targetAreaId))
+          : undefined,
+    }));
+
+    const edges = (overworldArea?.pois ?? [])
+      .filter((poi: TopDownPoi) => poi.kind === 'dungeon_entrance')
+      .map((poi: TopDownPoi) => {
+        const targetAreaId = String(poi.metadata.targetAreaId ?? '');
+        const matchingEdge = worldGraphByEdgeFrom.find((e) => e.to === targetAreaId);
+        return { from: poi.id, to: targetAreaId, requirements: matchingEdge?.requirements ?? [] };
+      });
+
+    return {
+      archetype: 'TOP_DOWN_ACTION_ADVENTURE' as const,
+      regions: overworldArea
+        ? [
+            {
+              id: overworldArea.id,
+              name: overworldArea.name,
+              rect: { x: 0, y: 0, w: overworldArea.widthTiles * overworldArea.tileSize, h: overworldArea.heightTiles * overworldArea.tileSize },
+            },
+          ]
+        : [],
+      nodes,
+      edges,
+    };
+  });
+
+  ipcMain.handle('get-dungeon-graph', async (_event, projectPath: string, dungeonId?: string) => {
+    assertProjectPath(projectPath, cwd);
+    const overworld = readTopDownOverworld(projectPath);
+    if (!overworld) return { error: 'No top-down dungeon data for this project' };
+
+    const dungeonAreas = overworld.areas.filter((a) => a.kind === 'dungeon');
+    const resolvedDungeonId = dungeonId ?? dungeonIdFromAreaId(dungeonAreas[0]?.id ?? '');
+    const areas = dungeonAreas
+      .filter((a) => dungeonIdFromAreaId(a.id) === resolvedDungeonId)
+      .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
+
+    if (areas.length === 0) return { error: `No dungeon found: ${resolvedDungeonId ?? '(none)'}` };
+
+    const keys = new Set<string>();
+    const doors: Array<{ from: string; to: string; keyId?: string }> = [];
+    let miniBossId: string | undefined;
+    let bossId: string | undefined;
+
+    const rooms = areas.map((area) => {
+      let kind: 'room' | 'puzzle' | 'key' | 'locked' | 'treasure' | 'mini_boss' | 'boss' | 'item' = 'room';
+      for (const poi of area.pois) {
+        if (poi.kind === 'boss') {
+          kind = 'boss';
+          bossId = typeof poi.metadata.bossId === 'string' ? poi.metadata.bossId : bossId;
+        } else if (poi.kind === 'switch' && kind === 'room') {
+          kind = 'puzzle';
+        } else if (poi.kind === 'chest' && kind === 'room') {
+          kind = 'treasure';
+        } else if (poi.kind === 'locked_door') {
+          if (kind === 'room') kind = 'locked';
+          if (typeof poi.metadata.keyId === 'string') keys.add(poi.metadata.keyId);
+          doors.push({
+            from: area.id,
+            to: String(poi.metadata.targetAreaId ?? ''),
+            keyId: typeof poi.metadata.keyId === 'string' ? poi.metadata.keyId : undefined,
+          });
+        } else if (poi.kind === 'dungeon_entrance' && typeof poi.metadata.targetAreaId === 'string') {
+          doors.push({ from: area.id, to: poi.metadata.targetAreaId });
+        }
+      }
+      return { id: area.id, kind };
+    });
+
+    return {
+      dungeonId: resolvedDungeonId,
+      rooms,
+      keys: Array.from(keys),
+      doors,
+      criticalPath: areas.map((a) => a.id),
+      dungeonItem: overworld.dungeonItemsById?.[resolvedDungeonId ?? ''] ?? overworld.dungeonItemId,
+      miniBossId,
+      bossId,
+    };
+  });
+
+  ipcMain.handle('get-room-collision', async (_event, projectPath: string, roomId: string) => {
+    assertProjectPath(projectPath, cwd);
+    const overworld = readTopDownOverworld(projectPath);
+    const area = overworld?.areas.find((a) => a.id === roomId);
+    if (!area) return { error: `No collision data for room: ${roomId}` };
+    return {
+      roomId,
+      tileSize: area.tileSize,
+      widthTiles: area.widthTiles,
+      heightTiles: area.heightTiles,
+      rects: area.collisionRects,
+    };
+  });
+
   ipcMain.handle(
     'update-world-graph',
     async (_event, projectPath: string, command: WorldEditCommand) => {
@@ -1311,6 +1819,35 @@ export function registerIpcHandlers(cwd: string): void {
         requireValidation: !opts?.force,
         requireCommercialSafe: opts?.commercialSafe,
       });
+    },
+  );
+
+  ipcMain.handle('get-project-allow-placeholders', async (_event, projectPath: string) => {
+    assertProjectPath(projectPath, cwd);
+    return getProjectAllowPlaceholders(projectPath);
+  });
+
+  ipcMain.handle(
+    'set-project-allow-placeholders',
+    async (_event, projectPath: string, allowPlaceholders: boolean) => {
+      assertProjectPath(projectPath, cwd);
+      return setProjectAllowPlaceholders(projectPath, allowPlaceholders === true);
+    },
+  );
+
+  ipcMain.handle(
+    'backfill-asset-maturity',
+    async (_event, projectPath: string, opts?: { dryRun?: boolean }) => {
+      assertProjectPath(projectPath, cwd);
+      return backfillProjectAssetMaturity(projectPath, { dryRun: opts?.dryRun === true });
+    },
+  );
+
+  ipcMain.handle(
+    'remap-project-abilities',
+    async (_event, projectPath: string, opts?: { dryRun?: boolean }) => {
+      assertProjectPath(projectPath, cwd);
+      return remapProjectAbilities(projectPath, { dryRun: opts?.dryRun === true });
     },
   );
 

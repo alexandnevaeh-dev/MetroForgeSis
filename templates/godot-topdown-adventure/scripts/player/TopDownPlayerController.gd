@@ -2,7 +2,7 @@ class_name TopDownPlayerController
 extends CharacterBody2D
 ## 8-direction top-down locomotion. Movement constants come from movement.json.
 
-const CARDINALS := {
+static var CARDINALS := {
 	"N": Vector2(0, -1),
 	"NE": Vector2(1, -1).normalized(),
 	"E": Vector2(1, 0),
@@ -33,9 +33,11 @@ func _ready() -> void:
 	hurtbox.hit_received.connect(_on_hit_received)
 	attack_hitbox.owner_node = self
 	attack_timer.timeout.connect(_on_attack_finished)
-	var pending = SaveManager.consume_pending_player_health()
-	if pending >= 0.0:
-		health.current_health = pending
+	var pending: Dictionary = SaveManager.consume_pending_player_health()
+	if float(pending.get("health", -1.0)) >= 0.0:
+		if float(pending.get("max_health", -1.0)) > 0.0:
+			health.max_health = float(pending.get("max_health"))
+		health.current_health = float(pending.get("health"))
 		health.health_changed.emit(health.current_health, health.max_health)
 	InventoryManager.apply_stat_bonuses(false, self)
 

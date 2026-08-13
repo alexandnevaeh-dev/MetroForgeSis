@@ -11,6 +11,7 @@ import { registerOpenCommand } from './commands/open.js';
 import { registerExportCommand } from './commands/export.js';
 import { registerProjectCommand } from './commands/project.js';
 import { registerAcceptCommand } from './commands/accept.js';
+import { registerConfigCommand } from './commands/config.js';
 
 const program = new Command();
 
@@ -30,5 +31,6 @@ registerOpenCommand(program);
 registerExportCommand(program);
 registerProjectCommand(program);
 registerAcceptCommand(program);
+registerConfigCommand(program);
 
 program.parse();

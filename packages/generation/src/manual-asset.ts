@@ -34,6 +34,8 @@ export interface ManualAssetRequest {
   generationMode?: import('@metroforge/shared').GenerationMode;
   transparentBackground?: boolean;
   commercialSafe?: boolean;
+  nvidiaImageModel?: string;
+  hardwareProfile?: string;
 }
 
 export interface ManualAssetResult {
@@ -118,8 +120,9 @@ export async function generateManualAsset(request: ManualAssetRequest): Promise<
     diffusersModelId: process.env.DIFFUSERS_MODEL_ID,
     nvidiaApiKey: process.env.NVIDIA_API_KEY,
     nvidiaApiBaseUrl: process.env.NVIDIA_API_BASE_URL,
-    nvidiaImageModel: process.env.NVIDIA_IMAGE_MODEL,
+    nvidiaImageModel: request.nvidiaImageModel ?? process.env.NVIDIA_IMAGE_MODEL,
     ollamaBaseUrl: config.ollamaBaseUrl,
+    hardwareProfile: request.hardwareProfile,
   });
 
   mkdirSync(dirname(join(request.projectPath, relPath)), { recursive: true });
@@ -147,9 +150,14 @@ export async function generateManualAsset(request: ManualAssetRequest): Promise<
         path: relPath,
         type: 'texture',
         provider: asset.provider,
+        modelId: asset.modelId,
         fallbackGenerated: asset.fallbackGenerated,
         critiquePassed: asset.critiquePassed,
         critiqueScore: asset.critiqueScore,
+        maturity: asset.maturity,
+        productionReady: asset.productionReady,
+        sourceType: asset.sourceType,
+        sourcePath: asset.sourcePath,
         manual: true,
         prompt: request.description,
         seed,

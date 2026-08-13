@@ -1,39 +1,19 @@
 class_name ItemGate
 extends StaticBody2D
+## A solid overworld barrier that opens permanently once interacted with while the player owns
+## the required item (InventoryManager — a real per-run inventory item, not GameManager's
+## ability set). Interact-based like every other top-down world object, and removes itself once
+## opened rather than re-checking every frame, since opening a gate is a one-way action.
 
-@export var item_id: String = "wind_disc"
+@export var item_id: String = ""
 
 func _ready() -> void:
 	add_to_group("interactable")
 	collision_layer = 1
-	var shape := CollisionShape2D.new()
-	var rect := RectangleShape2D.new()
-	rect.size = Vector2(24, 48)
-	shape.shape = rect
-	add_child(shape)
-	var vis := ColorRect.new()
-	vis.size = Vector2(24, 48)
-	vis.position = Vector2(-12, -24)
-	vis.color = Color(0.25, 0.45, 0.7, 1)
-	add_child(vis)
-	var area := Area2D.new()
-	area.collision_layer = 32
-	area.collision_mask = 2
-	area.monitoring = true
-	var ashape := CollisionShape2D.new()
-	ashape.shape = rect
-	area.add_child(ashape)
-	area.body_entered.connect(_on_body)
-	add_child(area)
+	collision_mask = 0
 
 func interact(_player: Node) -> void:
-	_try_open()
-
-func _on_body(body: Node2D) -> void:
-	if body.is_in_group("player"):
-		_try_open()
-
-func _try_open() -> void:
-	if InventoryManager.get_owned_count(item_id) <= 0 and not GameManager.has_ability(item_id):
+	if item_id != "" and InventoryManager.get_owned_count(item_id) <= 0:
 		return
+	AudioManager.play_sfx("pickup")
 	queue_free()
