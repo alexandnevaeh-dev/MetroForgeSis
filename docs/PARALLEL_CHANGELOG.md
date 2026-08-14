@@ -1,5 +1,74 @@
 # Parallel changelog
 
+## 2026-08-14 — CLAUDE — top-down: RuntimeSmokeTest.gd 14 → 165 checks, closing the smoke-test coverage gap with side-view
+
+- **Agent:** CLAUDE
+- **Branch:** `feature/claude-generation-runtime`
+
+Top-down's Godot runtime smoke test (`templates/godot-topdown-adventure/scripts/test/RuntimeSmokeTest.gd`)
+was 101 lines / 14 checks — autoloads, player spawn/movement/attack, a chest, a locked door, an
+item gate, one room transition — even though the underlying runtime systems it wasn't touching
+(quests, dialogue, shops, save-migration, save-backup-recovery, multi-slot saves, death-respawn,
+inventory/equip UI, minimap, HUD quest tracker, boss attack variety/weakness/victory) are equally
+real for top-down, per side-view's much thicker (~294-check) equivalent. Read every top-down
+runtime script (`GameManager`/`SaveManager`/`QuestManager`/`InventoryManager`/`ShopManager`/
+`DialogueManager`/`MapManager`/`BossController`/`TopDownEnemyController`/`TopDownPlayerController`/
+every `scripts/world/*.gd` and `scripts/UI/*.gd`) before writing a single check, since top-down's
+APIs diverge from side-view's in real ways — e.g. `TopDownEnemyController.gd` (what `Enemy.tscn`
+actually uses) is a much simpler wander/chase/melee script with no data-driven stats or attack-type
+variety, unlike side-view's `EnemyController.gd`; the richer, data-driven `scripts/AI/EnemyController.gd`
+in the same template is dead code no scene references. Expanded to 165 checks (164 PASS / 0 FAIL /
+1 SOFT_FAIL) covering autoloads (all 12, not 2), player component wiring, chest/door/gate block-then-
+open cases, walk-over `ItemPickup.gd` (currency/consumable/relic/charm/weapon/quest/collectible —
+mirroring side-view's rigor), a real dialogue-choice-driven quest accept (clicking through
+`DialogueOverlay`'s actual branching tree and emitting a real `pressed` signal, not calling
+`QuestManager.accept_quest()` directly) plus completion via the same `EventBus` signal real
+gameplay would fire, pause menu (including top-down's extra Inventory/Quests panels beyond
+side-view's Map/Settings), save v1→v2 migration, save-backup corruption recovery, three-slot saves,
+title-screen file select, death/respawn, boss placement/attack-variety/weakness/victory-flow, and a
+shop purchase flow with no side-view equivalent to port (`ShopManager.purchase()` +
+`ShopOverlay`'s real buy-button UI, designed from scratch against the real scripts since TINY_TEST
+profiles never generate a merchant NPC to exercise it through world placement).
+
+Two real bugs surfaced while writing this, both fixed as directly in-scope for the checks that
+found them:
+
+- **`PauseMenu.gd`**: `_open_map()`/`_open_inventory()`/`_open_quests()` all referenced
+  `$Panel/<X>Panel/<View>` — a path missing the `VBox` segment every one of those views actually
+  lives under in `PauseMenu.tscn`. This is the *exact same bug class* already found and fixed in
+  side-view's `PauseMenu.gd` earlier this session (also a stale `/VBox`-less path on the same three
+  panels) — evidently a scene-restructuring that never finished propagating to the script, in both
+  templates independently. Fixed all three paths; `pause_menu_map_panel_opens` /
+  `pause_menu_inventory_panel_opens` / `pause_menu_quests_panel_opens` now exercise genuinely
+  working UI instead of a null-node crash a real player would have hit on first click.
+- **Fixed-frame-count waits after fire-and-forget async transitions**, the same bug shape flagged
+  earlier this session for side-view: the pre-existing `dungeon_area_loads` check fired
+  `world_mgr.load_area(...)` without awaiting it, then guessed two `process_frame`s were enough.
+  Replaced with a direct `await` on the coroutine itself (where this test initiates the transition)
+  or a bounded wall-clock poll (where production code — `GameManager._do_respawn()` — fires it
+  fire-and-forget, matching real gameplay).
+
+Item pickups also caught a real, separate **generator data bug**, left unfixed and flagged as a
+standalone follow-up (out of scope for a smoke-test-only pass): top-down's generated `items.json`
+can contain duplicate ids — a real, richer item definition followed by a minimal "dungeon item"
+stub from a different code path in `packages/godot/src/assembler.ts`'s merge (~line 286, plain
+array concat, no dedup) — and `InventoryManager.gd` builds its lookup as a `Dictionary` keyed by
+id, so the *last* one silently wins. Confirmed live: a generated `health_vial` consumable (heals 30)
+was shadowed by a duplicate stub with no `effects` array, silently breaking real healing. The smoke
+test now dedupes with the same last-wins semantics `InventoryManager` actually uses before picking
+which item to test, so it honestly soft-fails ("no reliably-testable consumable exists in this
+generation") instead of a false hard FAIL for an unrelated bug — the generator bug itself is
+tracked separately, not fixed here.
+
+Verified via the real Godot 4.7.1 binary, standalone (`--headless ... RuntimeSmokeTest.tscn`:
+164/165 PASS, exit 0) and through one full clean end-to-end regeneration without
+`--skip-runtime-validation` (seed 456, TINY_TEST, LOCAL_ONLY): `godot_runtime` gate reports
+`164/165 runtime checks passed` (SOFT_FAIL state, non-blocking), overall
+`Validation: RUNTIME_VALIDATED` with `RUNTIME_VALIDATED: 18/18 gates passed`. `pnpm --filter
+@metroforge/godot typecheck`, `pnpm run build` (all packages including `apps/desktop`), and
+`pnpm run test` (392/392, 81 files) all stay clean — no TypeScript touched, `.gd`-only change plus
+two doc updates.
+
 ## 2026-08-14 — CLAUDE — side-view: added a real death animation, fixed a re-death bug and two playtest-timing regressions it exposed
 
 - **Agent:** CLAUDE
