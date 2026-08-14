@@ -1,10 +1,106 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Badge, Button, EmptyState, Panel } from './ui/index.js';
 
 export interface TileCell {
   x: number;
   y: number;
   col: number;
   row: number;
+}
+
+export type TileCoord = { col: number; row: number };
+
+interface TilePalettePanelProps {
+  projectPath: string;
+  biomeId: string;
+  tileSize?: number;
+  selectedTile: TileCoord;
+  onSelect: (tile: TileCoord) => void;
+  /** When false, tiles remain visible but selection is disabled (non-visual layers). */
+  interactive?: boolean;
+}
+
+export function TilePalettePanel({
+  projectPath,
+  biomeId,
+  tileSize = 16,
+  selectedTile,
+  onSelect,
+  interactive = true,
+}: TilePalettePanelProps) {
+  const [tilesetUrl, setTilesetUrl] = useState<string | null>(null);
+  const [atlasSize, setAtlasSize] = useState(128);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    setLoaded(false);
+    setTilesetUrl(null);
+    if (!projectPath || !window.metroforge?.getTilesetPreview) return;
+    let cancelled = false;
+    window.metroforge.getTilesetPreview(projectPath, biomeId).then((preview) => {
+      if (cancelled) return;
+      if (preview?.dataUrl) setTilesetUrl(preview.dataUrl);
+      if (preview?.atlasSize) setAtlasSize(preview.atlasSize);
+      setLoaded(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [projectPath, biomeId]);
+
+  const paletteCols = Math.floor(atlasSize / tileSize);
+
+  return (
+    <Panel
+      level={1}
+      className="tile-palette-dock"
+      title="Tile Palette"
+      actions={<Badge tone="muted">{biomeId}</Badge>}
+    >
+      {!loaded ? (
+        <p className="hint">Loading tileset…</p>
+      ) : !tilesetUrl ? (
+        <EmptyState
+          title="No tiles"
+          description={`No tileset atlas for ${biomeId}. Generate or import a tileset to paint.`}
+        />
+      ) : (
+        <>
+          {!interactive && (
+            <p className="hint">Switch to Visual layer to paint with the selected tile.</p>
+          )}
+          <div
+            className={interactive ? 'tile-palette' : 'tile-palette tile-palette-disabled'}
+            aria-disabled={!interactive}
+          >
+            {Array.from({ length: paletteCols * paletteCols }).map((_, i) => {
+              const col = i % paletteCols;
+              const row = Math.floor(i / paletteCols);
+              const active = selectedTile.col === col && selectedTile.row === row;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  className={active ? 'palette-tile active' : 'palette-tile'}
+                  disabled={!interactive}
+                  style={{
+                    width: tileSize,
+                    height: tileSize,
+                    backgroundImage: `url(${tilesetUrl})`,
+                    backgroundPosition: `-${col * tileSize}px -${row * tileSize}px`,
+                    backgroundSize: `${atlasSize}px ${atlasSize}px`,
+                    imageRendering: 'pixelated',
+                  }}
+                  onClick={() => onSelect({ col, row })}
+                  aria-label={`Tile ${col},${row}`}
+                />
+              );
+            })}
+          </div>
+        </>
+      )}
+    </Panel>
+  );
 }
 
 interface TilePaintEditorProps {
@@ -15,6 +111,7 @@ interface TilePaintEditorProps {
   height: number;
   tileSize?: number;
   initialCells?: TileCell[];
+  selectedTile: TileCoord;
   onSaved?: () => void;
 }
 
@@ -26,12 +123,10 @@ export function TilePaintEditor({
   height,
   tileSize = 16,
   initialCells = [],
+  selectedTile,
   onSaved,
 }: TilePaintEditorProps) {
   const [cells, setCells] = useState<TileCell[]>(initialCells);
-  const [selectedTile, setSelectedTile] = useState({ col: 0, row: 2 });
-  const [tilesetUrl, setTilesetUrl] = useState<string | null>(null);
-  const [atlasSize, setAtlasSize] = useState(128);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -39,20 +134,8 @@ export function TilePaintEditor({
     setCells(initialCells);
   }, [roomId, initialCells]);
 
-  useEffect(() => {
-    if (!projectPath || !window.metroforge?.getTilesetPreview) return;
-    window.metroforge.getTilesetPreview(projectPath, biomeId).then((preview) => {
-      if (preview?.dataUrl) setTilesetUrl(preview.dataUrl);
-      if (preview?.atlasSize) setAtlasSize(preview.atlasSize);
-      if (preview?.tileSize) {
-        /* keep prop default unless atlas reports */
-      }
-    });
-  }, [projectPath, biomeId]);
-
   const cols = Math.floor(width / tileSize);
   const rows = Math.floor(height / tileSize);
-  const paletteCols = Math.floor(atlasSize / tileSize);
 
   const cellKey = (x: number, y: number) => `${x},${y}`;
   const cellMap = useMemo(() => {
@@ -91,34 +174,12 @@ export function TilePaintEditor({
   const scale = Math.min(1, 640 / width);
 
   return (
-    <div className="tile-paint panel">
-      <h4>Tile Paint</h4>
-      <div className="row">
-        {tilesetUrl && (
-          <div className="tile-palette">
-            {Array.from({ length: paletteCols * paletteCols }).map((_, i) => {
-              const col = i % paletteCols;
-              const row = Math.floor(i / paletteCols);
-              const active = selectedTile.col === col && selectedTile.row === row;
-              return (
-                <button
-                  key={i}
-                  type="button"
-                  className={active ? 'palette-tile active' : 'palette-tile'}
-                  style={{
-                    width: tileSize,
-                    height: tileSize,
-                    backgroundImage: `url(${tilesetUrl})`,
-                    backgroundPosition: `-${col * tileSize}px -${row * tileSize}px`,
-                    backgroundSize: `${atlasSize}px ${atlasSize}px`,
-                    imageRendering: 'pixelated',
-                  }}
-                  onClick={() => setSelectedTile({ col, row })}
-                />
-              );
-            })}
-          </div>
-        )}
+    <div className="tile-paint">
+      <div className="mf-panel-head">
+        <h3 className="mf-panel-title">Paint · {biomeId}</h3>
+        <span className="hint mono">
+          tile {selectedTile.col},{selectedTile.row}
+        </span>
       </div>
       <div
         className="tile-canvas-wrap"
@@ -160,12 +221,12 @@ export function TilePaintEditor({
         </svg>
       </div>
       <div className="row">
-        <button type="button" className="primary" onClick={save} disabled={busy}>
+        <Button variant="primary" size="sm" onClick={() => void save()} disabled={busy}>
           {busy ? 'Saving…' : 'Save Tilemap'}
-        </button>
-        <button type="button" onClick={() => setCells([])} disabled={busy}>
+        </Button>
+        <Button size="sm" onClick={() => setCells([])} disabled={busy}>
           Clear
-        </button>
+        </Button>
       </div>
       {message && <p className="hint">{message}</p>}
     </div>

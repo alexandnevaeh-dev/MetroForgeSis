@@ -255,7 +255,7 @@ export function DungeonEditor() {
                 )}
               </aside>
 
-              <div className="panel editor-canvas">
+              <div className="panel editor-canvas editor-canvas-fill">
                 <div className="editor-toolbar">
                   <span>Room graph</span>
                   <span className="hint">

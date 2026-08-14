@@ -7,6 +7,7 @@ import { ScreenHeader } from './ScreenHeader.js';
 import { ProjectSelect } from './ProjectSelect.js';
 import { NoProjectHint } from './NoProjectHint.js';
 import { useStudio } from './StudioContext.js';
+import { Badge, EmptyState } from './ui/index.js';
 
 export function AssetsGallery() {
   const { selectedPath, hasActiveProject, openRoom, openGenerator, focusAssetId } = useStudio();
@@ -170,20 +171,22 @@ export function AssetsGallery() {
       {loading && <p className="hint">Loading assets…</p>}
 
       {!loading && classified.length === 0 && (
-        <div className="empty-state panel">
-          <p>No assets in this project yet.</p>
-          <div className="row">
+        <EmptyState
+          title="No assets in this project yet"
+          description="Generate a game or create assets manually to populate the gallery."
+          actions={
             <button type="button" className="primary" onClick={() => openGenerator()}>
               Manual Generator
             </button>
-          </div>
-        </div>
+          }
+        />
       )}
 
       {!loading && classified.length > 0 && filtered.length === 0 && (
-        <div className="empty-state panel">
-          <p>No assets match this search or category.</p>
-          <div className="row">
+        <EmptyState
+          title="No matching assets"
+          description="No assets match this search or category."
+          actions={
             <button
               type="button"
               onClick={() => {
@@ -193,8 +196,8 @@ export function AssetsGallery() {
             >
               Clear filters
             </button>
-          </div>
-        </div>
+          }
+        />
       )}
 
       {filtered.length > 0 && (
@@ -207,31 +210,46 @@ export function AssetsGallery() {
 
         {selected && (
           <aside className="asset-detail panel">
-            <h3>{selected.id}</h3>
-            {selected.isAnimation && selected.dataUrl ? (
-              <AnimationPreview
-                asset={selected}
-                frame={animFrame}
-                playing={animPlaying}
-                onToggle={() => setAnimPlaying((p) => !p)}
-                onStep={() => setAnimFrame((f) => (f + 1) % (selected.frameCount ?? 4))}
-              />
-            ) : selected.dataUrl ? (
-              <button type="button" className="zoom-preview" onClick={() => setZoomOpen(true)}>
-                <img className="detail-preview" src={selected.dataUrl} alt={selected.id} />
-              </button>
-            ) : null}
-            <dl className="settings-dl">
+            <div className="asset-inspector-preview">
+              {selected.isAnimation && selected.dataUrl ? (
+                <AnimationPreview
+                  asset={selected}
+                  frame={animFrame}
+                  playing={animPlaying}
+                  onToggle={() => setAnimPlaying((p) => !p)}
+                  onStep={() => setAnimFrame((f) => (f + 1) % (selected.frameCount ?? 4))}
+                />
+              ) : selected.dataUrl ? (
+                <button type="button" className="zoom-preview" onClick={() => setZoomOpen(true)}>
+                  <img className="detail-preview" src={selected.dataUrl} alt={selected.id} />
+                </button>
+              ) : (
+                <p className="hint">No preview</p>
+              )}
+            </div>
+            <h3 className="asset-inspector-title">{selected.id}</h3>
+            <dl className="settings-dl asset-inspector-dl">
               <dt>Path</dt>
-              <dd><code>{selected.path}</code></dd>
+              <dd>
+                <code>{selected.path}</code>
+              </dd>
               <dt>Category</dt>
               <dd>{selected.category}</dd>
               <dt>Provider</dt>
               <dd>{selected.provider ?? '—'}</dd>
               <dt>Maturity</dt>
               <dd>
-                {selected.maturity ??
-                  (selected.fallbackGenerated ? 'PLACEHOLDER' : '—')}
+                <Badge
+                  tone={
+                    selected.productionReady
+                      ? 'success'
+                      : selected.fallbackGenerated || selected.maturity === 'PLACEHOLDER'
+                        ? 'warning'
+                        : 'muted'
+                  }
+                >
+                  {selected.maturity ?? (selected.fallbackGenerated ? 'PLACEHOLDER' : '—')}
+                </Badge>
                 {selected.productionReady === true
                   ? ' · production-ready'
                   : selected.productionReady === false
@@ -241,7 +259,9 @@ export function AssetsGallery() {
                 {selected.fallbackGenerated ? ' · procedural fallback' : ''}
               </dd>
               <dt>QA</dt>
-              <dd>{selected.critiquePassed ? 'Passed' : 'Needs review'} ({selected.critiqueScore ?? '—'})</dd>
+              <dd>
+                {selected.critiquePassed ? 'Passed' : 'Needs review'} ({selected.critiqueScore ?? '—'})
+              </dd>
               {selected.prompt && (
                 <>
                   <dt>Prompt</dt>
@@ -251,12 +271,12 @@ export function AssetsGallery() {
               {usages && usages.length > 0 && (
                 <>
                   <dt>Where Used</dt>
-                  <dd>
+                  <dd className="asset-where-used">
                     {usages.map((u) => (
                       <button
                         key={`${u.type}-${u.id}`}
                         type="button"
-                        className="tab"
+                        className="usage-chip"
                         onClick={() => {
                           if (u.type.toLowerCase().includes('room')) openRoom(u.id);
                         }}
@@ -326,10 +346,10 @@ export function AssetsGallery() {
             )}
             {(selected.category === 'SFX' || selected.category === 'Music' || selected.category === 'Voice') &&
               selectedPath && <AudioPreview projectPath={selectedPath} relPath={selected.path} />}
-            <div className="row" style={{ marginTop: '0.75rem' }}>
+            <div className="asset-inspector-actions">
               <button
                 type="button"
-                className="primary"
+                className="primary asset-inspector-cta"
                 onClick={() =>
                   openGenerator({
                     description: selected.prompt || `Regenerate ${selected.id} in this project's art style.`,

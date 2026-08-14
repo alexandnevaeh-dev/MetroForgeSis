@@ -1,0 +1,126 @@
+/**
+ * MetroForge Concept A — design tokens
+ * Premium dark IDE / workstation (electric blue, slate borders, high density)
+ */
+:root {
+  /* Surfaces */
+  --bg-app: #080d14;
+  --bg-sidebar: #0a1018;
+  --bg-surface: #0d141d;
+  --bg-surface-raised: #111a25;
+  --bg-surface-hover: #152131;
+  --bg-input: #080d13;
+
+  /* Borders */
+  --border-subtle: #1b2a39;
+  --border-normal: #26394b;
+  --border-focus: #258cff;
+  --border-strong: #344b63;
+
+  /* Text */
+  --text-primary: #e8edf3;
+  --text-secondary: #9aa9b8;
+  --text-muted: #667789;
+  --text-inverse: #061018;
+
+  /* Accent */
+  --accent: #258cff;
+  --accent-hover: #399cff;
+  --accent-soft: rgba(37, 140, 255, 0.12);
+  --accent-pressed: #1a74d9;
+  --nav-active-bg: rgba(37, 140, 255, 0.32);
+  --nav-active-fg: #f2f7fc;
+
+  /* Semantic */
+  --success: #3dba7a;
+  --success-soft: rgba(61, 186, 122, 0.12);
+  --warning: #d4a017;
+  --warning-soft: rgba(212, 160, 23, 0.12);
+  --danger: #e06c75;
+  --danger-soft: rgba(224, 108, 117, 0.12);
+  --info: #258cff;
+  --info-soft: rgba(37, 140, 255, 0.12);
+
+  /* Spacing (4–32) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Radius (4–8 max) */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  /* Shadows — minimal */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+
+  /* Motion */
+  --ease-fast: 100ms ease;
+  --ease: 160ms ease;
+  --ease-slow: 220ms ease;
+
+  /* Typography */
+  --font-ui: Inter, Geist, 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-display: Inter, Geist, 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Cascadia Code', 'JetBrains Mono', Consolas, ui-monospace, monospace;
+
+  /* Shell metrics */
+  --topbar-h: 44px;
+  --sidebar-w: 216px;
+  --sidebar-w-collapsed: 52px;
+  --status-h: 26px;
+  --inspector-w: 280px;
+
+  /* —— Legacy aliases (existing class names) —— */
+  --bg-root: var(--bg-app);
+  --bg-panel: var(--bg-surface);
+  --bg-panel-elevated: var(--bg-surface-raised);
+  --bg-hover: var(--bg-surface-hover);
+  --bg-active: var(--bg-surface-hover);
+  --bg: var(--bg-app);
+  --bg-elevated: var(--bg-surface);
+  --surface: var(--bg-surface);
+  --surface-2: var(--bg-surface-raised);
+  --panel: var(--bg-surface-raised);
+
+  --border: var(--border-normal);
+
+  --text: var(--text-primary);
+  --text-dim: var(--text-secondary);
+  --muted: var(--text-muted);
+
+  --accent-cyan: var(--accent);
+  --accent-cyan-hover: var(--accent-hover);
+  --accent-cyan-muted: var(--accent-soft);
+  --accent-blue: var(--accent);
+  --accent-blue-muted: var(--accent-soft);
+  --accent-violet: #6b8caf;
+  --accent-violet-muted: rgba(107, 140, 175, 0.12);
+  --accent-amber: var(--warning);
+  --accent-amber-hover: #e0b020;
+  --accent-amber-muted: var(--warning-soft);
+  --accent-muted: var(--accent-soft);
+
+  --success-muted: var(--success-soft);
+  --warning-muted: var(--warning-soft);
+  --danger-muted: var(--danger-soft);
+  --info-muted: var(--info-soft);
+
+  --ok: var(--success);
+  --warn: var(--warning);
+  --focus: var(--border-focus);
+  --shadow: var(--shadow-sm);
+  --radius: var(--radius-md);
+
+  /* Neutralize previous neon glow tokens */
+  --glow-cyan: none;
+  --glow-amber: none;
+  --glow-violet: none;
+  --border-glow: transparent;
+  --radius-xl: var(--radius-lg);
+}

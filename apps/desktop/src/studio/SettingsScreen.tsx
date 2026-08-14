@@ -132,6 +132,8 @@ export function SettingsScreen() {
       {loading && <p className="hint">Loading settings…</p>}
       {error && <p className="result error">{error}</p>}
 
+      <div className="settings-sections">
+      <div className="panel">
       <h3>Active project</h3>
       <p className="hint">
         Per-project production gate opt-out. Dashboard / Export re-read this when you open those screens.
@@ -149,9 +151,11 @@ export function SettingsScreen() {
           Open Dashboard
         </button>
       </div>
+      </div>
 
       {config && (
         <>
+          <div className="panel">
           <h3>App Preferences</h3>
           <p className="hint">
             Stored in the MetroForge database and applied on next launch (concurrency applies immediately).
@@ -318,11 +322,15 @@ export function SettingsScreen() {
             {saving ? 'Saving…' : 'Save Preferences'}
           </button>
           {saveMessage && <p className="hint">{saveMessage}</p>}
+          </div>
 
+          <div className="panel">
           <h3>Live worker pool</h3>
           <p className="hint">Active vs max from getConcurrencyStatus. Limits update after save.</p>
           <ConcurrencyMeters />
+          </div>
 
+          <div className="panel">
           <h3>Environment</h3>
           <dl className="settings-dl">
             <dt>App Name</dt>
@@ -397,11 +405,13 @@ export function SettingsScreen() {
               ))}
             </tbody>
           </table>
+          </div>
         </>
       )}
       <p className="hint">
         Edit <code>.env</code> in the repo root, then restart the desktop app.
       </p>
+      </div>
     </section>
   );
 }

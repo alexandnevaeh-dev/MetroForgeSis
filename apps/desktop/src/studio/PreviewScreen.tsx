@@ -5,6 +5,7 @@ import { WorldMapPreview } from './WorldMapPreview.js';
 import { NoProjectHint } from './NoProjectHint.js';
 import { useStudio } from './StudioContext.js';
 import type { ProjectPreview } from './metroforge-api.js';
+import { Badge, Button, EmptyState, Panel } from './ui/index.js';
 
 export function PreviewScreen() {
   const { selectedPath, hasActiveProject, navigate, openRoom, openAsset } = useStudio();
@@ -29,7 +30,7 @@ export function PreviewScreen() {
   }, [selectedPath]);
 
   return (
-    <section>
+    <section className="preview-screen">
       <ScreenHeader
         eyebrow="World"
         title="Game Preview"
@@ -37,9 +38,8 @@ export function PreviewScreen() {
         actions={
           <div className="row">
             <ProjectSelect />
-            <button
-              type="button"
-              className="primary"
+            <Button
+              variant="primary"
               disabled={!selectedPath || launching}
               onClick={async () => {
                 setGodotError(null);
@@ -54,9 +54,8 @@ export function PreviewScreen() {
               }}
             >
               {launching ? 'Launching…' : 'Play in Godot'}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
               disabled={!selectedPath}
               onClick={async () => {
                 setGodotError(null);
@@ -66,60 +65,114 @@ export function PreviewScreen() {
               }}
             >
               Open in Godot Editor
-            </button>
-            <button type="button" onClick={() => navigate('World')}>
-              World Editor
-            </button>
-            <button type="button" onClick={() => navigate('Assets')}>
-              Asset Gallery
-            </button>
+            </Button>
+            <Button onClick={() => navigate('World')}>World Editor</Button>
+            <Button onClick={() => navigate('Assets')}>Asset Gallery</Button>
           </div>
         }
       />
       <NoProjectHint />
+
       {hasActiveProject && (
-        <>
-      {godotError && <p className="result error">{godotError}</p>}
-      {loading && <p className="hint">Loading preview…</p>}
-      {error && <p className="result error">{error}</p>}
-      {preview && !preview.error && (
-        <>
-          <h3>{preview.title}</h3>
-          {preview.profile && <p className="hint">Profile: {preview.profile}</p>}
-          <WorldMapPreview worldGraph={preview.worldGraph} onActivate={openRoom} />
-          <h3 style={{ marginTop: '1.5rem' }}>Generated Assets</h3>
-          {preview.assetPreviews && preview.assetPreviews.length > 0 ? (
-            <div className="asset-grid">
-              {preview.assetPreviews.map((asset) => (
-                <figure
-                  key={asset.id}
-                  className="asset-card"
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => openAsset(asset.id)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      openAsset(asset.id);
-                    }
+        <div className="preview-layout">
+          {godotError && <p className="result error">{godotError}</p>}
+
+          {loading && (
+            <EmptyState title="Loading preview…" description="Fetching world graph and asset previews." />
+          )}
+
+          {!loading && error && (
+            <EmptyState
+              title="Preview unavailable"
+              description={error}
+              actions={
+                <Button
+                  onClick={() => {
+                    if (!selectedPath || !window.metroforge?.getProjectPreview) return;
+                    setLoading(true);
+                    setError(null);
+                    window.metroforge
+                      .getProjectPreview(selectedPath)
+                      .then((data) => {
+                        if (data.error) setError(data.error);
+                        setPreview(data);
+                      })
+                      .catch((err) => setError(String(err)))
+                      .finally(() => setLoading(false));
                   }}
                 >
-                  <img src={asset.dataUrl} alt={asset.id} />
-                  <figcaption>
-                    <strong>{asset.id}</strong>
-                    <span>{asset.provider ?? 'unknown'}</span>
-                    {asset.fallbackGenerated && <span className="tag">procedural</span>}
-                    {typeof asset.critiqueScore === 'number' && <span>critique: {asset.critiqueScore}</span>}
-                  </figcaption>
-                </figure>
-              ))}
-            </div>
-          ) : (
-            <p className="hint">No texture assets found in generation_manifest.json.</p>
+                  Retry
+                </Button>
+              }
+            />
           )}
-        </>
-      )}
-        </>
+
+          {!loading && preview && !preview.error && (
+            <>
+              <Panel
+                level={1}
+                title="World map"
+                actions={
+                  <>
+                    <Badge tone="muted">{preview.title ?? 'Untitled'}</Badge>
+                    {preview.profile ? <Badge tone="info">{preview.profile}</Badge> : null}
+                  </>
+                }
+              >
+                <WorldMapPreview worldGraph={preview.worldGraph} onActivate={openRoom} />
+              </Panel>
+
+              <Panel
+                level={1}
+                title="Generated assets"
+                actions={
+                  <Badge tone="muted">
+                    {preview.assetPreviews?.length ?? 0} texture
+                    {(preview.assetPreviews?.length ?? 0) === 1 ? '' : 's'}
+                  </Badge>
+                }
+              >
+                {preview.assetPreviews && preview.assetPreviews.length > 0 ? (
+                  <div className="asset-grid">
+                    {preview.assetPreviews.map((asset) => (
+                      <figure
+                        key={asset.id}
+                        className="asset-card"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => openAsset(asset.id)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            openAsset(asset.id);
+                          }
+                        }}
+                      >
+                        <img src={asset.dataUrl} alt={asset.id} />
+                        <figcaption>
+                          <strong>{asset.id}</strong>
+                          <span>{asset.provider ?? 'unknown'}</span>
+                          {asset.fallbackGenerated && <Badge tone="warning">procedural</Badge>}
+                          {typeof asset.critiqueScore === 'number' && (
+                            <span>critique: {asset.critiqueScore}</span>
+                          )}
+                        </figcaption>
+                      </figure>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState
+                    title="No texture assets"
+                    description="No texture assets found in generation_manifest.json."
+                    actions={
+                      <Button onClick={() => navigate('Assets')}>Open Asset Gallery</Button>
+                    }
+                  />
+                )}
+              </Panel>
+            </>
+          )}
+        </div>
       )}
     </section>
   );

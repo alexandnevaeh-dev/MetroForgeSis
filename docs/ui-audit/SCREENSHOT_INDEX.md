@@ -1,12 +1,11 @@
 # MetroForge UI Screenshot Index
 
-Updated: 2026-08-13T18:24:53.523Z
+Updated: 2026-08-14T23:40:52.611Z
 Project: `C:\Users\<user>\OneDrive\Documents\Metroidvania\Forged\GeneratedGames\a-wind-swept-marsh-kingdom-with-a-hidden-crypt`
 Rerun: `node scripts/capture-ui-screenshots.mjs && node scripts/capture-ui-screenshots-gaps.mjs && node scripts/build-contact-sheet.mjs`
 
 | File | Screen | State | Resolution | Priority | Notes |
 |------|--------|-------|------------|----------|-------|
-| metroforge-contact-sheet.png | Contact sheet | CRITICAL thumbnails grid | 1600xfull | CRITICAL | Built by scripts/build-contact-sheet.mjs |
 | 00-app-shell-collapsed.png | App Shell | Collapsed sidebar | 1920x1080 | IMPORTANT | Ctrl+B icon rail |
 | 00-app-shell.png | App Shell | Expanded sidebar + dashboard | 1920x1080 | CRITICAL | Full window: topbar, nav, workspace, status |
 | 01-create-1366x768.png | Create | Default with active project | 1366x768 | SUPPORTING | Responsive check |
@@ -23,12 +22,7 @@ Rerun: `node scripts/capture-ui-screenshots.mjs && node scripts/capture-ui-scree
 | 04-generation-studio-1600x900.png | Studio | Default with active project | 1600x900 | SUPPORTING | Responsive check |
 | 04-generation-studio-idle.png | Studio | Idle / ready | 1920x1080 | CRITICAL | Project selected; may show prior events |
 | 04-generation-studio.png | Studio | Default with active project | 1920x1080 | CRITICAL | Full application window |
-| 05-generation-studio-running.png | Studio | Generation started / running | 1920x1080 | CRITICAL | Real generateGame TINY_TEST LOCAL_ONLY |
-| 06-generation-studio-assets.png | Studio | Asset / artifact activity | 1920x1080 | CRITICAL | Captured during live run |
-| 06-generation-studio-godot.png | Studio | Assembly / Godot / validation phase | 1920x1080 | CRITICAL | Live run |
-| 06-generation-studio-world.png | Studio | World / graph activity | 1920x1080 | CRITICAL | Captured during live run |
 | 07-generation-studio-completed.png | Studio | Completed / historical project state | 1920x1080 | CRITICAL | Real finished project loaded in Studio (not faked progress) |
-| 07-generation-studio-qa.png | Studio | QA / validation activity | 1920x1080 | CRITICAL | Captured during live run |
 | 08-asset-gallery-1366x768.png | Assets | Default with active project | 1366x768 | SUPPORTING | Responsive check |
 | 08-asset-gallery-1440x900.png | Assets | Default with active project | 1440x900 | SUPPORTING | Responsive check |
 | 08-asset-gallery-1600x900.png | Assets | Default with active project | 1600x900 | SUPPORTING | Responsive check |
@@ -81,7 +75,6 @@ Rerun: `node scripts/capture-ui-screenshots.mjs && node scripts/capture-ui-scree
 | 22-goto-palette.png | GoTo Palette | Open (Ctrl+K) | 1920x1080 | CRITICAL | Command palette overlay |
 | detail-asset-card.png | Assets | Single asset card | crop | SUPPORTING | detail crop |
 | detail-asset-inspector.png | Assets | Inspector panel | crop | SUPPORTING | detail crop |
-| detail-forge-button.png | Studio | Primary Generate button | crop | SUPPORTING |  |
 | detail-generation-phase-rail.png | Studio | Phase timeline rail | crop | SUPPORTING | detail crop |
 | detail-model-card.png | Models | Selected model detail | crop | SUPPORTING | detail crop |
 | detail-provider-health.png | Providers | Provider card | crop | SUPPORTING | detail crop |
@@ -93,7 +86,7 @@ Rerun: `node scripts/capture-ui-screenshots.mjs && node scripts/capture-ui-scree
 
 ## Missing / incomplete
 
-- **07-generation-studio-completed-live.png**: generation not finished in time
+_None from this gap-fill pass._
 
 ## Notes
 

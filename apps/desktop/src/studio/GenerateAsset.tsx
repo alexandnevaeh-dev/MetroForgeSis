@@ -126,8 +126,9 @@ export function GenerateAssetScreen() {
       />
       <NoProjectHint />
       {hasActiveProject && (
-      <div className="gallery-layout">
+      <div className="generate-asset-layout">
         <div className="panel form-stack">
+          <h3>Request</h3>
           <ProjectSelect />
           <label>
             Prompt
@@ -159,6 +160,8 @@ export function GenerateAssetScreen() {
                 ))}
               </select>
             </label>
+          </div>
+          <div className="row">
             <label>
               Variants
               <select value={variants} onChange={(e) => setVariants(Number(e.target.value))}>
@@ -199,9 +202,12 @@ export function GenerateAssetScreen() {
           </div>
         </div>
 
-        <aside className="panel">
-          <h3>Inspector</h3>
-          {previewUrl && <img className="detail-preview" src={previewUrl} alt={selectedAssetId ?? 'asset'} />}
+        <div className="panel">
+          <h3>Pipeline results</h3>
+          {variantResults.length === 0 && !generating && (
+            <p className="hint">Run generate to see real Asset Foundry variants here.</p>
+          )}
+          {generating && <p className="hint">Running generateAsset…</p>}
           {variantResults.map((v, i) => (
             <p key={i} className={v.success ? 'result success' : 'result error'}>
               Variant {i + 1}: {v.success ? v.assetPath : v.errors?.join('; ') ?? 'failed'}
@@ -210,6 +216,13 @@ export function GenerateAssetScreen() {
               {typeof v.critiqueScore === 'number' ? ` · QA ${v.critiqueScore}` : ''}
             </p>
           ))}
+          {previewUrl && (
+            <img className="detail-preview" src={previewUrl} alt={selectedAssetId ?? 'asset'} />
+          )}
+        </div>
+
+        <aside className="panel">
+          <h3>Inspector</h3>
           <dl className="settings-dl">
             <dt>Asset id</dt>
             <dd>{selectedAssetId ?? '—'}</dd>

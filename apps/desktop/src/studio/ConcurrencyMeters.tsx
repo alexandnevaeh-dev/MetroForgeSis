@@ -45,7 +45,7 @@ export function ConcurrencyMeters({ compact = false }: { compact?: boolean }) {
   if (compact) {
     return (
       <span className="concurrency-compact" title="Live worker pool from getConcurrencyStatus">
-        {LANES.map((lane) => `${lane.short} ${formatLane(status, lane.key)}`).join(' · ')}
+        {LANES.map((lane) => `${lane.short} ${formatLane(status, lane.key)}`).join(' | ')}
       </span>
     );
   }

@@ -8,6 +8,8 @@ import type { WorldGraphPreview } from './metroforge-api.js';
 import { useStudio } from './StudioContext.js';
 import { GENERATION_MODES, GENERATION_PROFILES } from './generation-options.js';
 import { NoProjectHint } from './NoProjectHint.js';
+import { ScreenHeader } from './ScreenHeader.js';
+import { Badge, Button, EmptyState, Input, Panel, Select, Tabs } from './ui/index.js';
 
 type GenerationEvent = {
   type: string;
@@ -43,6 +45,7 @@ const STATUS_CLASS: Record<string, string> = {
   FAILED: 'status-failed',
   SKIPPED: 'status-skipped',
   WARN: 'status-warn',
+  WARNING: 'status-warn',
   DEGRADED: 'status-degraded',
   REPAIRING: 'status-repairing',
   CANCELLED: 'status-failed',
@@ -53,18 +56,48 @@ const COMPLETED_PHASE_STATUSES = new Set([
   'FAILED',
   'SKIPPED',
   'WARN',
+  'WARNING',
   'DEGRADED',
   'CANCELLED',
 ]);
 
-function phaseStatusLabel(status: string): string {
-  if (status === 'DEGRADED') return 'DEGRADED (completed with warning)';
-  if (status === 'WARN') return 'WARN (completed with warning)';
+function normalizePhaseStatus(status: string): string {
+  if (status === 'WARN') return 'WARNING';
   return status;
 }
 
+function phaseStatusLabel(status: string): string {
+  const normalized = normalizePhaseStatus(status);
+  if (normalized === 'DEGRADED') return 'DEGRADED';
+  if (normalized === 'WARNING') return 'WARNING';
+  return normalized;
+}
+
+function phaseBadgeTone(
+  status: string,
+): 'default' | 'accent' | 'success' | 'warning' | 'danger' | 'info' | 'muted' {
+  switch (normalizePhaseStatus(status)) {
+    case 'PASSED':
+      return 'success';
+    case 'RUNNING':
+    case 'REPAIRING':
+      return 'accent';
+    case 'FAILED':
+    case 'CANCELLED':
+      return 'danger';
+    case 'WARNING':
+    case 'DEGRADED':
+      return 'warning';
+    case 'SKIPPED':
+      return 'muted';
+    default:
+      return 'muted';
+  }
+}
+
 export function GenerationStudio() {
-  const { projects, selectedPath, setSelectedPath, refreshProjects, openRoom, openAsset, navigate } = useStudio();
+  const { projects, selectedPath, setSelectedPath, refreshProjects, openRoom, openAsset, navigate } =
+    useStudio();
   const [prompt, setPrompt] = useState('');
   const [profile, setProfile] = useState('TINY_TEST');
   const [mode, setMode] = useState('LOCAL_ONLY');
@@ -108,12 +141,16 @@ export function GenerationStudio() {
     const lastRoom = [...nextEvents].reverse().find((event) => event.roomId);
     if (lastRoom?.roomId) setPreviewRoomId(lastRoom.roomId);
 
-    const running = (state.phases ?? []).some((phase) => phase.status === 'RUNNING' || phase.status === 'REPAIRING');
+    const running = (state.phases ?? []).some(
+      (phase) => phase.status === 'RUNNING' || phase.status === 'REPAIRING',
+    );
     setGenerating(running);
 
-    const review = (await window.metroforge.getGenerationReviewState?.(projectPath)) as {
-      pending?: { milestone: string; phase: string; message?: string; projectPath: string } | null;
-    } | undefined;
+    const review = (await window.metroforge.getGenerationReviewState?.(projectPath)) as
+      | {
+          pending?: { milestone: string; phase: string; message?: string; projectPath: string } | null;
+        }
+      | undefined;
     if (review?.pending) {
       setReviewPaused({
         milestone: review.pending.milestone,
@@ -278,7 +315,9 @@ export function GenerationStudio() {
   });
 
   const roomsGenerated = events.filter((e) => e.type === 'RoomGenerated').length;
-  const lastQa = [...events].reverse().find((e) => e.type?.startsWith('QA') || e.type?.includes('Validation') || e.type?.includes('Repair'));
+  const lastQa = [...events]
+    .reverse()
+    .find((e) => e.type?.startsWith('QA') || e.type?.includes('Validation') || e.type?.includes('Repair'));
   const lastModel = [...events].reverse().find((e) => e.modelId || e.provider);
   const runningPhase = phases.find((p) => p.status === 'RUNNING');
   const liveProgress = useMemo(() => {
@@ -292,94 +331,101 @@ export function GenerationStudio() {
     return Math.max(overallProgress, derived);
   }, [phases, overallProgress]);
 
-  const degradedPhases = phases.filter((p) => p.status === 'DEGRADED' || p.status === 'WARN');
+  const degradedPhases = phases.filter(
+    (p) => p.status === 'DEGRADED' || p.status === 'WARN' || p.status === 'WARNING',
+  );
+
+  const activityTabItems = (
+    ['ALL', 'AI', 'ASSETS', 'WORLD', 'GODOT', 'QA', 'ERROR'] as ActivityFilter[]
+  ).map((id) => ({ id, label: id }));
 
   return (
     <section className="studio-layout">
-      <header className="studio-header screen-header">
-        <div>
-          <p className="screen-eyebrow">Create</p>
-          <h2>Generation Studio</h2>
-          <p className="hint">Live pipeline events only — progress, artifacts, and QA update as the backend emits them.</p>
-        </div>
-      </header>
+      <ScreenHeader
+        eyebrow="Create"
+        title="Generation Studio"
+        description="Live pipeline events only — progress, artifacts, and QA update as the backend emits them."
+      />
       <NoProjectHint />
 
-      <div className="studio-generate-bar row panel-l2">
-        <input
-          className="studio-prompt"
-          placeholder="Describe the world you want to forge…"
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          disabled={generating}
-        />
-        <select value={archetype} onChange={(e) => setArchetype(e.target.value)} disabled={generating}>
-          <option value="SIDE_VIEW_METROIDVANIA">Side-view</option>
-          <option value="TOP_DOWN_ACTION_ADVENTURE">Top-down</option>
-        </select>
-        <select value={profile} onChange={(e) => setProfile(e.target.value)} disabled={generating}>
-          {GENERATION_PROFILES.map((id) => (
-            <option key={id} value={id}>
-              {id}
-            </option>
-          ))}
-        </select>
-        <select value={mode} onChange={(e) => setMode(e.target.value)} disabled={generating}>
-          {GENERATION_MODES.map((id) => (
-            <option key={id} value={id}>
-              {id}
-            </option>
-          ))}
-        </select>
-        <select
-          value={generationControl}
-          onChange={(e) => setGenerationControl(e.target.value)}
-          disabled={generating}
-          title="Interactive mode pauses at review milestones"
-        >
-          <option value="autonomous">Autonomous</option>
-          <option value="interactive">Interactive Review</option>
-        </select>
-        <input
-          type="number"
-          value={seed}
-          onChange={(e) => setSeed(e.target.value)}
-          style={{ width: '5rem' }}
-          disabled={generating}
-        />
-        <button className="primary" onClick={handleGenerate} disabled={generating || !prompt.trim()}>
-          {generating ? 'Generating…' : 'Generate Game'}
-        </button>
-      </div>
+      <Panel level={2} className="studio-generate-bar" title="Request">
+        <div className="row studio-request-row">
+          <Input
+            className="studio-prompt"
+            placeholder="Describe the world you want to forge…"
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            disabled={generating}
+          />
+          <Select value={archetype} onChange={(e) => setArchetype(e.target.value)} disabled={generating}>
+            <option value="SIDE_VIEW_METROIDVANIA">Side-view</option>
+            <option value="TOP_DOWN_ACTION_ADVENTURE">Top-down</option>
+          </Select>
+          <Select value={profile} onChange={(e) => setProfile(e.target.value)} disabled={generating}>
+            {GENERATION_PROFILES.map((id) => (
+              <option key={id} value={id}>
+                {id}
+              </option>
+            ))}
+          </Select>
+          <Select value={mode} onChange={(e) => setMode(e.target.value)} disabled={generating}>
+            {GENERATION_MODES.map((id) => (
+              <option key={id} value={id}>
+                {id}
+              </option>
+            ))}
+          </Select>
+          <Select
+            value={generationControl}
+            onChange={(e) => setGenerationControl(e.target.value)}
+            disabled={generating}
+            title="Interactive mode pauses at review milestones"
+          >
+            <option value="autonomous">Autonomous</option>
+            <option value="interactive">Interactive Review</option>
+          </Select>
+          <Input
+            type="number"
+            value={seed}
+            onChange={(e) => setSeed(e.target.value)}
+            style={{ width: '5rem' }}
+            disabled={generating}
+            aria-label="Seed"
+          />
+          <Button variant="primary" onClick={handleGenerate} disabled={generating || !prompt.trim()}>
+            {generating ? 'Generating…' : 'Generate Game'}
+          </Button>
+        </div>
+      </Panel>
 
       {error && <p className="result error">{error}</p>}
       {godotError && <p className="result error">{godotError}</p>}
 
       {reviewPaused && (
-        <div className="review-gate panel-l3">
-          <h3>Review Gate: {reviewPaused.milestone}</h3>
+        <Panel level={2} className="review-gate" title={`Review Gate: ${reviewPaused.milestone}`}>
           <p className="hint">{reviewPaused.message ?? reviewPaused.phase}</p>
-          {previewReady && (
-            <button type="button" onClick={handlePartialPreview}>
-              Play Partial Preview in Godot
-            </button>
-          )}
           <div className="row">
-            <button type="button" className="primary" onClick={() => handleReviewDecision(true)}>
+            {previewReady && (
+              <Button onClick={handlePartialPreview}>Play Partial Preview in Godot</Button>
+            )}
+            <Button variant="primary" onClick={() => handleReviewDecision(true)}>
               Approve &amp; Continue
-            </button>
-            <button type="button" onClick={() => handleReviewDecision(false)}>
+            </Button>
+            <Button variant="danger" onClick={() => handleReviewDecision(false)}>
               Cancel Generation
-            </button>
+            </Button>
           </div>
-        </div>
+        </Panel>
       )}
 
       <div className="studio-workspace">
-        <aside className="studio-phases panel-l1">
-          <h3>Timeline</h3>
+        <Panel
+          level={1}
+          className="studio-phases"
+          title="Pipeline timeline"
+          actions={<Badge tone={generating ? 'accent' : 'muted'}>{liveProgress}%</Badge>}
+        >
           <div className="progress-meta">
-            <span>{liveProgress}%</span>
             <span>{runningPhase ? phaseLabel(runningPhase.phase) : generating ? 'Running' : 'Idle'}</span>
           </div>
           <div className="progress-bar-wrap" aria-label="Overall generation progress">
@@ -389,46 +435,51 @@ export function GenerationStudio() {
             <div className="phase-degraded-banner">
               <p className="check-warn">
                 {degradedPhases.length} phase{degradedPhases.length === 1 ? '' : 's'} completed with warning
-                (DEGRADED/WARN) — not a hard failure.
+                (DEGRADED/WARNING) — not a hard failure.
               </p>
               <ul className="check-list">
                 {degradedPhases.map((phase) => (
                   <li key={phase.phase} className="check-warn">
-                    {phaseLabel(phase.phase)}: {phase.message ?? phase.status}
+                    {phaseLabel(phase.phase)}: {phase.message ?? phaseStatusLabel(phase.status)}
                   </li>
                 ))}
               </ul>
             </div>
           )}
           <ul className="phase-tree">
-            {phaseRows.map(({ phase, status, message }) => (
-              <li key={phase} className={`phase-tree-item ${STATUS_CLASS[status] ?? ''}`}>
-                <span className="phase-name">{phaseLabel(phase)}</span>
-                <span className="phase-status">{phaseStatusLabel(status)}</span>
-                {message && <span className="phase-msg">{message}</span>}
-              </li>
-            ))}
+            {phaseRows.map(({ phase, status, message }) => {
+              const failed = normalizePhaseStatus(status) === 'FAILED' || normalizePhaseStatus(status) === 'CANCELLED';
+              return (
+                <li
+                  key={phase}
+                  className={`phase-tree-item ${STATUS_CLASS[status] ?? ''}${failed ? ' phase-tree-failed' : ''}`}
+                >
+                  <span className="phase-name">{phaseLabel(phase)}</span>
+                  <Badge tone={phaseBadgeTone(status)} className={failed ? 'phase-badge-failed' : undefined}>
+                    {phaseStatusLabel(status)}
+                  </Badge>
+                  {message && <span className="phase-msg">{message}</span>}
+                </li>
+              );
+            })}
           </ul>
-        </aside>
+        </Panel>
 
-        <div className="studio-preview panel-l1">
-          <div className="editor-toolbar">
-            <h3>Live preview</h3>
-            <button
-              type="button"
-              className={previewMode === 'world' ? 'tab active' : 'tab'}
-              onClick={() => setPreviewMode('world')}
-            >
-              World
-            </button>
-            <button
-              type="button"
-              className={previewMode === 'artifact' ? 'tab active' : 'tab'}
-              onClick={() => setPreviewMode('artifact')}
-            >
-              Artifact
-            </button>
-          </div>
+        <Panel
+          level={1}
+          className="studio-preview"
+          title="Live preview"
+          actions={
+            <Tabs
+              items={[
+                { id: 'world', label: 'World' },
+                { id: 'artifact', label: 'Artifact' },
+              ]}
+              value={previewMode}
+              onChange={(id) => setPreviewMode(id as 'world' | 'artifact')}
+            />
+          }
+        >
           {currentTask && <p className="current-task">{currentTask}</p>}
           {previewMode === 'artifact' && previewArtifact?.type === 'ArtifactGenerated' && (
             <LiveArtifactPreview
@@ -448,20 +499,20 @@ export function GenerationStudio() {
               />
               {previewRoomId && (
                 <div className="row" style={{ marginTop: '0.5rem' }}>
-                  <button type="button" onClick={() => openRoom(previewRoomId)}>
-                    Open {previewRoomId} in Room Editor
-                  </button>
+                  <Button onClick={() => openRoom(previewRoomId)}>Open {previewRoomId} in Room Editor</Button>
                 </div>
               )}
             </>
           )}
           {!previewArtifact && !worldGraph && (
-            <p className="hint">Artifacts and world graph appear here as they are produced.</p>
+            <EmptyState
+              title="No preview yet"
+              description="Artifacts and world graph appear here as the pipeline produces them."
+            />
           )}
-        </div>
+        </Panel>
 
-        <aside className="studio-details panel-l1">
-          <h3>Task inspector</h3>
+        <Panel level={1} className="studio-details" title="Task inspector">
           <dl className="settings-dl">
             <dt>Current task</dt>
             <dd>{currentTask ?? 'Idle'}</dd>
@@ -469,7 +520,10 @@ export function GenerationStudio() {
             <dd>{runningPhase ? phaseLabel(runningPhase.phase) : '—'}</dd>
             <dt>Model / provider</dt>
             <dd>
-              {lastModel?.modelId ?? lastModel?.provider ?? previewArtifact?.provider ?? 'emitted on task/artifact events'}
+              {lastModel?.modelId ??
+                lastModel?.provider ??
+                previewArtifact?.provider ??
+                'emitted on task/artifact events'}
             </dd>
             <dt>Rooms generated</dt>
             <dd>{roomsGenerated}</dd>
@@ -477,9 +531,9 @@ export function GenerationStudio() {
             <dd>
               {lastQa ? `${lastQa.type}${lastQa.message ? ` — ${lastQa.message}` : ''}` : '—'}
               {lastQa && (
-                <button type="button" className="tab" onClick={() => navigate('QA')}>
+                <Button size="sm" variant="ghost" onClick={() => navigate('QA')}>
                   Open QA
-                </button>
+                </Button>
               )}
             </dd>
             <dt>Fallback</dt>
@@ -489,19 +543,20 @@ export function GenerationStudio() {
               <ConcurrencyMeters compact />
             </dd>
           </dl>
-          <h3>Project</h3>
-          <select value={selectedPath} onChange={(e) => setSelectedPath(e.target.value)}>
+          <h3 className="mf-panel-title" style={{ marginTop: '0.75rem' }}>
+            Project
+          </h3>
+          <Select value={selectedPath} onChange={(e) => setSelectedPath(e.target.value)}>
             <option value="">— select —</option>
             {projects.map((p) => (
               <option key={p.slug} value={p.path}>
                 {p.title ?? p.slug}
               </option>
             ))}
-          </select>
+          </Select>
           <div className="row" style={{ marginTop: '0.75rem' }}>
-            <button
-              type="button"
-              className="primary"
+            <Button
+              variant="primary"
               disabled={!selectedPath}
               onClick={async () => {
                 setGodotError(null);
@@ -511,9 +566,8 @@ export function GenerationStudio() {
               }}
             >
               Play
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
               disabled={!selectedPath}
               onClick={async () => {
                 setGodotError(null);
@@ -523,89 +577,89 @@ export function GenerationStudio() {
               }}
             >
               Open in Godot
-            </button>
+            </Button>
           </div>
-        </aside>
+        </Panel>
 
-        <footer className="studio-footer panel-l1">
-          <div className="studio-tabs row">
-            <h3>Activity</h3>
-            {(['ALL', 'AI', 'ASSETS', 'WORLD', 'GODOT', 'QA', 'ERROR'] as ActivityFilter[]).map((f) => (
-              <button
-                key={f}
-                type="button"
-                className={activityFilter === f ? 'tab active' : 'tab'}
-                onClick={() => setActivityFilter(f)}
-              >
-                {f}
-              </button>
-            ))}
-            <input
-              value={activityQuery}
-              onChange={(e) => setActivityQuery(e.target.value)}
-              placeholder="Search activity…"
-              aria-label="Search activity"
-            />
-            {selectedPath && (
-              <button type="button" onClick={() => void refreshState(selectedPath)}>
-                Reload events
-              </button>
-            )}
-          </div>
-          {filteredActivity.length === 0 ? (
-            <div className="empty-state">
-              <p>
-                {events.length === 0
-                  ? 'Activity appears here as the pipeline emits events.'
-                  : 'No events match this filter or search.'}
-              </p>
-              {events.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActivityFilter('ALL');
-                    setActivityQuery('');
-                  }}
-                >
-                  Clear activity filters
-                </button>
+        <Panel
+          level={1}
+          className="studio-footer"
+          title="Activity stream"
+          actions={
+            <div className="row">
+              <Input
+                value={activityQuery}
+                onChange={(e) => setActivityQuery(e.target.value)}
+                placeholder="Search activity…"
+                aria-label="Search activity"
+                style={{ width: '10rem' }}
+              />
+              {selectedPath && (
+                <Button size="sm" onClick={() => void refreshState(selectedPath)}>
+                  Reload events
+                </Button>
               )}
             </div>
-          ) : (
-          <ul className="activity-feed">
-            {filteredActivity
-              .slice()
-              .reverse()
-              .slice(0, 80)
-              .map((event, i) => (
-                <li key={`${event.timestamp}-${i}`}>
-                  <button
-                    type="button"
-                    className="activity-row"
-                    onClick={() => activateEvent(event)}
+          }
+        >
+          <Tabs
+            items={activityTabItems}
+            value={activityFilter}
+            onChange={(id) => setActivityFilter(id as ActivityFilter)}
+          />
+          {filteredActivity.length === 0 ? (
+            <EmptyState
+              title={events.length === 0 ? 'No activity yet' : 'No matching events'}
+              description={
+                events.length === 0
+                  ? 'Activity appears here as the pipeline emits real events.'
+                  : 'No events match this filter or search.'
+              }
+              actions={
+                events.length > 0 ? (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setActivityFilter('ALL');
+                      setActivityQuery('');
+                    }}
                   >
-                    {formatActivityMessage(event)}
-                  </button>
-                </li>
-              ))}
-          </ul>
+                    Clear activity filters
+                  </Button>
+                ) : undefined
+              }
+            />
+          ) : (
+            <ul className="activity-feed">
+              {filteredActivity
+                .slice()
+                .reverse()
+                .slice(0, 80)
+                .map((event, i) => (
+                  <li key={`${event.timestamp}-${i}`}>
+                    <button type="button" className="activity-row" onClick={() => activateEvent(event)}>
+                      {formatActivityMessage(event)}
+                    </button>
+                  </li>
+                ))}
+            </ul>
           )}
           {validationReport && (
             <div className="qa-panel">
               <h4>QA — {String(validationReport.validationLevel ?? 'unknown')}</h4>
               <ul>
-                {(validationReport.results as Array<{ gate: string; passed: boolean; message: string }> | undefined)?.map(
-                  (r) => (
-                    <li key={r.gate} className={r.passed ? 'check-pass' : 'check-warn'}>
-                      {r.gate}: {r.passed ? 'PASS' : 'FAIL'} — {r.message}
-                    </li>
-                  ),
-                )}
+                {(
+                  validationReport.results as Array<{ gate: string; passed: boolean; message: string }> | undefined
+                )?.map((r) => (
+                  <li key={r.gate} className={r.passed ? 'check-pass' : 'check-warn'}>
+                    {r.gate}: {r.passed ? 'PASS' : 'FAIL'} — {r.message}
+                  </li>
+                ))}
               </ul>
             </div>
           )}
           <GenerationQueuePanel />
-        </footer>
+        </Panel>
       </div>
     </section>
   );
@@ -640,12 +694,12 @@ function LiveArtifactPreview({
         <strong>{event.artifactId}</strong>
         <span>{event.assetType}</span>
         <span>{event.provider}</span>
-        {event.fallbackGenerated && <span className="tag">fallback</span>}
-        {event.critiquePassed === false && <span className="tag">qa failed</span>}
+        {event.fallbackGenerated && <Badge tone="warning">fallback</Badge>}
+        {event.critiquePassed === false && <Badge tone="danger">qa failed</Badge>}
         {onOpen && (
-          <button type="button" className="tab" onClick={onOpen}>
+          <Button size="sm" variant="ghost" onClick={onOpen}>
             Open in gallery
-          </button>
+          </Button>
         )}
       </figcaption>
     </figure>

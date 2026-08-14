@@ -1,16 +1,8 @@
 {
-  "capturedAt": "2026-08-13T18:24:53.523Z",
+  "capturedAt": "2026-08-14T23:40:52.611Z",
   "project": "C:\\Users\\<user>\\OneDrive\\Documents\\Metroidvania\\Forged\\GeneratedGames\\a-wind-swept-marsh-kingdom-with-a-hidden-crypt",
   "rerun": "node scripts/capture-ui-screenshots.mjs && node scripts/capture-ui-screenshots-gaps.mjs && node scripts/build-contact-sheet.mjs",
   "screenshots": [
-    {
-      "file": "metroforge-contact-sheet.png",
-      "screen": "Contact sheet",
-      "state": "CRITICAL thumbnails grid",
-      "resolution": "1600xfull",
-      "priority": "CRITICAL",
-      "notes": "Built by scripts/build-contact-sheet.mjs"
-    },
     {
       "file": "screenshots/00-app-shell-collapsed.png",
       "screen": "App Shell",
@@ -140,52 +132,12 @@
       "notes": "Full application window"
     },
     {
-      "file": "screenshots/05-generation-studio-running.png",
-      "screen": "Studio",
-      "state": "Generation started / running",
-      "resolution": "1920x1080",
-      "priority": "CRITICAL",
-      "notes": "Real generateGame TINY_TEST LOCAL_ONLY"
-    },
-    {
-      "file": "screenshots/06-generation-studio-assets.png",
-      "screen": "Studio",
-      "state": "Asset / artifact activity",
-      "resolution": "1920x1080",
-      "priority": "CRITICAL",
-      "notes": "Captured during live run"
-    },
-    {
-      "file": "screenshots/06-generation-studio-godot.png",
-      "screen": "Studio",
-      "state": "Assembly / Godot / validation phase",
-      "resolution": "1920x1080",
-      "priority": "CRITICAL",
-      "notes": "Live run"
-    },
-    {
-      "file": "screenshots/06-generation-studio-world.png",
-      "screen": "Studio",
-      "state": "World / graph activity",
-      "resolution": "1920x1080",
-      "priority": "CRITICAL",
-      "notes": "Captured during live run"
-    },
-    {
       "file": "screenshots/07-generation-studio-completed.png",
       "screen": "Studio",
       "state": "Completed / historical project state",
       "resolution": "1920x1080",
       "priority": "CRITICAL",
       "notes": "Real finished project loaded in Studio (not faked progress)"
-    },
-    {
-      "file": "screenshots/07-generation-studio-qa.png",
-      "screen": "Studio",
-      "state": "QA / validation activity",
-      "resolution": "1920x1080",
-      "priority": "CRITICAL",
-      "notes": "Captured during live run"
     },
     {
       "file": "screenshots/08-asset-gallery-1366x768.png",
@@ -604,14 +556,6 @@
       "notes": "detail crop"
     },
     {
-      "file": "screenshots/detail-forge-button.png",
-      "screen": "Studio",
-      "state": "Primary Generate button",
-      "resolution": "crop",
-      "priority": "SUPPORTING",
-      "notes": ""
-    },
-    {
       "file": "screenshots/detail-generation-phase-rail.png",
       "screen": "Studio",
       "state": "Phase timeline rail",
@@ -676,11 +620,6 @@
       "notes": "detail crop"
     }
   ],
-  "missing": [
-    {
-      "file": "07-generation-studio-completed-live.png",
-      "reason": "generation not finished in time"
-    }
-  ],
+  "missing": [],
   "contactSheet": "docs/ui-audit/metroforge-contact-sheet.png"
 }

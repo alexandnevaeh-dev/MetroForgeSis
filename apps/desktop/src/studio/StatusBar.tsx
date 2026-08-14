@@ -12,7 +12,8 @@ export function StatusBar({
   activeNav: string;
 }) {
   const { selectedProject, navigate } = useStudio();
-  const [hardware, setHardware] = useState('—');
+  const [hwProfile, setHwProfile] = useState('—');
+  const [vram, setVram] = useState('—');
   const [providers, setProviders] = useState('—');
   const [queue, setQueue] = useState(0);
 
@@ -26,9 +27,9 @@ export function StatusBar({
           window.metroforge?.listGenerationQueue?.(),
         ]);
         if (hw) {
-          setHardware(
-            `${hw.profile}${hw.vramMb ? ` · ${Math.round(hw.vramMb / 1024)} GB VRAM` : ` · ${Math.round(hw.totalRamMb / 1024)} GB RAM`}`,
-          );
+          setHwProfile(hw.profile || '—');
+          if (hw.vramMb) setVram(`${Math.round(hw.vramMb / 1024)} GB VRAM`);
+          else setVram(`${Math.round(hw.totalRamMb / 1024)} GB RAM`);
         }
         if (list) {
           const healthy = list.filter((p) => p.health === 'healthy' && p.enabled).length;
@@ -44,25 +45,39 @@ export function StatusBar({
     return () => window.clearInterval(id);
   }, [bridgeReady]);
 
+  const projectLabel = selectedProject?.title ?? selectedProject?.slug ?? 'No project';
+
   return (
     <footer className="status-bar" role="status">
-      <span className={bridgeReady === false ? 'status-dot error' : 'status-dot ok'} />
+      <span
+        className={bridgeReady === false ? 'status-dot error' : 'status-dot ok'}
+        aria-hidden="true"
+      />
       <span>{bridgeReady === false ? 'Bridge offline' : version}</span>
-      <span className="status-sep" />
+      <span className="status-sep" aria-hidden="true" />
       <span>{activeNav}</span>
-      <span className="status-sep" />
-      <button type="button" className="status-link" onClick={() => navigate('Dashboard')}>
-        {selectedProject?.title ?? selectedProject?.slug ?? 'No project'}
+      <span className="status-sep" aria-hidden="true" />
+      <button
+        type="button"
+        className="status-link status-context"
+        onClick={() => navigate('Dashboard')}
+        title={selectedProject?.path ?? projectLabel}
+      >
+        {projectLabel}
       </button>
-      <span className="status-sep" />
+      <span className="status-sep" aria-hidden="true" />
       <button type="button" className="status-link" onClick={() => navigate('Models')}>
-        {hardware}
+        {hwProfile}
       </button>
-      <span className="status-sep" />
+      <span className="status-sep" aria-hidden="true" />
+      <button type="button" className="status-link" onClick={() => navigate('Models')}>
+        {vram}
+      </button>
+      <span className="status-sep" aria-hidden="true" />
       <button type="button" className="status-link" onClick={() => navigate('Providers')}>
         {providers}
       </button>
-      <span className="status-sep" />
+      <span className="status-sep" aria-hidden="true" />
       <button type="button" className="status-link" onClick={() => navigate('Settings')} title="Worker pool">
         <ConcurrencyMeters compact />
       </button>
@@ -70,7 +85,8 @@ export function StatusBar({
       <button type="button" className="status-link" onClick={() => navigate('Studio')}>
         {queue > 0 ? `${queue} generation job${queue === 1 ? '' : 's'}` : 'Idle'}
       </button>
-      <span className="status-hint">Ctrl+K to jump</span>
+      <span className="status-sep" aria-hidden="true" />
+      <span className="status-hint">Ctrl+K to Jump</span>
     </footer>
   );
 }

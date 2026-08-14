@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ScreenHeader } from './ScreenHeader.js';
 import { useStudio } from './StudioContext.js';
 import type { DesktopConfig } from './metroforge-api.js';
+import { Badge, EmptyState, Panel } from './ui/index.js';
 
 type ProviderRow = {
   id: string;
@@ -103,6 +104,9 @@ export function ProvidersScreen() {
       .catch((err) => setError(String(err)));
   }, []);
 
+  const healthyCount = providers.filter((p) => p.health === 'healthy').length;
+  const allHealthy = providers.length > 0 && healthyCount === providers.length;
+
   return (
     <section>
       <ScreenHeader
@@ -117,42 +121,102 @@ export function ProvidersScreen() {
       />
       {error && <p className="result error">{error}</p>}
 
+      {providers.length === 0 && !error && (
+        <EmptyState title="No providers reported" description="listProviders returned an empty catalog." />
+      )}
+
+      {providers.length > 0 && (
+        <Panel level={1} className="provider-health-summary" title="Environment">
+          <div className="dashboard-env-status">
+            <span className={allHealthy ? 'status-dot ok' : 'status-dot error'} aria-hidden="true" />
+            <span>
+              Overall Status:{' '}
+              <strong style={{ color: allHealthy ? 'var(--success)' : 'var(--warning)' }}>
+                {allHealthy ? 'Healthy' : 'Attention'}
+              </strong>
+            </span>
+          </div>
+          <div className="dashboard-env-stats">
+            <div>
+              <span>Providers</span>
+              <strong>
+                {healthyCount}/{providers.length}
+              </strong>
+            </div>
+            <div>
+              <span>Enabled</span>
+              <strong>{providers.filter((p) => p.enabled).length}</strong>
+            </div>
+            <div>
+              <span>Local</span>
+              <strong>{providers.filter((p) => p.local).length}</strong>
+            </div>
+          </div>
+        </Panel>
+      )}
+
       <div className="provider-grid">
         {providers.map((provider) => (
           <article key={provider.id} className="panel provider-card">
             <header className="provider-card-head">
               <h3>{provider.name}</h3>
-              <span className={`health-${provider.health}`}>{provider.health}</span>
+              <Badge
+                tone={
+                  provider.health === 'healthy'
+                    ? 'success'
+                    : provider.health === 'degraded'
+                      ? 'warning'
+                      : 'danger'
+                }
+              >
+                {provider.health}
+              </Badge>
             </header>
+            <div className="provider-card-status">
+              <span className={provider.health === 'healthy' ? 'status-dot ok' : provider.health === 'degraded' ? 'status-dot warn' : 'status-dot error'} aria-hidden="true" />
+              <span className="hint mono">{provider.id}</span>
+            </div>
             <ul className="stat-list">
               <li>{provider.local ? 'Local' : 'Hosted'}</li>
               <li>{provider.enabled ? 'Enabled' : 'Disabled'}</li>
               <li>Priority {provider.priority}</li>
-              <li>
-                <code>{provider.id}</code>
-              </li>
             </ul>
           </article>
         ))}
       </div>
 
       {config && (
-        <div className="panel" style={{ marginTop: '1rem' }}>
-          <h3>Key presence</h3>
+        <div className="panel provider-health-log" style={{ marginTop: '0.55rem' }}>
+          <h3>Health log</h3>
           <ul className="check-list">
             <li className={config.envKeys.nvidiaApiKey ? 'check-pass' : 'check-warn'}>
+              <Badge tone={config.envKeys.nvidiaApiKey ? 'success' : 'warning'}>
+                {config.envKeys.nvidiaApiKey ? 'PASS' : 'WARN'}
+              </Badge>{' '}
               NVIDIA — {config.envKeys.nvidiaApiKey ? 'configured' : 'not set'}
             </li>
             <li className={config.envKeys.geminiApiKey ? 'check-pass' : 'check-warn'}>
+              <Badge tone={config.envKeys.geminiApiKey ? 'success' : 'warning'}>
+                {config.envKeys.geminiApiKey ? 'PASS' : 'WARN'}
+              </Badge>{' '}
               Gemini — {config.envKeys.geminiApiKey ? 'configured' : 'not set'}
             </li>
             <li className={config.envKeys.groqApiKey ? 'check-pass' : 'check-warn'}>
+              <Badge tone={config.envKeys.groqApiKey ? 'success' : 'warning'}>
+                {config.envKeys.groqApiKey ? 'PASS' : 'WARN'}
+              </Badge>{' '}
               Groq — {config.envKeys.groqApiKey ? 'configured' : 'not set'}
             </li>
             <li className={config.envKeys.openrouterApiKey ? 'check-pass' : 'check-warn'}>
+              <Badge tone={config.envKeys.openrouterApiKey ? 'success' : 'warning'}>
+                {config.envKeys.openrouterApiKey ? 'PASS' : 'WARN'}
+              </Badge>{' '}
               OpenRouter — {config.envKeys.openrouterApiKey ? 'configured' : 'not set'}
             </li>
             <li className={config.envKeys.comfyuiUrl ? 'check-pass' : 'check-warn'}>
+              <Badge tone={config.envKeys.comfyuiUrl ? 'success' : 'warning'}>
+                {config.envKeys.comfyuiUrl ? 'PASS' : 'WARN'}
+              </Badge>{' '}
               ComfyUI — {config.envKeys.comfyuiUrl ? 'configured' : 'not set'}
             </li>
           </ul>

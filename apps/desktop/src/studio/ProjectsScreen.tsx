@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ScreenHeader } from './ScreenHeader.js';
 import { useStudio } from './StudioContext.js';
 import { openProjectInGodot, playProjectInGodot } from './godot-actions.js';
+import { Badge, Button, EmptyState, Input, Panel } from './ui/index.js';
 
 export function ProjectsScreen() {
   const { projects, selectedPath, setSelectedPath, navigate, refreshProjects } = useStudio();
@@ -27,77 +28,87 @@ export function ProjectsScreen() {
   }, [projects, query]);
 
   return (
-    <section>
+    <section className="projects-screen">
       <ScreenHeader
         eyebrow="Library"
         title="Projects"
         description="Open, play, refresh runtime templates, or export a generated Godot project."
         actions={
-          <button type="button" className="primary" onClick={() => navigate('Create')}>
+          <Button variant="primary" onClick={() => navigate('Create')}>
             New Game
-          </button>
+          </Button>
         }
       />
       {error && <p className="result error">{error}</p>}
       {godotActionError && <p className="result error">{godotActionError}</p>}
       {projects.length === 0 ? (
-        <div className="empty-state panel">
-          <p>No generated projects yet.</p>
-          <button type="button" className="primary" onClick={() => navigate('Create')}>
-            Commission a game
-          </button>
-        </div>
+        <EmptyState
+          title="No generated projects yet"
+          description="Commission a game to populate the library."
+          actions={
+            <Button variant="primary" onClick={() => navigate('Create')}>
+              Commission a game
+            </Button>
+          }
+        />
       ) : (
-        <>
+        <Panel
+          level={1}
+          title="Library"
+          actions={
+            <Badge tone="muted">
+              {filtered.length} of {projects.length}
+            </Badge>
+          }
+        >
           <div className="toolbar">
-            <input
+            <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search title, slug, profile, path…"
               aria-label="Search projects"
             />
-            <p className="hint">
-              {filtered.length} of {projects.length}
-            </p>
           </div>
           <ul className="project-list">
-            {filtered.length === 0 && <li className="hint">No projects match this search.</li>}
+            {filtered.length === 0 && (
+              <li>
+                <EmptyState title="No matches" description="No projects match this search." />
+              </li>
+            )}
             {filtered.map((p) => (
               <li key={p.slug} className={p.path === selectedPath ? 'project-card active' : 'project-card'}>
-                <strong>{p.title ?? p.slug}</strong>
-                <span>{p.profile ?? 'unknown profile'}</span>
-                <code>{p.path}</code>
-                <div className="row" style={{ marginTop: '0.5rem' }}>
-                  <button
-                    className="primary"
-                    type="button"
+                <div className="project-card-head">
+                  <strong>{p.title ?? p.slug}</strong>
+                  {p.profile ? <Badge tone="info">{p.profile}</Badge> : <Badge tone="muted">unknown profile</Badge>}
+                </div>
+                <code className="mono">{p.path}</code>
+                <div className="row" style={{ marginTop: 'var(--space-2)' }}>
+                  <Button
+                    variant="primary"
                     onClick={() => {
                       setSelectedPath(p.path);
                       navigate('Dashboard');
                     }}
                   >
                     Open in Studio
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
                     onClick={async () => {
                       setGodotActionError(null);
                       setGodotActionError(await openProjectInGodot(p.path));
                     }}
                   >
                     Open in Godot
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
                     onClick={async () => {
                       setGodotActionError(null);
                       setGodotActionError(await playProjectInGodot(p.path));
                     }}
                   >
                     Play (F5)
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
                     onClick={async () => {
                       setGodotActionError(null);
                       const result = await window.metroforge?.refreshProjectTemplate?.(p.path);
@@ -112,9 +123,8 @@ export function ProjectsScreen() {
                     }}
                   >
                     Refresh Template
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
                     onClick={async () => {
                       setGodotActionError(null);
                       const result = await window.metroforge?.exportProject?.(p.path, { force: true });
@@ -126,12 +136,12 @@ export function ProjectsScreen() {
                     }}
                   >
                     Export Package
-                  </button>
+                  </Button>
                 </div>
               </li>
             ))}
           </ul>
-        </>
+        </Panel>
       )}
     </section>
   );

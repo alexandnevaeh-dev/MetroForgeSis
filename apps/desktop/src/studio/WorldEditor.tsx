@@ -201,7 +201,7 @@ export function WorldEditor() {
         </p>
       )}
       <div className="editor-workspace world-workspace">
-        <div className="panel editor-canvas">
+        <div className="panel editor-canvas editor-canvas-fill">
           <WorldMapPreview
             worldGraph={previewGraph}
             view={view}

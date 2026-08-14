@@ -46,9 +46,9 @@ function TopCommandBar({
           type="button"
           className="topbar-icon-btn"
           onClick={onToggleSidebar}
-          aria-label={sidebarCollapsed ? 'Expand navigation' : 'Collapse navigation'}
+          title={sidebarCollapsed ? 'Expand nav (Ctrl+B)' : 'Collapse nav (Ctrl+B)'}
+          aria-label={sidebarCollapsed ? 'Expand navigation (Ctrl+B)' : 'Collapse navigation (Ctrl+B)'}
           aria-pressed={sidebarCollapsed}
-          title={sidebarCollapsed ? 'Expand nav' : 'Collapse nav'}
         >
           <span className="topbar-hamburger" aria-hidden="true" />
         </button>
@@ -109,7 +109,9 @@ export function App() {
   const [version, setVersion] = useState('MetroForge');
   const [bridgeReady, setBridgeReady] = useState<boolean | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 1366px)').matches,
+  );
 
   useEffect(() => {
     const bridge = window.metroforge;
@@ -119,6 +121,15 @@ export function App() {
     }
     setBridgeReady(true);
     bridge.getVersion().then(setVersion).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 1366px)');
+    const onChange = (event: MediaQueryListEvent) => {
+      if (event.matches) setSidebarCollapsed(true);
+    };
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
   }, []);
 
   useEffect(() => {
@@ -166,27 +177,31 @@ export function App() {
             {NAV_GROUPS.map((group) => (
               <div key={group.id} className="nav-group">
                 <span className="nav-group-label">{group.label}</span>
-                {group.items.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className={activeNav === item.id ? 'nav-item active' : 'nav-item'}
-                    onClick={() => setActiveNav(item.id)}
-                    aria-current={activeNav === item.id ? 'page' : undefined}
-                    title={item.label}
-                    data-abbrev={item.label
-                      .split(/\s+/)
-                      .map((w) => w[0])
-                      .join('')
-                      .slice(0, 2)
-                      .toUpperCase()}
-                  >
-                    <span className="nav-item-label">{item.label}</span>
-                    {'shortcut' in item && item.shortcut ? (
-                      <span className="nav-shortcut">Ctrl+{item.shortcut}</span>
-                    ) : null}
-                  </button>
-                ))}
+                {group.items.map((item) => {
+                  const shortcut =
+                    'shortcut' in item && item.shortcut ? `Ctrl+${item.shortcut}` : undefined;
+                  const tooltip = shortcut ? `${item.label} (${shortcut})` : item.label;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={activeNav === item.id ? 'nav-item active' : 'nav-item'}
+                      onClick={() => setActiveNav(item.id)}
+                      aria-current={activeNav === item.id ? 'page' : undefined}
+                      aria-label={tooltip}
+                      title={tooltip}
+                      data-abbrev={item.label
+                        .split(/\s+/)
+                        .map((w) => w[0])
+                        .join('')
+                        .slice(0, 2)
+                        .toUpperCase()}
+                    >
+                      <span className="nav-item-label">{item.label}</span>
+                      {shortcut ? <span className="nav-shortcut">{shortcut}</span> : null}
+                    </button>
+                  );
+                })}
               </div>
             ))}
           </nav>

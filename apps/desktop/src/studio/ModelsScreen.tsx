@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ScreenHeader } from './ScreenHeader.js';
 import { useStudio } from './StudioContext.js';
 import type { CatalogModel, HardwareSnapshot } from './metroforge-api.js';
+import { Badge, Button, EmptyState, Input, Panel, Select } from './ui/index.js';
 
 const ROW_HEIGHT = 36;
 const OVERSCAN = 8;
@@ -21,6 +22,19 @@ function modelAvailabilityDetail(model: CatalogModel): string {
   if (model.liveListed === false) return 'Not listed by live provider /models';
   if (model.enabled === false) return 'Catalog entry disabled';
   return 'In catalog; not currently ranked as routable';
+}
+
+function availabilityTone(label: 'AVAILABLE' | 'ROUTABLE' | 'BLOCKED') {
+  if (label === 'ROUTABLE') return 'success' as const;
+  if (label === 'BLOCKED') return 'danger' as const;
+  return 'info' as const;
+}
+
+function formatVram(model: CatalogModel): string {
+  if (model.minVramMb != null) return `${model.minVramMb} MB`;
+  if (model.recommendedVramMb != null) return `~${model.recommendedVramMb} MB`;
+  if (!model.local) return 'N/A';
+  return '—';
 }
 
 export function ModelsScreen() {
@@ -95,26 +109,31 @@ export function ModelsScreen() {
     }
   };
 
+  const routableCount = models.filter((m) => m.routable).length;
+  const installedCount = models.filter((m) => m.installed).length;
+
   return (
-    <section>
+    <section className="models-screen">
       <ScreenHeader
         eyebrow="AI"
         title="Models"
         description="Live catalog reconciled with provider keys and hardware. Status: ROUTABLE (can be selected), AVAILABLE (present but not selected), BLOCKED (provider/model disabled or not live)."
         actions={
-          <button type="button" className="primary" onClick={handleScout} disabled={scouting}>
+          <Button variant="primary" onClick={handleScout} disabled={scouting}>
             {scouting ? 'Scouting…' : 'Refresh catalog'}
-          </button>
+          </Button>
         }
       />
 
       <div className="models-layout">
-        <div className="panel">
-          <h3>Hardware</h3>
+        <Panel level={1} title="Hardware summary">
           {hardware ? (
             <ul className="stat-list">
               <li>
-                {hardware.profile} · {hardware.totalRamMb} MB RAM
+                <Badge tone="accent">{hardware.profile}</Badge>
+              </li>
+              <li>
+                {hardware.totalRamMb} MB RAM
                 {hardware.vramMb ? ` · ${hardware.vramMb} MB VRAM` : ''}
               </li>
               {hardware.gpuModel && (
@@ -125,13 +144,18 @@ export function ModelsScreen() {
                 </li>
               )}
               {hardware.cpuCores != null && <li>{hardware.cpuCores} CPU cores</li>}
+              <li>
+                Catalog · {models.length} models · {routableCount} routable · {installedCount} installed
+              </li>
             </ul>
           ) : (
-            <p className="hint">Hardware profile unavailable.</p>
+            <EmptyState title="Hardware unavailable" description="getHardwareProfile returned no snapshot." />
           )}
           {hardware?.starterPack && hardware.starterPack.length > 0 && (
             <>
-              <h3>Starter pack</h3>
+              <h3 className="mf-panel-title" style={{ marginTop: '0.75rem' }}>
+                Starter pack
+              </h3>
               <ul className="stat-list">
                 {hardware.starterPack.map((id) => (
                   <li key={id}>
@@ -141,39 +165,57 @@ export function ModelsScreen() {
               </ul>
             </>
           )}
-        </div>
+        </Panel>
 
-        <div className="panel models-table-panel">
+        <Panel
+          level={1}
+          className="models-table-panel"
+          title="Catalog"
+          actions={
+            <span className="hint">
+              {filtered.length} of {models.length}
+            </span>
+          }
+        >
           <div className="toolbar">
-            <input
+            <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search name, provider, license…"
               aria-label="Filter models"
             />
-            <select value={filter} onChange={(e) => setFilter(e.target.value as typeof filter)}>
+            <Select value={filter} onChange={(e) => setFilter(e.target.value as typeof filter)}>
               <option value="all">All</option>
               <option value="installed">Installed</option>
               <option value="text">Text</option>
               <option value="vision">Vision</option>
               <option value="image">Image</option>
               <option value="audio">Audio</option>
-            </select>
+            </Select>
           </div>
-          <VirtualizedModelTable
-            models={filtered}
-            selectedId={selected?.id}
-            onSelect={setSelectedId}
-            downloadingId={downloadingId}
-            onDownload={handleDownload}
-          />
-          <p className="hint">{filtered.length} of {models.length} models</p>
+          {filtered.length === 0 ? (
+            <EmptyState
+              title="No models match"
+              description={
+                models.length === 0
+                  ? 'listModels returned an empty catalog. Refresh after configuring providers.'
+                  : 'Adjust search or modality filter.'
+              }
+            />
+          ) : (
+            <VirtualizedModelTable
+              models={filtered}
+              selectedId={selected?.id}
+              onSelect={setSelectedId}
+              downloadingId={downloadingId}
+              onDownload={handleDownload}
+            />
+          )}
           {downloadMessage && <p className="hint">{downloadMessage}</p>}
           {downloadError && <p className="result error">{downloadError}</p>}
-        </div>
+        </Panel>
 
-        <aside className="panel">
-          <h3>Inspector</h3>
+        <Panel level={1} title="Inspector">
           {selected ? (
             <dl className="settings-dl">
               <dt>Model</dt>
@@ -187,9 +229,17 @@ export function ModelsScreen() {
               <dt>Modality</dt>
               <dd>{selected.modality}</dd>
               <dt>Availability</dt>
-              <dd>{modelAvailabilityLabel(selected)}</dd>
+              <dd>
+                <Badge tone={availabilityTone(modelAvailabilityLabel(selected))}>
+                  {modelAvailabilityLabel(selected)}
+                </Badge>
+                <span className="hint" title={modelAvailabilityDetail(selected)}>
+                  {' '}
+                  {modelAvailabilityDetail(selected)}
+                </span>
+              </dd>
               <dt>Routable</dt>
-              <dd>{selected.routable ? 'ROUTABLE' : 'not routable'}</dd>
+              <dd>{selected.routable ? 'yes' : 'no'}</dd>
               <dt>Provider enabled</dt>
               <dd>{selected.providerEnabled === false ? 'no' : 'yes'}</dd>
               <dt>Installed / local</dt>
@@ -200,6 +250,8 @@ export function ModelsScreen() {
               <dd>
                 {selected.license} · {selected.commercialUse}
               </dd>
+              <dt>VRAM</dt>
+              <dd>{formatVram(selected)}</dd>
               <dt>Hardware</dt>
               <dd>
                 {selected.recommendedRamMb ? `${selected.recommendedRamMb} MB RAM` : '—'}
@@ -213,17 +265,13 @@ export function ModelsScreen() {
               </dd>
             </dl>
           ) : (
-            <p className="hint">No model in this filter.</p>
+            <EmptyState title="No selection" description="No model in this filter." />
           )}
           <div className="row" style={{ marginTop: '0.75rem' }}>
-            <button type="button" onClick={() => navigate('Routing')}>
-              Open Routing Inspector
-            </button>
-            <button type="button" onClick={() => navigate('Providers')}>
-              Providers
-            </button>
+            <Button onClick={() => navigate('Routing')}>Open Routing Inspector</Button>
+            <Button onClick={() => navigate('Providers')}>Providers</Button>
           </div>
-        </aside>
+        </Panel>
       </div>
     </section>
   );
@@ -260,13 +308,17 @@ function VirtualizedModelTable({
   const visible = models.slice(start, end);
 
   return (
-    <div className="virtualized-table-wrap">
+    <div className="virtualized-table-wrap models-catalog-table">
       <div className="virtualized-table-head">
         <span>Model</span>
         <span>Provider</span>
-        <span>Status</span>
+        <span>Modality</span>
+        <span>Routable</span>
         <span>Installed</span>
         <span>License</span>
+        <span>VRAM</span>
+        <span>Quality</span>
+        <span>Speed</span>
         <span></span>
       </div>
       <div
@@ -313,6 +365,7 @@ function VirtualizedModelTable({
         <div style={{ height: models.length * ROW_HEIGHT, position: 'relative' }}>
           {visible.map((model, index) => {
             const row = start + index;
+            const avail = modelAvailabilityLabel(model);
             return (
               <button
                 key={model.id}
@@ -324,11 +377,15 @@ function VirtualizedModelTable({
                 style={{ position: 'absolute', top: row * ROW_HEIGHT, left: 0, right: 0, height: ROW_HEIGHT - 2 }}
                 onClick={() => onSelect(model.id)}
               >
-                <span>{model.name}</span>
+                <span title={model.id}>{model.name}</span>
                 <span>{model.provider}</span>
-                <span title={modelAvailabilityDetail(model)}>{modelAvailabilityLabel(model)}</span>
+                <span>{model.modality}</span>
+                <span title={modelAvailabilityDetail(model)}>{model.routable ? 'yes' : 'no'}</span>
                 <span>{model.installed ? 'yes' : '—'}</span>
                 <span title={model.commercialUse}>{model.license.slice(0, 18)}</span>
+                <span>{formatVram(model)}</span>
+                <span>{model.estimatedQuality ?? '—'}</span>
+                <span>{model.estimatedSpeed ?? '—'}</span>
                 <span>
                   {model.downloadable && !model.installed ? (
                     <span
@@ -341,7 +398,9 @@ function VirtualizedModelTable({
                       {downloadingId === model.id ? '…' : 'Get'}
                     </span>
                   ) : (
-                    '—'
+                    <Badge tone={availabilityTone(avail)} className="mf-badge-inline">
+                      {avail === 'ROUTABLE' ? 'R' : avail === 'BLOCKED' ? 'B' : 'A'}
+                    </Badge>
                   )}
                 </span>
               </button>
