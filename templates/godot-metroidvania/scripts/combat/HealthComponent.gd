@@ -20,7 +20,7 @@ func _ready() -> void:
 	died.connect(_on_died)
 
 func take_damage(amount: float) -> void:
-	if invulnerable or amount <= 0:
+	if invulnerable or amount <= 0 or current_health <= 0:
 		return
 	current_health = max(0, current_health - amount)
 	damaged.emit(amount)

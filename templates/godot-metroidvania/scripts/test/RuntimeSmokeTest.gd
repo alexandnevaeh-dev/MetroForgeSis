@@ -1437,8 +1437,15 @@ func _check_boss_victory_flow() -> void:
 
 	var boss_health: HealthComponent = boss.get_node("HealthComponent")
 	boss_health.take_damage(boss_health.max_health)
-	await get_tree().process_frame
-	await get_tree().process_frame
+
+	# BossController._on_died() now plays the death animation and awaits
+	# sprite.animation_finished before emitting boss_defeated, so boss_defeated (and the
+	# VICTORY transition it triggers) no longer lands within a fixed couple of frames —
+	# poll for it instead, bounded so a genuine regression still fails fast.
+	for i in range(120):
+		if completed[0]:
+			break
+		await get_tree().process_frame
 
 	_check(
 		"final_boss_defeat_triggers_victory_state",

@@ -434,5 +434,9 @@ func _on_hit_received(damage: float, knockback: Vector2) -> void:
 		_hurt_timer = HURT_FLASH_DURATION
 
 func _on_died() -> void:
+	set_physics_process(false)
+	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("death"):
+		sprite.play("death")
+		await sprite.animation_finished
 	EventBus.enemy_killed.emit(enemy_id)
 	queue_free()

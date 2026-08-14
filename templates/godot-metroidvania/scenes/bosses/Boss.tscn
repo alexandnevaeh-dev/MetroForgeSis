@@ -23,6 +23,7 @@ sheet_path = "assets/bosses/boss_final_walk.png"
 frame_size = Vector2i(48, 48)
 frame_count = 3
 hurt_sheet_path = "assets/bosses/boss_final_hurt.png"
+death_sheet_path = "assets/bosses/boss_final_death.png"
 attack_sheet_path = "assets/bosses/boss_final_attack.png"
 fallback_color = Color(0.7, 0.15, 0.7, 1)
 

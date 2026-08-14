@@ -228,5 +228,9 @@ func _on_health_changed(current: float, max_h: float) -> void:
 		AudioManager.play_sfx("boss_hit")
 
 func _on_died() -> void:
+	set_physics_process(false)
+	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("death"):
+		sprite.play("death")
+		await sprite.animation_finished
 	EventBus.boss_defeated.emit(boss_id)
 	queue_free()

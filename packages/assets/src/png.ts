@@ -261,6 +261,50 @@ export function generateAttackSheet(spec: SpriteSpec, frameCount = 4, sourcePng?
   return encodePng(width * frameCount, height, sheet);
 }
 
+/** Death animation: the sprite sinks downward and desaturates toward gray across frames,
+ *  fading to 45% opacity by the final frame — never fully invisible, since a completely
+ *  transparent last frame reads as a rendering bug rather than a death, and would also fail
+ *  the animation critic's "frame is empty" check. Frame 0 is pixel-identical to the base
+ *  sprite (matches every other sheet here), not a relabeled hurt flash. */
+export function generateDeathSheet(spec: SpriteSpec, frameCount = 4, sourcePng?: Buffer): Buffer {
+  const { rgba, width, height } = sourcePng
+    ? decodePngRgba(sourcePng)
+    : decodePngRgba(generateProceduralSprite(spec));
+  const sheet = new Uint8Array(width * frameCount * height * 4);
+
+  for (let f = 0; f < frameCount; f++) {
+    const t = frameCount > 1 ? f / (frameCount - 1) : 0;
+    const dropPx = Math.round(t * height * 0.25);
+    const alphaScale = 1 - t * 0.55;
+    for (let y = 0; y < height; y++) {
+      const srcY = y + dropPx;
+      for (let x = 0; x < width; x++) {
+        const di = (y * width * frameCount + f * width + x) * 4;
+        if (srcY >= height) {
+          sheet[di + 3] = 0;
+          continue;
+        }
+        const si = (srcY * width + x) * 4;
+        const alpha = rgba[si + 3]!;
+        if (alpha === 0) {
+          sheet[di + 3] = 0;
+          continue;
+        }
+        const r = rgba[si]!;
+        const g = rgba[si + 1]!;
+        const b = rgba[si + 2]!;
+        const gray = (r + g + b) / 3;
+        sheet[di] = Math.round(r + (gray - r) * t);
+        sheet[di + 1] = Math.round(g + (gray - g) * t);
+        sheet[di + 2] = Math.round(b + (gray - b) * t);
+        sheet[di + 3] = Math.round(alpha * alphaScale);
+      }
+    }
+  }
+
+  return encodePng(width * frameCount, height, sheet);
+}
+
 function paethPredictor(a: number, b: number, c: number): number {
   const p = a + b - c;
   const pa = Math.abs(p - a);

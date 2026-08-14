@@ -256,6 +256,12 @@ func _on_died() -> void:
 
 	set_physics_process(false)
 
+	if sprite.sprite_frames and sprite.sprite_frames.has_animation("death"):
+
+		sprite.play("death")
+
+		await sprite.animation_finished
+
 	visible = false
 
 	EventBus.player_died.emit()

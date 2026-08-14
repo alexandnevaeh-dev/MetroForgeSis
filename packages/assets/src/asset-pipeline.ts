@@ -7,6 +7,7 @@ import {
   generateWalkCycleSheet,
   generateHurtFlashSheet,
   generateAttackSheet,
+  generateDeathSheet,
   generateVfxTexture,
   type SpriteSpec,
   type VfxSpec,
@@ -542,6 +543,17 @@ export class AssetPipeline {
       ),
       'animation',
     );
+    recordAsset(
+      this.buildDeathSheetAsset(
+        'player',
+        playerSpec,
+        'assets/characters/player_death.png',
+        4,
+        tileSize,
+        playerSource,
+      ),
+      'animation',
+    );
 
     for (let i = 0; i < defaults.enemies; i++) {
       checkCancelled();
@@ -598,6 +610,17 @@ export class AssetPipeline {
           enemyId,
           enemySpec,
           `assets/enemies/${enemyId}_hurt.png`,
+          4,
+          tileSize,
+          enemySource,
+        ),
+        'animation',
+      );
+      recordAsset(
+        this.buildDeathSheetAsset(
+          enemyId,
+          enemySpec,
+          `assets/enemies/${enemyId}_death.png`,
           4,
           tileSize,
           enemySource,
@@ -746,6 +769,17 @@ export class AssetPipeline {
           bossId,
           bossSpec,
           `assets/bosses/${bossId}_hurt.png`,
+          3,
+          tileSize,
+          bossSource,
+        ),
+        'animation',
+      );
+      recordAsset(
+        this.buildDeathSheetAsset(
+          bossId,
+          bossSpec,
+          `assets/bosses/${bossId}_death.png`,
           3,
           tileSize,
           bossSource,
@@ -981,6 +1015,37 @@ export class AssetPipeline {
     });
     return withMaturity({
       id: `${id}_hurt`,
+      path,
+      buffer: processed.buffer,
+      provider: sourcePng ? 'pixel-art-processor' : 'procedural',
+      fallbackGenerated: !sourcePng,
+      critiquePassed: critique.passed,
+      critiqueScore: critique.score,
+    });
+  }
+
+  private buildDeathSheetAsset(
+    id: string,
+    spec: SpriteSpec,
+    path: string,
+    frameCount: number,
+    tileSize: number,
+    sourcePng?: Buffer,
+  ): GeneratedAsset {
+    const sheet = generateDeathSheet(spec, frameCount, sourcePng);
+    const processed = this.pixelArt.process(sheet, {
+      targetWidth: spec.width * frameCount,
+      targetHeight: spec.height,
+      tileSize,
+    });
+    const critique = critiqueAnimationSheet(processed.buffer, {
+      frameCount,
+      expectedFrameWidth: spec.width,
+      expectedFrameHeight: spec.height,
+      kind: 'death',
+    });
+    return withMaturity({
+      id: `${id}_death`,
       path,
       buffer: processed.buffer,
       provider: sourcePng ? 'pixel-art-processor' : 'procedural',

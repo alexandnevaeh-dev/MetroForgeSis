@@ -180,13 +180,19 @@ func _defeat_final_boss(host: Node, boss_id: String) -> bool:
 	# timeout was never actually enforced in practice.
 	var timeout_sec := maxf(_boss_attack_timeout_sec, MIN_BOSS_ATTACK_TIMEOUT_SEC)
 	var start_ms := Time.get_ticks_msec()
+	var boss_health_depleted := false
 	while Time.get_ticks_msec() - start_ms < int(timeout_sec * 1000.0):
 		if not is_instance_valid(boss) or not is_instance_valid(boss_health):
 			# HealthComponent's death handling frees the boss on defeat — a freed reference here
 			# is the win condition, not a bug; stop the loop rather than touch it again.
 			return true
 		if boss_health.current_health <= 0.0 or GameManager.current_state == GameManager.GameState.VICTORY:
-			return true
+			# BossController._on_died() plays a real death animation and awaits it before
+			# emitting boss_defeated/freeing the boss, so defeat is no longer synchronous with
+			# health reaching 0 — fall through to the bounded wait below instead of declaring
+			# victory before that async sequence has actually finished.
+			boss_health_depleted = true
+			break
 		if not is_instance_valid(player) or not is_instance_valid(player_attack):
 			# A real player death also frees and rebuilds the room (same teardown path a
 			# transition would use) — that's this loop's failure mode, not a crash to propagate.
@@ -235,11 +241,14 @@ func _defeat_final_boss(host: Node, boss_id: String) -> bool:
 		Input.action_release("attack")
 		await host.get_tree().physics_frame
 
-	return (
-		is_instance_valid(boss_health)
-		and boss_health.current_health <= 0.0
-		or GameManager.current_state == GameManager.GameState.VICTORY
-	)
+	if boss_health_depleted:
+		var death_wait_start := Time.get_ticks_msec()
+		while Time.get_ticks_msec() - death_wait_start < 3000:
+			if not is_instance_valid(boss_health) or GameManager.current_state == GameManager.GameState.VICTORY:
+				break
+			await host.get_tree().process_frame
+
+	return not is_instance_valid(boss_health) or GameManager.current_state == GameManager.GameState.VICTORY
 
 func _walk_player_to(host: Node, player: Node, target: Vector2, timeout_sec: float = -1.0) -> bool:
 	if timeout_sec < 0.0:

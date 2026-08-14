@@ -806,6 +806,7 @@ sheet_path = "assets/enemies/${enemyId}_walk.png"
 frame_size = Vector2i(32, 32)
 frame_count = 4
 hurt_sheet_path = "assets/enemies/${enemyId}_hurt.png"
+death_sheet_path = "assets/enemies/${enemyId}_death.png"
 attack_sheet_path = "assets/enemies/${enemyId}_attack.png"
 `;
   }
@@ -822,6 +823,7 @@ sheet_path = "assets/bosses/${bossId}_walk.png"
 frame_size = Vector2i(48, 48)
 frame_count = 3
 hurt_sheet_path = "assets/bosses/${bossId}_hurt.png"
+death_sheet_path = "assets/bosses/${bossId}_death.png"
 attack_sheet_path = "assets/bosses/${bossId}_attack.png"
 `;
   }

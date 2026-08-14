@@ -12,6 +12,7 @@ extends AnimatedSprite2D
 ## back to a solid-color placeholder with a warning, not a crash.
 @export var attack_sheet_path: String = ""
 @export var hurt_sheet_path: String = ""
+@export var death_sheet_path: String = ""
 
 func _ready() -> void:
 	_build_frames()
@@ -33,6 +34,11 @@ func _build_frames() -> void:
 		frames.add_animation("hurt")
 		frames.set_animation_loop("hurt", false)
 		_load_animation_frames(frames, "hurt", hurt_sheet_path, false)
+
+	if not death_sheet_path.is_empty():
+		frames.add_animation("death")
+		frames.set_animation_loop("death", false)
+		_load_animation_frames(frames, "death", death_sheet_path, false)
 
 	sprite_frames = frames
 	centered = false

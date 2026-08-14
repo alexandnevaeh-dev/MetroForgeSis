@@ -1,7 +1,7 @@
 import type { VisionAnalysisResponse } from './types/vision.js';
 import { decodePngRgba } from './png.js';
 
-export type AnimationKind = 'walk' | 'hurt' | 'attack' | 'tileset';
+export type AnimationKind = 'walk' | 'hurt' | 'attack' | 'death' | 'tileset';
 
 export interface AnimationCritiqueOptions {
   frameCount: number;
