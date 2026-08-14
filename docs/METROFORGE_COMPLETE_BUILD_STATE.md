@@ -396,10 +396,7 @@ Not independently profiled this pass (would require running the desktop app with
 - Affected file: `templates/godot-topdown-adventure/scripts/test/RuntimeSmokeTest.gd`.
 - Complexity: LARGE (mirroring side-view's ~1500-line suite against top-down's different APIs).
 
-**P1-3 — `RoomTileMap.gd` is orphaned dead code.**
-- Problem: complete, working tile-painting implementation, referenced by nothing (no `.tscn`, no `class_name`, no preload).
-- Affected file: `templates/godot-metroidvania/scripts/world/RoomTileMap.gd`.
-- Complexity: SMALL (delete, or wire in if a tile-painted-room feature was intended).
+**P1-3 — CORRECTED, not a real gap.** `RoomTileMap.gd` was reported orphaned because the original audit pass only searched static `.tscn` files in the template tree. It's actually referenced dynamically: `packages/godot/src/room-assembler.ts:685` emits `[ext_resource type="Script" path="res://scripts/world/RoomTileMap.gd" ...]` into every generated room's `.tscn` when `options.hasTileset` is true, and `Ground` nodes in real generated projects do reference it (confirmed directly against a fresh generation's `scenes/rooms/*.tscn`). No action needed.
 
 **P1-4 — Player/enemy animation frames are generated from a placeholder shape, not the real AI art.**
 - Problem: even when a real AI character still exists, the walk/attack/hurt sheets are built by running procedural pixel-transforms on `generateProceduralSprite`'s output, not on the real image.
@@ -584,7 +581,7 @@ Local image generation (ComfyUI/Diffusers) unavailable on this specific machine 
 0 — none found.
 
 ## P1 Issues
-5 — desktop build failure; top-down smoke-test coverage gap; orphaned `RoomTileMap.gd`; animation-source mismatch; asset-maturity gate semantics gap.
+4 — desktop build failure; top-down smoke-test coverage gap; animation-source mismatch; asset-maturity gate semantics gap. (`RoomTileMap.gd` was a false positive in the original pass — see P1-3 correction above.)
 
 ## P2 Issues
 12 — see Part 49.
@@ -628,13 +625,13 @@ FAIL — `apps/desktop` renderer only; typecheck and all other packages PASS.
 ## Top 20 Remaining Engineering Tasks
 1. Finish the desktop build fix (P1-1) — smallest, highest-leverage task available.
 2. Expand top-down's `RuntimeSmokeTest.gd` to real parity with side-view's (P1-2).
-3. Thread real AI sprite art into player/enemy animation generation instead of the procedural placeholder shape (P1-4).
-4. Decide + enforce real `PRODUCTION_READY` semantics, or retire the unreachable state (P1-5).
-5. Delete or wire in `RoomTileMap.gd` (P1-3).
+3. ~~Thread real AI sprite art into player/enemy animation generation~~ — DONE (P1-4).
+4. ~~Decide + enforce real `PRODUCTION_READY` semantics~~ — DONE (P1-5).
+5. ~~`RoomTileMap.gd`~~ — false positive, already wired via `room-assembler.ts` (P1-3, corrected).
 6. Cover `wall_jump`/`wall_slide`/`grapple` in the movement-feasibility validator.
-7. Wire or remove top-down's vestigial `AbilityPickup.gd`.
+7. ~~Wire or remove top-down's vestigial `AbilityPickup.gd`~~ — DONE (removed, confirmed dead).
 8. Add a real death animation.
-9. Fix or remove the dead grid-alignment step in the pixel-art processor.
+9. ~~Fix or remove the dead grid-alignment step in the pixel-art processor~~ — DONE (removed).
 10. Stop force-marking real-source biome tile slices as `PLACEHOLDER`.
 11. Rename/rebuild the "Game Preview" screen to actually preview the game.
 12. Give the Dungeon Editor real mutation controls (parity with World/Room editors).

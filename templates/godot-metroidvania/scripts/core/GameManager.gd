@@ -58,7 +58,7 @@ func _do_respawn() -> void:
 	var world_manager := get_tree().get_first_node_in_group("world_manager")
 	if world_manager and world_manager.has_method("transition_to_room"):
 		var respawn_room := current_room_id if current_room_id != "" else "room_000"
-		world_manager.transition_to_room(respawn_room, "left")
+		await world_manager.transition_to_room(respawn_room, "left")
 
 	current_state = GameState.PLAYING
 	EventBus.player_respawned.emit()

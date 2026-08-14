@@ -1,5 +1,46 @@
 # Parallel changelog
 
+## 2026-08-14 — CLAUDE — side-view: fixed a real MEDIUM-scale room-transition bug + movement-feasibility coverage gap
+
+- **Agent:** CLAUDE
+- **Branch:** `feature/claude-generation-runtime`
+
+Found while empirically verifying a movement-feasibility fix at MEDIUM scale (a check that had
+never been exercised beyond TINY_TEST this session): `godot_playtest` regressed to 4/8 on a fresh
+104-room/5-boss MEDIUM generation, failing at the very first room transition. Root cause:
+`WorldManager.transition_to_room()` is called synchronously from `RoomTransition._on_body_entered`
+— itself a physics-signal callback firing during the physics server's own step — and
+`_load_room()`'s `queue_free()`/`add_child()` sequence mutates the new room's physics shapes
+(one-way platforms, weak floors, its own transition triggers) while still nested inside that same
+flush, throwing "Can't change this state while flushing queries" and silently aborting the
+transition. Top-down's equivalent (`OverworldManager.load_area()`) already had the right guard
+(`await get_tree().process_frame` before any physics mutation) — side-view was simply missing the
+pattern top-down already used. Fixed by awaiting one physics frame at the top of
+`transition_to_room()` before touching the scene tree.
+
+That fix has a real side effect: room transitions now legitimately take one frame longer, which
+surfaced 4 further bugs in test code (not the fix itself) that fired-and-forgot a transition then
+checked post-transition state after a fixed, now-too-short frame wait instead of actually awaiting
+the transition's completion — `boss_room_plays_boss_music`, `ability_gate_node_present_after_navigation`,
+`ability_gate_opens_after_unlock`, `player_death_respawns_at_checkpoint_room` in
+`RuntimeSmokeTest.gd`, plus `GameManager._do_respawn()` itself firing `transition_to_room()` without
+awaiting it — real production code (every player death), not just a test artifact. All fixed by
+awaiting the coroutine at each call site instead of guessing a frame count.
+
+Also closed a real coverage gap in `packages/procedural/src/movement-feasibility.ts`: `grapple` was
+excluded from the "up transition" feasibility check entirely (its computed reach was calculated but
+literally never used for anything), and its reach constant was a hardcoded `220px` never connected
+to the real per-project `grappleSpeed` stat. Now grapple genuinely drives the check via
+`grappleSpeed`; `wall_jump`/`wall_slide`'s previous accidental self-referencing tautology (always
+passed by construction, not by real math) is now an explicit, documented design decision instead —
+chain-bounce wall-climbing genuinely isn't modeled well by a single-impulse height formula, and a
+naive one would have introduced false-positive failures on legitimate level designs.
+
+Verified: full monorepo build/typecheck/test green throughout; a completely clean side-view
+TINY_TEST regeneration (no manual file syncing) reaches `RUNTIME_VALIDATED: 18/18 gates passed`;
+the MEDIUM-scale project that originally surfaced the bug now passes its smoke test cleanly
+(180/180 hard checks, only the pre-existing, unrelated headless-screenshot soft-fail remains).
+
 ## 2026-08-14 — CLAUDE — side-view archetype: godot_playtest 4/8 → 8/8 — the "mature" archetype had never actually been runtime-verified
 
 - **Agent:** CLAUDE

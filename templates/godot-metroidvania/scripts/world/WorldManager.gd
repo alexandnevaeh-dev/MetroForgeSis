@@ -96,6 +96,14 @@ func transition_to_room(room_id: String, spawn_side: String = "left") -> void:
 	if _transitioning or room_id.is_empty():
 		return
 	_transitioning = true
+	# This is called synchronously from RoomTransition's body_entered signal, which fires *during*
+	# the physics server's own step — freeing the old room and add_child()-ing the new one from
+	# here throws "Can't change this state while flushing queries" on the new room's own physics
+	# nodes (one-way platforms, weak floors, its own RoomTransition triggers) configuring their
+	# shapes in _ready(), because that's still nested inside the same physics flush. Waiting one
+	# physics frame first moves the whole load outside it — real, reliably reproducible failure at
+	# larger world sizes (more concurrent physics activity per step), not a cosmetic warning.
+	await get_tree().physics_frame
 	# _load_room is a coroutine now (it awaits the boss-room exit lock) — awaiting it here too
 	# keeps _transitioning true for the room's *entire* load, not just its synchronous prefix,
 	# so a second transition can't interleave with one that's still finishing.

@@ -9,6 +9,8 @@ export interface MovementStats {
   dashSpeed: number;
   dashDuration: number;
   airDashSpeed: number;
+  /** Grapple pull speed (px/s) — real per-project stat, used to derive grapple reach below. */
+  grappleSpeed: number;
 }
 
 export const DEFAULT_MOVEMENT_STATS: MovementStats = {
@@ -19,7 +21,18 @@ export const DEFAULT_MOVEMENT_STATS: MovementStats = {
   dashSpeed: 500,
   dashDuration: 0.15,
   airDashSpeed: 450,
+  grappleSpeed: 620,
 };
+
+/**
+ * No generated project defines a grapple *duration* the way dash does — a grapple pull runs
+ * until it reaches its anchor, not for a fixed window. This is a deliberately generous, documented
+ * assumption for how long a single grapple traversal is allowed to take, not a real config value;
+ * it exists so grappleSpeed (a real per-project stat) drives the reach check instead of the
+ * previous hardcoded 220px constant that never varied by project and was never actually checked
+ * against anything (grapple was excluded from validation entirely — see below).
+ */
+const GRAPPLE_TRAVEL_BUDGET_SEC = 1.0;
 
 export interface RoomLayoutDefaults {
   width: number;
@@ -92,9 +105,16 @@ function verticalReachPx(ability: string, stats: MovementStats): number {
     case 'air_dash':
       return jumpApexPx(stats) + dashReachPx(stats.airDashSpeed, stats.dashDuration);
     case 'grapple':
-      return 220;
+      return dashReachPx(stats.grappleSpeed, GRAPPLE_TRAVEL_BUDGET_SEC);
     case 'wall_jump':
     case 'wall_slide':
+      // Real wall-jump reach is a chained-bounce mechanic (jump off one wall, land the next,
+      // repeat up a shaft) — a single-impulse height formula from wallJumpVertical/gravity would
+      // drastically underestimate what a real player/generated level can climb, since level design
+      // in this genre keeps wall-climb shafts within one room's height by construction. Treated as
+      // "always reaches this room's own up-gap" rather than reach-limited the way a single jump or
+      // dash is — an explicit design decision, not (as it was previously) an accidental
+      // self-referencing formula that looked like a real check but could never fail.
       return upTransitionGapPx(DEFAULT_ROOM_LAYOUT);
     default:
       return jumpApexPx(stats);
@@ -146,7 +166,7 @@ export function validateMovementFeasibility(
       continue;
     }
 
-    if (transition === 'up' && !['grapple', 'wall_jump', 'wall_slide'].includes(primaryAbility)) {
+    if (transition === 'up') {
       const reach = verticalReachPx(primaryAbility, stats);
       if (reach + 24 < upGap) {
         issues.push({
@@ -177,5 +197,6 @@ export function movementStatsFromJson(raw: Record<string, unknown>): MovementSta
     dashSpeed: Number(raw.dashSpeed ?? DEFAULT_MOVEMENT_STATS.dashSpeed),
     dashDuration: Number(raw.dashDuration ?? DEFAULT_MOVEMENT_STATS.dashDuration),
     airDashSpeed: Number(raw.airDashSpeed ?? DEFAULT_MOVEMENT_STATS.airDashSpeed),
+    grappleSpeed: Number(raw.grappleSpeed ?? DEFAULT_MOVEMENT_STATS.grappleSpeed),
   };
 }

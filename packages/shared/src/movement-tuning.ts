@@ -82,7 +82,14 @@ export function movementFeasibilityStats(
   tuning: PlayerMovementTuning,
 ): Pick<
   PlayerMovementTuning,
-  'walkSpeed' | 'runSpeed' | 'jumpHeight' | 'gravity' | 'dashSpeed' | 'dashDuration' | 'airDashSpeed'
+  | 'walkSpeed'
+  | 'runSpeed'
+  | 'jumpHeight'
+  | 'gravity'
+  | 'dashSpeed'
+  | 'dashDuration'
+  | 'airDashSpeed'
+  | 'grappleSpeed'
 > {
   return {
     walkSpeed: tuning.walkSpeed,
@@ -92,5 +99,6 @@ export function movementFeasibilityStats(
     dashSpeed: tuning.dashSpeed,
     dashDuration: tuning.dashDuration,
     airDashSpeed: tuning.airDashSpeed,
+    grappleSpeed: tuning.grappleSpeed,
   };
 }

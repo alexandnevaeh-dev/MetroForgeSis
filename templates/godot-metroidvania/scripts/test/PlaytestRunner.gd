@@ -26,6 +26,12 @@ func _ready() -> void:
 	var agent := PlaytestAgent.new()
 	var outcome: Dictionary = await agent.run(world, self)
 	_telemetry = outcome.get("telemetry", {})
+	if not outcome.get("ok", false):
+		# outcome.ok=false carries a real reason (route_unreachable / transition_failed /
+		# boss_not_defeated) that every downstream check here just reports as an opaque FAIL —
+		# surface it so a failing run is diagnosable from --quit-after output alone, not only by
+		# re-instrumenting PlaytestAgent.gd by hand each time.
+		print("PLAYTEST_FAILURE_REASON: %s from=%s to=%s" % [outcome.get("reason", "unknown"), outcome.get("from", ""), outcome.get("to", "")])
 
 	_check("playtest_route_file_present", FileAccess.file_exists("res://playtest_route.json"))
 	_check("playtest_persona_configured", _telemetry.get("personaId", "") != "")

@@ -203,11 +203,11 @@ func _check_boss_music(world: Node) -> void:
 	var previous_room := GameManager.current_room_id
 	if previous_room.is_empty():
 		previous_room = "room_000"
-	world.transition_to_room(boss_room_id)
+	await world.transition_to_room(boss_room_id)
 	await get_tree().process_frame
 	_check("boss_room_plays_boss_music", AudioManager.get_current_music_id() == "boss")
 
-	world.transition_to_room(previous_room)
+	await world.transition_to_room(previous_room)
 	await get_tree().process_frame
 	_check("leaving_boss_restores_biome_music", AudioManager.get_current_music_id() != "boss")
 
@@ -507,7 +507,7 @@ func _check_player_death_respawn(player: Node, world: Node) -> void:
 	SaveManager.set_checkpoint(checkpoint_room, 100.0, 100.0)
 	SaveManager.save_game()
 
-	GameManager._do_respawn()
+	await GameManager._do_respawn()
 	await get_tree().process_frame
 	await get_tree().process_frame
 
@@ -1478,7 +1478,7 @@ func _check_ability_gated_transition(player: Node, world: Node) -> void:
 		return
 	_check_soft("ability_gate_found_in_generated_world", true)
 
-	world.transition_to_room(gated_room_id)
+	await world.transition_to_room(gated_room_id)
 	await get_tree().process_frame
 	await get_tree().process_frame
 
@@ -1509,7 +1509,14 @@ func _check_ability_gated_transition(player: Node, world: Node) -> void:
 
 	GameManager._on_ability_acquired(ability)
 	gate._on_body_entered(current_player)
-	await get_tree().process_frame
+	# RoomTransition._on_body_entered fires WorldManager.transition_to_room() without awaiting it
+	# (correctly, for real gameplay — a signal handler has nothing useful to block on) and that
+	# coroutine now itself starts with an await get_tree().physics_frame() (see WorldManager.gd) to
+	# avoid mutating physics state mid-flush. A single idle process_frame here isn't guaranteed to
+	# land after that physics_frame resolves, so wait on the same signal type transition_to_room
+	# actually awaits internally, not a different frame type that only usually lines up with it.
+	await get_tree().physics_frame
+	await get_tree().physics_frame
 	var room_after_unlocked: String = GameManager.current_room_id
 	_check("ability_gate_opens_after_unlock", room_after_unlocked == expected_target_room)
 
