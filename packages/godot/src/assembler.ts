@@ -92,6 +92,7 @@ export class GodotProjectAssembler {
       const roomsDir = join(input.outputDir, 'scenes', 'rooms');
       mkdirSync(roomsDir, { recursive: true });
       const roomsData: Record<string, unknown> = {};
+      let topDownOverworld: TopDownOverworld | undefined;
 
       if (isTopDownArchetype(input.gameDna.archetype)) {
         const overworld =
@@ -101,6 +102,7 @@ export class GodotProjectAssembler {
             profile: input.gameDna.profile,
             tileSize: input.gameDna.technical.tileSize,
           }).overworld;
+        topDownOverworld = overworld;
         writeTopDownWorld(input.outputDir, overworld);
         const worldArchetypeById = new Map(
           input.worldGraph.nodes.map((n) => [n.id, n.metadata?.archetype as string | undefined]),
@@ -269,22 +271,19 @@ export class GodotProjectAssembler {
         );
         writeFileSync(
           join(dataDir, 'items', 'items.json'),
-          // Top-down dungeon items (GameDNA.abilities holds pickTopDownDungeonItems() output for
-          // this archetype — see generators/game-dna.ts) merge in here so InventoryManager
-          // (which only knows items it finds in this file) actually recognizes them; without
-          // this, ItemPickup.gd's grant_item() rejects every dungeon-item pickup as unknown.
+          // Top-down items merge in here so InventoryManager (which only knows items it finds in
+          // this file) actually recognizes them; without this, ChestPickup.gd's grant_item()
+          // rejects every pickup as unknown. Two distinct sources: GameDNA.abilities holds the
+          // profile-level dungeon tool rewards (pickTopDownDungeonItems() — generators/
+          // game-dna.ts); per-dungeon key items (`${dungeonId}_key`, generated fresh inside
+          // generateTopDownWorld() for each LockedDoor — packages/procedural/src/topdown/
+          // world.ts) never flow through GameDNA at all, so they must be discovered by scanning
+          // every 'chest' POI's actual itemId directly — the only real source of truth for what
+          // a chest in this project grants.
           JSON.stringify(
             {
               items: isTopDownArchetype(input.gameDna.archetype)
-                ? [
-                    ...input.gameContent.items,
-                    ...input.gameDna.abilities.map((a) => ({
-                      id: a.id,
-                      name: a.name,
-                      category: 'tool',
-                      description: `Dungeon tool: ${a.name}`,
-                    })),
-                  ]
+                ? [...input.gameContent.items, ...topDownChestItemDefs(topDownOverworld, input.gameDna.abilities)]
                 : input.gameContent.items,
             },
             null,
@@ -408,6 +407,37 @@ export class GodotProjectAssembler {
 export function getTemplatePath(archetype?: string): string {
   const plugin = getGameArchetypePlugin(resolveGameArchetype(archetype));
   return join(REPO_ROOT, plugin.runtimeTemplate);
+}
+
+/** Every real item a chest in this project can grant — the DNA-level dungeon reward tools, plus
+ *  any per-dungeon key id discovered by scanning the actual generated chest POIs (see the
+ *  items.json write site above for why the latter can't come from GameDNA). */
+function topDownChestItemDefs(
+  overworld: TopDownOverworld | undefined,
+  dnaAbilities: { id: string; name: string }[],
+): Array<{ id: string; name: string; category: string; description: string }> {
+  const known = new Map(
+    dnaAbilities.map((a) => [a.id, { id: a.id, name: a.name, category: 'tool', description: `Dungeon tool: ${a.name}` }]),
+  );
+  for (const area of overworld?.areas ?? []) {
+    for (const poi of area.pois) {
+      if (poi.kind !== 'chest') continue;
+      const itemId = String(poi.metadata.itemId ?? '');
+      if (!itemId || known.has(itemId)) continue;
+      const isKey = itemId.endsWith('_key');
+      const displayName = itemId
+        .split('_')
+        .map((part) => (part ? part[0]!.toUpperCase() + part.slice(1) : part))
+        .join(' ');
+      known.set(itemId, {
+        id: itemId,
+        name: displayName,
+        category: isKey ? 'key' : 'misc',
+        description: isKey ? `Opens the matching locked door.` : displayName,
+      });
+    }
+  }
+  return Array.from(known.values());
 }
 
 function writeTopDownWorld(outputDir: string, overworld: TopDownOverworld): void {

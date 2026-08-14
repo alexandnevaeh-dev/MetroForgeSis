@@ -477,34 +477,6 @@ export class AssetPipeline {
 
     options.onTaskStarted?.('player_sprite', 'Generating player character sprite');
     checkCancelled();
-    recordAsset(
-      await this.generateSprite({
-        id: 'player',
-        path: 'assets/characters/player.png',
-        spec: {
-          id: 'player',
-          width: 32,
-          height: 32,
-          fill: [90, 140, 220, 255],
-          accent: [240, 240, 250, 255],
-          shape: 'humanoid',
-        },
-        profile: 'CHARACTER',
-        prompt: playerPrompt,
-        imageGen,
-        negativePrompt,
-        vlm,
-        vlmAvailable,
-        artDirection: options.gameDna.identity.visualStyle,
-        tileSize,
-        seed: options.seed,
-        outputDir: options.outputDir,
-        resume: options.resume,
-        signal: options.signal,
-      }),
-      'player',
-    );
-
     const playerSpec: SpriteSpec = {
       id: 'player',
       width: 32,
@@ -513,17 +485,61 @@ export class AssetPipeline {
       accent: [240, 240, 250, 255],
       shape: 'humanoid',
     };
+    const playerAsset = await this.generateSprite({
+      id: 'player',
+      path: 'assets/characters/player.png',
+      spec: playerSpec,
+      profile: 'CHARACTER',
+      prompt: playerPrompt,
+      imageGen,
+      negativePrompt,
+      vlm,
+      vlmAvailable,
+      artDirection: options.gameDna.identity.visualStyle,
+      tileSize,
+      seed: options.seed,
+      outputDir: options.outputDir,
+      resume: options.resume,
+      signal: options.signal,
+    });
+    recordAsset(playerAsset, 'player');
 
+    // Reuse the real generated still as the animation source (matches the NPC/boss path below) —
+    // previously these three always ran off generateProceduralSprite(spec)'s flat placeholder
+    // shape even when playerAsset.buffer held real AI art, so a player with a real portrait could
+    // still have visually disconnected placeholder walk/attack/hurt frames.
+    const playerSource = playerAsset.fallbackGenerated ? undefined : playerAsset.buffer;
     recordAsset(
-      this.buildWalkSheetAsset('player', playerSpec, 'assets/characters/player_walk.png', 4, tileSize),
+      this.buildWalkSheetAsset(
+        'player',
+        playerSpec,
+        'assets/characters/player_walk.png',
+        4,
+        tileSize,
+        playerSource,
+      ),
       'animation',
     );
     recordAsset(
-      this.buildAttackSheetAsset('player', playerSpec, 'assets/characters/player_attack.png', 4, tileSize),
+      this.buildAttackSheetAsset(
+        'player',
+        playerSpec,
+        'assets/characters/player_attack.png',
+        4,
+        tileSize,
+        playerSource,
+      ),
       'animation',
     );
     recordAsset(
-      this.buildHurtSheetAsset('player', playerSpec, 'assets/characters/player_hurt.png', 4, tileSize),
+      this.buildHurtSheetAsset(
+        'player',
+        playerSpec,
+        'assets/characters/player_hurt.png',
+        4,
+        tileSize,
+        playerSource,
+      ),
       'animation',
     );
 
@@ -546,37 +562,57 @@ export class AssetPipeline {
         `Generating enemy ${i + 1} / ${defaults.enemies}`,
       );
 
-      recordAsset(
-        await this.generateSprite({
-          id: enemyId,
-          path: `assets/enemies/${enemyId}.png`,
-          spec: enemySpec,
-          profile: 'ENEMY',
-          prompt: options.artBible?.characterGuidelines.enemy ?? `enemy creature biome ${i % defaults.biomes}`,
-          imageGen,
-          negativePrompt,
-          vlm,
-          vlmAvailable,
-          artDirection: options.gameDna.identity.visualStyle,
-          tileSize,
-          seed: options.seed + i,
-          outputDir: options.outputDir,
-          resume: options.resume,
-          signal: options.signal,
-        }),
-        'enemy',
-      );
+      const enemyAsset = await this.generateSprite({
+        id: enemyId,
+        path: `assets/enemies/${enemyId}.png`,
+        spec: enemySpec,
+        profile: 'ENEMY',
+        prompt: options.artBible?.characterGuidelines.enemy ?? `enemy creature biome ${i % defaults.biomes}`,
+        imageGen,
+        negativePrompt,
+        vlm,
+        vlmAvailable,
+        artDirection: options.gameDna.identity.visualStyle,
+        tileSize,
+        seed: options.seed + i,
+        outputDir: options.outputDir,
+        resume: options.resume,
+        signal: options.signal,
+      });
+      recordAsset(enemyAsset, 'enemy');
 
+      const enemySource = enemyAsset.fallbackGenerated ? undefined : enemyAsset.buffer;
       recordAsset(
-        this.buildWalkSheetAsset(enemyId, enemySpec, `assets/enemies/${enemyId}_walk.png`, 4, tileSize),
+        this.buildWalkSheetAsset(
+          enemyId,
+          enemySpec,
+          `assets/enemies/${enemyId}_walk.png`,
+          4,
+          tileSize,
+          enemySource,
+        ),
         'animation',
       );
       recordAsset(
-        this.buildHurtSheetAsset(enemyId, enemySpec, `assets/enemies/${enemyId}_hurt.png`, 4, tileSize),
+        this.buildHurtSheetAsset(
+          enemyId,
+          enemySpec,
+          `assets/enemies/${enemyId}_hurt.png`,
+          4,
+          tileSize,
+          enemySource,
+        ),
         'animation',
       );
       recordAsset(
-        this.buildAttackSheetAsset(enemyId, enemySpec, `assets/enemies/${enemyId}_attack.png`, 4, tileSize),
+        this.buildAttackSheetAsset(
+          enemyId,
+          enemySpec,
+          `assets/enemies/${enemyId}_attack.png`,
+          4,
+          tileSize,
+          enemySource,
+        ),
         'animation',
       );
     }
@@ -636,7 +672,7 @@ export class AssetPipeline {
           `assets/npcs/${npcId}_walk.png`,
           4,
           tileSize,
-          npcAsset.buffer,
+          npcAsset.fallbackGenerated ? undefined : npcAsset.buffer,
         ),
         'animation',
       );
@@ -693,6 +729,7 @@ export class AssetPipeline {
       });
       recordAsset(bossAsset, 'boss');
 
+      const bossSource = bossAsset.fallbackGenerated ? undefined : bossAsset.buffer;
       recordAsset(
         this.buildWalkSheetAsset(
           bossId,
@@ -700,7 +737,7 @@ export class AssetPipeline {
           `assets/bosses/${bossId}_walk.png`,
           3,
           tileSize,
-          bossAsset.buffer,
+          bossSource,
         ),
         'animation',
       );
@@ -711,7 +748,7 @@ export class AssetPipeline {
           `assets/bosses/${bossId}_hurt.png`,
           3,
           tileSize,
-          bossAsset.buffer,
+          bossSource,
         ),
         'animation',
       );
@@ -722,7 +759,7 @@ export class AssetPipeline {
           `assets/bosses/${bossId}_attack.png`,
           3,
           tileSize,
-          bossAsset.buffer,
+          bossSource,
         ),
         'animation',
       );
@@ -908,8 +945,8 @@ export class AssetPipeline {
       id: `${id}_walk`,
       path,
       buffer: processed.buffer,
-      provider: 'procedural',
-      fallbackGenerated: true,
+      provider: sourcePng ? 'pixel-art-processor' : 'procedural',
+      fallbackGenerated: !sourcePng,
       critiquePassed: critique.passed,
       critiqueScore: critique.score,
     });
@@ -939,8 +976,8 @@ export class AssetPipeline {
       id: `${id}_hurt`,
       path,
       buffer: processed.buffer,
-      provider: 'procedural',
-      fallbackGenerated: true,
+      provider: sourcePng ? 'pixel-art-processor' : 'procedural',
+      fallbackGenerated: !sourcePng,
       critiquePassed: critique.passed,
       critiqueScore: critique.score,
     });
@@ -970,8 +1007,8 @@ export class AssetPipeline {
       id: `${id}_attack`,
       path,
       buffer: processed.buffer,
-      provider: 'procedural',
-      fallbackGenerated: true,
+      provider: sourcePng ? 'pixel-art-processor' : 'procedural',
+      fallbackGenerated: !sourcePng,
       critiquePassed: critique.passed,
       critiqueScore: critique.score,
     });

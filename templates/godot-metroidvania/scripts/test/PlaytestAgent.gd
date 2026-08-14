@@ -137,6 +137,13 @@ func _collect_room_pickups(host: Node, player: Node) -> void:
 			pickups_collected += 1
 			await host.get_tree().physics_frame
 
+## The boss room's own RoomTransition triggers are locked while its boss is alive (see
+## WorldManager._lock_room_exits), so this no longer needs to defend against a wandering walk
+## tearing down the room mid-fight — but it still guards every reference with is_instance_valid()
+## since a real player death (which also frees and rebuilds the room, same as a transition would)
+## remains possible regardless.
+const MIN_BOSS_ATTACK_TIMEOUT_SEC := 45.0
+
 func _defeat_final_boss(host: Node, boss_id: String) -> bool:
 	var player := host.get_tree().get_first_node_in_group("player")
 	if player == null:
@@ -155,22 +162,84 @@ func _defeat_final_boss(host: Node, boss_id: String) -> bool:
 	if player_attack == null:
 		return false
 
-	var elapsed := 0.0
-	while elapsed < _boss_attack_timeout_sec and boss_health.current_health > 0.0:
-		var delta := host.get_physics_process_delta_time()
-		elapsed += delta
-		if not await _walk_player_to(host, player, boss.global_position, 2.0):
+	# This bot doesn't dodge the boss's own attacks any more than it dodges regular enemies on
+	# the way here, so it can and does take real damage across a fight this long — and a death
+	# mid-fight triggers GameManager's respawn flow, which reloads the room (destroying this
+	# room's Boss instance) without the boss ever actually dying. That silently turned "player
+	# lost the fight" into a freed `boss`/`boss_health` reference indistinguishable from victory
+	# below. Full health removes that failure mode from what this gate is trying to prove: can
+	# the boss itself be beaten within its timeout.
+	var player_health: HealthComponent = player.get_node_or_null("HealthComponent")
+	if player_health:
+		player_health.reset_health()
+
+	# Real wall-clock time, not accumulated physics delta: this loop's own _walk_player_to call
+	# can itself take several seconds of real time (up to its own internal timeout), plus a
+	# further 0.15s attack-recovery timer — crediting only one physics frame's delta per outer
+	# iteration undercounted real elapsed time by roughly two orders of magnitude, so the nominal
+	# timeout was never actually enforced in practice.
+	var timeout_sec := maxf(_boss_attack_timeout_sec, MIN_BOSS_ATTACK_TIMEOUT_SEC)
+	var start_ms := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - start_ms < int(timeout_sec * 1000.0):
+		if not is_instance_valid(boss) or not is_instance_valid(boss_health):
+			# HealthComponent's death handling frees the boss on defeat — a freed reference here
+			# is the win condition, not a bug; stop the loop rather than touch it again.
+			return true
+		if boss_health.current_health <= 0.0 or GameManager.current_state == GameManager.GameState.VICTORY:
+			return true
+		if not is_instance_valid(player) or not is_instance_valid(player_attack):
+			# A real player death also frees and rebuilds the room (same teardown path a
+			# transition would use) — that's this loop's failure mode, not a crash to propagate.
 			break
+		# _perform_attack() positions AttackHitbox's Area2D at `30 * facing` from the player, and
+		# its own CollisionShape2D carries a further fixed local offset of (30, -20) — the two
+		# compose, so the swing's real world reach is centered ~60px out in the facing direction,
+		# not at the player's own position. Walking the player's *center* to within 12px of the
+		# boss's (this loop's original target) puts them well past melee range on the far side of
+		# that reach — the swing would land 45-75px beyond the boss, not on it. Aim the approach
+		# at a real melee-range standoff instead of the boss's center.
+		const ATTACK_REACH := 60.0
+		var approach_dir: float = 1.0 if boss.global_position.x >= player.global_position.x else -1.0
+		var approach_target: Vector2 = boss.global_position - Vector2(approach_dir * ATTACK_REACH, 0.0)
+		# A single missed approach (the boss stepped away, a hazard blocked the path) isn't a
+		# reason to give up on the whole fight — only running out of real time budget is.
+		await _walk_player_to(host, player, approach_target, 2.0)
+		if not is_instance_valid(player) or not is_instance_valid(player_attack):
+			break
+		# PlayerController only updates `facing` while movement input is actually pressed (see
+		# `if input_dir != 0: facing = sign(input_dir)`) — once the walk above is already within
+		# its "close enough" tolerance it returns without ever pressing a direction, leaving
+		# `facing` stuck on whatever it last was. Set it directly from real relative position so
+		# the attack below — which reads `facing` to position the hitbox — doesn't inherit a
+		# stale value from earlier navigation.
+		if player.get("facing") != null:
+			player.facing = 1 if boss.global_position.x >= player.global_position.x else -1
 		used_input_simulation = true
+		# Call the player's own attack, not a direct hitbox poke: _perform_attack() is what
+		# actually sets attack_hitbox.position.x = 30 * facing before activating it — poking
+		# activate()/deactivate() directly left the hitbox wherever it was last positioned
+		# (its .tscn default, or wherever an earlier real attack happened to leave it), so it
+		# would land at most once by coincidence and then silently swing at empty space next to
+		# the boss for the rest of the fight regardless of how many times this loop "attacked".
 		Input.action_press("attack")
-		player_attack.activate()
+		if player.has_method("_perform_attack"):
+			player.call("_perform_attack")
+		else:
+			player_attack.activate()
 		attacks_performed += 1
 		await host.get_tree().create_timer(0.15).timeout
-		player_attack.deactivate()
+		if is_instance_valid(player) and player.has_method("_on_attack_finished"):
+			player.call("_on_attack_finished")
+		elif is_instance_valid(player_attack):
+			player_attack.deactivate()
 		Input.action_release("attack")
 		await host.get_tree().physics_frame
 
-	return boss_health.current_health <= 0.0 or GameManager.current_state == GameManager.GameState.VICTORY
+	return (
+		is_instance_valid(boss_health)
+		and boss_health.current_health <= 0.0
+		or GameManager.current_state == GameManager.GameState.VICTORY
+	)
 
 func _walk_player_to(host: Node, player: Node, target: Vector2, timeout_sec: float = -1.0) -> bool:
 	if timeout_sec < 0.0:

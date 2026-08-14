@@ -4,6 +4,23 @@
 
 **Methodology:** Direct inspection (git, package manifests, config files, a fresh end-to-end generation + real Godot runtime validation) plus five parallel source-code investigation passes, each independently re-reading the relevant packages and reporting exact file:line evidence. No claim here is carried forward from a previous session's summary without being re-verified against current source.
 
+### 2026-08-14 build sync — real image generation proven end-to-end
+
+Full writeup: `docs/REAL_ASSET_PIPELINE_STATUS.md`. Full fresh audit this same day, prior to this
+pass: `docs/METROFORGE_COMPLETE_BUILD_STATE.md` (supersedes this document's older sections below
+wherever they conflict — that document is the more current source of truth for anything not listed
+in this table).
+
+| Area | Current state | Key files |
+|---|---|---|
+| Real image generation | **NVIDIA hosted FLUX proven end-to-end**: real network generation, real bytes, real Godot integration, 18/18 runtime gates, both archetypes | `nvidia-image.ts`, `asset-pipeline.ts` |
+| PNG decoder | **Fixed a critical bug**: never implemented PNG scanline unfiltering, so real (externally-encoded) AI images decoded as ~99.996% transparent on ingestion — silently destroyed real art while procedural placeholder art happened to round-trip fine. Rewrote with real Sub/Up/Average/Paeth reconstruction; deleted a byte-identical duplicate decoder that was the actual hot path | `packages/assets/src/png.ts`, `pixel-art-processor.ts` |
+| Asset maturity ladder | `PRODUCTION_READY` was structurally unreachable (every code path forced `productionReady: false`); now reachable via high-confidence critique score. Added `PROCESSED` (reserved, unassigned) | `packages/shared/src/asset-maturity.ts` |
+| Provider health monitor | Rich per-provider status (`HEALTHY`/`DEGRADED`/`AUTH_FAILED`/etc.) was being collapsed to a boolean before reaching a snapshot; now carried through with `OFFLINE`/`UNKNOWN` added for full 9-state coverage | `provider-health-monitor.ts` |
+| Desktop app build | Fixed: Vite renderer was failing on `packages/shared/src/config.ts`'s Node-only code leaking in through the shared package's flat export barrel. Full `pnpm run build` passes clean | `packages/shared/package.json`, `SettingsScreen.tsx` |
+| Map system | Verified already fully implemented/wired for both archetypes (real bugs blocking it were fixed earlier the same day, separate from this pass) — not a gap despite older planning docs describing it as missing | `MapManager.gd`, `WorldMapPanel.gd`, `PauseMenu.gd` |
+| Tests | **388/388 passing** (81 files), **`pnpm run build` and `pnpm run typecheck` both succeed clean** | vitest |
+
 ### 2026-08-13 build sync
 
 | Area | Current state | Key files |

@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./provider-toggles": {
+      "types": "./dist/provider-toggles.d.ts",
+      "import": "./dist/provider-toggles.js"
     }
   },
   "scripts": {

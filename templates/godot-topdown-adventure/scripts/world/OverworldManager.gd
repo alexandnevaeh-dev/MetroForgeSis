@@ -74,6 +74,12 @@ func load_area(area_id: String) -> void:
 
 	_transitioning = false
 
+## Public accessor for PlaytestAgent.gd / other external inspectors — _entities is otherwise
+## just GDScript's underscore-convention-private, not engine-enforced, but a real method here
+## keeps callers from reaching into the manager's internals directly.
+func get_current_entities() -> Node2D:
+	return _entities
+
 func _find_area(area_id: String) -> Dictionary:
 	for area in _overworld.get("areas", []):
 		if String(area.get("id", "")) == area_id:
@@ -108,6 +114,8 @@ func _build_collision(area: Dictionary) -> void:
 		_area_root.add_child(visual)
 
 func _spawn_pois(area: Dictionary) -> void:
+	var exits: Array = []
+	var boss: Node = null
 	for poi in area.get("pois", []):
 		var kind := String(poi.get("kind", ""))
 		var pos := Vector2(float(poi.get("x", 0)), float(poi.get("y", 0)))
@@ -135,14 +143,17 @@ func _spawn_pois(area: Dictionary) -> void:
 				portal.position = pos
 				portal.target_area_id = String(poi.get("metadata", {}).get("targetAreaId", "overworld"))
 				_entities.add_child(portal)
+				exits.append(portal)
 			"enemy":
 				var enemy := ENEMY_SCENE.instantiate()
 				enemy.position = pos
 				_entities.add_child(enemy)
 			"boss":
-				var boss := BOSS_SCENE.instantiate()
-				boss.position = pos
-				_entities.add_child(boss)
+				var b := BOSS_SCENE.instantiate()
+				b.position = pos
+				b.boss_id = String(poi.get("metadata", {}).get("bossId", "boss_final"))
+				_entities.add_child(b)
+				boss = b
 			"locked_door":
 				var door := LockedDoor.new()
 				door.position = pos
@@ -150,6 +161,7 @@ func _spawn_pois(area: Dictionary) -> void:
 				door.target_area_id = String(poi.get("metadata", {}).get("targetAreaId", ""))
 				door.door_id = String(poi.get("id", ""))
 				_entities.add_child(door)
+				exits.append(door)
 			"switch":
 				var sw := FloorSwitch.new()
 				sw.position = pos
@@ -166,6 +178,37 @@ func _spawn_pois(area: Dictionary) -> void:
 				_entities.add_child(shrine)
 	if _player == null:
 		_ensure_player(Vector2(64, 64))
+	if boss:
+		_lock_arena_exits(boss, exits)
+
+## Classic boss-arena pattern: seal the room's own exits while its boss is alive, so neither a
+## real player nor the free-roaming boss AI can carry someone out of an in-progress fight through
+## the back door. Re-opens automatically on the boss's death signal.
+func _lock_arena_exits(boss: Node, exits: Array) -> void:
+	# Freshly-instantiated exits set monitoring = true in their own _ready() (AreaPortal.gd/
+	# LockedDoor.gd), and add_child() defers _ready() on a node whose parent is already inside
+	# the tree — it runs *after* this function's caller (_spawn_pois), not before. Locking here
+	# synchronously would just get silently overwritten a moment later; wait a frame so every
+	# exit's own _ready() has already run before this applies the lock on top of it.
+	await get_tree().process_frame
+	for exit in exits:
+		if is_instance_valid(exit) and exit is Area2D:
+			exit.monitoring = false
+			exit.monitorable = false
+	if not is_instance_valid(boss):
+		return
+	var health := boss.get_node_or_null("HealthComponent")
+	if health and health.has_signal("died"):
+		health.died.connect(func():
+			# died fires from inside HurtboxComponent's own area_entered handling (the killing
+			# blow's signal chain), and Godot rejects monitoring/monitorable writes made while
+			# still inside an Area2D's in/out signal callback — set_deferred applies them right
+			# after physics processing finishes instead of raising "blocked during in/out signal".
+			for exit in exits:
+				if is_instance_valid(exit) and exit is Area2D:
+					exit.set_deferred("monitoring", true)
+					exit.set_deferred("monitorable", true)
+		)
 
 func _ensure_player(pos: Vector2) -> void:
 	if _player and is_instance_valid(_player):

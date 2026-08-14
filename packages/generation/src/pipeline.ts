@@ -337,6 +337,8 @@ export class GenerationPipeline {
     }
 
     // Normalize LLM/deterministic ability ids onto registered runtime implementations.
+    // No-op for TOP_DOWN_ACTION_ADVENTURE — see remapGameDnaAbilities's own doc comment
+    // (packages/generation/src/remap-project-abilities.ts) for why.
     const abilityRemap = remapGameDnaAbilities(gameDna);
     gameDna = abilityRemap.dna;
     if (abilityRemap.changed) {

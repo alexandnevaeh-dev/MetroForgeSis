@@ -131,13 +131,28 @@ func _load_boss_definition(id: String) -> Dictionary:
 			return boss
 	return {}
 
+const MOVE_SPEED := 70.0
+const CHASE_RANGE := 26.0
+
 func _physics_process(delta: float) -> void:
 	if not health.is_alive():
 		return
-	velocity.y += 980.0 * delta
 
 	if _hurt_timer > 0.0:
 		_hurt_timer -= delta
+
+	# Hold position while telegraphing or mid-swing — this is the same window
+	# _set_telegraph_visual() flags visually (red flash), so a player who reacts to that tell
+	# gets a real chance to back out of range instead of the boss just closing the gap anyway.
+	if _attack_busy or _telegraph_active:
+		velocity = Vector2.ZERO
+	else:
+		var player := get_tree().get_first_node_in_group("player") as Node2D
+		if player and global_position.distance_to(player.global_position) > CHASE_RANGE:
+			velocity = (player.global_position - global_position).normalized() * MOVE_SPEED
+		else:
+			velocity = Vector2.ZERO
+	move_and_slide()
 
 	if sprite and sprite.sprite_frames:
 		if _hurt_timer > 0.0 and sprite.sprite_frames.has_animation("hurt"):

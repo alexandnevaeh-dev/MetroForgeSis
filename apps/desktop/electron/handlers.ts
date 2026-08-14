@@ -593,6 +593,7 @@ export function registerIpcHandlers(cwd: string): void {
           id: visionCritic.backendId(),
           category: 'vision',
           health: visionAvailable ? 'healthy' : 'unavailable',
+          status: visionAvailable ? 'HEALTHY' : 'OFFLINE',
           local: visionCritic.backendId().includes('ollama'),
           message: visionAvailable ? 'Vision critic reachable' : 'Vision critic unavailable',
         },

@@ -1,0 +1,686 @@
+{
+  "capturedAt": "2026-08-13T18:24:53.523Z",
+  "project": "C:\\Users\\<user>\\OneDrive\\Documents\\Metroidvania\\Forged\\GeneratedGames\\a-wind-swept-marsh-kingdom-with-a-hidden-crypt",
+  "rerun": "node scripts/capture-ui-screenshots.mjs && node scripts/capture-ui-screenshots-gaps.mjs && node scripts/build-contact-sheet.mjs",
+  "screenshots": [
+    {
+      "file": "metroforge-contact-sheet.png",
+      "screen": "Contact sheet",
+      "state": "CRITICAL thumbnails grid",
+      "resolution": "1600xfull",
+      "priority": "CRITICAL",
+      "notes": "Built by scripts/build-contact-sheet.mjs"
+    },
+    {
+      "file": "screenshots/00-app-shell-collapsed.png",
+      "screen": "App Shell",
+      "state": "Collapsed sidebar",
+      "resolution": "1920x1080",
+      "priority": "IMPORTANT",
+      "notes": "Ctrl+B icon rail"
+    },
+    {
+      "file": "screenshots/00-app-shell.png",
+      "screen": "App Shell",
+      "state": "Expanded sidebar + dashboard",
+      "resolution": "1920x1080",
+      "priority": "CRITICAL",
+      "notes": "Full window: topbar, nav, workspace, status"
+    },
+    {
+      "file": "screenshots/01-create-1366x768.png",
+      "screen": "Create",
+      "state": "Default with active project",
+      "resolution": "1366x768",
+      "priority": "SUPPORTING",
+      "notes": "Responsive check"
+    },
+    {
+      "file": "screenshots/01-create-1440x900.png",
+      "screen": "Create",
+      "state": "Default with active project",
+      "resolution": "1440x900",
+      "priority": "SUPPORTING",
+      "notes": "Responsive check"
+    },
+    {
+      "file": "screenshots/01-create-1600x900.png",
+      "screen": "Create",
+      "state": "Default with active project",
+      "resolution": "1600x900",
+      "priority": "SUPPORTING",
+      "notes": "Responsive check"
+    },
+    {
+      "file": "screenshots/01-create.png",
+      "screen": "Create",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "priority": "CRITICAL",
+      "notes": "Full application window"
+    },
+    {
+      "file": "screenshots/02-projects.png",
+      "screen": "Projects",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "priority": "IMPORTANT",
+      "notes": "Full application window"
+    },
+    {
+      "file": "screenshots/03-dashboard-1366x768.png",
+      "screen": "Dashboard",
+      "state": "Default with active project",
+      "resolution": "1366x768",
+      "priority": "SUPPORTING",
+      "notes": "Responsive check"
+    },
+    {
+      "file": "screenshots/03-dashboard-1440x900.png",
+      "screen": "Dashboard",
+      "state": "Default with active project",
+      "resolution": "1440x900",
+      "priority": "SUPPORTING",
+      "notes": "Responsive check"
+    },
+    {
+      "file": "screenshots/03-dashboard-1600x900.png",
+      "screen": "Dashboard",
+      "state": "Default with active project",
+      "resolution": "1600x900",
+      "priority": "SUPPORTING",
+      "notes": "Responsive check"
+    },
+    {
+      "file": "screenshots/03-dashboard.png",
+      "screen": "Dashboard",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "priority": "CRITICAL",
+      "notes": "Full application window"
+    },
+    {
+      "file": "screenshots/04-generation-studio-1366x768.png",
+      "screen": "Studio",
+      "state": "Default with active project",
+      "resolution": "1366x768",
+      "priority": "SUPPORTING",
+      "notes": "Responsive check"
+    },
+    {
+      "file": "screenshots/04-generation-studio-1440x900.png",
+      "screen": "Studio",
+      "state": "Default with active project",
+      "resolution": "1440x900",
+      "priority": "SUPPORTING",
+      "notes": "Responsive check"
+    },
+    {
+      "file": "screenshots/04-generation-studio-1600x900.png",
+      "screen": "Studio",
+      "state": "Default with active project",
+      "resolution": "1600x900",
+      "priority": "SUPPORTING",
+      "notes": "Responsive check"
+    },
+    {
+      "file": "screenshots/04-generation-studio-idle.png",
+      "screen": "Studio",
+      "state": "Idle / ready",
+      "resolution": "1920x1080",
+      "priority": "CRITICAL",
+      "notes": "Project selected; may show prior events"
+    },
+    {
+      "file": "screenshots/04-generation-studio.png",
+      "screen": "Studio",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "priority": "CRITICAL",
+      "notes": "Full application window"
+    },
+    {
+      "file": "screenshots/05-generation-studio-running.png",
+      "screen": "Studio",
+      "state": "Generation started / running",
+      "resolution": "1920x1080",
+      "priority": "CRITICAL",
+      "notes": "Real generateGame TINY_TEST LOCAL_ONLY"
+    },
+    {
+      "file": "screenshots/06-generation-studio-assets.png",
+      "screen": "Studio",
+      "state": "Asset / artifact activity",
+      "resolution": "1920x1080",
+      "priority": "CRITICAL",
+      "notes": "Captured during live run"
+    },
+    {
+      "file": "screenshots/06-generation-studio-godot.png",
+      "screen": "Studio",
+      "state": "Assembly / Godot / validation phase",
+      "resolution": "1920x1080",
+      "priority": "CRITICAL",
+      "notes": "Live run"
+    },
+    {
+      "file": "screenshots/06-generation-studio-world.png",
+      "screen": "Studio",
+      "state": "World / graph activity",
+      "resolution": "1920x1080",
+      "priority": "CRITICAL",
+      "notes": "Captured during live run"
+    },
+    {
+      "file": "screenshots/07-generation-studio-completed.png",
+      "screen": "Studio",
+      "state": "Completed / historical project state",
+      "resolution": "1920x1080",
+      "priority": "CRITICAL",
+      "notes": "Real finished project loaded in Studio (not faked progress)"
+    },
+    {
+      "file": "screenshots/07-generation-studio-qa.png",
+      "screen": "Studio",
+      "state": "QA / validation activity",
+      "resolution": "1920x1080",
+      "priority": "CRITICAL",
+      "notes": "Captured during live run"
+    },
+    {
+      "file": "screenshots/08-asset-gallery-1366x768.png",
+      "screen": "Assets",
+      "state": "Default with active project",
+      "resolution": "1366x768",
+      "priority": "SUPPORTING",
+      "notes": "Responsive check"
+    },
+    {
+      "file": "screenshots/08-asset-gallery-1440x900.png",
+      "screen": "Assets",
+      "state": "Default with active project",
+      "resolution": "1440x900",
+      "priority": "SUPPORTING",
+      "notes": "Responsive check"
+    },
+    {
+      "file": "screenshots/08-asset-gallery-1600x900.png",
+      "screen": "Assets",
+      "state": "Default with active project",
+      "resolution": "1600x900",
+      "priority": "SUPPORTING",
+      "notes": "Responsive check"
+    },
+    {
+      "file": "screenshots/08-asset-gallery-audio.png",
+      "screen": "Assets",
+      "state": "Audio category (Music/SFX)",
+      "resolution": "1920x1080",
+      "priority": "IMPORTANT",
+      "notes": "gap-fill"
+    },
+    {
+      "file": "screenshots/08-asset-gallery-filtered.png",
+      "screen": "Assets",
+      "state": "Category filter",
+      "resolution": "1920x1080",
+      "priority": "IMPORTANT",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/08-asset-gallery-tileset.png",
+      "screen": "Assets",
+      "state": "Tileset category",
+      "resolution": "1920x1080",
+      "priority": "IMPORTANT",
+      "notes": "gap-fill"
+    },
+    {
+      "file": "screenshots/08-asset-gallery.png",
+      "screen": "Assets",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "priority": "CRITICAL",
+      "notes": "Full application window"
+    },
+    {
+      "file": "screenshots/09-asset-detail-animation.png",
+      "screen": "Assets",
+      "state": "Animation / player sprite selected",
+      "resolution": "1920x1080",
+      "priority": "IMPORTANT",
+      "notes": "gap-fill"
+    },
+    {
+      "file": "screenshots/09-asset-detail-tileset.png",
+      "screen": "Assets",
+      "state": "Tileset selected + inspector",
+      "resolution": "1920x1080",
+      "priority": "IMPORTANT",
+      "notes": "gap-fill"
+    },
+    {
+      "file": "screenshots/09-asset-detail.png",
+      "screen": "Assets",
+      "state": "Asset selected + inspector",
+      "resolution": "1920x1080",
+      "priority": "CRITICAL",
+      "notes": "Real manifest asset"
+    },
+    {
+      "file": "screenshots/10-manual-asset-generator-configured.png",
+      "screen": "Generate Asset",
+      "state": "Configured prompt (no generate)",
+      "resolution": "1920x1080",
+      "priority": "IMPORTANT",
+      "notes": "Avoided expensive generateAsset"
+    },
+    {
+      "file": "screenshots/10-manual-asset-generator.png",
+      "screen": "Generate Asset",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "priority": "IMPORTANT",
+      "notes": "Full application window"
+    },
+    {
+      "file": "screenshots/11-world-editor-1366x768.png",
+      "screen": "World",
+      "state": "Default with active project",
+      "resolution": "1366x768",
+      "priority": "SUPPORTING",
+      "notes": "Responsive check"
+    },
+    {
+      "file": "screenshots/11-world-editor-1440x900.png",
+      "screen": "World",
+      "state": "Default with active project",
+      "resolution": "1440x900",
+      "priority": "SUPPORTING",
+      "notes": "Responsive check"
+    },
+    {
+      "file": "screenshots/11-world-editor-1600x900.png",
+      "screen": "World",
+      "state": "Default with active project",
+      "resolution": "1600x900",
+      "priority": "SUPPORTING",
+      "notes": "Responsive check"
+    },
+    {
+      "file": "screenshots/11-world-editor-graph.png",
+      "screen": "World",
+      "state": "Graph view",
+      "resolution": "1920x1080",
+      "priority": "IMPORTANT",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/11-world-editor-selected.png",
+      "screen": "World",
+      "state": "Room selected + inspector",
+      "resolution": "1920x1080",
+      "priority": "IMPORTANT",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/11-world-editor-spatial.png",
+      "screen": "World",
+      "state": "Spatial / overworld",
+      "resolution": "1920x1080",
+      "priority": "IMPORTANT",
+      "notes": "Uses getOverworldMap when available"
+    },
+    {
+      "file": "screenshots/11-world-editor.png",
+      "screen": "World",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "priority": "CRITICAL",
+      "notes": "Full application window"
+    },
+    {
+      "file": "screenshots/12-world-progression.png",
+      "screen": "World",
+      "state": "Progression view",
+      "resolution": "1920x1080",
+      "priority": "CRITICAL",
+      "notes": "World graph progression layout"
+    },
+    {
+      "file": "screenshots/13-room-editor-1366x768.png",
+      "screen": "Rooms",
+      "state": "Default with active project",
+      "resolution": "1366x768",
+      "priority": "SUPPORTING",
+      "notes": "Responsive check"
+    },
+    {
+      "file": "screenshots/13-room-editor-1440x900.png",
+      "screen": "Rooms",
+      "state": "Default with active project",
+      "resolution": "1440x900",
+      "priority": "SUPPORTING",
+      "notes": "Responsive check"
+    },
+    {
+      "file": "screenshots/13-room-editor-1600x900.png",
+      "screen": "Rooms",
+      "state": "Default with active project",
+      "resolution": "1600x900",
+      "priority": "SUPPORTING",
+      "notes": "Responsive check"
+    },
+    {
+      "file": "screenshots/13-room-editor-collision.png",
+      "screen": "Rooms",
+      "state": "Collision layer",
+      "resolution": "1920x1080",
+      "priority": "IMPORTANT",
+      "notes": "Occupancy / getRoomCollision"
+    },
+    {
+      "file": "screenshots/13-room-editor-debug.png",
+      "screen": "Rooms",
+      "state": "Debug JSON",
+      "resolution": "1920x1080",
+      "priority": "SUPPORTING",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/13-room-editor-entities.png",
+      "screen": "Rooms",
+      "state": "Entities layer",
+      "resolution": "1920x1080",
+      "priority": "SUPPORTING",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/13-room-editor-visual.png",
+      "screen": "Rooms",
+      "state": "Visual / tile paint layer",
+      "resolution": "1920x1080",
+      "priority": "IMPORTANT",
+      "notes": "gap-fill"
+    },
+    {
+      "file": "screenshots/13-room-editor.png",
+      "screen": "Rooms",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "priority": "CRITICAL",
+      "notes": "Full application window"
+    },
+    {
+      "file": "screenshots/14-dungeon-editor-selected.png",
+      "screen": "Dungeon",
+      "state": "Room selected + inspector/locks",
+      "resolution": "1920x1080",
+      "priority": "IMPORTANT",
+      "notes": "gap-fill"
+    },
+    {
+      "file": "screenshots/14-dungeon-editor.png",
+      "screen": "Dungeon",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "priority": "IMPORTANT",
+      "notes": "Full application window"
+    },
+    {
+      "file": "screenshots/15-game-preview.png",
+      "screen": "Preview",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "priority": "IMPORTANT",
+      "notes": "Full application window"
+    },
+    {
+      "file": "screenshots/16-models-selected.png",
+      "screen": "Models",
+      "state": "Model selected",
+      "resolution": "1920x1080",
+      "priority": "IMPORTANT",
+      "notes": "No secrets"
+    },
+    {
+      "file": "screenshots/16-models.png",
+      "screen": "Models",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "priority": "IMPORTANT",
+      "notes": "Full application window"
+    },
+    {
+      "file": "screenshots/17-providers.png",
+      "screen": "Providers",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "priority": "IMPORTANT",
+      "notes": "Full application window"
+    },
+    {
+      "file": "screenshots/18-routing-inspector-1366x768.png",
+      "screen": "Routing",
+      "state": "Default with active project",
+      "resolution": "1366x768",
+      "priority": "SUPPORTING",
+      "notes": "Responsive check"
+    },
+    {
+      "file": "screenshots/18-routing-inspector-1440x900.png",
+      "screen": "Routing",
+      "state": "Default with active project",
+      "resolution": "1440x900",
+      "priority": "SUPPORTING",
+      "notes": "Responsive check"
+    },
+    {
+      "file": "screenshots/18-routing-inspector-1600x900.png",
+      "screen": "Routing",
+      "state": "Default with active project",
+      "resolution": "1600x900",
+      "priority": "SUPPORTING",
+      "notes": "Responsive check"
+    },
+    {
+      "file": "screenshots/18-routing-inspector-refreshed.png",
+      "screen": "Routing",
+      "state": "After refresh",
+      "resolution": "1920x1080",
+      "priority": "CRITICAL",
+      "notes": "Real rankModels / explainModelRouting"
+    },
+    {
+      "file": "screenshots/18-routing-inspector.png",
+      "screen": "Routing",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "priority": "CRITICAL",
+      "notes": "Full application window"
+    },
+    {
+      "file": "screenshots/19-qa-1366x768.png",
+      "screen": "QA",
+      "state": "Default with active project",
+      "resolution": "1366x768",
+      "priority": "SUPPORTING",
+      "notes": "Responsive check"
+    },
+    {
+      "file": "screenshots/19-qa-1440x900.png",
+      "screen": "QA",
+      "state": "Default with active project",
+      "resolution": "1440x900",
+      "priority": "SUPPORTING",
+      "notes": "Responsive check"
+    },
+    {
+      "file": "screenshots/19-qa-1600x900.png",
+      "screen": "QA",
+      "state": "Default with active project",
+      "resolution": "1600x900",
+      "priority": "SUPPORTING",
+      "notes": "Responsive check"
+    },
+    {
+      "file": "screenshots/19-qa.png",
+      "screen": "QA",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "priority": "CRITICAL",
+      "notes": "Full application window"
+    },
+    {
+      "file": "screenshots/20-export-preflight.png",
+      "screen": "Export",
+      "state": "Preflight + config",
+      "resolution": "1920x1080",
+      "priority": "IMPORTANT",
+      "notes": "Exports/ already has staged packages for this slug"
+    },
+    {
+      "file": "screenshots/20-export.png",
+      "screen": "Export",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "priority": "IMPORTANT",
+      "notes": "Full application window"
+    },
+    {
+      "file": "screenshots/21-settings-1366x768.png",
+      "screen": "Settings",
+      "state": "Default with active project",
+      "resolution": "1366x768",
+      "priority": "SUPPORTING",
+      "notes": "Responsive check"
+    },
+    {
+      "file": "screenshots/21-settings-1440x900.png",
+      "screen": "Settings",
+      "state": "Default with active project",
+      "resolution": "1440x900",
+      "priority": "SUPPORTING",
+      "notes": "Responsive check"
+    },
+    {
+      "file": "screenshots/21-settings-1600x900.png",
+      "screen": "Settings",
+      "state": "Default with active project",
+      "resolution": "1600x900",
+      "priority": "SUPPORTING",
+      "notes": "Responsive check"
+    },
+    {
+      "file": "screenshots/21-settings.png",
+      "screen": "Settings",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "priority": "CRITICAL",
+      "notes": "Full application window"
+    },
+    {
+      "file": "screenshots/22-goto-palette.png",
+      "screen": "GoTo Palette",
+      "state": "Open (Ctrl+K)",
+      "resolution": "1920x1080",
+      "priority": "CRITICAL",
+      "notes": "Command palette overlay"
+    },
+    {
+      "file": "screenshots/detail-asset-card.png",
+      "screen": "Assets",
+      "state": "Single asset card",
+      "resolution": "crop",
+      "priority": "SUPPORTING",
+      "notes": "detail crop"
+    },
+    {
+      "file": "screenshots/detail-asset-inspector.png",
+      "screen": "Assets",
+      "state": "Inspector panel",
+      "resolution": "crop",
+      "priority": "SUPPORTING",
+      "notes": "detail crop"
+    },
+    {
+      "file": "screenshots/detail-forge-button.png",
+      "screen": "Studio",
+      "state": "Primary Generate button",
+      "resolution": "crop",
+      "priority": "SUPPORTING",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/detail-generation-phase-rail.png",
+      "screen": "Studio",
+      "state": "Phase timeline rail",
+      "resolution": "crop",
+      "priority": "SUPPORTING",
+      "notes": "detail crop"
+    },
+    {
+      "file": "screenshots/detail-model-card.png",
+      "screen": "Models",
+      "state": "Selected model detail",
+      "resolution": "crop",
+      "priority": "SUPPORTING",
+      "notes": "detail crop"
+    },
+    {
+      "file": "screenshots/detail-provider-health.png",
+      "screen": "Providers",
+      "state": "Provider card",
+      "resolution": "crop",
+      "priority": "SUPPORTING",
+      "notes": "detail crop"
+    },
+    {
+      "file": "screenshots/detail-qa-failure.png",
+      "screen": "QA",
+      "state": "Gates / failure detail area",
+      "resolution": "crop",
+      "priority": "SUPPORTING",
+      "notes": "detail crop"
+    },
+    {
+      "file": "screenshots/detail-room-inspector.png",
+      "screen": "Rooms",
+      "state": "Room inspector",
+      "resolution": "crop",
+      "priority": "SUPPORTING",
+      "notes": "detail crop"
+    },
+    {
+      "file": "screenshots/detail-routing-candidates.png",
+      "screen": "Routing",
+      "state": "Candidates panel",
+      "resolution": "crop",
+      "priority": "SUPPORTING",
+      "notes": "detail crop"
+    },
+    {
+      "file": "screenshots/detail-status-bar.png",
+      "screen": "Status Bar",
+      "state": "Detail crop",
+      "resolution": "crop",
+      "priority": "SUPPORTING",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/detail-world-inspector.png",
+      "screen": "World",
+      "state": "Inspector",
+      "resolution": "crop",
+      "priority": "SUPPORTING",
+      "notes": "detail crop"
+    }
+  ],
+  "missing": [
+    {
+      "file": "07-generation-studio-completed-live.png",
+      "reason": "generation not finished in time"
+    }
+  ],
+  "contactSheet": "docs/ui-audit/metroforge-contact-sheet.png"
+}

@@ -41,6 +41,19 @@ func _load_room(room_id: String, spawn_side: String = "left") -> void:
 	var scene: PackedScene = load(scene_path)
 	_current_room = scene.instantiate()
 	add_child(_current_room)
+
+	var boss := _current_room.get_node_or_null("Boss")
+	if boss and boss.has_node("HealthComponent"):
+		var health: HealthComponent = boss.get_node("HealthComponent")
+		if health.is_alive():
+			# Lock this room's exits — and let every RoomTransition's own deferred _ready() (see
+			# _lock_room_exits) actually run — BEFORE announcing the room as loaded via
+			# current_room_id/room_entered below. Anything reacting to those two (a real player's
+			# UI, or an automated playtest bot that starts fighting the instant it observes
+			# current_room_id match) must never be able to see a "loaded" boss room whose exits
+			# aren't locked yet.
+			await _lock_room_exits(_current_room, health)
+
 	GameManager.current_room_id = room_id
 	EventBus.room_entered.emit(room_id)
 
@@ -49,11 +62,44 @@ func _load_room(room_id: String, spawn_side: String = "left") -> void:
 		_position_player_for_spawn(player, spawn_side)
 		_move_camera_to_room(player)
 
+## Classic boss-arena pattern: seal the room's own RoomTransition triggers while its boss is
+## alive, so nothing — a real player fumbling into an edge trigger mid-fight, or an automated
+## playtest bot blindly walking straight at the boss's position every frame — can wander out of
+## an in-progress fight and strand every reference this room's callers are holding (the room
+## itself gets torn down and rebuilt with a brand new Player on any transition). Re-opens
+## automatically on the boss's death signal.
+func _lock_room_exits(room: Node, boss_health: HealthComponent) -> void:
+	# RoomTransition._ready() (which is what actually adds it to the "room_transition" group)
+	# is deferred for children of a node — this room — that's already inside the active
+	# SceneTree by the time add_child() added it above, so the group is empty until the next
+	# frame. Wait for it before trying to find and lock anything.
+	await get_tree().process_frame
+	var transitions := _room_transitions(room)
+	for transition in transitions:
+		transition.monitoring = false
+	if not is_instance_valid(boss_health):
+		return
+	boss_health.died.connect(func() -> void:
+		for transition in transitions:
+			if is_instance_valid(transition):
+				transition.monitoring = true
+	, CONNECT_ONE_SHOT)
+
+func _room_transitions(room: Node) -> Array:
+	var result: Array = []
+	for node in get_tree().get_nodes_in_group("room_transition"):
+		if room.is_ancestor_of(node):
+			result.append(node)
+	return result
+
 func transition_to_room(room_id: String, spawn_side: String = "left") -> void:
 	if _transitioning or room_id.is_empty():
 		return
 	_transitioning = true
-	_load_room(room_id, spawn_side)
+	# _load_room is a coroutine now (it awaits the boss-room exit lock) — awaiting it here too
+	# keeps _transitioning true for the room's *entire* load, not just its synchronous prefix,
+	# so a second transition can't interleave with one that's still finishing.
+	await _load_room(room_id, spawn_side)
 	_transitioning = false
 
 func _position_player_for_spawn(player: Node2D, spawn_side: String) -> void:

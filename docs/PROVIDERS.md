@@ -57,11 +57,26 @@ redacted (`maskApiKey()` in `nvidia.ts`) before it could reach a thrown error, a
 — verified by a test that deliberately puts the key in a mock error response body and asserts it
 never appears in the thrown error's message.
 
-**Not implemented this session (deliberately, not silently skipped)**:
-- No image-generation adapter (`packages/assets/src/providers/nvidia-image.ts` does not exist).
-  NVIDIA's visual-model endpoints use a different, unverified request/response shape than
-  `/chat/completions`, and guessing at that shape was explicitly out of scope.
-- Not migrated onto `GenerationRouter` — NVIDIA uses the same `CapabilityRouter`/`FallbackManager`
-  path every other hosted text provider already uses (the one this repository's own audit
-  confirmed is actually wired to real work — see `METROFORGE_CURRENT_BUILD.md` §5/§8/§31).
+**Update, 2026-08-14 — the image-generation adapter now exists and is real**: this section
+previously said `packages/assets/src/providers/nvidia-image.ts` did not exist. It does — a real,
+separate `NvidiaImageProvider` (distinct from the text `NvidiaProvider` above), registered in
+`packages/assets/src/asset-pipeline.ts`'s `resolveImageGenerator()`. Verified end-to-end this pass,
+not just read: real network generation against NVIDIA's hosted FLUX (`black-forest-labs/flux.1-dev`),
+real bytes, real provenance recorded in `generation_manifest.json`, integrated into a fully assembled
+Godot project that still passes 18/18 runtime gates for both archetypes. Its own health probe
+returns a real, granular status (`HEALTHY`/`DEGRADED`/`MISCONFIGURED`/`AUTH_FAILED`/`RATE_LIMITED`/
+`NETWORK_ERROR`/`MODEL_UNAVAILABLE`) — see `REAL_ASSET_PIPELINE_STATUS.md` for the full writeup,
+including a separate real PNG-decoder bug this verification pass found and fixed (real AI images
+were decoding as ~99.996% transparent before compiling into a sprite — nothing to do with NVIDIA's
+API itself, a defect in this repo's own PNG decoder that affected every image provider equally).
+There's also a real `NvidiaVisionCritic` (`packages/assets/src/providers/nvidia-vision-critic.ts`)
+for asset QA, abstracted the same way the Ollama vision critic is.
+
+**Still not implemented (deliberately, not silently skipped)**:
+- Not migrated onto `GenerationRouter` — NVIDIA text uses the same `CapabilityRouter`/
+  `FallbackManager` path every other hosted text provider already uses (the one this repository's
+  own audit confirmed is actually wired to real work — see `METROFORGE_CURRENT_BUILD.md` §5/§8/§31).
+  Image generation is routed through the separate `ImageProviderRegistry` in `packages/assets`, not
+  unified under the same facade class as text — see `docs/NEXT_PASS_BASELINE.md`'s deferred-work
+  list for why that unification wasn't attempted this pass.
   Migrating everything to `GenerationRouter` is a separate, larger, already-documented follow-up.

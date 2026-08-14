@@ -715,11 +715,24 @@ export class QAValidator {
 
     this.runGodotImport(godotPath, projectPath);
 
-    const command = `"${godotPath}" --headless --path "${projectPath}" res://scenes/test/PlaytestRunner.tscn --quit-after 600`;
+    // --quit-after counts engine main-loop iterations (≈ physics frames at the default 60Hz
+    // tick), not wall-clock seconds. 600 (~10s) was enough for the side-view playtest's short
+    // corridor-to-corridor walks, but a top-down free-roam route (multiple pickup detours +
+    // portal walks, each with its own multi-second timeout, plus a boss fight) can legitimately
+    // need 60-90 simulated seconds. Too low a budget force-quits the engine mid-coroutine,
+    // abandoning PlaytestRunner._finish() before it ever prints results — a genuine failure
+    // (route unreachable, transition broken) and "ran out of frame budget" must not look the
+    // same. Set well above the 90s execSync timeout below (in frame-equivalents) so that outer
+    // timeout — or the script's own natural completion — is what actually bounds this, not this
+    // safety net firing early.
+    const command = `"${godotPath}" --headless --path "${projectPath}" res://scenes/test/PlaytestRunner.tscn --quit-after 12000`;
     let output: string;
     let exitCode = 0;
     try {
-      output = execSync(command, { encoding: 'utf-8', timeout: 90000, windowsHide: true });
+      // 150s: comfortably above top-down PlaytestAgent.gd's own 55s boss-fight floor plus
+      // transition/pickup time, with margin — see that file's MIN_BOSS_ATTACK_TIMEOUT_SEC comment
+      // for why a kiting top-down boss needs far more real time than the side-view template does.
+      output = execSync(command, { encoding: 'utf-8', timeout: 150000, windowsHide: true });
     } catch (err) {
       exitCode = 1;
       output =

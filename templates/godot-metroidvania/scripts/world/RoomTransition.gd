@@ -7,6 +7,7 @@ extends Area2D
 @export var required_abilities: PackedStringArray = PackedStringArray()
 
 func _ready() -> void:
+	add_to_group("room_transition")
 	match transition_direction:
 		"up":
 			$Visual.color = Color(0.9, 0.75, 0.3, 0.45)

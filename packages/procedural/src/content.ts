@@ -24,7 +24,15 @@ export interface GameContent {
 
 const ENEMY_NAMES = ['Scrap Drone', 'Rust Crawler', 'Arc Wisp', 'Gear Mite', 'Void Sentinel'];
 const BOSS_NAMES = ['Guardian Core', 'Forge Titan', 'Echo Warden', 'Machine Sovereign'];
-const ENEMY_COMBAT_TYPES = ['melee', 'projectile', 'burst', 'beam', 'area', 'summon', 'trap'] as const;
+export const ENEMY_COMBAT_TYPES = [
+  'melee',
+  'projectile',
+  'burst',
+  'beam',
+  'area',
+  'summon',
+  'trap',
+] as const;
 const ENEMY_EXTRA_COMBAT_TYPES = ['burst', 'beam', 'area', 'summon', 'trap'] as const;
 const ENEMY_GROUND_MOVEMENT = ['patrol', 'hop', 'crawl'] as const;
 const ENEMY_EXTRA_MOVEMENT = ['fly', 'hover', 'charge', 'teleport', 'burrow'] as const;

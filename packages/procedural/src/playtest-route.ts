@@ -37,7 +37,13 @@ export function planVictoryRoute(
   graph: WorldGraph,
   options: PlanVictoryRouteOptions = {},
 ): PlaytestRoutePlan {
-  const roomIds = graph.nodes.filter((n) => n.type === 'room').map((n) => n.id);
+  // 'zone' (not just 'room') matters for TOP_DOWN_ACTION_ADVENTURE: generateTopDownWorld()
+  // (packages/procedural/src/topdown/world.ts) tags the overworld node type: 'zone' to
+  // distinguish it from dungeon interior rooms. Excluding it here meant startRoomId defaulted
+  // to the first dungeon room instead of 'overworld' — the actual node OverworldManager.gd
+  // spawns the player in — so PlaytestAgent's very first transition step never matched
+  // GameManager.current_room_id and every route silently failed from step one.
+  const roomIds = graph.nodes.filter((n) => n.type === 'room' || n.type === 'zone').map((n) => n.id);
   const startRoomId = roomIds[0] ?? 'room_000';
   const victoryRoomId = options.victoryRoomId ?? roomIds[roomIds.length - 1] ?? startRoomId;
   const victoryBossId = options.victoryBossId ?? 'boss_final';

@@ -1,8 +1,14 @@
-/** Explicit visual-asset maturity ladder used by generation provenance + production gates. */
+/**
+ * Explicit visual-asset maturity ladder used by generation provenance + production gates.
+ * PROCESSED is reserved for a future finer-grained sprite workflow (background removal / frame
+ * normalization / atlas packing as distinct tracked steps) — nothing currently assigns it; do
+ * not treat its presence here as evidence that step exists yet.
+ */
 export const ASSET_MATURITY_LEVELS = [
   'PLACEHOLDER',
   'BLOCKOUT',
   'GENERATED_SOURCE',
+  'PROCESSED',
   'COMPILED',
   'QA_REVIEW',
   'PRODUCTION_READY',
@@ -47,6 +53,14 @@ export function isNonProductionMaturity(maturity: AssetMaturity | string | undef
  */
 export const CRITIQUE_SOFT_PASS_SCORE = 70;
 
+/**
+ * A critique score at or above this bar is high enough confidence to promote past QA_REVIEW to
+ * PRODUCTION_READY outright, rather than waiting on a human look. Deliberately well above the
+ * soft-pass bar (70) — QA_REVIEW is for "usable but unconfirmed," PRODUCTION_READY is for
+ * "the critic is confident this doesn't need a human to check."
+ */
+export const PRODUCTION_READY_SCORE = 85;
+
 /** True when critique explicitly passed, or score meets the soft-pass threshold. */
 export function critiqueEffectivelyPassed(
   passed: boolean | undefined,
@@ -60,7 +74,8 @@ export function critiqueEffectivelyPassed(
 /**
  * Infer maturity from how an asset was produced. Procedural / test / fallback art is always
  * PLACEHOLDER (never PRODUCTION_READY). Real image-provider output starts as GENERATED_SOURCE
- * and may promote to QA_REVIEW when critique passes (or soft-passes on score).
+ * and promotes to QA_REVIEW when critique passes or soft-passes on score, or all the way to
+ * PRODUCTION_READY when critique passes with high confidence (score >= PRODUCTION_READY_SCORE).
  */
 export function inferAssetMaturity(input: {
   fallbackGenerated?: boolean;
@@ -72,7 +87,7 @@ export function inferAssetMaturity(input: {
   const provider = (input.provider ?? '').toLowerCase();
   const fallback = input.fallbackGenerated === true || provider === 'procedural';
 
-  let sourceType: AssetSourceType =
+  const sourceType: AssetSourceType =
     input.sourceType ??
     (fallback
       ? 'procedural'
@@ -97,6 +112,9 @@ export function inferAssetMaturity(input: {
   }
 
   if (input.critiquePassed === true) {
+    if (typeof input.critiqueScore === 'number' && input.critiqueScore >= PRODUCTION_READY_SCORE) {
+      return { maturity: 'PRODUCTION_READY', productionReady: true, sourceType };
+    }
     return { maturity: 'QA_REVIEW', productionReady: false, sourceType };
   }
 

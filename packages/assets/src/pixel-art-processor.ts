@@ -1,5 +1,4 @@
-import { encodePng } from './png.js';
-import { inflateSync } from 'node:zlib';
+import { decodePngRgba, encodePng } from './png.js';
 
 export interface PixelArtOptions {
   targetWidth: number;
@@ -31,7 +30,7 @@ const DEFAULT_PALETTE: [number, number, number][] = [
 /** Deterministic pixel-art post-processing pipeline */
 export class PixelArtProcessor {
   process(sourcePng: Buffer, options: PixelArtOptions): PixelArtResult {
-    const { rgba, width, height } = decodePngSimple(sourcePng);
+    const { rgba, width, height } = decodePngRgba(sourcePng);
     const palette = options.palette ?? DEFAULT_PALETTE;
 
     const scaled = nearestNeighborScale(
@@ -45,10 +44,6 @@ export class PixelArtProcessor {
     const quantized = quantizeToPalette(scaled.rgba, scaled.width, scaled.height, palette);
     const cleaned = cleanupAlpha(quantized, scaled.width, scaled.height, options.alphaThreshold ?? 128);
 
-    if (options.tileSize) {
-      alignToGrid(cleaned, scaled.width, scaled.height, options.tileSize);
-    }
-
     return {
       buffer: encodePng(scaled.width, scaled.height, cleaned),
       width: scaled.width,
@@ -60,7 +55,7 @@ export class PixelArtProcessor {
 
   /** Slice tileset source into individual tile PNGs */
   sliceTiles(sourcePng: Buffer, tileSize: number): Map<string, Buffer> {
-    const { rgba, width, height } = decodePngSimple(sourcePng);
+    const { rgba, width, height } = decodePngRgba(sourcePng);
     const tiles = new Map<string, Buffer>();
 
     const cols = Math.floor(width / tileSize);
@@ -158,65 +153,3 @@ function cleanupAlpha(rgba: Uint8Array, _w: number, _h: number, threshold: numbe
   return out;
 }
 
-function alignToGrid(rgba: Uint8Array, width: number, height: number, grid: number): void {
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const gx = Math.floor(x / grid) * grid + Math.floor((x % grid) / grid);
-      const gy = Math.floor(y / grid) * grid + Math.floor((y % grid) / grid);
-      const si = (y * width + x) * 4;
-      const gi = (gy * width + gx) * 4;
-      if (rgba[si + 3]! < 128 && rgba[gi + 3]! >= 128) {
-        rgba[si] = rgba[gi]!;
-        rgba[si + 1] = rgba[gi + 1]!;
-        rgba[si + 2] = rgba[gi + 2]!;
-        rgba[si + 3] = 0;
-      }
-    }
-  }
-}
-
-/** Minimal PNG decoder for RGBA8 — sufficient for our generated assets */
-function decodePngSimple(png: Buffer): { rgba: Uint8Array; width: number; height: number } {
-  if (png[0] !== 137 || png.toString('ascii', 1, 4) !== 'PNG') {
-    throw new Error('Not a PNG file');
-  }
-
-  let offset = 8;
-  let width = 0;
-  let height = 0;
-  let idat = Buffer.alloc(0);
-
-  while (offset < png.length) {
-    const len = png.readUInt32BE(offset);
-    const type = png.toString('ascii', offset + 4, offset + 8);
-    const data = png.subarray(offset + 8, offset + 8 + len);
-    offset += 12 + len;
-
-    if (type === 'IHDR') {
-      width = data.readUInt32BE(0);
-      height = data.readUInt32BE(4);
-    } else if (type === 'IDAT') {
-      idat = Buffer.concat([idat, data]);
-    } else if (type === 'IEND') {
-      break;
-    }
-  }
-
-  const inflated = inflateSync(idat);
-  const rgba = new Uint8Array(width * height * 4);
-  const stride = width * 4;
-
-  for (let y = 0; y < height; y++) {
-    const rowStart = y * (stride + 1) + 1;
-    for (let x = 0; x < width; x++) {
-      const si = rowStart + x * 4;
-      const di = (y * width + x) * 4;
-      rgba[di] = inflated[si]!;
-      rgba[di + 1] = inflated[si + 1]!;
-      rgba[di + 2] = inflated[si + 2]!;
-      rgba[di + 3] = inflated[si + 3]!;
-    }
-  }
-
-  return { rgba, width, height };
-}

@@ -1,6 +1,6 @@
 [gd_scene load_steps=7 format=3 uid="uid://boss_scene"]
 
-[ext_resource type="Script" path="res://scripts/AI/TopDownEnemyController.gd" id="1_boss"]
+[ext_resource type="Script" path="res://scripts/AI/BossController.gd" id="1_boss"]
 [ext_resource type="Script" path="res://scripts/combat/HealthComponent.gd" id="2_health"]
 [ext_resource type="Script" path="res://scripts/combat/HurtboxComponent.gd" id="3_hurtbox"]
 [ext_resource type="Script" path="res://scripts/combat/HitboxComponent.gd" id="4_hitbox"]
@@ -17,7 +17,6 @@ collision_layer = 4
 collision_mask = 1
 motion_mode = 1
 script = ExtResource("1_boss")
-is_boss = true
 
 [node name="Sprite" type="AnimatedSprite2D" parent="."]
 script = ExtResource("5_sprite")

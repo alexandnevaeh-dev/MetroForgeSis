@@ -26,6 +26,11 @@ var knockback: Vector2 = Vector2.ZERO
 var _stun_time: float = 0.0
 var _attack_cooldown: float = 0.0
 var _cfg: PlayerMovementConfig
+## Read by BossController._on_hit_received() for the "dash_through" weakness tag — bosses that
+## carry it (see bosses.json) take double damage from a hit landed while this is true. There's no
+## separate burst-dash ability in this template; holding "dash" is already the sprint-speed input
+## below, so that's the state this reflects.
+var _is_dashing: bool = false
 
 func _ready() -> void:
 	_cfg = PlayerMovementConfig.load_from_project()
@@ -57,6 +62,7 @@ func _physics_process(delta: float) -> void:
 	if Input.is_action_just_pressed("interact"):
 		_try_interact()
 
+	_is_dashing = Input.is_action_pressed("dash")
 	var axis := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	if axis.length() > 0.2:
 		axis = axis.normalized()

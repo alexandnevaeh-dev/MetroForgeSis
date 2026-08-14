@@ -77,7 +77,7 @@ func _open_map() -> void:
 	inventory_panel.visible = false
 	quests_panel.visible = false
 	map_panel.visible = true
-	$Panel/MapPanel/WorldMapView.queue_redraw()
+	$Panel/MapPanel/VBox/WorldMapView.queue_redraw()
 
 func _close_map() -> void:
 	map_panel.visible = false
@@ -89,7 +89,7 @@ func _open_inventory() -> void:
 	map_panel.visible = false
 	quests_panel.visible = false
 	inventory_panel.visible = true
-	$Panel/InventoryPanel/InventoryView.queue_redraw()
+	$Panel/InventoryPanel/VBox/InventoryView.queue_redraw()
 
 func _close_inventory() -> void:
 	inventory_panel.visible = false
@@ -101,7 +101,7 @@ func _open_quests() -> void:
 	map_panel.visible = false
 	inventory_panel.visible = false
 	quests_panel.visible = true
-	$Panel/QuestsPanel/QuestView.queue_redraw()
+	$Panel/QuestsPanel/VBox/QuestView.queue_redraw()
 
 func _close_quests() -> void:
 	quests_panel.visible = false

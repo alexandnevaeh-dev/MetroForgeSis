@@ -40,7 +40,11 @@ All four are `enabled: false` by default in the catalog (consistent with every o
 provider's model entries — `gemini-2.0-flash`, `groq-llama-3.3-70b`) and
 `usageClass: 'development_prototyping'`.
 
-**Not added**: any NVIDIA vision/multimodal or image-generation model entries — no adapter exists
-to serve them yet (see `PROVIDERS.md`), and adding catalog entries with no consuming code would be
-exactly the "generate data that has no runtime consumer" anti-pattern this project's own audit
-flagged elsewhere (quests/items/NPCs).
+**Update, 2026-08-14**: NVIDIA image generation is real and verified end-to-end (see
+`REAL_ASSET_PIPELINE_STATUS.md`) via `NvidiaImageProvider`, but it is deliberately **not** listed in
+this model catalog — it's registered directly in `packages/assets/src/asset-pipeline.ts`'s
+`ImageProviderRegistry`, a separate registry from the `ModelCatalogService`/`ModelRegistry` this
+document otherwise describes. Adding a catalog entry for it here would describe a routing path that
+doesn't actually go through this catalog, which would be misleading rather than informative.
+NVIDIA vision/multimodal (`NvidiaVisionCritic`) is likewise real, verified, and outside this
+catalog's scope — it's a `VisionCritic` implementation, not a `TextGenerationProvider` model entry.

@@ -260,7 +260,7 @@ func _check_pause_menu(world: Node) -> void:
 		await get_tree().process_frame
 		var map_panel: Control = pause_menu.get_node_or_null("Panel/MapPanel")
 		_check("pause_menu_map_panel_opens", map_panel != null and map_panel.visible)
-		_check("world_map_view_present", pause_menu.get_node_or_null("Panel/MapPanel/WorldMapView") != null)
+		_check("world_map_view_present", pause_menu.get_node_or_null("Panel/MapPanel/VBox/WorldMapView") != null)
 		_check("map_manager_has_graph", not MapManager.get_graph().is_empty())
 		_check("map_manager_tracks_discovered_rooms", map_room in MapManager.get_discovered_ids())
 		pause_menu._close_map()
@@ -353,6 +353,13 @@ func _check_save_point(player: Node) -> void:
 func _check_save_migration_v1_to_v2() -> void:
 	SaveManager.select_slot(0)
 	SaveManager.reset_save()
+	# reset_save() only clears the in-memory _save_data, not the on-disk file — and
+	# "save_manager_can_write" right before this call just wrote a real (current-version) save
+	# to this exact slot. load_game() tries that real file first and succeeds immediately,
+	# never falling through to the legacy-path branch this check exists to exercise. Remove it
+	# so load_game() actually has to migrate the v1 fixture written below.
+	if FileAccess.file_exists(SaveManager.get_save_path()):
+		DirAccess.remove_absolute(SaveManager.get_save_path())
 	var v1_save := {
 		"version": 1,
 		"player": {"health": 42.0, "position": Vector2(10.0, 20.0), "room_id": "room_003"},
@@ -550,13 +557,16 @@ func _check_npc_interaction(player: Node) -> void:
 		_check("npc_interaction_can_be_triggered", false)
 		return
 
-	var dialogue_scene := load("res://scenes/world/DialogueOverlay.tscn") as PackedScene
-	if dialogue_scene == null:
+	# NPC._dialogue_overlay() looks up the "dialogue_overlay" group tree-wide, not a locally
+	# passed-in reference — and World.tscn already instances its own DialogueOverlay in that
+	# group. Instantiating a second, disconnected overlay here (as an earlier version of this
+	# check did) meant _begin_dialogue() drove World's real overlay while the assertions below
+	# read the empty, never-touched local copy — always failing regardless of whether dialogue
+	# actually worked. Use the real one.
+	var dialogue_overlay := get_tree().get_first_node_in_group("dialogue_overlay")
+	if dialogue_overlay == null:
 		_check("npc_interaction_can_be_triggered", false)
 		return
-	var dialogue_overlay := dialogue_scene.instantiate()
-	add_child(dialogue_overlay)
-	await get_tree().process_frame
 
 	var npc := npc_scene.instantiate()
 	npc.npc_id = "npc_000"
@@ -578,8 +588,10 @@ func _check_npc_interaction(player: Node) -> void:
 		dialogue_overlay.visible and speaker_label != null and speaker_label.text.length() > 0,
 	)
 
-	if is_instance_valid(dialogue_overlay):
-		dialogue_overlay.queue_free()
+	# The overlay belongs to World.tscn, not this check — close it rather than freeing a node
+	# owned elsewhere, so it's left in a clean, closed state for anything that runs after this.
+	if is_instance_valid(dialogue_overlay) and dialogue_overlay.has_method("close_dialogue"):
+		dialogue_overlay.close_dialogue()
 
 	if is_instance_valid(npc):
 		npc.queue_free()
@@ -881,7 +893,7 @@ func _check_item_pickups(player: Node) -> void:
 		_check_soft("collectible_does_not_change_attack", false)
 
 func _check_inventory_equip_ui(world: Node) -> void:
-	var view: Control = world.get_node_or_null("PauseMenu/Panel/InventoryPanel/InventoryView") if world else null
+	var view: Control = world.get_node_or_null("PauseMenu/Panel/InventoryPanel/VBox/InventoryView") if world else null
 	_check("inventory_view_present", view != null)
 	if view == null:
 		return
@@ -1133,7 +1145,7 @@ func _check_enemy_combat(player: Node) -> void:
 		var before_count := get_child_count()
 		enemy2.call("_fire_projectile", Vector2.RIGHT)
 		_check("enemy_projectile_attack_spawns_projectile", get_child_count() > before_count)
-		_free_new_children(before_count)
+		await _free_new_children(before_count)
 
 		if is_instance_valid(enemy2):
 			enemy2.queue_free()
@@ -1151,7 +1163,7 @@ func _check_enemy_combat(player: Node) -> void:
 	var before_burst := get_child_count()
 	extra.call("_fire_burst", Vector2.RIGHT)
 	_check("enemy_burst_spawns_three_projectiles", get_child_count() >= before_burst + 3)
-	_free_new_children(before_burst)
+	await _free_new_children(before_burst)
 
 	var before_beam := get_child_count()
 	extra.call("_fire_beam", Vector2.RIGHT)
@@ -1163,12 +1175,12 @@ func _check_enemy_combat(player: Node) -> void:
 	else:
 		_check("enemy_beam_is_piercing", false)
 		_check("enemy_beam_is_stationary", false)
-	_free_new_children(before_beam)
+	await _free_new_children(before_beam)
 
 	var before_area := get_child_count()
 	extra.call("_fire_area_attack")
 	_check("enemy_area_spawns_radial_projectiles", get_child_count() >= before_area + 6)
-	_free_new_children(before_area)
+	await _free_new_children(before_area)
 
 	var before_summon := get_child_count()
 	extra.call("_summon_minion")
@@ -1182,7 +1194,7 @@ func _check_enemy_combat(player: Node) -> void:
 	else:
 		_check("enemy_summon_minion_flagged", false)
 		_check("enemy_summon_minion_uses_melee_contact", false)
-	_free_new_children(before_summon)
+	await _free_new_children(before_summon)
 
 	var trap_hitbox: HitboxComponent = extra.get_node("ContactHitbox")
 	if trap_hitbox.monitoring:
@@ -1319,12 +1331,12 @@ func _check_boss_attack_variety(player: Node) -> void:
 	var before_projectile_count := get_child_count()
 	boss.call("_fire_projectile_attack")
 	_check("boss_projectile_attack_spawns_projectile", get_child_count() > before_projectile_count)
-	_free_new_children(before_projectile_count)
+	await _free_new_children(before_projectile_count)
 
 	var before_burst_count := get_child_count()
 	boss.call("_fire_burst_attack")
 	_check("boss_area_burst_spawns_multiple_projectiles", get_child_count() >= before_burst_count + 3)
-	_free_new_children(before_burst_count)
+	await _free_new_children(before_burst_count)
 
 	# The reverse direction: the player's real AttackHitbox hitting the boss's own Hurtbox —
 	# the exact path that was silently broken (BossController never connected
@@ -1405,8 +1417,13 @@ func _check_boss_victory_flow() -> void:
 		_check("final_boss_defeat_tracks_progression", false)
 		return
 
-	var completed := false
-	EventBus.game_completed.connect(func() -> void: completed = true, CONNECT_ONE_SHOT)
+	# GDScript lambdas capture outer locals by value, not by reference — `completed = true`
+	# inside the lambda below would only mutate the closure's own snapshot, never the `completed`
+	# read after the boss dies, so the signal would always look like it never fired even though
+	# it genuinely did. A single-element array is a reference type, so mutating its contents from
+	# inside the closure is visible to the outer scope too.
+	var completed := [false]
+	EventBus.game_completed.connect(func() -> void: completed[0] = true, CONNECT_ONE_SHOT)
 
 	var world := world_scene.instantiate()
 	add_child(world)
@@ -1428,7 +1445,7 @@ func _check_boss_victory_flow() -> void:
 		GameManager.current_state == GameManager.GameState.VICTORY,
 	)
 	_check("final_boss_defeat_sets_game_complete_flag", GameManager.game_complete)
-	_check("final_boss_defeat_emits_game_completed", completed)
+	_check("final_boss_defeat_emits_game_completed", completed[0])
 	_check("final_boss_defeat_shows_victory_overlay", hud.get_node("VictoryOverlay").visible)
 	_check(
 		"final_boss_defeat_tracks_progression",
@@ -1533,11 +1550,18 @@ func _find_gated_transition(root: Node) -> Node:
 ## checks — e.g. hitting a later test's freshly-spawned enemy/boss, or outliving the entity
 ## that fired them and tripping the freed-owner_node guard in Projectile.gd/HitboxComponent.gd.
 ## Frees everything added as a child of this node since `before_count`.
+## queue_free() defers the actual removal rather than shrinking get_child_count() right away, so
+## a later `get_child_count() == before + N` check elsewhere can be thrown off by an earlier
+## batch of frees that hadn't actually resolved yet — they'd finally clear on whatever frame that
+## later check's own await happens to land on, mixed in with whatever it was really counting.
+## Awaiting a frame here settles the count before this function returns, so every caller starts
+## its next `before := get_child_count()` snapshot from a clean baseline.
 func _free_new_children(before_count: int) -> void:
 	var children := get_children()
 	for i in range(before_count, children.size()):
 		if is_instance_valid(children[i]):
 			children[i].queue_free()
+	await get_tree().process_frame
 
 func _check(name: String, condition: bool) -> void:
 	_results.append({"name": name, "passed": condition, "soft": false})

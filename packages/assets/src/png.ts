@@ -261,6 +261,67 @@ export function generateAttackSheet(spec: SpriteSpec, frameCount = 4, sourcePng?
   return encodePng(width * frameCount, height, sheet);
 }
 
+function paethPredictor(a: number, b: number, c: number): number {
+  const p = a + b - c;
+  const pa = Math.abs(p - a);
+  const pb = Math.abs(p - b);
+  const pc = Math.abs(p - c);
+  if (pa <= pb && pa <= pc) return a;
+  if (pb <= pc) return b;
+  return c;
+}
+
+/**
+ * Undoes PNG's per-scanline filtering (spec §9.2-9.3). Every real PNG encoder we ingest
+ * (Pillow's `Image.save(format="PNG")` in `ensurePngBuffer`'s JPEG conversion, any external
+ * image-gen provider) picks a per-row filter — usually Up or Paeth, since None compresses
+ * poorly on photographic/gradient content. `encodePng` below always writes filter 0 (None) for
+ * our own procedural output, so skipping this step happened to round-trip correctly for
+ * everything we generated ourselves, but silently corrupted every externally-sourced PNG: e.g.
+ * a constant alpha=255 channel under Up filtering reconstructs to a raw byte of 0
+ * (255 - previous-row's-255) on every row after the first, which reads back as fully
+ * transparent — turning a fully-opaque real AI image into a near-blank one once it hit the
+ * pixel-art pipeline.
+ */
+function unfilter(inflated: Buffer, width: number, height: number, bpp: number): Buffer {
+  const stride = width * bpp;
+  const out = Buffer.alloc(stride * height);
+  for (let y = 0; y < height; y++) {
+    const filterType = inflated[y * (stride + 1)]!;
+    const rowIn = y * (stride + 1) + 1;
+    const rowOut = y * stride;
+    const priorOut = rowOut - stride;
+    for (let x = 0; x < stride; x++) {
+      const raw = inflated[rowIn + x]!;
+      const a = x >= bpp ? out[rowOut + x - bpp]! : 0;
+      const b = y > 0 ? out[priorOut + x]! : 0;
+      const c = y > 0 && x >= bpp ? out[priorOut + x - bpp]! : 0;
+      let value: number;
+      switch (filterType) {
+        case 0:
+          value = raw;
+          break;
+        case 1:
+          value = raw + a;
+          break;
+        case 2:
+          value = raw + b;
+          break;
+        case 3:
+          value = raw + Math.floor((a + b) / 2);
+          break;
+        case 4:
+          value = raw + paethPredictor(a, b, c);
+          break;
+        default:
+          throw new Error(`Unsupported PNG filter type: ${filterType}`);
+      }
+      out[rowOut + x] = value & 0xff;
+    }
+  }
+  return out;
+}
+
 export function decodePngRgba(png: Buffer): { rgba: Uint8Array; width: number; height: number } {
   if (png[0] !== 137 || png.toString('ascii', 1, 4) !== 'PNG') {
     throw new Error('Not a PNG file');
@@ -269,6 +330,8 @@ export function decodePngRgba(png: Buffer): { rgba: Uint8Array; width: number; h
   let offset = 8;
   let width = 0;
   let height = 0;
+  let bitDepth = 8;
+  let colorType = 6;
   let idat = Buffer.alloc(0);
 
   while (offset < png.length) {
@@ -280,6 +343,8 @@ export function decodePngRgba(png: Buffer): { rgba: Uint8Array; width: number; h
     if (type === 'IHDR') {
       width = data.readUInt32BE(0);
       height = data.readUInt32BE(4);
+      bitDepth = data[8]!;
+      colorType = data[9]!;
     } else if (type === 'IDAT') {
       idat = Buffer.concat([idat, data]);
     } else if (type === 'IEND') {
@@ -287,20 +352,24 @@ export function decodePngRgba(png: Buffer): { rgba: Uint8Array; width: number; h
     }
   }
 
-  const inflated = inflateSync(idat);
-  const rgba = new Uint8Array(width * height * 4);
-  const stride = width * 4;
+  if (bitDepth !== 8 || (colorType !== 6 && colorType !== 2)) {
+    throw new Error(
+      `Unsupported PNG format for decodePngRgba: bitDepth=${bitDepth}, colorType=${colorType} (only 8-bit RGB/RGBA supported)`,
+    );
+  }
 
-  for (let y = 0; y < height; y++) {
-    const rowStart = y * (stride + 1) + 1;
-    for (let x = 0; x < width; x++) {
-      const si = rowStart + x * 4;
-      const di = (y * width + x) * 4;
-      rgba[di] = inflated[si]!;
-      rgba[di + 1] = inflated[si + 1]!;
-      rgba[di + 2] = inflated[si + 2]!;
-      rgba[di + 3] = inflated[si + 3]!;
-    }
+  const srcBpp = colorType === 6 ? 4 : 3;
+  const inflated = inflateSync(idat);
+  const pixels = unfilter(inflated, width, height, srcBpp);
+
+  const rgba = new Uint8Array(width * height * 4);
+  for (let i = 0; i < width * height; i++) {
+    const si = i * srcBpp;
+    const di = i * 4;
+    rgba[di] = pixels[si]!;
+    rgba[di + 1] = pixels[si + 1]!;
+    rgba[di + 2] = pixels[si + 2]!;
+    rgba[di + 3] = colorType === 6 ? pixels[si + 3]! : 255;
   }
 
   return { rgba, width, height };

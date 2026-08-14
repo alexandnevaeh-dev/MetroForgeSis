@@ -91,8 +91,17 @@ export function generateTopDownWorld(options: {
   const overworldH = defaults.chunkRows * CHUNK_H;
   const overworldTiles = carveField(overworldW, overworldH, rng);
 
-  const dungeonSlots = scatterPoints(dungeonCount, overworldW, overworldH, tileSize, rng);
-  const townSlots = scatterPoints(defaults.townCount, overworldW, overworldH, tileSize, rng, dungeonSlots);
+  // The fixed spawn-cluster POIs (spawn/npc/chest/save/enemy — placeOverworldPois below) all sit
+  // within ~120px of map center. Without excluding that cluster, a scattered dungeon entrance
+  // could land on top of it — on a small (TINY_TEST) map this reliably did, so simply walking
+  // toward the chest immediately triggered an unwanted dungeon transition (AreaPortal is a plain
+  // walk-over trigger, not gated), freeing the player instance mid-walk.
+  const spawnCluster = { x: (overworldW * tileSize) / 2, y: (overworldH * tileSize) / 2 };
+  const dungeonSlots = scatterPoints(dungeonCount, overworldW, overworldH, tileSize, rng, [spawnCluster]);
+  const townSlots = scatterPoints(defaults.townCount, overworldW, overworldH, tileSize, rng, [
+    spawnCluster,
+    ...dungeonSlots,
+  ]);
 
   const overworldPois = placeOverworldPois(overworldW, overworldH, tileSize, dungeonSlots, townSlots);
   const overworld = buildArea({
@@ -288,6 +297,14 @@ function carveRoom(w: number, h: number): number[][] {
 
 /** Deterministically scatters `count` points across the overworld on a coarse grid so multiple
  *  dungeon/town entrances never overlap, avoiding cells already taken by `avoid`. */
+/**
+ * Places `count` points across the map, each attempting to clear `minSeparation` from every
+ * point in `avoid` and every point already placed this call. Always returns exactly `count`
+ * points — a required dungeon entrance silently missing (the original grid-cell version could
+ * drop a point entirely if its one candidate cell was too close to `avoid`) is worse than one
+ * that's merely closer than ideal, so a fully-blocked attempt falls back to its least-bad
+ * candidate rather than being skipped.
+ */
 function scatterPoints(
   count: number,
   overworldW: number,
@@ -297,24 +314,34 @@ function scatterPoints(
   avoid: Array<{ x: number; y: number }> = [],
 ): Array<{ x: number; y: number }> {
   if (count <= 0) return [];
-  const cols = Math.max(1, Math.ceil(Math.sqrt(count)));
-  const rows = Math.max(1, Math.ceil(count / cols));
-  const cellW = (overworldW * tileSize) / (cols + 1);
-  const cellH = (overworldH * tileSize) / (rows + 1);
-  const points: Array<{ x: number; y: number }> = [];
-  const minSeparation = Math.min(cellW, cellH) * 0.5;
+  const mapW = overworldW * tileSize;
+  const mapH = overworldH * tileSize;
+  const margin = tileSize * 2;
+  const minSeparation = Math.min(mapW, mapH) * 0.18;
+  const placed: Array<{ x: number; y: number }> = [];
 
-  outer: for (let r = 0; r < rows && points.length < count; r++) {
-    for (let c = 0; c < cols && points.length < count; c++) {
-      const jitterX = rng.int(-Math.floor(cellW * 0.2), Math.floor(cellW * 0.2));
-      const jitterY = rng.int(-Math.floor(cellH * 0.2), Math.floor(cellH * 0.2));
-      const point = { x: cellW * (c + 1) + jitterX, y: cellH * (r + 1) + jitterY };
-      const tooClose = avoid.some((p) => Math.hypot(p.x - point.x, p.y - point.y) < minSeparation);
-      if (!tooClose) points.push(point);
-      if (points.length >= count) break outer;
+  for (let i = 0; i < count; i++) {
+    const exclusions = [...avoid, ...placed];
+    let best: { x: number; y: number } = { x: mapW / 2, y: mapH / 2 };
+    let bestDistance = -Infinity;
+    for (let attempt = 0; attempt < 24; attempt++) {
+      const candidate = {
+        x: rng.int(margin, Math.max(margin, mapW - margin)),
+        y: rng.int(margin, Math.max(margin, mapH - margin)),
+      };
+      const nearest =
+        exclusions.length === 0
+          ? Infinity
+          : Math.min(...exclusions.map((p) => Math.hypot(p.x - candidate.x, p.y - candidate.y)));
+      if (nearest > bestDistance) {
+        bestDistance = nearest;
+        best = candidate;
+      }
+      if (nearest >= minSeparation) break;
     }
+    placed.push(best);
   }
-  return points;
+  return placed;
 }
 
 function buildDungeonRooms(

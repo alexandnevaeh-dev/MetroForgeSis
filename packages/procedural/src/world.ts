@@ -265,7 +265,11 @@ export function validateWorldConnectivity(graph: WorldGraph): {
   connected: boolean;
   unreachableRoomIds: string[];
 } {
-  const roomIds = graph.nodes.filter((n) => n.type === 'room').map((n) => n.id);
+  // 'zone' included alongside 'room' so TOP_DOWN_ACTION_ADVENTURE's overworld node (tagged
+  // type: 'zone' by generateTopDownWorld(), packages/procedural/src/topdown/world.ts) is itself
+  // checked for reachability, not silently excluded from the room set this proves connectivity
+  // over — see the identical fix in planVictoryRoute (playtest-route.ts) for why that mattered.
+  const roomIds = graph.nodes.filter((n) => n.type === 'room' || n.type === 'zone').map((n) => n.id);
   if (roomIds.length === 0) return { connected: true, unreachableRoomIds: [] };
 
   const adjacency = new Map<string, string[]>();
@@ -312,7 +316,8 @@ export function validateWorldReachability(
   graph: WorldGraph,
   unlockedAbilities: Set<string> = new Set(),
 ): { reachable: boolean; unreachableRoomIds: string[] } {
-  const roomIds = graph.nodes.filter((n) => n.type === 'room').map((n) => n.id);
+  // See validateWorldConnectivity's comment above — 'zone' covers the top-down overworld node.
+  const roomIds = graph.nodes.filter((n) => n.type === 'room' || n.type === 'zone').map((n) => n.id);
   if (roomIds.length === 0) return { reachable: true, unreachableRoomIds: [] };
 
   const nodeById = new Map(graph.nodes.map((n) => [n.id, n]));

@@ -39,8 +39,18 @@ export type RemapGameDnaResult<T extends GameDnaFile = GameDnaFile> = {
 /**
  * Remap in-memory Game DNA abilities onto registered runtime IDs.
  * Used by the generation pipeline after DNA create/resume and by project remap.
+ *
+ * A no-op for TOP_DOWN_ACTION_ADVENTURE: that archetype's `abilities` field holds dungeon tool
+ * items (pickTopDownDungeonItems() — see generators/game-dna.ts), a different id namespace than
+ * REGISTERED_ABILITIES entirely. ABILITY_ALIAS_MAP (packages/shared/src/ability-remap.ts) maps
+ * some of those exact ids (e.g. `wind_disc` -> `dash`) onto side-view movement abilities, which
+ * is only meaningful for side-view GameDNA — running it against a top-down project silently
+ * corrupts real dungeon items into unrelated side-view ability ids.
  */
 export function remapGameDnaAbilities<T extends GameDnaFile>(dna: T): RemapGameDnaResult<T> {
+  if (dna.archetype === 'TOP_DOWN_ACTION_ADVENTURE') {
+    return { dna, remapped: [], removed: [], warnings: [], changed: false };
+  }
   const input = Array.isArray(dna.abilities) ? dna.abilities : [];
   const { abilities, remapped, removed, warnings } = remapAbilityList(input);
 
@@ -177,7 +187,10 @@ export function remapProjectAbilityReferences(
     try {
       const rawText = readFileSync(abs, 'utf-8');
       const parsed = JSON.parse(rawText) as unknown;
-      let { value, remapped: hits, changed } = remapAbilityReferences(parsed, { path: rel });
+      const { value: remappedValue, remapped: hits, changed } = remapAbilityReferences(parsed, {
+        path: rel,
+      });
+      let value = remappedValue;
       if (rel.replace(/\\/g, '/').endsWith('items.json') && changed) {
         value = dedupeItemsById(value);
       }
@@ -254,10 +267,16 @@ export function remapProjectAbilities(
     };
   }
 
+  const isTopDown = dna.archetype === 'TOP_DOWN_ACTION_ADVENTURE';
   const { dna: nextDna, remapped, removed, warnings, changed } = remapGameDnaAbilities(dna);
   const abilities = Array.isArray(nextDna.abilities) ? nextDna.abilities : [];
   const sync = syncAbilitiesDataFile(projectPath, abilities, dryRun);
-  const refs = remapProjectAbilityReferences(projectPath, { dryRun });
+  // Same reasoning as remapGameDnaAbilities above: top-down's item/world/quest JSON files use
+  // the dungeon-item id namespace, not ability aliases — scanning them for alias tokens like
+  // wind_disc would corrupt real dungeon item references the same way.
+  const refs = isTopDown
+    ? { filesUpdated: [], remapped: [], warnings: [], changed: false }
+    : remapProjectAbilityReferences(projectPath, { dryRun });
   const allWarnings = [
     ...(sync.warning ? [...warnings, sync.warning] : warnings),
     ...refs.warnings,

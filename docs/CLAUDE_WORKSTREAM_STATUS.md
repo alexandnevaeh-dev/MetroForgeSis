@@ -2,7 +2,7 @@
 
 Backend/generation/runtime/QA workstream status, maintained by the Claude agent working `feature/claude-generation-runtime`. Companion to `docs/PARALLEL_CHANGELOG.md` (append-only log), `docs/CURSOR_WORKSTREAM_STATUS.md` and `docs/CURSOR_BACKEND_REQUIREMENTS.md` (the other agent's own status/asks).
 
-Last updated: 2026-08-13.
+Last updated: 2026-08-14.
 
 ## How this session started
 
@@ -55,31 +55,145 @@ discarded every result even on a fully passing run.
 
 Verified live against real Godot 4.7.1: `godot_runtime` gate now 13/13 PASS.
 
+### Pass 4 — top-down `godot_playtest`: 2/8 → 8/8, via 6 distinct real runtime bugs
+
+Adapted `PlaytestAgent.gd`/`PlaytestRunner.gd` for top-down (Pass 3 left this explicitly out of
+scope) and then chased the boss fight through five rounds of live-Godot diagnosis before it
+actually completed. Each failure looked like the previous "fix" being wrong; each was really a
+different bug on the same critical path:
+
+1. **Boss-arena exit lock, and its own reentrancy bug.** Added exit-sealing while a boss is alive
+   (classic pattern: don't let the fight be walked away from) to `OverworldManager._spawn_pois()` —
+   `AreaPortal`/`LockedDoor` instances set `monitoring = true` in their own deferred `_ready()`,
+   which runs *after* the spawn call that tried to lock them, so the lock has to wait a
+   `process_frame` first. The auto-reopen-on-death handler then hit a second bug: it wrote
+   `monitoring`/`monitorable` directly from inside the boss's own `died` signal — which fires from
+   inside an `Area2D` in/out signal callback, where Godot rejects that write outright
+   ("blocked during in/out signal") — fixed via `set_deferred()`.
+2. **False-positive win detection.** The fight loop treated "boss node reference went invalid" as
+   the win condition (true when `HealthComponent` frees the boss on a real kill) — but a *player*
+   death also frees the boss, because `GameManager`'s respawn-at-checkpoint flow calls
+   `load_area()`, which `queue_free()`s every child of the current room, boss included. A player
+   death was being scored as a boss kill. Fixed by checking player-death first.
+3. **The real boss AI was dead code.** `Boss.tscn` was wired to `TopDownEnemyController.gd` (a
+   generic enemy script, no telegraph, 1.1s untelegraphed attack cooldown) while
+   `BossController.gd` — the actual phase/telegraph/weakness-data-driven boss script this session's
+   earlier work (`bosses.json` phases, `WEAKNESS_DAMAGE_MULTIPLIER`) was built for — was never
+   referenced by any scene. Rewired `Boss.tscn` to it, and completed `BossController.gd` itself:
+   it had no chase movement at all (never called `move_and_slide()`) and applied side-view-style
+   gravity in a floating top-down scene. Added real chase-when-not-telegraphing movement.
+4. **Dodge granularity.** Even with a real telegraph, the playtest bot only checked
+   `boss._telegraph_active` once per multi-frame approach/attack action — by the time it noticed,
+   the swing had often already landed. Extracted `_step_toward()` from `_walk_player_to()` so the
+   boss-fight loop could poll every physics frame and react within the ~0.6-0.8s telegraph window
+   instead of after it.
+5. **`dash_through` weakness was unreachable.** `BossController._on_hit_received()` already checked
+   `player.get("_is_dashing") == true` for double damage (`bosses.json` lists it on this boss), but
+   `TopDownPlayerController.gd` never defined `_is_dashing` — `get()` on a nonexistent property is
+   `null`, so the multiplier could never fire. Added the property (mirrors the existing "dash" =
+   sprint-speed input) and had the playtest bot hold dash through its swings, the same strategy a
+   real player reading the boss's own weakness data would use.
+6. **Residual chip damage.** The route only visits pickups on each leg's *origin* room — never the
+   boss room itself, since nothing transitions *from* it — so the bot could reach the fight already
+   damaged from incidental enemy contact earlier in the dungeon. `reset_health()` before the boss
+   fight starts, so this gate proves "is the boss beatable," not "did the bot arrive undamaged."
+
+Verified live against real Godot 4.7.1 across ~10 iterative runs (`--headless … PlaytestRunner.tscn
+--quit-after 12000`), then confirmed via a completely clean `metroforge create` regeneration with
+no manual file syncing: `final_qa: PASSED (RUNTIME_VALIDATED: 18/18 gates passed)`. Full monorepo
+`pnpm test` (387 tests) still green afterward.
+
+### Pass 5 — side-view `godot_playtest`: turned out to be 0/8 in practice too, now 8/8
+
+Went looking for the smaller "victory-path runtime assertion" gap in `RuntimeSmokeTest.gd` (its
+boss-victory check uses a direct `take_damage(max_health)` call, not simulated input) and found
+something much bigger on the way: side-view's own `godot_playtest` gate — the "mature",
+supposedly-already-working archetype — had never actually been runtime-verified either. A fresh
+TINY_TEST generation scored 4/8 on the same gate top-down started at, then a chain of *nine*
+further real bugs before it actually passed. None of this was introduced this session; all of it
+predates it and had simply never been exercised against the real engine before.
+
+1. **`WorldMapPanel.gd`/`PauseMenu.gd`/`MinimapPanel.gd` — the exact type-inference and missing-
+   `class_name` bugs already fixed for top-down, unfixed here.** `var known := room_id in discovered
+   or room_id == current` and `var label := room_id.replace(...)` both fail static type inference
+   the same way top-down's copies did; `MinimapPanel.gd extends WorldMapPanel` with no
+   `class_name WorldMapPanel` declared anywhere. This alone crashed the map/inventory/quest panels
+   and cascaded into `world_map_view_present`, `inventory_view_present`,
+   `final_boss_defeat_emits_game_completed`, and 6 more unrelated-looking check failures — a single
+   root cause masquerading as nine.
+2. **Three `queue_redraw()` calls in `PauseMenu.gd` (map/inventory/quest) pointed at a stale scene
+   path** — `$Panel/MapPanel/WorldMapView` etc., missing a `/VBox` segment the actual `.tscn` has
+   (and every *other* reference to these panels already included). A scene restructuring that
+   never finished propagating to the script. Same missing segment duplicated into
+   `RuntimeSmokeTest.gd`'s own `world_map_view_present`/`inventory_view_present` checks.
+3. **`_check_npc_interaction` drove an orphan `DialogueOverlay`.** `NPC._dialogue_overlay()` looks
+   up the "dialogue_overlay" group tree-wide — `World.tscn` already instances one there — but the
+   test instantiated a *second*, disconnected copy and asserted against that one, which
+   `_begin_dialogue()` never touched. Read the real instance from the group instead.
+4. **A real GDScript closure bug in `_check_boss_victory_flow`.** `var completed := false;
+   EventBus.game_completed.connect(func(): completed = true)` — GDScript lambdas capture outer
+   locals *by value*, not by reference, so the assignment only ever mutated the closure's own
+   snapshot. Confirmed live: the lambda printed `completed=true` from inside itself while the
+   very next line outside it read `false`. Fixed with the standard single-element-array
+   capture-by-reference workaround.
+5. **`_free_new_children()`'s `queue_free()` calls were never awaited**, so accumulated pending
+   frees from earlier assertions in the same test function could resolve on whatever frame a
+   *later*, unrelated `get_child_count() == before + N` check happened to await next, throwing off
+   an exact-count assertion that had nothing to do with the original frees. Made the helper await
+   a settling frame itself and updated all 7 call sites.
+6. **The v1→v2 save-migration test wrote its legacy fixture to the same slot a check one line
+   above had just written a real save to.** `reset_save()` only clears in-memory state, not the
+   on-disk file — `load_game()` found and loaded the real save first, never touching the v1
+   fixture the test existed to exercise. Delete the slot's file before writing the fixture.
+7. **The exact top-down boss-arena-exit-lock class of bug, in the older `WorldManager`/
+   `RoomTransition` system.** Ported the same fix: lock a boss room's `RoomTransition` triggers
+   while its boss is alive, re-enable on death — plus closing a race the top-down version didn't
+   have to deal with, since `WorldManager` here rebuilds the *entire room* (not just re-opens
+   doors) on every transition: `_load_room` now applies the lock *before* announcing the room
+   loaded via `current_room_id`/`room_entered`, so nothing reacting to those two signals can start
+   fighting before the lock is actually in place.
+8. **The same "fake elapsed time" bug top-down had, in the older `PlaytestAgent.gd`**, plus the
+   same "player death frees the room, indistinguishable from a real boss kill" bug — fixed the
+   same way (`Time.get_ticks_msec()`, `reset_health()` before the fight, `is_instance_valid()`
+   guards throughout, real time floor instead of giving up after one missed approach).
+9. **The real reason this fight only ever landed exactly one hit regardless of how long it ran.**
+   `_defeat_final_boss` poked `player_attack.activate()`/`.deactivate()` directly instead of
+   calling the player's own `_perform_attack()` — which is what actually positions the hitbox via
+   `attack_hitbox.position.x = 30 * facing` before activating it. Poking it directly left the
+   hitbox wherever it was last positioned. Fixed to call `_perform_attack()`/`_on_attack_finished()`
+   for real, and set `facing` explicitly first (`PlayerController` only updates it while movement
+   input is actively pressed — the walk-to-target loop stops pressing input once already close,
+   so `facing` goes stale). That still wasn't enough on its own: `AttackHitbox`'s own
+   `CollisionShape2D` carries a *further* fixed local offset of `(30, -20)` beyond the Area2D's
+   own `30 * facing` position, so the swing's real reach is centered ~60px out from the player,
+   not adjacent to them — while the bot's approach walked the player's *center* to within 12px of
+   the boss's, i.e. well past that reach on the near side. A real player naturally stops at melee
+   range; the bot was walking into the boss instead. Retargeted the approach at a real
+   melee-range standoff (`boss.position - 60px` in the approach direction) instead of the boss's
+   center. Boss health dropped 200→0 in exactly 20 landed hits afterward, once every attack
+   actually connects.
+
+Verified live against real Godot 4.7.1 across ~10 iterative runs, then confirmed via a completely
+clean `metroforge create` regeneration with no manual file syncing:
+`final_qa: PASSED (RUNTIME_VALIDATED: 18/18 gates passed)`. Full monorepo `pnpm test` (387 tests)
+still green afterward (one unrelated flaky timeout on a pre-existing NVIDIA catalog test,
+confirmed to pass cleanly at 359ms in isolation — resource contention from the concurrent Godot
+runs, not a real regression).
+
 ## Partial — real, open gaps
 
-- **`godot_playtest`: 2/8.** `templates/godot-topdown-adventure/scripts/test/PlaytestRunner.gd` is
-  an unmodified copy of the side-view template's version (identical line count) — the automated
-  persona-driven playtest-bot layer hasn't been adapted for top-down's input/victory model.
-  Comparable in scope to all of Pass 3 above; explicitly out-of-scope in the original
-  implementation spec ("sophisticated AI playtest bots — do not implement yet"). Not attempted.
-- **Victory-path runtime assertion (side-view).** `RuntimeSmokeTest.gd`'s boss-victory check
-  exercises a real signal chain but delivers damage via a direct `take_damage(max_health)` call,
-  not simulated player attack input. No single test chains simulated-input combat all the way to
-  `VICTORY`. Not touched this pass.
 - A mini-boss concept doesn't exist in the top-down generator yet (`getDungeonGraph.miniBossId` is
   always `undefined`) — add one if the dungeon design calls for it.
 
 ## Next (recommended, not started by me)
 
-1. Adapt `PlaytestRunner.gd`/`PlaytestAgent.gd` for top-down (persona-driven simulated input,
-   dungeon-item progression instead of ability progression, victory detection via
-   `EventBus.boss_defeated`) — the `godot_playtest` gap above.
-2. Close the side-view victory-path gap: extend `PlaytestRunner.gd`'s input-simulated combat loop
-   through to a `VICTORY` assertion, or add an equivalent check in `RuntimeSmokeTest.gd`.
-3. A mini-boss concept doesn't exist in the top-down generator yet — add one if wanted.
-4. `TOP_DOWN_PROFILE_DEFAULTS.townCount` places NPC/save clusters on the overworld but no
+1. A mini-boss concept doesn't exist in the top-down generator yet — add one if wanted.
+2. `TOP_DOWN_PROFILE_DEFAULTS.townCount` places NPC/save clusters on the overworld but no
    distinct "town" scene/area concept exists — currently honest (no fake town), but a real one
    would need its own area kind.
+3. `apps/desktop` renderer `vite build` currently fails (`packages/shared/dist/config.js` pulls
+   `node:path`/`node:url` into the browser bundle — pre-existing, not touched this session; `tsc`
+   and the electron-main bundle both succeed, only the Vite renderer step fails).
 
 ## New contracts / APIs
 

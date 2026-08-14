@@ -12,7 +12,7 @@ import {
   isProviderUserEnabled,
   parseProviderEnabledMap,
   providerEnabledSettingKey,
-} from '@metroforge/shared';
+} from '@metroforge/shared/provider-toggles';
 
 const TEXT_LABELS: Record<string, string> = {
   ollama: 'Ollama (local)',
