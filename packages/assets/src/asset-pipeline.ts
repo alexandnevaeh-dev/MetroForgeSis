@@ -863,6 +863,13 @@ export class AssetPipeline {
         'tileset',
       );
 
+      // A tile slice's real/placeholder status is inherited from its parent tileset, not
+      // hardcoded — this used to force every individual tile PNG to fallbackGenerated:true (and
+      // therefore PLACEHOLDER maturity) even when it was sliced straight out of real AI-generated
+      // art, purely because slicing itself is always a deterministic, non-AI step. The slicing
+      // step doesn't invent or lose fidelity, so critiquePassed/critiqueScore correctly stay fixed
+      // (the parent's critique already covers the whole sheet these tiles are cut from) — only
+      // fallbackGenerated/provider should track where the source pixels actually came from.
       const tiles = this.pixelArt.sliceTiles(processedBuffer, tileSize);
       for (const [tileId, tileBuf] of tiles) {
         recordAsset(
@@ -870,8 +877,8 @@ export class AssetPipeline {
             id: `biome_${b}_${tileId}`,
             path: `assets/tilesets/biome_${b}/tiles/${tileId}.png`,
             buffer: tileBuf,
-            provider: 'pixel-art-processor',
-            fallbackGenerated: true,
+            provider: fallback ? 'procedural' : 'pixel-art-processor',
+            fallbackGenerated: fallback,
             critiquePassed: true,
             critiqueScore: 100,
           },
