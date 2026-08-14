@@ -11,6 +11,8 @@ export function PreviewScreen() {
   const [preview, setPreview] = useState<ProjectPreview | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [godotError, setGodotError] = useState<string | null>(null);
+  const [launching, setLaunching] = useState(false);
 
   useEffect(() => {
     if (!selectedPath || !window.metroforge?.getProjectPreview) return;
@@ -31,10 +33,40 @@ export function PreviewScreen() {
       <ScreenHeader
         eyebrow="World"
         title="Game Preview"
-        description="Inspect canonical world topology and generated textures for the active project."
+        description="Launch the real generated game in Godot, and inspect canonical world topology and generated textures for the active project."
         actions={
           <div className="row">
             <ProjectSelect />
+            <button
+              type="button"
+              className="primary"
+              disabled={!selectedPath || launching}
+              onClick={async () => {
+                setGodotError(null);
+                if (!selectedPath || !window.metroforge?.playInGodot) return;
+                setLaunching(true);
+                try {
+                  const r = await window.metroforge.playInGodot(selectedPath);
+                  if (!r.success) setGodotError(r.message);
+                } finally {
+                  setLaunching(false);
+                }
+              }}
+            >
+              {launching ? 'Launching…' : 'Play in Godot'}
+            </button>
+            <button
+              type="button"
+              disabled={!selectedPath}
+              onClick={async () => {
+                setGodotError(null);
+                if (!selectedPath || !window.metroforge?.openInGodot) return;
+                const r = await window.metroforge.openInGodot(selectedPath);
+                if (!r.success) setGodotError(r.message);
+              }}
+            >
+              Open in Godot Editor
+            </button>
             <button type="button" onClick={() => navigate('World')}>
               World Editor
             </button>
@@ -47,6 +79,7 @@ export function PreviewScreen() {
       <NoProjectHint />
       {hasActiveProject && (
         <>
+      {godotError && <p className="result error">{godotError}</p>}
       {loading && <p className="hint">Loading preview…</p>}
       {error && <p className="result error">{error}</p>}
       {preview && !preview.error && (

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "desktop-dev",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@metroforge/desktop", "exec", "vite"],
+      "port": 5173
+    }
+  ]
+}
