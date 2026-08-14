@@ -3,7 +3,6 @@ import { contextBridge, ipcRenderer } from 'electron';
 contextBridge.exposeInMainWorld('metroforge', {
   getVersion: () => ipcRenderer.invoke('get-version') as Promise<string>,
   getConfig: () => ipcRenderer.invoke('get-config'),
-  getAppSettings: () => ipcRenderer.invoke('get-app-settings') as Promise<Record<string, string>>,
   setAppSettings: (settings: Record<string, string>) =>
     ipcRenderer.invoke('set-app-settings', settings) as Promise<{ success: boolean; saved: Record<string, string> }>,
   runDoctor: () => ipcRenderer.invoke('run-doctor'),
@@ -29,7 +28,6 @@ contextBridge.exposeInMainWorld('metroforge', {
     }>,
   getHardwareProfile: () => ipcRenderer.invoke('get-hardware-profile'),
   scoutModels: (opts?: { benchmark?: boolean }) => ipcRenderer.invoke('scout-models', opts),
-  rankModels: (capability: string) => ipcRenderer.invoke('rank-models', capability),
   explainModelRouting: (capability: string) => ipcRenderer.invoke('explain-model-routing', capability),
   getOverworldMap: (projectPath: string) => ipcRenderer.invoke('get-overworld-map', projectPath),
   getDungeonGraph: (projectPath: string, dungeonId?: string) =>
@@ -40,8 +38,6 @@ contextBridge.exposeInMainWorld('metroforge', {
   getProjectPreview: (projectPath: string) => ipcRenderer.invoke('get-project-preview', projectPath),
   getProjectDashboard: (projectPath: string) => ipcRenderer.invoke('get-project-dashboard', projectPath),
   getGenerationState: (projectPath: string) => ipcRenderer.invoke('get-generation-state', projectPath),
-  getGenerationEvents: (projectPath: string, category?: string) =>
-    ipcRenderer.invoke('get-generation-events', projectPath, category),
   listAssets: (projectPath: string) => ipcRenderer.invoke('list-assets', projectPath),
   getAssetPreview: (projectPath: string, relPath: string) =>
     ipcRenderer.invoke('get-asset-preview', projectPath, relPath),
@@ -53,7 +49,6 @@ contextBridge.exposeInMainWorld('metroforge', {
     ipcRenderer.invoke('get-audio-preview', projectPath, relPath),
   generateAsset: (request: Record<string, unknown>) => ipcRenderer.invoke('generate-asset', request),
   listRooms: (projectPath: string) => ipcRenderer.invoke('list-rooms', projectPath),
-  getRoom: (projectPath: string, roomId: string) => ipcRenderer.invoke('get-room', projectPath, roomId),
   updateRoom: (projectPath: string, patch: Record<string, unknown>) =>
     ipcRenderer.invoke('update-room', projectPath, patch),
   regenerateRoom: (projectPath: string, roomId: string, scope?: string) =>
@@ -64,7 +59,6 @@ contextBridge.exposeInMainWorld('metroforge', {
   undoWorldEdit: (projectPath: string) => ipcRenderer.invoke('undo-world-edit', projectPath),
   getEditHistory: (projectPath: string) => ipcRenderer.invoke('get-edit-history', projectPath),
   listGenerationQueue: () => ipcRenderer.invoke('list-generation-queue'),
-  enqueueGeneration: (job: Record<string, unknown>) => ipcRenderer.invoke('enqueue-generation', job),
   cancelGenerationJob: (jobId: string) => ipcRenderer.invoke('cancel-generation-job', jobId),
   revealProjectFolder: (projectPath: string) =>
     ipcRenderer.invoke('reveal-project-folder', projectPath),

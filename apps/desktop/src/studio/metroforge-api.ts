@@ -27,12 +27,6 @@ export type CatalogModel = ModelEntry & {
   downloadable?: boolean;
 };
 
-export type RankedModel = {
-  model: ModelEntry;
-  score: number;
-  reasons: string[];
-};
-
 export type ConcurrencyLane = {
   active: number;
   max: number;
@@ -174,7 +168,6 @@ export type RoomCollisionPreview = {
 export type MetroforgeBridge = {
   getVersion: () => Promise<string>;
   getConfig: () => Promise<DesktopConfig>;
-  getAppSettings: () => Promise<Record<string, string>>;
   setAppSettings: (
     settings: Record<string, string>,
   ) => Promise<{ success: boolean; saved: Record<string, string> }>;
@@ -199,7 +192,6 @@ export type MetroforgeBridge = {
   }>;
   getHardwareProfile: () => Promise<HardwareSnapshot>;
   scoutModels: (opts?: { benchmark?: boolean }) => Promise<unknown>;
-  rankModels: (capability: string) => Promise<RankedModel[]>;
   explainModelRouting: (capability: string) => Promise<ModelRoutingExplanation>;
   getOverworldMap: (projectPath: string) => Promise<OverworldMapPreview>;
   getDungeonGraph: (projectPath: string, dungeonId?: string) => Promise<DungeonGraphPreview>;
@@ -238,7 +230,6 @@ export type MetroforgeBridge = {
     validationReport?: Record<string, unknown>;
     worldGraph?: unknown;
   }>;
-  getGenerationEvents: (projectPath: string, category?: string) => Promise<Array<Record<string, unknown>>>;
   listAssets: (projectPath: string) => Promise<AssetListItem[]>;
   getAssetPreview: (projectPath: string, relPath: string) => Promise<{ dataUrl?: string }>;
   getAssetUsages: (
@@ -275,7 +266,6 @@ export type MetroforgeBridge = {
     }>;
   }>;
   listRooms: (projectPath: string) => Promise<Array<Record<string, unknown> & { id: string }>>;
-  getRoom: (projectPath: string, roomId: string) => Promise<Record<string, unknown> | null>;
   updateRoom: (
     projectPath: string,
     patch: Record<string, unknown>,
@@ -297,7 +287,6 @@ export type MetroforgeBridge = {
   listGenerationQueue: () => Promise<
     Array<{ id: string; type: string; status: string; label: string; createdAt: string; error?: string }>
   >;
-  enqueueGeneration: (job: Record<string, unknown>) => Promise<unknown>;
   cancelGenerationJob: (jobId: string) => Promise<unknown>;
   revealProjectFolder: (projectPath: string) => Promise<unknown>;
   onGenerationEvent: (callback: (event: Record<string, unknown>) => void) => () => void;

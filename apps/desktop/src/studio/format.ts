@@ -1,23 +1,11 @@
-/** Browser-safe helpers duplicated from @metroforge/generation for the Electron renderer. */
+/** Browser-safe helpers for the Electron renderer. */
 
-export const GENERATION_PHASES = [
-  'intake',
-  'game_dna',
-  'design_bible',
-  'world_topology',
-  'progression_graph',
-  'enemy_families',
-  'bosses',
-  'quests',
-  'npcs',
-  'audio',
-  'environment_assets',
-  'project_assembly',
-  'static_validation',
-  'automated_repair',
-  'final_qa',
-  'export',
-] as const;
+// Real shared constant (via a dedicated browser-safe subpath, not the package's main barrel,
+// which also re-exports Node-only config loading — see packages/shared/package.json). This used
+// to be a hand-copied literal array here with no import and no test asserting parity, so it could
+// silently drift from the real GENERATION_PHASES in packages/shared/src/constants.ts the moment
+// that list changed without anyone updating this file too.
+export { GENERATION_PHASES } from '@metroforge/shared/constants';
 
 export function phaseLabel(phase: string): string {
   return phase

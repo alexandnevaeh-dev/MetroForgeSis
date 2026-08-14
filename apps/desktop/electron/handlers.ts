@@ -41,7 +41,6 @@ import {
   ProviderHealthMonitor,
   fetchLiveModelIdsByProvider,
   reconcileCatalogEntries,
-  rankModelsForCapability,
   explainModelRouting,
   HardwareProfiler,
   OllamaEmbeddingProvider,
@@ -72,7 +71,7 @@ import {
 } from '@metroforge/assets';
 import type { GenerationMode, GenerationProfile } from '@metroforge/shared';
 import { generationEventStore } from './generation-bus.js';
-import { GenerationQueue, type QueueJob } from './generation-queue.js';
+import { GenerationQueue } from './generation-queue.js';
 import {
   recordWorldEdit,
   popWorldUndo,
@@ -518,12 +517,6 @@ export function registerIpcHandlers(cwd: string): void {
     };
   });
 
-  ipcMain.handle('get-app-settings', async () => {
-    const config = loadConfig();
-    const dataDir = config.dataDir || join(cwd, '.metroforge');
-    return loadAppPreferences(dataDir);
-  });
-
   ipcMain.handle(
     'set-app-settings',
     async (_event, settings: Record<string, string>) => {
@@ -708,24 +701,6 @@ export function registerIpcHandlers(cwd: string): void {
       runBenchmarks: opts?.benchmark,
       ollamaBaseUrl: config.ollamaBaseUrl,
     });
-  });
-
-  ipcMain.handle('rank-models', async (_event, capability: string) => {
-    const config = loadConfig();
-    const dataDir = config.dataDir || join(cwd, '.metroforge');
-    const { catalog, models, registry } = await bootstrapProviders(
-      await textBootstrapConfig(dataDir, 'HYBRID_FREE', config.ollamaBaseUrl),
-    );
-    const liveIds = await fetchLiveModelIdsByProvider(registry);
-    const providerIds = new Set(registry.listEnabled().map((p) => p.id));
-    const entries = reconcileCatalogEntries(catalog, models, liveIds, providerIds);
-    const hw = new HardwareProfiler().profile();
-    return rankModelsForCapability(
-      entries,
-      capability as import('@metroforge/schemas').ModelCapability,
-      hw,
-      { preferInstalled: true },
-    );
   });
 
   ipcMain.handle('explain-model-routing', async (_event, capability: string) => {
@@ -1111,12 +1086,6 @@ export function registerIpcHandlers(cwd: string): void {
     };
   });
 
-  ipcMain.handle('get-generation-events', async (_event, projectPath: string, category?: string) => {
-    assertProjectPath(projectPath, cwd);
-    const events = generationEventStore.read(projectPath);
-    return generationEventStore.filter(events, (category as import('@metroforge/generation').GenerationEventCategory) ?? 'ALL');
-  });
-
   ipcMain.handle('list-assets', async (_event, projectPath: string) => {
     assertProjectPath(projectPath, cwd);
     const artifacts = readManifestAssets(projectPath);
@@ -1463,12 +1432,6 @@ export function registerIpcHandlers(cwd: string): void {
     }));
   });
 
-  ipcMain.handle('get-room', async (_event, projectPath: string, roomId: string) => {
-    assertProjectPath(projectPath, cwd);
-    const project = loadProjectContext(projectPath);
-    return project.roomsData[roomId] ?? null;
-  });
-
   ipcMain.handle(
     'update-room',
     async (
@@ -1535,16 +1498,6 @@ export function registerIpcHandlers(cwd: string): void {
   });
 
   ipcMain.handle('list-generation-queue', () => generationQueue.list());
-
-  ipcMain.handle(
-    'enqueue-generation',
-    async (
-      _event,
-      job: { type: QueueJob['type']; label: string; payload: Record<string, unknown> },
-    ) => {
-      return generationQueue.enqueue(job);
-    },
-  );
 
   ipcMain.handle('cancel-generation-job', async (_event, jobId: string) => ({
     cancelled: generationQueue.cancel(jobId),

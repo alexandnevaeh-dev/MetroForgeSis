@@ -13,6 +13,10 @@
     "./provider-toggles": {
       "types": "./dist/provider-toggles.d.ts",
       "import": "./dist/provider-toggles.js"
+    },
+    "./constants": {
+      "types": "./dist/constants.d.ts",
+      "import": "./dist/constants.js"
     }
   },
   "scripts": {
