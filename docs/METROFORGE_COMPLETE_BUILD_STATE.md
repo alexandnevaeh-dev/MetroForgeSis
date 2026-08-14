@@ -617,38 +617,38 @@ Both archetypes: `final_qa: PASSED (RUNTIME_VALIDATED: 18/18 gates passed)`, con
 18/18 gates passing, both archetypes, real Godot 4.7.1 binary, today.
 
 ## Test Suite Result
-386/387 passing (1 confirmed-flaky, passes cleanly in isolation).
+392/392 passing.
 
 ## Build Result
-FAIL — `apps/desktop` renderer only; typecheck and all other packages PASS.
+PASS — `apps/desktop` renderer and all other packages build clean (verified with a fresh `pnpm run build` alongside the death-animation work below).
 
 ## Top 20 Remaining Engineering Tasks
-1. Finish the desktop build fix (P1-1) — smallest, highest-leverage task available.
+1. ~~Finish the desktop build fix (P1-1)~~ — DONE, verified clean.
 2. Expand top-down's `RuntimeSmokeTest.gd` to real parity with side-view's (P1-2).
 3. ~~Thread real AI sprite art into player/enemy animation generation~~ — DONE (P1-4).
 4. ~~Decide + enforce real `PRODUCTION_READY` semantics~~ — DONE (P1-5).
 5. ~~`RoomTileMap.gd`~~ — false positive, already wired via `room-assembler.ts` (P1-3, corrected).
-6. Cover `wall_jump`/`wall_slide`/`grapple` in the movement-feasibility validator.
+6. ~~Cover `wall_jump`/`wall_slide`/`grapple` in the movement-feasibility validator~~ — DONE.
 7. ~~Wire or remove top-down's vestigial `AbilityPickup.gd`~~ — DONE (removed, confirmed dead).
-8. Add a real death animation.
+8. ~~Add a real death animation~~ — DONE (player/enemy/boss death sheets + trigger, real Godot-verified).
 9. ~~Fix or remove the dead grid-alignment step in the pixel-art processor~~ — DONE (removed).
-10. Stop force-marking real-source biome tile slices as `PLACEHOLDER`.
+10. ~~Stop force-marking real-source biome tile slices as `PLACEHOLDER`~~ — DONE.
 11. Rename/rebuild the "Game Preview" screen to actually preview the game.
 12. Give the Dungeon Editor real mutation controls (parity with World/Room editors).
 13. Replace the fixed 8-effect VFX library with real per-project variety (particles or a larger procedural set).
 14. Implement real autotile/terrain-set tileset generation.
 15. Either build a real Furnace-format exporter or rename the feature.
-16. Prune the 5 confirmed-dead IPC handlers.
-17. Replace `apps/desktop/src/studio/format.ts`'s hand-duplicated `GENERATION_PHASES` with a real shared import.
+16. ~~Prune the 5 confirmed-dead IPC handlers~~ — DONE.
+17. ~~Replace `apps/desktop/src/studio/format.ts`'s hand-duplicated `GENERATION_PHASES` with a real shared import~~ — DONE.
 18. Implement a procedurally-generated (not fixed 4-room) top-down dungeon layout.
 19. Add a mini-boss concept for top-down dungeons.
-20. Clean up the 20 untracked `tmp-nvidia-*`/`tmp-smoke-*` scratch files at the repo root.
+20. ~~Clean up the 20 untracked `tmp-nvidia-*`/`tmp-smoke-*` scratch files at the repo root~~ — DONE.
 
 ## Recommended Next Engineering Pass
-**Fix the desktop build, then close the top-down smoke-test coverage gap.**
+**Close the top-down smoke-test coverage gap.**
 
 ## Why This Should Be Next
-The build fix is small, fully diagnosed, and unblocks the entire desktop app being usable/shippable at all — the highest-leverage single task available. The smoke-test gap is the largest real *risk* in the current state: it means top-down's "8/8 verified" claim rests on a much thinner net of assertions than side-view's, even though (per this audit) the underlying systems are equally real — closing it converts an assumption into a verified fact, the same way this session's `godot_playtest` work did for the playtest gate specifically.
+It's the largest real remaining *risk* in the current state: top-down's "8/8 verified" claim rests on a much thinner net of assertions (`RuntimeSmokeTest.gd`) than side-view's, even though the underlying systems (quests/dialogue/shops/inventory/save-migration) are equally real — closing it converts an assumption into a verified fact, the same way this session's `godot_playtest` and death-animation work did for their respective gates. Everything else remaining on this list is a LARGE net-new feature (autotile tilesets, real VFX/particles, procedural top-down dungeons, Dungeon Editor controls, Game Preview rebuild) rather than a correctness gap.
 
 ## User Action Required Before Next Pass
 NONE — both recommended tasks are fully actionable with the current toolchain and no external dependency changes.

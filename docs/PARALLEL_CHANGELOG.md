@@ -1,5 +1,43 @@
 # Parallel changelog
 
+## 2026-08-14 — CLAUDE — side-view: added a real death animation, fixed a re-death bug and two playtest-timing regressions it exposed
+
+- **Agent:** CLAUDE
+- **Branch:** `feature/claude-generation-runtime`
+
+Added a fourth generated animation sheet (`generateDeathSheet` in `packages/assets/src/png.ts`) —
+alongside the existing walk/attack/hurt — using the same real-AI-art-as-source pattern already
+established for those: progressive downward sinking via source-row offset, desaturation, and an
+alpha fade to a 45% floor (high enough to keep the animation critic's empty-frame check happy).
+Wired through `AssetPipeline` for player, every enemy, and every boss, and through
+`AnimatedAssetSprite.gd` as a non-looping `"death"` animation. Each character's `_on_died()`
+(`PlayerController.gd`, `EnemyController.gd`, `BossController.gd`) now plays it and `await`s
+`animation_finished` before hiding/freeing, so death is actually visible instead of an instant
+disappearance.
+
+Verifying this at runtime (not just typecheck/build) surfaced two real bugs:
+
+- **Re-death bug** (`HealthComponent.gd`): `take_damage()` only guarded `invulnerable`/`amount <= 0`,
+  not "already dead" — an entity at 0 health that took further damage during its own death
+  animation re-emitted `died`, re-running the whole death sequence. Fixed with a
+  `current_health <= 0` early return.
+- **Playtest-timing regression**: boss/enemy defeat was previously synchronous with health hitting
+  0 (the `died` signal's handler ran inline and froze the boss immediately), and two test harnesses
+  depended on that: `PlaytestAgent.gd`'s boss-fight loop returned "victory" the instant
+  `current_health <= 0`, and `RuntimeSmokeTest.gd`'s victory-flow check polled `GameManager` state
+  for only 2 fixed frames after dealing lethal damage. With `_on_died()` now awaiting a real
+  animation first, both checked final state before the boss had actually been freed / `VICTORY`
+  actually reached — regressing `godot_playtest` from 8/8 to 7/8 on a fresh TINY_TEST regeneration
+  (`playtest_victory_state_or_boss_defeated` FAIL, confirmed via `validation_report.json` telemetry:
+  `bossFightMs: 4540, victoryState: false`). Fixed both to poll with a bounded wait for the real
+  post-animation state instead of assuming a fixed frame count — the same fix shape as this
+  session's earlier room-transition-await bugs.
+
+Verified via a fresh TINY_TEST regeneration (seed 777, LOCAL_ONLY): death sheets generate for
+player/both enemies/boss, `godot_playtest` back to 8/8, `godot_runtime` 180/181 (pre-existing
+unrelated soft-fail), overall `RUNTIME_VALIDATED`. Full monorepo build and test suite (392 tests,
+81 files) stay clean.
+
 ## 2026-08-14 — CLAUDE — side-view: fixed a real MEDIUM-scale room-transition bug + movement-feasibility coverage gap
 
 - **Agent:** CLAUDE
