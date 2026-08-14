@@ -535,8 +535,8 @@ export class GenerationPipeline {
       join(musicDir, 'tracker_patterns.json'),
       JSON.stringify(Object.fromEntries(musicResult.patterns), null, 2),
     );
-    for (const [biomeId, mod] of musicResult.furnace) {
-      writeFileSync(join(musicDir, `${biomeId}.fur.json`), JSON.stringify(mod, null, 2));
+    for (const [biomeId, mod] of musicResult.trackerInterchange) {
+      writeFileSync(join(musicDir, `${biomeId}.tracker-interchange.json`), JSON.stringify(mod, null, 2));
     }
     mkdirSync(join(outputPath, 'audio', 'midi'), { recursive: true });
     for (const [biomeId, mid] of musicResult.midi) {
@@ -554,7 +554,7 @@ export class GenerationPipeline {
     report(
       'audio',
       'PASSED',
-      `${audioFiles.size} audio files (${musicResult.midi.size} MIDI, ${musicResult.furnace.size} Furnace${
+      `${audioFiles.size} audio files (${musicResult.midi.size} MIDI, ${musicResult.trackerInterchange.size} tracker-interchange JSON${
         voiceResult.synthesizedCount > 0 ? `, ${voiceResult.synthesizedCount} dialogue voice lines` : ''
       })`,
     );

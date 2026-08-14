@@ -112,14 +112,9 @@ Each candidate lists what it solves, why it's ranked where it is, dependencies, 
 
 ---
 
-## 10. Real (or honestly renamed) Furnace audio export
+## 10. ~~Real (or honestly renamed) Furnace audio export~~ — DONE (renamed)
 
-**Problem solved:** the "Furnace" export currently produces a JSON note-list with a manual-reconstruction hint, not an openable `.fur` file — a user expecting a working tracker project will be confused.
-**Why now:** low effort either direction; purely a matter of picking accuracy.
-**Files affected:** `packages/procedural/src/music.ts:74-94`.
-**Acceptance criteria:** either a real minimal `.fur`-format writer (if the format is tractable to implement), or rename the feature/output extension to honestly reflect what it produces (e.g. a `.json` "tracker notes" export with the same reconstruction hint, not claiming to be a Furnace file).
-**Estimated complexity:** SMALL (rename) or LARGE (real format writer).
-**Risk:** near-zero.
+**Resolved 2026-08-14:** renamed rather than building a real `.fur` binary writer (Furnace's format is an undocumented, versioned, zlib-compressed binary structure — a LARGE, low-value reverse-engineering effort for a niche tracker). `FurnaceModule`/`exportFurnaceModule` → `TrackerInterchangeModule`/`exportTrackerInterchange` in `packages/procedural/src/music.ts`, output file renamed `<id>.fur.json` → `<id>.tracker-interchange.json` (`packages/generation/src/pipeline.ts`), and the generation-phase report string no longer says "Furnace". The JSON content and its `recreationHint` (formerly `openmptHint`) field are unchanged — it was already an honest manual-reconstruction aid, just mislabeled.
 
 ---
 

@@ -1,5 +1,7 @@
 /**
- * MIDI + Furnace/OpenMPT-friendly exports from tracker patterns.
+ * MIDI export plus a JSON tracker-pattern dump intended to help a musician manually recreate
+ * the pattern in a real tracker (Furnace, OpenMPT, etc.) — neither is a native project file for
+ * either tool.
  */
 import type { AudioBible } from '@metroforge/schemas';
 import { SeededRNG } from './rng.js';
@@ -15,16 +17,20 @@ const SCALE_FREQ: Record<string, number[]> = {
   Fm: [174.61, 196, 207.65, 233.08, 261.63, 277.18, 311.13, 349.23],
 };
 
-/** Furnace/OpenMPT interchange — import into Furnace via JSON or OpenMPT via MIDI */
-export interface FurnaceModule {
-  format: 'metroforge-furnace';
+/**
+ * JSON dump of a tracker pattern's note/volume rows, meant as a manual-recreation aid for
+ * musicians working in a real tracker (Furnace, OpenMPT, etc.) — not a native project file for
+ * any of them. Pair with the companion .mid export (`exportPatternToMidi`) for import-by-ear.
+ */
+export interface TrackerInterchangeModule {
+  format: 'metroforge-tracker-interchange';
   version: string;
   title: string;
   bpm: number;
   key: string;
   mood: string;
   rows: { tick: number; note: string; octave: number; volume: number; instrument: number }[];
-  openmptHint: string;
+  recreationHint: string;
 }
 
 export interface TrackerEvent {
@@ -46,7 +52,7 @@ export interface MusicGenerationResult {
   audio: Map<string, Buffer>;
   patterns: Map<string, TrackerPattern>;
   midi: Map<string, Buffer>;
-  furnace: Map<string, FurnaceModule>;
+  trackerInterchange: Map<string, TrackerInterchangeModule>;
 }
 
 function tempoToBpm(tempo: 'slow' | 'medium' | 'fast'): number {
@@ -71,9 +77,9 @@ function noteNameForScaleIndex(key: string, noteIdx: number): { name: string; oc
   return { name, octave, midi };
 }
 
-export function exportFurnaceModule(pattern: TrackerPattern, title: string): FurnaceModule {
+export function exportTrackerInterchange(pattern: TrackerPattern, title: string): TrackerInterchangeModule {
   return {
-    format: 'metroforge-furnace',
+    format: 'metroforge-tracker-interchange',
     version: '0.1.0',
     title,
     bpm: pattern.bpm,
@@ -89,7 +95,7 @@ export function exportFurnaceModule(pattern: TrackerPattern, title: string): Fur
         instrument: 0,
       };
     }),
-    openmptHint: 'Import companion .mid into OpenMPT or recreate rows in Furnace',
+    recreationHint: 'Import companion .mid into OpenMPT/Furnace, or recreate these rows by hand — this JSON is not a native tracker project file',
   };
 }
 
@@ -248,7 +254,7 @@ export function generateMusicFromAudioBible(
   const audio = new Map<string, Buffer>();
   const patterns = new Map<string, TrackerPattern>();
   const midi = new Map<string, Buffer>();
-  const furnace = new Map<string, FurnaceModule>();
+  const trackerInterchange = new Map<string, TrackerInterchangeModule>();
 
   for (let i = 0; i < audioBible.biomeThemes.length; i++) {
     const theme = audioBible.biomeThemes[i]!;
@@ -256,7 +262,7 @@ export function generateMusicFromAudioBible(
     patterns.set(theme.biomeId, pattern);
     audio.set(`music_${theme.biomeId}`, synthesizeBiomeLoop(theme, seed + i * 100));
     midi.set(theme.biomeId, exportPatternToMidi(pattern, `${theme.biomeId}_${theme.mood}`));
-    furnace.set(theme.biomeId, exportFurnaceModule(pattern, `${theme.biomeId}_${theme.mood}`));
+    trackerInterchange.set(theme.biomeId, exportTrackerInterchange(pattern, `${theme.biomeId}_${theme.mood}`));
   }
 
   const titleTheme = audioBible.biomeThemes[0] ?? {
@@ -280,9 +286,9 @@ export function generateMusicFromAudioBible(
   patterns.set('boss', bossPattern);
   audio.set('music_boss', synthesizeBiomeLoop(bossTrack, seed + 777));
   midi.set('boss', exportPatternToMidi(bossPattern, 'boss_combat'));
-  furnace.set('boss', exportFurnaceModule(bossPattern, 'boss_combat'));
+  trackerInterchange.set('boss', exportTrackerInterchange(bossPattern, 'boss_combat'));
 
-  return { audio, patterns, midi, furnace };
+  return { audio, patterns, midi, trackerInterchange };
 }
 
 export async function enhanceMusicWithStableAudio(

@@ -51,9 +51,9 @@ export {
   generateMusicFromAudioBible,
   enhanceMusicWithStableAudio,
   exportPatternToMidi,
-  exportFurnaceModule,
+  exportTrackerInterchange,
 } from './music.js';
-export type { TrackerPattern, TrackerEvent, MusicGenerationResult, FurnaceModule } from './music.js';
+export type { TrackerPattern, TrackerEvent, MusicGenerationResult, TrackerInterchangeModule } from './music.js';
 export { StableAudioProvider } from './stable-audio.js';
 export type { StableAudioRequest, StableAudioResult } from './stable-audio.js';
 export { generateArtBible, generateAudioBible, generateDesignBible } from './bibles.js';

@@ -742,7 +742,7 @@ What exists instead, classified individually:
 | UI | 0 (HUD is hand-authored `.tscn`, not generated) | 0 | N/A | N/A | N/A | Entire category |
 | VFX | 0 | 0 | N/A | N/A | N/A | Entire category |
 | Audio (SFX) | 8 fixed ids | 8 | 8 (`.wav`, real Godot import) | N/A (no audio QA) | 8/8 procedural | 0 |
-| Music | 1 per biome (WAV + MIDI + Furnace) | 3/biome | 3/biome | N/A | Yes | 0 |
+| Music | 1 per biome (WAV + MIDI + tracker-interchange JSON) | 3/biome | 3/biome | N/A | Yes | 0 |
 | Portraits | 0 | 0 | N/A | N/A | N/A | Entire category |
 | Weapons | 0 | 0 | N/A | N/A | N/A | Entire category |
 | Icons | 0 | 0 | N/A | N/A | N/A | Entire category |
@@ -908,7 +908,7 @@ Of 25 requested animation names, **4 exist** (idle, walk, attack, hurt) for the 
 ## 33. Music
 
 - **AI music model**: none directly — no LLM/diffusion model call for music composition.
-- **Procedural music**: real, `packages/procedural/src/music.ts` — generates biome-themed loops, exports as WAV, MIDI (`.mid`, Standard MIDI File format), and Furnace tracker JSON (`.fur.json`).
+- **Procedural music**: real, `packages/procedural/src/music.ts` — generates biome-themed loops, exports as WAV, MIDI (`.mid`, Standard MIDI File format), and a tracker-interchange JSON note-list (`.tracker-interchange.json`) meant as a manual-recreation aid for a real tracker (Furnace, OpenMPT) — not a native project file for either.
 - **Stable Audio**: real, optional — `enhanceMusicWithStableAudio()` directly `spawn()`s `workers/diffusers_audio_worker.py` if `DIFFUSERS_PYTHON` is configured; **never invoked in this environment** (no local setup).
 - **Normalization**: not confirmed (no dedicated loudness-normalization step found in `music.ts`).
 - **Looping**: real — biome tracks are designed as loops (structural, not just an accidental seam).
@@ -996,7 +996,7 @@ Of 25 requested animation names, **4 exist** (idle, walk, attack, hurt) for the 
 
 ## 41. Godot Project Assembly
 
-Verified against a fresh generation this audit (full file tree in §3-adjacent inspection). Confirmed present in output: `project.godot` (with 7 autoloads), all core scenes/scripts, `.tscn` files for every generated room, player/enemy/boss/NPC/item-pickup/save-point/pause-menu/room-transition scenes, JSON data files (`rooms.json`, `enemies.json`, `bosses.json`, `quests.json`, `npcs.json`, `items.json`), audio (WAV/MIDI/Furnace), sprite/tileset PNGs, `game_dna.json`/`design_bible.json`/`world_graph.json`/`progression_graph.json`/`generation_manifest.json`/`project.json`/`validation_report.json`.
+Verified against a fresh generation this audit (full file tree in §3-adjacent inspection). Confirmed present in output: `project.godot` (with 7 autoloads), all core scenes/scripts, `.tscn` files for every generated room, player/enemy/boss/NPC/item-pickup/save-point/pause-menu/room-transition scenes, JSON data files (`rooms.json`, `enemies.json`, `bosses.json`, `quests.json`, `npcs.json`, `items.json`), audio (WAV/MIDI/tracker-interchange JSON), sprite/tileset PNGs, `game_dna.json`/`design_bible.json`/`world_graph.json`/`progression_graph.json`/`generation_manifest.json`/`project.json`/`validation_report.json`.
 
 **Confirmed absent from output** (matching the missing-subsystem findings above): no inventory data/scene, no dialogue data, no map data/scene, no VFX/shader resources, no distinct "ending" scene beyond the `GameState.VICTORY` flag + overlay label.
 

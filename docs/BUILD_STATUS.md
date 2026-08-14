@@ -41,7 +41,7 @@ All planned generation passes through Pass 23 are implemented.
 
 ### Pass 23 — Final Polish
 - **MIDI export** (`.mid`) — OpenMPT-compatible Standard MIDI Files per biome
-- **Furnace module export** (`.fur.json`) — row-based interchange for Furnace tracker
+- **Tracker-interchange export** (`.tracker-interchange.json`) — row-based note-list, a manual-recreation aid for a real tracker (Furnace, OpenMPT), not a native project file
 - **Stable Audio Open worker** — optional `diffusers_audio_worker.py` + `StableAudioProvider`
 - **Ability-gated transitions** — `required_abilities` on `RoomTransition` (orange gates)
 - **TileMapLayer** — `RoomTileMap.gd` paints floor/walls from generated tilesets
@@ -52,7 +52,7 @@ All planned generation passes through Pass 23 are implemented.
 - **HUD quest tracker** — `QuestTrackerPanel` on GameHUD lists active quests; pause menu still has the full `QuestPanel`
 
 ### Full Pipeline
-Game DNA → Design Bible → World Graph → Content → Music (WAV/MIDI/Furnace) → Assets → Godot Assembly → QA
+Game DNA → Design Bible → World Graph → Content → Music (WAV/MIDI/tracker-interchange JSON) → Assets → Godot Assembly → QA
 
 ### Runtime Notes
 - **Database:** CLI uses Node built-in `node:sqlite`; Electron desktop uses `sql.js` (no native compile step).
