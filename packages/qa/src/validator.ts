@@ -542,6 +542,14 @@ export class QAValidator {
   }
 
   validateGodotHeadless(godotPath: string, projectPath: string): QAGateResult {
+    if (!existsSync(godotPath)) {
+      return {
+        gate: 'godot_imports',
+        passed: true,
+        state: 'SKIPPED',
+        message: 'NEEDS_RUNTIME_VALIDATION: GODOT_NOT_AVAILABLE',
+      };
+    }
     this.runGodotImport(godotPath, projectPath);
 
     try {
@@ -559,19 +567,21 @@ export class QAValidator {
         passed: !hasParseError,
         state: hasParseError ? 'FAIL' : 'PASS',
         message: hasParseError ? 'Godot reported errors' : 'Godot headless OK',
-        details: { output: output.slice(0, 500) },
+        details: { output: output.slice(0, 2000) },
       };
     } catch (err) {
-      const output =
-        err instanceof Error && 'stdout' in err
-          ? String((err as { stdout?: string }).stdout ?? err.message)
-          : String(err);
+      const stdout =
+        err instanceof Error && 'stdout' in err ? String((err as { stdout?: string }).stdout ?? '') : '';
+      const stderr =
+        err instanceof Error && 'stderr' in err ? String((err as { stderr?: string }).stderr ?? '') : '';
+      const message = err instanceof Error ? err.message : String(err);
+      const output = [stdout, stderr, message].filter(Boolean).join('\n');
       return {
         gate: 'godot_imports',
         passed: false,
         state: 'FAIL',
         message: 'Godot headless failed',
-        details: { output: output.slice(0, 500) },
+        details: { output: output.slice(0, 2000) },
       };
     }
   }
@@ -638,17 +648,23 @@ export class QAValidator {
     };
   }
 
-  /** Critiques `qa/screenshot_gameplay.png` written by RuntimeSmokeTest. Blank headless
-   *  frames are SKIPPED (not a generation failure). Structured frames that fail the
-   *  critic are SOFT_FAIL so vision issues never block a playable project. */
-  validateGameplayScreenshot(projectPath: string): QAGateResult {
+  /** Critiques `qa/screenshot_gameplay.png` written by RuntimeSmokeTest.
+   *  For non-RC profiles, missing/blank frames are SKIPPED (not a generation failure).
+   *  For RELEASE_CANDIDATE (`required: true`), missing or blank capture is a hard FAIL. */
+  validateGameplayScreenshot(
+    projectPath: string,
+    options?: { required?: boolean },
+  ): QAGateResult {
+    const required = options?.required === true;
     const screenshotPath = join(projectPath, 'qa', 'screenshot_gameplay.png');
     if (!existsSync(screenshotPath)) {
       return {
         gate: 'gameplay_screenshot_qa',
-        passed: true,
-        state: 'SKIPPED',
-        message: 'No gameplay screenshot (capture missing or runtime smoke did not run)',
+        passed: !required,
+        state: required ? 'FAIL' : 'SKIPPED',
+        message: required
+          ? 'RELEASE_CANDIDATE requires gameplay screenshot evidence — qa/screenshot_gameplay.png missing'
+          : 'No gameplay screenshot (capture missing or runtime smoke did not run)',
       };
     }
 
@@ -665,9 +681,11 @@ export class QAValidator {
     if (critique.blank) {
       return {
         gate: 'gameplay_screenshot_qa',
-        passed: true,
-        state: 'SKIPPED',
-        message: 'Gameplay screenshot is blank (typical of GPU-less Godot --headless)',
+        passed: !required,
+        state: required ? 'FAIL' : 'SKIPPED',
+        message: required
+          ? 'RELEASE_CANDIDATE gameplay screenshot is blank (not valid evidence)'
+          : 'Gameplay screenshot is blank (typical of GPU-less Godot --headless)',
         details: { ...critique },
       };
     }
@@ -716,23 +734,16 @@ export class QAValidator {
     this.runGodotImport(godotPath, projectPath);
 
     // --quit-after counts engine main-loop iterations (≈ physics frames at the default 60Hz
-    // tick), not wall-clock seconds. 600 (~10s) was enough for the side-view playtest's short
-    // corridor-to-corridor walks, but a top-down free-roam route (multiple pickup detours +
-    // portal walks, each with its own multi-second timeout, plus a boss fight) can legitimately
-    // need 60-90 simulated seconds. Too low a budget force-quits the engine mid-coroutine,
-    // abandoning PlaytestRunner._finish() before it ever prints results — a genuine failure
-    // (route unreachable, transition broken) and "ran out of frame budget" must not look the
-    // same. Set well above the 90s execSync timeout below (in frame-equivalents) so that outer
-    // timeout — or the script's own natural completion — is what actually bounds this, not this
-    // safety net firing early.
-    const command = `"${godotPath}" --headless --path "${projectPath}" res://scenes/test/PlaytestRunner.tscn --quit-after 12000`;
+    // tick), not wall-clock seconds. 12000 was enough for 8-room TINY worlds, but RELEASE_CANDIDATE
+    // maps (30+ transitions, several minibosses at MIN_BOSS_ATTACK_TIMEOUT_SEC=45, plus a final
+    // boss) need a frame budget that cannot fire before the runner's own _finish(). The outer
+    // execSync timeout is what actually bounds the gate.
+    const command = `"${godotPath}" --headless --path "${projectPath}" res://scenes/test/PlaytestRunner.tscn --quit-after 360000`;
     let output: string;
     let exitCode = 0;
     try {
-      // 150s: comfortably above top-down PlaytestAgent.gd's own 55s boss-fight floor plus
-      // transition/pickup time, with margin — see that file's MIN_BOSS_ATTACK_TIMEOUT_SEC comment
-      // for why a kiting top-down boss needs far more real time than the side-view template does.
-      output = execSync(command, { encoding: 'utf-8', timeout: 150000, windowsHide: true });
+      // 10 minutes: 45-room critical-path with 4 real boss fights and 10s walk timeouts per room.
+      output = execSync(command, { encoding: 'utf-8', timeout: 600000, windowsHide: true });
     } catch (err) {
       exitCode = 1;
       output =
@@ -751,17 +762,20 @@ export class QAValidator {
     const passed = state === 'PASS';
 
     if (telemetry) {
-      writeFileSync(
-        join(projectPath, 'playtest_telemetry.json'),
-        JSON.stringify(
-          {
-            ...telemetry,
-            balanceSummary: summarizePlaytestBalance(telemetry),
-          },
-          null,
-          2,
-        ),
-      );
+      const payload = {
+        ...telemetry,
+        balanceSummary: summarizePlaytestBalance(telemetry),
+      };
+      writeFileSync(join(projectPath, 'playtest_telemetry.json'), JSON.stringify(payload, null, 2));
+      try {
+        mkdirSync(join(projectPath, 'playtest'), { recursive: true });
+        writeFileSync(
+          join(projectPath, 'playtest', 'telemetry.jsonl'),
+          `${JSON.stringify({ ...payload, timestamp: new Date().toISOString() })}\n`,
+        );
+      } catch {
+        /* jsonl sidecar is best-effort */
+      }
     }
 
     return {

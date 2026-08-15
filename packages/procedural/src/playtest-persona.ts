@@ -1,7 +1,8 @@
+import type { GenerationProfile } from '@metroforge/shared';
 import type { PlaytestRoutePlan } from './playtest-route.js';
 
 /** Bot behavior profiles for automated playtesting — distinct from graph reachability proofs. */
-export type PlaytestPersonaId = 'victory_rusher' | 'ability_collector';
+export type PlaytestPersonaId = 'victory_rusher' | 'ability_collector' | 'critical_path' | 'explorer';
 
 export interface PlaytestPersona {
   id: PlaytestPersonaId;
@@ -29,21 +30,45 @@ export const PLAYTEST_PERSONAS: Record<PlaytestPersonaId, PlaytestPersona> = {
     bossAttackTimeoutSec: 14,
     collectAllPickups: true,
   },
+  critical_path: {
+    id: 'critical_path',
+    displayName: 'Critical Path',
+    walkTimeoutSec: 10,
+    bossAttackTimeoutSec: 16,
+    collectAllPickups: true,
+  },
+  explorer: {
+    id: 'explorer',
+    displayName: 'Explorer',
+    walkTimeoutSec: 14,
+    bossAttackTimeoutSec: 16,
+    collectAllPickups: true,
+  },
+};
+
+const PERSONA_ALIASES: Record<string, PlaytestPersonaId> = {
+  VICTORY_RUSHER: 'victory_rusher',
+  CRITICAL_PATH: 'critical_path',
+  EXPLORER: 'explorer',
+  ABILITY_COLLECTOR: 'ability_collector',
+  COMPLETIONIST: 'ability_collector',
 };
 
 export type PlaytestRouteWithPersona = PlaytestRoutePlan & { persona: PlaytestPersona };
 
 export function resolvePlaytestPersona(id?: string): PlaytestPersona {
-  if (id && id in PLAYTEST_PERSONAS) {
+  if (!id) return PLAYTEST_PERSONAS.victory_rusher;
+  if (id in PLAYTEST_PERSONAS) {
     return PLAYTEST_PERSONAS[id as PlaytestPersonaId];
   }
+  const aliased = PERSONA_ALIASES[id];
+  if (aliased) return PLAYTEST_PERSONAS[aliased];
   return PLAYTEST_PERSONAS.victory_rusher;
 }
 
 /** Default persona for a profile — larger worlds get a more patient collector bot. */
-export function defaultPlaytestPersonaForProfile(
-  profile: 'TINY_TEST' | 'SMALL' | 'MEDIUM' | 'LARGE',
-): PlaytestPersona {
+export function defaultPlaytestPersonaForProfile(profile: GenerationProfile): PlaytestPersona {
+  if (profile === 'RELEASE_CANDIDATE') return PLAYTEST_PERSONAS.critical_path;
   return profile === 'TINY_TEST' || profile === 'SMALL'
     ? PLAYTEST_PERSONAS.victory_rusher
     : PLAYTEST_PERSONAS.ability_collector;

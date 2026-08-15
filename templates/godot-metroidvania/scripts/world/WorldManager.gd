@@ -83,6 +83,11 @@ func _lock_room_exits(room: Node, boss_health: HealthComponent) -> void:
 		for transition in transitions:
 			if is_instance_valid(transition):
 				transition.monitoring = true
+				# Enabling monitoring does not emit body_entered for a player already
+				# standing in the door (e.g. crushed against a sealed exit as the boss dies).
+				if transition.has_method("_on_body_entered"):
+					for body in transition.get_overlapping_bodies():
+						transition.call("_on_body_entered", body)
 	, CONNECT_ONE_SHOT)
 
 func _room_transitions(room: Node) -> Array:

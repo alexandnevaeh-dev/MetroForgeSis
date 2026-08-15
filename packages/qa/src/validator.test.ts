@@ -344,6 +344,19 @@ describe('QAValidator gameplay screenshot gate', () => {
     rmSync(outputDir, { recursive: true, force: true });
   });
 
+  it('RELEASE_CANDIDATE fails when gameplay screenshot is missing', () => {
+    const outputDir = join(tmpdir(), `metroforge-qa-shot-rc-missing-${Date.now()}`);
+    mkdirSync(outputDir, { recursive: true });
+
+    const validator = new QAValidator();
+    const gate = validator.validateGameplayScreenshot(outputDir, { required: true });
+    expect(gate.gate).toBe('gameplay_screenshot_qa');
+    expect(gate.passed).toBe(false);
+    expect(gate.state).toBe('FAIL');
+
+    rmSync(outputDir, { recursive: true, force: true });
+  });
+
   it('skips blank headless frames', () => {
     const outputDir = join(tmpdir(), `metroforge-qa-shot-blank-${Date.now()}`);
     mkdirSync(join(outputDir, 'qa'), { recursive: true });

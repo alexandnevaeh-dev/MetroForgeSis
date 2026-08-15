@@ -25,13 +25,19 @@ func _ready() -> void:
 
 	var agent := PlaytestAgent.new()
 	var outcome: Dictionary = await agent.run(world, self)
-	_telemetry = outcome.get("telemetry", {})
+	var telem: Variant = outcome.get("telemetry", {})
+	_telemetry = telem if typeof(telem) == TYPE_DICTIONARY else {}
 	if not outcome.get("ok", false):
 		# outcome.ok=false carries a real reason (route_unreachable / transition_failed /
 		# boss_not_defeated) that every downstream check here just reports as an opaque FAIL —
 		# surface it so a failing run is diagnosable from --quit-after output alone, not only by
 		# re-instrumenting PlaytestAgent.gd by hand each time.
-		print("PLAYTEST_FAILURE_REASON: %s from=%s to=%s" % [outcome.get("reason", "unknown"), outcome.get("from", ""), outcome.get("to", "")])
+		print("PLAYTEST_FAILURE_REASON: %s from=%s to=%s stage=%s" % [
+			outcome.get("reason", "unknown"),
+			outcome.get("from", ""),
+			outcome.get("to", ""),
+			outcome.get("failStage", ""),
+		])
 
 	_check("playtest_route_file_present", FileAccess.file_exists("res://playtest_route.json"))
 	_check("playtest_persona_configured", _telemetry.get("personaId", "") != "")
@@ -67,8 +73,30 @@ func _finish() -> void:
 		if not r.passed:
 			hard_failures += 1
 	print("PLAYTEST_RESULTS_END")
-	if not _telemetry.is_empty():
-		print("PLAYTEST_TELEMETRY_BEGIN")
-		print(JSON.stringify(_telemetry))
-		print("PLAYTEST_TELEMETRY_END")
+	_emit_telemetry()
 	get_tree().quit(0 if hard_failures == 0 else 1)
+
+func _emit_telemetry() -> void:
+	if _telemetry.is_empty():
+		return
+	print("PLAYTEST_TELEMETRY_BEGIN")
+	print(JSON.stringify(_telemetry))
+	print("PLAYTEST_TELEMETRY_END")
+	var json := JSON.stringify(_telemetry, "\t")
+	var file := FileAccess.open("res://playtest_telemetry.json", FileAccess.WRITE)
+	if file:
+		file.store_string(json)
+		file.close()
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://playtest"))
+	var existing := ""
+	if FileAccess.file_exists("res://playtest/telemetry.jsonl"):
+		var reader := FileAccess.open("res://playtest/telemetry.jsonl", FileAccess.READ)
+		if reader:
+			existing = reader.get_as_text()
+			reader.close()
+	var line: Dictionary = _telemetry.duplicate(true)
+	line["timestamp"] = Time.get_datetime_string_from_system(true)
+	var jsonl := FileAccess.open("res://playtest/telemetry.jsonl", FileAccess.WRITE)
+	if jsonl:
+		jsonl.store_string(existing + JSON.stringify(line) + "\n")
+		jsonl.close()

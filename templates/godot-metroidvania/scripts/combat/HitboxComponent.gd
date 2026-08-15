@@ -14,9 +14,20 @@ func _ready() -> void:
 func activate() -> void:
 	_hit_targets.clear()
 	monitoring = true
+	# Area2D does not emit area_entered for shapes that were already overlapping
+	# when monitoring flips true. A standing melee swing (playtest bot, or a player
+	# who walked into range then attacked) would otherwise deal 0 damage forever.
+	if is_inside_tree():
+		get_tree().physics_frame.connect(_apply_current_overlaps, CONNECT_ONE_SHOT)
 
 func deactivate() -> void:
 	monitoring = false
+
+func _apply_current_overlaps() -> void:
+	if not monitoring:
+		return
+	for area in get_overlapping_areas():
+		_on_area_entered(area)
 
 func _on_area_entered(area: Area2D) -> void:
 	if area is HurtboxComponent:

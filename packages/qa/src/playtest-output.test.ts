@@ -56,4 +56,38 @@ describe('parsePlaytestOutput', () => {
       'high_attack_count',
     );
   });
+
+  it('playtest telemetry has the P6 required fields', () => {
+    const telemetry = parsePlaytestTelemetry(
+      [
+        'PLAYTEST_TELEMETRY_BEGIN',
+        JSON.stringify({
+          personaId: 'critical_path',
+          elapsedMs: 1000,
+          transitionsPlanned: 2,
+          transitionsCompleted: 2,
+          pickupsCollected: 1,
+          attacksPerformed: 3,
+          abilitiesAfterRun: ['air_dash'],
+          roomsVisited: ['room_000', 'room_001'],
+          victoryBossId: 'boss_final',
+          bossFightMs: 200,
+          avgTransitionMs: 100,
+          inputSimulationUsed: true,
+          victoryState: false,
+          gameComplete: false,
+          balanceHints: [],
+        }),
+        'PLAYTEST_TELEMETRY_END',
+      ].join('\n'),
+    );
+    expect(telemetry).toMatchObject({
+      personaId: 'critical_path',
+      inputSimulationUsed: true,
+      roomsVisited: expect.any(Array),
+      transitionsCompleted: expect.any(Number),
+      victoryState: false,
+    });
+    expect(telemetry?.inputSimulationUsed).toBe(true);
+  });
 });

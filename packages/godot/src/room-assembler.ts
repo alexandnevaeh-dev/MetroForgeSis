@@ -831,7 +831,9 @@ attack_sheet_path = "assets/bosses/${bossId}_attack.png"
   if (options.abilityPickups.length > 0) {
     for (let pi = 0; pi < options.abilityPickups.length; pi++) {
       const abilityId = options.abilityPickups[pi]!;
-      const x = platformWidth / 2 + pi * 40 - (options.abilityPickups.length - 1) * 20;
+      // Keep pickups off the room center: up/down transitions and water volumes
+      // are placed at platformWidth/2, and a center pickup overlaps those sensors.
+      const x = 220 + pi * 40;
       scene += `
 [node name="AbilityPickup_${abilityId}" parent="." instance=ExtResource("4_pickup")]
 position = Vector2(${x}, ${floorY - 60})
@@ -872,27 +874,34 @@ amount = ${options.itemAmount}
 `;
   }
 
+  const directionSlot: Record<string, number> = {};
+  const hasLeft = options.connections.some((c) => c.direction === 'left');
+  const hasRight = options.connections.some((c) => c.direction === 'right');
   for (const conn of options.connections) {
     const spawnSide = spawnSideForEntry(conn.direction);
+    const slot = directionSlot[conn.direction] ?? 0;
+    directionSlot[conn.direction] = slot + 1;
     let x = 0;
     let y = floorY - 80;
     switch (conn.direction) {
       case 'up':
-        x = platformWidth / 2 - 12;
+        x = platformWidth / 2 - 12 + slot * 48;
         y = 48;
         break;
       case 'down':
-        x = platformWidth / 2 - 12;
+        x = platformWidth / 2 - 12 + slot * 48;
         y = weakFloors.some((wf) => wf.targetRoomId === conn.targetRoomId)
           ? floorY + 96
-          : floorY - 96;
+          : hasLeft && hasRight
+            ? 120
+            : floorY - 96;
         break;
       case 'right':
-        x = platformWidth - 24;
+        x = platformWidth - 24 - slot * 48;
         y = floorY - 80;
         break;
       case 'left':
-        x = 0;
+        x = slot * 48;
         y = floorY - 80;
         break;
     }

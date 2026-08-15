@@ -31,5 +31,12 @@ describe('playtest persona', () => {
   it('defaultPlaytestPersonaForProfile picks patient bot for MEDIUM+', () => {
     expect(defaultPlaytestPersonaForProfile('TINY_TEST').id).toBe('victory_rusher');
     expect(defaultPlaytestPersonaForProfile('MEDIUM').id).toBe('ability_collector');
+    expect(defaultPlaytestPersonaForProfile('RELEASE_CANDIDATE').id).toBe('critical_path');
+  });
+
+  it('resolves CRITICAL_PATH and VICTORY_RUSHER aliases', () => {
+    expect(resolvePlaytestPersona('CRITICAL_PATH').id).toBe('critical_path');
+    expect(resolvePlaytestPersona('VICTORY_RUSHER').id).toBe('victory_rusher');
+    expect(resolvePlaytestPersona('critical_path').walkTimeoutSec).toBeGreaterThan(0);
   });
 });

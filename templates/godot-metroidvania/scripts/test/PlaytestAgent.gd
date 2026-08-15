@@ -15,17 +15,21 @@ var _collect_all_pickups: bool = true
 var _persona_id: String = "victory_rusher"
 var _started_at_ms: int = 0
 var _transition_timings_ms: Array[int] = []
+var _fail_stage: String = ""
+var _visited_rooms: Array[String] = []
 
 func run(world: Node, host: Node) -> Dictionary:
 	_started_at_ms = Time.get_ticks_msec()
 	var route := _load_route()
 	if route.is_empty():
-		return {"ok": false, "reason": "missing_route"}
+		return _outcome(false, {}, "missing_route")
 
 	_apply_persona(route.get("persona", {}))
+	_visited_rooms = [String(route.get("startRoomId", GameManager.current_room_id))]
 
 	if not route.get("reachable", false):
-		return {"ok": false, "reason": "route_unreachable"}
+		_fail_stage = "route_unreachable"
+		return _outcome(false, route, "route_unreachable")
 
 	var transitions: Array = route.get("transitions", [])
 	for step in transitions:
@@ -33,21 +37,30 @@ func run(world: Node, host: Node) -> Dictionary:
 		var to_room: String = step.get("toRoomId", "")
 		var step_start := Time.get_ticks_msec()
 		if not await _execute_transition(world, host, from_room, to_room):
-			return {"ok": false, "reason": "transition_failed", "from": from_room, "to": to_room}
+			return _outcome(false, route, "transition_failed", {"from": from_room, "to": to_room, "failStage": _fail_stage})
 		_transition_timings_ms.append(Time.get_ticks_msec() - step_start)
 		steps_completed += 1
+		if _visited_rooms.is_empty() or _visited_rooms[_visited_rooms.size() - 1] != to_room:
+			_visited_rooms.append(to_room)
 
 	var boss_start := Time.get_ticks_msec()
 	if not await _defeat_final_boss(host, String(route.get("victoryBossId", "boss_final"))):
-		return {"ok": false, "reason": "boss_not_defeated"}
+		return _outcome(false, route, "boss_not_defeated", {}, Time.get_ticks_msec() - boss_start)
 	var boss_fight_ms := Time.get_ticks_msec() - boss_start
 
-	return {
-		"ok": true,
+	return _outcome(true, route, "", {}, boss_fight_ms)
+
+func _outcome(ok: bool, route: Dictionary, reason: String, extra: Dictionary = {}, boss_fight_ms: int = 0) -> Dictionary:
+	var result := {
+		"ok": ok,
+		"reason": reason,
 		"steps": steps_completed,
 		"used_input": used_input_simulation,
 		"telemetry": _build_telemetry(route, boss_fight_ms),
 	}
+	for key in extra.keys():
+		result[key] = extra[key]
+	return result
 
 func _apply_persona(persona: Variant) -> void:
 	if typeof(persona) != TYPE_DICTIONARY:
@@ -82,8 +95,8 @@ func _build_telemetry(route: Dictionary, boss_fight_ms: int) -> Dictionary:
 		"transitionsCompleted": steps_completed,
 		"pickupsCollected": pickups_collected,
 		"attacksPerformed": attacks_performed,
-		"abilitiesAfterRun": GameManager.player_abilities.duplicate(),
-		"roomsVisited": route.get("visitedRoomOrder", []),
+		"abilitiesAfterRun": _ability_ids(),
+		"roomsVisited": _visited_list(),
 		"victoryBossId": route.get("victoryBossId", "boss_final"),
 		"bossFightMs": boss_fight_ms,
 		"avgTransitionMs": avg_transition_ms,
@@ -91,7 +104,20 @@ func _build_telemetry(route: Dictionary, boss_fight_ms: int) -> Dictionary:
 		"victoryState": GameManager.current_state == GameManager.GameState.VICTORY,
 		"gameComplete": GameManager.game_complete,
 		"balanceHints": hints,
+		"failStage": _fail_stage,
 	}
+
+func _ability_ids() -> Array:
+	var ids: Array = []
+	for ability in GameManager.player_abilities:
+		ids.append(String(ability))
+	return ids
+
+func _visited_list() -> Array:
+	var rooms: Array = []
+	for room_id in _visited_rooms:
+		rooms.append(String(room_id))
+	return rooms
 
 func _load_route() -> Dictionary:
 	if not FileAccess.file_exists(ROUTE_PATH):
@@ -106,36 +132,142 @@ func _load_route() -> Dictionary:
 
 func _execute_transition(world: Node, host: Node, from_room: String, to_room: String) -> bool:
 	if GameManager.current_room_id != from_room:
+		_fail_stage = "wrong_room current=%s expected=%s" % [GameManager.current_room_id, from_room]
 		return false
 
 	var player := host.get_tree().get_first_node_in_group("player")
 	if player == null:
+		_fail_stage = "no_player"
 		return false
 
 	if _collect_all_pickups:
-		await _collect_room_pickups(host, player)
+		await _collect_room_pickups(host, player, from_room)
+		if GameManager.current_room_id == to_room:
+			return true
+		player = host.get_tree().get_first_node_in_group("player")
+		if player == null:
+			_fail_stage = "no_player_after_pickups"
+			return false
+
+	# Miniboss arenas lock RoomTransition.monitoring until the boss dies
+	# (WorldManager._lock_room_exits). Walking the exit without fighting is a real
+	# stuck state — same as a player standing at a sealed door.
+	if not await _defeat_alive_room_boss(host):
+		_fail_stage = "miniboss_not_defeated"
+		return false
+	if GameManager.current_room_id == to_room:
+		return true
+
+	player = host.get_tree().get_first_node_in_group("player")
+	if player == null:
+		_fail_stage = "no_player_after_boss"
+		return false
 
 	var transition := _find_transition(host, to_room)
 	if transition == null:
+		_fail_stage = "no_transition"
 		return false
 
-	if not await _walk_player_to(host, player, transition.global_position):
+	if not await _wait_transition_open(host, transition, 3.0):
+		_fail_stage = "exit_still_locked"
 		return false
 
-	await host.get_tree().physics_frame
-	await host.get_tree().physics_frame
+	if not await _walk_player_to(host, player, _transition_entry_point(transition)):
+		_fail_stage = "walk_timeout"
+		return false
 
-	return GameManager.current_room_id == to_room
+	if not await _wait_room(host, to_room, 2.0):
+		# Godot will not re-emit body_entered if we were already overlapping when
+		# monitoring flipped true. Step off the sensor and walk back in.
+		if is_instance_valid(player) and is_instance_valid(transition):
+			var away: Vector2 = (player as Node2D).global_position + _door_nudge(transition)
+			await _walk_player_to(host, player, away, 2.0)
+			await _walk_player_to(host, player, _transition_entry_point(transition), 3.0)
+			await _wait_room(host, to_room, 2.0)
 
-func _collect_room_pickups(host: Node, player: Node) -> void:
+	if GameManager.current_room_id != to_room:
+		_fail_stage = "door_did_not_fire current=%s locked=%s" % [
+			GameManager.current_room_id,
+			str(not bool(transition.get("monitoring"))) if is_instance_valid(transition) else "freed",
+		]
+		return false
+	return true
+
+func _wait_transition_open(host: Node, transition: Node, timeout_sec: float) -> bool:
+	if transition == null:
+		return false
+	if bool(transition.get("monitoring")):
+		return true
+	var start := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - start < int(timeout_sec * 1000.0):
+		if not is_instance_valid(transition):
+			return false
+		if bool(transition.get("monitoring")):
+			return true
+		await host.get_tree().physics_frame
+	return is_instance_valid(transition) and bool(transition.get("monitoring"))
+
+func _wait_room(host: Node, room_id: String, timeout_sec: float) -> bool:
+	var start := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - start < int(timeout_sec * 1000.0):
+		if GameManager.current_room_id == room_id:
+			return true
+		await host.get_tree().physics_frame
+	return GameManager.current_room_id == room_id
+
+func _transition_entry_point(transition: Node) -> Vector2:
+	# Walk to the lip of the Area2D, not its shape center. Parking deep inside
+	# the sensor tears the current room down mid-_walk_player_to (player freed)
+	# and looks like a walk_timeout on even the first corridor door.
+	return (transition as Node2D).global_position
+
+func _door_nudge(transition: Node) -> Vector2:
+	match String(transition.get("transition_direction")):
+		"left":
+			return Vector2(48.0, 0.0)
+		"up":
+			return Vector2(0.0, 48.0)
+		"down":
+			return Vector2(0.0, -48.0)
+		_:
+			return Vector2(-48.0, 0.0)
+
+func _defeat_alive_room_boss(host: Node) -> bool:
+	var room := _current_room(host)
+	if room == null:
+		return true
+	var boss := room.get_node_or_null("Boss")
+	if boss == null or not is_instance_valid(boss):
+		return true
+	var health: HealthComponent = boss.get_node_or_null("HealthComponent")
+	if health == null or not health.is_alive():
+		return true
+	var boss_id := String(boss.get("boss_id"))
+	if boss_id.is_empty():
+		return false
+	var ok := await _defeat_final_boss(host, boss_id)
+	if not ok:
+		return false
+	await host.get_tree().process_frame
+	await host.get_tree().process_frame
+	return true
+
+func _collect_room_pickups(host: Node, player: Node, stay_room: String = "") -> void:
 	var room := _current_room(host)
 	if room == null:
 		return
+	var pickups: Array[Node] = []
 	for child in room.get_children():
-		if child.name.begins_with("AbilityPickup"):
-			await _walk_player_to(host, player, child.global_position)
-			pickups_collected += 1
-			await host.get_tree().physics_frame
+		if is_instance_valid(child) and String(child.name).begins_with("AbilityPickup"):
+			pickups.append(child)
+	for pickup in pickups:
+		if not is_instance_valid(pickup) or not is_instance_valid(player):
+			return
+		if stay_room != "" and GameManager.current_room_id != stay_room:
+			return
+		await _walk_player_to(host, player, (pickup as Node2D).global_position)
+		pickups_collected += 1
+		await host.get_tree().physics_frame
 
 ## The boss room's own RoomTransition triggers are locked while its boss is alive (see
 ## WorldManager._lock_room_exits), so this no longer needs to defend against a wandering walk
@@ -248,7 +380,13 @@ func _defeat_final_boss(host: Node, boss_id: String) -> bool:
 				break
 			await host.get_tree().process_frame
 
-	return not is_instance_valid(boss_health) or GameManager.current_state == GameManager.GameState.VICTORY
+	if boss_id == "boss_final" or boss_id.begins_with("final"):
+		return not is_instance_valid(boss_health) or GameManager.current_state == GameManager.GameState.VICTORY
+	# Miniboss door-lock (WorldManager._lock_room_exits) fires on HealthComponent.died at HP 0.
+	# The node may still exist during the death animation; the exit is already unsealed.
+	if not is_instance_valid(boss_health):
+		return true
+	return boss_health.current_health <= 0.0
 
 func _walk_player_to(host: Node, player: Node, target: Vector2, timeout_sec: float = -1.0) -> bool:
 	if timeout_sec < 0.0:
@@ -257,8 +395,14 @@ func _walk_player_to(host: Node, player: Node, target: Vector2, timeout_sec: flo
 		return false
 
 	var body := player as CharacterBody2D
+	if not is_instance_valid(body):
+		return false
 	var elapsed := 0.0
 	while elapsed < timeout_sec:
+		if not is_instance_valid(body):
+			_release_horizontal_input()
+			# The walk target (a door) likely fired and the old room's player was freed.
+			return true
 		var delta := host.get_physics_process_delta_time()
 		elapsed += delta
 		var dx := target.x - body.global_position.x
@@ -272,21 +416,37 @@ func _walk_player_to(host: Node, player: Node, target: Vector2, timeout_sec: flo
 		else:
 			Input.action_press("move_left")
 			Input.action_release("move_right")
+		if target.y > body.global_position.y + 24.0:
+			Input.action_press("move_down")
+			Input.action_release("jump")
+		elif target.y < body.global_position.y - 48.0:
+			Input.action_press("jump")
+			Input.action_release("move_down")
+		else:
+			Input.action_release("jump")
+			Input.action_release("move_down")
 		await host.get_tree().physics_frame
 
 	_release_horizontal_input()
+	if not is_instance_valid(body):
+		return true
 	return absf(target.x - body.global_position.x) < 24.0
 
 func _release_horizontal_input() -> void:
 	Input.action_release("move_left")
 	Input.action_release("move_right")
+	Input.action_release("move_down")
+	Input.action_release("jump")
 
 func _current_room(host: Node) -> Node:
 	var world_manager := host.get_tree().get_first_node_in_group("world_manager")
 	if world_manager == null:
 		return null
+	var current: Variant = world_manager.get("_current_room")
+	if current is Node and is_instance_valid(current):
+		return current
 	for child in world_manager.get_children():
-		if child is Node2D:
+		if child is Node2D and String(child.name).begins_with("room_"):
 			return child
 	return null
 
