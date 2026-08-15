@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "score": 100,
+  "issues": [],
+  "tags": [
+    "gameplay-screenshot",
+    "scene-consistency"
+  ],
+  "description": "Gameplay screenshot looks structured (27 colors, 100.0% occupancy)",
+  "blank": false,
+  "occupancy": 0.9999840265797713,
+  "uniqueColors": 27,
+  "lumaStdDev": 4.802457088970714
+}

@@ -12,6 +12,7 @@ import { registerExportCommand } from './commands/export.js';
 import { registerProjectCommand } from './commands/project.js';
 import { registerAcceptCommand } from './commands/accept.js';
 import { registerConfigCommand } from './commands/config.js';
+import { registerQualityCommand } from './commands/quality.js';
 
 const program = new Command();
 
@@ -32,5 +33,6 @@ registerExportCommand(program);
 registerProjectCommand(program);
 registerAcceptCommand(program);
 registerConfigCommand(program);
+registerQualityCommand(program);
 
 program.parse();

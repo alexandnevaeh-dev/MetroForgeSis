@@ -10,6 +10,13 @@ func _ready() -> void:
 	EventBus.game_completed.connect(_on_game_completed)
 	EventBus.player_died.connect(_on_player_died)
 	EventBus.player_respawned.connect(_on_player_respawned)
+	if ability_label:
+		ability_label.add_theme_color_override("font_color", Color(0.92, 0.93, 0.96))
+		ability_label.add_theme_color_override("font_shadow_color", Color(0.05, 0.06, 0.08, 0.85))
+	if currency_label:
+		currency_label.add_theme_color_override("font_color", Color(0.86, 0.88, 0.92))
+	if collectible_label:
+		collectible_label.add_theme_color_override("font_color", Color(0.72, 0.82, 0.95))
 	_update_abilities()
 
 func _process(_delta: float) -> void:

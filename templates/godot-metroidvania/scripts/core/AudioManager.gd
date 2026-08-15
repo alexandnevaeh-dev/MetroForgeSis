@@ -9,6 +9,8 @@ const MUSIC_DIR := "res://audio/music/"
 const BUS_MASTER := "Master"
 const BUS_MUSIC := "Music"
 const BUS_SFX := "SFX"
+const BUS_UI := "UI"
+const BUS_AMBIENCE := "Ambience"
 
 ## Volume categories — 0..1 linear, applied to Godot audio buses so Master/Music/SFX
 ## can be mixed independently. SettingsManager writes these properties.
@@ -23,6 +25,14 @@ const BUS_SFX := "SFX"
 @export var sfx_volume: float = 1.0:
 	set(value):
 		sfx_volume = clampf(value, 0.0, 1.0)
+		_apply_bus_volumes()
+@export var ui_volume: float = 0.8:
+	set(value):
+		ui_volume = clampf(value, 0.0, 1.0)
+		_apply_bus_volumes()
+@export var ambience_volume: float = 0.45:
+	set(value):
+		ambience_volume = clampf(value, 0.0, 1.0)
 		_apply_bus_volumes()
 
 var _sfx_pool: Array[AudioStreamPlayer] = []
@@ -153,6 +163,9 @@ func _load_music(track_id: String) -> AudioStream:
 func _ensure_buses() -> void:
 	_ensure_bus(BUS_MUSIC)
 	_ensure_bus(BUS_SFX)
+	_ensure_bus(BUS_UI)
+	_ensure_bus(BUS_AMBIENCE)
+	_apply_profile_mix()
 
 func _ensure_bus(bus_name: String) -> void:
 	if AudioServer.get_bus_index(bus_name) != -1:
@@ -166,8 +179,27 @@ func _apply_bus_volumes() -> void:
 	_set_bus_volume(BUS_MASTER, master_volume)
 	_set_bus_volume(BUS_MUSIC, music_volume)
 	_set_bus_volume(BUS_SFX, sfx_volume)
+	_set_bus_volume(BUS_UI, ui_volume)
+	_set_bus_volume(BUS_AMBIENCE, ambience_volume)
 	if _music_player:
 		_music_player.volume_db = 0.0
+
+func _apply_profile_mix() -> void:
+	var path := "res://data/quality/apply_audio_bus_mix.json"
+	if not FileAccess.file_exists(path):
+		return
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		return
+	var parsed = JSON.parse_string(file.get_as_text())
+	file.close()
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return
+	master_volume = float(parsed.get("master", master_volume))
+	music_volume = float(parsed.get("music", music_volume))
+	sfx_volume = float(parsed.get("sfx", sfx_volume))
+	ui_volume = float(parsed.get("ui", ui_volume))
+	ambience_volume = float(parsed.get("ambience", ambience_volume))
 
 func _set_bus_volume(bus_name: String, linear: float) -> void:
 	var idx := AudioServer.get_bus_index(bus_name)

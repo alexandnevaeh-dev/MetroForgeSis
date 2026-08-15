@@ -25,6 +25,8 @@ func take_damage(amount: float) -> void:
 	current_health = max(0, current_health - amount)
 	damaged.emit(amount)
 	health_changed.emit(current_health, max_health)
+	if has_node("/root/CombatFeedback"):
+		CombatFeedback.play_hit(get_parent(), amount)
 	if current_health <= 0:
 		died.emit()
 

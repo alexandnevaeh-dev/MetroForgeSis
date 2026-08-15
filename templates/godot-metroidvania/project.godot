@@ -25,6 +25,8 @@ InventoryManager="*res://scripts/core/InventoryManager.gd"
 DialogueManager="*res://scripts/core/DialogueManager.gd"
 ShopManager="*res://scripts/core/ShopManager.gd"
 VFXManager="*res://scripts/core/VFXManager.gd"
+QualityPresentation="*res://scripts/core/QualityPresentation.gd"
+CombatFeedback="*res://scripts/combat/CombatFeedback.gd"
 
 [display]
 
@@ -117,3 +119,4 @@ pause={
 [rendering]
 
 textures/canvas_textures/default_texture_filter=0
+environment/defaults/default_clear_color=Color(0.078, 0.094, 0.125, 1)

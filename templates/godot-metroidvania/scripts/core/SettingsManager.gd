@@ -10,6 +10,7 @@ var master_volume: float = 1.0
 var music_volume: float = 0.7
 var sfx_volume: float = 1.0
 var screen_shake_enabled: bool = true
+var reduce_flash: bool = false
 var fullscreen_enabled: bool = false
 
 func _ready() -> void:
@@ -34,6 +35,10 @@ func set_screen_shake(enabled: bool) -> void:
 	screen_shake_enabled = enabled
 	save_settings()
 
+func set_reduce_flash(enabled: bool) -> void:
+	reduce_flash = enabled
+	save_settings()
+
 func set_fullscreen(enabled: bool) -> void:
 	fullscreen_enabled = enabled
 	DisplayServer.window_set_mode(
@@ -55,6 +60,7 @@ func save_settings() -> bool:
 		"music_volume": music_volume,
 		"sfx_volume": sfx_volume,
 		"screen_shake_enabled": screen_shake_enabled,
+		"reduce_flash": reduce_flash,
 		"fullscreen_enabled": fullscreen_enabled,
 	}
 	var file := FileAccess.open(SETTINGS_PATH, FileAccess.WRITE)
@@ -88,6 +94,7 @@ func load_settings() -> bool:
 	music_volume = data.get("music_volume", music_volume)
 	sfx_volume = data.get("sfx_volume", sfx_volume)
 	screen_shake_enabled = data.get("screen_shake_enabled", screen_shake_enabled)
+	reduce_flash = data.get("reduce_flash", reduce_flash)
 	fullscreen_enabled = data.get("fullscreen_enabled", fullscreen_enabled)
 
 	_apply_audio()

@@ -16,3 +16,15 @@ export { buildAcceptanceReport, formatAcceptanceReport } from './acceptance-repo
 export type { AcceptanceReport } from './acceptance-report.js';
 export { runProjectAcceptance } from './run-acceptance.js';
 export type { RunProjectAcceptanceOptions } from './run-acceptance.js';
+export { runQualityPass } from './quality-pass.js';
+export type { QualityPassOptions } from './quality-types.js';
+export { QualityDirector } from './quality-director.js';
+export { QualityRepairEngine } from './quality-repair-engine.js';
+export type {
+  QualityReport,
+  QualityPlan,
+  QualityIssue,
+  RepairAction,
+  QualityCategory,
+  QualityScorecard,
+} from './quality-types.js';

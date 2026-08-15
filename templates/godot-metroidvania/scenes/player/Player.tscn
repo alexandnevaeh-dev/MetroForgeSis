@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://player_scene"]
+[gd_scene load_steps=10 format=3 uid="uid://player_scene"]
 
 [ext_resource type="Script" path="res://scripts/player/PlayerController.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/combat/HealthComponent.gd" id="2_health"]
@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://scripts/combat/HitboxComponent.gd" id="4_hitbox"]
 [ext_resource type="Script" path="res://scripts/core/AnimatedAssetSprite.gd" id="5_sprite"]
 [ext_resource type="Script" path="res://scripts/player/AbilityController.gd" id="6_ability"]
+[ext_resource type="Script" path="res://scripts/player/CameraDirector.gd" id="7_camera"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(24, 40)
@@ -63,4 +64,5 @@ script = ExtResource("6_ability")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(0, -20)
-zoom = Vector2(1.5, 1.5)
+zoom = Vector2(2.4, 2.4)
+script = ExtResource("7_camera")

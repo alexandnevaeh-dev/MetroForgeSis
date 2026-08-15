@@ -61,6 +61,8 @@ func _load_room(room_id: String, spawn_side: String = "left") -> void:
 	if player:
 		_position_player_for_spawn(player, spawn_side)
 		_move_camera_to_room(player)
+		if has_node("/root/QualityPresentation"):
+			QualityPresentation.apply_room(_current_room, room_id)
 
 ## Classic boss-arena pattern: seal the room's own RoomTransition triggers while its boss is
 ## alive, so nothing — a real player fumbling into an edge trigger mid-fight, or an automated
@@ -101,6 +103,10 @@ func transition_to_room(room_id: String, spawn_side: String = "left") -> void:
 	if _transitioning or room_id.is_empty():
 		return
 	_transitioning = true
+	var fader := get_node_or_null("TransitionFader")
+	var skip_fade := has_node("/root/CombatFeedback") and CombatFeedback.is_automated_harness()
+	if fader and fader.has_method("fade_out") and not skip_fade:
+		await fader.fade_out(0.08)
 	# This is called synchronously from RoomTransition's body_entered signal, which fires *during*
 	# the physics server's own step — freeing the old room and add_child()-ing the new one from
 	# here throws "Can't change this state while flushing queries" on the new room's own physics
@@ -113,6 +119,8 @@ func transition_to_room(room_id: String, spawn_side: String = "left") -> void:
 	# keeps _transitioning true for the room's *entire* load, not just its synchronous prefix,
 	# so a second transition can't interleave with one that's still finishing.
 	await _load_room(room_id, spawn_side)
+	if fader and fader.has_method("fade_in") and not skip_fade:
+		await fader.fade_in(0.08)
 	_transitioning = false
 
 func _position_player_for_spawn(player: Node2D, spawn_side: String) -> void:

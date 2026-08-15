@@ -640,7 +640,7 @@ color = Color(0.3, 0.32, 0.38, 1)
   return { subResources, nodes, extraSubResources };
 }
 
-export function generateRoomScene(roomId: string, index: number, options: RoomAssemblyOptions): string {
+export function generateRoomScene(roomId: string, _index: number, options: RoomAssemblyOptions): string {
   const floorY = options.height - 64;
   const platformWidth = options.width;
   const weakFloors = deriveWeakFloors(options.connections, platformWidth);
@@ -654,7 +654,6 @@ export function generateRoomScene(roomId: string, index: number, options: RoomAs
   if (waterZones.length > 0) loadSteps += 1;
   if (phaseBarriers.length > 0) loadSteps += 1;
   if (options.hasTileset) loadSteps += 2;
-  if (options.biomeTexturePath) loadSteps += 1;
   if (options.hasSavePoint) loadSteps += 1;
   if (options.npcs.length > 0) loadSteps += 1;
   if (options.hasItemPickup) loadSteps += 1;
@@ -683,10 +682,6 @@ export function generateRoomScene(roomId: string, index: number, options: RoomAs
   }
   if (options.hasTileset) {
     scene += `[ext_resource type="Script" path="res://scripts/world/RoomTileMap.gd" id="6_tilemap"]
-`;
-  }
-  if (options.biomeTexturePath) {
-    scene += `[ext_resource type="Texture2D" path="res://${options.biomeTexturePath}" id="7_biome"]
 `;
   }
   if (weakFloors.length > 0) {
@@ -732,24 +727,18 @@ tile_size = ${options.tileSize}
 `;
   }
 
-  if (options.biomeTexturePath) {
-    scene += `[node name="Background" type="TextureRect" parent="."]
-z_index = -2
-offset_right = ${options.width}.0
-offset_bottom = ${options.height}.0
-texture = ExtResource("7_biome")
-expand_mode = 1
-stretch_mode = 6
+  const shadow = 0.08 + ((options.biomeIndex + _index) % 3) * 0.02;
+  const steel = 0.12 + (options.biomeIndex % 2) * 0.03;
+  scene += `[node name="Background" type="ColorRect" parent="."]
+z_index = -4
+offset_left = -240.0
+offset_top = -180.0
+offset_right = ${options.width + 240}.0
+offset_bottom = ${options.height + 180}.0
+mouse_filter = 2
+color = Color(${shadow.toFixed(3)}, ${steel.toFixed(3)}, ${(0.16 + (options.biomeIndex % 4) * 0.02).toFixed(3)}, 1)
 
 `;
-  } else {
-    scene += `[node name="Background" type="ColorRect" parent="."]
-offset_right = ${options.width}.0
-offset_bottom = ${options.height}.0
-color = Color(${0.1 + (index % 3) * 0.05}, ${0.12 + (index % 2) * 0.03}, ${0.18 + (index % 4) * 0.02}, 1)
-
-`;
-  }
 
   scene += floorSection.nodes;
 

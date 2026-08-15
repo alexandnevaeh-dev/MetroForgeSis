@@ -1,0 +1,16 @@
+{
+  "passed": false,
+  "score": 55,
+  "issues": [
+    "Gameplay screenshot lacks spatial structure (looks flat)"
+  ],
+  "tags": [
+    "gameplay-screenshot",
+    "scene-consistency"
+  ],
+  "description": "Gameplay screenshot lacks spatial structure (looks flat)",
+  "blank": false,
+  "occupancy": 0.8561111111111112,
+  "uniqueColors": 30,
+  "lumaStdDev": 2.4219035033793697
+}

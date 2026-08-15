@@ -1,0 +1,46 @@
+{
+  "phase": "P7",
+  "headBaseline": "072d85a89d6cfa5fd89ef09b2e81f2865cc525d2",
+  "project": "GeneratedGames/heart-engine-release-candidate",
+  "tier": "LOW",
+  "before": {
+    "qualityScore": 69,
+    "technicalScore": 100,
+    "presentationScore": 43.6,
+    "criticScore": 55,
+    "lumaStdDev": 2.4219035033793697,
+    "uniqueColors": 30,
+    "occupancy": 0.8561111111111112,
+    "criticPassed": false
+  },
+  "after": {
+    "qualityScore": 92.6,
+    "technicalScore": 100,
+    "presentationScore": 86.6,
+    "criticScore": 100,
+    "lumaStdDev": 4.802457088970714,
+    "uniqueColors": 27,
+    "occupancy": 1,
+    "criticPassed": true
+  },
+  "delta": {
+    "qualityScore": 23.6,
+    "presentationScore": 43,
+    "criticScore": 45,
+    "lumaStdDev": 2.38
+  },
+  "gates": {
+    "godotImport": true,
+    "cliValidate": true,
+    "runtimeSmoke": "180/186",
+    "playtest": "8/8",
+    "transitions": "30/30",
+    "commercialSafe": true,
+    "placeholderCount": 0,
+    "rejectedDeathSheets": 15,
+    "export": true,
+    "assetsRegenerated": []
+  },
+  "rolledBack": false,
+  "p8Started": false
+}

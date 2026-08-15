@@ -395,4 +395,19 @@ describe('generateRoomScene combat sprites', () => {
     expect(scene).toContain('ItemPickup.tscn');
     expect(scene).toContain('item_id = "heart_relic"');
   });
+
+  it('uses palette ColorRect backgrounds instead of stretched tileset atlases', () => {
+    const scene = generateRoomScene('room_000', 0, {
+      ...baseOptions,
+      hasEnemy: false,
+      enemyIndex: 0,
+      isBossRoom: false,
+      bossId: '',
+      hasTileset: true,
+      biomeTexturePath: 'assets/tilesets/biome_0/source.png',
+    });
+    expect(scene).toContain('[node name="Background" type="ColorRect"');
+    expect(scene).not.toContain('stretch_mode = 6');
+    expect(scene).toContain('RoomTileMap.gd');
+  });
 });

@@ -28,12 +28,17 @@ func play(effect_id: String, global_position: Vector2, scale: float = 1.0) -> vo
 	if host == null:
 		return
 
+	var mul := 1.0
+	if has_node("/root/CombatFeedback"):
+		mul = CombatFeedback.vfx_mul()
+	scale *= mul
+
 	var sprite := Sprite2D.new()
 	sprite.texture = _textures[effect_id]
 	sprite.centered = true
 	sprite.global_position = global_position
 	sprite.scale = Vector2(scale, scale)
-	sprite.z_index = 100
+	sprite.z_index = 80
 	host.add_child(sprite)
 
 	var tween := create_tween()
