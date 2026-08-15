@@ -1,6 +1,6 @@
 # MetroForge UI redesign notes
 
-Updated: 2026-08-14 (Pass 10 — remaining Concept A deltas)
+Updated: 2026-08-14 (Pass 11 — screenshot refresh post–Pass 10)
 
 ## Direction
 
@@ -27,8 +27,7 @@ Closed largest gaps vs the board (Dashboard / Room Editor / status strip / sideb
 ### Remaining deltas vs board
 
 - Board mock radar/chart in Fallbacks panel not reproduced (no fake viz; list fallbacks only)
-- Optional screenshot refresh still pending (`pnpm capture:ui`)
-- Live visual QA at 1366 / 1440 / 1920 after electron run
+- Live visual QA at 1366 / 1440 / 1920 after electron run (multi-res PNGs exist; eyeball still optional)
 - Mock copy/values from the board are intentionally not copied when live IPC differs
 
 ## Landed
@@ -40,9 +39,20 @@ Closed largest gaps vs the board (Dashboard / Room Editor / status strip / sideb
 - Gallery / Manual Generator / Providers / Settings / editors densified; maturity badges; empty states
 - Plan: `docs/ui-redesign/CONCEPT_A_IMPLEMENTATION_PLAN.md`
 
+### Pass 11 — screenshot refresh (post–Pass 10)
+
+- Rebuilt desktop; project `GeneratedGames/a-wind-swept-marsh-kingdom-with-a-hidden-crypt`
+- `METROFORGE_SCREENSHOT_SKIP_GENERATION=1`; then gap-fill without live generation
+- **77** PNGs in `docs/ui-audit/screenshots/` + `docs/ui-audit/metroforge-contact-sheet.png` (13 thumbs)
+- Index auto-updated: `docs/ui-audit/SCREENSHOT_INDEX.md` (`2026-08-14T23:57:21.050Z`)
+- Pass 10 layouts visible in shots: Routing two-pane (Candidates | Rejected + QA Health), QA Environment | Project gates, Room Editor docked Tile Palette, denser Providers / Asset inspector callouts
+- Gap miss fixed: `detail-provider-health.png` — wait for Concept A `.provider-card` / `.provider-health-summary` after async `listProviders` (stale `.panel` fallback removed); `METROFORGE_SCREENSHOT_GAP_ONLY=detail-provider-health` supported
+- Live Studio phase shots (`05-*`, `06-*`) not refreshed (generation skipped)
+- Capture-script fix only (no fake UI); follow-up screenshot commit after re-capture
+
 ## Remaining
 
-- Optional screenshot refresh: `pnpm capture:ui` (+ `pnpm capture:ui-contact`) under `docs/ui-audit/`
+- Optional: re-run capture with generation enabled for live Studio phase screenshots
 - Live visual QA at 1366 / 1440 / 1920 after electron run
 
 ## Notes

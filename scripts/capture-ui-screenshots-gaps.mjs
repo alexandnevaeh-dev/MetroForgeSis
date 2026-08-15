@@ -27,6 +27,8 @@ const PROJECT = resolve(
 
 const records = [];
 const missing = [];
+/** Optional single-id filter, e.g. detail-provider-health */
+const ONLY = (process.env.METROFORGE_SCREENSHOT_GAP_ONLY ?? '').trim();
 
 async function sleep(ms) {
   await new Promise((r) => setTimeout(r, ms));
@@ -92,6 +94,7 @@ async function goNav(page, label) {
 }
 
 async function shot(page, fileBase, meta) {
+  if (ONLY && ONLY !== fileBase && !fileBase.startsWith(ONLY)) return;
   await redact(page);
   const file = `${fileBase}.png`;
   const path = join(OUT, file);
@@ -109,9 +112,16 @@ async function shot(page, fileBase, meta) {
 }
 
 async function crop(page, selector, fileBase, meta) {
+  if (ONLY && ONLY !== fileBase && !fileBase.startsWith(ONLY)) return;
   const loc = page.locator(selector).first();
-  if (!(await loc.count()) || !(await loc.isVisible().catch(() => false))) {
+  try {
+    await loc.waitFor({ state: 'visible', timeout: meta?.timeout ?? 12000 });
+  } catch {
     missing.push({ file: `${fileBase}.png`, reason: `selector not found: ${selector}` });
+    return;
+  }
+  if (!(await loc.isVisible().catch(() => false))) {
+    missing.push({ file: `${fileBase}.png`, reason: `selector not visible: ${selector}` });
     return;
   }
   await loc.screenshot({ path: join(OUT, `${fileBase}.png`) });
@@ -146,6 +156,20 @@ async function main() {
   await resize(app, page, 1920, 1080);
   await setProject(page, PROJECT);
 
+  if (ONLY === 'detail-provider-health') {
+    await goNav(page, 'Providers');
+    await page
+      .locator('.provider-card, .provider-health-summary, .provider-grid > .panel')
+      .first()
+      .waitFor({ state: 'visible', timeout: 20000 })
+      .catch(() => {});
+    await sleep(400);
+    await crop(page, '.provider-card, .provider-health-summary, .provider-grid > .panel.provider-card', 'detail-provider-health', {
+      screen: 'Providers',
+      state: 'Provider health card',
+      notes: 'Concept A provider card / Environment summary (real listProviders)',
+    });
+  } else {
   // Completed / historical Studio (finished project phases + events)
   await goNav(page, 'Generation Studio');
   await page.locator('button:has-text("Reload events")').click().catch(() => {});
@@ -274,9 +298,17 @@ async function main() {
     state: 'Selected model detail',
   });
   await goNav(page, 'Providers');
-  await crop(page, '.provider-grid > *:first-child, .provider-card, .panel', 'detail-provider-health', {
+  // Concept A ProvidersScreen: async listProviders fills .provider-card / provider-health-summary
+  await page
+    .locator('.provider-card, .provider-health-summary, .provider-grid > .panel')
+    .first()
+    .waitFor({ state: 'visible', timeout: 20000 })
+    .catch(() => {});
+  await sleep(400);
+  await crop(page, '.provider-card, .provider-health-summary, .provider-grid > .panel.provider-card', 'detail-provider-health', {
     screen: 'Providers',
-    state: 'Provider card',
+    state: 'Provider health card',
+    notes: 'Concept A provider card / Environment summary (real listProviders)',
   });
 
   // Export — existing Exports folder means prior export success exists on disk
@@ -339,6 +371,8 @@ async function main() {
     if (!gotAsm) missing.push({ file: '06-generation-studio-godot.png', reason: 'assembly phase not seen' });
     if (!gotDone) missing.push({ file: '07-generation-studio-completed-live.png', reason: 'generation not finished in time' });
   }
+
+  } // end full gap path when !ONLY
 
   await app.close();
 

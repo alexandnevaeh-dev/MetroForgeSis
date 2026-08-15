@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-08-14T23:40:52.611Z",
+  "capturedAt": "2026-08-15T00:27:20.886Z",
   "project": "C:\\Users\\<user>\\OneDrive\\Documents\\Metroidvania\\Forged\\GeneratedGames\\a-wind-swept-marsh-kingdom-with-a-hidden-crypt",
   "rerun": "node scripts/capture-ui-screenshots.mjs && node scripts/capture-ui-screenshots-gaps.mjs && node scripts/build-contact-sheet.mjs",
   "screenshots": [
@@ -574,10 +574,10 @@
     {
       "file": "screenshots/detail-provider-health.png",
       "screen": "Providers",
-      "state": "Provider card",
+      "state": "Provider health card",
       "resolution": "crop",
       "priority": "SUPPORTING",
-      "notes": "detail crop"
+      "notes": "Concept A provider card / Environment summary (real listProviders)"
     },
     {
       "file": "screenshots/detail-qa-failure.png",

@@ -1,6 +1,6 @@
 # MetroForge UI Screenshot Index
 
-Updated: 2026-08-14T23:40:52.611Z
+Updated: 2026-08-15T00:27:20.886Z
 Project: `C:\Users\<user>\OneDrive\Documents\Metroidvania\Forged\GeneratedGames\a-wind-swept-marsh-kingdom-with-a-hidden-crypt`
 Rerun: `node scripts/capture-ui-screenshots.mjs && node scripts/capture-ui-screenshots-gaps.mjs && node scripts/build-contact-sheet.mjs`
 
@@ -77,7 +77,7 @@ Rerun: `node scripts/capture-ui-screenshots.mjs && node scripts/capture-ui-scree
 | detail-asset-inspector.png | Assets | Inspector panel | crop | SUPPORTING | detail crop |
 | detail-generation-phase-rail.png | Studio | Phase timeline rail | crop | SUPPORTING | detail crop |
 | detail-model-card.png | Models | Selected model detail | crop | SUPPORTING | detail crop |
-| detail-provider-health.png | Providers | Provider card | crop | SUPPORTING | detail crop |
+| detail-provider-health.png | Providers | Provider health card | crop | SUPPORTING | Concept A provider card / Environment summary (real listProviders) |
 | detail-qa-failure.png | QA | Gates / failure detail area | crop | SUPPORTING | detail crop |
 | detail-room-inspector.png | Rooms | Room inspector | crop | SUPPORTING | detail crop |
 | detail-routing-candidates.png | Routing | Candidates panel | crop | SUPPORTING | detail crop |
