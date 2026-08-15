@@ -1,5 +1,31 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { NvidiaImageProvider } from './nvidia-image.js';
+import {
+  NvidiaImageProvider,
+  NvidiaInvalidImagePayloadError,
+  assertValidNvidiaImageBytes,
+  NVIDIA_MIN_DECODED_IMAGE_BYTES,
+} from './nvidia-image.js';
+import { encodePng } from '../png.js';
+
+function colorfulPng(size = 64): Buffer {
+  const rgba = new Uint8Array(size * size * 4);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const i = (y * size + x) * 4;
+      rgba[i] = 40 + (x % 200);
+      rgba[i + 1] = 80 + (y % 150);
+      rgba[i + 2] = 160;
+      rgba[i + 3] = 255;
+    }
+  }
+  return encodePng(size, size, rgba);
+}
+
+function blankBlackPng(size = 64): Buffer {
+  const rgba = new Uint8Array(size * size * 4);
+  // fully transparent / black — should fail visible-content check
+  return encodePng(size, size, rgba);
+}
 
 describe('NvidiaImageProvider', () => {
   beforeEach(() => {
@@ -78,10 +104,10 @@ describe('NvidiaImageProvider', () => {
   });
 
   it('generateImage posts to genai endpoint with NVCF-POLL-SECONDS and returns PNG bytes', async () => {
-    // Minimal valid PNG
-    const pngBytes = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 0]);
+    const pngBytes = colorfulPng(96);
+    expect(pngBytes.length).toBeGreaterThan(NVIDIA_MIN_DECODED_IMAGE_BYTES);
     vi.mocked(fetch).mockResolvedValueOnce(
-      new Response(JSON.stringify({ artifacts: [{ base64: pngBytes.toString('base64') }] }), {
+      new Response(JSON.stringify({ artifacts: [{ base64: pngBytes.toString('base64'), finishReason: 'SUCCESS' }] }), {
         status: 200,
         headers: { 'nvcf-status': 'fulfilled' },
       }),
@@ -90,6 +116,7 @@ describe('NvidiaImageProvider', () => {
     const provider = new NvidiaImageProvider({
       apiKey: 'nvapi-test-key',
       modelId: 'black-forest-labs/flux.1-dev',
+      maxRetries: 0,
     });
 
     const result = await provider.generateImage({
@@ -115,5 +142,118 @@ describe('NvidiaImageProvider', () => {
     expect(body.width).toBe(1024);
     expect(body.height).toBe(1024);
     expect(body.model).toBeUndefined();
+  });
+
+  it('retries blank/empty NVCF payloads then succeeds on a valid artifact', async () => {
+    const validPng = colorfulPng(96);
+    const tinyJunk = Buffer.alloc(120, 0); // below MIN + not PNG/JPEG
+
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ artifacts: [] }), {
+          status: 200,
+          headers: { 'nvcf-status': 'fulfilled' },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ artifacts: [{ base64: tinyJunk.toString('base64'), finishReason: 'SUCCESS' }] }),
+          { status: 200, headers: { 'nvcf-status': 'fulfilled' } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            artifacts: [{ base64: validPng.toString('base64'), finishReason: 'SUCCESS' }],
+          }),
+          { status: 200, headers: { 'nvcf-status': 'fulfilled' } },
+        ),
+      );
+
+    const provider = new NvidiaImageProvider({
+      apiKey: 'nvapi-test-key',
+      modelId: 'black-forest-labs/flux.1-dev',
+      maxRetries: 2,
+      retryBackoffMs: [0, 0],
+    });
+
+    const result = await provider.generateImage({
+      profile: 'ENEMY',
+      prompt: 'pixel moth enemy',
+      width: 64,
+      height: 64,
+      seed: 7,
+    });
+
+    expect(result.image[0]).toBe(137);
+    expect(vi.mocked(fetch).mock.calls.length).toBe(3);
+  });
+
+  it('surfaces a clear error after exhausting retries on empty NVCF payloads', async () => {
+    vi.mocked(fetch).mockImplementation(
+      async () =>
+        new Response(JSON.stringify({ artifacts: [{ base64: '' }] }), {
+          status: 200,
+          headers: { 'nvcf-status': 'fulfilled' },
+        }),
+    );
+
+    const provider = new NvidiaImageProvider({
+      apiKey: 'nvapi-test-key',
+      maxRetries: 2,
+      retryBackoffMs: [0, 0],
+    });
+
+    await expect(
+      provider.generateImage({
+        profile: 'CHARACTER',
+        prompt: 'hero',
+        width: 64,
+        height: 64,
+        seed: 1,
+      }),
+    ).rejects.toThrow(/no image data|failed after 3/i);
+    expect(vi.mocked(fetch).mock.calls.length).toBe(3);
+  });
+
+  it('does not retry auth failures', async () => {
+    vi.mocked(fetch).mockImplementation(async () => new Response('nope', { status: 401 }));
+    const provider = new NvidiaImageProvider({ apiKey: 'nvapi-test-key', maxRetries: 2 });
+    await expect(
+      provider.generateImage({
+        profile: 'CHARACTER',
+        prompt: 'hero',
+        width: 64,
+        height: 64,
+      }),
+    ).rejects.toThrow(/auth failed/i);
+    expect(vi.mocked(fetch).mock.calls.length).toBe(1);
+  });
+
+  it('rejects blank near-black or tiny PNG artifacts', async () => {
+    const blank = blankBlackPng(96);
+    // Solid black PNG compresses tiny — caught by min-bytes gate (same user-facing failure path).
+    expect(blank.length).toBeLessThan(NVIDIA_MIN_DECODED_IMAGE_BYTES);
+    vi.mocked(fetch).mockImplementation(
+      async () =>
+        new Response(JSON.stringify({ artifacts: [{ base64: blank.toString('base64') }] }), {
+          status: 200,
+        }),
+    );
+    const provider = new NvidiaImageProvider({ apiKey: 'nvapi-test-key', maxRetries: 0 });
+    await expect(
+      provider.generateImage({
+        profile: 'CHARACTER',
+        prompt: 'blank',
+        width: 64,
+        height: 64,
+      }),
+    ).rejects.toThrow(/too small|blank|near-black/i);
+  });
+});
+
+describe('assertValidNvidiaImageBytes', () => {
+  it('throws NvidiaInvalidImagePayloadError for tiny buffers', () => {
+    expect(() => assertValidNvidiaImageBytes(Buffer.alloc(64))).toThrow(NvidiaInvalidImagePayloadError);
   });
 });

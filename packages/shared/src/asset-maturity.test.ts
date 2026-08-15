@@ -35,15 +35,28 @@ describe('inferAssetMaturity', () => {
     expect(a.productionReady).toBe(false);
   });
 
-  it('promotes critique-passed assets with a high-confidence score to PRODUCTION_READY', () => {
+  it('does not auto-promote high critique scores to PRODUCTION_READY (explicit promotion only)', () => {
     const a = inferAssetMaturity({
       fallbackGenerated: false,
-      provider: 'comfyui',
+      provider: 'nvidia-image',
       critiquePassed: true,
       critiqueScore: 90,
     });
-    expect(a.maturity).toBe('PRODUCTION_READY');
-    expect(a.productionReady).toBe(true);
+    expect(a.maturity).toBe('QA_REVIEW');
+    expect(a.productionReady).toBe(false);
+  });
+
+  it('keeps fresh compiled nvidia sources at QA_REVIEW even at PRODUCTION_READY_SCORE', () => {
+    const a = inferAssetMaturity({
+      fallbackGenerated: false,
+      provider: 'nvidia-image',
+      critiquePassed: true,
+      critiqueScore: 85,
+      sourceType: 'compiled',
+    });
+    expect(a.maturity).toBe('QA_REVIEW');
+    expect(a.productionReady).toBe(false);
+    expect(a.sourceType).toBe('compiled');
   });
 
   it('marks hard critique failures as REJECTED', () => {

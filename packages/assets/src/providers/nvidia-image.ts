@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import type { ImageGenRequest, ImageGenResult, ImageGenerator, ImageProviderHealthReport } from '../types/image-gen.js';
 import { mergeAbortSignal } from '@metroforge/shared';
+import { decodePngRgba } from '../png.js';
 
 export interface NvidiaImageConfig {
   apiKey?: string;
@@ -19,6 +20,10 @@ export interface NvidiaImageConfig {
   enabled?: boolean;
   /** Python used only to convert JPEG artifacts → PNG for the pixel-art pipeline. */
   pythonPath?: string;
+  /** Extra generate attempts after the first (default 2 → 3 total). */
+  maxRetries?: number;
+  /** Backoff between retries in ms (default [1000, 2000]). */
+  retryBackoffMs?: number[];
 }
 
 interface GenaiImageResponse {
@@ -27,6 +32,23 @@ interface GenaiImageResponse {
   title?: string;
   error?: { message?: string };
 }
+
+/**
+ * Empty / tiny / corrupt NVCF payloads — safe to retry with backoff.
+ * Auth, rate-limit, and hard 404s are not retryable.
+ */
+export class NvidiaInvalidImagePayloadError extends Error {
+  readonly retryable = true as const;
+  constructor(message: string) {
+    super(message);
+    this.name = 'NvidiaInvalidImagePayloadError';
+  }
+}
+
+/** Real FLUX 1024² artifacts are far larger; ~6KB HTTP bodies with tiny/empty base64 fail here. */
+export const NVIDIA_MIN_DECODED_IMAGE_BYTES = 5_000;
+const DEFAULT_MAX_RETRIES = 2;
+const RETRY_BACKOFF_MS = [1_000, 2_000] as const;
 
 /** Text NIM /models catalog base (auth probe). */
 const DEFAULT_BASE_URL = 'https://integrate.api.nvidia.com/v1';
@@ -131,6 +153,71 @@ function parseErrorMessage(body: GenaiImageResponse | null, status: number): str
   return `NVIDIA image API failed (HTTP ${status})`;
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRetryableNvidiaImageError(err: unknown): boolean {
+  if (err instanceof NvidiaInvalidImagePayloadError) return true;
+  if (!(err instanceof Error)) return false;
+  const msg = err.message;
+  return (
+    /no image data|too small|blank|near-black|unrecognized image|corrupt|errored\/timeout|HTTP 504|empty NVCF|invalid NVCF/i.test(
+      msg,
+    ) || err.name === 'NvidiaInvalidImagePayloadError'
+  );
+}
+
+/** Reject empty / tiny / non-image / near-black decoded NVCF artifacts early. */
+export function assertValidNvidiaImageBytes(decoded: Buffer): void {
+  if (decoded.length === 0) {
+    throw new NvidiaInvalidImagePayloadError('NVIDIA image API returned empty image bytes');
+  }
+  if (decoded.length < NVIDIA_MIN_DECODED_IMAGE_BYTES) {
+    throw new NvidiaInvalidImagePayloadError(
+      `NVIDIA image payload too small (${decoded.length} bytes) — likely blank/corrupt NVCF response`,
+    );
+  }
+  if (!isPng(decoded) && !isJpeg(decoded)) {
+    throw new NvidiaInvalidImagePayloadError(
+      'NVIDIA image API returned unrecognized image bytes (expected PNG or JPEG)',
+    );
+  }
+}
+
+function assertPngHasVisibleContent(png: Buffer): void {
+  let decoded: { rgba: Uint8Array; width: number; height: number };
+  try {
+    decoded = decodePngRgba(png);
+  } catch (err) {
+    throw new NvidiaInvalidImagePayloadError(
+      `NVIDIA image PNG corrupt or undecodable (${err instanceof Error ? err.message : String(err)})`,
+    );
+  }
+  const { rgba, width, height } = decoded;
+  const pixels = width * height;
+  if (pixels <= 0) {
+    throw new NvidiaInvalidImagePayloadError('NVIDIA image has zero dimensions');
+  }
+  let nonBlack = 0;
+  const stride = Math.max(1, Math.floor(pixels / 4096));
+  for (let p = 0; p < pixels; p += stride) {
+    const i = p * 4;
+    const r = rgba[i] ?? 0;
+    const g = rgba[i + 1] ?? 0;
+    const b = rgba[i + 2] ?? 0;
+    const a = rgba[i + 3] ?? 0;
+    if (a > 16 && (r > 8 || g > 8 || b > 8)) nonBlack += 1;
+  }
+  const samples = Math.ceil(pixels / stride);
+  const ratio = samples > 0 ? nonBlack / samples : 0;
+  if (ratio < 0.01) {
+    throw new NvidiaInvalidImagePayloadError(
+      `NVIDIA image appears blank/near-black (visible ratio ${ratio.toFixed(4)})`,
+    );
+  }
+}
+
 /** Hosted NVIDIA Visual GenAI — POST ai.api.nvidia.com/v1/genai/{model}. */
 export class NvidiaImageProvider implements ImageGenerator {
   id = 'nvidia-image';
@@ -140,6 +227,8 @@ export class NvidiaImageProvider implements ImageGenerator {
   private readonly modelId: string;
   private readonly enabled: boolean;
   private readonly pythonPath: string;
+  private readonly maxRetries: number;
+  private readonly retryBackoffMs: number[];
 
   constructor(config: NvidiaImageConfig = {}) {
     this.apiKey = config.apiKey ?? process.env.NVIDIA_API_KEY;
@@ -152,6 +241,10 @@ export class NvidiaImageProvider implements ImageGenerator {
     this.modelId = config.modelId ?? process.env.NVIDIA_IMAGE_MODEL ?? DEFAULT_MODEL;
     this.enabled = config.enabled ?? !!this.apiKey;
     this.pythonPath = config.pythonPath ?? process.env.DIFFUSERS_PYTHON ?? 'python';
+    this.maxRetries = Math.max(0, config.maxRetries ?? DEFAULT_MAX_RETRIES);
+    this.retryBackoffMs = config.retryBackoffMs?.length
+      ? config.retryBackoffMs.map((n) => Math.max(0, n))
+      : [...RETRY_BACKOFF_MS];
   }
 
   async getHealthReport(): Promise<ImageProviderHealthReport> {
@@ -353,6 +446,35 @@ export class NvidiaImageProvider implements ImageGenerator {
     }
 
     const seed = request.seed ?? Math.floor(Math.random() * 2 ** 31);
+    const maxAttempts = 1 + this.maxRetries;
+    let lastError: Error | undefined;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        // Slight seed jitter on retries — same prompt+seed often re-hits CONTENT_FILTERED.
+        const attemptSeed = attempt === 1 ? seed : (seed + attempt * 9973) >>> 0;
+        return await this.generateImageOnce(request, attemptSeed);
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+        const retryable = isRetryableNvidiaImageError(lastError);
+        if (!retryable || attempt >= maxAttempts) {
+          if (attempt > 1) {
+            throw new Error(
+              `${lastError.message} (failed after ${attempt} NVIDIA image attempts)`,
+            );
+          }
+          throw lastError;
+        }
+        const delayMs =
+          this.retryBackoffMs[Math.min(attempt - 1, this.retryBackoffMs.length - 1)] ?? 1_000;
+        if (delayMs > 0) await sleep(delayMs);
+      }
+    }
+
+    throw lastError ?? new Error('NVIDIA image generation failed');
+  }
+
+  private async generateImageOnce(request: ImageGenRequest, seed: number): Promise<ImageGenResult> {
     const width = clampFluxDim(request.width);
     const height = clampFluxDim(request.height);
     const url = `${this.imageApiBaseUrl}/${this.modelId}`;
@@ -396,7 +518,7 @@ export class NvidiaImageProvider implements ImageGenerator {
       );
     }
     if (res.status === 504 || res.headers.get('nvcf-status') === 'errored') {
-      throw new Error(
+      throw new NvidiaInvalidImagePayloadError(
         `NVIDIA image generation errored/timeout (HTTP ${res.status}) for ${this.modelId}. Try NVIDIA_IMAGE_MODEL=black-forest-labs/flux.1-dev.`,
       );
     }
@@ -404,13 +526,43 @@ export class NvidiaImageProvider implements ImageGenerator {
       throw new Error(parseErrorMessage(body, res.status));
     }
 
-    const b64 = body?.artifacts?.[0]?.base64;
-    if (!b64) {
-      throw new Error('NVIDIA image API returned no image data');
+    // Fulfilled but empty/tiny bodies (~6KB) are the flaky Manual Generator failure mode.
+    if (!body || typeof body !== 'object') {
+      throw new NvidiaInvalidImagePayloadError(
+        `NVIDIA image API returned invalid NVCF JSON (${rawText.length} bytes)`,
+      );
     }
 
-    const decoded = Buffer.from(b64, 'base64');
+    const artifact = body.artifacts?.[0];
+    const finishReason = artifact?.finishReason?.toUpperCase() ?? '';
+    const b64 = artifact?.base64?.trim();
+    if (!b64) {
+      const reasonHint = finishReason ? ` finishReason=${artifact?.finishReason}` : '';
+      throw new NvidiaInvalidImagePayloadError(
+        `NVIDIA image API returned no image data (response ${rawText.length} bytes${reasonHint})`,
+      );
+    }
+
+    // CONTENT_FILTERED / ERROR without usable bytes already handled above. If base64 is present,
+    // continue into size/magic/visible checks — flaky NVCF sometimes labels good JPEGs oddly.
+    if (finishReason && /ERROR|FAIL|REJECT/.test(finishReason) && rawText.length < 8_000) {
+      throw new NvidiaInvalidImagePayloadError(
+        `NVIDIA image artifact finishReason=${artifact?.finishReason ?? 'unknown'}`,
+      );
+    }
+
+    let decoded: Buffer;
+    try {
+      decoded = Buffer.from(b64, 'base64');
+    } catch {
+      throw new NvidiaInvalidImagePayloadError('NVIDIA image API returned undecodable base64');
+    }
+
+    assertValidNvidiaImageBytes(decoded);
     const image = ensurePngBuffer(decoded, this.pythonPath);
+    assertPngHasVisibleContent(image);
+
+    // After size/magic/visible checks, SUCCESS and CONTENT_FILTERED-with-valid-pixels both return.
 
     return {
       image,

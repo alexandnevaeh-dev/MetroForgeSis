@@ -1,6 +1,6 @@
 # MetroForge UI redesign notes
 
-Updated: 2026-08-14 (Pass 11 — screenshot refresh post–Pass 10)
+Updated: 2026-08-14 (Pass 12 — compile res + light polish)
 
 ## Direction
 
@@ -50,10 +50,17 @@ Closed largest gaps vs the board (Dashboard / Room Editor / status strip / sideb
 - Live Studio phase shots (`05-*`, `06-*`) not refreshed (generation skipped)
 - Capture-script fix only (no fake UI); follow-up screenshot commit after re-capture
 
+### Pass 12 — light polish (post live Concept A review)
+
+- Status strip: tighter gap/padding, project label ellipsis, concurrency meters use `·` separators, hide Ctrl+K hint ≤1366
+- Inspector: denser `.editor-inspector` / `.asset-detail` padding + tighter dl spacing
+- (Product) Sprite compile defaults raised — see `docs/audit/REAL_IMAGE_PROVIDER_ACTIVATION.md` Compile resolution
+
 ## Remaining
 
 - Optional: re-run capture with generation enabled for live Studio phase screenshots
 - Live visual QA at 1366 / 1440 / 1920 after electron run
+- Recompile existing GeneratedGames assets to pick up 64×64 defaults (new gens only unless re-run)
 
 ## Notes
 

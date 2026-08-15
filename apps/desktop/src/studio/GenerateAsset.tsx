@@ -89,9 +89,13 @@ export function GenerateAssetScreen() {
         success: v.success,
         assetPath: v.asset?.path,
         provider: v.asset?.provider,
+        fallbackGenerated: v.asset?.fallbackGenerated,
+        critiquePassed: v.asset?.critiquePassed,
+        critiqueScore: v.asset?.critiqueScore,
+        errors: v.errors,
       }));
       setVariantResults(list);
-      const first = list.find((v) => v.assetPath);
+      const first = list.find((v) => v.success && v.assetPath);
       if (first?.assetPath) await inspectAsset(first.assetPath);
     } else {
       const single: VariantResult = {
@@ -104,7 +108,7 @@ export function GenerateAssetScreen() {
         errors: response.errors,
       };
       setVariantResults([single]);
-      if (single.assetPath) await inspectAsset(single.assetPath);
+      if (single.success && single.assetPath) await inspectAsset(single.assetPath);
     }
   };
 

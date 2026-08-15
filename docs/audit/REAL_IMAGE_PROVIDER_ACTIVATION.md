@@ -198,7 +198,7 @@ Handlers probe now returns precise `status`, `reason`, `nearbyModels` / `suggest
 None for remote image invoke. Optional follow-ups (not required for Outcome A):
 
 - Full Generation Studio TINY_TEST when user can supervise (avoid hang in unattended agents).
-- Improve pixel-art downscale quality (32×32 post-process still tiny; maturity path fixed below).
+- Improve pixel-art downscale quality (**resolved 2026-08-14**: compiled character/enemy/npc frames default to **64×64**, bosses **96 / 128**, tileset atlas remains **128**; `*_source.png` untouched — see Compile resolution below).
 - Account note: `flux.1-schnell` currently errors on this NVIDIA account; keep `flux.1-dev`.
 
 ## Follow-up
@@ -236,7 +236,47 @@ None for remote image invoke. Optional follow-ups (not required for Outcome A):
 
 **Validate:** shared maturity + assets pipeline/router/nvidia tests **30/30 PASS**; `@metroforge/assets` + `generation` build PASS; `@metroforge/desktop` typecheck PASS.
 
-**Still optional:** full Generation Studio / Godot assemble (hang risk). Pixel-art 32×32 quality still crude but no longer destructive to source.
+**Still optional:** full Generation Studio / Godot assemble (hang risk).
+
+## Compile resolution (2026-08-14)
+
+Pixel-art compile targets raised so NVIDIA `*_source.png` is no longer crushed to unusable 32×32 game sprites.
+
+| Kind | Before | After | Notes |
+|---|---|---|---|
+| character / enemy / npc | 32×32 | **64×64** | Production-usable silhouette; AI request still `frame×4` |
+| boss (mini) | 40×40 | **96×96** | |
+| boss (final) | 48×48 | **128×128** | |
+| tileset atlas | 128×128 | **128×128** | unchanged |
+| item / icon | 16×16 | **16×16** | unchanged |
+
+- Helper: `compiledSpriteFrameSize()` in `packages/assets/src/asset-pipeline.ts` (exported)
+- Source sidecar path unchanged — compile never overwrites `_source.png`
+- Vitest covers helper defaults + compile dims + source preserved at full size
+
+### Offline recompile of existing sources (2026-08-14)
+
+`GeneratedGames/nvidia-image-activation-smoke` and `studio-godot-nvidia-smoke` were **missing** (empty `GeneratedGames/`). Recompiled all projects under `Exports/` that still had `*_source.png` via:
+
+```bash
+node scripts/recompile-sourced-sprites.mjs <projectDir...>
+```
+
+Defaults (when no args): the two smoke paths above. Uses `AssetPipeline.compileFromSource` + `compiledSpriteFrameSize`; preserves `*_source.png`; patches `generation_manifest.json` (keeps `nvidia-image` / QA_REVIEW|PRODUCTION_READY).
+
+Verified sample: character/enemy **32→64**, `boss_final` **48→128**, sources remain **1024×1024**. Summary: `GeneratedGames/recompile-sourced-sprites-summary.json`.
+
+### Smoke recreate (2026-08-14 evening)
+
+`GeneratedGames/` was empty again. Recreated **`GeneratedGames/nvidia-image-activation-smoke`** with a live `nvidia-image` / `flux.1-dev` player:
+
+- Path: `NvidiaImageProvider.generateImage` + `AssetPipeline.compileFromSource` (same provider/compile stack as Manual Generator `generateManualAsset`; blank/fast NVCF 6KB black artifacts rejected; 180s abort)
+- Source: `assets/characters/nvidia_activation_player_source.png` (**1024×1024**, ~609 KB)
+- Compiled: `assets/characters/nvidia_activation_player.png` (**64×64**)
+- Manifest: `provider: nvidia-image`, `modelId: black-forest-labs/flux.1-dev`, maturity **PRODUCTION_READY** (not PLACEHOLDER), `fallbackGenerated: false`
+- Summary: `activation_manual_smoke_summary.json`
+- Helper script: `node scripts/nvidia-manual-asset-smoke.mjs` (blankness checks + retries)
+- No full `GenerationPipeline` TINY_TEST; no key rotation; desktop left running
 
 ## Studio/Godot follow-up (2026-08-13)
 

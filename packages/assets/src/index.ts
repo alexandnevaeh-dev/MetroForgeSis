@@ -8,6 +8,11 @@ export { DiffusersProvider } from './providers/diffusers.js';
 export type { DiffusersConfig } from './providers/diffusers.js';
 export { NvidiaImageProvider } from './providers/nvidia-image.js';
 export type { NvidiaImageConfig, NvidiaImageHealthDetails, NvidiaImageHealthStatus } from './providers/nvidia-image.js';
+export {
+  NvidiaInvalidImagePayloadError,
+  NVIDIA_MIN_DECODED_IMAGE_BYTES,
+  assertValidNvidiaImageBytes,
+} from './providers/nvidia-image.js';
 export type {
   ImageGenRequest,
   ImageGenResult,
@@ -39,5 +44,5 @@ export { critiqueAnimationSheet, critiqueTilesetSheet } from './animation-critic
 export type { AnimationKind, AnimationCritiqueOptions } from './animation-critic.js';
 export { critiqueGameplayScreenshot } from './scene-critic.js';
 export type { GameplayScreenshotCritique } from './scene-critic.js';
-export { AssetPipeline, derivedSourceRelPath } from './asset-pipeline.js';
-export type { AssetPipelineOptions, AssetPipelineResult, GeneratedAsset } from './asset-pipeline.js';
+export { AssetPipeline, derivedSourceRelPath, compiledSpriteFrameSize } from './asset-pipeline.js';
+export type { AssetPipelineOptions, AssetPipelineResult, GeneratedAsset, CompiledSpriteKind } from './asset-pipeline.js';

@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { mkdirSync, rmSync, existsSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, existsSync, writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { GenerationCancelledError } from '@metroforge/shared';
-import { AssetPipeline } from '../src/asset-pipeline.js';
+import { AssetPipeline, compiledSpriteFrameSize } from '../src/asset-pipeline.js';
+import { decodePngRgba } from '../src/png.js';
 import type { GameDNA } from '@metroforge/schemas';
 
 const minimalDna: GameDNA = {
@@ -61,6 +62,17 @@ describe('AssetPipeline procedural path', () => {
     expect(result.assets.some((a) => a.path === 'assets/vfx/slam_shock.png')).toBe(true);
     expect(result.assets.some((a) => a.path === 'assets/npcs/npc_000.png')).toBe(true);
     expect(result.assets.some((a) => a.path === 'assets/npcs/npc_000_walk.png')).toBe(true);
+
+    const player = result.assets.find((a) => a.path === 'assets/characters/player.png')!;
+    const playerDims = decodePngRgba(player.buffer);
+    const characterFrame = compiledSpriteFrameSize('character');
+    expect(playerDims.width).toBe(characterFrame.width);
+    expect(playerDims.height).toBe(characterFrame.height);
+
+    const tileset = result.assets.find((a) => a.path.includes('tilesets/biome_0'))!;
+    const tilesetDims = decodePngRgba(tileset.buffer);
+    expect(tilesetDims.width).toBe(compiledSpriteFrameSize('tileset').width);
+    expect(tilesetDims.height).toBe(compiledSpriteFrameSize('tileset').height);
 
     rmSync(outputDir, { recursive: true, force: true });
   });
@@ -281,6 +293,18 @@ describe('AssetPipeline procedural path', () => {
   });
 });
 
+describe('compiledSpriteFrameSize', () => {
+  it('raises character/enemy/npc above legacy 32 and keeps tileset/item rules', () => {
+    expect(compiledSpriteFrameSize('character')).toEqual({ width: 64, height: 64 });
+    expect(compiledSpriteFrameSize('enemy')).toEqual({ width: 64, height: 64 });
+    expect(compiledSpriteFrameSize('npc')).toEqual({ width: 64, height: 64 });
+    expect(compiledSpriteFrameSize('boss')).toEqual({ width: 96, height: 96 });
+    expect(compiledSpriteFrameSize('boss_final')).toEqual({ width: 128, height: 128 });
+    expect(compiledSpriteFrameSize('tileset')).toEqual({ width: 128, height: 128 });
+    expect(compiledSpriteFrameSize('item')).toEqual({ width: 16, height: 16 });
+  });
+});
+
 describe('AssetPipeline compileFromSource', () => {
   it('persists source alongside compiled and marks COMPILED', async () => {
     const { derivedSourceRelPath } = await import('../src/asset-pipeline.js');
@@ -288,10 +312,11 @@ describe('AssetPipeline compileFromSource', () => {
     const outputDir = join(tmpdir(), `metroforge-compile-${Date.now()}`);
     mkdirSync(outputDir, { recursive: true });
 
+    const frame = compiledSpriteFrameSize('character');
     const source = generateProceduralSprite({
       id: 'big',
-      width: 64,
-      height: 64,
+      width: 256,
+      height: 256,
       fill: [90, 140, 220, 255],
       shape: 'humanoid',
     });
@@ -302,8 +327,8 @@ describe('AssetPipeline compileFromSource', () => {
       sourcePng: source,
       compiledRelPath: compiledRel,
       outputDir,
-      targetWidth: 32,
-      targetHeight: 32,
+      targetWidth: frame.width,
+      targetHeight: frame.height,
       tileSize: 16,
       provider: 'nvidia-image',
       modelId: 'black-forest-labs/flux.1-dev',
@@ -317,6 +342,50 @@ describe('AssetPipeline compileFromSource', () => {
     expect(existsSync(join(outputDir, 'assets/characters/hero_source.png'))).toBe(true);
     expect(existsSync(join(outputDir, compiledRel))).toBe(true);
     expect(asset.buffer.length).toBeLessThan(source.length);
+
+    const compiledDims = decodePngRgba(asset.buffer);
+    expect(compiledDims.width).toBe(frame.width);
+    expect(compiledDims.height).toBe(frame.height);
+    const sourceOnDisk = decodePngRgba(
+      readFileSync(join(outputDir, 'assets/characters/hero_source.png')),
+    );
+    expect(sourceOnDisk.width).toBe(256);
+    expect(sourceOnDisk.height).toBe(256);
+
+    rmSync(outputDir, { recursive: true, force: true });
+  });
+
+  it('soft-pass critique on compile lands QA_REVIEW, never PRODUCTION_READY', async () => {
+    const { generateProceduralSprite } = await import('../src/png.js');
+    const outputDir = join(tmpdir(), `metroforge-compile-qa-${Date.now()}`);
+    mkdirSync(outputDir, { recursive: true });
+
+    const frame = compiledSpriteFrameSize('character');
+    const source = generateProceduralSprite({
+      id: 'nvidia_activation_player',
+      width: 256,
+      height: 256,
+      fill: [200, 90, 40, 255],
+      shape: 'humanoid',
+    });
+    const pipeline = new AssetPipeline();
+    const asset = pipeline.compileFromSource({
+      id: 'nvidia_activation_player',
+      sourcePng: source,
+      compiledRelPath: 'assets/characters/nvidia_activation_player.png',
+      outputDir,
+      targetWidth: frame.width,
+      targetHeight: frame.height,
+      tileSize: 16,
+      provider: 'nvidia-image',
+      modelId: 'black-forest-labs/flux.1-dev',
+      critiquePassed: true,
+      critiqueScore: 85,
+    });
+
+    expect(asset.sourceType).toBe('compiled');
+    expect(asset.maturity).toBe('QA_REVIEW');
+    expect(asset.productionReady).toBe(false);
 
     rmSync(outputDir, { recursive: true, force: true });
   });

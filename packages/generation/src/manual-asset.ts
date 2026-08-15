@@ -104,26 +104,48 @@ export async function generateManualAsset(request: ManualAssetRequest): Promise<
   const relPath = inferAssetPath(request.assetType, assetId);
   const seed = request.seed ?? Math.floor(Math.random() * 1_000_000);
 
-  const pipeline = new AssetPipeline();
-  const asset = await pipeline.generateManual({
-    gameDna,
-    artBible,
-    description: request.description,
-    assetType: request.assetType,
-    assetId,
-    relPath,
-    outputDir: request.projectPath,
-    seed,
-    mode: request.generationMode ?? 'HYBRID_FREE',
-    comfyuiUrl: process.env.COMFYUI_BASE_URL,
-    diffusersPython: process.env.DIFFUSERS_PYTHON,
-    diffusersModelId: process.env.DIFFUSERS_MODEL_ID,
-    nvidiaApiKey: process.env.NVIDIA_API_KEY,
-    nvidiaApiBaseUrl: process.env.NVIDIA_API_BASE_URL,
-    nvidiaImageModel: request.nvidiaImageModel ?? process.env.NVIDIA_IMAGE_MODEL,
-    ollamaBaseUrl: config.ollamaBaseUrl,
-    hardwareProfile: request.hardwareProfile,
-  });
+  let asset: GeneratedAsset;
+  try {
+    const pipeline = new AssetPipeline();
+    asset = await pipeline.generateManual({
+      gameDna,
+      artBible,
+      description: request.description,
+      assetType: request.assetType,
+      assetId,
+      relPath,
+      outputDir: request.projectPath,
+      seed,
+      mode: request.generationMode ?? 'HYBRID_FREE',
+      comfyuiUrl: process.env.COMFYUI_BASE_URL,
+      diffusersPython: process.env.DIFFUSERS_PYTHON,
+      diffusersModelId: process.env.DIFFUSERS_MODEL_ID,
+      nvidiaApiKey: process.env.NVIDIA_API_KEY,
+      nvidiaApiBaseUrl: process.env.NVIDIA_API_BASE_URL,
+      nvidiaImageModel: request.nvidiaImageModel ?? process.env.NVIDIA_IMAGE_MODEL,
+      ollamaBaseUrl: config.ollamaBaseUrl,
+      hardwareProfile: request.hardwareProfile,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return {
+      success: false,
+      errors: [message],
+      warnings,
+    };
+  }
+
+  if (asset.fallbackGenerated) {
+    return {
+      success: false,
+      asset,
+      errors: [
+        asset.fallbackReason ??
+          'Manual Generator refused procedural placeholder — image provider failed or unavailable',
+      ],
+      warnings,
+    };
+  }
 
   mkdirSync(dirname(join(request.projectPath, relPath)), { recursive: true });
   const targetFull = join(request.projectPath, relPath);

@@ -66,6 +66,38 @@ export function derivedSourceRelPath(relPath: string): string {
   return `${normalized.slice(0, dot)}_source${normalized.slice(dot)}`;
 }
 
+/** Kind of game sprite for profile-aware pixel-art compile targets. */
+export type CompiledSpriteKind =
+  | 'character'
+  | 'enemy'
+  | 'npc'
+  | 'boss'
+  | 'boss_final'
+  | 'item'
+  | 'tileset';
+
+/**
+ * Target size for pixel-art *compiled* game frames (never applied to `*_source.png`).
+ * 32×32 crushed readable silhouette; 64×64 is production-usable for characters/enemies/NPCs.
+ * Bosses scale up; tileset atlas stays 128; item icons stay 16.
+ */
+export function compiledSpriteFrameSize(kind: CompiledSpriteKind): { width: number; height: number } {
+  switch (kind) {
+    case 'character':
+    case 'enemy':
+    case 'npc':
+      return { width: 64, height: 64 };
+    case 'boss':
+      return { width: 96, height: 96 };
+    case 'boss_final':
+      return { width: 128, height: 128 };
+    case 'item':
+      return { width: 16, height: 16 };
+    case 'tileset':
+      return { width: 128, height: 128 };
+  }
+}
+
 export interface AssetPipelineOptions {
   gameDna: GameDNA;
   profile: GenerationProfile;
@@ -332,6 +364,27 @@ function checkpointFullPath(outputDir: string, relPath: string): string {
   return join(outputDir, relPath.replace(/\//g, sep));
 }
 
+/**
+ * Hosted NVCF often returns blank/black artifacts when prompts echo vendor brand names
+ * (seen with smoke projects titled "NVIDIA …"). Strip those tokens from image prompts only.
+ */
+function sanitizeImagePromptText(text: string): string {
+  return text
+    .replace(/\bNVIDIA\b/gi, '')
+    .replace(/\bNVCF\b/gi, '')
+    .replace(/\bNVAPI\b/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+([.,;:!?])/g, '$1')
+    .trim();
+}
+
+function buildManualImagePrompt(description: string, styleHint: string, gameTitle: string): string {
+  const title = sanitizeImagePromptText(gameTitle) || 'this game';
+  const style = sanitizeImagePromptText(styleHint) || 'pixel art';
+  const desc = sanitizeImagePromptText(description) || 'game sprite';
+  return `${desc}. Art style: ${style}. Pixel art for ${title}.`;
+}
+
 function loadCheckpoint(outputDir: string, relPath: string): Buffer | null {
   const full = checkpointFullPath(outputDir, relPath);
   if (!existsSync(full)) return null;
@@ -478,10 +531,11 @@ export class AssetPipeline {
 
     options.onTaskStarted?.('player_sprite', 'Generating player character sprite');
     checkCancelled();
+    const playerFrame = compiledSpriteFrameSize('character');
     const playerSpec: SpriteSpec = {
       id: 'player',
-      width: 32,
-      height: 32,
+      width: playerFrame.width,
+      height: playerFrame.height,
       fill: [90, 140, 220, 255],
       accent: [240, 240, 250, 255],
       shape: 'humanoid',
@@ -559,10 +613,11 @@ export class AssetPipeline {
       checkCancelled();
       const palette = BIOME_PALETTES[i % BIOME_PALETTES.length]!;
       const enemyId = `enemy_${i.toString().padStart(3, '0')}`;
+      const enemyFrame = compiledSpriteFrameSize('enemy');
       const enemySpec: SpriteSpec = {
         id: enemyId,
-        width: 32,
-        height: 32,
+        width: enemyFrame.width,
+        height: enemyFrame.height,
         fill: [palette[2]![0], palette[2]![1], palette[2]![2], 255],
         shape: 'enemy',
       };
@@ -655,10 +710,11 @@ export class AssetPipeline {
       const npcId = npc.id;
       const role = npc.role ?? NPC_ROLES[ni % NPC_ROLES.length]!;
       const color = NPC_ROLE_COLORS[role] ?? NPC_ROLE_COLORS.neutral!;
+      const npcFrame = compiledSpriteFrameSize('npc');
       const npcSpec: SpriteSpec = {
         id: npcId,
-        width: 32,
-        height: 32,
+        width: npcFrame.width,
+        height: npcFrame.height,
         fill: [color[0], color[1], color[2], 255],
         shape: 'humanoid',
       };
@@ -715,11 +771,11 @@ export class AssetPipeline {
       const bossId = boss.id;
       const isFinal = bossId === 'boss_final' || bi === bossList.length - 1;
       const palette = BIOME_PALETTES[(bi + 2) % BIOME_PALETTES.length]!;
-      const bossSize = isFinal ? 48 : 40;
+      const bossFrame = compiledSpriteFrameSize(isFinal ? 'boss_final' : 'boss');
       const bossSpec: SpriteSpec = {
         id: bossId,
-        width: bossSize,
-        height: bossSize,
+        width: bossFrame.width,
+        height: bossFrame.height,
         fill: [palette[2]![0], palette[2]![1], palette[2]![2], 255],
         shape: 'boss',
       };
@@ -1103,6 +1159,11 @@ export class AssetPipeline {
     resume?: boolean;
     signal?: AbortSignal;
     conditioning?: ImageConditioning;
+    /**
+     * When false (Manual Generator), image-provider failures propagate instead of
+     * silently writing a procedural SUCCESS placeholder.
+     */
+    allowProceduralFallback?: boolean;
   }): Promise<GeneratedAsset> {
     if (opts.resume) {
       const cached = loadCheckpoint(opts.outputDir, opts.path);
@@ -1119,6 +1180,7 @@ export class AssetPipeline {
       }
     }
 
+    const allowProceduralFallback = opts.allowProceduralFallback !== false;
     let buffer = generateProceduralSprite(opts.spec);
     let provider = 'procedural';
     let fallback = true;
@@ -1141,9 +1203,19 @@ export class AssetPipeline {
         provider = result.provider;
         modelId = result.modelId;
         fallback = false;
-      } catch {
+      } catch (err) {
+        if (!allowProceduralFallback) {
+          const msg = err instanceof Error ? err.message : String(err);
+          throw new Error(
+            `Manual image generation failed (${opts.imageGen.id}): ${msg}`,
+          );
+        }
         // keep procedural
       }
+    } else if (!allowProceduralFallback) {
+      throw new Error(
+        'Manual image generation requires a healthy image provider (NVIDIA / ComfyUI / Diffusers) — none available',
+      );
     }
 
     // Preserve full AI bytes beside the compiled game sprite — never overwrite source with
@@ -1320,47 +1392,50 @@ export class AssetPipeline {
     const vlmAvailable = await vlm.isAvailable();
 
     let profile: ImageGenerationProfile = 'CHARACTER';
-    let width = 32;
-    let height = 32;
+    let frame = compiledSpriteFrameSize('character');
     let shape: SpriteSpec['shape'] = 'humanoid';
 
     switch (opts.assetType) {
       case 'enemy':
         profile = 'ENEMY';
+        frame = compiledSpriteFrameSize('enemy');
         shape = 'enemy';
         break;
       case 'npc':
         profile = 'CHARACTER';
+        frame = compiledSpriteFrameSize('npc');
         shape = 'humanoid';
         break;
       case 'boss':
         profile = 'BOSS';
-        width = 48;
-        height = 48;
+        frame = compiledSpriteFrameSize('boss');
         shape = 'boss';
         break;
       case 'weapon':
       case 'item':
       case 'prop':
-        width = 16;
-        height = 16;
+        frame = compiledSpriteFrameSize('item');
         shape = 'item';
         break;
       case 'tileset':
       case 'tile':
         profile = 'TILE_SOURCE';
-        width = 128;
-        height = 128;
+        frame = compiledSpriteFrameSize('tileset');
         shape = 'tile';
         break;
       default:
         break;
     }
+    const { width, height } = frame;
 
     const styleHint =
       opts.artBible?.characterGuidelines.player ??
       opts.gameDna.identity.visualStyle;
-    const prompt = `${opts.description}. Art style: ${styleHint}. Pixel art for ${opts.gameDna.identity.title}.`;
+    const prompt = buildManualImagePrompt(
+      opts.description,
+      styleHint,
+      opts.gameDna.identity.title,
+    );
 
     const sourceCandidate = join(opts.outputDir, derivedSourceRelPath(opts.relPath));
     const existingFullPath = join(opts.outputDir, opts.relPath);
@@ -1393,9 +1468,19 @@ export class AssetPipeline {
           fallback = result.fallbackGenerated;
           provider = fallback ? 'procedural' : imageGen.id;
           modelId = fallback ? undefined : result.modelId;
-        } catch {
-          /* procedural fallback */
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          throw new Error(`Manual image generation failed (${imageGen.id}): ${msg}`);
         }
+      } else {
+        throw new Error(
+          'Manual image generation requires a healthy image provider (NVIDIA / ComfyUI / Diffusers) — none available',
+        );
+      }
+      if (fallback) {
+        throw new Error(
+          'Manual image generation returned a procedural placeholder — refusing silent SUCCESS',
+        );
       }
       const processed = this.pixelArt.process(tileBuffer, {
         targetWidth: 128,
@@ -1442,6 +1527,7 @@ export class AssetPipeline {
       seed: opts.seed,
       outputDir: opts.outputDir,
       conditioning,
+      allowProceduralFallback: false,
     });
   }
 }

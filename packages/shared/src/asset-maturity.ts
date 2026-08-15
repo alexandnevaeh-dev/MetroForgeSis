@@ -54,10 +54,9 @@ export function isNonProductionMaturity(maturity: AssetMaturity | string | undef
 export const CRITIQUE_SOFT_PASS_SCORE = 70;
 
 /**
- * A critique score at or above this bar is high enough confidence to promote past QA_REVIEW to
- * PRODUCTION_READY outright, rather than waiting on a human look. Deliberately well above the
- * soft-pass bar (70) — QA_REVIEW is for "usable but unconfirmed," PRODUCTION_READY is for
- * "the critic is confident this doesn't need a human to check."
+ * Suggested score bar for *explicit* human/tool promotion to PRODUCTION_READY.
+ * Inferrence never auto-assigns PRODUCTION_READY from score alone — fresh generates/compiles
+ * stop at QA_REVIEW (critique pass/soft-pass) or GENERATED_SOURCE / COMPILED.
  */
 export const PRODUCTION_READY_SCORE = 85;
 
@@ -74,8 +73,8 @@ export function critiqueEffectivelyPassed(
 /**
  * Infer maturity from how an asset was produced. Procedural / test / fallback art is always
  * PLACEHOLDER (never PRODUCTION_READY). Real image-provider output starts as GENERATED_SOURCE
- * and promotes to QA_REVIEW when critique passes or soft-passes on score, or all the way to
- * PRODUCTION_READY when critique passes with high confidence (score >= PRODUCTION_READY_SCORE).
+ * and promotes to QA_REVIEW when critique passes or soft-passes on score.
+ * PRODUCTION_READY is never inferred — callers must set it explicitly after promotion.
  */
 export function inferAssetMaturity(input: {
   fallbackGenerated?: boolean;
@@ -112,9 +111,7 @@ export function inferAssetMaturity(input: {
   }
 
   if (input.critiquePassed === true) {
-    if (typeof input.critiqueScore === 'number' && input.critiqueScore >= PRODUCTION_READY_SCORE) {
-      return { maturity: 'PRODUCTION_READY', productionReady: true, sourceType };
-    }
+    // Pass (any score) → QA_REVIEW only. High scores do not auto-promote to PRODUCTION_READY.
     return { maturity: 'QA_REVIEW', productionReady: false, sourceType };
   }
 
