@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { encodePng, generateProceduralSprite, generateWalkCycleSheet, generateAttackSheet, generateVfxTexture } from '../src/png.js';
+import { encodePng, decodePngRgba, generateProceduralSprite, generateWalkCycleSheet, generateAttackSheet, generateVfxTexture, knockoutVfxBackground } from '../src/png.js';
 import { PixelArtProcessor } from '../src/pixel-art-processor.js';
 import { runDeterministicAssetChecks } from '../src/vlm-critic.js';
 
@@ -99,5 +99,28 @@ describe('PixelArtProcessor sliceTiles', () => {
     const processor = new PixelArtProcessor();
     const tiles = processor.sliceTiles(source, 16);
     expect(tiles.size).toBe(4);
+  });
+});
+
+describe('knockoutVfxBackground', () => {
+  it('turns magenta chrome into alpha while keeping the spark', () => {
+    const width = 16;
+    const height = 16;
+    const rgba = new Uint8Array(width * height * 4);
+    for (let i = 0; i < rgba.length; i += 4) {
+      rgba[i] = 255;
+      rgba[i + 1] = 0;
+      rgba[i + 2] = 255;
+      rgba[i + 3] = 255;
+    }
+    const center = (8 * width + 8) * 4;
+    rgba[center] = 255;
+    rgba[center + 1] = 240;
+    rgba[center + 2] = 80;
+    rgba[center + 3] = 255;
+    const knocked = knockoutVfxBackground(encodePng(width, height, rgba));
+    const decoded = decodePngRgba(knocked);
+    expect(decoded.rgba[3]).toBe(0);
+    expect(decoded.rgba[center + 3]).toBeGreaterThan(0);
   });
 });

@@ -69,12 +69,15 @@ export {
 } from './mode-routing.js';
 export { LicenseRouter } from './license-router.js';
 export type { LicenseStatus, LicenseClassification, LicenseSubject } from './license-router.js';
-export { auditExportLicense } from './export-license-audit.js';
+export { auditExportLicense, buildAttributionsMarkdown } from './export-license-audit.js';
 export type { ExportLicenseAudit, ExportLicenseArtifactAudit } from './export-license-audit.js';
 export {
   PROVIDER_LICENSE_DEFAULTS,
+  COMPILER_PROVIDERS,
   resolveArtifactLicense,
   licenseFieldsForProvider,
+  licenseFieldsForArtifact,
+  repairManifestArtifactLicenses,
 } from './provider-license-metadata.js';
 export type { ManifestArtifactLicenseInput } from './provider-license-metadata.js';
 export {

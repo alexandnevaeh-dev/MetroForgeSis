@@ -66,3 +66,23 @@ export const DesignBibleSchema = z.object({
 });
 
 export type DesignBible = z.infer<typeof DesignBibleSchema>;
+
+/** Compact style spec consumed by asset prompts. Derived from ArtBible + Game DNA — not a parallel creative source. */
+export const StyleBibleSchema = z.object({
+  styleId: z.string(),
+  renderingStyle: z.string(),
+  pixelResolution: z.number().int().positive(),
+  palette: ArtBibleSchema.shape.palette,
+  outlineRules: z.string(),
+  lighting: z.string(),
+  materials: z.string(),
+  characterScale: z.string(),
+  spritePerspective: z.string(),
+  environmentDensity: z.string(),
+  VFXStyle: z.string(),
+  UIStyle: z.string(),
+  promptPrefixes: z.record(z.string(), z.string()),
+  negativePrompts: z.array(z.string()),
+});
+
+export type StyleBible = z.infer<typeof StyleBibleSchema>;

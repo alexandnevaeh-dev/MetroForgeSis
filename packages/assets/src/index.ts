@@ -1,5 +1,5 @@
-export { encodePng, decodePngRgba, generateProceduralSprite, generateTilesetSource, generateWalkCycleSheet, generateHurtFlashSheet, generateAttackSheet } from './png.js';
-export type { SpriteSpec } from './png.js';
+export { encodePng, decodePngRgba, generateProceduralSprite, generateTilesetSource, generateWalkCycleSheet, generateHurtFlashSheet, generateAttackSheet, generateVfxTexture, knockoutVfxBackground } from './png.js';
+export type { SpriteSpec, VfxSpec } from './png.js';
 export { PixelArtProcessor } from './pixel-art-processor.js';
 export type { PixelArtOptions, PixelArtResult } from './pixel-art-processor.js';
 export { ComfyUIProvider } from './providers/comfyui.js';
@@ -44,6 +44,6 @@ export { critiqueAnimationSheet, critiqueTilesetSheet } from './animation-critic
 export type { AnimationKind, AnimationCritiqueOptions } from './animation-critic.js';
 export { critiqueGameplayScreenshot } from './scene-critic.js';
 export type { GameplayScreenshotCritique } from './scene-critic.js';
-export { AssetPipeline, derivedSourceRelPath, compiledSpriteFrameSize } from './asset-pipeline.js';
+export { AssetPipeline, derivedSourceRelPath, compiledSpriteFrameSize, VFX_TEXTURES } from './asset-pipeline.js';
 export type { AssetPipelineOptions, AssetPipelineResult, GeneratedAsset, CompiledSpriteKind } from './asset-pipeline.js';
 export { sanitizeImagePromptText } from './sanitize-image-prompt.js';

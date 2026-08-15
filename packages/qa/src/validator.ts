@@ -19,6 +19,7 @@ import { auditRoomArchetypeFidelity } from '@metroforge/godot';
 import { critiqueGameplayScreenshot } from '@metroforge/assets';
 import { parseSmokeTestOutput } from './smoke-output.js';
 import { parsePlaytestOutput, summarizePlaytestBalance } from './playtest-output.js';
+import { captureGameplayScreenshots } from './gameplay-capture.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..', '..', '..');
@@ -606,11 +607,11 @@ export class QAValidator {
 
     this.runGodotImport(godotPath, projectPath);
 
-    const command = `"${godotPath}" --headless --path "${projectPath}" res://scenes/test/RuntimeSmokeTest.tscn --quit-after 600`;
+    const command = `"${godotPath}" --headless --path "${projectPath}" res://scenes/test/RuntimeSmokeTest.tscn --quit-after 1800`;
     let output: string;
     let exitCode = 0;
     try {
-      output = execSync(command, { encoding: 'utf-8', timeout: 60000, windowsHide: true });
+      output = execSync(command, { encoding: 'utf-8', timeout: 90000, windowsHide: true });
     } catch (err) {
       exitCode = 1;
       output =
@@ -653,9 +654,20 @@ export class QAValidator {
    *  For RELEASE_CANDIDATE (`required: true`), missing or blank capture is a hard FAIL. */
   validateGameplayScreenshot(
     projectPath: string,
-    options?: { required?: boolean },
+    options?: { required?: boolean; godotPath?: string; headlessOutput?: string },
   ): QAGateResult {
     const required = options?.required === true;
+    if (options?.godotPath && (required || options.headlessOutput)) {
+      try {
+        captureGameplayScreenshots({
+          godotPath: options.godotPath,
+          projectPath,
+          headlessOutput: options.headlessOutput,
+        });
+      } catch {
+        /* screenshot gate below reports missing/blank honestly */
+      }
+    }
     const screenshotPath = join(projectPath, 'qa', 'screenshot_gameplay.png');
     if (!existsSync(screenshotPath)) {
       return {
@@ -671,6 +683,15 @@ export class QAValidator {
     const png = readFileSync(screenshotPath);
     const critique = critiqueGameplayScreenshot(png);
     const critiquePath = join(projectPath, 'qa', 'screenshot_critique.json');
+    let captureDetails: Record<string, unknown> | undefined;
+    try {
+      const telemetryPath = join(projectPath, 'qa', 'capture_telemetry.json');
+      if (existsSync(telemetryPath)) {
+        captureDetails = JSON.parse(readFileSync(telemetryPath, 'utf-8')) as Record<string, unknown>;
+      }
+    } catch {
+      captureDetails = undefined;
+    }
     try {
       mkdirSync(join(projectPath, 'qa'), { recursive: true });
       writeFileSync(critiquePath, JSON.stringify(critique, null, 2));
@@ -686,7 +707,7 @@ export class QAValidator {
         message: required
           ? 'RELEASE_CANDIDATE gameplay screenshot is blank (not valid evidence)'
           : 'Gameplay screenshot is blank (typical of GPU-less Godot --headless)',
-        details: { ...critique },
+        details: { ...critique, capture: captureDetails },
       };
     }
 

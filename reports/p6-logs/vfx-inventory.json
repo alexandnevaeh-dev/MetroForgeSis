@@ -1,0 +1,74 @@
+[
+  {
+    "id": "hit_spark",
+    "path": "assets/vfx/hit_spark.png",
+    "effectType": "impact_spark",
+    "whereUsed": ["HealthComponent.damage", "EnemyController.melee", "WeakFloor.break"],
+    "provider": "nvidia-image",
+    "modelId": "black-forest-labs/flux.1-dev",
+    "status": "QA_REVIEW"
+  },
+  {
+    "id": "death_puff",
+    "path": "assets/vfx/death_puff.png",
+    "effectType": "death_puff",
+    "whereUsed": ["HealthComponent.died"],
+    "provider": "nvidia-image",
+    "modelId": "black-forest-labs/flux.1-dev",
+    "status": "QA_REVIEW"
+  },
+  {
+    "id": "dash_trail",
+    "path": "assets/vfx/dash_trail.png",
+    "effectType": "motion_streak",
+    "whereUsed": ["AirDashAbility", "DashAbility", "GrappleAbility"],
+    "provider": "nvidia-image",
+    "modelId": "black-forest-labs/flux.1-dev",
+    "status": "QA_REVIEW"
+  },
+  {
+    "id": "pickup_spark",
+    "path": "assets/vfx/pickup_spark.png",
+    "effectType": "item_sparkle",
+    "whereUsed": ["ItemPickup.collect"],
+    "provider": "nvidia-image",
+    "modelId": "black-forest-labs/flux.1-dev",
+    "status": "QA_REVIEW"
+  },
+  {
+    "id": "ability_unlock",
+    "path": "assets/vfx/ability_unlock.png",
+    "effectType": "ability_unlock",
+    "whereUsed": ["VFXManager.ability_acquired", "PhaseAbility"],
+    "provider": "nvidia-image",
+    "modelId": "black-forest-labs/flux.1-dev",
+    "status": "QA_REVIEW"
+  },
+  {
+    "id": "boss_phase_shift",
+    "path": "assets/vfx/boss_phase_shift.png",
+    "effectType": "phase_shift",
+    "whereUsed": ["VFXManager.play_phase_shift", "BossController.phase"],
+    "provider": "nvidia-image",
+    "modelId": "black-forest-labs/flux.1-dev",
+    "status": "QA_REVIEW"
+  },
+  {
+    "id": "area_burst",
+    "path": "assets/vfx/area_burst.png",
+    "effectType": "area_burst",
+    "whereUsed": ["BossController.area_burst", "EnemyController.area_burst"],
+    "provider": "nvidia-image",
+    "modelId": "black-forest-labs/flux.1-dev",
+    "status": "QA_REVIEW"
+  },
+  {
+    "id": "slam_shock",
+    "path": "assets/vfx/slam_shock.png",
+    "effectType": "ground_shock",
+    "whereUsed": ["BossController.slam", "GroundSlamAbility"],
+    "provider": "nvidia-image",
+    "modelId": "black-forest-labs/flux.1-dev",
+    "status": "QA_REVIEW"
+  }
+]

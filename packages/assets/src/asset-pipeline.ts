@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, sep } from 'node:path';
-import type { GameDNA, ArtBible } from '@metroforge/schemas';
+import type { GameDNA, ArtBible, StyleBible } from '@metroforge/schemas';
 import {
   generateProceduralSprite,
   generateTilesetSource,
@@ -9,6 +9,7 @@ import {
   generateAttackSheet,
   generateDeathSheet,
   generateVfxTexture,
+  knockoutVfxBackground,
   type SpriteSpec,
   type VfxSpec,
 } from './png.js';
@@ -99,12 +100,28 @@ export function compiledSpriteFrameSize(kind: CompiledSpriteKind): { width: numb
   }
 }
 
+function applyStylePrompt(
+  styleBible: StyleBible | undefined,
+  capability: string,
+  prompt: string,
+): string {
+  if (!styleBible) return prompt;
+  const prefix = styleBible.promptPrefixes?.[capability];
+  const palette = styleBible.palette.map((swatch) => swatch.hex).join(' ');
+  const head = [prefix, styleBible.renderingStyle, styleBible.lighting, palette && `palette ${palette}`]
+    .filter(Boolean)
+    .join(', ');
+  return head ? `${head}. ${prompt}` : prompt;
+}
+
 export interface AssetPipelineOptions {
   gameDna: GameDNA;
   profile: GenerationProfile;
   seed: number;
   outputDir: string;
   artBible?: ArtBible;
+  /** Compact visual spec derived from ArtBible — prepended to image prompts when present. */
+  styleBible?: StyleBible;
   comfyuiUrl?: string;
   diffusersPython?: string;
   diffusersModelId?: string;
@@ -201,13 +218,17 @@ function buildBossImagePrompt(
   return `${gameDna.identity.visualStyle} pixel art game boss sprite, ${role}, ${boss.lore ?? gameDna.narrative.centralConflict}${attackHint}, ${gameDna.identity.tone} tone`;
 }
 
-const VFX_TEXTURES: VfxSpec[] = [
+export const VFX_TEXTURES: VfxSpec[] = [
   {
     id: 'hit_spark',
     size: 16,
     core: [255, 240, 120, 255],
     edge: [255, 80, 40, 255],
     style: 'burst',
+    effectType: 'impact_spark',
+    whereUsed: ['HealthComponent.damage', 'EnemyController.melee', 'WeakFloor.break'],
+    prompt:
+      'tiny yellow-white hit spark burst, sharp shards, single combat impact flash, no character',
   },
   {
     id: 'death_puff',
@@ -215,6 +236,9 @@ const VFX_TEXTURES: VfxSpec[] = [
     core: [210, 210, 230, 220],
     edge: [90, 90, 110, 0],
     style: 'burst',
+    effectType: 'death_puff',
+    whereUsed: ['HealthComponent.died'],
+    prompt: 'ashen smoke puff, evaporating silhouette, death dissipate cloud, no body, no skull',
   },
   {
     id: 'dash_trail',
@@ -222,6 +246,9 @@ const VFX_TEXTURES: VfxSpec[] = [
     core: [120, 200, 255, 220],
     edge: [40, 120, 255, 0],
     style: 'streak',
+    effectType: 'motion_streak',
+    whereUsed: ['AirDashAbility', 'DashAbility', 'GrappleAbility'],
+    prompt: 'horizontal cyan motion streak, speed trail smear, dashed energy afterimage',
   },
   {
     id: 'pickup_spark',
@@ -229,6 +256,9 @@ const VFX_TEXTURES: VfxSpec[] = [
     core: [255, 220, 80, 255],
     edge: [255, 255, 200, 0],
     style: 'burst',
+    effectType: 'item_sparkle',
+    whereUsed: ['ItemPickup.collect'],
+    prompt: 'gold pickup sparkle, four-point star glint, treasure collect twinkle',
   },
   {
     id: 'ability_unlock',
@@ -236,6 +266,9 @@ const VFX_TEXTURES: VfxSpec[] = [
     core: [140, 220, 255, 255],
     edge: [255, 255, 255, 0],
     style: 'burst',
+    effectType: 'ability_unlock',
+    whereUsed: ['VFXManager.ability_acquired', 'PhaseAbility'],
+    prompt: 'pale cyan ability unlock burst, concentric energy rings, power-up nova',
   },
   {
     id: 'boss_phase_shift',
@@ -243,6 +276,9 @@ const VFX_TEXTURES: VfxSpec[] = [
     core: [255, 120, 220, 255],
     edge: [120, 40, 180, 0],
     style: 'burst',
+    effectType: 'phase_shift',
+    whereUsed: ['VFXManager.play_phase_shift', 'BossController.phase'],
+    prompt: 'magenta-violet boss phase-shift shockwave, arcane ring flare, no creature',
   },
   {
     id: 'area_burst',
@@ -250,6 +286,9 @@ const VFX_TEXTURES: VfxSpec[] = [
     core: [255, 180, 60, 255],
     edge: [255, 60, 20, 0],
     style: 'burst',
+    effectType: 'area_burst',
+    whereUsed: ['BossController.area_burst', 'EnemyController.area_burst'],
+    prompt: 'orange radial explosion burst, fire halo, area-of-effect blast, no crater scenery',
   },
   {
     id: 'slam_shock',
@@ -257,6 +296,9 @@ const VFX_TEXTURES: VfxSpec[] = [
     core: [220, 220, 255, 240],
     edge: [80, 80, 140, 0],
     style: 'streak',
+    effectType: 'ground_shock',
+    whereUsed: ['BossController.slam', 'GroundSlamAbility'],
+    prompt: 'ground slam shockwave crescent, white-blue impact ring, dirt-free energy wave',
   },
 ];
 
@@ -512,9 +554,12 @@ export class AssetPipeline {
       warnings.push('VLM critic unavailable — using deterministic asset checks');
     }
 
-    const playerPrompt =
+    const playerPrompt = applyStylePrompt(
+      options.styleBible,
+      'CHARACTER',
       options.artBible?.characterGuidelines.player ??
-      `${options.gameDna.identity.visualStyle} player character ${options.gameDna.narrative.protagonist}`;
+        `${options.gameDna.identity.visualStyle} player character ${options.gameDna.narrative.protagonist}`,
+    );
 
     options.onTaskStarted?.('player_sprite', 'Generating player character sprite');
     checkCancelled();
@@ -621,7 +666,11 @@ export class AssetPipeline {
         path: `assets/enemies/${enemyId}.png`,
         spec: enemySpec,
         profile: 'ENEMY',
-        prompt: options.artBible?.characterGuidelines.enemy ?? `enemy creature biome ${i % defaults.biomes}`,
+        prompt: applyStylePrompt(
+          options.styleBible,
+          'ENEMY',
+          options.artBible?.characterGuidelines.enemy ?? `enemy creature biome ${i % defaults.biomes}`,
+        ),
         imageGen,
         negativePrompt,
         vlm,
@@ -718,7 +767,11 @@ export class AssetPipeline {
         path: `assets/npcs/${npcId}.png`,
         spec: npcSpec,
         profile: 'CHARACTER',
-        prompt: buildNpcImagePrompt(npc, options.gameDna, options.artBible),
+        prompt: applyStylePrompt(
+          options.styleBible,
+          'CHARACTER',
+          buildNpcImagePrompt(npc, options.gameDna, options.artBible),
+        ),
         imageGen,
         negativePrompt,
         vlm,
@@ -774,7 +827,11 @@ export class AssetPipeline {
         `Generating boss ${bi + 1} / ${bossList.length}: ${boss.name ?? bossId}`,
       );
 
-      const bossPrompt = buildBossImagePrompt(boss, options.gameDna, options.artBible, isFinal);
+      const bossPrompt = applyStylePrompt(
+        options.styleBible,
+        'BOSS',
+        buildBossImagePrompt(boss, options.gameDna, options.artBible, isFinal),
+      );
 
       const bossAsset = await this.generateSprite({
         id: bossId,
@@ -876,9 +933,12 @@ export class AssetPipeline {
         if (imageGen) {
           try {
             checkCancelled();
-            const tilePrompt =
+            const tilePrompt = applyStylePrompt(
+              options.styleBible,
+              'TILE_SOURCE',
               options.artBible?.environmentGuidelines.tileStyle ??
-              `${options.gameDna.identity.visualStyle} biome ${b} ground and wall tiles`;
+                `${options.gameDna.identity.visualStyle} biome ${b} ground and wall tiles`,
+            );
             const result = await imageGen.generateImage({
               profile: 'TILE_SOURCE',
               prompt: sanitizeImagePromptText(tilePrompt),
@@ -976,23 +1036,19 @@ export class AssetPipeline {
         VFX_TEXTURES.length,
         `Generating VFX ${vi + 1} / ${VFX_TEXTURES.length}: ${vfx.id}`,
       );
-      const vfxPath = `assets/vfx/${vfx.id}.png`;
-      const cachedVfx = options.resume ? loadCheckpoint(options.outputDir, vfxPath) : null;
-      recordAsset(
-        {
-          id: vfx.id,
-          path: vfxPath,
-          buffer: cachedVfx ?? generateVfxTexture(vfx),
-          provider: cachedVfx ? 'checkpoint' : 'procedural',
-          fallbackGenerated: !cachedVfx,
-          critiquePassed: true,
-          critiqueScore: 100,
-        },
-        'vfx',
-      );
-      if (!cachedVfx) {
-        writeCheckpoint(options.outputDir, vfxPath, assets[assets.length - 1]!.buffer);
-      }
+      const vfxAsset = await this.generateVfxTextureAsset({
+        spec: vfx,
+        outputDir: options.outputDir,
+        seed: options.seed + vi * 7919,
+        imageGen,
+        styleBible: options.styleBible,
+        artBible: options.artBible,
+        gameDna: options.gameDna,
+        resume: options.resume,
+        signal: options.signal,
+        allowProceduralFallback: true,
+      });
+      recordAsset(vfxAsset, 'vfx');
     }
 
     return {
@@ -1128,6 +1184,137 @@ export class AssetPipeline {
       fallbackGenerated: !sourcePng,
       critiquePassed: critique.passed,
       critiqueScore: critique.score,
+    });
+  }
+
+  /**
+   * Gameplay VFX through the same ImageProviderRegistry path as characters.
+   * NVIDIA flux.1-dev (or Comfy/Diffusers) when available; procedural only as explicit fallback.
+   */
+  private async generateVfxTextureAsset(opts: {
+    spec: VfxSpec;
+    outputDir: string;
+    seed: number;
+    imageGen: ImageGenerator | null;
+    styleBible?: StyleBible;
+    artBible?: ArtBible;
+    gameDna: GameDNA;
+    resume?: boolean;
+    signal?: AbortSignal;
+    allowProceduralFallback?: boolean;
+    extraDescription?: string;
+  }): Promise<GeneratedAsset> {
+    const vfxPath = `assets/vfx/${opts.spec.id}.png`;
+    if (opts.resume) {
+      const cached = loadCheckpoint(opts.outputDir, vfxPath);
+      if (cached) {
+        return withMaturity({
+          id: opts.spec.id,
+          path: vfxPath,
+          buffer: cached,
+          provider: 'checkpoint',
+          fallbackGenerated: false,
+          critiquePassed: true,
+          critiqueScore: 100,
+        });
+      }
+    }
+
+    const allowProceduralFallback = opts.allowProceduralFallback !== false;
+    const size = opts.spec.size;
+    let buffer = generateVfxTexture(opts.spec);
+    let provider = 'procedural';
+    let fallback = true;
+    let modelId: string | undefined;
+
+    const prompt = applyStylePrompt(
+      opts.styleBible,
+      'VFX_TEXTURE',
+      [
+        'isolated pixel art game VFX sprite',
+        opts.spec.prompt ?? opts.spec.id,
+        opts.extraDescription,
+        'single centered effect, no character, no scenery, no UI, no letters',
+        'solid chroma-key magenta background #FF00FF, transparent silhouette intended',
+        opts.gameDna.identity.visualStyle,
+        opts.styleBible?.VFXStyle,
+      ]
+        .filter(Boolean)
+        .join(', '),
+    );
+    const negativePrompt = [
+      ...(opts.artBible?.negativePrompts ?? []),
+      ...(opts.styleBible?.negativePrompts ?? []),
+      'character',
+      'creature',
+      'landscape',
+      'text',
+      'watermark',
+      'photorealistic',
+    ].join(', ');
+
+    if (opts.imageGen) {
+      try {
+        throwIfCancelled(opts.signal);
+        const result = await opts.imageGen.generateImage({
+          profile: 'VFX_TEXTURE',
+          prompt: sanitizeImagePromptText(prompt),
+          negativePrompt: sanitizeImagePromptText(negativePrompt),
+          width: 1024,
+          height: 1024,
+          seed: opts.seed,
+          signal: opts.signal,
+        });
+        buffer = knockoutVfxBackground(result.image);
+        provider = result.provider;
+        modelId = result.modelId;
+        fallback = false;
+      } catch (err) {
+        if (!allowProceduralFallback) {
+          const msg = err instanceof Error ? err.message : String(err);
+          throw new Error(`VFX image generation failed (${opts.imageGen.id}): ${msg}`);
+        }
+      }
+    } else if (!allowProceduralFallback) {
+      throw new Error(
+        'VFX image generation requires a healthy image provider (NVIDIA / ComfyUI / Diffusers) — none available',
+      );
+    }
+
+    let sourcePath: string | undefined;
+    if (!fallback) {
+      sourcePath = derivedSourceRelPath(vfxPath);
+      writeCheckpoint(opts.outputDir, sourcePath, buffer);
+    }
+
+    const compiled = fallback
+      ? buffer
+      : this.pixelArt.process(buffer, {
+          targetWidth: size,
+          targetHeight: size,
+          tileSize: Math.min(8, size),
+          alphaThreshold: 32,
+        }).buffer;
+    const det = runDeterministicAssetChecks(compiled, size, size);
+    writeCheckpoint(opts.outputDir, vfxPath, compiled);
+
+    return withMaturity({
+      id: opts.spec.id,
+      path: vfxPath,
+      buffer: compiled,
+      provider,
+      modelId,
+      fallbackGenerated: fallback,
+      critiquePassed: det.passed,
+      critiqueScore: det.passed ? 85 : 40,
+      sourceType: fallback ? undefined : 'compiled',
+      sourcePath,
+      fallbackDepth: fallback ? 1 : 0,
+      fallbackReason: fallback ? 'Image provider unavailable or failed — procedural placeholder' : undefined,
+      selectedProvider: provider,
+      selectedModel: modelId,
+      requestedCapability: 'IMAGE_GENERATION',
+      productionAllowed: !fallback,
     });
   }
 
@@ -1343,6 +1530,7 @@ export class AssetPipeline {
   async generateManual(opts: {
     gameDna: GameDNA;
     artBible?: ArtBible;
+    styleBible?: StyleBible;
     description: string;
     assetType: string;
     assetId: string;
@@ -1374,6 +1562,27 @@ export class AssetPipeline {
       hardwareProfile: opts.hardwareProfile,
       providerEnabled: opts.providerEnabled,
     });
+
+    if (opts.assetType === 'vfx_texture') {
+      const spec = VFX_TEXTURES.find((v) => v.id === opts.assetId) ?? {
+        id: opts.assetId,
+        size: 24,
+        core: [255, 240, 180, 255] as [number, number, number, number],
+        edge: [255, 80, 40, 0] as [number, number, number, number],
+        style: 'burst' as const,
+        prompt: opts.description,
+      };
+      return this.generateVfxTextureAsset({
+        spec: { ...spec, prompt: opts.description || spec.prompt },
+        outputDir: opts.outputDir,
+        seed: opts.seed,
+        imageGen,
+        styleBible: opts.styleBible,
+        artBible: opts.artBible,
+        gameDna: opts.gameDna,
+        allowProceduralFallback: false,
+      });
+    }
     const vlm = createVisionCritic({
       ollamaBaseUrl: opts.ollamaBaseUrl,
       nvidiaApiKey: opts.nvidiaApiKey,

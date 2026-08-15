@@ -2,7 +2,7 @@ import { existsSync, readFileSync, mkdirSync, copyFileSync, readdirSync, writeFi
 import { join, basename } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { PRODUCT } from '@metroforge/shared';
-import { auditExportLicense } from '@metroforge/ai';
+import { auditExportLicense, buildAttributionsMarkdown, repairManifestArtifactLicenses } from '@metroforge/ai';
 import type { LicenseStatus } from '@metroforge/ai';
 
 export interface ExportManifest {
@@ -161,16 +161,24 @@ export function exportProject(options: ExportProjectOptions): ExportProjectResul
   }
 
   const artifacts = (generationManifest?.artifacts as Array<Record<string, unknown>> | undefined) ?? [];
+  const repaired = repairManifestArtifactLicenses(artifacts);
+  if (repaired.repaired > 0 && generationManifest) {
+    writeFileSync(
+      join(projectPath, 'generation_manifest.json'),
+      JSON.stringify({ ...generationManifest, artifacts: repaired.artifacts }, null, 2),
+    );
+  }
   const providers = [
     ...new Set(
-      artifacts
+      repaired.artifacts
         .map((a) => String(a.provider ?? ''))
         .filter(Boolean),
     ),
   ];
-  const fallbackArtifactCount = artifacts.filter((a) => a.fallbackGenerated === true).length;
-  const manualArtifactCount = artifacts.filter((a) => a.manual === true).length;
-  const licenseAudit = auditExportLicense(artifacts);
+  const fallbackArtifactCount = repaired.artifacts.filter((a) => a.fallbackGenerated === true).length;
+  const manualArtifactCount = repaired.artifacts.filter((a) => a.manual === true).length;
+  const licenseAudit = auditExportLicense(repaired.artifacts);
+  writeFileSync(join(projectPath, 'ATTRIBUTIONS.md'), buildAttributionsMarkdown(licenseAudit));
 
   if (requireCommercialSafe && !licenseAudit.commercialSafe) {
     writeLicenseReport(projectPath, licenseAudit, {

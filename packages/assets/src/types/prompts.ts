@@ -8,6 +8,8 @@ export function profilePrefix(profile: ImageGenerationProfile): string {
     TILE_SOURCE: 'seamless pixel art game tileset texture, top-down,',
     ENVIRONMENT: 'pixel art game environment background, parallax,',
     ICON: 'pixel art game item icon, centered,',
+    VFX_TEXTURE:
+      'isolated pixel art game VFX sprite, centered single effect, transparent silhouette, chroma-key magenta background,',
   };
   return map[profile] ?? 'pixel art game asset,';
 }

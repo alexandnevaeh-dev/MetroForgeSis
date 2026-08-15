@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ArtBibleSchema, AudioBibleSchema, DesignBibleSchema } from '../src/bibles.js';
+import { ArtBibleSchema, AudioBibleSchema, DesignBibleSchema, StyleBibleSchema } from '../src/bibles.js';
 
 describe('ArtBibleSchema', () => {
   it('validates art bible', () => {
@@ -78,5 +78,27 @@ describe('DesignBibleSchema', () => {
     };
     expect(DesignBibleSchema.parse(bible)).toEqual(bible);
     expect(AudioBibleSchema.parse(bible.audio)).toEqual(bible.audio);
+  });
+});
+
+describe('StyleBibleSchema', () => {
+  it('validates a persisted style bible', () => {
+    const style = {
+      styleId: 'dark-pixel-art',
+      renderingStyle: 'dark pixel art',
+      pixelResolution: 16,
+      palette: [{ name: 'Shadow', hex: '#141820', usage: 'backgrounds' }],
+      outlineRules: '16px',
+      lighting: 'low key',
+      materials: '16px tiles',
+      characterScale: '16px-grid readable silhouette',
+      spritePerspective: 'side view',
+      environmentDensity: '2 layers',
+      VFXStyle: 'pixel sparks',
+      UIStyle: 'minimal',
+      promptPrefixes: { CHARACTER: 'pixel art character,' },
+      negativePrompts: ['blurry'],
+    };
+    expect(StyleBibleSchema.parse(style)).toEqual(style);
   });
 });

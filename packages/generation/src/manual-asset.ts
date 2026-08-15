@@ -1,7 +1,8 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { AssetPipeline, type GeneratedAsset } from '@metroforge/assets';
-import { GameDNASchema, type DesignBible } from '@metroforge/schemas';
+import { licenseFieldsForProvider } from '@metroforge/ai';
+import { GameDNASchema, type DesignBible, type StyleBible } from '@metroforge/schemas';
 import { loadConfig } from '@metroforge/shared';
 import { recordAssetVersion } from './asset-history.js';
 
@@ -64,6 +65,8 @@ function inferAssetPath(assetType: ManualAssetType, assetId: string): string {
     case 'ui_icon':
     case 'ui_panel':
       return `assets/ui/${assetId}.png`;
+    case 'vfx_texture':
+      return `assets/vfx/${assetId}.png`;
     default:
       return `assets/generated/${assetId}.png`;
   }
@@ -98,6 +101,15 @@ export async function generateManualAsset(request: ManualAssetRequest): Promise<
       warnings.push('design_bible.json unreadable — using Game DNA style only');
     }
   }
+  let styleBible: StyleBible | undefined;
+  const stylePath = join(request.projectPath, 'style_bible.json');
+  if (existsSync(stylePath)) {
+    try {
+      styleBible = JSON.parse(readFileSync(stylePath, 'utf-8')) as StyleBible;
+    } catch {
+      warnings.push('style_bible.json unreadable — using Game DNA style only');
+    }
+  }
 
   const config = loadConfig();
   const assetId = request.assetId ?? slugifyAssetId(request.description);
@@ -110,6 +122,7 @@ export async function generateManualAsset(request: ManualAssetRequest): Promise<
     asset = await pipeline.generateManual({
       gameDna,
       artBible,
+      styleBible,
       description: request.description,
       assetType: request.assetType,
       assetId,
@@ -167,6 +180,7 @@ export async function generateManualAsset(request: ManualAssetRequest): Promise<
       };
       const artifacts = manifest.artifacts ?? [];
       const idx = artifacts.findIndex((a) => a.id === assetId);
+      const license = licenseFieldsForProvider(asset.provider);
       const entry = {
         id: assetId,
         path: relPath,
@@ -180,6 +194,11 @@ export async function generateManualAsset(request: ManualAssetRequest): Promise<
         productionReady: asset.productionReady,
         sourceType: asset.sourceType,
         sourcePath: asset.sourcePath,
+        selectedProvider: asset.selectedProvider ?? asset.provider,
+        selectedModel: asset.selectedModel ?? asset.modelId,
+        requestedCapability: asset.requestedCapability ?? 'IMAGE_GENERATION',
+        productionAllowed: asset.productionAllowed,
+        ...license,
         manual: true,
         prompt: request.description,
         seed,

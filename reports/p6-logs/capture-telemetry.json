@@ -1,0 +1,37 @@
+{
+  "strategy": "windowed_gpu",
+  "attempts": [
+    {
+      "strategy": "headless",
+      "startedAt": "2026-08-15T08:54:22.637Z",
+      "elapsedMs": 9702,
+      "exitCode": 0,
+      "textureNull": true,
+      "screenshotWritten": false,
+      "decodeOk": false,
+      "blank": true,
+      "killed": false
+    },
+    {
+      "strategy": "windowed_gpu",
+      "startedAt": "2026-08-15T08:54:29.670Z",
+      "elapsedMs": 6941,
+      "exitCode": 1,
+      "textureNull": false,
+      "screenshotWritten": true,
+      "decodeOk": true,
+      "blank": false,
+      "uniqueColors": 30,
+      "lumaStdDev": 2.4219035033793697,
+      "killed": false
+    }
+  ],
+  "shots": [
+    "screenshot_gameplay.png",
+    "screenshot_spawn.png",
+    "screenshot_exploration.png",
+    "screenshot_combat.png",
+    "screenshot_ability.png",
+    "screenshot_boss.png"
+  ]
+}

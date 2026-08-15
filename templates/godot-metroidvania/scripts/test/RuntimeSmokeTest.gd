@@ -58,6 +58,7 @@ func _ready() -> void:
 		_check("player_has_health_component", player.get_node_or_null("HealthComponent") != null)
 		_check("player_has_hurtbox", player.get_node_or_null("HurtboxComponent") != null)
 		_check("player_has_attack_hitbox", player.get_node_or_null("AttackHitbox") != null)
+		await _capture_named_screenshot("spawn")
 
 		var player_sprite: AnimatedSprite2D = player.get_node_or_null("Sprite")
 		if player_sprite and player_sprite.sprite_frames:
@@ -68,6 +69,7 @@ func _ready() -> void:
 			_check("player_has_hurt_animation", false)
 
 	_check_ability_pickup(player)
+	await _capture_named_screenshot("ability")
 	_check_npc_interaction(player)
 	await _check_boss_victory_flow()
 	await _check_quest_system(world)
@@ -77,10 +79,13 @@ func _ready() -> void:
 	_check_currency_hud(world)
 	_check_hud_minimap(world)
 	await _check_hud_quest_tracker(world)
+	await _capture_named_screenshot("exploration")
 	await _capture_gameplay_screenshot()
 	await _check_enemy_combat(player)
+	await _capture_named_screenshot("combat")
 	_check_boss_placement()
 	await _check_boss_attack_variety(player)
+	await _capture_named_screenshot("boss")
 	await _check_boss_weakness(player)
 	await _check_ability_gated_transition(player, world)
 
@@ -984,25 +989,46 @@ func _check_hud_quest_tracker(world: Node) -> void:
 
 
 ## Captures the live viewport after HUD + world are on screen. Headless Godot often yields a
-## black frame; that is a soft-fail here. The TypeScript scene critic SKIPPED-handles blanks
-## and scores structured frames in `qa/screenshot_gameplay.png`.
-func _capture_gameplay_screenshot() -> void:
+## black frame (`texture_2d_get` null on dummy renderer); that is a soft-fail here. The QA
+## validator retries with a windowed GPU capture strategy when RELEASE_CANDIDATE requires evidence.
+func _capture_named_screenshot(shot_id: String, hard: bool = false) -> bool:
 	await get_tree().process_frame
-	await get_tree().process_frame
+	var headless := DisplayServer.get_name() == "headless"
+	if not headless:
+		await RenderingServer.frame_post_draw
+		await get_tree().process_frame
+		RenderingServer.force_draw(true)
+		await RenderingServer.frame_post_draw
+	else:
+		await get_tree().process_frame
+
 	var tex := get_viewport().get_texture()
 	if tex == null:
-		_check_soft("gameplay_screenshot_captured", false)
-		return
+		print("CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=%s" % shot_id)
+		if hard:
+			_check("gameplay_screenshot_captured", false)
+		else:
+			_check_soft("gameplay_screenshot_%s" % shot_id, false)
+		return false
 	var img: Image = tex.get_image()
 	if img == null or img.get_width() < 8 or img.get_height() < 8:
-		_check_soft("gameplay_screenshot_captured", false)
-		return
+		print("CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=%s empty_image" % shot_id)
+		if hard:
+			_check_soft("gameplay_screenshot_captured", false)
+		else:
+			_check_soft("gameplay_screenshot_%s" % shot_id, false)
+		return false
 
 	var qa_dir := ProjectSettings.globalize_path("res://qa")
 	DirAccess.make_dir_recursive_absolute(qa_dir)
-	var path := qa_dir.path_join("screenshot_gameplay.png")
+	var path := qa_dir.path_join("screenshot_%s.png" % shot_id)
 	var err := img.save_png(path)
-	_check("gameplay_screenshot_captured", err == OK)
+	if shot_id == "gameplay" or shot_id == "exploration":
+		img.save_png(qa_dir.path_join("screenshot_gameplay.png"))
+	if hard:
+		_check("gameplay_screenshot_captured", err == OK)
+	else:
+		_check_soft("gameplay_screenshot_%s" % shot_id, err == OK)
 
 	var distinct := {}
 	var step_x: int = maxi(1, int(img.get_width() / 16))
@@ -1012,7 +1038,21 @@ func _capture_gameplay_screenshot() -> void:
 			var c := img.get_pixel(x, y)
 			var key := "%d_%d_%d" % [int(c.r * 15.0), int(c.g * 15.0), int(c.b * 15.0)]
 			distinct[key] = true
-	_check_soft("gameplay_screenshot_has_visible_pixels", distinct.size() >= 4)
+	_check_soft("gameplay_screenshot_%s_visible" % shot_id, distinct.size() >= 4)
+	var strategy := OS.get_environment("METROFORGE_CAPTURE_STRATEGY")
+	if strategy.is_empty():
+		strategy = "headless" if DisplayServer.get_name() == "headless" else "windowed_gpu"
+	print("CAPTURE_TELEMETRY shot=%s strategy=%s colors=%d size=%dx%d" % [
+		shot_id, strategy, distinct.size(), img.get_width(), img.get_height(),
+	])
+	return err == OK
+
+
+func _capture_gameplay_screenshot() -> void:
+	if OS.get_environment("METROFORGE_CAPTURE") == "1":
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+		DisplayServer.window_set_size(Vector2i(960, 540))
+	await _capture_named_screenshot("gameplay", true)
 
 
 ## Proves EnemyController actually reads real generated enemy data (data/enemies/enemies.json)

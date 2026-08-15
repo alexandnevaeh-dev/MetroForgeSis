@@ -1,0 +1,294 @@
+{
+  "metroforgeVersion": "0.1.0",
+  "generatorVersion": "0.1.0",
+  "releaseDecision": "RELEASE CANDIDATE PASS",
+  "p7Started": false,
+  "checkpointCommit": "630ad61401a98d1cb60d17d9b854ba39e2c7cddf",
+  "timestamp": "2026-08-15T09:20:00.000Z",
+  "project": {
+    "id": "proj_mstyh6hj_vu66mi",
+    "jobId": "job_mstyh6i1_xwjtfc",
+    "slug": "heart-engine-release-candidate",
+    "title": "Heart of the Drowned",
+    "path": "GeneratedGames/heart-engine-release-candidate",
+    "archetype": "SIDE_VIEW_METROIDVANIA",
+    "profile": "RELEASE_CANDIDATE",
+    "mode": "HYBRID_FREE",
+    "seed": 184729,
+    "hardwareProfile": "LOW_RESOURCE",
+    "prompt": "Create a dark fantasy Metroidvania set inside a drowned mechanical kingdom buried beneath a storm-wracked marsh. The player is a relic hunter searching for the Heart Engine, an ancient machine capable of restoring the dying surface world. The kingdom is divided into distinct interconnected regions with ability-gated traversal, meaningful backtracking, environmental storytelling, optional secrets, NPC quests, escalating enemies, minibosses, and a multi-phase final boss.\nThe game must include several traversal abilities that materially change exploration, including an air dash, wall traversal ability, water traversal ability, and one unusual world-interaction ability. Combat should use a fast melee weapon plus unlockable secondary abilities. Include checkpoints, healing, collectible upgrades, secrets, progression locks, a functional save system, clear player onboarding, and an actual ending."
+  },
+  "duration": {
+    "wallClockMs": 558457,
+    "startedAt": "2026-08-15T05:49:03.144Z",
+    "completedAt": "2026-08-15T05:57:56.836Z",
+    "note": "Original generate wall clock. P6.5 closure added VFX NVIDIA, license repair, windowed capture, playtest rerun, commercial-safe export."
+  },
+  "providers": {
+    "healthNote": "HYBRID_FREE + LOW_RESOURCE. NVIDIA image used for 34 assets (flux.1-dev): 26 character/tileset + 8 VFX. Local ollama/ffmpeg CLI binaries not on PATH. No API keys recorded.",
+    "used": [
+      {
+        "capability": "JSON_GENERATION",
+        "source": "ai",
+        "task": "game_dna"
+      },
+      {
+        "capability": "IMAGE_GENERATION",
+        "provider": "nvidia-image",
+        "model": "black-forest-labs/flux.1-dev",
+        "count": 34
+      },
+      {
+        "capability": "IMAGE_COMPILE",
+        "provider": "pixel-art-processor",
+        "count": 449,
+        "note": "Inherits nvidia-image registry license from source artifacts"
+      },
+      {
+        "capability": "IMAGE_FALLBACK",
+        "provider": "procedural",
+        "note": "Audio remains procedural. VFX no longer PLACEHOLDER."
+      }
+    ]
+  },
+  "world": {
+    "regions": 6,
+    "biomes": 6,
+    "rooms": 45,
+    "roomScenes": 45,
+    "enemies": 10,
+    "bosses": 4,
+    "bossIds": ["boss_000", "boss_001", "boss_002", "boss_final"],
+    "finalBossPhases": 2,
+    "npcs": 5,
+    "quests": 4,
+    "abilities": ["air_dash", "wall_slide", "wall_jump", "swim", "phase"]
+  },
+  "progressionProof": {
+    "path": "GeneratedGames/heart-engine-release-candidate/progression_proof.json",
+    "passed": true,
+    "startReachable": true,
+    "bossReachable": true,
+    "criticalPathReachable": true,
+    "victoryAchievable": true,
+    "noHardCycle": true,
+    "selfLocks": [],
+    "unknownAbilities": [],
+    "traceSteps": 54
+  },
+  "playtest": {
+    "personaPlanned": "critical_path",
+    "routeReachable": true,
+    "transitionsPlanned": 30,
+    "transitionsCompleted": 30,
+    "inputSimulationOccurred": true,
+    "telemetryEmitted": true,
+    "ranVia": "Godot PlaytestRunner.tscn via Node spawnSync --quit-after 360000",
+    "result": "PASS",
+    "passedCount": 8,
+    "failedCount": 0,
+    "passed": [
+      "world_scene_loads",
+      "playtest_route_file_present",
+      "playtest_persona_configured",
+      "playtest_used_input_simulation",
+      "playtest_completed_transitions",
+      "playtest_reached_victory_flow",
+      "playtest_victory_state_or_boss_defeated",
+      "playtest_telemetry_emitted"
+    ],
+    "failed": [],
+    "failureReason": null,
+    "elapsedMs": 112927,
+    "bossFightMs": 4090,
+    "attacksPerformed": 54,
+    "abilitiesAfterRun": ["air_dash", "swim"],
+    "victoryState": true,
+    "gameComplete": true,
+    "exitCode": 0,
+    "telemetryFiles": {
+      "playtest_telemetry_json": true,
+      "telemetry_jsonl": true
+    }
+  },
+  "assets": {
+    "total": 499,
+    "nvidiaImage": 34,
+    "pixelArtProcessor": 449,
+    "procedural": 16,
+    "placeholderMaturity": 0,
+    "placeholderRemaining": [],
+    "vfx": [
+      {
+        "id": "hit_spark",
+        "path": "assets/vfx/hit_spark.png",
+        "effectType": "impact_spark",
+        "whereUsed": ["HealthComponent.damage", "EnemyController.melee", "WeakFloor.break"],
+        "provider": "nvidia-image",
+        "status": "QA_REVIEW"
+      },
+      {
+        "id": "death_puff",
+        "path": "assets/vfx/death_puff.png",
+        "effectType": "death_puff",
+        "whereUsed": ["HealthComponent.died"],
+        "provider": "nvidia-image",
+        "status": "QA_REVIEW"
+      },
+      {
+        "id": "dash_trail",
+        "path": "assets/vfx/dash_trail.png",
+        "effectType": "motion_streak",
+        "whereUsed": ["AirDashAbility", "DashAbility", "GrappleAbility"],
+        "provider": "nvidia-image",
+        "status": "QA_REVIEW"
+      },
+      {
+        "id": "pickup_spark",
+        "path": "assets/vfx/pickup_spark.png",
+        "effectType": "item_sparkle",
+        "whereUsed": ["ItemPickup.collect"],
+        "provider": "nvidia-image",
+        "status": "QA_REVIEW"
+      },
+      {
+        "id": "ability_unlock",
+        "path": "assets/vfx/ability_unlock.png",
+        "effectType": "ability_unlock",
+        "whereUsed": ["VFXManager.ability_acquired", "PhaseAbility"],
+        "provider": "nvidia-image",
+        "status": "QA_REVIEW"
+      },
+      {
+        "id": "boss_phase_shift",
+        "path": "assets/vfx/boss_phase_shift.png",
+        "effectType": "phase_shift",
+        "whereUsed": ["VFXManager.play_phase_shift", "BossController.phase"],
+        "provider": "nvidia-image",
+        "status": "QA_REVIEW"
+      },
+      {
+        "id": "area_burst",
+        "path": "assets/vfx/area_burst.png",
+        "effectType": "area_burst",
+        "whereUsed": ["BossController.area_burst", "EnemyController.area_burst"],
+        "provider": "nvidia-image",
+        "status": "QA_REVIEW"
+      },
+      {
+        "id": "slam_shock",
+        "path": "assets/vfx/slam_shock.png",
+        "effectType": "ground_shock",
+        "whereUsed": ["BossController.slam", "GroundSlamAbility"],
+        "provider": "nvidia-image",
+        "status": "QA_REVIEW"
+      }
+    ],
+    "nvidiaCritical": {
+      "player": true,
+      "enemies": 10,
+      "npcs": 5,
+      "bosses": 4,
+      "tilesets": [0, 1, 2, 3, 4, 5],
+      "vfx": 8
+    },
+    "environmentAssetsStatus": "VFX regenerated nvidia-image QA_REVIEW; shipping PLACEHOLDER count 0; player/tilesets not replaced",
+    "licenseCommercialSafe": true,
+    "licenseBlocked": 0,
+    "attributions": "GeneratedGames/heart-engine-release-candidate/ATTRIBUTIONS.md",
+    "styleBiblePath": "GeneratedGames/heart-engine-release-candidate/style_bible.json"
+  },
+  "godot": {
+    "projectGodotExists": true,
+    "canonicalResolverUsed": true,
+    "configuredExecutableExists": true,
+    "version": "4.7.1.stable.official.a13da4feb",
+    "import": "PASS",
+    "runtime": "PASS",
+    "runtimeDetail": "180/186 passed under headless dummy renderer; named extra screenshot checks SOFT_FAIL; windowed_gpu capture used for evidence",
+    "playtest": "PASS",
+    "windowedLaunch": "PASS",
+    "windowedEvidence": "Vulkan 1.3.215 - Forward+ - Using Device #0: Intel - Intel(R) UHD Graphics",
+    "reimportAfterVfx": "PASS"
+  },
+  "qa": {
+    "passed": true,
+    "validationLevel": "RUNTIME_VALIDATED",
+    "cliValidate": "PASSED (static + import + runtime + gameplay_screenshot_qa)",
+    "staticGates": "all passed in validate CLI",
+    "godotImports": "PASS",
+    "godotRuntime": "PASS",
+    "godotPlaytest": "PASS 8/8",
+    "gameplayScreenshot": "PASS with SOFT_FAIL critic (score 55, not blank); strategy windowed_gpu",
+    "screenshotGateRemoved": false,
+    "failedGates": []
+  },
+  "export": {
+    "success": true,
+    "path": "Exports/heart-engine-release-candidate/heart-engine-release-candidate-staging-2026-08-15T09-04-15-392Z",
+    "zip": "Exports/heart-engine-release-candidate/heart-engine-release-candidate-2026-08-15T09-04-15-392Z.zip",
+    "manifest": "GeneratedGames/heart-engine-release-candidate/export_manifest.json",
+    "commercialSafe": true,
+    "commercialSafeByFiat": false
+  },
+  "screenshots": {
+    "dir": "GeneratedGames/heart-engine-release-candidate/qa",
+    "strategy": "windowed_gpu",
+    "captured": [
+      "screenshot_gameplay.png",
+      "screenshot_spawn.png",
+      "screenshot_exploration.png",
+      "screenshot_combat.png",
+      "screenshot_ability.png",
+      "screenshot_boss.png"
+    ],
+    "gameplayPng": true,
+    "decodeOk": true,
+    "blank": false,
+    "uniqueColors": 30,
+    "occupancy": 0.8561111111111112,
+    "lumaStdDev": 2.4219035033793697,
+    "criticScore": 55,
+    "criticState": "SOFT_FAIL",
+    "skippedReason": null
+  },
+  "tests": {
+    "checkpointVitest": "54/54 passed (assembler, room-assembler, playtest-output, validator, playtest-persona, content)",
+    "p65Vitest": "46/46 passed (png knockout, license inherit, capture, export)",
+    "desktopTypecheck": "not re-run in P6.5 (UI not in this closure)"
+  },
+  "unresolvedIssues": [
+    "Screenshot spatial-structure SOFT_FAIL (score 55 / lumaStdDev 2.42) — evidence exists and is not blank",
+    "ollama/ffmpeg not on PATH — audio remains procedural",
+    "15 REJECTED death sheets remain REJECTED (not PLACEHOLDER)"
+  ],
+  "followUp": {
+    "at": "2026-08-15T09:20:00Z",
+    "godotVersion": "4.7.1.stable.official.a13da4feb",
+    "godotExecutable": "C:/Users/alexa/AppData/Local/MetroForge/Godot/Godot_v4.7.1-stable_win64.exe",
+    "regeneratedWholeGame": false,
+    "replacedPlayerOrTilesets": false,
+    "commands": [
+      {
+        "cmd": "generateManualAsset vfx_texture ×8 nvidia flux.1-dev",
+        "result": "8/8 nvidia-image QA_REVIEW fallbackGenerated=false; shipping PLACEHOLDER=0"
+      },
+      {
+        "cmd": "Godot --headless --import --quit",
+        "result": "exit 0; VFX reimported"
+      },
+      {
+        "cmd": "node apps/cli/dist/index.js validate heart-engine-release-candidate",
+        "result": "Validation PASSED including gameplay_screenshot_qa via windowed_gpu fallback"
+      },
+      {
+        "cmd": "Godot PlaytestRunner.tscn --quit-after 360000",
+        "result": "exit 0; 8/8 PASS; 30/30; victoryState true; elapsedMs 112927; bossFightMs 4090"
+      },
+      {
+        "cmd": "export --commercial-safe",
+        "result": "PASS; commercialSafe true; blocked 0"
+      }
+    ]
+  }
+}

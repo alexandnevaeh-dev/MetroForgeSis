@@ -1,7 +1,20 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { Command } from 'commander';
 import { loadConfig, resolveGeneratedGamesPath, resolveProjectPathSafe, UnsafeProjectPathError } from '@metroforge/shared';
 import { QAValidator, RepairEngineer } from '@metroforge/qa';
 import { ToolRegistry } from '@metroforge/tools';
+
+function isReleaseCandidate(projectPath: string): boolean {
+  try {
+    const dna = JSON.parse(readFileSync(join(projectPath, 'game_dna.json'), 'utf-8')) as {
+      profile?: string;
+    };
+    return dna.profile === 'RELEASE_CANDIDATE';
+  } catch {
+    return false;
+  }
+}
 
 export function registerValidateCommand(program: Command): void {
   program
@@ -47,10 +60,15 @@ export function registerValidateCommand(program: Command): void {
 
       const toolRegistry = new ToolRegistry();
       const tools = await toolRegistry.detectAll({ godotPath: config.godotExecutable });
-      const godotPath = config.godotExecutable ?? tools.find((t) => t.id === 'godot')?.path ?? null;
+      const godotPath =
+        config.godotExecutable && existsSync(config.godotExecutable)
+          ? config.godotExecutable
+          : (tools.find((t) => t.id === 'godot')?.path ?? null);
 
       let godotPassed = true;
       let runtimePassed = true;
+      let screenshotPassed = true;
+      const requiredShot = isReleaseCandidate(projectPath);
 
       if (godotPath) {
         const godotResult = validator.validateGodotHeadless(godotPath, projectPath);
@@ -63,6 +81,15 @@ export function registerValidateCommand(program: Command): void {
           runtimePassed = runtimeResult.passed;
           const runtimeIcon = runtimeResult.passed ? '✓' : '✗';
           console.log(`[${runtimeIcon}] ${runtimeResult.gate}: ${runtimeResult.message}`);
+
+          const shot = validator.validateGameplayScreenshot(projectPath, {
+            required: requiredShot,
+            godotPath,
+            headlessOutput: String(runtimeResult.details?.output ?? ''),
+          });
+          screenshotPassed = shot.passed;
+          const shotIcon = shot.passed ? '✓' : '✗';
+          console.log(`[${shotIcon}] ${shot.gate}: ${shot.message}`);
         } else {
           console.log('[·] godot_runtime: Skipped — --no-runtime');
         }
@@ -71,9 +98,13 @@ export function registerValidateCommand(program: Command): void {
         if (opts.runtime !== false) {
           console.log('[!] godot_runtime: Skipped — Godot not detected');
         }
+        if (requiredShot) {
+          screenshotPassed = false;
+          console.log('[✗] gameplay_screenshot_qa: RELEASE_CANDIDATE requires gameplay screenshot evidence — Godot not detected');
+        }
       }
 
-      const overallPassed = report.passed && godotPassed && runtimePassed;
+      const overallPassed = report.passed && godotPassed && runtimePassed && screenshotPassed;
 
       console.log('');
       console.log(overallPassed ? 'Validation PASSED' : 'Validation FAILED');

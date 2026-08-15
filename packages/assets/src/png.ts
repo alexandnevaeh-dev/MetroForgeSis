@@ -122,6 +122,85 @@ export interface VfxSpec {
   core: [number, number, number, number];
   edge: [number, number, number, number];
   style?: 'burst' | 'streak';
+  effectType?: string;
+  whereUsed?: string[];
+  prompt?: string;
+}
+
+function colorDistance(a: [number, number, number], b: [number, number, number]): number {
+  const dr = a[0] - b[0];
+  const dg = a[1] - b[1];
+  const db = a[2] - b[2];
+  return Math.sqrt(dr * dr + dg * dg + db * db);
+}
+
+function pixelRgb(rgba: Uint8Array, i: number): [number, number, number] {
+  return [rgba[i]!, rgba[i + 1]!, rgba[i + 2]!];
+}
+
+/**
+ * Knock out a solid chroma / photographic backdrop so compiled VFX sprites keep transparency.
+ * FLUX.1 hosted preview cannot emit alpha; prompts request magenta or dark studio backdrops
+ * which this pass converts to alpha before PixelArtProcessor.
+ */
+export function knockoutVfxBackground(png: Buffer, chroma: [number, number, number] = [255, 0, 255]): Buffer {
+  const { rgba, width, height } = decodePngRgba(png);
+  const out = new Uint8Array(rgba);
+  const chromaTol = 48;
+  const floodTol = 28;
+  const visited = new Uint8Array(width * height);
+  const queue: number[] = [];
+
+  for (let i = 0; i < out.length; i += 4) {
+    if (colorDistance(pixelRgb(out, i), chroma) <= chromaTol) {
+      out[i + 3] = 0;
+    }
+  }
+
+  const pushIfBackdrop = (x: number, y: number, origin: [number, number, number]) => {
+    if (x < 0 || y < 0 || x >= width || y >= height) return;
+    const idx = y * width + x;
+    if (visited[idx]) return;
+    const i = idx * 4;
+    if ((out[i + 3] ?? 0) === 0) {
+      visited[idx] = 1;
+      return;
+    }
+    if (colorDistance(pixelRgb(out, i), origin) > floodTol) return;
+    visited[idx] = 1;
+    out[i + 3] = 0;
+    queue.push(idx);
+  };
+
+  const corners: Array<[number, number]> = [
+    [0, 0],
+    [width - 1, 0],
+    [0, height - 1],
+    [width - 1, height - 1],
+  ];
+  for (const [cx, cy] of corners) {
+    const i = (cy * width + cx) * 4;
+    const origin = pixelRgb(out, i);
+    const luma = 0.2126 * origin[0] + 0.7152 * origin[1] + 0.0722 * origin[2];
+    // Only flood typical studio backdrops (dark, magenta-ish, or pale gray) — never
+    // a saturated effect that happens to touch a corner.
+    const magentaish = colorDistance(origin, chroma) < 90;
+    const studio = luma < 28 || luma > 210 || magentaish;
+    if (!studio) continue;
+    queue.length = 0;
+    pushIfBackdrop(cx, cy, origin);
+    while (queue.length > 0) {
+      const idx = queue.pop()!;
+      const x = idx % width;
+      const y = Math.floor(idx / width);
+      pushIfBackdrop(x + 1, y, origin);
+      pushIfBackdrop(x - 1, y, origin);
+      pushIfBackdrop(x, y + 1, origin);
+      pushIfBackdrop(x, y - 1, origin);
+    }
+  }
+
+  return encodePng(width, height, out);
 }
 
 /** Small radial or streak VFX sprites for hit/dash/pickup/death feedback. */
