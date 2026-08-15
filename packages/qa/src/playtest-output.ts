@@ -19,6 +19,25 @@ export interface PlaytestTelemetry {
   victoryState: boolean;
   gameComplete: boolean;
   balanceHints: string[];
+  // Optional — only the top-down PlaytestAgent.gd currently emits these (see
+  // docs/debug/TOPDOWN_PLAYTEST_REPAIR.md, Phase 13). Present on both success AND failure runs,
+  // so a failed playtest is diagnosable instead of producing no telemetry at all.
+  archetype?: string;
+  routeLength?: number;
+  completedSteps?: number;
+  failedStepIndex?: number;
+  transitionsAttempted?: number;
+  itemsCollected?: number;
+  gatesOpened?: number;
+  enemyEncounters?: number;
+  bossAttempts?: number;
+  bossDefeated?: boolean;
+  victoryReached?: boolean;
+  durationMs?: number;
+  timeoutsExceeded?: number;
+  unstickAttempts?: number;
+  failureReason?: string;
+  stepDiagnostics?: Array<Record<string, unknown>>;
 }
 
 export interface ParsedPlaytestOutput {

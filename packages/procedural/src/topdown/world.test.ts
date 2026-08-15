@@ -40,4 +40,56 @@ describe('generateTopDownWorld', () => {
     expect(isWalkableTile(TILE_GRASS)).toBe(true);
     expect(isWalkableTile(TILE_WALL)).toBe(false);
   });
+
+  // Regression coverage for the P0 autonomous-playtest failure (docs/debug/
+  // TOPDOWN_PLAYTEST_REPAIR.md): carveField's per-cell random water/wall scatter used to run
+  // fully independently of POI placement, so a POI (chest, portal, spawn...) could generate
+  // directly on top of a blocked tile, and two randomly-scattered obstacles could end up
+  // diagonally touching, pinching the only nearby path to zero real width — both confirmed via a
+  // real headless PlaytestAgent run to permanently wedge the input-simulated bot. Every seed
+  // below reproduced at least one of these two defects before the `clearWalkableFootprint`/
+  // `removeDiagonalPinches` fix in generateTopDownWorld.
+  const REGRESSION_SEEDS = [424242, 777001, 20260814, 1, 99999, 5551234];
+
+  it.each(REGRESSION_SEEDS)(
+    'places every overworld POI on a walkable tile (seed %i)',
+    (seed) => {
+      const result = generateTopDownWorld({ seed, profile: 'TINY_TEST' });
+      const overworld = result.overworld.areas.find((a: TopDownArea) => a.id === 'overworld')!;
+      const tileSize = overworld.tileSize;
+      for (const poi of overworld.pois) {
+        const tx = Math.floor(poi.x / tileSize);
+        const ty = Math.floor(poi.y / tileSize);
+        const tile = overworld.tiles[ty]?.[tx];
+        expect(
+          isWalkableTile(tile as number),
+          `POI ${poi.id} (${poi.kind}) at tile (${tx},${ty}) is not walkable (tile=${tile})`,
+        ).toBe(true);
+      }
+    },
+  );
+
+  it.each(REGRESSION_SEEDS)(
+    'never leaves a diagonal-only blocked pinch in the overworld field (seed %i)',
+    (seed) => {
+      const result = generateTopDownWorld({ seed, profile: 'TINY_TEST' });
+      const overworld = result.overworld.areas.find((a: TopDownArea) => a.id === 'overworld')!;
+      const tiles = overworld.tiles;
+      const blocked = (x: number, y: number): boolean =>
+        tiles[y]?.[x] === TILE_WALL || tiles[y]?.[x] === TILE_WATER;
+      const pinches: string[] = [];
+      for (let y = 0; y < tiles.length - 1; y++) {
+        for (let x = 0; x < (tiles[0]?.length ?? 0) - 1; x++) {
+          const nw = blocked(x, y);
+          const ne = blocked(x + 1, y);
+          const sw = blocked(x, y + 1);
+          const se = blocked(x + 1, y + 1);
+          if ((nw && se && !ne && !sw) || (ne && sw && !nw && !se)) {
+            pinches.push(`(${x},${y})`);
+          }
+        }
+      }
+      expect(pinches, `diagonal-only pinches at: ${pinches.join(', ')}`).toHaveLength(0);
+    },
+  );
 });

@@ -104,6 +104,23 @@ export function generateTopDownWorld(options: {
   ]);
 
   const overworldPois = placeOverworldPois(overworldW, overworldH, tileSize, dungeonSlots, townSlots);
+
+  // `carveField` below scatters water/wall tiles per-cell fully independently of where POIs and
+  // the player's walk paths end up — confirmed (via a real headless PlaytestAgent run, see
+  // docs/debug/TOPDOWN_PLAYTEST_REPAIR.md) to produce two concrete, reproducible failures: a POI
+  // generated directly on top of a blocked tile (unreachable within any arrival tolerance), and
+  // two randomly-scattered single-tile obstacles landing diagonally adjacent to each other,
+  // pinching the only nearby path down to a zero-width diagonal gap no physical body can cross.
+  // Both are fixed here, after POI placement is known and before the tiles are handed to
+  // `buildArea` (which derives the actual runtime collision rects from them): every POI gets a
+  // small guaranteed-walkable clearance, then a full de-pinch pass removes every remaining
+  // diagonal-only blocked pattern in the grid (not just near POIs — the player can walk anywhere
+  // in the open field, not just point-to-point between POIs).
+  for (const poi of overworldPois) {
+    clearWalkableFootprint(overworldTiles, poi.x, poi.y, tileSize);
+  }
+  removeDiagonalPinches(overworldTiles);
+
   const overworld = buildArea({
     id: 'overworld',
     name: 'Sunken Marches',
@@ -281,6 +298,69 @@ function carveField(w: number, h: number, rng: SeededRNG): number[][] {
     tiles[y]![Math.floor(w / 2)] = TILE_GRASS;
   }
   return tiles;
+}
+
+/** Forces the tile under `xPx,yPx` (and its immediate 4-neighborhood, so a 16px-wide physical
+ *  body centered there has clearance on every side, not just a single walkable pixel-point) to
+ *  TILE_GRASS. Called once per POI after `carveField`'s random scatter runs, so no POI — chest,
+ *  portal, spawn, NPC, etc. — can end up generated on top of an unreachable blocked tile. Leaves
+ *  the outer border (x/y == 0 or the last row/col) alone; those tiles are the intentional map
+ *  wall, not random noise, and no POI is ever placed there. */
+function clearWalkableFootprint(tiles: number[][], xPx: number, yPx: number, tileSize: number): void {
+  const h = tiles.length;
+  const w = tiles[0]?.length ?? 0;
+  const cx = Math.floor(xPx / tileSize);
+  const cy = Math.floor(yPx / tileSize);
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      const x = cx + dx;
+      const y = cy + dy;
+      if (x <= 0 || y <= 0 || x >= w - 1 || y >= h - 1) continue;
+      tiles[y]![x] = TILE_GRASS;
+    }
+  }
+}
+
+/** `carveField`'s per-cell random water scatter can leave two blocked tiles touching only at a
+ *  shared corner (the other two cells of that 2x2 square open) — a diagonal gap with zero real
+ *  width. Godot's `move_and_slide` treats that as fully solid for any body with physical size
+ *  (confirmed directly: a real headless PlaytestAgent run got permanently wedged at exactly such
+ *  a corner, position and velocity frozen for the rest of its walk timeout — see
+ *  docs/debug/TOPDOWN_PLAYTEST_REPAIR.md), even though the two tiles never literally overlap.
+ *  This scans every 2x2 window and opens one tile of each diagonal-only blocked pair so any
+ *  nominally-passable route actually has walkable width, for both the playtest bot and a real
+ *  player. Mutates `tiles` in place; run after any per-POI clearing so pinches created at a
+ *  clearance boundary are caught too. */
+function removeDiagonalPinches(tiles: number[][]): void {
+  const h = tiles.length;
+  const w = tiles[0]?.length ?? 0;
+  const blocked = (x: number, y: number): boolean =>
+    tiles[y]?.[x] === TILE_WALL || tiles[y]?.[x] === TILE_WATER;
+
+  // Clearing one window's pinch can reveal a *new* one in the row above (a window whose bottom
+  // edge is the row this pass just modified, already scanned this pass in top-to-bottom order),
+  // so this re-scans to a fixed point rather than assuming one top-to-bottom sweep is enough —
+  // each mutation strictly reduces the blocked-tile count, so this always terminates.
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (let y = 0; y < h - 1; y++) {
+      for (let x = 0; x < w - 1; x++) {
+        const nw = blocked(x, y);
+        const ne = blocked(x + 1, y);
+        const sw = blocked(x, y + 1);
+        const se = blocked(x + 1, y + 1);
+
+        if (nw && se && !ne && !sw) {
+          tiles[y]![x] = TILE_GRASS;
+          changed = true;
+        } else if (ne && sw && !nw && !se) {
+          tiles[y]![x + 1] = TILE_GRASS;
+          changed = true;
+        }
+      }
+    }
+  }
 }
 
 function carveRoom(w: number, h: number): number[][] {

@@ -7,8 +7,21 @@ class_name PlaytestAgent
 ## are interact-based ChestPickup (not walk-over AbilityPickup), and movement is free-roam 2D
 ## (both axes), not a single horizontal axis. Supports persona-specific timeouts and emits
 ## structured telemetry for balance analysis, matching the side-view version's contract.
+##
+## Root-cause note (see docs/debug/TOPDOWN_PLAYTEST_REPAIR.md): the overworld's per-cell random
+## water/wall scatter (packages/procedural/src/topdown/world.ts) used to place obstacles fully
+## independently of POI positions and player paths — a POI could generate on top of a blocked
+## tile, and two randomly-scattered obstacles could end up diagonally touching, pinching a path
+## to zero real width. A real headless run confirmed the greedy straight-line walk below got
+## permanently wedged at exactly such a spot (position and velocity frozen for the rest of the
+## walk timeout). That's now fixed at the generation layer (every POI gets guaranteed-walkable
+## clearance, and a de-pinch pass removes diagonal-only blocked patterns), but the bot below also
+## gained bounded stuck-detection/unstick logic as defense-in-depth — the same terrain shape that
+## wedged a bot with no recovery logic can still cost a real player time, and a competent player
+## sidesteps around a minor obstacle rather than standing still walking into it forever.
 
 const ROUTE_PATH := "res://playtest_route.json"
+const MOVEMENT_CONFIG_PATH := "res://data/player/movement.json"
 
 var steps_completed: int = 0
 var used_input_simulation: bool = false
@@ -20,39 +33,78 @@ var _collect_all_pickups: bool = true
 var _persona_id: String = "victory_rusher"
 var _started_at_ms: int = 0
 var _transition_timings_ms: Array[int] = []
+var _expected_walk_speed_px: float = 110.0
+
+# --- Phase 13 telemetry / Phase 4 diagnostics state -------------------------------------------
+var _step_diagnostics: Array[Dictionary] = []
+var _transitions_attempted: int = 0
+var _gates_opened: int = 0
+var _enemy_encounters: int = 0
+var _boss_attempts: int = 0
+var _boss_defeated: bool = false
+var _unstick_attempts: int = 0
+var _timeouts_exceeded: int = 0
+var _failure_reason: String = ""
+var _failed_step_index: int = -1
 
 func run(world: Node, host: Node) -> Dictionary:
 	_started_at_ms = Time.get_ticks_msec()
+	_load_expected_speed()
 	var route := _load_route()
 	if route.is_empty():
-		return {"ok": false, "reason": "missing_route"}
+		_failure_reason = "missing_route"
+		return _finish(false, route, 0)
 
 	_apply_persona(route.get("persona", {}))
 
 	if not route.get("reachable", false):
-		return {"ok": false, "reason": "route_unreachable"}
+		_failure_reason = "route_unreachable"
+		return _finish(false, route, 0)
 
 	var transitions: Array = route.get("transitions", [])
-	for step in transitions:
+	for i in range(transitions.size()):
+		var step: Dictionary = transitions[i]
 		var from_area: String = step.get("fromRoomId", "")
 		var to_area: String = step.get("toRoomId", "")
 		var step_start := Time.get_ticks_msec()
-		if not await _execute_transition(world, host, from_area, to_area):
-			return {"ok": false, "reason": "transition_failed", "from": from_area, "to": to_area}
+		_transitions_attempted += 1
+		var step_ok := await _execute_transition(world, host, from_area, to_area, i)
 		_transition_timings_ms.append(Time.get_ticks_msec() - step_start)
+		if not step_ok:
+			_failed_step_index = i
+			_failure_reason = "transition_failed"
+			return _finish(false, route, 0, from_area, to_area)
 		steps_completed += 1
 
 	var boss_start := Time.get_ticks_msec()
-	if not await _defeat_final_boss(host, String(route.get("victoryBossId", "boss_final"))):
-		return {"ok": false, "reason": "boss_not_defeated"}
+	_boss_attempts += 1
+	_boss_defeated = await _defeat_final_boss(host, String(route.get("victoryBossId", "boss_final")))
 	var boss_fight_ms := Time.get_ticks_msec() - boss_start
+	if not _boss_defeated:
+		_failure_reason = "boss_not_defeated"
+		return _finish(false, route, boss_fight_ms)
 
-	return {
-		"ok": true,
+	return _finish(true, route, boss_fight_ms)
+
+## Builds the final outcome dictionary — always, on every exit path (success or failure), so
+## PlaytestRunner.gd always has telemetry to write to playtest_telemetry.json even for a run that
+## never got anywhere near victory. Before this fix, telemetry only existed on full success (see
+## the old `run()`'s early `return {"ok": false, "reason": ...}` returns with no "telemetry" key
+## at all) — a route failing on its very first step produced zero diagnostic output.
+func _finish(ok: bool, route: Dictionary, boss_fight_ms: int, from_area: String = "", to_area: String = "") -> Dictionary:
+	var result := {
+		"ok": ok,
 		"steps": steps_completed,
 		"used_input": used_input_simulation,
 		"telemetry": _build_telemetry(route, boss_fight_ms),
 	}
+	if not ok:
+		result["reason"] = _failure_reason
+		if from_area != "":
+			result["from"] = from_area
+		if to_area != "":
+			result["to"] = to_area
+	return result
 
 ## The persona's own bossAttackTimeoutSec (12-14s) is tuned for the side-view template's melee
 ## pacing and shared by both archetypes today. A top-down boss actively wanders/kites (see
@@ -74,6 +126,23 @@ func _apply_persona(persona: Variant) -> void:
 	)
 	_collect_all_pickups = bool(persona.get("collectAllPickups", _collect_all_pickups))
 
+## Reads the project's real walk speed so distance-aware timeouts (Phase 14 / _walk_timeout_for)
+## reflect how fast this specific generated game's player actually moves, rather than a hardcoded
+## guess. Best-effort — falls back to the template's own default (see PlayerMovementConfig.gd)
+## if the file is missing or malformed.
+func _load_expected_speed() -> void:
+	if not FileAccess.file_exists(MOVEMENT_CONFIG_PATH):
+		return
+	var file := FileAccess.open(MOVEMENT_CONFIG_PATH, FileAccess.READ)
+	if file == null:
+		return
+	var json := JSON.new()
+	if json.parse(file.get_as_text()) != OK:
+		return
+	var data: Variant = json.data
+	if typeof(data) == TYPE_DICTIONARY and data.has("walkSpeed"):
+		_expected_walk_speed_px = max(1.0, float(data.get("walkSpeed")))
+
 func _build_telemetry(route: Dictionary, boss_fight_ms: int) -> Dictionary:
 	var transitions: Array = route.get("transitions", [])
 	var avg_transition_ms := 0.0
@@ -91,6 +160,8 @@ func _build_telemetry(route: Dictionary, boss_fight_ms: int) -> Dictionary:
 		hints.append("incomplete_route")
 	if avg_transition_ms > _walk_timeout_sec * 1000 * 0.75:
 		hints.append("slow_room_transitions")
+	if _unstick_attempts > 0:
+		hints.append("navigation_required_unstick")
 
 	return {
 		"personaId": _persona_id,
@@ -108,6 +179,23 @@ func _build_telemetry(route: Dictionary, boss_fight_ms: int) -> Dictionary:
 		"victoryState": GameManager.current_state == GameManager.GameState.VICTORY,
 		"gameComplete": GameManager.game_complete,
 		"balanceHints": hints,
+		# --- Phase 13 additions: failure/balance diagnosability, present on every run -----------
+		"archetype": "TOP_DOWN_ACTION_ADVENTURE",
+		"routeLength": transitions.size(),
+		"completedSteps": steps_completed,
+		"failedStepIndex": _failed_step_index,
+		"transitionsAttempted": _transitions_attempted,
+		"itemsCollected": pickups_collected,
+		"gatesOpened": _gates_opened,
+		"enemyEncounters": _enemy_encounters,
+		"bossAttempts": _boss_attempts,
+		"bossDefeated": _boss_defeated,
+		"victoryReached": GameManager.current_state == GameManager.GameState.VICTORY or GameManager.game_complete,
+		"durationMs": elapsed_ms,
+		"timeoutsExceeded": _timeouts_exceeded,
+		"unstickAttempts": _unstick_attempts,
+		"failureReason": _failure_reason,
+		"stepDiagnostics": _step_diagnostics,
 	}
 
 func _load_route() -> Dictionary:
@@ -121,13 +209,40 @@ func _load_route() -> Dictionary:
 		return {}
 	return json.data if typeof(json.data) == TYPE_DICTIONARY else {}
 
-func _execute_transition(world: Node, host: Node, from_area: String, to_area: String) -> bool:
+func _execute_transition(world: Node, host: Node, from_area: String, to_area: String, step_index: int) -> bool:
+	var step_start_ms := Time.get_ticks_msec()
+	var player := host.get_tree().get_first_node_in_group("player")
+	var diag := {
+		"stepIndex": step_index,
+		"stepType": "area_transition",
+		"sourceNode": from_area,
+		"destinationNode": to_area,
+		"requiredItem": "",
+		"playerPositionStart": _pos_str(player),
+		"playerPositionEnd": "",
+		"targetPosition": "",
+		"distanceToTarget": -1.0,
+		"currentArea": GameManager.current_room_id,
+		"expectedArea": from_area,
+		"transitionId": "%s->%s" % [from_area, to_area],
+		"portalId": "",
+		"elapsedMs": 0,
+		"timeoutMs": int(_walk_timeout_sec * 1000.0),
+		"result": "FAIL",
+		"failureReason": "",
+	}
+
 	if GameManager.current_room_id != from_area:
+		diag["failureReason"] = "wrong_current_area"
+		_record_step(diag, step_start_ms)
 		return false
 
-	var player := host.get_tree().get_first_node_in_group("player")
 	if player == null:
+		diag["failureReason"] = "player_missing"
+		_record_step(diag, step_start_ms)
 		return false
+
+	_enemy_encounters += _count_enemies(host)
 
 	if _collect_all_pickups:
 		await _collect_area_pickups(host, player)
@@ -135,18 +250,28 @@ func _execute_transition(world: Node, host: Node, from_area: String, to_area: St
 	# An incidental pickup-walk can itself carry the player across a portal boundary (AreaPortal
 	# triggers on physical contact, no arrival tolerance) — check before searching for one.
 	if GameManager.current_room_id == to_area:
+		diag["result"] = "PASS"
+		diag["playerPositionEnd"] = _pos_str(player)
+		_record_step(diag, step_start_ms)
 		return true
 
 	var portal := _find_portal(host, to_area)
 	if portal == null:
+		diag["failureReason"] = "portal_not_found"
+		_record_step(diag, step_start_ms)
 		return false
+	diag["portalId"] = str(portal.get("door_id")) if portal.get("door_id") != null and str(portal.get("door_id")) != "" else str(portal.get("name"))
+	diag["targetPosition"] = _pos_str(portal)
 
 	# LockedDoor starts solid and interact-only; unlock it (uses whichever key/switch state the
 	# player has already collected this run) before trying to walk through it. AreaPortal has no
 	# such gate and this is simply a no-op check.
 	if portal.has_method("interact") and portal.get("unlocked") == false:
+		diag["requiredItem"] = str(portal.get("key_id"))
 		portal.interact(player)
 		await host.get_tree().physics_frame
+		if portal.get("unlocked") == true:
+			_gates_opened += 1
 
 	# Walking toward the portal can itself complete the transition mid-flight — touching its
 	# Area2D fires AreaPortal/LockedDoor's own body_entered handler immediately, before
@@ -154,11 +279,41 @@ func _execute_transition(world: Node, host: Node, from_area: String, to_area: St
 	# old area's player instance. So the walk call's own return value isn't the success signal —
 	# a freed player reference there is the *expected* shape of success, not a bug — only the
 	# resulting room id is. Ignore what _walk_player_to returns and re-check state directly.
-	await _walk_player_to(host, player, portal.global_position)
+	var walk_timeout := _walk_timeout_for(player.global_position, portal.global_position)
+	diag["timeoutMs"] = int(walk_timeout * 1000.0)
+	await _walk_player_to(host, player, portal.global_position, walk_timeout)
 	await host.get_tree().physics_frame
 	await host.get_tree().physics_frame
 
-	return GameManager.current_room_id == to_area
+	var final_ok := GameManager.current_room_id == to_area
+	diag["result"] = "PASS" if final_ok else "FAIL"
+	if not final_ok:
+		diag["failureReason"] = "walk_timeout_or_blocked"
+		diag["distanceToTarget"] = (
+			player.global_position.distance_to(portal.global_position) if is_instance_valid(player) else -1.0
+		)
+	diag["playerPositionEnd"] = _pos_str(player) if is_instance_valid(player) else "freed"
+	_record_step(diag, step_start_ms)
+	return final_ok
+
+func _record_step(diag: Dictionary, step_start_ms: int) -> void:
+	diag["elapsedMs"] = Time.get_ticks_msec() - step_start_ms
+	_step_diagnostics.append(diag)
+
+func _pos_str(node: Node) -> String:
+	if node == null or not is_instance_valid(node) or not (node is Node2D):
+		return ""
+	return str((node as Node2D).global_position)
+
+func _count_enemies(host: Node) -> int:
+	var entities := _current_entities(host)
+	if entities == null:
+		return 0
+	var count := 0
+	for child in entities.get_children():
+		if child.is_in_group("enemy") or child.get("enemy_id") != null:
+			count += 1
+	return count
 
 func _collect_area_pickups(host: Node, player: Node) -> void:
 	var entities := _current_entities(host)
@@ -170,10 +325,18 @@ func _collect_area_pickups(host: Node, player: Node) -> void:
 	for child in entities.get_children():
 		if not (child is ChestPickup) or child.opened:
 			continue
-		await _walk_player_to(host, player, child.global_position)
-		if is_instance_valid(child):
-			child.interact(player)
-			pickups_collected += 1
+		var reached := await _walk_player_to(host, player, child.global_position)
+		# Only grant the pickup if the walk actually got the player into real interact range
+		# (matching TopDownPlayerController._try_interact()'s own 36px group-distance check) —
+		# calling interact() unconditionally regardless of whether the bot ever got there would
+		# be exactly the kind of shortcut Phase 21 rules out ("no false green"). A route step
+		# whose only prerequisite is a required chest (e.g. a dungeon key) will correctly fail
+		# its own transition/gate check below instead of silently appearing to succeed.
+		if is_instance_valid(child) and is_instance_valid(player):
+			var close_enough: bool = reached or (player.global_position.distance_to(child.global_position) <= 36.0)
+			if close_enough:
+				child.interact(player)
+				pickups_collected += 1
 		await host.get_tree().physics_frame
 
 func _defeat_final_boss(host: Node, boss_id: String) -> bool:
@@ -275,18 +438,52 @@ func _defeat_final_boss(host: Node, boss_id: String) -> bool:
 		Input.action_release("dash")
 		await host.get_tree().physics_frame
 
+	if Time.get_ticks_msec() - start_ms >= timeout_ms and not boss_defeated:
+		_timeouts_exceeded += 1
+		print("PLAYTEST_TIMEOUT: boss_fight exceeded %dms budget" % timeout_ms)
+
 	return boss_defeated or GameManager.current_state == GameManager.GameState.VICTORY
+
+# --- Phase 14: distance-aware walk timeout -----------------------------------------------------
+# A flat per-persona walk timeout (8-12s) works for short hops but not for a long diagonal
+# crossing of a larger overworld — and a flat timeout that's simply raised across the board is
+# exactly the "increase every timeout arbitrarily" shortcut Phase 21 rules out. Instead, floor the
+# persona's own budget but extend it, transparently, by how far this *specific* walk actually is:
+# real travel time at the project's own walk speed, plus a fixed allowance for the unstick
+# maneuvers below and the final approach/arrival slop.
+const TRANSITION_TIMEOUT_ALLOWANCE_SEC := 2.0
+
+func _walk_timeout_for(from: Vector2, target: Vector2) -> float:
+	var dist := from.distance_to(target)
+	var travel_time := dist / _expected_walk_speed_px
+	return max(_walk_timeout_sec, travel_time + TRANSITION_TIMEOUT_ALLOWANCE_SEC)
+
+# --- Phase 15: bounded unstick strategy ---------------------------------------------------------
+const STUCK_CHECK_INTERVAL_SEC := 0.4
+const STUCK_PROGRESS_THRESHOLD_PX := 6.0
+const MAX_UNSTICK_ATTEMPTS_PER_WALK := 4
+const UNSTICK_HOLD_SEC := 0.25
 
 ## Free-roam 2D walk (both axes at once), unlike the side-view template's horizontal-only
 ## version — a top-down world has no floor/corridor constraint forcing single-axis movement.
+## Detects being stuck (position not meaningfully progressing over a short window) and tries a
+## perpendicular sidestep before resuming the direct approach — bounded, and never a teleport: if
+## the bounded attempts don't free the body, this returns false honestly rather than silently
+## treating the leg as complete.
 func _walk_player_to(host: Node, player: Node, target: Vector2, timeout_sec: float = -1.0) -> bool:
-	if timeout_sec < 0.0:
-		timeout_sec = _walk_timeout_sec
 	if not (player is CharacterBody2D):
 		return false
-
 	var body := player as CharacterBody2D
+	if timeout_sec < 0.0:
+		timeout_sec = _walk_timeout_for(body.global_position, target)
+
 	var elapsed := 0.0
+	var stuck_timer := 0.0
+	var last_check_pos := body.global_position
+	var unstick_hold := 0.0
+	var unstick_sign := 1.0
+	var local_unstick_attempts := 0
+
 	while elapsed < timeout_sec:
 		if not is_instance_valid(body):
 			# The player instance is recreated on every load_area() call — walking into this
@@ -297,14 +494,41 @@ func _walk_player_to(host: Node, player: Node, target: Vector2, timeout_sec: flo
 			return false
 		var delta := host.get_physics_process_delta_time()
 		elapsed += delta
+		stuck_timer += delta
 		if body.global_position.distance_to(target) < 12.0:
 			_release_movement_input()
 			return true
+
+		if unstick_hold > 0.0:
+			unstick_hold -= delta
+			await host.get_tree().physics_frame
+			continue
+
+		if stuck_timer >= STUCK_CHECK_INTERVAL_SEC:
+			var progressed := body.global_position.distance_to(last_check_pos)
+			stuck_timer = 0.0
+			last_check_pos = body.global_position
+			if progressed < STUCK_PROGRESS_THRESHOLD_PX:
+				local_unstick_attempts += 1
+				_unstick_attempts += 1
+				if local_unstick_attempts > MAX_UNSTICK_ATTEMPTS_PER_WALK:
+					_release_movement_input()
+					return false
+				# Alternate sides each attempt so a pinch that only opens on one side still gets
+				# a fair try, without looping forever on a side that never works.
+				unstick_sign = -unstick_sign
+				_step_perpendicular(body, target, unstick_sign)
+				unstick_hold = UNSTICK_HOLD_SEC
+				await host.get_tree().physics_frame
+				continue
+
 		used_input_simulation = true
 		_step_toward(body, target)
 		await host.get_tree().physics_frame
 
 	_release_movement_input()
+	_timeouts_exceeded += 1
+	print("PLAYTEST_TIMEOUT: walk_to target=%s exceeded %dms budget (unstick_attempts=%d)" % [target, int(timeout_sec * 1000.0), local_unstick_attempts])
 	return target.distance_to(body.global_position) < 24.0
 
 ## One frame's worth of directional input toward `target`, factored out of _walk_player_to so
@@ -330,6 +554,18 @@ func _step_toward(body: CharacterBody2D, target: Vector2) -> void:
 	else:
 		Input.action_release("move_up")
 		Input.action_release("move_down")
+
+## Steps at 90 degrees to the current target direction instead of straight at it — a small
+## deterministic sidestep to break out of a corner/diagonal pinch the direct approach can't cross,
+## without any pathfinding system. `sign` picks left vs. right so alternating attempts try both
+## sides of the obstacle.
+func _step_perpendicular(body: CharacterBody2D, target: Vector2, sign: float) -> void:
+	var to_target := target - body.global_position
+	if to_target.length() < 1.0:
+		to_target = Vector2.RIGHT
+	var dir := to_target.normalized()
+	var perpendicular := Vector2(-dir.y, dir.x) * sign
+	_step_toward(body, body.global_position + perpendicular * 40.0)
 
 func _release_movement_input() -> void:
 	Input.action_release("move_left")
