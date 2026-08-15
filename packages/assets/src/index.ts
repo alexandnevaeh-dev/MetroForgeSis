@@ -46,3 +46,4 @@ export { critiqueGameplayScreenshot } from './scene-critic.js';
 export type { GameplayScreenshotCritique } from './scene-critic.js';
 export { AssetPipeline, derivedSourceRelPath, compiledSpriteFrameSize } from './asset-pipeline.js';
 export type { AssetPipelineOptions, AssetPipelineResult, GeneratedAsset, CompiledSpriteKind } from './asset-pipeline.js';
+export { sanitizeImagePromptText } from './sanitize-image-prompt.js';

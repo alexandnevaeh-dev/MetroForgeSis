@@ -32,6 +32,7 @@ import {
   critiqueEffectivelyPassed,
 } from '@metroforge/shared';
 import type { AssetMaturity, AssetSourceType } from '@metroforge/shared';
+import { sanitizeImagePromptText } from './sanitize-image-prompt.js';
 
 export interface GeneratedAsset {
   id: string;
@@ -362,20 +363,6 @@ function withMaturity(
 
 function checkpointFullPath(outputDir: string, relPath: string): string {
   return join(outputDir, relPath.replace(/\//g, sep));
-}
-
-/**
- * Hosted NVCF often returns blank/black artifacts when prompts echo vendor brand names
- * (seen with smoke projects titled "NVIDIA …"). Strip those tokens from image prompts only.
- */
-function sanitizeImagePromptText(text: string): string {
-  return text
-    .replace(/\bNVIDIA\b/gi, '')
-    .replace(/\bNVCF\b/gi, '')
-    .replace(/\bNVAPI\b/gi, '')
-    .replace(/\s{2,}/g, ' ')
-    .replace(/\s+([.,;:!?])/g, '$1')
-    .trim();
 }
 
 function buildManualImagePrompt(description: string, styleHint: string, gameTitle: string): string {
@@ -894,8 +881,10 @@ export class AssetPipeline {
               `${options.gameDna.identity.visualStyle} biome ${b} ground and wall tiles`;
             const result = await imageGen.generateImage({
               profile: 'TILE_SOURCE',
-              prompt: tilePrompt,
-              negativePrompt,
+              prompt: sanitizeImagePromptText(tilePrompt),
+              negativePrompt: negativePrompt
+                ? sanitizeImagePromptText(negativePrompt)
+                : undefined,
               width: 128,
               height: 128,
               seed: options.seed + b,
@@ -1191,8 +1180,10 @@ export class AssetPipeline {
         throwIfCancelled(opts.signal);
         const result = await opts.imageGen.generateImage({
           profile: opts.profile,
-          prompt: opts.prompt,
-          negativePrompt: opts.negativePrompt,
+          prompt: sanitizeImagePromptText(opts.prompt),
+          negativePrompt: opts.negativePrompt
+            ? sanitizeImagePromptText(opts.negativePrompt)
+            : undefined,
           width: opts.spec.width * 4,
           height: opts.spec.height * 4,
           seed: opts.seed,
@@ -1457,8 +1448,10 @@ export class AssetPipeline {
         try {
           const result = await imageGen.generateImage({
             profile: 'TILE_SOURCE',
-            prompt,
-            negativePrompt,
+            prompt: sanitizeImagePromptText(prompt),
+            negativePrompt: negativePrompt
+              ? sanitizeImagePromptText(negativePrompt)
+              : undefined,
             width: 128,
             height: 128,
             seed: opts.seed,
