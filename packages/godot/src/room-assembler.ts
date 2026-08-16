@@ -2,6 +2,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { GameDNA, Room, WorldGraph } from '@metroforge/schemas';
 import type { GameContent } from '@metroforge/procedural';
+import { buildMovementJson, movementFeasibilityStats } from '@metroforge/shared';
+import { buildRoomTileCells, floorTopPx, type PlatformRect, type PitGap } from './tile-layout.js';
 
 export interface RoomConnection {
   direction: 'left' | 'right' | 'up' | 'down';
@@ -39,6 +41,12 @@ export interface RoomAssemblyOptions {
   itemAmount: number;
   worldGraphArchetype?: string;
   tileCells?: TileCell[];
+  /** Real, collidable platforms derived from tileCells — the painted tiles alone carry no
+   *  physics, so these drive an actual StaticBody2D per platform (see generateRoomScene). */
+  platforms?: PlatformRect[];
+  /** Real gaps carved into the main floor collider (see buildFloorSection). */
+  pits?: PitGap[];
+  backgroundLayers?: { far?: string; mid?: string; near?: string };
 }
 
 export interface TileCell {
@@ -63,6 +71,41 @@ export interface PublishedRoomRecord {
   collectibles: string[];
   tileCells?: TileCell[];
   weakFloors?: { x: number; width: number; targetRoomId: string }[];
+  platforms?: PlatformRect[];
+  pits?: PitGap[];
+}
+
+/**
+ * Abilities the player has actually picked up by the time they can reach a given room index,
+ * assuming the main-spine/critical-path room order (ctx.roomIds — the same order abilities are
+ * gated against in world.ts's abilityGateRoomIndex). This is a real, verifiable per-room signal
+ * (not a guess) used to keep dash-reach-sized geometry (pits) out of rooms the player visits
+ * before dash is actually unlocked — dash is gated behind GameManager.has_ability("dash") at
+ * runtime (see templates/godot-metroidvania/scripts/player/abilities/DashAbility.gd), so placing
+ * a dash-only-crossable gap before that room is a real softlock, not a cosmetic issue.
+ */
+function abilitiesAvailableBeforeRoom(ctx: RoomAssemblyContext, index: number): string[] {
+  const abilities = new Set<string>();
+  for (let i = 0; i < index && i < ctx.roomIds.length; i++) {
+    const grants = ctx.worldGraphNodesById.get(ctx.roomIds[i]!)?.metadata?.grantsAbilities as
+      | string[]
+      | undefined;
+    if (Array.isArray(grants)) for (const a of grants) abilities.add(a);
+  }
+  return [...abilities];
+}
+
+/** Deterministic per-room seed derived from the world seed + roomId + room index, so two rooms
+ *  sharing an archetype still get independently-varied tile-layout geometry (FNV-1a-style mix;
+ *  packages/procedural's SeededRNG then consumes this as its single numeric seed). */
+export function deriveRoomTileSeed(worldSeed: number, roomId: string, index: number): number {
+  let h = (worldSeed ^ 0x9e3779b9) >>> 0;
+  for (let i = 0; i < roomId.length; i++) {
+    h ^= roomId.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  h = (h ^ Math.imul(index + 1, 2654435761)) >>> 0;
+  return h || 1;
 }
 
 const VALID_ARCHETYPES = new Set<Room['archetype']>([
@@ -347,12 +390,16 @@ export function pickRoomPickupItem(
 
 function defaultRoomWidth(worldGraphArchetype: string | undefined, override?: number): number {
   if (override !== undefined) return override;
-  return worldGraphArchetype === 'set_piece' ? 960 : 800;
+  if (worldGraphArchetype === 'set_piece' || worldGraphArchetype === 'traversal') return 960;
+  if (worldGraphArchetype === 'boss' || worldGraphArchetype === 'arena') return 960;
+  return 800;
 }
 
 function defaultRoomHeight(worldGraphArchetype: string | undefined, override?: number): number {
   if (override !== undefined) return override;
-  return worldGraphArchetype === 'set_piece' ? 720 : 600;
+  if (worldGraphArchetype === 'challenge') return 900;
+  if (worldGraphArchetype === 'set_piece' || worldGraphArchetype === 'boss') return 720;
+  return 600;
 }
 
 export function buildRoomAssemblyOptions(
@@ -396,6 +443,24 @@ export function buildRoomAssemblyOptions(
     index % gameDna.world.biomeCount;
   const biomeTexRel = `assets/tilesets/biome_${biomeIndex}/source.png`;
   const hasTileset = textureExists(biomeTexRel);
+  const width = defaultRoomWidth(worldGraphArchetype, overrides?.width);
+  const height = defaultRoomHeight(worldGraphArchetype, overrides?.height);
+  const tileSize = gameDna.technical.tileSize;
+  const far = `assets/backgrounds/biome_${biomeIndex}/far.png`;
+  const mid = `assets/backgrounds/biome_${biomeIndex}/mid.png`;
+  const near = `assets/backgrounds/biome_${biomeIndex}/near.png`;
+  const connections = ctx.roomConnections.get(roomId) ?? [];
+  const movementStats = movementFeasibilityStats(buildMovementJson(gameDna.movement));
+  const layout = buildRoomTileCells({
+    width,
+    height,
+    tileSize,
+    archetype: worldGraphArchetype,
+    seed: deriveRoomTileSeed(gameDna.seed, roomId, index),
+    movement: movementStats,
+    connections,
+    availableAbilities: abilitiesAvailableBeforeRoom(ctx, index),
+  });
 
   return {
     hasEnemy,
@@ -405,18 +470,26 @@ export function buildRoomAssemblyOptions(
     isBossRoom,
     bossId: bossId ?? '',
     hasSavePoint,
-    width: defaultRoomWidth(worldGraphArchetype, overrides?.width),
-    height: defaultRoomHeight(worldGraphArchetype, overrides?.height),
+    width,
+    height,
     biomeIndex,
     connections: ctx.roomConnections.get(roomId) ?? [],
     biomeTexturePath: hasTileset ? biomeTexRel : undefined,
     hasTileset,
-    tileSize: gameDna.technical.tileSize,
+    tileSize,
     npcs: ctx.npcsByRoom.get(roomId) ?? [],
     hasItemPickup,
     itemId: pickupItem?.id ?? '',
     itemAmount: pickupItem?.category === 'currency' ? 15 : 1,
     worldGraphArchetype,
+    tileCells: layout.cells,
+    platforms: layout.platforms,
+    pits: layout.pits,
+    backgroundLayers: {
+      far: textureExists(far) ? far : undefined,
+      mid: textureExists(mid) ? mid : undefined,
+      near: textureExists(near) ? near : undefined,
+    },
   };
 }
 
@@ -457,6 +530,8 @@ export function buildPublishedRoomRecord(
       width: wf.width,
       targetRoomId: wf.targetRoomId,
     })),
+    platforms: opts.platforms,
+    pits: opts.pits,
   };
 }
 
@@ -558,15 +633,79 @@ export function derivePhaseBarriers(
   return placements;
 }
 
+/** A generic center-x/width floor gap. WeakFloorPlacement (ability-gated, gets a WeakFloor
+ *  scene) and PitGap (plain, unconditional) both funnel through this so the floor collider
+ *  always has a matching real hole rather than an invisible full-width platform under a painted
+ *  pit. */
+interface FloorGap {
+  x: number;
+  width: number;
+}
+
 function buildFloorSection(
   platformWidth: number,
   floorY: number,
-  weakFloors: WeakFloorPlacement[],
+  gaps: FloorGap[],
+  hideFloorVisual = false,
+  thickness = 64,
 ): { subResources: string; nodes: string; extraSubResources: number } {
-  if (weakFloors.length === 0) {
+  const visual = hideFloorVisual ? 'Color(0.3, 0.32, 0.38, 0)' : 'Color(0.3, 0.32, 0.38, 1)';
+  const visualVisible = hideFloorVisual ? 'false' : 'true';
+  const half = thickness / 2;
+
+  // Merge overlapping/adjacent gaps (a weak floor and a pit could in principle sit near each
+  // other) into disjoint spans, sorted left-to-right, clipped to the room's own width.
+  const spans = gaps
+    .map((g) => ({ left: Math.max(0, g.x - g.width / 2), right: Math.min(platformWidth, g.x + g.width / 2) }))
+    .filter((g) => g.right > g.left)
+    .sort((a, b) => a.left - b.left)
+    .reduce<{ left: number; right: number }[]>((acc, g) => {
+      const last = acc[acc.length - 1];
+      if (last && g.left <= last.right) last.right = Math.max(last.right, g.right);
+      else acc.push({ ...g });
+      return acc;
+    }, []);
+
+  if (spans.length >= 2) {
+    let subResources = '';
+    let nodes = '';
+    let segCount = 0;
+    const bounds = [0, ...spans.flatMap((s) => [s.left, s.right]), platformWidth];
+    for (let i = 0; i < bounds.length; i += 2) {
+      const segLeft = bounds[i]!;
+      const segRight = bounds[i + 1]!;
+      const segWidth = segRight - segLeft;
+      if (segWidth <= 0) continue;
+      segCount++;
+      const name = `FloorSeg${segCount}`;
+      const shapeId = `floor_seg_${segCount}_shape`;
+      subResources += `[sub_resource type="RectangleShape2D" id="${shapeId}"]
+size = Vector2(${segWidth}, ${thickness})
+
+`;
+      nodes += `[node name="${name}" type="StaticBody2D" parent="."]
+position = Vector2(${segLeft + segWidth / 2}, ${floorY})
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="${name}"]
+shape = SubResource("${shapeId}")
+
+[node name="FloorVisual" type="ColorRect" parent="${name}"]
+visible = ${visualVisible}
+offset_left = -${segWidth / 2}.0
+offset_top = -${half}.0
+offset_right = ${segWidth / 2}.0
+offset_bottom = ${half}.0
+color = ${visual}
+
+`;
+    }
+    return { subResources, nodes, extraSubResources: Math.max(0, segCount - 1) };
+  }
+
+  if (spans.length === 0) {
     return {
       subResources: `[sub_resource type="RectangleShape2D" id="floor_shape"]
-size = Vector2(${platformWidth}, 64)
+size = Vector2(${platformWidth}, ${thickness})
 `,
       nodes: `[node name="Floor" type="StaticBody2D" parent="."]
 position = Vector2(${platformWidth / 2}, ${floorY})
@@ -575,20 +714,20 @@ position = Vector2(${platformWidth / 2}, ${floorY})
 shape = SubResource("floor_shape")
 
 [node name="FloorVisual" type="ColorRect" parent="Floor"]
+visible = ${visualVisible}
 offset_left = -${platformWidth / 2}.0
-offset_top = -32.0
+offset_top = -${half}.0
 offset_right = ${platformWidth / 2}.0
-offset_bottom = 32.0
-color = Color(0.3, 0.32, 0.38, 1)
+offset_bottom = ${half}.0
+color = ${visual}
 
 `,
       extraSubResources: 0,
     };
   }
 
-  const wf = weakFloors[0]!;
-  const gapLeft = wf.x - wf.width / 2;
-  const gapRight = wf.x + wf.width / 2;
+  const gapLeft = spans[0]!.left;
+  const gapRight = spans[0]!.right;
   const leftWidth = Math.max(gapLeft, 0);
   const rightWidth = Math.max(platformWidth - gapRight, 0);
   let subResources = '';
@@ -596,7 +735,7 @@ color = Color(0.3, 0.32, 0.38, 1)
 
   if (leftWidth > 0) {
     subResources += `[sub_resource type="RectangleShape2D" id="floor_left_shape"]
-size = Vector2(${leftWidth}, 64)
+size = Vector2(${leftWidth}, ${thickness})
 
 `;
     nodes += `[node name="FloorLeft" type="StaticBody2D" parent="."]
@@ -606,18 +745,19 @@ position = Vector2(${leftWidth / 2}, ${floorY})
 shape = SubResource("floor_left_shape")
 
 [node name="FloorVisual" type="ColorRect" parent="FloorLeft"]
+visible = ${visualVisible}
 offset_left = -${leftWidth / 2}.0
-offset_top = -32.0
+offset_top = -${half}.0
 offset_right = ${leftWidth / 2}.0
-offset_bottom = 32.0
-color = Color(0.3, 0.32, 0.38, 1)
+offset_bottom = ${half}.0
+color = ${visual}
 
 `;
   }
 
   if (rightWidth > 0) {
     subResources += `[sub_resource type="RectangleShape2D" id="floor_right_shape"]
-size = Vector2(${rightWidth}, 64)
+size = Vector2(${rightWidth}, ${thickness})
 
 `;
     nodes += `[node name="FloorRight" type="StaticBody2D" parent="."]
@@ -627,11 +767,12 @@ position = Vector2(${gapRight + rightWidth / 2}, ${floorY})
 shape = SubResource("floor_right_shape")
 
 [node name="FloorVisual" type="ColorRect" parent="FloorRight"]
+visible = ${visualVisible}
 offset_left = -${rightWidth / 2}.0
-offset_top = -32.0
+offset_top = -${half}.0
 offset_right = ${rightWidth / 2}.0
-offset_bottom = 32.0
-color = Color(0.3, 0.32, 0.38, 1)
+offset_bottom = ${half}.0
+color = ${visual}
 
 `;
   }
@@ -640,15 +781,63 @@ color = Color(0.3, 0.32, 0.38, 1)
   return { subResources, nodes, extraSubResources };
 }
 
+/** Real StaticBody2D + CollisionShape2D per painted platform — the TileMapLayer's tiles carry no
+ *  physics on their own (no physics layer on the generated TileSet, see RoomTileMap.gd), so this
+ *  is what actually makes a painted platform something the player can stand on. */
+function buildPlatformColliders(platforms: PlatformRect[]): {
+  subResources: string;
+  nodes: string;
+} {
+  let subResources = '';
+  let nodes = '';
+  platforms.forEach((p, i) => {
+    const shapeId = `platform_${i}_shape`;
+    subResources += `[sub_resource type="RectangleShape2D" id="${shapeId}"]
+size = Vector2(${p.width}, ${p.height})
+
+`;
+    nodes += `[node name="Platform_${i}" type="StaticBody2D" parent="."]
+position = Vector2(${p.x + p.width / 2}, ${p.y + p.height / 2})
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platform_${i}"]
+shape = SubResource("${shapeId}")
+
+`;
+  });
+  return { subResources, nodes };
+}
+
 export function generateRoomScene(roomId: string, _index: number, options: RoomAssemblyOptions): string {
-  const floorY = options.height - 64;
+  const tileSize = options.tileSize || 16;
+  const floorThickness = options.hasTileset ? tileSize * 2 : 64;
+  const floorTop = options.hasTileset
+    ? floorTopPx(options.height, tileSize)
+    : options.height - 96;
+  const floorY = floorTop + floorThickness / 2;
   const platformWidth = options.width;
   const weakFloors = deriveWeakFloors(options.connections, platformWidth);
   const grapplePoints = deriveGrapplePoints(options.connections, platformWidth, floorY);
   const waterZones = deriveWaterZones(options.connections, platformWidth, floorY);
   const phaseBarriers = derivePhaseBarriers(options.connections, platformWidth, floorY);
-  const floorSection = buildFloorSection(platformWidth, floorY, weakFloors);
-  let loadSteps = 6 + floorSection.extraSubResources;
+  // Pits/platforms are painted-tile features — only carve real collision for them when a tileset
+  // actually exists to render them, otherwise they'd be invisible floating collision volumes.
+  const pitGaps: FloorGap[] = options.hasTileset
+    ? (options.pits ?? []).map((p) => ({ x: p.x + p.width / 2, width: p.width }))
+    : [];
+  const realPlatforms = options.hasTileset ? (options.platforms ?? []) : [];
+  const floorSection = buildFloorSection(
+    platformWidth,
+    floorY,
+    [...weakFloors.map((wf) => ({ x: wf.x, width: wf.width })), ...pitGaps],
+    options.hasTileset,
+    floorThickness,
+  );
+  const platformSection = buildPlatformColliders(realPlatforms);
+  const layers = options.backgroundLayers ?? {};
+  const layerEntries = (['far', 'mid', 'near'] as const)
+    .map((name) => ({ name, path: layers[name] }))
+    .filter((e): e is { name: 'far' | 'mid' | 'near'; path: string } => Boolean(e.path));
+  let loadSteps = 6 + floorSection.extraSubResources + realPlatforms.length;
   if (weakFloors.length > 0) loadSteps += 1;
   if (grapplePoints.length > 0) loadSteps += 1;
   if (waterZones.length > 0) loadSteps += 1;
@@ -658,6 +847,7 @@ export function generateRoomScene(roomId: string, _index: number, options: RoomA
   if (options.npcs.length > 0) loadSteps += 1;
   if (options.hasItemPickup) loadSteps += 1;
   if (options.abilityPickups.length > 0) loadSteps += options.abilityPickups.length;
+  if (layerEntries.length > 0) loadSteps += 1 + layerEntries.length;
 
   let scene = `[gd_scene load_steps=${loadSteps} format=3]
 
@@ -700,16 +890,22 @@ export function generateRoomScene(roomId: string, _index: number, options: RoomA
     scene += `[ext_resource type="PackedScene" uid="uid://phase_barrier" path="res://scenes/world/PhaseBarrier.tscn" id="14_phase"]
 `;
   }
+  layerEntries.forEach((layer, i) => {
+    scene += `[ext_resource type="Texture2D" path="res://${layer.path}" id="21_bg_${layer.name}"]
+`;
+    void i;
+  });
 
   scene += `
-${floorSection.subResources}
+${floorSection.subResources}${platformSection.subResources}
 [node name="${roomId}" type="Node2D"]
 
 `;
 
   if (options.hasTileset) {
     scene += `[node name="Ground" type="TileMapLayer" parent="."]
-z_index = -1
+z_index = 0
+texture_filter = 0
 script = ExtResource("6_tilemap")
 biome_id = "biome_${options.biomeIndex}"
 room_width = ${platformWidth}
@@ -723,24 +919,68 @@ tile_size = ${options.tileSize}
       scene += `painted_cells_json = "${encoded.replace(/"/g, '\\"')}"
 `;
     }
+    if (pitGaps.length > 0) {
+      // Tell RoomTileMap.gd's visual backfill (_paint_visual_mass) which columns are a real
+      // pit so it doesn't silently repaint solid ground back over the carved-out floor gap.
+      const pitCols = pitGaps.map((g) => [
+        Math.round((g.x - g.width / 2) / options.tileSize),
+        Math.round((g.x + g.width / 2) / options.tileSize),
+      ]);
+      scene += `pit_columns_json = "${JSON.stringify(pitCols).replace(/"/g, '\\"')}"
+`;
+    }
     scene += `
 `;
   }
 
   const shadow = 0.08 + ((options.biomeIndex + _index) % 3) * 0.02;
   const steel = 0.12 + (options.biomeIndex % 2) * 0.03;
+  const hideSkyRect = layerEntries.length > 0 || options.hasTileset;
   scene += `[node name="Background" type="ColorRect" parent="."]
-z_index = -4
+z_index = -20
+visible = ${hideSkyRect ? 'false' : 'true'}
 offset_left = -240.0
 offset_top = -180.0
 offset_right = ${options.width + 240}.0
 offset_bottom = ${options.height + 180}.0
 mouse_filter = 2
-color = Color(${shadow.toFixed(3)}, ${steel.toFixed(3)}, ${(0.16 + (options.biomeIndex % 4) * 0.02).toFixed(3)}, 1)
+color = Color(${shadow.toFixed(3)}, ${steel.toFixed(3)}, ${(0.16 + (options.biomeIndex % 4) * 0.02).toFixed(3)}, ${hideSkyRect ? '0' : '1'})
 
 `;
 
+  if (layerEntries.length > 0) {
+    scene += `[node name="ParallaxBg" type="ParallaxBackground" parent="."]
+
+`;
+    const scales: Record<string, string> = { far: '0.15, 0.05', mid: '0.4, 0.12', near: '0.75, 0.2' };
+    const layerY: Record<string, number> = {
+      far: options.height * 0.28,
+      mid: options.height * 0.48,
+      near: options.height * 0.68,
+    };
+    const layerMod: Record<string, string> = {
+      far: 'Color(1, 1, 1, 1)',
+      mid: 'Color(1, 1, 1, 0.72)',
+      near: 'Color(1, 1, 1, 0.42)',
+    };
+    for (const layer of layerEntries) {
+      scene += `[node name="${layer.name}" type="ParallaxLayer" parent="ParallaxBg"]
+motion_scale = Vector2(${scales[layer.name]})
+
+[node name="Sprite" type="Sprite2D" parent="ParallaxBg/${layer.name}"]
+z_index = ${layer.name === 'far' ? '-12' : layer.name === 'mid' ? '-10' : '-8'}
+texture_filter = 0
+position = Vector2(${options.width / 2}, ${layerY[layer.name]})
+modulate = ${layerMod[layer.name]}
+texture = ExtResource("21_bg_${layer.name}")
+centered = true
+
+`;
+    }
+  }
+
   scene += floorSection.nodes;
+  scene += platformSection.nodes;
 
   if (weakFloors.length > 0) {
     const wf = weakFloors[0]!;
@@ -780,19 +1020,19 @@ position = Vector2(${pb.x}, ${pb.y})
   }
 
   scene += `[node name="Player" parent="." instance=ExtResource("1_player")]
-position = Vector2(100, ${floorY - 50})
+position = Vector2(100, ${floorTop})
 `;
 
   if (options.hasEnemy && !options.isBossRoom) {
     const enemyId = `enemy_${options.enemyIndex.toString().padStart(3, '0')}`;
     scene += `
 [node name="Enemy" parent="." instance=ExtResource("2_enemy")]
-position = Vector2(${platformWidth - 150}, ${floorY - 30})
+position = Vector2(${platformWidth - 150}, ${floorTop})
 enemy_id = "${enemyId}"
 
 [node name="Sprite" parent="Enemy"]
 sheet_path = "assets/enemies/${enemyId}_walk.png"
-frame_size = Vector2i(32, 32)
+frame_size = Vector2i(64, 64)
 frame_count = 4
 hurt_sheet_path = "assets/enemies/${enemyId}_hurt.png"
 death_sheet_path = "assets/enemies/${enemyId}_death.png"
@@ -802,14 +1042,15 @@ attack_sheet_path = "assets/enemies/${enemyId}_attack.png"
 
   if (options.isBossRoom) {
     const bossId = options.bossId;
+    const bossFrame = bossId === 'boss_final' || bossId.includes('final') ? 128 : 96;
     scene += `
 [node name="Boss" parent="." instance=ExtResource("3_boss")]
-position = Vector2(${platformWidth / 2}, ${floorY - 40})
+position = Vector2(${platformWidth / 2}, ${floorTop})
 boss_id = "${bossId}"
 
 [node name="Sprite" parent="Boss"]
 sheet_path = "assets/bosses/${bossId}_walk.png"
-frame_size = Vector2i(48, 48)
+frame_size = Vector2i(${bossFrame}, ${bossFrame})
 frame_count = 3
 hurt_sheet_path = "assets/bosses/${bossId}_hurt.png"
 death_sheet_path = "assets/bosses/${bossId}_death.png"
@@ -825,7 +1066,7 @@ attack_sheet_path = "assets/bosses/${bossId}_attack.png"
       const x = 220 + pi * 40;
       scene += `
 [node name="AbilityPickup_${abilityId}" parent="." instance=ExtResource("4_pickup")]
-position = Vector2(${x}, ${floorY - 60})
+position = Vector2(${x}, ${floorTop - 28})
 ability_id = "${abilityId}"
 display_name = "${abilityId}"
 `;
@@ -835,21 +1076,21 @@ display_name = "${abilityId}"
   if (options.hasSavePoint) {
     scene += `
 [node name="SavePoint" parent="." instance=ExtResource("8_savepoint")]
-position = Vector2(150, ${floorY - 16})
+position = Vector2(150, ${floorTop})
 `;
   }
 
   options.npcs.forEach((npc, npcIdx) => {
     scene += `
 [node name="NPC_${npcIdx}" parent="." instance=ExtResource("9_npc")]
-position = Vector2(${platformWidth * 0.75 - npcIdx * 60}, ${floorY - 24})
+position = Vector2(${platformWidth * 0.75 - npcIdx * 60}, ${floorTop})
 npc_id = "${npc.id}"
 npc_name = "${npc.name.replace(/"/g, '\\"')}"
 role = "${npc.role}"${npc.questIds.length > 0 ? `\nquest_ids = PackedStringArray(${npc.questIds.map((q) => `"${q}"`).join(', ')})` : ''}${npc.shopId ? `\nshop_id = "${npc.shopId}"` : ''}
 
 [node name="Sprite" parent="NPC_${npcIdx}"]
 sheet_path = "assets/npcs/${npc.id}_walk.png"
-frame_size = Vector2i(32, 32)
+frame_size = Vector2i(64, 64)
 frame_count = 4
 `;
   });
@@ -857,7 +1098,7 @@ frame_count = 4
   if (options.hasItemPickup) {
     scene += `
 [node name="ItemPickup" parent="." instance=ExtResource("10_item")]
-position = Vector2(${platformWidth * 0.5 + 100}, ${floorY - 20})
+position = Vector2(${platformWidth * 0.5 + 100}, ${floorTop - 12})
 item_id = "${options.itemId}"
 amount = ${options.itemAmount}
 `;
@@ -968,7 +1209,18 @@ export function recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult
         textureExists,
         override,
       );
-      if (tileCells?.length) opts.tileCells = tileCells;
+      if (tileCells?.length) {
+        opts.tileCells = tileCells;
+        if (override?.tileCells) {
+          // Hand-edited cells (room editor) have no matching auto-generated collision geometry —
+          // clear it rather than risk mismatched/floating platform or pit collision.
+          opts.platforms = [];
+          opts.pits = [];
+        } else if (existing?.tileCells) {
+          opts.platforms = existing.platforms ?? [];
+          opts.pits = existing.pits ?? [];
+        }
+      }
       const scene = generateRoomScene(roomId, i, opts);
       writeFileSync(join(roomsDir, `${roomId}.tscn`), scene);
       roomsData[roomId] = buildPublishedRoomRecord(roomId, i, opts);
