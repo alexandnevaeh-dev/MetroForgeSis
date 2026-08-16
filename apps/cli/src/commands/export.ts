@@ -9,8 +9,9 @@ export function registerExportCommand(program: Command): void {
     .option('--no-zip', 'Stage export folder only, skip zip archive')
     .option('--force', 'Export even if validation has not passed')
     .option('--commercial-safe', 'Block export unless all artifacts pass commercial-safe license audit')
+    .option('--require-production-assets', 'Block export if any artifact is PLACEHOLDER/BLOCKOUT/REJECTED maturity')
     .option('--output <dir>', 'Override export output directory')
-    .action(async (slug: string, opts: { zip?: boolean; force?: boolean; commercialSafe?: boolean; output?: string }) => {
+    .action(async (slug: string, opts: { zip?: boolean; force?: boolean; commercialSafe?: boolean; requireProductionAssets?: boolean; output?: string }) => {
       const config = loadConfig();
       let projectPath: string;
       try {
@@ -27,6 +28,7 @@ export function registerExportCommand(program: Command): void {
         zip: opts.zip !== false,
         requireValidation: !opts.force,
         requireCommercialSafe: opts.commercialSafe,
+        requireProductionAssets: opts.requireProductionAssets,
       });
 
       for (const warning of result.warnings) console.log(`[!] ${warning}`);
@@ -41,6 +43,7 @@ export function registerExportCommand(program: Command): void {
         console.log(`  Validation: ${result.manifest.validationPassed ? 'PASSED' : 'FAILED'} (${result.manifest.validationLevel ?? 'unknown'})`);
         console.log(`  Production ready: ${result.manifest.productionReady ? 'yes' : 'no'}`);
         console.log(`  Commercial safe: ${result.manifest.licenseSummary.commercialSafe ? 'yes' : 'no'}`);
+        console.log(`  Non-production assets: ${result.manifest.nonProductionAssetCount}`);
         console.log(`  Rooms: ${result.manifest.roomCount}, Artifacts: ${result.manifest.artifactCount}`);
       }
       if (result.archivePath) console.log(`  Output: ${result.archivePath}`);

@@ -213,5 +213,139 @@ describe('exportProject', () => {
 
   });
 
+
+
+  it('blocks export when production assets are required and a PLACEHOLDER artifact exists', () => {
+
+    writeFileSync(
+
+      join(projectPath, 'generation_manifest.json'),
+
+      JSON.stringify({
+
+        artifacts: [
+
+          {
+
+            id: 'a',
+
+            path: 'assets/characters/player.png',
+
+            provider: 'procedural',
+
+            maturity: 'PLACEHOLDER',
+
+            commercialUse: 'allowed',
+
+            license: 'MetroForge Procedural Generator (original work)',
+
+          },
+
+        ],
+
+      }),
+
+    );
+
+    const result = exportProject({ projectPath, zip: false, requireProductionAssets: true });
+
+    expect(result.success).toBe(false);
+
+    expect(result.errors[0]).toContain('non-production-maturity');
+
+    expect(result.errors.some((e) => e.includes('player.png') && e.includes('PLACEHOLDER'))).toBe(true);
+
+  });
+
+
+
+  it('exports successfully when production assets are required and all artifacts are at/above production maturity', () => {
+
+    writeFileSync(
+
+      join(projectPath, 'generation_manifest.json'),
+
+      JSON.stringify({
+
+        artifacts: [
+
+          {
+
+            id: 'a',
+
+            path: 'assets/characters/player.png',
+
+            provider: 'comfyui',
+
+            maturity: 'PRODUCTION_READY',
+
+            commercialUse: 'allowed',
+
+            license: 'CC0',
+
+          },
+
+        ],
+
+      }),
+
+    );
+
+    const result = exportProject({ projectPath, zip: false, requireProductionAssets: true });
+
+    expect(result.success).toBe(true);
+
+    const manifest = JSON.parse(readFileSync(result.manifestPath!, 'utf-8'));
+
+    expect(manifest.nonProductionAssetCount).toBe(0);
+
+  });
+
+
+
+  it('warns but exports when production assets are not required (backward compatible default)', () => {
+
+    writeFileSync(
+
+      join(projectPath, 'generation_manifest.json'),
+
+      JSON.stringify({
+
+        artifacts: [
+
+          {
+
+            id: 'a',
+
+            path: 'assets/characters/player.png',
+
+            provider: 'procedural',
+
+            maturity: 'PLACEHOLDER',
+
+            commercialUse: 'allowed',
+
+            license: 'MetroForge Procedural Generator (original work)',
+
+          },
+
+        ],
+
+      }),
+
+    );
+
+    const result = exportProject({ projectPath, zip: false });
+
+    expect(result.success).toBe(true);
+
+    expect(result.warnings.some((w) => w.includes('not production-maturity'))).toBe(true);
+
+    const manifest = JSON.parse(readFileSync(result.manifestPath!, 'utf-8'));
+
+    expect(manifest.nonProductionAssetCount).toBe(1);
+
+  });
+
 });
 

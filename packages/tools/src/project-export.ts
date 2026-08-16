@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, mkdirSync, copyFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join, basename } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { PRODUCT } from '@metroforge/shared';
+import { PRODUCT, isNonProductionMaturity } from '@metroforge/shared';
 import { auditExportLicense, buildAttributionsMarkdown, repairManifestArtifactLicenses } from '@metroforge/ai';
 import type { LicenseStatus } from '@metroforge/ai';
 
@@ -16,6 +16,8 @@ export interface ExportManifest {
   productionReady: boolean;
   roomCount: number;
   artifactCount: number;
+  /** Count of artifacts whose maturity is in NON_PRODUCTION_MATURITIES (PLACEHOLDER/BLOCKOUT/REJECTED). */
+  nonProductionAssetCount: number;
   licenseSummary: {
     providers: string[];
     fallbackArtifactCount: number;
@@ -55,6 +57,8 @@ export interface ExportProjectOptions {
   requireValidation?: boolean;
   /** When true, block export if any artifact fails LicenseRouter COMMERCIAL_SAFE check. */
   requireCommercialSafe?: boolean;
+  /** When true, block export if any artifact's maturity is in NON_PRODUCTION_MATURITIES. */
+  requireProductionAssets?: boolean;
 }
 
 export interface ExportProjectResult {
@@ -208,6 +212,34 @@ export function exportProject(options: ExportProjectOptions): ExportProjectResul
       `${licenseAudit.blockedArtifacts.length} artifact(s) are not COMMERCIAL_SAFE — use --commercial-safe to block export`,
     );
   }
+
+  const nonProductionArtifacts = repaired.artifacts.filter((a) =>
+    isNonProductionMaturity(a.maturity as string | undefined | null),
+  );
+
+  if (options.requireProductionAssets && nonProductionArtifacts.length > 0) {
+    const sample = nonProductionArtifacts
+      .slice(0, 5)
+      .map((a) => `${String(a.path || a.id)} (${String(a.maturity)})`);
+    return {
+      success: false,
+      errors: [
+        'Export blocked: project contains non-production-maturity assets',
+        ...sample,
+        ...(nonProductionArtifacts.length > 5
+          ? [`…and ${nonProductionArtifacts.length - 5} more artifact(s)`]
+          : []),
+      ],
+      warnings,
+    };
+  }
+
+  if (nonProductionArtifacts.length > 0) {
+    warnings.push(
+      `${nonProductionArtifacts.length} artifact(s) are not production-maturity — use --require-production-assets to block export`,
+    );
+  }
+
   const roomCount = roomsJson?.rooms
     ? Object.keys(roomsJson.rooms as Record<string, unknown>).length
     : 0;
@@ -253,6 +285,7 @@ export function exportProject(options: ExportProjectOptions): ExportProjectResul
     productionReady,
     roomCount,
     artifactCount: artifacts.length,
+    nonProductionAssetCount: nonProductionArtifacts.length,
     licenseSummary: {
       providers,
       fallbackArtifactCount,
