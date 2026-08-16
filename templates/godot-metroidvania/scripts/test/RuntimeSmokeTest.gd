@@ -1055,16 +1055,7 @@ func _capture_named_screenshot(shot_id: String, hard: bool = false) -> bool:
 
 
 func _is_visual_slice() -> bool:
-	if not FileAccess.file_exists("res://game_dna.json"):
-		return false
-	var file := FileAccess.open("res://game_dna.json", FileAccess.READ)
-	if file == null:
-		return false
-	var parsed = JSON.parse_string(file.get_as_text())
-	file.close()
-	if typeof(parsed) != TYPE_DICTIONARY:
-		return false
-	return String(parsed.get("profile", "")) == "VISUAL_VERTICAL_SLICE"
+	return true
 
 
 func _save_report_shot(shot_id: String, dest_name: String) -> void:
@@ -1087,8 +1078,11 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 		"combat": "03-combat.png",
 		"challenge": "04-vertical-room.png",
 		"ability_shrine": "05-ability-room.png",
+		"ability_gate": "05-ability-room.png",
 		"secret": "06-secret.png",
 		"save": "07-checkpoint.png",
+		"npc": "07b-npc.png",
+		"transition": "07c-biome-transition.png",
 		"boss": "08-boss-room.png",
 	}
 	var rooms_path := "res://data/rooms/rooms.json"

@@ -398,6 +398,22 @@ export class GenerationPipeline {
     );
     const styleBible = generateStyleBible(gameDna, designBible.art);
     writeFileSync(join(outputPath, 'style_bible.json'), JSON.stringify(styleBible, null, 2));
+    writeFileSync(
+      join(outputPath, 'style_contract.json'),
+      JSON.stringify(
+        {
+          artStyle: styleBible.artStyle ?? styleBible.renderingStyle,
+          palette: styleBible.palette.map((p) => p.hex),
+          outlineRules: styleBible.outlineRules,
+          lightingDirection: styleBible.lightingDirection,
+          saturation: styleBible.saturation,
+          characterScale: styleBible.characterScale,
+          foregroundBackgroundSeparation: styleBible.backgroundDepthRules ?? styleBible.parallaxRules,
+        },
+        null,
+        2,
+      ),
+    );
     const characterVisualDna = generateCharacterVisualDNA(gameDna, designBible.art);
     writeFileSync(
       join(outputPath, 'character_visual_dna.json'),
@@ -407,6 +423,7 @@ export class GenerationPipeline {
       'game_dna.json',
       'design_bible.json',
       'style_bible.json',
+      'style_contract.json',
       'character_visual_dna.json',
     ]);
     report(
@@ -740,6 +757,7 @@ export class GenerationPipeline {
             path: asset.path,
             provider: asset.provider,
             model: asset.modelId,
+            promptHash: asset.promptHash,
             seed: options.seed,
             validationState: asset.critiquePassed ? 'passed' : 'failed',
             fallbackGenerated: asset.fallbackGenerated,
@@ -755,6 +773,11 @@ export class GenerationPipeline {
               selectedModel: asset.selectedModel,
               requestedCapability: asset.requestedCapability,
               productionAllowed: asset.productionAllowed,
+              parentArtifactIds: asset.parentArtifactIds,
+              compiler: asset.compiler,
+              godotResourcePath: asset.godotResourcePath ?? `res://${asset.path.replace(/\\/g, '/')}`,
+              repairCount: asset.repairCount ?? 0,
+              transformation: asset.transformation,
             },
           });
         }
@@ -786,6 +809,12 @@ export class GenerationPipeline {
       requestedCapability: a.requestedCapability ?? 'IMAGE_GENERATION',
       productionAllowed: a.productionAllowed,
       sourcePath: a.sourcePath,
+      promptHash: a.promptHash,
+      parentArtifactIds: a.parentArtifactIds,
+      compiler: a.compiler,
+      godotResourcePath: a.godotResourcePath ?? `res://${a.path.replace(/\\/g, '/')}`,
+      repairCount: a.repairCount ?? 0,
+      transformation: a.transformation,
     }));
     for (const meta of assetMetadata) {
       Object.assign(meta, licenseFieldsForArtifact(meta, assetMetadata));
@@ -828,6 +857,7 @@ export class GenerationPipeline {
       textureFiles,
       assetMetadata,
       overworld: topDownWorld?.overworld,
+      styleBible,
     });
 
     if (!assemblyResult.success) {
@@ -1120,7 +1150,7 @@ export class GenerationPipeline {
       validationLevel === 'RUNTIME_VALIDATED' ||
       (validationLevel === 'IMPORT_VALIDATED' && Boolean(options.skipRuntimeValidation));
 
-    if (gameDna.profile === 'RELEASE_CANDIDATE' && godotPath && validationPassed) {
+    if (gameDna.profile !== 'TINY_TEST' && godotPath && validationPassed) {
       try {
         const qualityReport = runQualityPass({
           projectPath: outputPath,

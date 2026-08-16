@@ -23,7 +23,7 @@ func _ready() -> void:
 
 func _load_profile() -> void:
 	if not FileAccess.file_exists(PROFILE_PATH):
-		zoom = Vector2(2.4, 2.4)
+		zoom = Vector2(1.85, 1.85)
 		return
 	var file := FileAccess.open(PROFILE_PATH, FileAccess.READ)
 	if file == null:
@@ -32,7 +32,7 @@ func _load_profile() -> void:
 	file.close()
 	if typeof(parsed) != TYPE_DICTIONARY:
 		return
-	var z := float(parsed.get("zoom", 2.4))
+	var z := float(parsed.get("zoom", 1.85))
 	zoom = Vector2(z, z)
 	_dead_zone = float(parsed.get("deadZone", 0.18))
 	_look_ahead = float(parsed.get("lookAheadPx", 28.0))

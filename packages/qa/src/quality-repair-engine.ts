@@ -82,7 +82,7 @@ function attachCameraDirector(playerTscn: string): string {
       /\[node name="Camera2D" type="Camera2D" parent="."\]\nposition = Vector2\(0, -20\)\nzoom = Vector2\([^)]+\)/,
       `[node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(0, -20)
-zoom = Vector2(2.4, 2.4)
+zoom = Vector2(1.85, 1.85)
 script = ExtResource("7_camera")`,
     );
   }
@@ -284,7 +284,7 @@ export class QualityRepairEngine {
       return { kind: action.kind, ok: false, detail: 'Player.tscn missing', filesWritten: [] };
     }
     writeFileSync(dest, attachCameraDirector(readFileSync(dest, 'utf-8')));
-    const zoom = Number(action.payload.zoom ?? 2.4);
+    const zoom = Number(action.payload.zoom ?? 1.85);
     const profileRel = writeText(
       projectPath,
       'data/quality/camera_profile.json',

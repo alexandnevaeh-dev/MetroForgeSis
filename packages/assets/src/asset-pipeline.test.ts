@@ -63,16 +63,20 @@ describe('AssetPipeline procedural path', () => {
     expect(result.assets.some((a) => a.path === 'assets/npcs/npc_000.png')).toBe(true);
     expect(result.assets.some((a) => a.path === 'assets/npcs/npc_000_walk.png')).toBe(true);
 
+    expect(result.assets.some((a) => a.path === 'assets/backgrounds/biome_0/far.png')).toBe(true);
+    expect(result.assets.some((a) => a.path.includes('player_idle_pose.png'))).toBe(true);
+    expect(result.assets.some((a) => a.path.includes('assets/ui/portraits/'))).toBe(true);
+
     const player = result.assets.find((a) => a.path === 'assets/characters/player.png')!;
     const playerDims = decodePngRgba(player.buffer);
     const characterFrame = compiledSpriteFrameSize('character');
     expect(playerDims.width).toBe(characterFrame.width);
     expect(playerDims.height).toBe(characterFrame.height);
 
-    const tileset = result.assets.find((a) => a.path.includes('tilesets/biome_0'))!;
+    const tileset = result.assets.find((a) => a.path === 'assets/tilesets/biome_0/source.png')!;
     const tilesetDims = decodePngRgba(tileset.buffer);
-    expect(tilesetDims.width).toBe(compiledSpriteFrameSize('tileset').width);
-    expect(tilesetDims.height).toBe(compiledSpriteFrameSize('tileset').height);
+    expect(tilesetDims.width).toBe(16 * 8);
+    expect(tilesetDims.height).toBe(16 * 6);
 
     rmSync(outputDir, { recursive: true, force: true });
   });

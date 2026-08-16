@@ -123,18 +123,41 @@ func transition_to_room(room_id: String, spawn_side: String = "left") -> void:
 		await fader.fade_in(0.08)
 	_transitioning = false
 
+func _current_room_width() -> float:
+	if _current_room:
+		var ground := _current_room.get_node_or_null("Ground")
+		if ground != null and ground.get("room_width") != null:
+			return float(ground.get("room_width"))
+		var info: Dictionary = _room_data.get(GameManager.current_room_id, {})
+		if typeof(info) == TYPE_DICTIONARY and info.has("width"):
+			return float(info.get("width"))
+	return float(ROOM_WIDTH)
+
+
+func _current_floor_y(player: Node2D) -> float:
+	if _current_room:
+		var ground := _current_room.get_node_or_null("Ground")
+		if ground != null and ground.get("room_height") != null and ground.get("tile_size") != null:
+			var h := float(ground.get("room_height"))
+			var ts := float(ground.get("tile_size"))
+			if ts > 0.0:
+				return floor((h - ts * 2.0) / ts) * ts
+	return player.position.y
+
+
 func _position_player_for_spawn(player: Node2D, spawn_side: String) -> void:
-	var floor_y := player.position.y
+	var floor_y := _current_floor_y(player)
+	var room_width := _current_room_width()
 	match spawn_side:
 		"right":
-			player.position.x = ROOM_WIDTH - SPAWN_MARGIN
+			player.position.x = room_width - SPAWN_MARGIN
 		"left":
 			player.position.x = SPAWN_MARGIN
 		"bottom":
-			player.position.x = ROOM_WIDTH / 2.0
+			player.position.x = room_width / 2.0
 			player.position.y = floor_y
 		"top":
-			player.position.x = ROOM_WIDTH / 2.0
+			player.position.x = room_width / 2.0
 			player.position.y = 120.0
 		_:
 			player.position.x = SPAWN_MARGIN

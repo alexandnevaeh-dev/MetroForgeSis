@@ -64,5 +64,5 @@ script = ExtResource("6_ability")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(0, -32)
-zoom = Vector2(2.4, 2.4)
+zoom = Vector2(1.85, 1.85)
 script = ExtResource("7_camera")

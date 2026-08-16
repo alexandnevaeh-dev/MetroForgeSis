@@ -423,6 +423,8 @@ export const POSE_TRANSFORMS: Record<string, PoseTransformSpec> = {
   fall: { cropY: [0.06, 1], shearX: [-6, 6], tint: -6 },
   land: { cropY: [0.28, 1], scaleX: 1.22 },
   dash: { scaleX: 0.82, shearX: [10, -10], tint: 26 },
+  wall_slide: { cropY: [0.04, 0.92], shearX: [8, 2], scaleX: 0.9 },
+  wall_jump: { cropY: [0, 0.84], shearX: [-8, 8], tint: 18 },
 };
 
 /**

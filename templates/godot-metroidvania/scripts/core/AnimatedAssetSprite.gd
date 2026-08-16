@@ -16,14 +16,14 @@ extends AnimatedSprite2D
 
 func _ready() -> void:
 	_build_frames()
-	play("walk")
+	play("idle")
 
 func _build_frames() -> void:
 	var frames := SpriteFrames.new()
 	frames.add_animation("idle")
 	frames.add_animation("walk")
 
-	_load_animation_frames(frames, "walk", sheet_path, true)
+	_load_animation_frames(frames, "walk", sheet_path, false)
 
 	if not attack_sheet_path.is_empty():
 		frames.add_animation("attack")
@@ -46,6 +46,8 @@ func _build_frames() -> void:
 	# Bottom-center on the CharacterBody origin (feet).
 	offset = Vector2(0, -frame_size.y / 2.0)
 	_load_pose_overrides(frames)
+	if frames.get_frame_count("idle") == 0 and frames.get_frame_count("walk") > 0:
+		frames.add_frame("idle", frames.get_frame_texture("walk", 0), 1.0)
 	speed_scale = 1.0
 
 
@@ -56,7 +58,7 @@ func _load_pose_overrides(frames: SpriteFrames) -> void:
 	var prefix := sheet_path.get_basename()
 	if prefix.ends_with("_walk"):
 		prefix = prefix.substr(0, prefix.length() - 5)
-	var pose_anims := ["idle", "run", "jump_start", "jump", "fall", "land", "attack", "hurt", "death", "dash"]
+	var pose_anims := ["idle", "run", "jump_start", "jump", "fall", "land", "attack", "hurt", "death", "dash", "wall_slide", "wall_jump"]
 	for anim in pose_anims:
 		var pose_path := "%s_%s_pose.png" % [prefix, anim]
 		var res_path := pose_path if pose_path.begins_with("res://") else "res://" + pose_path

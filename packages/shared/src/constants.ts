@@ -50,6 +50,19 @@ export const GENERATION_PROFILES: readonly GenerationProfile[] = [
 /** Profiles that may emit hundreds of final visual assets. Blocked until a human approves a visual slice. */
 export const MASS_VISUAL_PROFILES: readonly GenerationProfile[] = ['LARGE', 'RELEASE_CANDIDATE'];
 
+/** Profiles that automatically run QualityDirector after a successful runtime/import validation. */
+export const PRODUCTION_QUALITY_PROFILES: readonly GenerationProfile[] = [
+  'SMALL',
+  'MEDIUM',
+  'LARGE',
+  'RELEASE_CANDIDATE',
+  'VISUAL_VERTICAL_SLICE',
+];
+
+export function isProductionQualityProfile(profile: GenerationProfile | string | undefined): boolean {
+  return Boolean(profile && (PRODUCTION_QUALITY_PROFILES as readonly string[]).includes(profile));
+}
+
 export type GameArchetype = 'SIDE_VIEW_METROIDVANIA' | 'TOP_DOWN_ACTION_ADVENTURE';
 
 export type HardwareProfile = 'LOW_RESOURCE' | 'BALANCED' | 'HIGH_QUALITY';

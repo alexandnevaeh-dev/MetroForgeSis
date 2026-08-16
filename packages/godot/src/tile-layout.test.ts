@@ -81,20 +81,22 @@ describe('buildRoomTileCells — movement-feasibility bounds', () => {
     // clearance under a shaft platform — precisely the player's own collision height with zero
     // margin — which wedged a real playtest bot ("walk_timeout") during manual verification.
     const PLAYER_COLLISION_HEIGHT_PX = 48;
-    for (const archetype of ['combat', 'traversal', 'challenge']) {
-      for (let seed = 1; seed <= 20; seed++) {
-        const { platforms } = buildRoomTileCells({
-          ...BASE,
-          width: 960,
-          height: 900,
-          archetype,
-          seed,
-          availableAbilities: ['dash'],
-        });
-        const floorTop = floorTopPx(900, BASE.tileSize);
-        for (const p of platforms) {
-          const clearance = floorTop - (p.y + p.height);
-          expect(clearance).toBeGreaterThan(PLAYER_COLLISION_HEIGHT_PX);
+    for (const tileSize of [16, 32]) {
+      for (const archetype of ['combat', 'traversal', 'challenge']) {
+        for (let seed = 1; seed <= 20; seed++) {
+          const { platforms } = buildRoomTileCells({
+            width: 960,
+            height: 900,
+            tileSize,
+            archetype,
+            seed,
+            availableAbilities: ['dash'],
+          });
+          const floorTop = floorTopPx(900, tileSize);
+          for (const p of platforms) {
+            const clearance = floorTop - (p.y + p.height);
+            expect(clearance).toBeGreaterThan(PLAYER_COLLISION_HEIGHT_PX);
+          }
         }
       }
     }

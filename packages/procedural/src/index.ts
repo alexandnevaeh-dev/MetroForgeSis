@@ -65,6 +65,8 @@ export {
   generateCharacterVisualDNA,
   applyStyleBiblePrompt,
 } from './bibles.js';
+export { buildVisualStyleContract, applyVisualStyleContract } from './style-contract.js';
+export type { VisualStyleContract } from './style-contract.js';
 export { buildProgressionProof } from './progression-proof.js';
 export type { ProgressionProof, ProgressionTraceStep } from './progression-proof.js';
 export { generateTopDownWorld, collisionRectsFromTiles, isWalkableTile } from './topdown/world.js';

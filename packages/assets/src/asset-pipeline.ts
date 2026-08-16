@@ -22,9 +22,12 @@ import type { VisionCritic } from './vision-critic-factory.js';
 import { createVisionCritic } from './vision-critic-factory.js';
 import { runDeterministicAssetChecks } from './vlm-critic.js';
 import { critiqueAnimationSheet, critiqueTilesetSheet } from './animation-critic.js';
-import { TileCompiler } from './tile-compiler.js';
+import { TileCompiler, TILE_ATLAS } from './tile-compiler.js';
 import { assembleContactSheet, critiqueAnimationIdentity } from './sprite-qa.js';
 import { NVIDIA_FLUX_KONTEXT, nvidiaModelForImageTask } from './image-task.js';
+import { buildPlayerAnimationManifest, poseNamesFromManifest } from './animation-manifest.js';
+import { buildTileTerrainMetadata, missingRequiredTileRoles } from './tile-roles.js';
+import { createHash } from 'node:crypto';
 import type { ImageGenerationProfile } from './types/vision.js';
 import type { ImageGenerator, ImageConditioning } from './types/image-gen.js';
 import type { GenerationMode, GenerationProfile } from '@metroforge/shared';
@@ -33,6 +36,7 @@ import {
   throwIfCancelled,
   inferAssetMaturity,
   critiqueEffectivelyPassed,
+  isTopDownArchetype,
 } from '@metroforge/shared';
 import type { AssetMaturity, AssetSourceType } from '@metroforge/shared';
 import { sanitizeImagePromptText } from './sanitize-image-prompt.js';
@@ -62,6 +66,14 @@ export interface GeneratedAsset {
   productionAllowed?: boolean;
   /** True when this sheet was derived from one still (bob/slide) rather than posed frames. */
   fakeAnimation?: boolean;
+  promptHash?: string;
+  parentArtifactIds?: string[];
+  compiler?: string;
+  godotResourcePath?: string;
+  repairCount?: number;
+  transformation?: string;
+  sourceLicense?: string;
+  derivedLicense?: string;
 }
 
 /** `assets/foo/bar.png` → `assets/foo/bar_source.png` (never overwrites the compiled path). */
@@ -117,10 +129,23 @@ function applyStylePrompt(
   if (!styleBible) return prompt;
   const prefix = styleBible.promptPrefixes?.[capability];
   const palette = styleBible.palette.map((swatch) => swatch.hex).join(' ');
-  const head = [prefix, styleBible.renderingStyle, styleBible.lighting, palette && `palette ${palette}`]
+  const contract = [
+    styleBible.outlineRules,
+    styleBible.lightingDirection,
+    styleBible.saturation,
+    styleBible.characterScale,
+    styleBible.backgroundDepthRules,
+  ]
+    .filter(Boolean)
+    .join(', ');
+  const head = [prefix, styleBible.renderingStyle, styleBible.lighting, palette && `palette ${palette}`, contract]
     .filter(Boolean)
     .join(', ');
   return head ? `${head}. ${prompt}` : prompt;
+}
+
+function hashPrompt(prompt: string): string {
+  return createHash('sha256').update(prompt).digest('hex').slice(0, 16);
 }
 
 export interface AssetPipelineOptions {
@@ -665,14 +690,26 @@ export class AssetPipeline {
     );
 
     // Canonical per-animation-state pose stills (Section 6/7): idle/run/jump_start/jump/fall/
-    // land/dash must be real, distinct poses — never a copy of walk-frame-1 — so this always
-    // runs, for every profile, not only VISUAL_VERTICAL_SLICE. The expensive AI-conditioned
-    // upgrade pass (up to 7 extra image-gen calls) stays gated to VISUAL_VERTICAL_SLICE via
-    // allowAiUpgrade; every other profile (including the TINY_TEST default, and any run with no
-    // healthy image provider) still gets deterministic, purposeful procedural pose transforms —
-    // see generatePoseStill()/POSE_TRANSFORMS in png.ts — so the idle-is-walk-frame-1 defect is
-    // actually fixed everywhere, not only in the costly visual-slice path.
+    // land/dash must be real, distinct poses — never a copy of walk-frame-1. AI-conditioned
+    // pose upgrade is opt-in (`allowAiUpgrade: true`) because NVIDIA flux.1-kontext-dev
+    // currently 422s on custom sprites. Procedural POSE_TRANSFORMS remain the production PATH.
     {
+      const abilityIds = options.gameDna.abilities.filter((a) => a.enabled).map((a) => a.id);
+      const animManifest = buildPlayerAnimationManifest({
+        abilities: abilityIds,
+        generator: options.profile === 'VISUAL_VERTICAL_SLICE' ? 'mixed' : 'procedural-pose',
+      });
+      const posePrompts: Record<string, string> = {
+        idle: 'same character idle stance, feet planted, side view facing right',
+        run: 'same character running mid-stride, side view facing right',
+        jump_start: 'same character crouching into a jump, side view',
+        jump: 'same character airborne jump pose, side view',
+        fall: 'same character falling, limbs braced, side view',
+        land: 'same character landing, knees bent, side view',
+        dash: 'same character dashing forward, motion, side view',
+        wall_slide: 'same character sliding down a wall, side view',
+        wall_jump: 'same character kicking off a wall, side view',
+      };
       const poseSet = await this.tryCanonicalPoseSet({
         id: 'player',
         destDir: 'assets/characters',
@@ -686,7 +723,16 @@ export class AssetPipeline {
         signal: options.signal,
         tileSize,
         spec: playerSpec,
-        allowAiUpgrade: options.profile === 'VISUAL_VERTICAL_SLICE',
+        // NVIDIA flux.1-kontext-dev hosted preview returns HTTP 422 for custom sprites (example_id
+        // only). Do not burn 3 retries per pose — the interface still accepts conditioning when a
+        // future provider actually supports it; this flag stays off until that day.
+        allowAiUpgrade: false,
+        poses: poseNamesFromManifest(animManifest)
+          .filter((name) => !['attack', 'hurt', 'death'].includes(name))
+          .map((name) => ({
+            name,
+            prompt: posePrompts[name] ?? `same character ${name.replace(/_/g, ' ')} pose, side view`,
+          })),
       });
       warnings.push(...poseSet.warnings);
       fakeAnimationDetected = fakeAnimationDetected || poseSet.fakeAnimation;
@@ -704,10 +750,14 @@ export class AssetPipeline {
             critiquePassed: !poseSet.fakeAnimation,
             critiqueScore: poseSet.fakeAnimation ? 20 : 80,
             fakeAnimation: poseSet.fakeAnimation,
+            parentArtifactIds: ['player'],
           },
           'animation',
         );
       }
+      const animDir = join(options.outputDir, 'data', 'animation');
+      mkdirSync(animDir, { recursive: true });
+      writeFileSync(join(animDir, 'player_manifest.json'), JSON.stringify(animManifest, null, 2));
     }
 
     for (let i = 0; i < defaults.enemies; i++) {
@@ -909,7 +959,107 @@ export class AssetPipeline {
         ),
         'animation',
       );
+      const portraitRole = role.replace(/[^a-z0-9_]/gi, '_').toLowerCase();
+      const portraitPath = `assets/ui/portraits/${portraitRole}.png`;
+      if (!assets.some((a) => a.path === portraitPath)) {
+        const portrait = this.pixelArt.process(npcAsset.buffer, {
+          targetWidth: 72,
+          targetHeight: 72,
+          tileSize,
+        });
+        writeCheckpoint(options.outputDir, portraitPath, portrait.buffer);
+        recordAsset(
+          {
+            id: `portrait_${portraitRole}`,
+            path: portraitPath,
+            buffer: portrait.buffer,
+            provider: npcAsset.fallbackGenerated ? 'pixel-art-processor' : npcAsset.provider,
+            modelId: npcAsset.modelId,
+            fallbackGenerated: npcAsset.fallbackGenerated,
+            critiquePassed: true,
+            critiqueScore: npcAsset.fallbackGenerated ? 45 : 70,
+            parentArtifactIds: [npcId],
+            compiler: 'pixel-art-processor',
+            transformation: 'npc-portrait-crop',
+            godotResourcePath: `res://${portraitPath}`,
+          },
+          'portrait',
+        );
+      }
     }
+
+    for (const ability of options.gameDna.abilities.filter((a) => a.enabled)) {
+      checkCancelled();
+      const iconPath = `assets/ui/icons/ability_${ability.id}.png`;
+      const iconSpec: SpriteSpec = {
+        id: `ability_${ability.id}`,
+        width: 32,
+        height: 32,
+        fill: [80, 140, 210, 255],
+        shape: 'item',
+      };
+      const iconAsset = await this.generateSprite({
+        id: `ability_icon_${ability.id}`,
+        path: iconPath,
+        spec: iconSpec,
+        profile: 'ICON',
+        prompt: applyStylePrompt(
+          options.styleBible,
+          'UI',
+          `game ability icon for ${ability.name}, centered symbol, no text, no UI chrome, ${options.gameDna.identity.visualStyle}`,
+        ),
+        imageGen,
+        negativePrompt: `${negativePrompt ?? ''}, readable text, letters, HUD screenshot`,
+        vlm,
+        vlmAvailable,
+        artDirection: options.gameDna.identity.visualStyle,
+        tileSize,
+        seed: options.seed + 11000 + hashPrompt(ability.id).charCodeAt(0),
+        outputDir: options.outputDir,
+        resume: options.resume,
+        signal: options.signal,
+      });
+      recordAsset(
+        {
+          ...iconAsset,
+          parentArtifactIds: [],
+          transformation: 'ability-icon',
+          godotResourcePath: `res://${iconPath}`,
+        },
+        'icon',
+      );
+    }
+
+    const questIconPath = 'assets/ui/icons/quest.png';
+    const questSpec: SpriteSpec = {
+      id: 'quest_icon',
+      width: 32,
+      height: 32,
+      fill: [210, 180, 70, 255],
+      shape: 'item',
+    };
+    const questIcon = await this.generateSprite({
+      id: 'quest_icon',
+      path: questIconPath,
+      spec: questSpec,
+      profile: 'ICON',
+      prompt: applyStylePrompt(
+        options.styleBible,
+        'UI',
+        'quest journal icon, small centered emblem, no text, no UI screenshot',
+      ),
+      imageGen,
+      negativePrompt: `${negativePrompt ?? ''}, readable text, HUD, letters`,
+      vlm,
+      vlmAvailable,
+      artDirection: options.gameDna.identity.visualStyle,
+      tileSize,
+      seed: options.seed + 12000,
+      outputDir: options.outputDir,
+      resume: options.resume,
+      signal: options.signal,
+    });
+    recordAsset({ ...questIcon, transformation: 'quest-icon', godotResourcePath: `res://${questIconPath}` }, 'icon');
 
     const bossList =
       options.bosses && options.bosses.length > 0
@@ -1111,26 +1261,39 @@ export class AssetPipeline {
           }
         }
 
-        const processed = this.pixelArt.process(tileBuffer, {
-          targetWidth: 128,
-          targetHeight: 128,
+        const compiled = new TileCompiler().compile({
+          sourcePng: tileBuffer,
           tileSize,
-          palette: BIOME_PALETTES[b % BIOME_PALETTES.length],
+          paletteHex: options.styleBible?.palette.map((p) => p.hex),
         });
-
-        if (options.profile === 'VISUAL_VERTICAL_SLICE') {
-          const compiled = new TileCompiler().compile({
-            sourcePng: tileBuffer,
-            tileSize,
-            paletteHex: options.styleBible?.palette.map((p) => p.hex),
-          });
-          processedBuffer = compiled.atlas;
-          if (!compiled.passed) {
-            warnings.push(`Tileset biome ${b} seam QA: ${compiled.seamIssues.join('; ')}`);
-          }
+        processedBuffer = compiled.atlas;
+        if (!compiled.passed) {
+          warnings.push(`Tileset biome ${b} seam QA: ${compiled.seamIssues.join('; ')}`);
+        }
+        const missingRoles = compiled.passed ? [] : missingRequiredTileRoles(Object.keys(TILE_ATLAS.roles));
+        if (missingRoles.length) {
+          warnings.push(`Tileset biome ${b} missing roles: ${missingRoles.join(', ')}`);
+        }
+        writeCheckpoint(
+          options.outputDir,
+          `assets/tilesets/biome_${b}/terrain.json`,
+          Buffer.from(
+            JSON.stringify(
+              {
+                tileSize,
+                roles: buildTileTerrainMetadata(),
+                missingRoles,
+                seamIssues: compiled.seamIssues,
+                passed: compiled.passed && missingRoles.length === 0,
+              },
+              null,
+              2,
+            ),
+            'utf8',
+          ),
+        );
+        if (b === 0) {
           writeCheckpoint(options.outputDir, 'assets/qa/tileset-test.png', compiled.atlas);
-        } else {
-          processedBuffer = processed.buffer;
         }
 
         const expectedW = decodeImageSize(processedBuffer);
@@ -1192,8 +1355,12 @@ export class AssetPipeline {
         );
       }
 
-      if (options.profile === 'VISUAL_VERTICAL_SLICE') {
-        const layers = ['far', 'mid', 'near'] as const;
+      if (!isTopDownArchetype(options.gameDna.archetype)) {
+        const layers = (
+          options.profile === 'TINY_TEST'
+            ? (['far', 'mid', 'near'] as const)
+            : (['far', 'mid', 'near', 'overlay', 'foreground'] as const)
+        );
         for (let li = 0; li < layers.length; li++) {
           const layer = layers[li]!;
           const bgPath = `assets/backgrounds/biome_${b}/${layer}.png`;
@@ -1202,18 +1369,27 @@ export class AssetPipeline {
           let bgFallback = true;
           let bgProvider = 'procedural';
           let bgModel: string | undefined;
-          if (imageGen) {
+          const useAi = Boolean(imageGen) && (layer === 'far' || layer === 'mid' || layer === 'near');
+          const layerPrompt =
+            layer === 'far'
+              ? 'far_background skyline plate, distant architecture, empty of characters'
+              : layer === 'overlay'
+                ? 'environmental_overlay mist and hanging debris, transparent-friendly, no characters'
+                : layer === 'foreground'
+                  ? 'foreground_occluder silhouettes, dark rim plants/ruins at the camera edge, no UI'
+                  : `${layer} parallax_layer, empty of characters`;
+          if (useAi) {
             try {
-              const result = await imageGen.generateImage({
+              const result = await imageGen!.generateImage({
                 profile: 'BACKGROUND',
                 prompt: sanitizeImagePromptText(
                   applyStylePrompt(
                     options.styleBible,
                     'ENVIRONMENT',
-                    `${layer} parallax layer, empty of characters, ${options.gameDna.identity.visualStyle} biome ${b}`,
+                    `${layerPrompt}, ${options.gameDna.identity.visualStyle} biome ${b}, matching tileset palette, side-view, no UI, no text, no logos, no characters`,
                   ),
                 ),
-                negativePrompt,
+                negativePrompt: `${negativePrompt ?? ''}, UI, HUD, text, logos, watermarks, characters, portraits, unrelated biome`,
                 width: 1024,
                 height: 512,
                 seed: options.seed + 4000 + b * 10 + li,
@@ -1244,6 +1420,11 @@ export class AssetPipeline {
               fallbackGenerated: bgFallback,
               critiquePassed: true,
               critiqueScore: bgFallback ? 40 : 75,
+              promptHash: hashPrompt(layerPrompt),
+              compiler: 'pixel-art-processor',
+              parentArtifactIds: [`tileset_biome_${b}`],
+              transformation: 'biome-background-layer',
+              godotResourcePath: `res://${bgPath}`,
             },
             'background',
           );
@@ -1257,16 +1438,17 @@ export class AssetPipeline {
             { label: 'mid', png: mid },
             { label: 'near', png: near },
           ]);
-          writeCheckpoint(options.outputDir, 'assets/qa/biome-layers.png', biomeSheet);
+          writeCheckpoint(options.outputDir, `assets/qa/biome_${b}-layers.png`, biomeSheet);
           recordAsset(
             {
-              id: 'biome_layers_sheet',
-              path: 'assets/qa/biome-layers.png',
+              id: `biome_${b}_layers_sheet`,
+              path: `assets/qa/biome_${b}-layers.png`,
               buffer: biomeSheet,
               provider: 'pixel-art-processor',
               fallbackGenerated: false,
               critiquePassed: true,
               critiqueScore: 80,
+              parentArtifactIds: [`bg_biome_${b}_far`, `bg_biome_${b}_mid`, `bg_biome_${b}_near`],
             },
             'background',
           );
@@ -1345,7 +1527,7 @@ export class AssetPipeline {
     const assets: GeneratedAsset[] = [];
     const contactFrames: { label: string; png: Buffer }[] = [];
     const knockedOutSource = opts.source ? knockoutVfxBackground(opts.source) : undefined;
-    const canAttemptAi = Boolean(opts.imageGen && opts.source && opts.allowAiUpgrade !== false);
+    const canAttemptAi = Boolean(opts.imageGen && opts.source && opts.allowAiUpgrade === true);
 
     if (!canAttemptAi) {
       warnings.push(
@@ -1355,7 +1537,7 @@ export class AssetPipeline {
       );
     }
 
-    let anyAiSuccess = false;
+
     for (let i = 0; i < poses.length; i++) {
       const pose = poses[i]!;
       const rel = `${opts.destDir}/${opts.id}_${pose.name}_pose.png`;
@@ -1395,11 +1577,14 @@ export class AssetPipeline {
               critiquePassed: identity.passed,
               critiqueScore: identity.passed ? 80 : 40,
               fakeAnimation: false,
+              parentArtifactIds: [opts.id],
+              compiler: 'pixel-art-processor',
+              transformation: 'canonical-pose',
+              godotResourcePath: `res://${rel}`,
             }),
           );
           contactFrames.push({ label: pose.name, png: compiled.buffer });
           usedAi = true;
-          anyAiSuccess = true;
         } catch (err) {
           // Continue to the next pose instead of aborting the whole set — a single transient
           // failure (e.g. one pose's request timing out) must not leave every later pose
@@ -1430,6 +1615,10 @@ export class AssetPipeline {
             critiquePassed: identity.passed,
             critiqueScore: identity.passed ? 55 : 30,
             fakeAnimation: false,
+            parentArtifactIds: [opts.id],
+            compiler: 'pixel-art-processor',
+            transformation: 'procedural-pose-transform',
+            godotResourcePath: `res://${rel}`,
             fallbackDepth: 1,
             fallbackReason: canAttemptAi
               ? 'AI-conditioned pose generation failed for this state — deterministic procedural transform used instead'
@@ -1443,7 +1632,7 @@ export class AssetPipeline {
     return {
       assets,
       warnings,
-      fakeAnimation: !anyAiSuccess,
+      fakeAnimation: assets.length === 0,
       contactSheet: contactFrames.length ? assembleContactSheet(contactFrames) : undefined,
     };
   }

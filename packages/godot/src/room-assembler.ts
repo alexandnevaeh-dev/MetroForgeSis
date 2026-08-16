@@ -46,7 +46,8 @@ export interface RoomAssemblyOptions {
   platforms?: PlatformRect[];
   /** Real gaps carved into the main floor collider (see buildFloorSection). */
   pits?: PitGap[];
-  backgroundLayers?: { far?: string; mid?: string; near?: string };
+  backgroundLayers?: { far?: string; mid?: string; near?: string; overlay?: string; foreground?: string };
+  uniquenessSalt?: number;
 }
 
 export interface TileCell {
@@ -397,7 +398,8 @@ function defaultRoomWidth(worldGraphArchetype: string | undefined, override?: nu
 
 function defaultRoomHeight(worldGraphArchetype: string | undefined, override?: number): number {
   if (override !== undefined) return override;
-  if (worldGraphArchetype === 'challenge') return 900;
+  if (worldGraphArchetype === 'challenge' || worldGraphArchetype === 'traversal') return 900;
+  if (worldGraphArchetype === 'ability_gate' || worldGraphArchetype === 'ability_shrine') return 780;
   if (worldGraphArchetype === 'set_piece' || worldGraphArchetype === 'boss') return 720;
   return 600;
 }
@@ -410,7 +412,7 @@ export function buildRoomAssemblyOptions(
   gameContent: GameContent | undefined,
   enemyCounter: { value: number },
   textureExists: (relPath: string) => boolean,
-  overrides?: Partial<Pick<RoomAssemblyOptions, 'hasEnemy' | 'width' | 'height'>>,
+  overrides?: Partial<Pick<RoomAssemblyOptions, 'hasEnemy' | 'width' | 'height' | 'uniquenessSalt'>>,
 ): RoomAssemblyOptions {
   const bossId = ctx.bossesByRoom.get(roomId);
   const isBossRoom = bossId !== undefined;
@@ -449,6 +451,8 @@ export function buildRoomAssemblyOptions(
   const far = `assets/backgrounds/biome_${biomeIndex}/far.png`;
   const mid = `assets/backgrounds/biome_${biomeIndex}/mid.png`;
   const near = `assets/backgrounds/biome_${biomeIndex}/near.png`;
+  const overlay = `assets/backgrounds/biome_${biomeIndex}/overlay.png`;
+  const foreground = `assets/backgrounds/biome_${biomeIndex}/foreground.png`;
   const connections = ctx.roomConnections.get(roomId) ?? [];
   const movementStats = movementFeasibilityStats(buildMovementJson(gameDna.movement));
   const layout = buildRoomTileCells({
@@ -460,6 +464,7 @@ export function buildRoomAssemblyOptions(
     movement: movementStats,
     connections,
     availableAbilities: abilitiesAvailableBeforeRoom(ctx, index),
+    uniquenessSalt: overrides?.uniquenessSalt ?? 0,
   });
 
   return {
@@ -489,6 +494,8 @@ export function buildRoomAssemblyOptions(
       far: textureExists(far) ? far : undefined,
       mid: textureExists(mid) ? mid : undefined,
       near: textureExists(near) ? near : undefined,
+      overlay: textureExists(overlay) ? overlay : undefined,
+      foreground: textureExists(foreground) ? foreground : undefined,
     },
   };
 }
@@ -834,9 +841,17 @@ export function generateRoomScene(roomId: string, _index: number, options: RoomA
   );
   const platformSection = buildPlatformColliders(realPlatforms);
   const layers = options.backgroundLayers ?? {};
-  const layerEntries = (['far', 'mid', 'near'] as const)
-    .map((name) => ({ name, path: layers[name] }))
-    .filter((e): e is { name: 'far' | 'mid' | 'near'; path: string } => Boolean(e.path));
+  const layerEntries = (
+    [
+      { name: 'far', path: layers.far },
+      { name: 'mid', path: layers.mid },
+      { name: 'near', path: layers.near },
+      { name: 'overlay', path: layers.overlay },
+      { name: 'foreground', path: layers.foreground },
+    ] as const
+  ).filter((e): e is { name: 'far' | 'mid' | 'near' | 'overlay' | 'foreground'; path: string } =>
+    Boolean(e.path),
+  );
   let loadSteps = 6 + floorSection.extraSubResources + realPlatforms.length;
   if (weakFloors.length > 0) loadSteps += 1;
   if (grapplePoints.length > 0) loadSteps += 1;
@@ -935,7 +950,7 @@ tile_size = ${options.tileSize}
 
   const shadow = 0.08 + ((options.biomeIndex + _index) % 3) * 0.02;
   const steel = 0.12 + (options.biomeIndex % 2) * 0.03;
-  const hideSkyRect = layerEntries.length > 0 || options.hasTileset;
+	const hideSkyRect = false;
   scene += `[node name="Background" type="ColorRect" parent="."]
 z_index = -20
 visible = ${hideSkyRect ? 'false' : 'true'}
@@ -949,29 +964,42 @@ color = Color(${shadow.toFixed(3)}, ${steel.toFixed(3)}, ${(0.16 + (options.biom
 `;
 
   if (layerEntries.length > 0) {
-    scene += `[node name="ParallaxBg" type="ParallaxBackground" parent="."]
+    scene += `[node name="ParallaxBg" type="Node2D" parent="."]
+z_index = -16
 
 `;
-    const scales: Record<string, string> = { far: '0.15, 0.05', mid: '0.4, 0.12', near: '0.75, 0.2' };
-    const layerY: Record<string, number> = {
-      far: options.height * 0.28,
-      mid: options.height * 0.48,
-      near: options.height * 0.68,
+    const scales: Record<string, string> = {
+      far: '0.15, 0.05',
+      mid: '0.4, 0.12',
+      near: '0.75, 0.2',
+      overlay: '0.92, 0.85',
+      foreground: '1.18, 1.08',
     };
     const layerMod: Record<string, string> = {
       far: 'Color(1, 1, 1, 1)',
-      mid: 'Color(1, 1, 1, 0.72)',
-      near: 'Color(1, 1, 1, 0.42)',
+      mid: 'Color(1, 1, 1, 0.45)',
+      near: 'Color(1, 1, 1, 0.28)',
+      overlay: 'Color(1, 1, 1, 0)',
+      foreground: 'Color(1, 1, 1, 0)',
+    };
+    const layerZ: Record<string, string> = {
+      far: '0',
+      mid: '1',
+      near: '2',
+      overlay: '3',
+      foreground: '4',
     };
     for (const layer of layerEntries) {
-      scene += `[node name="${layer.name}" type="ParallaxLayer" parent="ParallaxBg"]
-motion_scale = Vector2(${scales[layer.name]})
+      const repeating = layer.name === 'far' ? 1 : 1;
+      scene += `[node name="${layer.name}" type="Parallax2D" parent="ParallaxBg"]
+scroll_scale = Vector2(${scales[layer.name] ?? '1, 1'})
+repeat_times = ${repeating}
 
 [node name="Sprite" type="Sprite2D" parent="ParallaxBg/${layer.name}"]
-z_index = ${layer.name === 'far' ? '-12' : layer.name === 'mid' ? '-10' : '-8'}
+z_index = ${layerZ[layer.name] ?? '0'}
 texture_filter = 0
-position = Vector2(${options.width / 2}, ${layerY[layer.name]})
-modulate = ${layerMod[layer.name]}
+position = Vector2(${options.width / 2}, ${options.height / 2})
+modulate = ${layerMod[layer.name] ?? 'Color(1, 1, 1, 1)'}
 texture = ExtResource("21_bg_${layer.name}")
 centered = true
 

@@ -291,6 +291,13 @@ export const ArtifactSchema = z.object({
   timestamp: z.string().datetime(),
   validationState: z.enum(['pending', 'passed', 'failed']).default('pending'),
   fallbackGenerated: z.boolean().default(false),
+  parentArtifactIds: z.array(z.string()).optional(),
+  compiler: z.string().nullable().optional(),
+  godotResourcePath: z.string().optional(),
+  repairCount: z.number().int().nonnegative().optional(),
+  transformation: z.string().optional(),
+  sourceLicense: z.string().optional(),
+  derivedLicense: z.string().optional(),
   /** Explicit maturity — procedural/test art must be PLACEHOLDER/BLOCKOUT, never PRODUCTION_READY. */
   maturity: AssetMaturitySchema.optional(),
   productionReady: z.boolean().optional(),

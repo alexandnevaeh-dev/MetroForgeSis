@@ -4,6 +4,7 @@ extends CanvasLayer
 signal dialogue_finished(context: Dictionary)
 
 @onready var portrait: ColorRect = $Panel/HBox/Portrait
+@onready var portrait_image: TextureRect = $Panel/HBox/Portrait/PortraitImage
 @onready var speaker_label: Label = $Panel/HBox/Content/SpeakerLabel
 @onready var text_label: Label = $Panel/HBox/Content/TextLabel
 @onready var choices_box: VBoxContainer = $Panel/HBox/Content/ChoicesBox
@@ -152,3 +153,14 @@ func _clear_choices() -> void:
 
 func _apply_portrait(portrait_key: String) -> void:
 	portrait.color = PORTRAIT_COLORS.get(portrait_key, PORTRAIT_COLORS["neutral"])
+	if portrait_image == null:
+		return
+	var key := portrait_key.to_lower()
+	var path := "res://assets/ui/portraits/%s.png" % key
+	if ResourceLoader.exists(path):
+		portrait_image.texture = load(path)
+		portrait_image.visible = true
+		portrait.color = Color(0, 0, 0, 0)
+	else:
+		portrait_image.texture = null
+		portrait_image.visible = false

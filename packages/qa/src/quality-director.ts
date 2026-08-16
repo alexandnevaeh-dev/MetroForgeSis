@@ -316,7 +316,7 @@ export class QualityDirector {
       reason: 'Room-lock / dead-zone / look-ahead; do not change transition colliders',
       payload: {
         tier,
-        zoom: dna?.profile === 'VISUAL_VERTICAL_SLICE' ? 3 : tier === 'LOW' ? 2.4 : tier === 'MEDIUM' ? 2.1 : 1.85,
+        zoom: 1.85,
         deadZone: dna?.profile === 'VISUAL_VERTICAL_SLICE' ? 0.14 : 0.18,
         lookAheadPx: dna?.profile === 'VISUAL_VERTICAL_SLICE' ? 40 : 28,
       },

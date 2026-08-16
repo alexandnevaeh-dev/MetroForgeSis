@@ -410,7 +410,7 @@ describe('generateRoomScene combat sprites', () => {
     expect(scene).not.toContain('stretch_mode = 6');
     expect(scene).toContain('RoomTileMap.gd');
     expect(scene).toContain('z_index = 0');
-    expect(scene).toContain('visible = false');
+    expect(scene).toContain('visible = true');
   });
 
   it('aligns floor collision with the ground tile row when a tileset is present', () => {

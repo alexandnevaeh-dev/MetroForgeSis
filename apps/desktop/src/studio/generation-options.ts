@@ -1,4 +1,4 @@
-import { GENERATION_PROFILES } from '@metroforge/shared';
+import { GENERATION_PROFILES } from '@metroforge/shared/constants';
 
 export { GENERATION_PROFILES };
 export const GENERATION_MODES = [

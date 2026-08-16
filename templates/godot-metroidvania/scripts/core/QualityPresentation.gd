@@ -127,13 +127,58 @@ func _clear_injected(room: Node) -> void:
 
 func _replace_stretched_background(room: Node, size: Vector2, biome: String) -> void:
 	var bg := room.get_node_or_null("Background")
-	if bg is CanvasItem:
-		(bg as CanvasItem).visible = false
-		(bg as CanvasItem).modulate = Color(1, 1, 1, 0)
 	if bg is ColorRect:
-		(bg as ColorRect).color.a = 0
-	if bg is TextureRect:
-		(bg as TextureRect).visible = false
+		var sky := bg as ColorRect
+		sky.visible = true
+		sky.color = _biome_far(biome)
+		sky.z_index = -30
+		sky.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		# Cover the whole room so uncovered camera edges aren't a black void.
+		sky.offset_left = -240.0
+		sky.offset_top = -180.0
+		sky.offset_right = size.x + 240.0
+		sky.offset_bottom = size.y + 180.0
+	elif bg is CanvasItem:
+		(bg as CanvasItem).visible = false
+
+
+func _cover_parallax_sprite(sprite: Sprite2D, size: Vector2, alpha: float) -> void:
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sprite.centered = true
+	sprite.modulate = Color(1, 1, 1, alpha)
+	# ParallaxBackground is a CanvasLayer (screen space). Cover the viewport so zoomed Camera2D
+	# world tiles sit on a full-frame landscape instead of a floating 640×360 plate. Parallax2D
+	# lives in world space — cover the room rectangle so empty air reads as biome depth.
+	var cover := size
+	var n: Node = sprite.get_parent()
+	while n:
+		if n is CanvasLayer:
+			cover = sprite.get_viewport_rect().size
+			break
+		n = n.get_parent()
+	sprite.position = cover * 0.5
+	if sprite.texture:
+		var tw := float(sprite.texture.get_width())
+		var th := float(sprite.texture.get_height())
+		if tw > 1.0 and th > 1.0:
+			var s := maxf(cover.x / tw, cover.y / th)
+			sprite.scale = Vector2(s, s)
+
+
+func _tune_parallax(room: Node, size: Vector2) -> void:
+	var px := room.get_node_or_null("ParallaxBg")
+	if px == null:
+		return
+	var far := px.get_node_or_null("far/Sprite") as Sprite2D
+	if far:
+		_cover_parallax_sprite(far, size, 1.0)
+	# Mid/near/overlay currently reuse the same perspective landscape, so stacking them with
+	# alpha + horizontal repeat produces ghosted hills instead of depth. Keep far as the
+	# full-bleed biome plate until dedicated strip assets exist.
+	for extra in ["mid", "near", "overlay", "foreground"]:
+		var node := px.get_node_or_null(extra)
+		if node:
+			(node as CanvasItem).visible = false
 
 func _hide_collision_slabs(room: Node) -> void:
 	for path in ["Floor/FloorVisual", "FloorLeft/FloorVisual", "FloorRight/FloorVisual"]:
@@ -146,26 +191,6 @@ func _hide_collision_slabs(room: Node) -> void:
 			var vis := child.get_node_or_null("Visual")
 			if vis is CanvasItem:
 				(vis as CanvasItem).visible = false
-
-func _tune_parallax(room: Node, size: Vector2) -> void:
-	var px := room.get_node_or_null("ParallaxBg")
-	if px == null:
-		return
-	var far := px.get_node_or_null("far/Sprite") as Sprite2D
-	if far:
-		far.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		far.position = Vector2(size.x * 0.5, size.y * 0.28)
-		far.modulate = Color(1, 1, 1, 1)
-	var mid := px.get_node_or_null("mid/Sprite") as Sprite2D
-	if mid:
-		mid.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		mid.position = Vector2(size.x * 0.5, size.y * 0.48)
-		mid.modulate = Color(1, 1, 1, 0.72)
-	var near := px.get_node_or_null("near/Sprite") as Sprite2D
-	if near:
-		near.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		near.position = Vector2(size.x * 0.5, size.y * 0.68)
-		near.modulate = Color(1, 1, 1, 0.42)
 
 func _inject_depth_layers(room: Node, size: Vector2, biome: String) -> void:
 	## ParallaxBg already carries far/mid/near. Injecting full plates again covers the tileset.

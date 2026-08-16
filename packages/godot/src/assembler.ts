@@ -1,7 +1,7 @@
 import { cpSync, mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { join, dirname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { GameDNA, ProgressionGraph, WorldGraph } from '@metroforge/schemas';
+import type { GameDNA, ProgressionGraph, StyleBible, WorldGraph } from '@metroforge/schemas';
 import type { GameContent, TopDownOverworld } from '@metroforge/procedural';
 import {
   attachPlaytestPersona,
@@ -28,6 +28,8 @@ import {
   type RecompileRoomsInput,
   type RecompileRoomsResult,
 } from './room-assembler.js';
+import { measureRoomLayout, layoutsTooSimilar, type RoomLayoutMetrics } from './room-variety.js';
+import { composeEnvironment } from './environment-composition.js';
 import { writePixelArtImport } from './godot-import.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -44,6 +46,15 @@ export interface AssetManifestEntry {
   critiqueScore?: number;
   license?: string;
   commercialUse?: 'allowed' | 'restricted' | 'unknown';
+  promptHash?: string | null;
+  parentArtifactIds?: string[];
+  compiler?: string;
+  godotResourcePath?: string;
+  repairCount?: number;
+  sourcePath?: string;
+  transformation?: string;
+  sourceLicense?: string;
+  derivedLicense?: string;
 }
 
 export interface AssemblyInput {
@@ -57,6 +68,7 @@ export interface AssemblyInput {
   textureFiles?: Map<string, Buffer>;
   assetMetadata?: AssetManifestEntry[];
   overworld?: TopDownOverworld;
+  styleBible?: StyleBible;
 }
 
 export interface AssemblyResult {
@@ -135,10 +147,16 @@ export class GodotProjectAssembler {
       const enemyCounter = { value: 0 };
       const textureExists = (rel: string) =>
         (input.textureFiles?.has(rel) ?? false) || existsSync(join(input.outputDir, rel));
+      const previousLayouts: Array<{
+        metrics: RoomLayoutMetrics;
+        platforms: NonNullable<ReturnType<typeof buildRoomAssemblyOptions>['platforms']>;
+        pits: NonNullable<ReturnType<typeof buildRoomAssemblyOptions>['pits']>;
+      }> = [];
+      const compositionByRoom: Record<string, unknown> = {};
 
       for (let i = 0; i < input.roomIds.length; i++) {
         const roomId = input.roomIds[i]!;
-        const opts = buildRoomAssemblyOptions(
+        let opts = buildRoomAssemblyOptions(
           roomId,
           i,
           roomConnections,
@@ -147,10 +165,75 @@ export class GodotProjectAssembler {
           enemyCounter,
           textureExists,
         );
+        const enemySnapshot = enemyCounter.value;
+        for (let salt = 1; salt <= 5; salt++) {
+          const metrics = measureRoomLayout({
+            width: opts.width,
+            height: opts.height,
+            tileSize: opts.tileSize,
+            layout: {
+              cells: opts.tileCells ?? [],
+              platforms: opts.platforms ?? [],
+              pits: opts.pits ?? [],
+            },
+          });
+          const similar = previousLayouts.some((prev) =>
+            layoutsTooSimilar(
+              prev.metrics,
+              metrics,
+              prev.platforms ?? [],
+              opts.platforms ?? [],
+              prev.pits ?? [],
+              opts.pits ?? [],
+            ),
+          );
+          if (!similar) break;
+          enemyCounter.value = opts.hasEnemy ? enemySnapshot - 1 : enemySnapshot;
+          opts = buildRoomAssemblyOptions(
+            roomId,
+            i,
+            roomConnections,
+            input.gameDna,
+            input.gameContent,
+            enemyCounter,
+            textureExists,
+            { uniquenessSalt: salt, hasEnemy: opts.hasEnemy, width: opts.width, height: opts.height },
+          );
+        }
+        previousLayouts.push({
+          metrics: measureRoomLayout({
+            width: opts.width,
+            height: opts.height,
+            tileSize: opts.tileSize,
+            layout: {
+              cells: opts.tileCells ?? [],
+              platforms: opts.platforms ?? [],
+              pits: opts.pits ?? [],
+            },
+          }),
+          platforms: opts.platforms ?? [],
+          pits: opts.pits ?? [],
+        });
+        compositionByRoom[roomId] = composeEnvironment({
+          gameDna: input.gameDna,
+          styleBible: input.styleBible,
+          biomeIndex: opts.biomeIndex,
+          archetype: opts.worldGraphArchetype ?? 'combat',
+          seed: input.gameDna.seed + i,
+          textureExists,
+        });
         const sceneContent = generateRoomScene(roomId, i, opts);
         writeFileSync(join(roomsDir, `${roomId}.tscn`), sceneContent);
-        roomsData[roomId] = buildPublishedRoomRecord(roomId, i, opts);
+        roomsData[roomId] = {
+          ...buildPublishedRoomRecord(roomId, i, opts),
+          layoutMetrics: previousLayouts[previousLayouts.length - 1]!.metrics,
+        };
       }
+      mkdirSync(join(input.outputDir, 'data', 'environment'), { recursive: true });
+      writeFileSync(
+        join(input.outputDir, 'data', 'environment', 'composition.json'),
+        JSON.stringify({ rooms: compositionByRoom }, null, 2),
+      );
       }
 
       writeFileSync(
@@ -394,14 +477,48 @@ export class GodotProjectAssembler {
             'window/stretch/mode="canvas_items"\nwindow/stretch/aspect="integer"',
           );
         }
-        mkdirSync(join(input.outputDir, 'data', 'quality'), { recursive: true });
+      }
+      if (!isTopDownArchetype(input.gameDna.archetype)) {
+        const qualityDir = join(input.outputDir, 'data', 'quality');
+        mkdirSync(qualityDir, { recursive: true });
+        // 3.0 cropped an 800×600 room to ~426×240 world pixels so the camera showed a postage-stamp
+        // of floor plus floating parallax plates. 1.85 still reads as chunky pixel art while
+        // keeping platforms, exits, and biome depth in frame.
+        const zoom = 1.85;
         writeFileSync(
-          join(input.outputDir, 'data', 'quality', 'camera_profile.json'),
+          join(qualityDir, 'camera_profile.json'),
           JSON.stringify(
-            { zoom: 3, deadZone: 0.14, lookAheadPx: 40, pixelSnap: true },
+            { zoom, deadZone: 0.16, lookAheadPx: 32, pixelSnap: true, smoothing: true },
             null,
             2,
           ),
+        );
+        writeFileSync(
+          join(qualityDir, 'install_readability_outline.json'),
+          JSON.stringify({ kind: 'INSTALL_READABILITY_OUTLINE', enabled: true, intensity: 1 }, null, 2),
+        );
+        writeFileSync(
+          join(qualityDir, 'apply_combat_feedback.json'),
+          JSON.stringify(
+            {
+              kind: 'APPLY_COMBAT_FEEDBACK',
+              hitstopMs: 36,
+              flashMs: 60,
+              vfxScale: 1.1,
+              shakeEnabledDefault: true,
+              flashEnabledDefault: true,
+            },
+            null,
+            2,
+          ),
+        );
+        writeFileSync(
+          join(qualityDir, 'apply_transition_fade.json'),
+          JSON.stringify({ kind: 'APPLY_TRANSITION_FADE', durationMs: 180 }, null, 2),
+        );
+        writeFileSync(
+          join(qualityDir, 'apply_lighting_profile.json'),
+          JSON.stringify({ kind: 'APPLY_LIGHTING_PROFILE', tier: 'LOW' }, null, 2),
         );
       }
       writeFileSync(projectGodotPath, projectGodot);

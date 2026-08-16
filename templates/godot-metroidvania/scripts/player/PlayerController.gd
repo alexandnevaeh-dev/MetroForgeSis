@@ -21,6 +21,8 @@ extends CharacterBody2D
 var facing: int = 1
 
 var _attack_cooldown: float = 0.0
+var _was_on_floor: bool = true
+var _land_timer: float = 0.0
 
 
 
@@ -96,7 +98,17 @@ func _physics_process(delta: float) -> void:
 
 	else:
 
+		if not _was_on_floor:
+
+			_land_timer = 0.18
+			if has_node("/root/VFXManager"):
+				VFXManager.play("slam_shock", global_position + Vector2(0, 8), 0.7)
+
 		ability_controller.on_landed()
+
+
+	_land_timer = max(0.0, _land_timer - delta)
+	_was_on_floor = is_on_floor()
 
 
 
@@ -184,6 +196,10 @@ func _update_locomotion_animation(input_dir: float) -> void:
 
 		return
 
+	if ability_controller.is_wall_sliding and sprite.sprite_frames.has_animation("wall_slide"):
+		sprite.play("wall_slide")
+		return
+
 	if ability_controller.is_dashing and sprite.sprite_frames.has_animation("dash"):
 
 		sprite.play("dash")
@@ -192,14 +208,20 @@ func _update_locomotion_animation(input_dir: float) -> void:
 
 	if not is_on_floor():
 
-		if velocity.y < 0.0 and sprite.sprite_frames.has_animation("jump"):
-
-			sprite.play("jump")
+		if velocity.y < 0.0:
+			if sprite.sprite_frames.has_animation("jump_start") and abs(velocity.y) > 160.0:
+				sprite.play("jump_start")
+			elif sprite.sprite_frames.has_animation("jump"):
+				sprite.play("jump")
 
 		elif sprite.sprite_frames.has_animation("fall"):
 
 			sprite.play("fall")
 
+		return
+
+	if _land_timer > 0.0 and sprite.sprite_frames.has_animation("land"):
+		sprite.play("land")
 		return
 
 	if input_dir != 0:

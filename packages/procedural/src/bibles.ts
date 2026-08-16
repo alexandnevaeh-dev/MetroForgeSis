@@ -221,5 +221,14 @@ export function applyStyleBiblePrompt(
   if (!styleBible) return prompt;
   const prefix = styleBible.promptPrefixes[capability] ?? `${styleBible.renderingStyle},`;
   const palette = styleBible.palette.map((p) => `${p.name} ${p.hex}`).join(', ');
-  return `${prefix} ${styleBible.spritePerspective}, ${styleBible.lighting}, palette [${palette}]. ${prompt}`.trim();
+  const extras = [
+    styleBible.outlineRules,
+    styleBible.lightingDirection,
+    styleBible.saturation,
+    styleBible.backgroundDepthRules,
+    styleBible.characterScale,
+  ]
+    .filter(Boolean)
+    .join(', ');
+  return `${prefix} ${styleBible.spritePerspective}, ${styleBible.lighting}, palette [${palette}], ${extras}. ${prompt}`.trim();
 }

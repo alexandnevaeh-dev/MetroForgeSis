@@ -15,6 +15,14 @@ export type {
   ProjectMemorySummary,
 } from './project-loader.js';
 export { buildDependencyGraph, findAssetUsages } from './dependency-graph.js';
+export {
+  lineageFromArtifact,
+  defaultCharacterLineageEdges,
+  descendantsOf,
+  markDescendantsDirty,
+} from './artifact-lineage.js';
+export type { ArtifactLineage, LineageEdge } from './artifact-lineage.js';
+export { inheritDerivativeLicense } from './derivative-license.js';
 export { scanGodotResourceGraph, assetPathToResPath } from './godot-resource-graph.js';
 export type { GodotResourceGraph, GodotResourceReference } from './godot-resource-graph.js';
 export { EditHistory } from './edit-history.js';

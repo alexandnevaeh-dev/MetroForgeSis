@@ -1,3 +1,4 @@
+import { defaultCharacterLineageEdges, type LineageEdge } from './artifact-lineage.js';
 import type { LoadedProject } from './project-loader.js';
 import { assetPathToResPath, scanGodotResourceGraph } from './godot-resource-graph.js';
 
@@ -15,6 +16,7 @@ export interface DependencyGraph {
   assets: Map<string, AssetUsage>;
   godotResourceCount: number;
   godotScannedFiles: number;
+  lineageEdges: LineageEdge[];
 }
 
 export function buildDependencyGraph(project: LoadedProject): DependencyGraph {
@@ -67,10 +69,22 @@ export function buildDependencyGraph(project: LoadedProject): DependencyGraph {
     }
   }
 
+  const lineageEdges: LineageEdge[] = [...defaultCharacterLineageEdges('player')];
+  for (const artifact of project.manifest.artifacts ?? []) {
+    const childId = String(artifact.id ?? artifact.path ?? '');
+    const parents = (artifact.parentArtifactIds as string[] | undefined) ?? [];
+    const transformation = String(artifact.transformation ?? artifact.compiler ?? 'derived');
+    for (const parentId of parents) {
+      if (!parentId || !childId) continue;
+      lineageEdges.push({ parentId, childId, reason: transformation });
+    }
+  }
+
   return {
     assets,
     godotResourceCount: godotGraph.resources.size,
     godotScannedFiles: godotGraph.scannedFiles,
+    lineageEdges,
   };
 }
 
