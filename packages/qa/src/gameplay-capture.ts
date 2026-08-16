@@ -137,7 +137,16 @@ export function captureGameplayScreenshots(opts: {
     const run = runGodotSync({
       godotPath: opts.godotPath,
       projectPath: opts.projectPath,
-      args: ['--headless', '--path', opts.projectPath, scene, '--quit-after', '900'],
+      args: [
+      '--headless',
+      '--path',
+      opts.projectPath,
+      '--resolution',
+      readViewportResolution(opts.projectPath),
+      scene,
+      '--quit-after',
+      '3600',
+    ],
       timeoutMs: 90_000,
       windowsHide: true,
     });
@@ -197,8 +206,16 @@ export function captureGameplayScreenshots(opts: {
   const windowed = runGodotSync({
     godotPath: opts.godotPath,
     projectPath: opts.projectPath,
-    args: ['--path', opts.projectPath, '--rendering-driver', 'd3d12', scene, '--quit-after', '900'],
-    timeoutMs: 120_000,
+    args: [
+      '--path',
+      opts.projectPath,
+      '--rendering-driver',
+      'd3d12',
+      '--resolution',
+      readViewportResolution(opts.projectPath),
+      scene,
+    ],
+    timeoutMs: 180_000,
     windowsHide: false,
     env: {
       METROFORGE_CAPTURE: '1',
@@ -232,6 +249,21 @@ export function captureGameplayScreenshots(opts: {
   telemetry.shots = collectShots(qaDir);
   writeTelemetry(qaDir, telemetry);
   return telemetry;
+}
+
+function readViewportResolution(projectPath: string): string {
+  let w = 1280;
+  let h = 720;
+  try {
+    const text = readFileSync(join(projectPath, 'project.godot'), 'utf-8');
+    const wm = /window\/size\/viewport_width=(\d+)/.exec(text);
+    const hm = /window\/size\/viewport_height=(\d+)/.exec(text);
+    if (wm) w = Number(wm[1]);
+    if (hm) h = Number(hm[1]);
+  } catch {
+    /* keep defaults */
+  }
+  return `${w}x${h}`;
 }
 
 function collectShots(qaDir: string): string[] {

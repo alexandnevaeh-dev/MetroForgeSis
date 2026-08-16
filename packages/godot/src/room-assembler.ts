@@ -841,17 +841,9 @@ export function generateRoomScene(roomId: string, _index: number, options: RoomA
   );
   const platformSection = buildPlatformColliders(realPlatforms);
   const layers = options.backgroundLayers ?? {};
-  const layerEntries = (
-    [
-      { name: 'far', path: layers.far },
-      { name: 'mid', path: layers.mid },
-      { name: 'near', path: layers.near },
-      { name: 'overlay', path: layers.overlay },
-      { name: 'foreground', path: layers.foreground },
-    ] as const
-  ).filter((e): e is { name: 'far' | 'mid' | 'near' | 'overlay' | 'foreground'; path: string } =>
-    Boolean(e.path),
-  );
+  // Far is a viewport-filling CanvasLayer plate. Mid/near Parallax2D strips stack
+  // as extra hill silhouettes and slide off-camera, leaking the clear color.
+  const farPath = layers.far;
   let loadSteps = 6 + floorSection.extraSubResources + realPlatforms.length;
   if (weakFloors.length > 0) loadSteps += 1;
   if (grapplePoints.length > 0) loadSteps += 1;
@@ -862,7 +854,7 @@ export function generateRoomScene(roomId: string, _index: number, options: RoomA
   if (options.npcs.length > 0) loadSteps += 1;
   if (options.hasItemPickup) loadSteps += 1;
   if (options.abilityPickups.length > 0) loadSteps += options.abilityPickups.length;
-  if (layerEntries.length > 0) loadSteps += 1 + layerEntries.length;
+  if (farPath) loadSteps += 1;
 
   let scene = `[gd_scene load_steps=${loadSteps} format=3]
 
@@ -905,11 +897,10 @@ export function generateRoomScene(roomId: string, _index: number, options: RoomA
     scene += `[ext_resource type="PackedScene" uid="uid://phase_barrier" path="res://scenes/world/PhaseBarrier.tscn" id="14_phase"]
 `;
   }
-  layerEntries.forEach((layer, i) => {
-    scene += `[ext_resource type="Texture2D" path="res://${layer.path}" id="21_bg_${layer.name}"]
+  if (farPath) {
+    scene += `[ext_resource type="Texture2D" path="res://${farPath}" id="21_bg_far"]
 `;
-    void i;
-  });
+  }
 
   scene += `
 ${floorSection.subResources}${platformSection.subResources}
@@ -950,7 +941,7 @@ tile_size = ${options.tileSize}
 
   const shadow = 0.08 + ((options.biomeIndex + _index) % 3) * 0.02;
   const steel = 0.12 + (options.biomeIndex % 2) * 0.03;
-	const hideSkyRect = false;
+  const hideSkyRect = Boolean(farPath);
   scene += `[node name="Background" type="ColorRect" parent="."]
 z_index = -20
 visible = ${hideSkyRect ? 'false' : 'true'}
@@ -963,48 +954,18 @@ color = Color(${shadow.toFixed(3)}, ${steel.toFixed(3)}, ${(0.16 + (options.biom
 
 `;
 
-  if (layerEntries.length > 0) {
-    scene += `[node name="ParallaxBg" type="Node2D" parent="."]
-z_index = -16
-
-`;
-    const scales: Record<string, string> = {
-      far: '0.15, 0.05',
-      mid: '0.4, 0.12',
-      near: '0.75, 0.2',
-      overlay: '0.92, 0.85',
-      foreground: '1.18, 1.08',
-    };
-    const layerMod: Record<string, string> = {
-      far: 'Color(1, 1, 1, 1)',
-      mid: 'Color(1, 1, 1, 0.45)',
-      near: 'Color(1, 1, 1, 0.28)',
-      overlay: 'Color(1, 1, 1, 0)',
-      foreground: 'Color(1, 1, 1, 0)',
-    };
-    const layerZ: Record<string, string> = {
-      far: '0',
-      mid: '1',
-      near: '2',
-      overlay: '3',
-      foreground: '4',
-    };
-    for (const layer of layerEntries) {
-      const repeating = layer.name === 'far' ? 1 : 1;
-      scene += `[node name="${layer.name}" type="Parallax2D" parent="ParallaxBg"]
-scroll_scale = Vector2(${scales[layer.name] ?? '1, 1'})
-repeat_times = ${repeating}
-
-[node name="Sprite" type="Sprite2D" parent="ParallaxBg/${layer.name}"]
-z_index = ${layerZ[layer.name] ?? '0'}
+  if (farPath) {
+    const farScale = Math.max(options.width / 640, options.height / 360) * 1.4;
+    scene += `[node name="FarSky" type="Sprite2D" parent="."]
+z_index = -80
+z_as_relative = false
 texture_filter = 0
 position = Vector2(${options.width / 2}, ${options.height / 2})
-modulate = ${layerMod[layer.name] ?? 'Color(1, 1, 1, 1)'}
-texture = ExtResource("21_bg_${layer.name}")
+texture = ExtResource("21_bg_far")
 centered = true
+scale = Vector2(${farScale.toFixed(4)}, ${farScale.toFixed(4)})
 
 `;
-    }
   }
 
   scene += floorSection.nodes;
@@ -1225,8 +1186,8 @@ export function recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult
     if (!targets.has(roomId)) continue;
     try {
       const override = input.roomOverrides?.[roomId];
-      const existing = roomsData[roomId];
-      const tileCells = override?.tileCells ?? existing?.tileCells;
+      // Rebuild layout from the seeded assembler. Restoring rooms.json tileCells would
+      // re-bake previous wallpaper infills into every interior cell.
       const opts = buildRoomAssemblyOptions(
         roomId,
         i,
@@ -1237,17 +1198,12 @@ export function recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult
         textureExists,
         override,
       );
-      if (tileCells?.length) {
-        opts.tileCells = tileCells;
-        if (override?.tileCells) {
-          // Hand-edited cells (room editor) have no matching auto-generated collision geometry —
-          // clear it rather than risk mismatched/floating platform or pit collision.
-          opts.platforms = [];
-          opts.pits = [];
-        } else if (existing?.tileCells) {
-          opts.platforms = existing.platforms ?? [];
-          opts.pits = existing.pits ?? [];
-        }
+      if (override?.tileCells?.length) {
+        // Hand-edited cells (room editor) have no matching auto-generated collision geometry —
+        // clear it rather than risk mismatched/floating platform or pit collision.
+        opts.tileCells = override.tileCells;
+        opts.platforms = [];
+        opts.pits = [];
       }
       const scene = generateRoomScene(roomId, i, opts);
       writeFileSync(join(roomsDir, `${roomId}.tscn`), scene);

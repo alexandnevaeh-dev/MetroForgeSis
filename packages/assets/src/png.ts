@@ -172,20 +172,28 @@ export function knockoutVfxBackground(png: Buffer, chroma: [number, number, numb
     queue.push(idx);
   };
 
-  const corners: Array<[number, number]> = [
-    [0, 0],
-    [width - 1, 0],
-    [0, height - 1],
-    [width - 1, height - 1],
-  ];
-  for (const [cx, cy] of corners) {
+  const seeds: Array<[number, number]> = [];
+  for (let x = 0; x < width; x++) {
+    seeds.push([x, 0], [x, height - 1]);
+  }
+  for (let y = 1; y < height - 1; y++) {
+    seeds.push([0, y], [width - 1, y]);
+  }
+  for (const [cx, cy] of seeds) {
     const i = (cy * width + cx) * 4;
+    if ((out[i + 3] ?? 0) === 0) continue;
     const origin = pixelRgb(out, i);
     const luma = 0.2126 * origin[0] + 0.7152 * origin[1] + 0.0722 * origin[2];
     // Only flood typical studio backdrops (dark, magenta-ish, or pale gray) — never
     // a saturated effect that happens to touch a corner.
     const magentaish = colorDistance(origin, chroma) < 90;
-    const studio = luma < 28 || luma > 210 || magentaish;
+    const sat = Math.max(origin[0], origin[1], origin[2]) - Math.min(origin[0], origin[1], origin[2]);
+    const grayish = sat < 36;
+    // NVIDIA hosted preview paints a low-sat studio rectangle (mid gray or pale)
+    // that is neither magenta nor near-black. Flood those too so walk/idle sheets
+    // do not compile as an opaque punch box. Corners on already-compiled sheets are
+    // often punched already — scanning the whole border still reaches leftover gray.
+    const studio = luma < 28 || luma > 200 || magentaish || grayish;
     if (!studio) continue;
     queue.length = 0;
     pushIfBackdrop(cx, cy, origin);
@@ -200,7 +208,123 @@ export function knockoutVfxBackground(png: Buffer, chroma: [number, number, numb
     }
   }
 
+  // Grow punched alpha into leftover studio gray / magenta that already touches
+  // transparency. NVIDIA stills leave a mid-gray punch box or a pocket between
+  // legs that is not 4-connected to the image border, so border flood misses it.
+  const grow: number[] = [];
+  for (let i = 0; i < width * height; i++) {
+    if ((out[i * 4 + 3] ?? 0) < 16) grow.push(i);
+  }
+  while (grow.length > 0) {
+    const idx = grow.pop()!;
+    const x = idx % width;
+    const y = Math.floor(idx / width);
+    for (const [nx, ny] of [
+      [x + 1, y],
+      [x - 1, y],
+      [x, y + 1],
+      [x, y - 1],
+    ] as Array<[number, number]>) {
+      if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+      const ni = ny * width + nx;
+      const pi = ni * 4;
+      if ((out[pi + 3] ?? 0) < 16) continue;
+      if (!isKnockableBackdrop(pixelRgb(out, pi))) continue;
+      out[pi + 3] = 0;
+      grow.push(ni);
+    }
+  }
+
+  punchRegistrationTicks(out, width, height);
+  punchDetachedSpecks(out, width, height);
+
   return encodePng(width, height, out);
+}
+
+function isKnockableBackdrop(rgb: [number, number, number]): boolean {
+  const luma = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+  const sat = Math.max(rgb[0], rgb[1], rgb[2]) - Math.min(rgb[0], rgb[1], rgb[2]);
+  // Mid-gray studio plates only. Saturated magenta/purple is often the weapon glow.
+  return sat < 40 && luma >= 44 && luma <= 140;
+}
+
+function punchRegistrationTicks(out: Uint8Array, width: number, height: number): void {
+  // Hosted sprite sheets stamp a 2px red/white/magenta registration tick in the
+  // bottom-right of each frame. Red/magenta ticks fuse into the feet even when
+  // they are not yet 4-connected to transparency — punch those in the bottom
+  // band. White ticks only punch when they already touch alpha so a pale
+  // sleeve is not eaten.
+  for (let y = Math.max(0, height - 8); y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      if ((out[i + 3] ?? 0) === 0) continue;
+      const r = out[i]!;
+      const g = out[i + 1]!;
+      const b = out[i + 2]!;
+      const redTick = r > 190 && g < 80 && b < 80;
+      const whiteTick = r > 210 && g > 210 && b > 210;
+      const magentaTick = r > 180 && b > 140 && g < 120;
+      if (!redTick && !whiteTick && !magentaTick) continue;
+      if (redTick || magentaTick) {
+        out[i + 3] = 0;
+        continue;
+      }
+      const neighbors = [
+        [x - 1, y],
+        [x + 1, y],
+        [x, y - 1],
+        [x, y + 1],
+      ];
+      const nearClear = neighbors.some(([nx, ny]) => {
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) return true;
+        return (out[(ny * width + nx) * 4 + 3] ?? 0) < 16;
+      });
+      if (nearClear) out[i + 3] = 0;
+    }
+  }
+}
+
+function punchDetachedSpecks(out: Uint8Array, width: number, height: number): void {
+  // Leftover ticks and chroma specks sit as tiny opaque islands after the studio
+  // plate is gone. Keep the largest silhouette; punch components that are clearly
+  // trash (a few pixels in the corner, not a second character).
+  const n = width * height;
+  const seen = new Uint8Array(n);
+  const components: number[][] = [];
+  for (let i = 0; i < n; i++) {
+    if (seen[i] || (out[i * 4 + 3] ?? 0) < 16) continue;
+    const stack = [i];
+    seen[i] = 1;
+    const cells: number[] = [];
+    while (stack.length > 0) {
+      const idx = stack.pop()!;
+      cells.push(idx);
+      const x = idx % width;
+      const y = Math.floor(idx / width);
+      for (const [nx, ny] of [
+        [x + 1, y],
+        [x - 1, y],
+        [x, y + 1],
+        [x, y - 1],
+      ] as Array<[number, number]>) {
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+        const ni = ny * width + nx;
+        if (seen[ni] || (out[ni * 4 + 3] ?? 0) < 16) continue;
+        seen[ni] = 1;
+        stack.push(ni);
+      }
+    }
+    components.push(cells);
+  }
+  if (components.length < 2) return;
+  components.sort((a, b) => b.length - a.length);
+  const main = components[0]!.length;
+  const trashLimit = Math.max(24, Math.floor(main * 0.02));
+  for (let c = 1; c < components.length; c++) {
+    const cells = components[c]!;
+    if (cells.length > trashLimit) continue;
+    for (const idx of cells) out[idx * 4 + 3] = 0;
+  }
 }
 
 /** Small radial or streak VFX sprites for hit/dash/pickup/death feedback. */

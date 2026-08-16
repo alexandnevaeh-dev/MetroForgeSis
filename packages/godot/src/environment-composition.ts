@@ -106,8 +106,7 @@ export function composeEnvironment(input: {
     if (def.id === 'parallax_near' && exists(near)) assetPath = near;
     if (def.id === 'terrain_overlay' && exists(overlay)) assetPath = overlay;
     if (def.id === 'foreground_occluder' && exists(foreground)) assetPath = foreground;
-    const a =
-      def.id === 'far_background' ? 1 : def.id === 'parallax_mid' ? 0.5 : def.id === 'parallax_near' ? 0.28 : 1;
+    const a = def.id === 'fog' || def.id === 'terrain_overlay' ? 0.35 : def.id === 'foreground_occluder' ? 0.7 : 1;
     return {
       id: def.id,
       zIndex: def.z,

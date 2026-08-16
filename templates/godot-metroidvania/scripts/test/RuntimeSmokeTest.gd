@@ -14,6 +14,7 @@ func _room_has_ability_pickup(room: Node) -> bool:
 	return false
 
 func _ready() -> void:
+	_prepare_capture_window()
 	await get_tree().process_frame
 	await get_tree().process_frame
 
@@ -998,6 +999,8 @@ func _check_hud_quest_tracker(world: Node) -> void:
 ## black frame (`texture_2d_get` null on dummy renderer); that is a soft-fail here. The QA
 ## validator retries with a windowed GPU capture strategy when RELEASE_CANDIDATE requires evidence.
 func _capture_named_screenshot(shot_id: String, hard: bool = false) -> bool:
+	_prepare_capture_window()
+	_sync_visual_camera()
 	await get_tree().process_frame
 	var headless := DisplayServer.get_name() == "headless"
 	if not headless:
@@ -1025,6 +1028,17 @@ func _capture_named_screenshot(shot_id: String, hard: bool = false) -> bool:
 			_check_soft("gameplay_screenshot_%s" % shot_id, false)
 		return false
 
+	var target_w := _capture_width()
+	var target_h := _capture_height()
+	if img.get_width() != target_w or img.get_height() != target_h:
+		# Integer-stretch / DPI can dump the OS window (letterboxed). Keep the gameplay
+		# rectangle, not a random desktop-sized PNG with the game in one corner.
+		var crop_w: int = mini(target_w, img.get_width())
+		var crop_h: int = mini(target_h, img.get_height())
+		img = img.get_region(Rect2i(0, 0, crop_w, crop_h))
+		if img.get_width() != target_w or img.get_height() != target_h:
+			img.resize(target_w, target_h, Image.INTERPOLATE_NEAREST)
+
 	var qa_dir := ProjectSettings.globalize_path("res://qa")
 	DirAccess.make_dir_recursive_absolute(qa_dir)
 	var path := qa_dir.path_join("screenshot_%s.png" % shot_id)
@@ -1048,14 +1062,83 @@ func _capture_named_screenshot(shot_id: String, hard: bool = false) -> bool:
 	var strategy := OS.get_environment("METROFORGE_CAPTURE_STRATEGY")
 	if strategy.is_empty():
 		strategy = "headless" if DisplayServer.get_name() == "headless" else "windowed_gpu"
-	print("CAPTURE_TELEMETRY shot=%s strategy=%s colors=%d size=%dx%d" % [
-		shot_id, strategy, distinct.size(), img.get_width(), img.get_height(),
+	var cam := get_viewport().get_camera_2d()
+	var zoom_s := "none"
+	var xform_s := 0.0
+	var view := Vector2.ZERO
+	var center := Vector2.ZERO
+	if cam:
+		zoom_s = "%.2f" % cam.zoom.x
+		xform_s = cam.get_canvas_transform().x.x
+		view = cam.get_viewport_rect().size / cam.zoom
+		center = cam.get_screen_center_position()
+	var tile_s := "none"
+	var used := "none"
+	var world := get_tree().get_first_node_in_group("world_manager")
+	if world:
+		var room: Node = world.get("_current_room") as Node
+		if room:
+			var ground := room.get_node_or_null("Ground") as TileMapLayer
+			if ground and ground.tile_set:
+				tile_s = "%d" % ground.tile_set.tile_size.x
+				var r := ground.get_used_rect()
+				used = "%s:%sx%s" % [r.position, r.size.x, r.size.y]
+	print("CAPTURE_TELEMETRY shot=%s strategy=%s colors=%d size=%dx%d zoom=%s xform=%.2f view=%.0fx%.0f center=%.0f,%.0f current=%s tile=%s used=%s" % [
+		shot_id, strategy, distinct.size(), img.get_width(), img.get_height(), zoom_s,
+		xform_s, view.x, view.y, center.x, center.y, cam != null, tile_s, used,
 	])
 	return err == OK
 
 
+func _sync_visual_camera() -> void:
+	if not _is_visual_slice():
+		return
+	var cam := get_viewport().get_camera_2d()
+	if cam == null or not cam.has_method("apply_room_bounds"):
+		return
+	var size := Vector2(800, 600)
+	var world := get_tree().get_first_node_in_group("world_manager")
+	if world:
+		var room: Node = world.get("_current_room") as Node
+		if room:
+			var ground := room.get_node_or_null("Ground")
+			if ground:
+				size = Vector2(float(ground.get("room_width")), float(ground.get("room_height")))
+	cam.apply_room_bounds(size)
+
+
 func _is_visual_slice() -> bool:
-	return true
+	var path := "res://game_dna.json"
+	if not FileAccess.file_exists(path):
+		return false
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		return false
+	var parsed = JSON.parse_string(file.get_as_text())
+	file.close()
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return false
+	var profile := String(parsed.get("profile", ""))
+	return profile != "" and profile != "TINY_TEST"
+
+
+func _capture_width() -> int:
+	return int(ProjectSettings.get_setting("display/window/size/viewport_width", 1280))
+
+
+func _capture_height() -> int:
+	return int(ProjectSettings.get_setting("display/window/size/viewport_height", 720))
+
+
+func _prepare_capture_window() -> void:
+	var w := _capture_width()
+	var h := _capture_height()
+	if DisplayServer.get_name() == "headless":
+		return
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true)
+	DisplayServer.window_set_size(Vector2i(w, h))
+	get_viewport().size = Vector2i(w, h)
 
 
 func _save_report_shot(shot_id: String, dest_name: String) -> void:
@@ -1107,6 +1190,7 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 		await world.transition_to_room(String(room_id))
 		await get_tree().process_frame
 		await get_tree().process_frame
+		await get_tree().process_frame
 		# Room loads instantiate a new Player — never reuse a stale reference.
 		var _player := get_tree().get_first_node_in_group("player")
 		if _player == null:
@@ -1128,9 +1212,8 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 
 
 func _capture_gameplay_screenshot() -> void:
-	if OS.get_environment("METROFORGE_CAPTURE") == "1":
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-		DisplayServer.window_set_size(Vector2i(960, 540))
+	_prepare_capture_window()
+	await get_tree().process_frame
 	await _capture_named_screenshot("gameplay", true)
 
 

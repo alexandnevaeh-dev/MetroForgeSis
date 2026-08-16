@@ -53,6 +53,100 @@ function hexToRgb(hex: string): [number, number, number] {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
+function luma(rgb: [number, number, number]): number {
+  return 0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2];
+}
+
+/** Sky / paper / cream fills from landscape sources must not become walkable stone. */
+function clampTerrainFill(rgb: [number, number, number]): [number, number, number] {
+  const L = luma(rgb);
+  if (L > 150) return shade(rgb, Math.max(0.32, 118 / L));
+  if (L < 22) return shade(rgb, Math.min(2.2, 36 / Math.max(L, 1)));
+  return rgb;
+}
+
+function mixRgb(a: [number, number, number], b: [number, number, number], t: number): [number, number, number] {
+  return [
+    Math.round(a[0] + (b[0] - a[0]) * t),
+    Math.round(a[1] + (b[1] - a[1]) * t),
+    Math.round(a[2] + (b[2] - a[2]) * t),
+  ];
+}
+
+interface RoleFills {
+  wall: [number, number, number];
+  ground: [number, number, number];
+  ceiling: [number, number, number];
+  platform: [number, number, number];
+  hazard: [number, number, number];
+  door: [number, number, number];
+  accent: [number, number, number];
+  mortar: [number, number, number];
+}
+
+function isSkyFill(rgb: [number, number, number]): boolean {
+  return rgb[2] > rgb[1] + 15 && rgb[2] > rgb[0] + 25;
+}
+
+function isGrassFill(rgb: [number, number, number]): boolean {
+  return rgb[1] > rgb[0] + 25 && rgb[1] > rgb[2] + 15;
+}
+
+function isGoldFill(rgb: [number, number, number]): boolean {
+  return rgb[0] > 140 && rgb[1] > 100 && rgb[2] < 90 && rgb[0] > rgb[2] + 30;
+}
+
+function ensureLuma(rgb: [number, number, number], minL: number, maxL: number): [number, number, number] {
+  const L = luma(rgb);
+  if (L < minL) return shade(rgb, minL / Math.max(L, 1));
+  if (L > maxL) return shade(rgb, maxL / L);
+  return rgb;
+}
+
+function asMasonry(rgb: [number, number, number]): [number, number, number] {
+  // Drowned-citadel wet stone: teal-slate, not dry graybox and not the night-sky plate.
+  // Lift into a readable band so masonry sits lighter than #284878 and stays cooler than grass.
+  const wet: [number, number, number] = [64, 92, 90];
+  return ensureLuma(mixRgb(rgb, wet, 0.72), 74, 98);
+}
+
+function pickRoleFills(extracted: [number, number, number][], hex: [number, number, number][]): RoleFills {
+  const candidates = [...extracted, ...hex]
+    .map(clampTerrainFill)
+    .filter((c) => luma(c) > 28 && luma(c) < 168)
+    .filter((c) => !isSkyFill(c) && !isGrassFill(c) && !isGoldFill(c));
+  const wall = asMasonry(candidates[0] ?? [64, 92, 90]);
+  const ground = ensureLuma(shade(wall, 0.78), 48, Math.max(48, luma(wall) - 8));
+  const ceiling = ensureLuma(shade(wall, 0.62), 40, Math.max(40, luma(ground) - 4));
+  // Ledges stay in the masonry family — grass/gold bible tokens are pickups, not walkable tops.
+  const platform = ensureLuma(mixRgb(wall, [110, 98, 78], 0.22), luma(wall) + 4, 118);
+  return {
+    wall,
+    ground,
+    ceiling,
+    platform,
+    hazard: clampTerrainFill(extracted[3] ?? hex[3] ?? [200, 80, 80]),
+    door: clampTerrainFill(extracted.find((c) => c[2] > c[0]) ?? hex[2] ?? [90, 140, 220]),
+    accent: clampTerrainFill(extracted[2] ?? hex[2] ?? [90, 140, 220]),
+    mortar: shade(wall, 0.32),
+  };
+}
+
+function fillForRole(kind: TileRole, fills: RoleFills): [number, number, number] {
+  if (kind === 'hazard') return fills.hazard;
+  if (kind === 'door') return fills.door;
+  if (kind.startsWith('decor')) return fills.accent;
+  if (kind === 'breakable') return shade(fills.wall, 0.88);
+  if (kind.includes('platform') || kind === 'one_way') return fills.platform;
+  if (kind === 'ground' || kind === 'bottom_edge' || kind === 'outside_bl' || kind === 'outside_br') {
+    return fills.ground;
+  }
+  if (kind === 'ceiling' || kind === 'top_edge' || kind === 'outside_tl' || kind === 'outside_tr') {
+    return fills.ceiling;
+  }
+  return fills.wall;
+}
+
 function setPixel(rgba: Uint8Array, w: number, x: number, y: number, rgb: [number, number, number], a = 255): void {
   if (x < 0 || y < 0 || x >= w) return;
   const i = (y * w + x) * 4;
@@ -155,13 +249,32 @@ function roleStructureOffset(kind: TileRole, x: number, y: number, tileSize: num
   if (kind === 'hazard' || kind === 'one_way') {
     return hash01(x * 5, y * 11) > 0.6 ? 1 : 0;
   }
-  // Masonry default: mortar coursing lines with staggered vertical joints, the classic
-  // brick/stone-block read for ground/wall/ceiling/platform/edge/corner roles.
-  const courseHeight = Math.max(3, Math.floor(tileSize / 8));
+  // Masonry: different coursing so ground brick, wall ashlar, and platform flagstone do not
+  // stamp as the same 4px grid. Platforms get a light cap so ledges read at a glance.
+  const isWall =
+    kind === 'wall' ||
+    kind.includes('left') ||
+    kind.includes('right') ||
+    kind.startsWith('outside') ||
+    kind.startsWith('inside');
+  const isPlatform = kind.includes('platform');
+  const isCeiling = kind === 'ceiling' || kind === 'top_edge';
+  if (isPlatform && y <= 2) return -1;
+  let courseHeight = Math.max(3, Math.floor(tileSize / 8));
+  let jointWidth = Math.max(3, Math.floor(tileSize / 4));
+  if (isWall) {
+    courseHeight = Math.max(6, Math.floor(tileSize / 4));
+    jointWidth = Math.max(6, Math.floor(tileSize / 3));
+  } else if (isPlatform) {
+    courseHeight = Math.max(5, Math.floor(tileSize / 5));
+    jointWidth = Math.max(8, Math.floor(tileSize / 2));
+  } else if (isCeiling) {
+    courseHeight = Math.max(3, Math.floor(tileSize / 10));
+    jointWidth = Math.max(5, Math.floor(tileSize / 3));
+  }
   const rowInCourse = y % courseHeight;
   if (rowInCourse === 0) return 2;
   const course = Math.floor(y / courseHeight);
-  const jointWidth = Math.max(3, Math.floor(tileSize / 4));
   const stagger = course % 2 === 0 ? 0 : Math.floor(jointWidth / 2);
   if ((x + stagger) % jointWidth === 0) return 1;
   return 0;
@@ -218,9 +331,10 @@ function paintTile(
   fill: [number, number, number],
   kind: TileRole,
   patch: TexturePatch | null = null,
+  mortar?: [number, number, number],
 ): void {
   const ramp = buildRamp(fill);
-  const outline: [number, number, number] = shade(fill, 0.28);
+  const outline: [number, number, number] = mortar ?? shade(fill, 0.28);
   const roleSeed = hashString(kind);
   for (let y = 0; y < tileSize; y++) {
     for (let x = 0; x < tileSize; x++) {
@@ -259,15 +373,17 @@ function paintTile(
       setPixel(rgba, atlasW, originX + x, originY + y, c);
     }
   }
+  const masonry =
+    !kind.startsWith('decor') && kind !== 'hazard' && kind !== 'one_way' && kind !== 'door';
   const edge = (kind.includes('left') || kind === 'outside_tl' || kind === 'outside_bl' || kind === 'inside_tl' || kind === 'inside_bl');
   const right = kind.includes('right') || kind === 'outside_tr' || kind === 'outside_br' || kind === 'inside_tr' || kind === 'inside_br';
   const top = kind.includes('top') || kind.startsWith('outside_t') || kind.startsWith('inside_t') || kind === 'ceiling' || kind === 'platform' || kind === 'one_way';
   const bottom = kind.includes('bottom') || kind.startsWith('outside_b') || kind.startsWith('inside_b') || kind === 'ground';
   for (let i = 0; i < tileSize; i++) {
-    if (top) setPixel(rgba, atlasW, originX + i, originY, outline);
-    if (bottom) setPixel(rgba, atlasW, originX + i, originY + tileSize - 1, outline);
-    if (edge) setPixel(rgba, atlasW, originX, originY + i, outline);
-    if (right) setPixel(rgba, atlasW, originX + tileSize - 1, originY + i, outline);
+    if (masonry || top) setPixel(rgba, atlasW, originX + i, originY, outline);
+    if (masonry || bottom) setPixel(rgba, atlasW, originX + i, originY + tileSize - 1, outline);
+    if (masonry || edge) setPixel(rgba, atlasW, originX, originY + i, outline);
+    if (masonry || right) setPixel(rgba, atlasW, originX + tileSize - 1, originY + i, outline);
   }
 }
 
@@ -349,23 +465,27 @@ export class TileCompiler {
     const rgba = new Uint8Array(width * height * 4);
     const extracted = opts.sourcePng ? extractDominantPalette(opts.sourcePng) : [];
     const hex = (opts.paletteHex ?? []).map(hexToRgb);
-    const fills: [number, number, number][] = [
-      extracted[0] ?? hex[1] ?? [60, 64, 78],
-      extracted[1] ?? hex[0] ?? [20, 24, 32],
-      extracted[2] ?? hex[2] ?? [90, 140, 220],
-      extracted[3] ?? [200, 80, 80],
-    ];
+    const roleFills = pickRoleFills(extracted, hex);
 
     for (const [role, pos] of Object.entries(TILE_ATLAS.roles)) {
-      const fill =
-        role === 'hazard' ? fills[3]! : role === 'door' ? fills[2]! : role.includes('platform') ? fills[0]! : fills[0]!;
+      const fill = fillForRole(role as TileRole, roleFills);
       // Each role samples a different deterministic sub-region of the source image so the atlas
       // doesn't repeat one patch across every cell; undefined sourcePng falls through to the
       // procedural hash texture inside paintTile() (see roleStructureOffset/ditherOffset).
       const patch = opts.sourcePng
         ? extractTexturePatch(opts.sourcePng, tileSize, hashString(role) ^ (tileSize * 2654435761))
         : null;
-      paintTile(rgba, width, pos.col * tileSize, pos.row * tileSize, tileSize, fill, role as TileRole, patch);
+      paintTile(
+        rgba,
+        width,
+        pos.col * tileSize,
+        pos.row * tileSize,
+        tileSize,
+        fill,
+        role as TileRole,
+        patch,
+        roleFills.mortar,
+      );
     }
 
     const atlas = encodePng(width, height, rgba);

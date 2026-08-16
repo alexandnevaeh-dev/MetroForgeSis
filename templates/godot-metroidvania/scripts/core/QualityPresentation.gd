@@ -42,7 +42,11 @@ func apply_room(room: Node2D, room_id: String) -> void:
 	if modulate:
 		var cm := modulate.get_node_or_null("WorldCanvasModulate") as CanvasModulate
 		if cm:
-			cm.color = _modulate_for_biome(biome)
+			# Tiled citadel interiors are already dark teal; extra dimming turns masonry into mud.
+			if room.get_node_or_null("Ground") != null:
+				cm.color = Color(1, 1, 1, 1)
+			else:
+				cm.color = _modulate_for_biome(biome)
 
 func _on_room_entered(room_id: String) -> void:
 	var world := get_tree().get_first_node_in_group("world_manager")
@@ -129,7 +133,7 @@ func _replace_stretched_background(room: Node, size: Vector2, biome: String) -> 
 	var bg := room.get_node_or_null("Background")
 	if bg is ColorRect:
 		var sky := bg as ColorRect
-		sky.visible = true
+		sky.visible = room.get_node_or_null("FarSky") == null and room.get_node_or_null("ParallaxBg/far") == null
 		sky.color = _biome_far(biome)
 		sky.z_index = -30
 		sky.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -142,43 +146,65 @@ func _replace_stretched_background(room: Node, size: Vector2, biome: String) -> 
 		(bg as CanvasItem).visible = false
 
 
-func _cover_parallax_sprite(sprite: Sprite2D, size: Vector2, alpha: float) -> void:
+func _layout_parallax_strip(sprite: Sprite2D, size: Vector2, kind: String) -> void:
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	sprite.centered = true
-	sprite.modulate = Color(1, 1, 1, alpha)
-	# ParallaxBackground is a CanvasLayer (screen space). Cover the viewport so zoomed Camera2D
-	# world tiles sit on a full-frame landscape instead of a floating 640×360 plate. Parallax2D
-	# lives in world space — cover the room rectangle so empty air reads as biome depth.
-	var cover := size
-	var n: Node = sprite.get_parent()
-	while n:
-		if n is CanvasLayer:
-			cover = sprite.get_viewport_rect().size
-			break
-		n = n.get_parent()
-	sprite.position = cover * 0.5
-	if sprite.texture:
-		var tw := float(sprite.texture.get_width())
-		var th := float(sprite.texture.get_height())
-		if tw > 1.0 and th > 1.0:
-			var s := maxf(cover.x / tw, cover.y / th)
-			sprite.scale = Vector2(s, s)
+	sprite.visible = true
+	sprite.modulate = Color(1, 1, 1, 1)
+	if sprite.texture == null:
+		return
+	var tw := float(sprite.texture.get_width())
+	var th := float(sprite.texture.get_height())
+	if tw < 2.0 or th < 2.0:
+		return
+	var s: float
+	if kind == "far":
+		# One full back plate. Overscan so camera look-ahead does not flash the sky ColorRect.
+		s = maxf(size.x / tw, size.y / th) * 1.6
+		sprite.scale = Vector2(s, s)
+		sprite.position = size * 0.5
+	else:
+		s = size.x / tw
+		sprite.scale = Vector2(s, s)
+		var y := size.y * 0.88
+		if kind == "mid":
+			y = size.y * 0.82
+		sprite.position = Vector2(size.x * 0.5, y)
+	var layer := sprite.get_parent()
+	if layer is Parallax2D:
+		if kind == "far":
+			(layer as Parallax2D).repeat_size = Vector2.ZERO
+			(layer as Parallax2D).repeat_times = 1
+		else:
+			(layer as Parallax2D).repeat_size = Vector2(tw * s, 0.0)
+			(layer as Parallax2D).repeat_times = 3
 
 
 func _tune_parallax(room: Node, size: Vector2) -> void:
 	var px := room.get_node_or_null("ParallaxBg")
+	if px is CanvasItem:
+		(px as CanvasItem).visible = false
+	var far_sky := room.get_node_or_null("FarSky")
+	if far_sky is CanvasLayer:
+		# Fullscreen CanvasLayer composites over the tilemap. Hide leftovers from older rooms.
+		far_sky.visible = false
+	elif far_sky is Sprite2D:
+		_layout_parallax_strip(far_sky as Sprite2D, size, "far")
+		return
 	if px == null:
 		return
-	var far := px.get_node_or_null("far/Sprite") as Sprite2D
-	if far:
-		_cover_parallax_sprite(far, size, 1.0)
-	# Mid/near/overlay currently reuse the same perspective landscape, so stacking them with
-	# alpha + horizontal repeat produces ghosted hills instead of depth. Keep far as the
-	# full-bleed biome plate until dedicated strip assets exist.
-	for extra in ["mid", "near", "overlay", "foreground"]:
-		var node := px.get_node_or_null(extra)
-		if node:
-			(node as CanvasItem).visible = false
+	for extra in ["overlay", "foreground", "mid", "near"]:
+		var junk := px.get_node_or_null(extra)
+		if junk:
+			(junk as CanvasItem).visible = false
+	var far_layer := px.get_node_or_null("far")
+	if far_layer:
+		(far_layer as CanvasItem).visible = true
+		if far_layer is Parallax2D:
+			(far_layer as Parallax2D).scroll_scale = Vector2.ZERO
+	var sprite := px.get_node_or_null("far/Sprite") as Sprite2D
+	if sprite:
+		_layout_parallax_strip(sprite, size, "far")
 
 func _hide_collision_slabs(room: Node) -> void:
 	for path in ["Floor/FloorVisual", "FloorLeft/FloorVisual", "FloorRight/FloorVisual"]:
@@ -194,6 +220,8 @@ func _hide_collision_slabs(room: Node) -> void:
 
 func _inject_depth_layers(room: Node, size: Vector2, biome: String) -> void:
 	## ParallaxBg already carries far/mid/near. Injecting full plates again covers the tileset.
+	if room.get_node_or_null("FarSky") != null:
+		return
 	if room.get_node_or_null("ParallaxBg") != null:
 		return
 	## Tileset rooms must not get opaque ColorRect slabs.
@@ -248,49 +276,19 @@ func _inject_depth_layers(room: Node, size: Vector2, biome: String) -> void:
 	floor_wash.mouse_filter = mouse
 	host.add_child(floor_wash)
 
-func _inject_lights(room: Node, size: Vector2, biome: String, archetype: String) -> void:
+func _inject_lights(room: Node, size: Vector2, _biome: String, _archetype: String) -> void:
+	## One quiet key light. The old 2.8-scale PointLights turned an 800×600 room into cyan wash.
 	var host := _host(room)
 	var tex := _light_texture()
-	var rim := PointLight2D.new()
-	rim.name = "QualityLightRim"
-	rim.position = Vector2(size.x * 0.22, size.y * 0.35)
-	rim.texture = tex
-	rim.color = _palette.accent
-	rim.energy = 1.15 if _tier == "LOW" else 1.4
-	rim.texture_scale = 2.8
-	rim.z_index = 5
-	host.add_child(rim)
-
 	var key := PointLight2D.new()
 	key.name = "QualityLightKey"
-	key.position = Vector2(size.x * 0.72, size.y * 0.48)
+	key.position = Vector2(size.x * 0.38, size.y * 0.42)
 	key.texture = tex
-	key.color = _palette.steel.lightened(0.25)
-	key.energy = 0.85
-	key.texture_scale = 2.4
+	key.color = _palette.accent.lightened(0.15)
+	key.energy = 0.4
+	key.texture_scale = 1.35
 	key.z_index = 5
 	host.add_child(key)
-
-	if _point_lights >= 3 or archetype == "boss" or archetype == "arena":
-		var danger := PointLight2D.new()
-		danger.name = "QualityLightDanger"
-		danger.position = Vector2(size.x * 0.5, size.y * 0.4)
-		danger.texture = tex
-		danger.color = _palette.danger
-		danger.energy = 0.7
-		danger.texture_scale = 2.0
-		danger.z_index = 5
-		host.add_child(danger)
-
-	if _point_lights >= 4:
-		var fill := PointLight2D.new()
-		fill.name = "QualityLightFill"
-		fill.position = Vector2(size.x * 0.5, size.y * 0.7)
-		fill.texture = tex
-		fill.color = Color(1, 0.95, 0.85)
-		fill.energy = 0.45
-		fill.texture_scale = 3.2
-		host.add_child(fill)
 
 func _light_texture() -> GradientTexture2D:
 	var g := Gradient.new()

@@ -242,6 +242,24 @@ describe('buildRoomTileCells — archetype features', () => {
   });
 });
 
+describe('buildRoomTileCells — playable air', () => {
+  it('does not fill combat interiors with rear masonry so biome backgrounds can show', () => {
+    const { cells } = buildRoomTileCells({ ...BASE, archetype: 'combat', seed: 1 });
+    const floorRow = Math.max(1, Math.floor((BASE.height - BASE.tileSize * 2) / BASE.tileSize));
+    const cols = Math.floor(BASE.width / BASE.tileSize);
+    const interiorMass = cells.filter(
+      (c) =>
+        c.x > 0 &&
+        c.x < cols - 1 &&
+        c.y > 0 &&
+        c.y < floorRow &&
+        c.col === 1 &&
+        c.row === 0,
+    );
+    expect(interiorMass.length).toBe(0);
+  });
+});
+
 describe('buildRoomTileCells — role/atlas agreement', () => {
   it('every painted role matches packages/assets/src/tile-compiler.ts TILE_ATLAS coordinates', () => {
     // Spot-check the roles this module actually paints against the real compiled atlas layout.

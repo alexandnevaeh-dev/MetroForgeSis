@@ -38,9 +38,18 @@ function interiorLuminanceVariance(tilePng: Buffer): number {
   return lums.reduce((a, b) => a + (b - mean) ** 2, 0) / lums.length;
 }
 
-/** A synthetic 96x96 "biome source" PNG standing in for a real AI-generated tileset source:
- * diagonal brick-ish bands of two base tones plus a per-pixel hash ripple, so it has genuine
- * local spatial structure (not a flat single-color image) for extractTexturePatch() to sample. */
+function interiorMeanLuma(tilePng: Buffer): number {
+  const { rgba, width, height } = decodePngRgba(tilePng);
+  const lums: number[] = [];
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      const i = (y * width + x) * 4;
+      if (rgba[i + 3]! < 16) continue;
+      lums.push(0.299 * rgba[i]! + 0.587 * rgba[i + 1]! + 0.114 * rgba[i + 2]!);
+    }
+  }
+  return lums.reduce((a, b) => a + b, 0) / lums.length;
+}
 function syntheticBiomeSourcePng(size = 96): Buffer {
   const rgba = new Uint8Array(size * size * 4);
   for (let y = 0; y < size; y++) {
@@ -109,6 +118,76 @@ describe('TileCompiler', () => {
     expect(distinctInteriorColors(ceiling)).toBeGreaterThanOrEqual(4);
     expect(compiled.passed).toBe(true);
     expect(compiled.seamIssues).toEqual([]);
+  });
+
+  it('does not use sky/cream as walkable ground and keeps ground darker than walls', () => {
+    const cream = encodePng(48, 48, (() => {
+      const rgba = new Uint8Array(48 * 48 * 4);
+      for (let i = 0; i < rgba.length; i += 4) {
+        rgba[i] = 232;
+        rgba[i + 1] = 224;
+        rgba[i + 2] = 208;
+        rgba[i + 3] = 255;
+      }
+      return rgba;
+    })());
+    const compiled = new TileCompiler().compile({ sourcePng: cream, tileSize: 16 });
+    const ground = compiled.tiles.get('tile_0_0')!;
+    const wall = compiled.tiles.get('tile_1_0')!;
+    const platform = compiled.tiles.get('tile_3_0')!;
+    expect(interiorMeanLuma(ground)).toBeLessThan(140);
+    expect(interiorMeanLuma(ground)).toBeLessThan(interiorMeanLuma(wall) - 4);
+    expect(Math.abs(interiorMeanLuma(platform) - interiorMeanLuma(ground))).toBeGreaterThan(4);
+    expect(compiled.passed).toBe(true);
+  });
+
+  it('does not turn a gameplay style-bible (sky/grass/gold) into lime ledges or night-dark stone', () => {
+    const compiled = new TileCompiler().compile({
+      tileSize: 32,
+      paletteHex: ['#284878', '#3ca064', '#dcb432', '#e87850'],
+    });
+    const ground = compiled.tiles.get('tile_0_0')!;
+    const wall = compiled.tiles.get('tile_1_0')!;
+    const platform = compiled.tiles.get('tile_3_0')!;
+    const gL = interiorMeanLuma(ground);
+    const wL = interiorMeanLuma(wall);
+    const pL = interiorMeanLuma(platform);
+    expect(wL).toBeGreaterThanOrEqual(60);
+    expect(gL).toBeLessThan(wL - 4);
+    const { rgba, width, height } = decodePngRgba(platform);
+    let greenVotes = 0;
+    let n = 0;
+    for (let y = 1; y < height - 1; y++) {
+      for (let x = 1; x < width - 1; x++) {
+        const i = (y * width + x) * 4;
+        if (rgba[i + 3]! < 16) continue;
+        n++;
+        if (rgba[i + 1]! > rgba[i]! + 20 && rgba[i + 1]! > rgba[i + 2]! + 15) greenVotes++;
+      }
+    }
+    expect(greenVotes / Math.max(n, 1)).toBeLessThan(0.35);
+    expect(pL).toBeGreaterThan(gL + 4);
+    const wallPx = decodePngRgba(wall);
+    let rSum = 0;
+    let gSum = 0;
+    let bSum = 0;
+    let count = 0;
+    for (let y = 1; y < wallPx.height - 1; y++) {
+      for (let x = 1; x < wallPx.width - 1; x++) {
+        const i = (y * wallPx.width + x) * 4;
+        if (wallPx.rgba[i + 3]! < 16) continue;
+        rSum += wallPx.rgba[i]!;
+        gSum += wallPx.rgba[i + 1]!;
+        bSum += wallPx.rgba[i + 2]!;
+        count++;
+      }
+    }
+    const wr = rSum / count;
+    const wg = gSum / count;
+    const wb = bSum / count;
+    expect(wg).toBeGreaterThan(wr + 2);
+    expect(wb).toBeGreaterThan(wr);
+    expect(wb - wg).toBeLessThan(18);
   });
 
   it('keeps every role at its documented atlas (col,row) — tile-layout.ts/room-assembler.ts depend on this exact mapping', () => {

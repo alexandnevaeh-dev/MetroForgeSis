@@ -221,15 +221,16 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
     if (floorRow + 2 < rows) cells.push(cell(x, floorRow + 2, 'ground'));
     if (floorRow + 3 < rows) cells.push(cell(x, floorRow + 3, 'bottom_edge'));
   }
-  // Rear dado / keep wall so the tileset fills the camera, behind the player.
-  // Boss/arena rooms stay visually open — a filled dado makes every combat room a copy of
-  // the floor-and-two-walls template.
-  const openArena = archetype === 'boss' || archetype === 'arena' || archetype === 'set_piece';
-  if (!openArena) {
-    const dadoStart = Math.max(2, floorRow - (archetype === 'connector' ? 3 : 1));
-    for (let y = dadoStart; y < floorRow; y++) {
+  // Playable air stays empty so biome parallax shows through. Filling the camera with a
+  // rear dado painted every interior cell as the same masonry as the floor — a cream void,
+  // not a composed room. Connector rooms still get a one-tile wainscot so a hallway reads
+  // as having a baseboard rather than floating in sky.
+  if (archetype === 'connector') {
+    const dadoRow = floorRow - 1;
+    if (dadoRow > 1) {
       for (let x = 1; x < cols - 1; x++) {
-        cells.push(cell(x, y, y === dadoStart ? 'top_edge' : 'wall'));
+        if (x === Math.floor(cols / 2)) continue;
+        cells.push(cell(x, dadoRow, 'top_edge'));
       }
     }
   }

@@ -180,4 +180,134 @@ describe('knockoutVfxBackground', () => {
     expect(decoded.rgba[3]).toBe(0);
     expect(decoded.rgba[center + 3]).toBeGreaterThan(0);
   });
+
+  it('knocks out a mid-gray studio plate while keeping a saturated subject', () => {
+    const width = 16;
+    const height = 16;
+    const rgba = new Uint8Array(width * height * 4);
+    for (let i = 0; i < rgba.length; i += 4) {
+      rgba[i] = 60;
+      rgba[i + 1] = 64;
+      rgba[i + 2] = 78;
+      rgba[i + 3] = 255;
+    }
+    const center = (8 * width + 8) * 4;
+    rgba[center] = 90;
+    rgba[center + 1] = 140;
+    rgba[center + 2] = 220;
+    rgba[center + 3] = 255;
+    const knocked = knockoutVfxBackground(encodePng(width, height, rgba));
+    const decoded = decodePngRgba(knocked);
+    expect(decoded.rgba[3]).toBe(0);
+    expect(decoded.rgba[center + 3]).toBeGreaterThan(0);
+  });
+
+  it('still floods leftover studio gray when the four corners are already transparent', () => {
+    const width = 16;
+    const height = 16;
+    const rgba = new Uint8Array(width * height * 4);
+    for (let i = 0; i < rgba.length; i += 4) {
+      rgba[i] = 54;
+      rgba[i + 1] = 58;
+      rgba[i + 2] = 75;
+      rgba[i + 3] = 255;
+    }
+    for (const [x, y] of [
+      [0, 0],
+      [width - 1, 0],
+      [0, height - 1],
+      [width - 1, height - 1],
+    ]) {
+      const i = (y * width + x) * 4;
+      rgba[i + 3] = 0;
+    }
+    const center = (8 * width + 8) * 4;
+    rgba[center] = 200;
+    rgba[center + 1] = 80;
+    rgba[center + 2] = 60;
+    rgba[center + 3] = 255;
+    const knocked = knockoutVfxBackground(encodePng(width, height, rgba));
+    const decoded = decodePngRgba(knocked);
+    expect(decoded.rgba[(1 * width + 1) * 4 + 3]).toBe(0);
+    expect(decoded.rgba[center + 3]).toBeGreaterThan(0);
+  });
+
+  it('grows punched alpha into leftover studio gray that only touches transparency', () => {
+    const width = 16;
+    const height = 16;
+    const rgba = new Uint8Array(width * height * 4);
+    for (let i = 0; i < rgba.length; i += 4) rgba[i + 3] = 0;
+    for (let y = 2; y < 14; y++) {
+      for (let x = 2; x < 14; x++) {
+        const i = (y * width + x) * 4;
+        rgba[i] = 60;
+        rgba[i + 1] = 64;
+        rgba[i + 2] = 78;
+        rgba[i + 3] = 255;
+      }
+    }
+    const center = (8 * width + 8) * 4;
+    rgba[center] = 220;
+    rgba[center + 1] = 90;
+    rgba[center + 2] = 50;
+    rgba[center + 3] = 255;
+    const knocked = knockoutVfxBackground(encodePng(width, height, rgba));
+    const decoded = decodePngRgba(knocked);
+    expect(decoded.rgba[(3 * width + 3) * 4 + 3]).toBe(0);
+    expect(decoded.rgba[center + 3]).toBeGreaterThan(0);
+  });
+
+  it('punches detached registration ticks without eating the subject', () => {
+    const width = 16;
+    const height = 16;
+    const rgba = new Uint8Array(width * height * 4);
+    for (let i = 0; i < rgba.length; i += 4) rgba[i + 3] = 0;
+    for (let y = 4; y < 12; y++) {
+      for (let x = 4; x < 12; x++) {
+        const i = (y * width + x) * 4;
+        rgba[i] = 200;
+        rgba[i + 1] = 80;
+        rgba[i + 2] = 60;
+        rgba[i + 3] = 255;
+      }
+    }
+    const tick = ((height - 1) * width + (width - 1)) * 4;
+    rgba[tick] = 255;
+    rgba[tick + 1] = 40;
+    rgba[tick + 2] = 200;
+    rgba[tick + 3] = 255;
+    rgba[tick - 4] = 240;
+    rgba[tick - 3] = 240;
+    rgba[tick - 2] = 240;
+    rgba[tick - 1] = 255;
+    const knocked = knockoutVfxBackground(encodePng(width, height, rgba));
+    const decoded = decodePngRgba(knocked);
+    expect(decoded.rgba[tick + 3]).toBe(0);
+    expect(decoded.rgba[(8 * width + 8) * 4 + 3]).toBeGreaterThan(0);
+  });
+
+  it('punches a red registration tick fused to the feet in the bottom band', () => {
+    const width = 16;
+    const height = 16;
+    const rgba = new Uint8Array(width * height * 4);
+    for (let i = 0; i < rgba.length; i += 4) rgba[i + 3] = 0;
+    for (let y = 4; y < 15; y++) {
+      for (let x = 5; x < 11; x++) {
+        const i = (y * width + x) * 4;
+        rgba[i] = 200;
+        rgba[i + 1] = 80;
+        rgba[i + 2] = 60;
+        rgba[i + 3] = 255;
+      }
+    }
+    const foot = ((height - 2) * width + 8) * 4;
+    rgba[foot] = 255;
+    rgba[foot + 1] = 20;
+    rgba[foot + 2] = 20;
+    rgba[foot + 3] = 255;
+    const knocked = knockoutVfxBackground(encodePng(width, height, rgba));
+    const decoded = decodePngRgba(knocked);
+    expect(decoded.rgba[foot + 3]).toBe(0);
+    expect(decoded.rgba[(8 * width + 8) * 4 + 3]).toBeGreaterThan(0);
+  });
 });

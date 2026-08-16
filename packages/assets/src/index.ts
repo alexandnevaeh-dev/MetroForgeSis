@@ -1,4 +1,6 @@
 export { encodePng, decodePngRgba, generateProceduralSprite, generateTilesetSource, generateWalkCycleSheet, generateHurtFlashSheet, generateAttackSheet, generateVfxTexture, knockoutVfxBackground } from './png.js';
+export { generateParallaxStrip, punchParallaxAlpha, PARALLAX_LAYER_PROMPTS, PARALLAX_STRIP_SIZE } from './parallax-strip.js';
+export type { ParallaxLayerName } from './parallax-strip.js';
 export type { SpriteSpec, VfxSpec } from './png.js';
 export { PixelArtProcessor } from './pixel-art-processor.js';
 export type { PixelArtOptions, PixelArtResult } from './pixel-art-processor.js';

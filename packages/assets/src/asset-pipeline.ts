@@ -16,6 +16,11 @@ import {
   type VfxSpec,
 } from './png.js';
 import { PixelArtProcessor } from './pixel-art-processor.js';
+import {
+  generateParallaxStrip,
+  PARALLAX_LAYER_PROMPTS,
+  PARALLAX_STRIP_SIZE,
+} from './parallax-strip.js';
 import { ImageProviderRegistry } from './image-router.js';
 import { registerFoundryImageProviders } from './foundry/register.js';
 import type { VisionCritic } from './vision-critic-factory.js';
@@ -1365,19 +1370,13 @@ export class AssetPipeline {
           const layer = layers[li]!;
           const bgPath = `assets/backgrounds/biome_${b}/${layer}.png`;
           options.onTaskStarted?.('background', `Generating ${layer} parallax for biome ${b}`);
-          let bgBuffer = generateTilesetSource(options.seed + b * 50 + li, 128);
+          const dim = PARALLAX_STRIP_SIZE[layer];
+          let bgBuffer = generateParallaxStrip(layer, options.seed + b * 50 + li, dim.width, dim.height);
           let bgFallback = true;
           let bgProvider = 'procedural';
           let bgModel: string | undefined;
-          const useAi = Boolean(imageGen) && (layer === 'far' || layer === 'mid' || layer === 'near');
-          const layerPrompt =
-            layer === 'far'
-              ? 'far_background skyline plate, distant architecture, empty of characters'
-              : layer === 'overlay'
-                ? 'environmental_overlay mist and hanging debris, transparent-friendly, no characters'
-                : layer === 'foreground'
-                  ? 'foreground_occluder silhouettes, dark rim plants/ruins at the camera edge, no UI'
-                  : `${layer} parallax_layer, empty of characters`;
+          const useAi = Boolean(imageGen) && layer === 'far';
+          const layerPrompt = PARALLAX_LAYER_PROMPTS[layer];
           if (useAi) {
             try {
               const result = await imageGen!.generateImage({
@@ -1389,32 +1388,34 @@ export class AssetPipeline {
                     `${layerPrompt}, ${options.gameDna.identity.visualStyle} biome ${b}, matching tileset palette, side-view, no UI, no text, no logos, no characters`,
                   ),
                 ),
-                negativePrompt: `${negativePrompt ?? ''}, UI, HUD, text, logos, watermarks, characters, portraits, unrelated biome`,
+                negativePrompt: `${negativePrompt ?? ''}, UI, HUD, text, logos, watermarks, characters, portraits, unrelated biome, floating plates`,
                 width: 1024,
                 height: 512,
                 seed: options.seed + 4000 + b * 10 + li,
                 signal: options.signal,
                 modelOverride: nvidiaModelForImageTask('BACKGROUND_SOURCE'),
               });
-              bgBuffer = result.image;
+              const processedBg = this.pixelArt.process(result.image, {
+                targetWidth: dim.width,
+                targetHeight: dim.height,
+                tileSize,
+                alphaThreshold: 8,
+                skipQuantize: true,
+              });
+              bgBuffer = processedBg.buffer;
               bgFallback = result.fallbackGenerated;
               bgProvider = result.provider;
               bgModel = result.modelId;
             } catch {
-              warnings.push(`Background ${layer} biome ${b} failed — procedural fallback`);
+              warnings.push(`Background ${layer} biome ${b} failed — procedural strip fallback`);
             }
           }
-          const processedBg = this.pixelArt.process(bgBuffer, {
-            targetWidth: 640,
-            targetHeight: 360,
-            tileSize,
-          });
-          writeCheckpoint(options.outputDir, bgPath, processedBg.buffer);
+          writeCheckpoint(options.outputDir, bgPath, bgBuffer);
           recordAsset(
             {
               id: `bg_biome_${b}_${layer}`,
               path: bgPath,
-              buffer: processedBg.buffer,
+              buffer: bgBuffer,
               provider: bgProvider,
               modelId: bgModel,
               fallbackGenerated: bgFallback,

@@ -80,6 +80,39 @@ export interface AssemblyResult {
 
 export type { RecompileRoomsInput, RecompileRoomsResult };
 
+function readExistingGenerationManifest(outputDir: string): {
+  artifacts?: AssetManifestEntry[];
+  createdAt?: string;
+} | null {
+  const path = join(outputDir, 'generation_manifest.json');
+  if (!existsSync(path)) return null;
+  try {
+    const parsed = JSON.parse(readFileSync(path, 'utf-8')) as {
+      artifacts?: AssetManifestEntry[];
+      createdAt?: string;
+    };
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function mergeManifestArtifacts(
+  existing: AssetManifestEntry[] | undefined,
+  incoming: AssetManifestEntry[],
+): AssetManifestEntry[] {
+  const byId = new Map<string, AssetManifestEntry>();
+  for (const entry of existing ?? []) {
+    if (entry?.id) byId.set(entry.id, entry);
+  }
+  for (const entry of incoming) {
+    if (!entry?.id) continue;
+    const prev = byId.get(entry.id);
+    byId.set(entry.id, prev ? { ...prev, ...entry } : entry);
+  }
+  return [...byId.values()];
+}
+
 export class GodotProjectAssembler {
   recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult {
     return recompileRooms(input);
@@ -100,6 +133,7 @@ export class GodotProjectAssembler {
     }
 
     try {
+      const priorManifest = readExistingGenerationManifest(input.outputDir);
       cpSync(templatePath, input.outputDir, { recursive: true });
 
       const roomsDir = join(input.outputDir, 'scenes', 'rooms');
@@ -425,7 +459,7 @@ export class GodotProjectAssembler {
         );
       }
 
-      const artifacts: AssetManifestEntry[] = [...(input.assetMetadata ?? [])];
+      const incoming: AssetManifestEntry[] = [...(input.assetMetadata ?? [])];
       if (input.audioFiles) {
         for (const id of input.audioFiles.keys()) {
           const relPath = id.startsWith('voice_')
@@ -433,7 +467,7 @@ export class GodotProjectAssembler {
             : id.startsWith('music_')
               ? `audio/music/${id.replace(/^music_/, '')}.wav`
               : `audio/sfx/${id}.wav`;
-          artifacts.push({
+          incoming.push({
             id,
             path: relPath,
             type: 'audio',
@@ -446,6 +480,7 @@ export class GodotProjectAssembler {
           });
         }
       }
+      const artifacts = mergeManifestArtifacts(priorManifest?.artifacts, incoming);
 
       writeFileSync(
         join(input.outputDir, 'generation_manifest.json'),
@@ -456,7 +491,8 @@ export class GodotProjectAssembler {
             seed: input.gameDna.seed,
             generatorVersion: PRODUCT.generatorVersion,
             artifacts,
-            createdAt: new Date().toISOString(),
+            createdAt: priorManifest?.createdAt ?? new Date().toISOString(),
+            reassembledAt: priorManifest ? new Date().toISOString() : undefined,
           },
           null,
           2,
@@ -470,14 +506,19 @@ export class GodotProjectAssembler {
         'config/name="MetroForge Template"',
         `config/name="${input.gameDna.identity.title.replace(/"/g, '\\"')}"`,
       );
-      if (input.gameDna.profile === 'VISUAL_VERTICAL_SLICE') {
-        if (!projectGodot.includes('window/stretch/aspect=')) {
-          projectGodot = projectGodot.replace(
-            'window/stretch/mode="canvas_items"',
-            'window/stretch/mode="canvas_items"\nwindow/stretch/aspect="integer"',
-          );
-        }
-      }
+      const viewportW = input.gameDna.technical.resolution.width;
+      const viewportH = input.gameDna.technical.resolution.height;
+      projectGodot = projectGodot.replace(
+        /window\/size\/viewport_width=\d+/,
+        `window/size/viewport_width=${viewportW}`,
+      );
+      projectGodot = projectGodot.replace(
+        /window\/size\/viewport_height=\d+/,
+        `window/size/viewport_height=${viewportH}`,
+      );
+      // Integer stretch + a non-multiple capture window letterboxes the game into a corner of
+      // the PNG. Keep canvas_items so pixel art scales, without locking the window to integer.
+      projectGodot = projectGodot.replace(/\nwindow\/stretch\/aspect="integer"/g, '');
       if (!isTopDownArchetype(input.gameDna.archetype)) {
         const qualityDir = join(input.outputDir, 'data', 'quality');
         mkdirSync(qualityDir, { recursive: true });

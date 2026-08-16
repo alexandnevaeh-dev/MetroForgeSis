@@ -144,4 +144,60 @@ describe('GodotProjectAssembler', () => {
 
     rmSync(outputDir, { recursive: true, force: true });
   });
+
+  it('merges existing generation_manifest artifacts instead of wiping them on reassemble', () => {
+    const outputDir = join(tmpdir(), `metroforge-assembler-merge-${Date.now()}`);
+    mkdirSync(outputDir, { recursive: true });
+    const roomIds = ['room_000', 'room_001', 'room_002'];
+    const worldGraph: WorldGraph = {
+      version: '0.1.0',
+      seed: 1,
+      nodes: roomIds.map((id) => ({ id, type: 'room' as const, label: id, metadata: {} })),
+      edges: [],
+      regions: [{ id: 'region_0', name: 'R0', biomeId: 'biome_0', roomIds }],
+    };
+    const progressionGraph: ProgressionGraph = {
+      version: '0.1.0',
+      seed: 1,
+      startNodeId: 'room_000',
+      endNodeId: 'room_002',
+      nodes: [],
+      edges: [],
+      abilities: ['dash'],
+      criticalPath: roomIds,
+    };
+    const assembler = new GodotProjectAssembler();
+    assembler.assemble({
+      outputDir,
+      gameDna: minimalDna,
+      worldGraph,
+      progressionGraph,
+      roomIds,
+      assetMetadata: [
+        {
+          id: 'tileset_biome_0',
+          path: 'assets/tilesets/biome_0/source.png',
+          type: 'texture',
+          provider: 'nvidia',
+          fallbackGenerated: false,
+        },
+      ],
+    });
+    assembler.assemble({
+      outputDir,
+      gameDna: minimalDna,
+      worldGraph,
+      progressionGraph,
+      roomIds,
+    });
+    const manifest = JSON.parse(readFileSync(join(outputDir, 'generation_manifest.json'), 'utf-8')) as {
+      artifacts: Array<{ id: string }>;
+    };
+    expect(manifest.artifacts.some((a) => a.id === 'tileset_biome_0')).toBe(true);
+    const projectGodot = readFileSync(join(outputDir, 'project.godot'), 'utf-8');
+    expect(projectGodot).toContain('window/size/viewport_width=1280');
+    expect(projectGodot).toContain('window/size/viewport_height=720');
+    expect(projectGodot).not.toContain('window/stretch/aspect="integer"');
+    rmSync(outputDir, { recursive: true, force: true });
+  });
 });

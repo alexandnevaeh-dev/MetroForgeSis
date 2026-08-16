@@ -1,29 +1,24 @@
 extends Camera2D
-## Room-aware camera: lock horizontally when a generated room is smaller than the view,
-## otherwise dead-zone + look-ahead. Bounds come from QualityPresentation after each load.
-## Transition colliders are not modified.
+## Room-aware camera: cover-zoom so an 800×600 room fills a 1920×1080 window,
+## then clamp in world space. Built-in Camera2D limits do not hold when this
+## node is a child of the player (screen center can walk past limit_right).
 
 const PROFILE_PATH := "res://data/quality/camera_profile.json"
 
 var _room_size := Vector2(800, 600)
 var _look_ahead := 28.0
-var _dead_zone := 0.18
 
 func _ready() -> void:
 	_load_profile()
-	position_smoothing_enabled = true
-	position_smoothing_speed = 8.0
-	drag_horizontal_enabled = true
-	drag_vertical_enabled = true
-	drag_left_margin = _dead_zone
-	drag_right_margin = _dead_zone
-	drag_top_margin = _dead_zone
-	drag_bottom_margin = 0.22
+	top_level = true
+	enabled = true
+	position_smoothing_enabled = false
+	drag_horizontal_enabled = false
+	drag_vertical_enabled = false
 	make_current()
 
 func _load_profile() -> void:
 	if not FileAccess.file_exists(PROFILE_PATH):
-		zoom = Vector2(1.85, 1.85)
 		return
 	var file := FileAccess.open(PROFILE_PATH, FileAccess.READ)
 	if file == null:
@@ -32,33 +27,53 @@ func _load_profile() -> void:
 	file.close()
 	if typeof(parsed) != TYPE_DICTIONARY:
 		return
-	var z := float(parsed.get("zoom", 1.85))
-	zoom = Vector2(z, z)
-	_dead_zone = float(parsed.get("deadZone", 0.18))
 	_look_ahead = float(parsed.get("lookAheadPx", 28.0))
 
 func apply_room_bounds(room_size: Vector2) -> void:
 	_room_size = room_size
-	limit_left = 0
-	limit_top = 0
-	limit_right = int(room_size.x)
-	limit_bottom = int(room_size.y)
-	limit_smoothed = true
+	top_level = true
+	enabled = true
+	position = Vector2.ZERO
+	offset = Vector2.ZERO
+	make_current()
+	var vp := get_viewport().get_visible_rect().size
+	if vp.x < 64.0 or vp.y < 64.0:
+		vp = Vector2(
+			float(ProjectSettings.get_setting("display/window/size/viewport_width", 1920)),
+			float(ProjectSettings.get_setting("display/window/size/viewport_height", 1080)),
+		)
+	# Cover the window with the room. Zoom 1.85 on a 1920×1080 viewport shows ~1038×584
+	# world pixels, which is wider than an 800px room and turns the sky ColorRect into a slab.
+	var cover := maxf(vp.x / maxf(room_size.x, 1.0), vp.y / maxf(room_size.y, 1.0))
+	zoom = Vector2(cover, cover)
+	position_smoothing_enabled = false
+	drag_horizontal_enabled = false
+	drag_vertical_enabled = false
+	_snap_to_room()
+	if has_method("force_update_scroll"):
+		force_update_scroll()
+	make_current()
 
 func _process(_delta: float) -> void:
-	var parent := get_parent() as Node2D
-	if parent == null:
+	_snap_to_room()
+
+func _snap_to_room() -> void:
+	var view := get_viewport().get_visible_rect().size / zoom
+	if view.x < 8.0 or view.y < 8.0:
 		return
-	var view := get_viewport_rect().size / zoom
-	if view.x >= _room_size.x - 2.0:
-		offset.x = _room_size.x * 0.5 - parent.global_position.x
-	else:
-		var facing := int(parent.get("facing")) if parent.get("facing") != null else 1
-		var goal := float(facing) * _look_ahead
-		offset.x = lerpf(offset.x, goal, 0.08)
-	if view.y >= _room_size.y - 2.0:
-		offset.y = _room_size.y * 0.5 - parent.global_position.y
-	else:
-		offset.y = lerpf(offset.y, -20.0, 0.08)
-	offset.x = round(offset.x)
-	offset.y = round(offset.y)
+	var half := view * 0.5
+	# Drop the extra earth row RoomTileMap paints below the walkable floor so a
+	# cover-zoomed tall room does not pin the shot on sub-floor mass.
+	var visual_bottom := maxf(half.y * 2.0, _room_size.y - 48.0)
+	var target := Vector2(_room_size.x * 0.5, visual_bottom * 0.5)
+	var parent := get_parent() as Node2D
+	if parent:
+		if view.x < _room_size.x - 2.0:
+			var facing := int(parent.get("facing")) if parent.get("facing") != null else 1
+			target.x = parent.global_position.x + float(facing) * _look_ahead
+		if view.y < visual_bottom - 2.0:
+			var look_up := minf(96.0, (visual_bottom - view.y) * 0.25)
+			target.y = parent.global_position.y - look_up
+	target.x = clampf(target.x, half.x, maxf(half.x, _room_size.x - half.x))
+	target.y = clampf(target.y, half.y, maxf(half.y, visual_bottom - half.y))
+	global_position = target.round()

@@ -396,6 +396,36 @@ describe('generateRoomScene combat sprites', () => {
     expect(scene).toContain('item_id = "heart_relic"');
   });
 
+  it('puts the far sky on a room-space Sprite2D and omits stacked parallax strips', () => {
+    const scene = generateRoomScene('room_000', 0, {
+      ...baseOptions,
+      width: 800,
+      height: 600,
+      hasEnemy: false,
+      enemyIndex: 0,
+      isBossRoom: false,
+      bossId: '',
+      backgroundLayers: {
+        far: 'assets/backgrounds/biome_0/far.png',
+        mid: 'assets/backgrounds/biome_0/mid.png',
+        near: 'assets/backgrounds/biome_0/near.png',
+        overlay: 'assets/backgrounds/biome_0/overlay.png',
+        foreground: 'assets/backgrounds/biome_0/foreground.png',
+      },
+    });
+    expect(scene).toContain('[node name="FarSky" type="Sprite2D"');
+    expect(scene).not.toContain('type="CanvasLayer"');
+    const farScale = Math.max(800 / 640, 600 / 360) * 1.4;
+    expect(scene).toContain(`scale = Vector2(${farScale.toFixed(4)}, ${farScale.toFixed(4)})`);
+    expect(scene).toContain('assets/backgrounds/biome_0/far.png');
+    expect(scene).not.toContain('[node name="ParallaxBg"');
+    expect(scene).not.toContain('[node name="far" type="Parallax2D"');
+    expect(scene).not.toContain('[node name="mid" type="Parallax2D"');
+    expect(scene).not.toContain('[node name="near" type="Parallax2D"');
+    expect(scene).not.toContain('overlay.png');
+    expect(scene).not.toContain('foreground.png');
+  });
+
   it('uses palette ColorRect backgrounds instead of stretched tileset atlases', () => {
     const scene = generateRoomScene('room_000', 0, {
       ...baseOptions,
@@ -431,5 +461,30 @@ describe('generateRoomScene combat sprites', () => {
     expect(scene).toContain(`size = Vector2(800, ${thickness})`);
     expect(scene).toContain(`position = Vector2(400, ${floorCenter})`);
     expect(scene).toContain(`position = Vector2(100, ${floorTop})`);
+  });
+
+  it('does not wallpaper playable-air cells into painted_cells_json', () => {
+    const layoutCells = [
+      { x: 0, y: 16, col: 0, row: 0 },
+      { x: 6, y: 13, col: 3, row: 0 },
+    ];
+    const scene = generateRoomScene('room_000', 0, {
+      ...baseOptions,
+      hasEnemy: false,
+      enemyIndex: 0,
+      isBossRoom: false,
+      bossId: '',
+      hasTileset: true,
+      tileSize: 32,
+      tileCells: layoutCells,
+      biomeTexturePath: 'assets/tilesets/biome_0/source.png',
+    });
+    const match = scene.match(/painted_cells_json = "(\[[\s\S]*?\])"/);
+    expect(match).not.toBeNull();
+    const painted = JSON.parse((match as RegExpMatchArray)[1]!.replace(/\\"/g, '"')) as number[][];
+    expect(painted).toEqual([
+      [0, 16, 0, 0],
+      [6, 13, 3, 0],
+    ]);
   });
 });

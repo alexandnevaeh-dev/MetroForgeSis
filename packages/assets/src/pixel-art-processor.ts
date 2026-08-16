@@ -6,6 +6,8 @@ export interface PixelArtOptions {
   tileSize?: number;
   palette?: [number, number, number][];
   alphaThreshold?: number;
+  /** Keep source colors. Background plates must not be crushed to the sprite 8-color set. */
+  skipQuantize?: boolean;
 }
 
 export interface PixelArtResult {
@@ -41,7 +43,9 @@ export class PixelArtProcessor {
       options.targetHeight,
     );
 
-    const quantized = quantizeToPalette(scaled.rgba, scaled.width, scaled.height, palette);
+    const quantized = options.skipQuantize
+      ? scaled.rgba
+      : quantizeToPalette(scaled.rgba, scaled.width, scaled.height, palette);
     const cleaned = cleanupAlpha(quantized, scaled.width, scaled.height, options.alphaThreshold ?? 128);
 
     return {
