@@ -71,6 +71,29 @@ export function defaultCharacterLineageEdges(characterId = 'player'): LineageEdg
   return edges;
 }
 
+/** Rel paths that should be rebuilt when the canonical character still is replaced. Never rooms. */
+export function descendantRelPaths(characterId = 'player'): Array<{ id: string; path: string; reason: string }> {
+  const { reasons } = descendantsOf(defaultCharacterLineageEdges(characterId), characterId);
+  return reasons
+    .filter((entry) => entry.id !== 'Player.tscn')
+    .map((entry) => ({
+      id: entry.id,
+      path: descendantIdToRelPath(characterId, entry.id),
+      reason: entry.reason,
+    }))
+    .filter((entry) => Boolean(entry.path));
+}
+
+function descendantIdToRelPath(characterId: string, id: string): string {
+  if (id.endsWith('_walk_sheet')) return `assets/characters/${characterId}_walk.png`;
+  if (id.endsWith('_attack_sheet')) return `assets/characters/${characterId}_attack.png`;
+  if (id.endsWith('_hurt_sheet')) return `assets/characters/${characterId}_hurt.png`;
+  if (id.endsWith('_death_sheet')) return `assets/characters/${characterId}_death.png`;
+  const pose = id.replace(`${characterId}_`, '').replace(/_pose$/, '');
+  if (id.endsWith('_pose')) return `assets/characters/${characterId}_${pose}_pose.png`;
+  return '';
+}
+
 export function descendantsOf(
   edges: LineageEdge[],
   rootId: string,

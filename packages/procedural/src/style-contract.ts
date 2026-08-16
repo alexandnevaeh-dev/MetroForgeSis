@@ -59,7 +59,7 @@ export function buildVisualStyleContract(styleBible: StyleBible | undefined): Vi
     uiVocabulary: ui,
     promptFragment: '',
     negativeFragment:
-      'UI chrome, HUD, readable text, logos, watermarks, unrelated characters, mismatched perspective, wrong biome palette',
+      'UI chrome, HUD, readable text, logos, watermarks, people, person, human figure, character silhouette, pine trees, conifer forest, mountain range, lake vista, outdoor landscape photography, alpine woodland, fjord shoreline, mismatched perspective, wrong biome palette',
   };
   contract.promptFragment = [
     artStyle,

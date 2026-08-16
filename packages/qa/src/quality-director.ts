@@ -275,20 +275,20 @@ export class QualityDirector {
       payload: {},
     });
 
-    if (snapshot.lumaStdDev < 4 || snapshot.criticScore < 70) {
+    if (snapshot.lumaStdDev < 4 || snapshot.criticScore < 70 || ((snapshot.occupancy ?? 0) > 0.94 && snapshot.lumaStdDev < 10)) {
       issues.push({
         id: 'flat_luminance',
         category: 'CONTRAST',
-        severity: snapshot.lumaStdDev < 4 ? 'error' : 'warn',
+        severity: snapshot.lumaStdDev < 4 || ((snapshot.occupancy ?? 0) > 0.94 && snapshot.lumaStdDev < 10) ? 'error' : 'warn',
         title: 'Gameplay frame lacks spatial luminance structure',
-        evidence: snapshot.criticIssues.join('; ') || `lumaStdDev ${snapshot.lumaStdDev.toFixed(2)}`,
+        evidence: snapshot.criticIssues.join('; ') || `lumaStdDev ${snapshot.lumaStdDev.toFixed(2)} occupancy ${snapshot.occupancy ?? 0}`,
         metric: 'lumaStdDev',
         beforeValue: snapshot.lumaStdDev,
-        target: 4,
+        target: 10,
       });
     }
 
-    if (worldUsesStretchedTilesetBg(projectPath) || snapshot.lumaStdDev < 8) {
+    if (worldUsesStretchedTilesetBg(projectPath)) {
       issues.push({
         id: 'stretched_tileset_background',
         category: 'DEPTH',

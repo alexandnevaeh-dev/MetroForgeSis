@@ -222,9 +222,9 @@ describe('knockoutVfxBackground', () => {
       rgba[i + 3] = 0;
     }
     const center = (8 * width + 8) * 4;
-    rgba[center] = 200;
-    rgba[center + 1] = 80;
-    rgba[center + 2] = 60;
+    rgba[center] = 90;
+    rgba[center + 1] = 140;
+    rgba[center + 2] = 220;
     rgba[center + 3] = 255;
     const knocked = knockoutVfxBackground(encodePng(width, height, rgba));
     const decoded = decodePngRgba(knocked);
@@ -247,9 +247,9 @@ describe('knockoutVfxBackground', () => {
       }
     }
     const center = (8 * width + 8) * 4;
-    rgba[center] = 220;
-    rgba[center + 1] = 90;
-    rgba[center + 2] = 50;
+    rgba[center] = 90;
+    rgba[center + 1] = 140;
+    rgba[center + 2] = 220;
     rgba[center + 3] = 255;
     const knocked = knockoutVfxBackground(encodePng(width, height, rgba));
     const decoded = decodePngRgba(knocked);
@@ -265,9 +265,9 @@ describe('knockoutVfxBackground', () => {
     for (let y = 4; y < 12; y++) {
       for (let x = 4; x < 12; x++) {
         const i = (y * width + x) * 4;
-        rgba[i] = 200;
-        rgba[i + 1] = 80;
-        rgba[i + 2] = 60;
+        rgba[i] = 90;
+        rgba[i + 1] = 140;
+        rgba[i + 2] = 220;
         rgba[i + 3] = 255;
       }
     }
@@ -294,9 +294,9 @@ describe('knockoutVfxBackground', () => {
     for (let y = 4; y < 15; y++) {
       for (let x = 5; x < 11; x++) {
         const i = (y * width + x) * 4;
-        rgba[i] = 200;
-        rgba[i + 1] = 80;
-        rgba[i + 2] = 60;
+        rgba[i] = 90;
+        rgba[i + 1] = 140;
+        rgba[i + 2] = 220;
         rgba[i + 3] = 255;
       }
     }
@@ -309,5 +309,192 @@ describe('knockoutVfxBackground', () => {
     const decoded = decodePngRgba(knocked);
     expect(decoded.rgba[foot + 3]).toBe(0);
     expect(decoded.rgba[(8 * width + 8) * 4 + 3]).toBeGreaterThan(0);
+  });
+
+  it('keeps enclosed leftover studio gray instead of punching holes in the silhouette', () => {
+    const width = 16;
+    const height = 16;
+    const rgba = new Uint8Array(width * height * 4);
+    for (let i = 0; i < rgba.length; i += 4) rgba[i + 3] = 0;
+    for (let y = 3; y < 13; y++) {
+      for (let x = 3; x < 13; x++) {
+        const i = (y * width + x) * 4;
+        rgba[i] = 90;
+        rgba[i + 1] = 140;
+        rgba[i + 2] = 220;
+        rgba[i + 3] = 255;
+      }
+    }
+    for (const [x, y] of [
+      [7, 7],
+      [8, 7],
+      [7, 8],
+      [8, 8],
+    ]) {
+      const i = (y * width + x) * 4;
+      rgba[i] = 60;
+      rgba[i + 1] = 64;
+      rgba[i + 2] = 78;
+      rgba[i + 3] = 255;
+    }
+    const knocked = knockoutVfxBackground(encodePng(width, height, rgba));
+    const decoded = decodePngRgba(knocked);
+    // Enclosed studio that does not touch transparency stays — punching it cut
+    // holes that showed the floor as 60,64,78 and rimmed white via the outline.
+    expect(decoded.rgba[(7 * width + 7) * 4 + 3]).toBeGreaterThan(0);
+    expect(decoded.rgba[(5 * width + 5) * 4 + 3]).toBeGreaterThan(0);
+  });
+
+  it('punches a magenta contact oval under the feet without eating the subject', () => {
+    const width = 16;
+    const height = 16;
+    const rgba = new Uint8Array(width * height * 4);
+    for (let i = 0; i < rgba.length; i += 4) rgba[i + 3] = 0;
+    for (let y = 4; y < 12; y++) {
+      for (let x = 5; x < 11; x++) {
+        const i = (y * width + x) * 4;
+        rgba[i] = 90;
+        rgba[i + 1] = 140;
+        rgba[i + 2] = 220;
+        rgba[i + 3] = 255;
+      }
+    }
+    const glow = ((height - 2) * width + 8) * 4;
+    rgba[glow] = 180;
+    rgba[glow + 1] = 100;
+    rgba[glow + 2] = 200;
+    rgba[glow + 3] = 255;
+    const knocked = knockoutVfxBackground(encodePng(width, height, rgba));
+    const decoded = decodePngRgba(knocked);
+    expect(decoded.rgba[glow + 3]).toBe(0);
+    expect(decoded.rgba[(8 * width + 8) * 4 + 3]).toBeGreaterThan(0);
+  });
+
+  it('punches leftover studio gray in the bottom contact band', () => {
+    const width = 16;
+    const height = 16;
+    const rgba = new Uint8Array(width * height * 4);
+    for (let i = 0; i < rgba.length; i += 4) rgba[i + 3] = 0;
+    for (let y = 4; y < 15; y++) {
+      for (let x = 5; x < 11; x++) {
+        const i = (y * width + x) * 4;
+        rgba[i] = 90;
+        rgba[i + 1] = 140;
+        rgba[i + 2] = 220;
+        rgba[i + 3] = 255;
+      }
+    }
+    const pad = ((height - 2) * width + 8) * 4;
+    rgba[pad] = 60;
+    rgba[pad + 1] = 64;
+    rgba[pad + 2] = 78;
+    rgba[pad + 3] = 255;
+    const knocked = knockoutVfxBackground(encodePng(width, height, rgba));
+    const decoded = decodePngRgba(knocked);
+    expect(decoded.rgba[pad + 3]).toBe(0);
+    expect(decoded.rgba[(8 * width + 8) * 4 + 3]).toBeGreaterThan(0);
+  });
+
+  it('fills a small punched hole inside the silhouette', () => {
+    const width = 16;
+    const height = 16;
+    const rgba = new Uint8Array(width * height * 4);
+    for (let i = 0; i < rgba.length; i += 4) rgba[i + 3] = 0;
+    for (let y = 3; y < 13; y++) {
+      for (let x = 3; x < 13; x++) {
+        const i = (y * width + x) * 4;
+        rgba[i] = 90;
+        rgba[i + 1] = 140;
+        rgba[i + 2] = 220;
+        rgba[i + 3] = 255;
+      }
+    }
+    const hole = (7 * width + 7) * 4;
+    rgba[hole + 3] = 0;
+    const knocked = knockoutVfxBackground(encodePng(width, height, rgba));
+    const decoded = decodePngRgba(knocked);
+    expect(decoded.rgba[hole + 3]).toBeGreaterThan(0);
+    expect(decoded.rgba[(5 * width + 5) * 4 + 3]).toBeGreaterThan(0);
+  });
+
+  it('does not punch enclosed studio gray when it is most of the silhouette', () => {
+    const width = 16;
+    const height = 16;
+    const rgba = new Uint8Array(width * height * 4);
+    for (let i = 0; i < rgba.length; i += 4) rgba[i + 3] = 0;
+    for (let y = 2; y < 14; y++) {
+      for (let x = 2; x < 14; x++) {
+        const i = (y * width + x) * 4;
+        const ring = x === 2 || y === 2 || x === 13 || y === 13;
+        rgba[i] = ring ? 90 : 60;
+        rgba[i + 1] = ring ? 140 : 64;
+        rgba[i + 2] = ring ? 220 : 78;
+        rgba[i + 3] = 255;
+      }
+    }
+    const inner = (8 * width + 8) * 4;
+    const knocked = knockoutVfxBackground(encodePng(width, height, rgba));
+    const decoded = decodePngRgba(knocked);
+    expect(decoded.rgba[inner + 3]).toBeGreaterThan(0);
+    expect(decoded.rgba[inner]).toBe(60);
+  });
+
+  it('punches palette red and cream in the contact band', () => {
+    const width = 16;
+    const height = 16;
+    const rgba = new Uint8Array(width * height * 4);
+    for (let i = 0; i < rgba.length; i += 4) rgba[i + 3] = 0;
+    for (let y = 3; y < 14; y++) {
+      for (let x = 4; x < 12; x++) {
+        const i = (y * width + x) * 4;
+        rgba[i] = 90;
+        rgba[i + 1] = 140;
+        rgba[i + 2] = 220;
+        rgba[i + 3] = 255;
+      }
+    }
+    const red = ((height - 2) * width + 6) * 4;
+    rgba[red] = 200;
+    rgba[red + 1] = 80;
+    rgba[red + 2] = 80;
+    rgba[red + 3] = 255;
+    const cream = ((height - 2) * width + 9) * 4;
+    rgba[cream] = 240;
+    rgba[cream + 1] = 240;
+    rgba[cream + 2] = 250;
+    rgba[cream + 3] = 255;
+    const knocked = knockoutVfxBackground(encodePng(width, height, rgba));
+    const decoded = decodePngRgba(knocked);
+    expect(decoded.rgba[red + 3]).toBe(0);
+    expect(decoded.rgba[cream + 3]).toBe(0);
+    expect(decoded.rgba[(8 * width + 8) * 4 + 3]).toBeGreaterThan(0);
+  });
+});
+
+describe('generateWalkCycleSheet identity', () => {
+  it('emits unique stride frames instead of four identical stills', () => {
+    const spec = {
+      id: 'player',
+      width: 32,
+      height: 32,
+      fill: [90, 140, 220, 255] as [number, number, number, number],
+      shape: 'humanoid' as const,
+    };
+    const still = generateProceduralSprite(spec);
+    const sheet = generateWalkCycleSheet(spec, 4, still);
+    const decoded = decodePngRgba(sheet);
+    expect(decoded.width).toBe(128);
+    const hashes = new Set<string>();
+    for (let f = 0; f < 4; f++) {
+      let h = 0;
+      for (let y = 0; y < 32; y++) {
+        for (let x = 0; x < 32; x++) {
+          h = (h * 33 + decoded.rgba[(y * 128 + f * 32 + x) * 4]!) | 0;
+          h = (h * 33 + decoded.rgba[(y * 128 + f * 32 + x) * 4 + 3]!) | 0;
+        }
+      }
+      hashes.add(String(h));
+    }
+    expect(hashes.size).toBeGreaterThan(1);
   });
 });

@@ -60,6 +60,7 @@ describe('AssetPipeline procedural path', () => {
     expect(result.assets.some((a) => a.path === 'assets/vfx/boss_phase_shift.png')).toBe(true);
     expect(result.assets.some((a) => a.path === 'assets/vfx/area_burst.png')).toBe(true);
     expect(result.assets.some((a) => a.path === 'assets/vfx/slam_shock.png')).toBe(true);
+    expect(result.assets.some((a) => a.path === 'assets/vfx/landing_dust.png')).toBe(true);
     expect(result.assets.some((a) => a.path === 'assets/npcs/npc_000.png')).toBe(true);
     expect(result.assets.some((a) => a.path === 'assets/npcs/npc_000_walk.png')).toBe(true);
 

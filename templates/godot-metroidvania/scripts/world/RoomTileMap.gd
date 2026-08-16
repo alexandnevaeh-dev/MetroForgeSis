@@ -5,6 +5,7 @@ extends TileMapLayer
 @export var room_height: int = 600
 @export var tile_size: int = 16
 @export var painted_cells_json: String = ""
+@export var room_archetype: String = "combat"
 ## JSON array of [start_col, end_col) pairs (end exclusive) the room-assembler carved out as real
 ## pits — the visual backfill below must not repaint these columns solid or the collision gap
 ## (a separate StaticBody2D floor split, see room-assembler.ts buildFloorSection) would look filled.
@@ -77,6 +78,17 @@ func _in_pit(x: int, pits: Array) -> bool:
 ## Pack extra earth *below* the walkable floor so a 32px atlas isn't a one-row strip.
 ## Do not backfill playable air on this (colliding) layer — that hid the sky behind a cream
 ## wall. Interior mass belongs on RearWall, which has no collision.
+func _arch_rng() -> RandomNumberGenerator:
+	var rng := RandomNumberGenerator.new()
+	var room_key := get_parent().name if get_parent() else name
+	rng.seed = hash("%s-%d-%d" % [str(room_key), room_width, room_height])
+	return rng
+
+
+func _arch_variant() -> int:
+	return _arch_rng().randi() % 4
+
+
 func _paint_visual_mass() -> void:
 	var cols := int(room_width / float(tile_size))
 	var max_rows := int(room_height / float(tile_size))
@@ -84,20 +96,32 @@ func _paint_visual_mass() -> void:
 	var ground := Vector2i(0, 0)
 	var bottom_edge := Vector2i(7, 0)
 	var pits := _pit_columns()
-	for extra in range(1, 2):
+	var variant := _arch_variant()
+	# Floor mass is the room's silhouette against the camera crop, not a wallpaper.
+	var extra_earth := 1 if variant == 0 else (2 if variant == 1 else (1 if variant == 2 else 0))
+	if variant == 2:
+		ground = Vector2i(3, 0)
+		bottom_edge = Vector2i(4, 0)
+	for extra in range(1, extra_earth + 1):
 		var y := floor_row + extra
 		if y >= max_rows:
 			break
-		var coords := ground if extra < 3 else bottom_edge
+		var coords := ground if extra < extra_earth else bottom_edge
 		for x in range(cols):
 			if _in_pit(x, pits):
 				continue
 			if get_cell_source_id(Vector2i(x, y)) == -1:
 				set_cell(Vector2i(x, y), 0, coords)
+	if variant == 1:
+		for x in range(cols):
+			if _in_pit(x, pits):
+				continue
+			if get_cell_source_id(Vector2i(x, floor_row)) != -1 and x % 3 == 0:
+				set_cell(Vector2i(x, floor_row), 0, bottom_edge)
 
-## Architecture behind the player on a sibling layer: cornice, lintel, dado, pilasters, and
-## night window frames in each bay. Playable air and window openings stay empty so the far
-## night plate reads as a hall, not wallpaper.
+## Architecture behind the player on a sibling layer. Four silhouettes so rooms
+## are not copies of the same arcade: night apse, solid gallery, colonnade, ruin.
+## Playable air on Ground stays empty. Window/sky openings on RearWall stay empty.
 ## Cover-zoom on 4:3 rooms crops the authored ceiling, so the lintel is placed on the first
 ## on-screen row rather than world row 1.
 func _paint_rear_wall() -> void:
@@ -107,32 +131,33 @@ func _paint_rear_wall() -> void:
 	var wall := Vector2i(1, 0)
 	var ceiling := Vector2i(2, 0)
 	var crop_rows := maxi(0, int((float(room_height) - float(room_width) * 9.0 / 16.0) / float(tile_size)))
-	var lintel := maxi(1, crop_rows)
-	for x in range(1, cols - 1):
-		_rear_cell(rear, x, lintel, ceiling)
-		if lintel + 1 < floor_row:
-			_rear_cell(rear, x, lintel + 1, ceiling)
-	for y in range(maxi(lintel + 2, floor_row - 2), floor_row):
-		for x in range(1, cols - 1):
-			_rear_cell(rear, x, y, ceiling)
-	# Night windows in each bay: frame only. The opening stays empty so FarSky
-	# reads as glass, not another wallpapered interior.
-	var header := lintel + 2
-	var sill := floor_row - 3
-	if header + 2 < sill:
-		for pier in range(1, cols - 1):
-			if pier % 6 != 1:
-				continue
-			var x0 := pier + 2
-			var x1 := mini(pier + 5, cols - 2)
-			_paint_window_frame(rear, x0, x1, header, sill, wall, ceiling)
-	for x in range(1, cols - 1):
-		if x % 6 != 1:
-			continue
-		for y in range(lintel, floor_row):
-			_rear_cell(rear, x, y, wall)
-			if x + 1 < cols - 1:
-				_rear_cell(rear, x + 1, y, wall)
+	var rng := _arch_rng()
+	var variant := rng.randi() % 4
+	# Archetype chooses the silhouette family so traversal/combat/boss/NPC cannot
+	# collapse to the same arcade. Hash variant only flavors leftover connectors.
+	match room_archetype:
+		"traversal", "challenge", "tutorial":
+			_paint_night_apse(rear, cols, floor_row, crop_rows, wall, ceiling)
+		"combat", "arena", "miniboss":
+			_paint_colonnade(rear, cols, floor_row, crop_rows, wall, ceiling)
+		"boss":
+			_paint_ruin_mass(rear, cols, floor_row, crop_rows, wall, ceiling, rng)
+		"npc", "shop", "save":
+			_paint_colonnade(rear, cols, floor_row, crop_rows, wall, ceiling)
+		"ability_shrine", "ability_gate":
+			_paint_night_apse(rear, cols, floor_row, crop_rows, wall, ceiling)
+		"secret", "treasure":
+			_paint_ruin_mass(rear, cols, floor_row, crop_rows, wall, ceiling, rng)
+		_:
+			match variant:
+				0:
+					_paint_night_apse(rear, cols, floor_row, crop_rows, wall, ceiling)
+				1:
+					_paint_colonnade(rear, cols, floor_row, crop_rows, wall, ceiling)
+				2:
+					_paint_colonnade(rear, cols, floor_row, crop_rows, wall, ceiling)
+				_:
+					_paint_ruin_mass(rear, cols, floor_row, crop_rows, wall, ceiling, rng)
 
 func _ensure_rear_layer() -> TileMapLayer:
 	var parent := get_parent()
@@ -158,6 +183,150 @@ func _ensure_rear_layer() -> TileMapLayer:
 	parent.add_child(rear)
 	parent.move_child(rear, 0)
 	return rear
+
+
+func _paint_night_apse(
+	rear: TileMapLayer,
+	cols: int,
+	floor_row: int,
+	crop_rows: int,
+	wall: Vector2i,
+	ceiling: Vector2i,
+) -> void:
+	## Two side masses + one tall night opening. Not a repeating arcade.
+	rear.modulate = Color(0.84, 0.90, 0.94, 1)
+	var lintel := maxi(1, crop_rows)
+	var mass_w := maxi(3, int(cols / 5.0))
+	for x in range(1, 1 + mass_w):
+		_rear_cell(rear, x, lintel, ceiling)
+		for y in range(lintel + 1, floor_row):
+			_rear_cell(rear, x, y, wall)
+	for x in range(cols - 1 - mass_w, cols - 1):
+		_rear_cell(rear, x, lintel, ceiling)
+		for y in range(lintel + 1, floor_row):
+			_rear_cell(rear, x, y, wall)
+	for x in range(1 + mass_w, cols - 1 - mass_w):
+		_rear_cell(rear, x, lintel, ceiling)
+		if floor_row - 1 > lintel:
+			_rear_cell(rear, x, floor_row - 1, wall)
+	if 1 + mass_w + 2 < cols - 1 - mass_w:
+		_rear_cell(rear, 1 + mass_w, lintel + 1, ceiling)
+		_rear_cell(rear, cols - 2 - mass_w, lintel + 1, ceiling)
+
+
+func _paint_gallery_wall(
+	rear: TileMapLayer,
+	cols: int,
+	floor_row: int,
+	crop_rows: int,
+	wall: Vector2i,
+	ceiling: Vector2i,
+) -> void:
+	## Solid rear with a high slit row. Reads as a wall, not an arcade of piers.
+	rear.modulate = Color(0.76, 0.84, 0.90, 1)
+	var lintel := maxi(1, crop_rows)
+	for y in range(lintel, floor_row):
+		for x in range(1, cols - 1):
+			_rear_cell(rear, x, y, ceiling if y <= lintel + 1 else wall)
+	var slit_top := lintel + 2
+	var slit_bot := mini(lintel + 5, floor_row - 3)
+	if slit_bot <= slit_top:
+		return
+	var x := 3
+	while x < cols - 4:
+		for wx in range(x, mini(x + 2, cols - 2)):
+			for wy in range(slit_top, slit_bot + 1):
+				rear.erase_cell(Vector2i(wx, wy))
+		_rear_cell(rear, x - 1, slit_top, ceiling)
+		_rear_cell(rear, mini(x + 2, cols - 2), slit_top, ceiling)
+		x += 7
+
+
+func _paint_colonnade(
+	rear: TileMapLayer,
+	cols: int,
+	floor_row: int,
+	crop_rows: int,
+	wall: Vector2i,
+	ceiling: Vector2i,
+) -> void:
+	## Isolated piers, no connecting lintel, no window frames. Sky is the wall.
+	rear.modulate = Color(0.90, 0.86, 0.80, 1)
+	var lintel := maxi(1, crop_rows)
+	var x := 2
+	while x < cols - 3:
+		for px in range(2):
+			if x + px >= cols - 1:
+				break
+			_rear_cell(rear, x + px, lintel, ceiling)
+			for y in range(lintel + 1, floor_row):
+				_rear_cell(rear, x + px, y, wall)
+		x += 8
+
+
+func _paint_ruin_mass(
+	rear: TileMapLayer,
+	cols: int,
+	floor_row: int,
+	crop_rows: int,
+	wall: Vector2i,
+	ceiling: Vector2i,
+	rng: RandomNumberGenerator,
+) -> void:
+	## Broken, asymmetric masses. No stamped bay rhythm.
+	rear.modulate = Color(0.82, 0.88, 0.90, 1)
+	var lintel := maxi(1, crop_rows)
+	var chunks := 3 + rng.randi() % 3
+	for i in range(chunks):
+		var x0 := 1 + rng.randi() % maxi(1, cols - 6)
+		var w := 2 + rng.randi() % 4
+		var top := lintel + rng.randi() % 3
+		var bot := floor_row - rng.randi() % 3
+		for x in range(x0, mini(x0 + w, cols - 1)):
+			_rear_cell(rear, x, top, ceiling)
+			for y in range(top + 1, bot):
+				_rear_cell(rear, x, y, wall)
+			if rng.randf() < 0.35 and bot - 1 > top:
+				_rear_cell(rear, x, bot - 1, ceiling)
+
+func _paint_bay_architecture(
+	layer: TileMapLayer,
+	x0: int,
+	x1: int,
+	header: int,
+	sill: int,
+	wall: Vector2i,
+	ceiling: Vector2i,
+	bay_i: int,
+) -> void:
+	if x1 - x0 < 2:
+		return
+	var kind := bay_i % 3
+	if kind == 0:
+		# High clerestory: a short window under the lintel, night hall below.
+		var high_sill := mini(header + 4, sill - 1)
+		if high_sill > header + 1:
+			_paint_window_frame(layer, x0, x1, header, high_sill, wall, ceiling)
+			if x1 - x0 >= 3 and header + 1 < high_sill:
+				_rear_cell(layer, x0 + 1, header + 1, ceiling)
+		return
+	if kind == 1:
+		# Standard framed window with a second sill course as an apron.
+		_paint_window_frame(layer, x0, x1, header, sill, wall, ceiling)
+		if sill + 1 < header:
+			return
+		for x in range(x0, x1 + 1):
+			_rear_cell(layer, x, sill + 1, ceiling)
+		return
+	# Deep lancet: jambs only, opening is a tall night slit. Leave the aperture
+	# empty — no infill of playable air.
+	for y in range(header, sill + 1):
+		_rear_cell(layer, x0, y, wall)
+		_rear_cell(layer, x1, y, wall)
+	for x in range(x0, x1 + 1):
+		_rear_cell(layer, x, header, ceiling)
+		_rear_cell(layer, x, sill, wall)
+
 
 func _paint_window_frame(
 	layer: TileMapLayer,

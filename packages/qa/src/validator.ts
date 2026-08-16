@@ -16,7 +16,7 @@ import {
 const TOP_DOWN_ITEM_IDS = new Set<string>(TOP_DOWN_DUNGEON_ITEMS.map((item) => item.id));
 import { validateWorldConnectivity, validateWorldReachability, validateMovementFeasibility, movementStatsFromJson } from '@metroforge/procedural';
 import { auditRoomArchetypeFidelity } from '@metroforge/godot';
-import { critiqueGameplayScreenshot } from '@metroforge/assets';
+import { critiqueGameplayScreenshot, critiqueScreenshotDiversity } from '@metroforge/assets';
 import { parseSmokeTestOutput } from './smoke-output.js';
 import { parsePlaytestOutput, summarizePlaytestBalance } from './playtest-output.js';
 import { captureGameplayScreenshots } from './gameplay-capture.js';
@@ -718,13 +718,46 @@ export class QAValidator {
     }
 
     if (!critique.passed) {
+      const hardVisual = critique.issues.some(
+        (issue) =>
+          issue.includes('wallpapered') ||
+          issue.includes('occupancy') ||
+          issue.toLowerCase().includes('victory') ||
+          issue.includes('flat') ||
+          issue.includes('near-solid'),
+      );
       return {
         gate: 'gameplay_screenshot_qa',
-        passed: true,
-        state: 'SOFT_FAIL',
+        passed: !hardVisual && !required,
+        state: hardVisual || required ? 'FAIL' : 'SOFT_FAIL',
         message: `Gameplay screenshot QA score ${critique.score}: ${critique.description}`,
-        details: { ...critique },
+        details: { ...critique, capture: captureDetails },
       };
+    }
+
+    let diversityIssues: string[] = [];
+    try {
+      const qaDir = join(projectPath, 'qa');
+      const sliceShots = existsSync(qaDir)
+        ? readdirSync(qaDir)
+            .filter((name) => name.startsWith('screenshot_slice_') && name.endsWith('.png'))
+            .map((name) => readFileSync(join(qaDir, name)))
+        : [];
+      if (sliceShots.length >= 3) {
+        const diversity = critiqueScreenshotDiversity(sliceShots);
+        diversityIssues = diversity.issues;
+        if (!diversity.passed) {
+          return {
+            gate: 'gameplay_screenshot_qa',
+            passed: false,
+            state: 'FAIL',
+            message: diversity.issues.join('; '),
+            details: { ...critique, diversity, capture: captureDetails },
+          };
+        }
+      }
+    } catch {
+      diversityIssues = [];
     }
 
     return {
@@ -732,7 +765,7 @@ export class QAValidator {
       passed: true,
       state: 'PASS',
       message: `Gameplay screenshot QA score ${critique.score}`,
-      details: { ...critique },
+      details: { ...critique, diversityIssues, capture: captureDetails },
     };
   }
 

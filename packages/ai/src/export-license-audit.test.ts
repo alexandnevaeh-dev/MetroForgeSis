@@ -80,6 +80,29 @@ describe('resolveArtifactLicense', () => {
     expect(audit.commercialSafe).toBe(true);
   });
 
+  it('inherits from explicit parentArtifactIds when the id suffix is not a sheet', () => {
+    const artifacts = [
+      {
+        id: 'player',
+        path: 'assets/characters/player.png',
+        provider: 'nvidia-image',
+        commercialUse: 'allowed' as const,
+        license: 'NVIDIA API Terms / model card',
+      },
+      {
+        id: 'player_idle_pose',
+        path: 'assets/characters/player_idle_pose.png',
+        provider: 'pixel-art-processor',
+        commercialUse: 'unknown' as const,
+        license: 'Unverified provider: pixel-art-processor',
+        parentArtifactIds: ['player'],
+      },
+    ];
+    const pose = resolveArtifactLicense(artifacts[1]!, artifacts);
+    expect(pose.commercialUse).toBe('allowed');
+    expect(pose.license).toContain('NVIDIA');
+  });
+
   it('keeps unknown compiler artifacts unknown when no source exists', () => {
     const audit = auditExportLicense([
       {

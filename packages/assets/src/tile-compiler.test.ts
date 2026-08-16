@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { TileCompiler, TILE_ATLAS } from '../src/tile-compiler.js';
 import { decodePngRgba, encodePng } from '../src/png.js';
 import { critiqueAnimationIdentity, assembleContactSheet } from '../src/sprite-qa.js';
-import { generateWalkCycleSheet, generateProceduralSprite } from '../src/png.js';
+import { generateProceduralSprite } from '../src/png.js';
 
 /** Distinct opaque RGB combinations within a tile's 1px-inset interior (the border row/col is
  * deliberately left as a flat shared-edge color for autotile seam matching — see
@@ -208,12 +208,28 @@ describe('sprite animation identity', () => {
       fill: [90, 140, 220, 255],
       shape: 'humanoid',
     });
-    const sheet = generateWalkCycleSheet(
-      { id: 'p', width: 32, height: 32, fill: [90, 140, 220, 255], shape: 'humanoid' },
-      4,
-      still,
-    );
-    const qa = critiqueAnimationIdentity(sheet, { frameWidth: 32, expectedFrames: 4, kind: 'walk' });
+    const { rgba, width, height } = decodePngRgba(still);
+    const sheet = new Uint8Array(width * 4 * height * 4);
+    for (let f = 0; f < 4; f++) {
+      const bob = f % 2;
+      for (let y = 0; y < height; y++) {
+        const srcY = y - bob;
+        if (srcY < 0 || srcY >= height) continue;
+        for (let x = 0; x < width; x++) {
+          const si = (srcY * width + x) * 4;
+          const di = (y * width * 4 + f * width + x) * 4;
+          sheet[di] = rgba[si]!;
+          sheet[di + 1] = rgba[si + 1]!;
+          sheet[di + 2] = rgba[si + 2]!;
+          sheet[di + 3] = rgba[si + 3]!;
+        }
+      }
+    }
+    const qa = critiqueAnimationIdentity(encodePng(width * 4, height, sheet), {
+      frameWidth: 32,
+      expectedFrames: 4,
+      kind: 'walk',
+    });
     expect(qa.fakeAnimation || !qa.checks.notFakeBobCycle).toBe(true);
   });
 

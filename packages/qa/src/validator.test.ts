@@ -396,8 +396,11 @@ describe('QAValidator gameplay screenshot gate', () => {
       }
     };
     fill(0, 0, width, height, [18, 22, 40, 255]);
+    fill(20, 8, 52, 48, [168, 196, 228, 255]);
+    fill(70, 10, 110, 50, [150, 180, 214, 255]);
     fill(0, 68, width, height, [92, 58, 36, 255]);
     fill(4, 2, 70, 10, [48, 190, 72, 255]);
+    fill(76, 3, 92, 9, [210, 50, 50, 255]);
     fill(48, 46, 60, 68, [90, 150, 230, 255]);
     writeFileSync(join(outputDir, 'qa', 'screenshot_gameplay.png'), encodePng(width, height, rgba));
 

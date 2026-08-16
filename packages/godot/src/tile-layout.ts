@@ -147,6 +147,16 @@ function platformRowRange(
   return { minRow: Math.min(highest, lowest), maxRow: Math.max(highest, lowest) };
 }
 
+function climbRows(platMaxRow: number, count: number, jumpStep: number): number[] {
+  const rows: number[] = [];
+  let row = platMaxRow;
+  for (let i = 0; i < count && row > 2; i++) {
+    rows.push(row);
+    row -= Math.max(1, jumpStep);
+  }
+  return rows;
+}
+
 function placePlatform(
   cells: TileCell[],
   platforms: PlatformRect[],
@@ -181,6 +191,7 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
   const connections = input.connections ?? [];
   const rng = new SeededRNG((((input.seed ?? 1) + (input.uniquenessSalt ?? 0) * 9973) >>> 0) || 1);
   const { minRow: platMinRow, maxRow: platMaxRow } = platformRowRange(floorRow, tileSize, stats);
+  const jumpStep = Math.max(1, Math.floor((jumpApexPx(stats) * 0.7) / tileSize));
 
   // A down-connection gated on ground_slam already reserves a floor gap for a WeakFloor scene
   // (see deriveWeakFloors in room-assembler.ts) — never double-carve that same span with a pit.
@@ -260,19 +271,29 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
   cells.push(cell(0, floorRow, 'outside_bl'));
   cells.push(cell(cols - 1, floorRow, 'outside_br'));
 
-  if (archetype === 'combat' || archetype === 'tutorial' || archetype === 'arena') {
-    const lengthCols = rng.int(4, Math.max(5, Math.floor(cols * 0.22)));
-    const startCol = rng.int(Math.floor(cols * 0.22), Math.max(Math.floor(cols * 0.22) + 1, Math.floor(cols * 0.62) - lengthCols));
-    const row = rng.int(platMinRow, platMaxRow);
-    placePlatform(cells, platforms, tileSize, startCol, lengthCols, row);
-    // Combat/arena rooms get a second, independently-seeded platform so two rooms sharing this
-    // archetype don't collapse to the same single-shape silhouette.
-    if (archetype !== 'tutorial' && rng.next() < 0.6) {
-      const length2 = rng.int(3, Math.max(4, Math.floor(cols * 0.16)));
-      const start2 = rng.int(Math.floor(cols * 0.62), Math.max(Math.floor(cols * 0.62) + 1, cols - 3 - length2));
-      const row2 = rng.int(platMinRow, platMaxRow);
-      placePlatform(cells, platforms, tileSize, start2, length2, row2);
-    }
+  if (archetype === 'tutorial') {
+    const climb = climbRows(platMaxRow, 3, jumpStep);
+    const lowCol = Math.max(2, Math.floor(cols * 0.14));
+    const midCol = Math.max(lowCol + 5, Math.floor(cols * 0.34));
+    const highCol = Math.max(midCol + 4, Math.floor(cols * 0.54));
+    placePlatform(cells, platforms, tileSize, lowCol, 4, climb[0] ?? platMaxRow);
+    placePlatform(cells, platforms, tileSize, midCol, 4, climb[1] ?? climb[0] ?? platMaxRow);
+    placePlatform(cells, platforms, tileSize, highCol, 4, climb[2] ?? climb[1] ?? platMaxRow);
+  }
+
+  if (archetype === 'combat' || archetype === 'arena') {
+    // Wide flanking islands at similar height so the floor stays a fight bowl, not a staircase.
+    const leftLen = rng.int(3, Math.max(4, Math.floor(cols * 0.16)));
+    const rightLen = rng.int(3, Math.max(4, Math.floor(cols * 0.16)));
+    placePlatform(cells, platforms, tileSize, Math.max(2, Math.floor(cols * 0.12)), leftLen, platMaxRow);
+    placePlatform(
+      cells,
+      platforms,
+      tileSize,
+      Math.min(cols - 3 - rightLen, Math.floor(cols * 0.72)),
+      rightLen,
+      platMaxRow,
+    );
   }
 
   if (archetype === 'challenge' || archetype === 'traversal') {
@@ -345,10 +366,17 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
   }
 
   if (archetype === 'ability_gate' || archetype === 'ability_shrine') {
-    const verticalAbility = connections
-      .flatMap((c) => c.requirements)
-      .find((r) => r === 'double_jump' || r === 'air_dash' || r === 'grapple' || r === 'wall_jump' || r === 'wall_slide');
+    const required = new Set(connections.flatMap((c) => c.requirements));
+    const verticalAbility = [...required].find(
+      (r) => r === 'double_jump' || r === 'air_dash' || r === 'grapple' || r === 'wall_jump' || r === 'wall_slide',
+    );
+    const dashAbility = required.has('dash') || required.has('air_dash');
     const gx = rng.int(Math.floor(cols * 0.4), Math.floor(cols * 0.68));
+    const approachCol = Math.max(2, Math.floor(cols * 0.18));
+    const altarCol = Math.min(cols - 6, Math.max(approachCol + 6, Math.floor(cols * 0.52)));
+    const climb = climbRows(platMaxRow, 2, jumpStep);
+    placePlatform(cells, platforms, tileSize, approachCol, 4, climb[0] ?? platMaxRow);
+    placePlatform(cells, platforms, tileSize, altarCol, 4, climb[1] ?? platMaxRow);
     let doorTopRow: number;
     if (verticalAbility === 'wall_jump' || verticalAbility === 'wall_slide') {
       // Real wall-jump/wall-climb reach is treated as unbounded within a single room (see
@@ -358,22 +386,37 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
     } else if (verticalAbility === 'double_jump' || verticalAbility === 'air_dash' || verticalAbility === 'grapple') {
       const reachPx = verticalAbility === 'grapple' ? dashReachPx(stats) * 4 : doubleJumpReachPx(stats);
       doorTopRow = Math.max(2, floorRow - Math.floor((reachPx * 0.85) / tileSize));
-      // A stepping platform partway up so the ability-gated climb has a visible intermediate beat,
-      // matching how a real double-jump/grapple ascent would be staged.
-      const midRow = Math.floor((doorTopRow + floorRow) / 2);
-      if (midRow > doorTopRow + 1 && midRow < floorRow - 1) {
-        const stepCol = Math.max(1, gx - 4);
-        placePlatform(cells, platforms, tileSize, stepCol, 3, midRow);
-      }
     } else {
-      doorTopRow = Math.max(2, floorRow - rng.int(3, 5));
+      doorTopRow = Math.max(2, floorRow - rng.int(4, 6));
     }
-    for (let y = doorTopRow; y < floorRow; y++) {
-      cells.push(cell(gx, y, 'door'));
+    if (archetype === 'ability_gate') {
+      for (let y = doorTopRow; y < floorRow; y++) {
+        cells.push(cell(gx, y, 'door'));
+      }
+    }
+    if (
+      dashAbility &&
+      hasHorizontalReachAbility &&
+      !hasWeakFloorGap &&
+      archetype === 'ability_gate'
+    ) {
+      const pitWidthTiles = Math.max(2, Math.min(3, maxPitWidthTiles));
+      const pitCol = Math.max(marginTiles, Math.min(cols - marginTiles - pitWidthTiles, altarCol - pitWidthTiles - 1));
+      if (pitCol > 1 && pitCol + pitWidthTiles < cols - 1) {
+        for (let x = pitCol; x < pitCol + pitWidthTiles; x++) {
+          for (let i = cells.length - 1; i >= 0; i--) {
+            const c = cells[i]!;
+            if (c.x === x && (c.y === floorRow || c.y === floorRow + 1 || c.y === floorRow + 2 || c.y === floorRow + 3)) {
+              cells.splice(i, 1);
+            }
+          }
+        }
+        pits.push({ x: pitCol * tileSize, width: pitWidthTiles * tileSize });
+      }
     }
   }
 
-  if (archetype === 'arena' || archetype === 'boss') {
+  if (archetype === 'arena' || archetype === 'boss' || archetype === 'miniboss') {
     const deco = rng.int(Math.max(2, Math.floor(cols * 0.12)), Math.max(3, Math.floor(cols * 0.28)));
     cells.push(cell(deco, floorRow - 1, 'decor_a'));
     cells.push(cell(cols - deco, floorRow - 1, 'decor_b'));
@@ -382,20 +425,25 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
   if (archetype === 'save') {
     const lx = rng.int(Math.max(2, Math.floor(cols * 0.3)), Math.max(3, Math.floor(cols * 0.6)));
     cells.push(cell(lx, floorRow - 1, 'decor_a'));
+    const daisCol = Math.max(2, Math.floor(cols * 0.42));
+    const climb = climbRows(platMaxRow, 2, jumpStep);
+    placePlatform(cells, platforms, tileSize, daisCol, 3, climb[0] ?? platMaxRow);
+    placePlatform(cells, platforms, tileSize, daisCol + 5, 2, climb[1] ?? platMaxRow);
   }
 
-  if (archetype === 'npc' || archetype === 'shop' || archetype === 'save') {
-    const benchCol = rng.int(Math.floor(cols * 0.28), Math.max(Math.floor(cols * 0.28) + 1, Math.floor(cols * 0.5)));
-    const benchRow = Math.max(platMinRow, platMaxRow);
-    placePlatform(cells, platforms, tileSize, benchCol, 4, benchRow);
+  if (archetype === 'npc' || archetype === 'shop') {
+    const benchCol = Math.max(3, Math.floor(cols * 0.36));
+    const climb = climbRows(platMaxRow, 2, jumpStep);
+    placePlatform(cells, platforms, tileSize, benchCol, 6, climb[0] ?? platMaxRow);
+    placePlatform(cells, platforms, tileSize, Math.max(2, benchCol - 6), 3, climb[1] ?? platMaxRow);
   }
 
   if (archetype === 'puzzle') {
-    placePlatform(cells, platforms, tileSize, Math.max(2, Math.floor(cols * 0.18)), 4, platMaxRow);
-    placePlatform(cells, platforms, tileSize, Math.max(2, Math.floor(cols * 0.42)), 3, platMinRow);
-    const midRow = Math.floor((platMinRow + platMaxRow) / 2);
-    if (midRow !== platMinRow && midRow !== platMaxRow) {
-      placePlatform(cells, platforms, tileSize, Math.max(2, Math.floor(cols * 0.62)), 3, midRow);
+    const climb = climbRows(platMaxRow, 3, jumpStep);
+    placePlatform(cells, platforms, tileSize, Math.max(2, Math.floor(cols * 0.18)), 4, climb[0] ?? platMaxRow);
+    placePlatform(cells, platforms, tileSize, Math.max(2, Math.floor(cols * 0.42)), 3, climb[1] ?? platMaxRow);
+    if (climb[2] !== undefined) {
+      placePlatform(cells, platforms, tileSize, Math.max(2, Math.floor(cols * 0.62)), 3, climb[2]);
     }
   }
 
@@ -420,15 +468,27 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
   }
 
   if (archetype === 'treasure') {
-    const alcove = rng.next() < 0.5 ? 2 : cols - 6;
-    placePlatform(cells, platforms, tileSize, alcove, 4, platMinRow);
-    const alcoveTop = platMinRow - 1 > 1 ? platMinRow - 1 : platMinRow;
+    const alcove = rng.next() < 0.5 ? 2 : cols - 7;
+    const step = Math.max(2, alcove === 2 ? alcove + 6 : alcove - 6);
+    const climb = climbRows(platMaxRow, 3, jumpStep);
+    placePlatform(cells, platforms, tileSize, step, 3, climb[0] ?? platMaxRow);
+    placePlatform(cells, platforms, tileSize, Math.floor((step + alcove) / 2), 3, climb[1] ?? platMaxRow);
+    placePlatform(cells, platforms, tileSize, alcove, 4, climb[2] ?? platMaxRow);
+    const topRow = climb[2] ?? platMaxRow;
+    const alcoveTop = topRow - 1 > 1 ? topRow - 1 : topRow;
     cells.push(cell(alcove + 1, alcoveTop, 'decor_b'));
   }
 
   if (archetype === 'boss') {
-    placePlatform(cells, platforms, tileSize, 3, 4, platMaxRow);
-    placePlatform(cells, platforms, tileSize, cols - 8, 4, platMaxRow);
+    const climb = climbRows(platMaxRow, 2, jumpStep);
+    placePlatform(cells, platforms, tileSize, 3, 4, climb[0] ?? platMaxRow);
+    placePlatform(cells, platforms, tileSize, cols - 8, 4, climb[1] ?? climb[0] ?? platMaxRow);
+  }
+
+  if (archetype === 'miniboss') {
+    const midCol = Math.max(3, Math.floor(cols * 0.38));
+    placePlatform(cells, platforms, tileSize, midCol, 6, platMaxRow);
+    cells.push(cell(midCol + 2, platMaxRow - 1 > 1 ? platMaxRow - 1 : platMaxRow, 'hazard'));
   }
 
   return { cells, platforms, pits };

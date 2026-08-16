@@ -1,10 +1,11 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { AssetPipeline, type GeneratedAsset } from '@metroforge/assets';
 import { licenseFieldsForProvider } from '@metroforge/ai';
 import { GameDNASchema, type DesignBible, type StyleBible } from '@metroforge/schemas';
 import { loadConfig } from '@metroforge/shared';
 import { recordAssetVersion } from './asset-history.js';
+import { descendantRelPaths, markDescendantsDirty, defaultCharacterLineageEdges } from './artifact-lineage.js';
 
 export type ManualAssetType =
   | 'character_concept'
@@ -178,6 +179,26 @@ export async function generateManualAsset(request: ManualAssetRequest): Promise<
   }
   writeFileSync(targetFull, asset.buffer);
 
+  const characterId = request.assetType === 'player_sprite' ? 'player' : '';
+  let dirtyReason = '';
+  const dirtyIds = new Set<string>();
+  if (characterId) {
+    const invalidation = markDescendantsDirty(defaultCharacterLineageEdges(characterId), characterId);
+    dirtyReason = invalidation.reason;
+    warnings.push(invalidation.reason);
+    for (const descendant of descendantRelPaths(characterId)) {
+      dirtyIds.add(descendant.id);
+      const full = join(request.projectPath, descendant.path);
+      if (existsSync(full)) {
+        try {
+          unlinkSync(full);
+        } catch {
+          warnings.push(`Could not remove stale descendant ${descendant.path}`);
+        }
+      }
+    }
+  }
+
   const manifestPath = join(request.projectPath, 'generation_manifest.json');
   if (existsSync(manifestPath)) {
     try {
@@ -211,6 +232,14 @@ export async function generateManualAsset(request: ManualAssetRequest): Promise<
       };
       if (idx >= 0) artifacts[idx] = { ...artifacts[idx], ...entry };
       else artifacts.push(entry);
+      if (dirtyIds.size > 0) {
+        for (const row of artifacts) {
+          const id = String(row.id ?? '');
+          if (!dirtyIds.has(id) && !dirtyIds.has(`${id}_sheet`)) continue;
+          row.dirty = true;
+          row.dirtyReason = dirtyReason;
+        }
+      }
       writeFileSync(manifestPath, JSON.stringify({ ...manifest, artifacts }, null, 2));
     } catch {
       warnings.push('Could not update generation_manifest.json');

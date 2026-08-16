@@ -11,11 +11,11 @@ export const PARALLAX_STRIP_SIZE: Record<ParallaxLayerName, { width: number; hei
 };
 
 export const PARALLAX_LAYER_PROMPTS: Record<ParallaxLayerName, string> = {
-  far: 'orthographic side-view FAR background PLATE filling the entire frame, distant ridgeline and sky, continuous horizon, tileable left-right, empty of characters, no UI, not stacked floating islands, not a cropped landscape strip',
-  mid: 'horizontal mid-ground parallax STRIP of architecture silhouettes, transparent empty sky above, orthographic side-view, tileable left-right, no characters, no UI',
-  near: 'horizontal near parallax STRIP of dark foreground silhouettes along the bottom, transparent above, orthographic side-view, tileable left-right, no characters, no UI',
-  overlay: 'sparse mist overlay STRIP, mostly transparent, no characters, no UI',
-  foreground: 'dark foreground occluder silhouettes along the very bottom edge, transparent above, no UI, no characters',
+  far: 'orthographic side-view INTERIOR FAR PLATE filling the entire frame, viewed from INSIDE a drowned tideglass citadel hall: receding glass-masonry vaults, iron ribs, moonlit clerestory ON THE BUILDING, flooded stone colonnades, architecture only, empty of people animals characters silhouettes figures, NOT an outdoor landscape, no pine trees, no conifers, no forest, no mountains, no lake, no shoreline, no nature vista, no UI, tileable left-right',
+  mid: 'horizontal mid-ground parallax STRIP of citadel INTERIOR architecture silhouettes, iron ribs and glass masonry columns, transparent empty air above, orthographic side-view, tileable left-right, no characters, no people, no trees, no UI',
+  near: 'horizontal near parallax STRIP of dark citadel foreground silhouettes along the bottom, transparent above, orthographic side-view, tileable left-right, no characters, no trees, no UI',
+  overlay: 'sparse tide mist overlay STRIP, mostly transparent, no characters, no UI',
+  foreground: 'dark citadel foreground occluder silhouettes along the very bottom edge, transparent above, no UI, no characters',
 };
 
 function hash01(seed: number, n: number): number {
@@ -56,8 +56,8 @@ function ridgeAt(x: number, width: number, seed: number, base: number, amp: numb
 }
 
 /**
- * Procedural side-view parallax plates. Far is an opaque sky+horizon that fills the
- * camera; mid/near keep empty air transparent so they sit as depth silhouettes.
+ * Procedural side-view parallax plates. Far is an opaque night-citadel interior (not a
+ * pine/mountain/lake vista); mid/near keep empty air transparent so they sit as depth silhouettes.
  */
 export function generateParallaxStrip(
   layer: ParallaxLayerName,
@@ -69,8 +69,9 @@ export function generateParallaxStrip(
   // Drowned-citadel night sky (#284878 family). Do not drift into cream/green landscape slabs.
   const skyTop: [number, number, number] = [22 + Math.floor(hash01(seed, 1) * 10), 38 + Math.floor(hash01(seed, 2) * 12), 70 + Math.floor(hash01(seed, 3) * 14)];
   const skyBot: [number, number, number] = [36 + Math.floor(hash01(seed, 4) * 10), 64 + Math.floor(hash01(seed, 5) * 14), 108 + Math.floor(hash01(seed, 6) * 16)];
-  const rock: [number, number, number] = [28 + Math.floor(hash01(seed, 7) * 12), 36 + Math.floor(hash01(seed, 8) * 10), 48 + Math.floor(hash01(seed, 9) * 12)];
+  const masonry: [number, number, number] = [32 + Math.floor(hash01(seed, 7) * 10), 42 + Math.floor(hash01(seed, 8) * 8), 62 + Math.floor(hash01(seed, 9) * 10)];
   const dark: [number, number, number] = [10 + Math.floor(hash01(seed, 10) * 8), 14 + Math.floor(hash01(seed, 11) * 8), 22 + Math.floor(hash01(seed, 12) * 10)];
+  const glass: [number, number, number] = [48, 78, 118];
 
   for (let y = 0; y < height; y++) {
     const t = y / Math.max(1, height - 1);
@@ -79,11 +80,26 @@ export function generateParallaxStrip(
         const r = Math.round(skyTop[0] + (skyBot[0] - skyTop[0]) * t);
         const g = Math.round(skyTop[1] + (skyBot[1] - skyTop[1]) * t);
         const b = Math.round(skyTop[2] + (skyBot[2] - skyTop[2]) * t);
-        const farRidge = ridgeAt(x, width, seed, height * 0.86, height * 0.025);
-        if (y > farRidge) {
-          setPx(rgba, width, x, y, rock[0], rock[1], rock[2], 255);
-        } else {
-          setPx(rgba, width, x, y, r, g, b, 255);
+        setPx(rgba, width, x, y, r, g, b, 255);
+        const moonX = Math.floor(width * 0.78);
+        const moonY = Math.floor(height * 0.16);
+        const md = (x - moonX) * (x - moonX) + (y - moonY) * (y - moonY);
+        if (md < 36) setPx(rgba, width, x, y, 210, 220, 236, 255);
+        const span = 22 + Math.floor(hash01(seed, 40) * 8);
+        const pier = x % span;
+        const hallTop = Math.floor(height * 0.34);
+        if (y > hallTop) {
+          const inPier = pier < 7 || pier > span - 4;
+          const vault = Math.abs(y - hallTop - 10) < 3;
+          const windowSlot = !inPier && y > hallTop + 14 && y < height * 0.72 && (y % 18) > 6 && (y % 18) < 14;
+          if (inPier || vault) {
+            const n = hash01(seed, x + y * 3);
+            setPx(rgba, width, x, y, masonry[0] + n * 10, masonry[1] + n * 8, masonry[2] + n * 10, 255);
+          } else if (windowSlot) {
+            setPx(rgba, width, x, y, glass[0], glass[1], glass[2], 255);
+          } else {
+            setPx(rgba, width, x, y, dark[0] + 8, dark[1] + 10, dark[2] + 18, 255);
+          }
         }
         continue;
       }
@@ -92,7 +108,7 @@ export function generateParallaxStrip(
         const ridge = ridgeAt(x, width, seed + 17, height * 0.28, height * 0.16);
         if (y > ridge) {
           const n = hash01(seed, x + y * 2);
-          setPx(rgba, width, x, y, rock[0] + n * 8, rock[1] + n * 6, rock[2] + n * 8, 255);
+          setPx(rgba, width, x, y, masonry[0] + n * 8, masonry[1] + n * 6, masonry[2] + n * 8, 255);
         } else {
           setPx(rgba, width, x, y, 0, 0, 0, 0);
         }
@@ -142,6 +158,37 @@ function stripMask(layer: ParallaxLayerName, t: number): number {
   }
   if (t < 0.16 || t > 0.62) return 0;
   return 1;
+}
+
+/**
+ * NVIDIA / FLUX often ignores "no pines" and emits an outdoor vista. True when the far plate
+ * looks like foliage, skin-tone figures, or a green landscape rather than night masonry.
+ */
+export function farPlateLooksLikeOutdoorLandscape(png: Buffer): boolean {
+  const { rgba, width, height } = decodePngRgba(png);
+  let sampled = 0;
+  let pine = 0;
+  let skin = 0;
+  const step = Math.max(1, Math.floor(Math.min(width, height) / 80));
+  for (let y = 0; y < height; y += step) {
+    for (let x = 0; x < width; x += step) {
+      const i = (y * width + x) * 4;
+      const r = rgba[i]!;
+      const g = rgba[i + 1]!;
+      const b = rgba[i + 2]!;
+      const a = rgba[i + 3]!;
+      if (a < 16) continue;
+      sampled += 1;
+      if (g > r + 18 && g > b + 8 && g > 48 && g < 190 && r < 150) pine += 1;
+      const midX = x > width * 0.28 && x < width * 0.72;
+      const midY = y > height * 0.18 && y < height * 0.72;
+      if (midX && midY && r > 140 && g > 80 && g < 175 && b > 50 && b < 145 && r > g + 12 && r > b + 18) {
+        skin += 1;
+      }
+    }
+  }
+  if (sampled === 0) return false;
+  return pine / sampled > 0.032 || skin / sampled > 0.01;
 }
 
 /** Punch AI landscape plates into horizon strips so stacked layers do not ghost. */

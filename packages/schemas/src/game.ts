@@ -120,6 +120,7 @@ export const RoomSchema = z.object({
     'treasure',
     'challenge',
     'boss',
+    'miniboss',
     'set_piece',
     'tutorial',
     'transition',

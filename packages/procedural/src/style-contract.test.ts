@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateStyleBible, generateArtBible, buildVisualStyleContract } from '../src/index.js';
+import { generateStyleBible, generateArtBible, buildVisualStyleContract, applyVisualStyleContract } from '../src/index.js';
 import type { GameDNA } from '@metroforge/schemas';
 
 const dna: GameDNA = {
@@ -26,6 +26,9 @@ describe('visual style contract', () => {
     expect(contract.palette.length).toBeGreaterThan(0);
     expect(contract.promptFragment).toContain(contract.outlineRules.split(',')[0] ?? '');
     expect(contract.negativeFragment).toContain('UI');
-    expect(contract.characterScale.length).toBeGreaterThan(0);
+    expect(contract.negativeFragment).toContain('pine trees');
+    expect(contract.negativeFragment).toContain('outdoor landscape');
+    expect(applyVisualStyleContract('player sprite', bible)).toContain(contract.promptFragment.split(',')[0]!);
+    expect(applyVisualStyleContract('player sprite', bible)).toContain('player sprite');
   });
 });

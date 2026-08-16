@@ -7,6 +7,7 @@ const DECOR_PATH := "res://data/quality/place_room_decor.json"
 const PACING_PATH := "res://data/quality/tweak_room_pacing.json"
 const STYLE_PATH := "res://style_bible.json"
 const ROOMS_PATH := "res://data/rooms/rooms.json"
+const COMPOSITION_PATH := "res://data/environment/composition.json"
 
 var _palette := {
 	"shadow": Color(0.078, 0.094, 0.125),
@@ -16,6 +17,7 @@ var _palette := {
 }
 var _tier := "LOW"
 var _rooms: Dictionary = {}
+var _composition: Dictionary = {}
 var _point_lights := 2
 
 func _ready() -> void:
@@ -35,6 +37,7 @@ func apply_room(room: Node2D, room_id: String) -> void:
 	_tune_parallax(room, size)
 	_inject_depth_layers(room, size, biome)
 	_inject_lights(room, size, biome, archetype)
+	_inject_ambient(room, size, biome, room_id)
 	_inject_decor(room, size, biome, archetype, info)
 	_apply_outline(room)
 	_apply_camera(room, size)
@@ -44,7 +47,9 @@ func apply_room(room: Node2D, room_id: String) -> void:
 		if cm:
 			# Tiled citadel interiors are already dark teal; extra dimming turns masonry into mud.
 			if room.get_node_or_null("Ground") != null:
-				cm.color = Color(1, 1, 1, 1)
+				# Dim the plate so key/fill/sun actually read as lighting, not flat teal.
+				# Pure white modulate made PointLights invisible against masonry.
+				cm.color = Color(0.78, 0.82, 0.88, 1)
 			else:
 				cm.color = _modulate_for_biome(biome)
 
@@ -70,6 +75,13 @@ func _load_jsons() -> void:
 			file.close()
 			if typeof(parsed) == TYPE_DICTIONARY:
 				_rooms = parsed.get("rooms", {})
+	if FileAccess.file_exists(COMPOSITION_PATH):
+		var comp := FileAccess.open(COMPOSITION_PATH, FileAccess.READ)
+		if comp:
+			var parsed_comp = JSON.parse_string(comp.get_as_text())
+			comp.close()
+			if typeof(parsed_comp) == TYPE_DICTIONARY:
+				_composition = parsed_comp.get("rooms", {})
 
 func _ingest_style() -> void:
 	if not FileAccess.file_exists(STYLE_PATH):
@@ -128,6 +140,9 @@ func _clear_injected(room: Node) -> void:
 	var existing := room.get_node_or_null("QualityInjected")
 	if existing:
 		existing.free()
+	var floor_occ := room.get_node_or_null("QualityFloorOccluder")
+	if floor_occ:
+		floor_occ.free()
 
 func _replace_stretched_background(room: Node, size: Vector2, biome: String) -> void:
 	var bg := room.get_node_or_null("Background")
@@ -277,18 +292,135 @@ func _inject_depth_layers(room: Node, size: Vector2, biome: String) -> void:
 	host.add_child(floor_wash)
 
 func _inject_lights(room: Node, size: Vector2, _biome: String, _archetype: String) -> void:
-	## One quiet key light. The old 2.8-scale PointLights turned an 800×600 room into cyan wash.
 	var host := _host(room)
 	var tex := _light_texture()
+	var tiled := room.get_node_or_null("Ground") != null
 	var key := PointLight2D.new()
 	key.name = "QualityLightKey"
-	key.position = Vector2(size.x * 0.38, size.y * 0.42)
+	key.position = Vector2(size.x * 0.22, size.y * 0.26)
 	key.texture = tex
-	key.color = _palette.accent.lightened(0.15)
-	key.energy = 0.4
-	key.texture_scale = 1.35
+	key.color = Color(0.72, 0.86, 1.0, 1)
+	key.energy = 1.55 if tiled else 0.4
+	key.texture_scale = 2.15 if tiled else 1.35
 	key.z_index = 5
+	key.shadow_enabled = tiled
 	host.add_child(key)
+	var fill := PointLight2D.new()
+	fill.name = "QualityLightFill"
+	fill.position = Vector2(size.x * 0.62, size.y * 0.74)
+	fill.texture = tex
+	fill.color = Color(1.0, 0.82, 0.62, 1)
+	fill.energy = 0.95 if tiled else 0.22
+	fill.texture_scale = 1.85 if tiled else 1.05
+	fill.z_index = 5
+	fill.shadow_enabled = tiled
+	host.add_child(fill)
+	if tiled:
+		var sun := DirectionalLight2D.new()
+		sun.name = "QualitySun"
+		sun.rotation = deg_to_rad(-42.0)
+		sun.color = Color(0.80, 0.90, 1.0, 1)
+		sun.energy = 0.78
+		sun.shadow_enabled = true
+		sun.height = 24.0
+		host.add_child(sun)
+		_attach_floor_occluder(room, size)
+		_attach_actor_occluders(room)
+		_enable_terrain_lighting(room)
+
+
+func _enable_terrain_lighting(room: Node) -> void:
+	## Tilemaps default to receiving lights, but an explicit mask plus a warm
+	## floor vs cool rear makes the key/fill read in screenshots.
+	for node_name in ["Ground", "RearWall"]:
+		var layer := room.get_node_or_null(node_name) as CanvasItem
+		if layer == null:
+			continue
+		layer.light_mask = 1
+		if node_name == "Ground":
+			layer.modulate = Color(1.0, 0.94, 0.88, 1)
+
+
+func _attach_floor_occluder(room: Node, size: Vector2) -> void:
+	if room.get_node_or_null("QualityFloorOccluder") != null:
+		return
+	var occ := LightOccluder2D.new()
+	occ.name = "QualityFloorOccluder"
+	var poly := OccluderPolygon2D.new()
+	var floor_y := size.y - 48.0
+	poly.polygon = PackedVector2Array([
+		Vector2(-40.0, floor_y),
+		Vector2(size.x + 40.0, floor_y),
+		Vector2(size.x + 40.0, size.y + 80.0),
+		Vector2(-40.0, size.y + 80.0),
+	])
+	occ.occluder = poly
+	room.add_child(occ)
+
+
+func _attach_actor_occluders(room: Node) -> void:
+	for node_name in ["Player", "Enemy", "Boss"]:
+		var actor := room.get_node_or_null(node_name)
+		if actor == null or actor.get_node_or_null("QualityOccluder") != null:
+			continue
+		var occ := LightOccluder2D.new()
+		occ.name = "QualityOccluder"
+		var poly := OccluderPolygon2D.new()
+		var w := 22.0
+		var h := 48.0
+		if node_name == "Boss":
+			w = 72.0
+			h = 96.0
+		elif node_name == "Enemy":
+			w = 28.0
+			h = 44.0
+		poly.polygon = PackedVector2Array([
+			Vector2(-w * 0.5, -h),
+			Vector2(w * 0.5, -h),
+			Vector2(w * 0.5, 0.0),
+			Vector2(-w * 0.5, 0.0),
+		])
+		occ.occluder = poly
+		actor.add_child(occ)
+
+func _inject_ambient(room: Node, size: Vector2, biome: String, room_id: String) -> void:
+	## Dust quads sit on the actor and read as a leftover cluster. Tiled rooms
+	## already have window key / floor fill.
+	if room.get_node_or_null("Ground") != null:
+		return
+	var spec: Dictionary = _composition.get(room_id, {})
+	var biome_spec: Dictionary = spec.get("biome", {})
+	var kind := String(biome_spec.get("ambientVfx", "none"))
+	if kind == "" or kind == "none":
+		return
+	var host := _host(room)
+	var emitter := GPUParticles2D.new()
+	emitter.name = "QualityAmbient"
+	emitter.position = Vector2(size.x * 0.5, size.y * 0.35)
+	emitter.amount = 8
+	emitter.lifetime = 3.2
+	emitter.preprocess = 0.8
+	emitter.explosiveness = 0.0
+	emitter.z_index = 6
+	emitter.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	var mat := ParticleProcessMaterial.new()
+	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+	mat.emission_box_extents = Vector3(size.x * 0.35, size.y * 0.12, 1)
+	mat.direction = Vector3(0, 1 if kind == "dust" else -1, 0)
+	mat.spread = 18.0
+	mat.initial_velocity_min = 4.0
+	mat.initial_velocity_max = 12.0
+	mat.gravity = Vector3(0, 8.0 if kind == "dust" else -6.0, 0)
+	mat.scale_min = 0.12
+	mat.scale_max = 0.28
+	if kind == "embers":
+		mat.color = Color(1.0, 0.55, 0.22, 0.55)
+	elif kind == "mist":
+		mat.color = Color(0.72, 0.82, 0.9, 0.35)
+	else:
+		mat.color = Color(0.85, 0.8, 0.7, 0.28)
+	emitter.process_material = mat
+	host.add_child(emitter)
 
 func _light_texture() -> GradientTexture2D:
 	var g := Gradient.new()
@@ -364,6 +496,24 @@ func _excluded(pos: Vector2, rects: Array[Rect2]) -> bool:
 	return false
 
 func _apply_outline(room: Node) -> void:
+	## Interior knockout holes get a pale ring from this shader and read as a
+	## cluster of eyes at the player's feet. Tiled rooms already have contrast
+	## plus sprite_foot_clean on AnimatedAssetSprite.
+	if room.get_node_or_null("Ground") != null:
+		for node_name in ["Player", "Enemy", "Boss"]:
+			var actor := room.get_node_or_null(node_name)
+			if actor == null:
+				continue
+			var sprite := actor.get_node_or_null("Sprite") as CanvasItem
+			if sprite:
+				# Keep the contact-band cleaner; never layer readability outline over it.
+				if sprite.material == null and ResourceLoader.exists("res://scripts/shaders/sprite_foot_clean.gdshader"):
+					var shader: Shader = load("res://scripts/shaders/sprite_foot_clean.gdshader")
+					if shader:
+						var mat := ShaderMaterial.new()
+						mat.shader = shader
+						sprite.material = mat
+		return
 	if not ResourceLoader.exists("res://scripts/shaders/sprite_outline.gdshader"):
 		return
 	if not FileAccess.file_exists("res://data/quality/install_readability_outline.json"):

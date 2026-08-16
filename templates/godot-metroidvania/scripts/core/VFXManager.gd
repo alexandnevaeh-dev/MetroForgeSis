@@ -10,6 +10,7 @@ const EFFECT_IDS := [
 	"boss_phase_shift",
 	"area_burst",
 	"slam_shock",
+	"landing_dust",
 ]
 
 const POOL_SIZE := 16
@@ -32,8 +33,10 @@ func _ready() -> void:
 		emitter.amount = 18
 		emitter.lifetime = 0.35
 		emitter.z_index = 80
+		emitter.visible = false
 		emitter.texture = _fallback_tex
 		emitter.process_material = _make_material(effect_id_for_index(i))
+		emitter.finished.connect(_on_emitter_finished.bind(emitter))
 		add_child(emitter)
 		_pool.append(emitter)
 	EventBus.ability_acquired.connect(_on_ability_acquired)
@@ -55,6 +58,7 @@ func play(effect_id: String, global_position: Vector2, scale: float = 1.0) -> vo
 	emitter.lifetime = 0.28 if effect_id == "hit_spark" else 0.4
 	emitter.process_material = _make_material(effect_id)
 	emitter.scale = Vector2(scale, scale)
+	emitter.visible = true
 	emitter.restart()
 	emitter.emitting = true
 
@@ -88,10 +92,15 @@ func _acquire() -> GPUParticles2D:
 			return emitter
 	return _pool[0] if _pool.size() > 0 else null
 
+func _on_emitter_finished(emitter: GPUParticles2D) -> void:
+	emitter.visible = false
+	emitter.emitting = false
+
 func _make_fallback_texture() -> Texture2D:
+	## Missing PNGs must not stamp DEFAULT_PALETTE red/cream under actors.
 	var g := Gradient.new()
-	g.set_color(0, Color(1, 0.95, 0.75, 1))
-	g.set_color(1, Color(1, 0.7, 0.2, 0))
+	g.set_color(0, Color(0.52, 0.48, 0.42, 0.65))
+	g.set_color(1, Color(0.38, 0.36, 0.32, 0))
 	var tex := GradientTexture2D.new()
 	tex.gradient = g
 	tex.width = 16
@@ -124,6 +133,14 @@ func _make_material(effect_id: String) -> ParticleProcessMaterial:
 			mat.direction = Vector3(0, -1, 0)
 			mat.spread = 50.0
 			mat.initial_velocity_max = 160.0
+		"landing_dust":
+			mat.direction = Vector3(0, -1, 0)
+			mat.spread = 55.0
+			mat.gravity = Vector3(0, 80, 0)
+			mat.initial_velocity_min = 12.0
+			mat.initial_velocity_max = 36.0
+			mat.scale_min = 0.2
+			mat.scale_max = 0.45
 		"pickup_spark":
 			mat.gravity = Vector3(0, -40, 0)
 	return mat

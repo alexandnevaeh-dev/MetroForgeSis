@@ -17,6 +17,7 @@ import {
   missingReleaseCandidateAbilities,
   assertMassVisualGenerationAllowed,
   isMassVisualProfile,
+  isProductionQualityProfile,
   GenerationCancelledError,
   throwIfCancelled,
 } from '@metroforge/shared';
@@ -61,6 +62,7 @@ import { synthesizeDialogueVoices } from './dialogue-voice.js';
 import { buildAssetCoverageReport } from './asset-coverage.js';
 import { writeVisualSliceReviewRequired } from './visual-review.js';
 import { writeVisualSliceReports, collectVisualSliceEvidence } from './visual-slice-report.js';
+import { inheritDerivativeLicense } from './derivative-license.js';
 
 export interface GenerateOptions {
   prompt: string;
@@ -815,9 +817,26 @@ export class GenerationPipeline {
       godotResourcePath: a.godotResourcePath ?? `res://${a.path.replace(/\\/g, '/')}`,
       repairCount: a.repairCount ?? 0,
       transformation: a.transformation,
+      sourceLicense: a.sourceLicense,
+      derivedLicense: a.derivedLicense,
+      commercialUse: undefined as 'allowed' | 'restricted' | 'unknown' | undefined,
     }));
     for (const meta of assetMetadata) {
       Object.assign(meta, licenseFieldsForArtifact(meta, assetMetadata));
+      const parentId = meta.parentArtifactIds?.[0];
+      if (!parentId) continue;
+      const parent = assetMetadata.find((candidate) => candidate.id === parentId);
+      if (!parent) continue;
+      const inherited = inheritDerivativeLicense({
+        parent,
+        child: meta,
+        transformation: String(meta.transformation ?? meta.compiler ?? 'derived'),
+        siblings: assetMetadata,
+      });
+      meta.sourceLicense = inherited.sourceLicense;
+      meta.derivedLicense = inherited.derivedLicense;
+      meta.commercialUse = inherited.commercialUse;
+      meta.transformation = inherited.transformation;
     }
     const assetPassCount = assetResult.assets.filter((a) => a.critiquePassed).length;
     const placeholderCount = assetResult.assets.filter(
@@ -1150,7 +1169,7 @@ export class GenerationPipeline {
       validationLevel === 'RUNTIME_VALIDATED' ||
       (validationLevel === 'IMPORT_VALIDATED' && Boolean(options.skipRuntimeValidation));
 
-    if (gameDna.profile !== 'TINY_TEST' && godotPath && validationPassed) {
+    if (isProductionQualityProfile(gameDna.profile) && godotPath && validationPassed) {
       try {
         const qualityReport = runQualityPass({
           projectPath: outputPath,

@@ -211,6 +211,21 @@ export function knockoutVfxBackground(png: Buffer, chroma: [number, number, numb
   // Grow punched alpha into leftover studio gray / magenta that already touches
   // transparency. NVIDIA stills leave a mid-gray punch box or a pocket between
   // legs that is not 4-connected to the image border, so border flood misses it.
+  growKnockableFromAlpha(out, width, height);
+
+  punchRegistrationTicks(out, width, height);
+  punchDetachedSpecks(out, width, height);
+  punchGroundBloom(out, width, height);
+  // Studio gray under the feet is often a sealed island (boots on three sides).
+  // Punch knockable backdrop in the contact band so it cannot composite as RGB 60,64,78.
+  punchBottomStudioBand(out, width, height);
+  growKnockableFromAlpha(out, width, height);
+  fillInteriorHoles(out, width, height);
+
+  return encodePng(width, height, out);
+}
+
+function growKnockableFromAlpha(out: Uint8Array, width: number, height: number): void {
   const grow: number[] = [];
   for (let i = 0; i < width * height; i++) {
     if ((out[i * 4 + 3] ?? 0) < 16) grow.push(i);
@@ -234,11 +249,6 @@ export function knockoutVfxBackground(png: Buffer, chroma: [number, number, numb
       grow.push(ni);
     }
   }
-
-  punchRegistrationTicks(out, width, height);
-  punchDetachedSpecks(out, width, height);
-
-  return encodePng(width, height, out);
 }
 
 function isKnockableBackdrop(rgb: [number, number, number]): boolean {
@@ -253,15 +263,17 @@ function punchRegistrationTicks(out: Uint8Array, width: number, height: number):
   // bottom-right of each frame. Red/magenta ticks fuse into the feet even when
   // they are not yet 4-connected to transparency — punch those in the bottom
   // band. White ticks only punch when they already touch alpha so a pale
-  // sleeve is not eaten.
-  for (let y = Math.max(0, height - 8); y < height; y++) {
+  // sleeve is not eaten. Match the bloom contact band so ticks above the last
+  // 8px still cannot composite as palette red/cream at runtime.
+  const y0 = Math.max(0, height - Math.max(8, Math.floor(height * 0.35)));
+  for (let y = y0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const i = (y * width + x) * 4;
       if ((out[i + 3] ?? 0) === 0) continue;
       const r = out[i]!;
       const g = out[i + 1]!;
       const b = out[i + 2]!;
-      const redTick = r > 190 && g < 80 && b < 80;
+      const redTick = r > 190 && g <= 90 && b < 90;
       const whiteTick = r > 210 && g > 210 && b > 210;
       const magentaTick = r > 180 && b > 140 && g < 120;
       if (!redTick && !whiteTick && !magentaTick) continue;
@@ -327,6 +339,141 @@ function punchDetachedSpecks(out: Uint8Array, width: number, height: number): vo
   }
 }
 
+function isGroundBloom(r: number, g: number, b: number): boolean {
+  const purple = r > 140 && b > 150 && g < 130;
+  const pale = r > 210 && g > 200 && b > 180;
+  const paletteRed = Math.hypot(r - 200, g - 80, b - 80) <= 28;
+  const paletteCream = Math.hypot(r - 240, g - 240, b - 250) <= 28;
+  const redTick = r > 160 && g < 120 && b < 140;
+  return purple || pale || paletteRed || paletteCream || redTick;
+}
+
+function punchGroundBloom(out: Uint8Array, width: number, height: number): void {
+  // NVIDIA stills paint a magenta contact oval and a white registration stitch
+  // under the feet. Palette red/cream also survive skipQuantize and show up as
+  // a cluster under the player even when the still has zero exact 60,64,78.
+  const y0 = Math.max(0, height - Math.max(8, Math.floor(height * 0.35)));
+  for (let y = y0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      if ((out[i + 3] ?? 0) < 16) continue;
+      if (!isGroundBloom(out[i]!, out[i + 1]!, out[i + 2]!)) continue;
+      out[i + 3] = 0;
+    }
+  }
+}
+
+function punchBottomStudioBand(out: Uint8Array, width: number, height: number): void {
+  const band = Math.max(2, Math.min(4, Math.floor(height / 16) || 2));
+  const y0 = Math.max(0, height - band);
+  for (let y = y0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      if ((out[i + 3] ?? 0) < 16) continue;
+      if (!isKnockableBackdrop(pixelRgb(out, i))) continue;
+      out[i + 3] = 0;
+    }
+  }
+}
+
+function fillInteriorHoles(out: Uint8Array, width: number, height: number): void {
+  const n = width * height;
+  const exterior = new Uint8Array(n);
+  const stack: number[] = [];
+  const seed = (x: number, y: number) => {
+    if (x < 0 || y < 0 || x >= width || y >= height) return;
+    const idx = y * width + x;
+    if (exterior[idx]) return;
+    if ((out[idx * 4 + 3] ?? 0) >= 16) return;
+    exterior[idx] = 1;
+    stack.push(idx);
+  };
+  for (let x = 0; x < width; x++) {
+    seed(x, 0);
+    seed(x, height - 1);
+  }
+  for (let y = 1; y < height - 1; y++) {
+    seed(0, y);
+    seed(width - 1, y);
+  }
+  while (stack.length > 0) {
+    const idx = stack.pop()!;
+    const x = idx % width;
+    const y = Math.floor(idx / width);
+    seed(x + 1, y);
+    seed(x - 1, y);
+    seed(x, y + 1);
+    seed(x, y - 1);
+  }
+
+  let opaque = 0;
+  for (let i = 0; i < n; i++) {
+    if ((out[i * 4 + 3] ?? 0) >= 16) opaque++;
+  }
+  const holeLimit = Math.max(24, Math.floor(opaque * 0.02));
+  const seen = new Uint8Array(n);
+  const offsets: Array<[number, number]> = [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+    [1, 1],
+    [1, -1],
+    [-1, 1],
+    [-1, -1],
+  ];
+  for (let start = 0; start < n; start++) {
+    if (seen[start] || exterior[start]) continue;
+    if ((out[start * 4 + 3] ?? 0) >= 16) continue;
+    const cells: number[] = [];
+    const open = [start];
+    seen[start] = 1;
+    while (open.length > 0) {
+      const idx = open.pop()!;
+      cells.push(idx);
+      const x = idx % width;
+      const y = Math.floor(idx / width);
+      for (const [dx, dy] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ] as Array<[number, number]>) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+        const ni = ny * width + nx;
+        if (seen[ni] || exterior[ni]) continue;
+        if ((out[ni * 4 + 3] ?? 0) >= 16) continue;
+        seen[ni] = 1;
+        open.push(ni);
+      }
+    }
+    if (cells.length > holeLimit) continue;
+    for (const idx of cells) {
+      const x = idx % width;
+      const y = Math.floor(idx / width);
+      const i = idx * 4;
+      let found = false;
+      for (let r = 1; r <= 4 && !found; r++) {
+        for (const [dx, dy] of offsets) {
+          const nx = x + dx * r;
+          const ny = y + dy * r;
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+          const ni = (ny * width + nx) * 4;
+          if ((out[ni + 3] ?? 0) < 16) continue;
+          out[i] = out[ni]!;
+          out[i + 1] = out[ni + 1]!;
+          out[i + 2] = out[ni + 2]!;
+          out[i + 3] = out[ni + 3]!;
+          found = true;
+          break;
+        }
+      }
+    }
+  }
+}
+
 /** Small radial or streak VFX sprites for hit/dash/pickup/death feedback. */
 export function generateVfxTexture(spec: VfxSpec): Buffer {
   const { size, core, edge, style = 'burst' } = spec;
@@ -373,15 +520,28 @@ export function generateWalkCycleSheet(spec: SpriteSpec, frameCount = 4, sourceP
     ? decodePngRgba(sourcePng)
     : decodePngRgba(generateProceduralSprite(spec));
   const sheet = new Uint8Array(width * frameCount * height * 4);
+  // Stride the legs. A 1px whole-sprite bob quantized away to four identical
+  // stills; shearing the whole NVIDIA silhouette looks worse than that. Moving
+  // only below the hip keeps the hat/coat and reads as a step.
+  const hip = Math.floor(height * 0.55);
+  const stride = Math.max(3, Math.round(width * 0.14));
 
   for (let f = 0; f < frameCount; f++) {
-    const bob = f % 2;
+    const phase = frameCount > 1 ? (2 * Math.PI * f) / frameCount : 0;
+    const legShift = Math.round(Math.sin(phase) * stride);
+    const plant = yPlant(phase);
     for (let y = 0; y < height; y++) {
-      const srcY = y - bob;
+      const srcY = y >= hip ? y - plant : y;
       if (srcY < 0 || srcY >= height) continue;
+      const shift = y >= hip ? legShift : Math.round(legShift * 0.25);
       for (let x = 0; x < width; x++) {
-        const si = (srcY * width + x) * 4;
+        const srcX = x - shift;
         const di = (y * width * frameCount + f * width + x) * 4;
+        if (srcX < 0 || srcX >= width) {
+          sheet[di + 3] = 0;
+          continue;
+        }
+        const si = (srcY * width + srcX) * 4;
         sheet[di] = rgba[si]!;
         sheet[di + 1] = rgba[si + 1]!;
         sheet[di + 2] = rgba[si + 2]!;
@@ -391,6 +551,10 @@ export function generateWalkCycleSheet(spec: SpriteSpec, frameCount = 4, sourceP
   }
 
   return encodePng(width * frameCount, height, sheet);
+}
+
+function yPlant(phase: number): number {
+  return Math.round((1 - Math.cos(phase)) * 0.5);
 }
 
 /** Damage-flash animation: alternates the sprite's real colors with a bright red-white

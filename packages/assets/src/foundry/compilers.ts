@@ -112,11 +112,12 @@ export class SpriteCompiler {
       const target = request.dimensions ?? defaultSizeFor(request);
       const pixel = request.style.pixelArt !== false;
       if (cropped.cropped) transformations.push('subject-crop');
-      if (pixel) transformations.push('nearest-neighbor', 'palette-quantization', 'pixel-grid-normalize');
+      if (pixel) transformations.push('nearest-neighbor', 'pixel-grid-normalize');
       const processed = this.processor.process(padded, {
         targetWidth: target.width,
         targetHeight: target.height,
         palette: paletteFromRequest(request),
+        skipQuantize: true,
       });
       return {
         buffer: processed.buffer,

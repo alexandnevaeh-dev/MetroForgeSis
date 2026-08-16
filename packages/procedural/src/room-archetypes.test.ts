@@ -42,7 +42,7 @@ describe('assignRoomArchetypes', () => {
       biomeCount: 3,
       seed: 99,
     });
-    const featured = ['puzzle', 'secret', 'challenge', 'arena', 'set_piece'];
+    const featured = ['puzzle', 'secret', 'challenge', 'arena', 'set_piece', 'miniboss'];
     for (const tag of featured) {
       expect(archetypes).toContain(tag);
     }

@@ -60,6 +60,7 @@ export interface ManifestArtifactLicenseInput {
   manual?: boolean;
   sourcePath?: string;
   selectedProvider?: string;
+  parentArtifactIds?: string[];
 }
 
 /**
@@ -99,6 +100,12 @@ function findLicenseSource(
         (s.id === `tileset_${biome}` ||
           String(s.path ?? '').replace(/\\/g, '/') === `assets/tilesets/${biome}/source.png`),
     );
+    if (parent) return parent;
+  }
+
+  const parentIds = artifact.parentArtifactIds ?? [];
+  for (const parentId of parentIds) {
+    const parent = siblings.find((s) => s !== artifact && (s.id === parentId || s.path === parentId));
     if (parent) return parent;
   }
 

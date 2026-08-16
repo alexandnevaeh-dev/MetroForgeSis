@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { defaultCharacterLineageEdges, descendantsOf, markDescendantsDirty } from '../src/artifact-lineage.js';
+import { defaultCharacterLineageEdges, descendantsOf, markDescendantsDirty, descendantRelPaths } from '../src/artifact-lineage.js';
 import { inheritDerivativeLicense } from '../src/derivative-license.js';
 
 describe('artifact lineage', () => {
@@ -14,8 +14,11 @@ describe('artifact lineage', () => {
 
   it('exposes a dirty-state reason for logs', () => {
     const { dirtyIds, reason } = markDescendantsDirty(defaultCharacterLineageEdges(), 'player');
-    expect(dirtyIds.length).toBeGreaterThan(3);
+    expect(dirtyIds).toContain('player_idle_pose');
     expect(reason).toContain('invalidate player');
+    const paths = descendantRelPaths('player');
+    expect(paths.some((p) => p.path.includes('player_idle_pose.png'))).toBe(true);
+    expect(paths.some((p) => p.path.includes('Player.tscn'))).toBe(false);
   });
 });
 

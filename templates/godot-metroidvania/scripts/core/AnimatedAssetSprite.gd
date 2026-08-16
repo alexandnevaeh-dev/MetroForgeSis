@@ -14,9 +14,66 @@ extends AnimatedSprite2D
 @export var hurt_sheet_path: String = ""
 @export var death_sheet_path: String = ""
 
+static var _clean_cache: Dictionary = {}
+
 func _ready() -> void:
 	_build_frames()
+	_apply_contact_filter()
 	play("idle")
+
+func _apply_contact_filter() -> void:
+	## Palette red/cream/magenta still composites at the feet after knockout.
+	## Filter only the contact band so hats and weapon glow stay.
+	if not ResourceLoader.exists("res://scripts/shaders/sprite_foot_clean.gdshader"):
+		return
+	var shader: Shader = load("res://scripts/shaders/sprite_foot_clean.gdshader")
+	if shader == null:
+		return
+	var mat := ShaderMaterial.new()
+	mat.shader = shader
+	material = mat
+
+## NVIDIA contact leftovers survive import as palette red/cream even when the
+## authored PNG samples clean. Punch the contact band on a runtime Image so
+## the compositor cannot draw those tokens under the feet.
+func _clean_contact_texture(tex: Texture2D) -> Texture2D:
+	if tex == null:
+		return tex
+	var key := tex.resource_path
+	if key == "" or key == null:
+		key = str(tex.get_rid())
+	if _clean_cache.has(key):
+		return _clean_cache[key]
+	var img := tex.get_image()
+	if img == null:
+		_clean_cache[key] = tex
+		return tex
+	if img.is_compressed():
+		if img.decompress() != OK:
+			_clean_cache[key] = tex
+			return tex
+	img.convert(Image.FORMAT_RGBA8)
+	var w := img.get_width()
+	var h := img.get_height()
+	var y0 := int(float(h) * 0.62)
+	for y in range(y0, h):
+		for x in range(w):
+			var c := img.get_pixel(x, y)
+			if c.a < 0.12:
+				continue
+			if _is_contact_leftover(c):
+				img.set_pixel(x, y, Color(0, 0, 0, 0))
+	var cleaned := ImageTexture.create_from_image(img)
+	_clean_cache[key] = cleaned
+	return cleaned
+
+func _is_contact_leftover(c: Color) -> bool:
+	var pale := minf(minf(c.r, c.g), c.b)
+	var lum := 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b
+	var red_tick := c.r > 0.62 and c.g < 0.48 and c.b < 0.55
+	var mag := c.r > 0.55 and c.b > 0.55 and c.g < 0.48
+	var stitch := pale > 0.78 or (lum > 0.82 and absf(c.r - c.g) < 0.14)
+	return red_tick or mag or stitch
 
 func _build_frames() -> void:
 	var frames := SpriteFrames.new()
@@ -69,7 +126,7 @@ func _load_pose_overrides(frames: SpriteFrames) -> void:
 			if anim in ["attack", "hurt", "death", "jump_start", "jump", "land", "dash"]:
 				frames.set_animation_loop(anim, false)
 		frames.clear(anim)
-		var tex: Texture2D = load(res_path)
+		var tex: Texture2D = _clean_contact_texture(load(res_path))
 		if tex == null:
 			continue
 		var atlas := AtlasTexture.new()
@@ -85,7 +142,7 @@ func _load_pose_overrides(frames: SpriteFrames) -> void:
 func _load_animation_frames(frames: SpriteFrames, anim: String, path: String, copy_to_idle: bool) -> void:
 	var res_path := path if path.begins_with("res://") else "res://" + path
 	if ResourceLoader.exists(res_path):
-		var tex: Texture2D = load(res_path)
+		var tex: Texture2D = _clean_contact_texture(load(res_path))
 		for i in range(frame_count):
 			var atlas := AtlasTexture.new()
 			atlas.atlas = tex

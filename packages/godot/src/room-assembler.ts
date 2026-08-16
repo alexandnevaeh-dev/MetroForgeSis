@@ -124,6 +124,7 @@ const VALID_ARCHETYPES = new Set<Room['archetype']>([
   'treasure',
   'challenge',
   'boss',
+  'miniboss',
   'set_piece',
   'tutorial',
   'transition',
@@ -340,6 +341,7 @@ function shouldSpawnEnemy(
     case 'arena':
     case 'challenge':
     case 'combat':
+    case 'miniboss':
       return true;
     case 'puzzle':
     case 'connector':
@@ -392,7 +394,7 @@ export function pickRoomPickupItem(
 function defaultRoomWidth(worldGraphArchetype: string | undefined, override?: number): number {
   if (override !== undefined) return override;
   if (worldGraphArchetype === 'set_piece' || worldGraphArchetype === 'traversal') return 960;
-  if (worldGraphArchetype === 'boss' || worldGraphArchetype === 'arena') return 960;
+  if (worldGraphArchetype === 'boss' || worldGraphArchetype === 'arena' || worldGraphArchetype === 'miniboss') return 960;
   return 800;
 }
 
@@ -400,7 +402,7 @@ function defaultRoomHeight(worldGraphArchetype: string | undefined, override?: n
   if (override !== undefined) return override;
   if (worldGraphArchetype === 'challenge' || worldGraphArchetype === 'traversal') return 900;
   if (worldGraphArchetype === 'ability_gate' || worldGraphArchetype === 'ability_shrine') return 780;
-  if (worldGraphArchetype === 'set_piece' || worldGraphArchetype === 'boss') return 720;
+  if (worldGraphArchetype === 'set_piece' || worldGraphArchetype === 'boss' || worldGraphArchetype === 'miniboss') return 720;
   return 600;
 }
 
@@ -917,6 +919,7 @@ biome_id = "biome_${options.biomeIndex}"
 room_width = ${platformWidth}
 room_height = ${options.height}
 tile_size = ${options.tileSize}
+room_archetype = "${(options.worldGraphArchetype ?? 'combat').replace(/"/g, '')}"
 `;
     if (options.tileCells?.length) {
       const encoded = JSON.stringify(

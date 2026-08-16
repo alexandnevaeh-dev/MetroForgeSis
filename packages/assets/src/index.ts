@@ -1,5 +1,11 @@
 export { encodePng, decodePngRgba, generateProceduralSprite, generateTilesetSource, generateWalkCycleSheet, generateHurtFlashSheet, generateAttackSheet, generateVfxTexture, knockoutVfxBackground } from './png.js';
-export { generateParallaxStrip, punchParallaxAlpha, PARALLAX_LAYER_PROMPTS, PARALLAX_STRIP_SIZE } from './parallax-strip.js';
+export {
+  generateParallaxStrip,
+  punchParallaxAlpha,
+  farPlateLooksLikeOutdoorLandscape,
+  PARALLAX_LAYER_PROMPTS,
+  PARALLAX_STRIP_SIZE,
+} from './parallax-strip.js';
 export type { ParallaxLayerName } from './parallax-strip.js';
 export type { SpriteSpec, VfxSpec } from './png.js';
 export { PixelArtProcessor } from './pixel-art-processor.js';
@@ -77,7 +83,7 @@ export type { VisionCritic, VisionCriticFactoryConfig } from './vision-critic-fa
 export { NvidiaVisionCritic } from './providers/nvidia-vision-critic.js';
 export { critiqueAnimationSheet, critiqueTilesetSheet } from './animation-critic.js';
 export type { AnimationKind, AnimationCritiqueOptions } from './animation-critic.js';
-export { critiqueGameplayScreenshot } from './scene-critic.js';
+export { critiqueGameplayScreenshot, critiqueScreenshotDiversity } from './scene-critic.js';
 export type { GameplayScreenshotCritique } from './scene-critic.js';
 export { TileCompiler, TILE_ATLAS, tileRoleAt } from './tile-compiler.js';
 export type { CompiledTileset, TileRole } from './tile-compiler.js';

@@ -20,6 +20,7 @@ export {
   defaultCharacterLineageEdges,
   descendantsOf,
   markDescendantsDirty,
+  descendantRelPaths,
 } from './artifact-lineage.js';
 export type { ArtifactLineage, LineageEdge } from './artifact-lineage.js';
 export { inheritDerivativeLicense } from './derivative-license.js';

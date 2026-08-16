@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { decodePngRgba, encodePng } from '../src/png.js';
-import { generateParallaxStrip, punchParallaxAlpha } from '../src/parallax-strip.js';
+import { generateParallaxStrip, punchParallaxAlpha, farPlateLooksLikeOutdoorLandscape } from '../src/parallax-strip.js';
 
 function countAlpha(png: Buffer, pred: (a: number, t: number) => boolean): number {
   const { rgba, width, height } = decodePngRgba(png);
@@ -16,7 +16,7 @@ function countAlpha(png: Buffer, pred: (a: number, t: number) => boolean): numbe
 }
 
 describe('parallax strips', () => {
-  it('paints far as an opaque sky+horizon plate', () => {
+  it('paints far as an opaque night-citadel plate, not an outdoor vista', () => {
     const far = generateParallaxStrip('far', 7, 160, 90);
     const { width, height } = decodePngRgba(far);
     expect(width).toBe(160);
@@ -51,5 +51,19 @@ describe('parallax strips', () => {
     const mid = punchParallaxAlpha(plate, 'mid');
     expect(countAlpha(mid, (a, t) => t < 0.25 && a < 16)).toBeGreaterThan(80 * 8);
     expect(punchParallaxAlpha(plate, 'far')).toEqual(plate);
+  });
+
+  it('rejects green pine/landscape far plates and accepts procedural citadel far', () => {
+    const w = 80;
+    const h = 40;
+    const pine = new Uint8Array(w * h * 4);
+    for (let i = 0; i < pine.length; i += 4) {
+      pine[i] = 40;
+      pine[i + 1] = 110;
+      pine[i + 2] = 50;
+      pine[i + 3] = 255;
+    }
+    expect(farPlateLooksLikeOutdoorLandscape(encodePng(w, h, pine))).toBe(true);
+    expect(farPlateLooksLikeOutdoorLandscape(generateParallaxStrip('far', 7, w, h))).toBe(false);
   });
 });

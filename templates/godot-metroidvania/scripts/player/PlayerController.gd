@@ -23,6 +23,7 @@ var facing: int = 1
 var _attack_cooldown: float = 0.0
 var _was_on_floor: bool = true
 var _land_timer: float = 0.0
+var _land_vfx_armed: bool = false
 
 
 
@@ -39,6 +40,7 @@ func _ready() -> void:
 	attack_timer.timeout.connect(_on_attack_finished)
 
 	EventBus.ability_acquired.connect(_on_ability_acquired)
+	call_deferred("_arm_land_vfx")
 
 
 
@@ -59,6 +61,15 @@ func _ready() -> void:
 
 
 	ability_controller._sync_unlocked_abilities()
+
+
+func _arm_land_vfx() -> void:
+	## Room loads leave the body airborne for one physics tick. That must not
+	## fire slam/dust on spawn or every door — wait until grounded is stable.
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	_was_on_floor = is_on_floor()
+	_land_vfx_armed = true
 
 
 
@@ -98,11 +109,11 @@ func _physics_process(delta: float) -> void:
 
 	else:
 
-		if not _was_on_floor:
+		if _land_vfx_armed and not _was_on_floor:
 
 			_land_timer = 0.18
 			if has_node("/root/VFXManager"):
-				VFXManager.play("slam_shock", global_position + Vector2(0, 8), 0.7)
+				VFXManager.play("landing_dust", global_position + Vector2(0, 8), 0.55)
 
 		ability_controller.on_landed()
 

@@ -1,7 +1,7 @@
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config as loadDotenv } from 'dotenv';
-import { PRODUCT } from './constants.js';
+import { PRODUCT, type GenerationMode, type GenerationProfile } from './constants.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..', '..', '..');
@@ -23,8 +23,8 @@ export interface AppConfig {
   dataDir: string;
   generatedGamesDir: string;
   logLevel: 'debug' | 'info' | 'warn' | 'error';
-  defaultMode: 'FREE_ONLY' | 'LOCAL_ONLY' | 'HYBRID_FREE' | 'CUSTOM';
-  defaultProfile: 'TINY_TEST' | 'VISUAL_VERTICAL_SLICE' | 'SMALL' | 'MEDIUM' | 'LARGE' | 'RELEASE_CANDIDATE';
+  defaultMode: GenerationMode;
+  defaultProfile: GenerationProfile;
   godotExecutable: string | null;
   ollamaBaseUrl: string;
 }
@@ -35,8 +35,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     dataDir: env.METROFORGE_DATA_DIR ?? '',
     generatedGamesDir: env.METROFORGE_GENERATED_GAMES_DIR ?? 'GeneratedGames',
     logLevel: (env.METROFORGE_LOG_LEVEL as AppConfig['logLevel']) ?? 'info',
-    defaultMode: (env.METROFORGE_DEFAULT_MODE as AppConfig['defaultMode']) ?? 'LOCAL_ONLY',
-    defaultProfile: (env.METROFORGE_DEFAULT_PROFILE as AppConfig['defaultProfile']) ?? 'TINY_TEST',
+    defaultMode: (env.METROFORGE_DEFAULT_MODE as GenerationMode) ?? 'LOCAL_ONLY',
+    defaultProfile: (env.METROFORGE_DEFAULT_PROFILE as GenerationProfile) ?? 'TINY_TEST',
     godotExecutable: env.GODOT_EXECUTABLE ?? null,
     ollamaBaseUrl: env.OLLAMA_BASE_URL ?? 'http://localhost:11434',
   };

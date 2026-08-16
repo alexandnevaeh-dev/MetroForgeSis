@@ -18,6 +18,7 @@ import {
 import { PixelArtProcessor } from './pixel-art-processor.js';
 import {
   generateParallaxStrip,
+  farPlateLooksLikeOutdoorLandscape,
   PARALLAX_LAYER_PROMPTS,
   PARALLAX_STRIP_SIZE,
 } from './parallax-strip.js';
@@ -44,6 +45,7 @@ import {
   isTopDownArchetype,
 } from '@metroforge/shared';
 import type { AssetMaturity, AssetSourceType } from '@metroforge/shared';
+import { applyVisualStyleContract, buildVisualStyleContract } from '@metroforge/procedural';
 import { sanitizeImagePromptText } from './sanitize-image-prompt.js';
 
 export interface GeneratedAsset {
@@ -133,20 +135,16 @@ function applyStylePrompt(
 ): string {
   if (!styleBible) return prompt;
   const prefix = styleBible.promptPrefixes?.[capability];
-  const palette = styleBible.palette.map((swatch) => swatch.hex).join(' ');
-  const contract = [
-    styleBible.outlineRules,
-    styleBible.lightingDirection,
-    styleBible.saturation,
-    styleBible.characterScale,
-    styleBible.backgroundDepthRules,
-  ]
-    .filter(Boolean)
-    .join(', ');
-  const head = [prefix, styleBible.renderingStyle, styleBible.lighting, palette && `palette ${palette}`, contract]
-    .filter(Boolean)
-    .join(', ');
-  return head ? `${head}. ${prompt}` : prompt;
+  const extras = [prefix, styleBible.lighting].filter(Boolean).join(', ');
+  return applyVisualStyleContract(prompt, styleBible, extras || undefined);
+}
+
+function applyStyleNegativePrompt(styleBible: StyleBible | undefined, extra?: string): string | undefined {
+  const fragments = [
+    extra,
+    styleBible ? buildVisualStyleContract(styleBible).negativeFragment : undefined,
+  ].filter((part): part is string => Boolean(part && part.trim()));
+  return fragments.length ? fragments.join(', ') : undefined;
 }
 
 function hashPrompt(prompt: string): string {
@@ -347,6 +345,16 @@ export const VFX_TEXTURES: VfxSpec[] = [
     effectType: 'ground_shock',
     whereUsed: ['BossController.slam', 'GroundSlamAbility'],
     prompt: 'ground slam shockwave crescent, white-blue impact ring, dirt-free energy wave',
+  },
+  {
+    id: 'landing_dust',
+    size: 18,
+    core: [210, 190, 150, 230],
+    edge: [90, 70, 50, 0],
+    style: 'burst',
+    effectType: 'landing_dust',
+    whereUsed: ['PlayerController.land'],
+    prompt: 'small dusty landing puff at the feet, beige grit burst, no character, no shockwave scenery',
   },
 ];
 
@@ -557,7 +565,10 @@ export class AssetPipeline {
 
     const defaults = PROFILE_DEFAULTS[options.profile];
     const tileSize = options.gameDna.technical.tileSize;
-    const negativePrompt = options.artBible?.negativePrompts.join(', ');
+    const negativePrompt = applyStyleNegativePrompt(
+      options.styleBible,
+      options.artBible?.negativePrompts.join(', '),
+    );
 
     const imageRoute = options.skipImageGen
       ? {
@@ -1385,10 +1396,10 @@ export class AssetPipeline {
                   applyStylePrompt(
                     options.styleBible,
                     'ENVIRONMENT',
-                    `${layerPrompt}, ${options.gameDna.identity.visualStyle} biome ${b}, matching tileset palette, side-view, no UI, no text, no logos, no characters`,
+                    `${layerPrompt}, ${options.gameDna.identity.visualStyle} ${options.gameDna.identity.tone ?? ''} citadel-or-biome interiors matching the tileset palette, side-view night beyond windows, no UI, no text, no logos, no characters`,
                   ),
                 ),
-                negativePrompt: `${negativePrompt ?? ''}, UI, HUD, text, logos, watermarks, characters, portraits, unrelated biome, floating plates`,
+                negativePrompt: `${negativePrompt ?? ''}, UI, HUD, text, logos, watermarks, characters, people, person, human, explorer, warden, portraits, pine trees, conifer forest, mountain range, lake vista, alpine woodland, outdoor landscape photography, shoreline, nature vista, unrelated biome, floating plates`,
                 width: 1024,
                 height: 512,
                 seed: options.seed + 4000 + b * 10 + li,
@@ -1406,6 +1417,15 @@ export class AssetPipeline {
               bgFallback = result.fallbackGenerated;
               bgProvider = result.provider;
               bgModel = result.modelId;
+              if (layer === 'far' && farPlateLooksLikeOutdoorLandscape(bgBuffer)) {
+                warnings.push(
+                  `Background far biome ${b} looked like outdoor landscape (pines/figures) — procedural citadel fallback`,
+                );
+                bgBuffer = generateParallaxStrip(layer, options.seed + b * 50 + li, dim.width, dim.height);
+                bgFallback = true;
+                bgProvider = 'procedural';
+                bgModel = undefined;
+              }
             } catch {
               warnings.push(`Background ${layer} biome ${b} failed — procedural strip fallback`);
             }
@@ -1564,6 +1584,7 @@ export class AssetPipeline {
             targetWidth: opts.spec.width,
             targetHeight: opts.spec.height,
             tileSize: opts.tileSize,
+            skipQuantize: true,
           });
           writeCheckpoint(opts.outputDir, rel, compiled.buffer);
           const identity = critiqueAnimationIdentity(compiled.buffer, { frameWidth: opts.spec.width, expectedFrames: 1 });
@@ -1603,6 +1624,7 @@ export class AssetPipeline {
           targetWidth: opts.spec.width,
           targetHeight: opts.spec.height,
           tileSize: opts.tileSize,
+          skipQuantize: true,
         });
         writeCheckpoint(opts.outputDir, rel, compiled.buffer);
         const identity = critiqueAnimationIdentity(compiled.buffer, { frameWidth: opts.spec.width, expectedFrames: 1 });
@@ -1655,11 +1677,17 @@ export class AssetPipeline {
       targetWidth: spec.width * frameCount,
       targetHeight: spec.height,
       tileSize,
+      skipQuantize: true,
     });
     const critique = critiqueAnimationSheet(processed.buffer, {
       frameCount,
       expectedFrameWidth: spec.width,
       expectedFrameHeight: spec.height,
+      kind: 'walk',
+    });
+    const identity = critiqueAnimationIdentity(processed.buffer, {
+      frameWidth: spec.width,
+      expectedFrames: frameCount,
       kind: 'walk',
     });
     return withMaturity({
@@ -1668,9 +1696,9 @@ export class AssetPipeline {
       buffer: processed.buffer,
       provider: sourcePng ? 'pixel-art-processor' : 'procedural',
       fallbackGenerated: !sourcePng,
-      critiquePassed: critique.passed,
-      critiqueScore: critique.score,
-      fakeAnimation: true,
+      critiquePassed: critique.passed && !identity.fakeAnimation,
+      critiqueScore: identity.fakeAnimation ? 20 : critique.score,
+      fakeAnimation: identity.fakeAnimation,
     });
   }
 
@@ -1691,6 +1719,7 @@ export class AssetPipeline {
       targetWidth: spec.width * frameCount,
       targetHeight: spec.height,
       tileSize,
+      skipQuantize: true,
     });
     const critique = critiqueAnimationSheet(processed.buffer, {
       frameCount,
@@ -1726,6 +1755,7 @@ export class AssetPipeline {
       targetWidth: spec.width * frameCount,
       targetHeight: spec.height,
       tileSize,
+      skipQuantize: true,
     });
     const critique = critiqueAnimationSheet(processed.buffer, {
       frameCount,
@@ -1761,6 +1791,7 @@ export class AssetPipeline {
       targetWidth: spec.width * frameCount,
       targetHeight: spec.height,
       tileSize,
+      skipQuantize: true,
     });
     const critique = critiqueAnimationSheet(processed.buffer, {
       frameCount,
@@ -1881,12 +1912,15 @@ export class AssetPipeline {
 
     const compiled = fallback
       ? buffer
-      : this.pixelArt.process(buffer, {
-          targetWidth: size,
-          targetHeight: size,
-          tileSize: Math.min(8, size),
-          alphaThreshold: 32,
-        }).buffer;
+      : knockoutVfxBackground(
+          this.pixelArt.process(buffer, {
+            targetWidth: size,
+            targetHeight: size,
+            tileSize: Math.min(8, size),
+            alphaThreshold: 32,
+            skipQuantize: true,
+          }).buffer,
+        );
     const det = runDeterministicAssetChecks(compiled, size, size);
     writeCheckpoint(opts.outputDir, vfxPath, compiled);
 
@@ -2001,6 +2035,7 @@ export class AssetPipeline {
       targetWidth: opts.spec.width,
       targetHeight: opts.spec.height,
       tileSize: opts.tileSize,
+      skipQuantize: true,
     });
 
     const det = runDeterministicAssetChecks(processed.buffer, opts.spec.width, opts.spec.height);
@@ -2068,10 +2103,11 @@ export class AssetPipeline {
     const sourceRel = opts.sourceRelPath ?? derivedSourceRelPath(opts.compiledRelPath);
     writeCheckpoint(opts.outputDir, sourceRel, opts.sourcePng);
 
-    const processed = this.pixelArt.process(opts.sourcePng, {
+    const processed = this.pixelArt.process(knockoutVfxBackground(opts.sourcePng), {
       targetWidth: opts.targetWidth,
       targetHeight: opts.targetHeight,
       tileSize: opts.tileSize,
+      skipQuantize: true,
     });
     writeCheckpoint(opts.outputDir, opts.compiledRelPath, processed.buffer);
 
@@ -2149,7 +2185,10 @@ export class AssetPipeline {
     providerEnabled?: Record<string, boolean>;
   }): Promise<GeneratedAsset> {
     const tileSize = opts.gameDna.technical.tileSize;
-    const negativePrompt = opts.artBible?.negativePrompts.join(', ');
+    const negativePrompt = applyStyleNegativePrompt(
+      opts.styleBible,
+      opts.artBible?.negativePrompts.join(', '),
+    );
     const { generator: imageGen } = await resolveImageGenerator({
       comfyuiUrl: opts.comfyuiUrl,
       diffusersPython: opts.diffusersPython,
@@ -2236,10 +2275,16 @@ export class AssetPipeline {
     const styleHint =
       opts.artBible?.characterGuidelines.player ??
       opts.gameDna.identity.visualStyle;
-    const prompt = buildManualImagePrompt(
-      opts.description,
-      styleHint,
-      opts.gameDna.identity.title,
+    const prompt = applyStylePrompt(
+      opts.styleBible,
+      opts.assetType === 'tileset' || opts.assetType === 'tile'
+        ? 'TILE_SOURCE'
+        : opts.assetType === 'background'
+          ? 'BACKGROUND'
+          : opts.assetType === 'ui_icon' || opts.assetType === 'ui_panel' || opts.assetType === 'portrait'
+            ? 'UI'
+            : 'CHARACTER',
+      buildManualImagePrompt(opts.description, styleHint, opts.gameDna.identity.title),
     );
 
     const sourceCandidate = join(opts.outputDir, derivedSourceRelPath(opts.relPath));

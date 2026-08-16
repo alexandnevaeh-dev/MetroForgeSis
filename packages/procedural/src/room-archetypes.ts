@@ -12,6 +12,7 @@ export const PROCEDURAL_ARCHETYPE_POOL = [
   'challenge',
   'set_piece',
   'transition',
+  'miniboss',
 ] as const;
 
 export type ProceduralArchetype = (typeof PROCEDURAL_ARCHETYPE_POOL)[number];
@@ -116,6 +117,10 @@ export function assignRoomArchetypes(options: AssignRoomArchetypesOptions): stri
     }
     if (npcRoomIndices.has(i)) {
       archetypes.push('npc');
+      continue;
+    }
+    if (i === options.roomCount - 2 && options.roomCount >= 8) {
+      archetypes.push('miniboss');
       continue;
     }
     if (transitionIndices.has(i)) {
