@@ -1,8 +1,63 @@
 import { describe, expect, it } from 'vitest';
 import { TileCompiler, TILE_ATLAS } from '../src/tile-compiler.js';
-import { decodePngRgba } from '../src/png.js';
+import { decodePngRgba, encodePng } from '../src/png.js';
 import { critiqueAnimationIdentity, assembleContactSheet } from '../src/sprite-qa.js';
 import { generateWalkCycleSheet, generateProceduralSprite } from '../src/png.js';
+
+/** Distinct opaque RGB combinations within a tile's 1px-inset interior (the border row/col is
+ * deliberately left as a flat shared-edge color for autotile seam matching — see
+ * tile-compiler.ts's paintTile()/measureSeams(), so it must be excluded from a "is this tile
+ * textured" measurement or a real regression there would be masked by the untextured border). */
+function distinctInteriorColors(tilePng: Buffer): number {
+  const { rgba, width, height } = decodePngRgba(tilePng);
+  const seen = new Set<number>();
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      const i = (y * width + x) * 4;
+      if (rgba[i + 3]! < 16) continue;
+      seen.add((rgba[i]! << 16) | (rgba[i + 1]! << 8) | rgba[i + 2]!);
+    }
+  }
+  return seen.size;
+}
+
+/** Population variance of per-pixel luminance within a tile's interior. A perfectly flat fill
+ * (the bug this phase fixes) has variance 0; any real texture/dither/material pattern pushes it
+ * well above 0. */
+function interiorLuminanceVariance(tilePng: Buffer): number {
+  const { rgba, width, height } = decodePngRgba(tilePng);
+  const lums: number[] = [];
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      const i = (y * width + x) * 4;
+      if (rgba[i + 3]! < 16) continue;
+      lums.push(0.299 * rgba[i]! + 0.587 * rgba[i + 1]! + 0.114 * rgba[i + 2]!);
+    }
+  }
+  const mean = lums.reduce((a, b) => a + b, 0) / lums.length;
+  return lums.reduce((a, b) => a + (b - mean) ** 2, 0) / lums.length;
+}
+
+/** A synthetic 96x96 "biome source" PNG standing in for a real AI-generated tileset source:
+ * diagonal brick-ish bands of two base tones plus a per-pixel hash ripple, so it has genuine
+ * local spatial structure (not a flat single-color image) for extractTexturePatch() to sample. */
+function syntheticBiomeSourcePng(size = 96): Buffer {
+  const rgba = new Uint8Array(size * size * 4);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const band = Math.floor((x + y) / 6) % 2;
+      const ripple = ((x * 13 + y * 29) % 17) - 8; // small deterministic local variation
+      const base = band === 0 ? 120 : 70;
+      const v = Math.max(0, Math.min(255, base + ripple));
+      const i = (y * size + x) * 4;
+      rgba[i] = v;
+      rgba[i + 1] = Math.max(0, Math.min(255, v + 20));
+      rgba[i + 2] = Math.max(0, Math.min(255, v - 10));
+      rgba[i + 3] = 255;
+    }
+  }
+  return encodePng(size, size, rgba);
+}
 
 describe('TileCompiler', () => {
   it('emits a fixed autotile atlas with uniform tile size and no hard seam fail', () => {
@@ -19,6 +74,49 @@ describe('TileCompiler', () => {
     expect(decoded.width).toBe(32);
     expect(decoded.height).toBe(32);
     expect(compiled.passed).toBe(true);
+  });
+
+  it('does not paint tiles as a flat single-color block even with no AI source image (procedural fallback)', () => {
+    // opts.sourcePng is undefined here — this is the common local-dev path (no image provider
+    // configured), which must still produce real, non-flat texture, not just a different flat fill.
+    const compiled = new TileCompiler().compile({
+      tileSize: 32,
+      paletteHex: ['#141820', '#3c4454', '#5a8cdc', '#c84848'],
+    });
+    const ground = compiled.tiles.get('tile_0_0')!;
+    const wall = compiled.tiles.get('tile_1_0')!;
+    const breakable = compiled.tiles.get('tile_4_2')!;
+    expect(distinctInteriorColors(ground)).toBeGreaterThanOrEqual(4);
+    expect(interiorLuminanceVariance(ground)).toBeGreaterThan(4);
+    expect(distinctInteriorColors(wall)).toBeGreaterThanOrEqual(4);
+    // breakable should read distinctly cracked (higher-contrast interior) rather than a flat slab.
+    expect(distinctInteriorColors(breakable)).toBeGreaterThanOrEqual(4);
+    expect(compiled.passed).toBe(true);
+    expect(compiled.seamIssues).toEqual([]);
+  });
+
+  it('inherits real spatial texture patterns from an AI-generated source image, not just its dominant flat color', () => {
+    const source = syntheticBiomeSourcePng();
+    const compiled = new TileCompiler().compile({
+      sourcePng: source,
+      tileSize: 32,
+      paletteHex: ['#141820', '#3c4454', '#5a8cdc', '#c84848'],
+    });
+    const ground = compiled.tiles.get('tile_0_0')!;
+    const ceiling = compiled.tiles.get('tile_2_0')!;
+    expect(distinctInteriorColors(ground)).toBeGreaterThanOrEqual(4);
+    expect(interiorLuminanceVariance(ground)).toBeGreaterThan(4);
+    expect(distinctInteriorColors(ceiling)).toBeGreaterThanOrEqual(4);
+    expect(compiled.passed).toBe(true);
+    expect(compiled.seamIssues).toEqual([]);
+  });
+
+  it('keeps every role at its documented atlas (col,row) — tile-layout.ts/room-assembler.ts depend on this exact mapping', () => {
+    expect(TILE_ATLAS.roles.ground).toEqual({ col: 0, row: 0 });
+    expect(TILE_ATLAS.roles.wall).toEqual({ col: 1, row: 0 });
+    expect(TILE_ATLAS.roles.breakable).toEqual({ col: 4, row: 2 });
+    expect(TILE_ATLAS.roles.decor_b).toEqual({ col: 7, row: 2 });
+    expect(Object.keys(TILE_ATLAS.roles)).toHaveLength(24);
   });
 });
 

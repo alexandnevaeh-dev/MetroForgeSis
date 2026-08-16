@@ -70,6 +70,145 @@ function shade(rgb: [number, number, number], amount: number): [number, number, 
   ];
 }
 
+/** Five-tone material ramp derived from a role's base fill color. Index 0 is the brightest
+ * highlight tone, 2 is the raw fill, 4 is the deepest shadow tone. Kept anchored on the exact
+ * `shade(fill, 1.25)`/`shade(fill, 0.55)` values the original flat-fill renderer used for its
+ * highlight/shadow corners, so overall tile lighting direction is unchanged — only the amount of
+ * distinguishable material detail *within* each lighting band increases. */
+function buildRamp(fill: [number, number, number]): [number, number, number][] {
+  return [
+    shade(fill, 1.25),
+    shade(fill, 1.1),
+    fill,
+    shade(fill, 0.8),
+    shade(fill, 0.55),
+  ];
+}
+
+/** FNV-1a style integer hash — deterministic, no Math.random, same inputs always produce the
+ * same output so procedural texture is reproducible across runs/machines (same standard Phase 2
+ * held deterministic pose fallback to). */
+function hashInt(...vals: number[]): number {
+  let h = 2166136261;
+  for (const v of vals) {
+    h ^= v | 0;
+    h = Math.imul(h, 16777619);
+  }
+  h ^= h >>> 15;
+  return h >>> 0;
+}
+
+function hashString(s: string): number {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+  return h >>> 0;
+}
+
+function hash01(...vals: number[]): number {
+  return (hashInt(...vals) % 10000) / 10000;
+}
+
+/** 4x4 ordered (Bayer) dither matrix. Produces a disciplined, repeating pixel-art dither grain
+ * instead of white noise — the same technique retro tile sets use to fake extra material tones
+ * out of a small palette without reading as garbled static. */
+const BAYER4 = [
+  [0, 8, 2, 10],
+  [12, 4, 14, 6],
+  [3, 11, 1, 9],
+  [15, 7, 13, 5],
+];
+
+function ditherOffset(x: number, y: number): number {
+  // Only the matrix's two most extreme corners nudge a pixel (~4/16 of the tile combined) — a
+  // subtle grain accent, not a dominant checkerboard. The structural motifs (mortar coursing,
+  // cracks, plank seams) are what should read first at a glance; dither is a texture-of-texture
+  // detail on top of them.
+  const v = BAYER4[y & 3]![x & 3]! / 16;
+  if (v > 0.85) return 1;
+  if (v < 0.15) return -1;
+  return 0;
+}
+
+/** Deterministic structural motif per role family — mortar coursing for masonry-like roles
+ * (ground/wall/ceiling/edges/corners/platform), crack accents for `breakable`, plank seams for
+ * `door`, organic mottling for `decor_*`. This is what keeps a texture-less procedural fallback
+ * (no AI source image available) from being just a differently-colored flat rectangle: the tile
+ * still carries a real, recognizable material pattern even with zero source pixels to sample.
+ * Returned offsets are in ramp-index space, where a *higher* index is darker (see buildRamp) —
+ * positive values darken (mortar joints, cracks, seams), negative values lighten (flecks). */
+function roleStructureOffset(kind: TileRole, x: number, y: number, tileSize: number): number {
+  if (kind === 'breakable') {
+    const d = (x - y + tileSize * 4) % tileSize;
+    if (d === 0 || d === tileSize - 1) return 2;
+    if (d === 1 || d === tileSize - 2) return 1;
+    return 0;
+  }
+  if (kind === 'door') {
+    const seg = Math.max(2, Math.floor(tileSize / 4));
+    return x % seg === 0 ? 1 : 0;
+  }
+  if (kind.startsWith('decor')) {
+    if (hash01(x * 13, y * 7) > 0.72) return 1;
+    if (hash01(x * 17, y * 3) < 0.16) return -1;
+    return 0;
+  }
+  if (kind === 'hazard' || kind === 'one_way') {
+    return hash01(x * 5, y * 11) > 0.6 ? 1 : 0;
+  }
+  // Masonry default: mortar coursing lines with staggered vertical joints, the classic
+  // brick/stone-block read for ground/wall/ceiling/platform/edge/corner roles.
+  const courseHeight = Math.max(3, Math.floor(tileSize / 8));
+  const rowInCourse = y % courseHeight;
+  if (rowInCourse === 0) return 2;
+  const course = Math.floor(y / courseHeight);
+  const jointWidth = Math.max(3, Math.floor(tileSize / 4));
+  const stagger = course % 2 === 0 ? 0 : Math.floor(jointWidth / 2);
+  if ((x + stagger) % jointWidth === 0) return 1;
+  return 0;
+}
+
+interface TexturePatch {
+  data: Float32Array;
+  mean: number;
+}
+
+/** Sample a real local patch of pixels out of the AI-generated biome source image (rather than
+ * reducing the whole image to a global dominant-color histogram) and reduce it to a normalized
+ * luminance field. Only the *spatial pattern* (grain, cracks, brick lines — whatever texture the
+ * real source art contains) is kept; the actual output color still comes from the role's fill
+ * ramp, so real source detail shows through without photo-texture colors breaking the limited
+ * pixel-art palette. Different roles/tiles sample different deterministic sub-regions (via
+ * `seed`) so the atlas doesn't repeat one patch everywhere. */
+function extractTexturePatch(png: Buffer, tileSize: number, seed: number): TexturePatch | null {
+  try {
+    const { rgba, width, height } = decodePngRgba(png);
+    if (width < 4 || height < 4) return null;
+    const regionW = Math.max(4, Math.floor(width / 2));
+    const regionH = Math.max(4, Math.floor(height / 2));
+    const maxOx = Math.max(0, width - regionW);
+    const maxOy = Math.max(0, height - regionH);
+    const ox = maxOx > 0 ? hashInt(seed, 1) % (maxOx + 1) : 0;
+    const oy = maxOy > 0 ? hashInt(seed, 2) % (maxOy + 1) : 0;
+    const data = new Float32Array(tileSize * tileSize);
+    let sum = 0;
+    for (let y = 0; y < tileSize; y++) {
+      for (let x = 0; x < tileSize; x++) {
+        const sx = Math.min(width - 1, ox + Math.floor((x / tileSize) * regionW));
+        const sy = Math.min(height - 1, oy + Math.floor((y / tileSize) * regionH));
+        const si = (sy * width + sx) * 4;
+        const a = rgba[si + 3]!;
+        const lum = a < 16 ? 0.5 : (0.299 * rgba[si]! + 0.587 * rgba[si + 1]! + 0.114 * rgba[si + 2]!) / 255;
+        const idx = y * tileSize + x;
+        data[idx] = lum;
+        sum += lum;
+      }
+    }
+    return { data, mean: sum / data.length };
+  } catch {
+    return null;
+  }
+}
+
 function paintTile(
   rgba: Uint8Array,
   atlasW: number,
@@ -78,19 +217,35 @@ function paintTile(
   tileSize: number,
   fill: [number, number, number],
   kind: TileRole,
+  patch: TexturePatch | null = null,
 ): void {
-  const highlight = shade(fill, 1.25);
-  const shadow = shade(fill, 0.55);
+  const ramp = buildRamp(fill);
   const outline: [number, number, number] = shade(fill, 0.28);
+  const roleSeed = hashString(kind);
   for (let y = 0; y < tileSize; y++) {
     for (let x = 0; x < tileSize; x++) {
       let c = fill;
-      // Interior lighting only — keep the shared 1px edge as the base fill so adjacent
-      // autotile roles (ground|wall) do not invent a hard seam.
+      // Interior texture only — keep the shared 1px edge as the flat base fill so adjacent
+      // autotile roles (ground|wall) do not invent a hard seam (measureSeams() below asserts this).
       const interior = x > 0 && x < tileSize - 1 && y > 0 && y < tileSize - 1;
       if (interior) {
-        if (x + y < tileSize * 0.35) c = highlight;
-        if (x > tileSize * 0.75 || y > tileSize * 0.8) c = shadow;
+        let tier = 2; // base fill tone
+        if (x + y < tileSize * 0.35) tier = 0;
+        else if (x > tileSize * 0.75 || y > tileSize * 0.8) tier = 4;
+        tier += roleStructureOffset(kind, x, y, tileSize);
+        if (patch) {
+          const lum = patch.data[y * tileSize + x]!;
+          // Brighter source pixel than the patch average -> lighter tile pixel (lower/brighter
+          // ramp index); darker source pixel -> darker tile pixel (higher/darker ramp index).
+          tier += Math.round((patch.mean - lum) * 5);
+        } else {
+          // No AI source image for this run (procedural-only generation) — still perturb with a
+          // deterministic per-tile hash so the fallback isn't a second flat color.
+          tier += hash01(x * 3 + roleSeed, y * 7 + roleSeed) > 0.82 ? 1 : 0;
+        }
+        tier += ditherOffset(x, y);
+        tier = Math.max(0, Math.min(ramp.length - 1, tier));
+        c = ramp[tier]!;
       }
       if (kind === 'hazard' && (x + y) % 6 < 2) c = [180, 70, 50];
       if (kind === 'one_way' && y > tileSize / 3) {
@@ -204,7 +359,13 @@ export class TileCompiler {
     for (const [role, pos] of Object.entries(TILE_ATLAS.roles)) {
       const fill =
         role === 'hazard' ? fills[3]! : role === 'door' ? fills[2]! : role.includes('platform') ? fills[0]! : fills[0]!;
-      paintTile(rgba, width, pos.col * tileSize, pos.row * tileSize, tileSize, fill, role as TileRole);
+      // Each role samples a different deterministic sub-region of the source image so the atlas
+      // doesn't repeat one patch across every cell; undefined sourcePng falls through to the
+      // procedural hash texture inside paintTile() (see roleStructureOffset/ditherOffset).
+      const patch = opts.sourcePng
+        ? extractTexturePatch(opts.sourcePng, tileSize, hashString(role) ^ (tileSize * 2654435761))
+        : null;
+      paintTile(rgba, width, pos.col * tileSize, pos.row * tileSize, tileSize, fill, role as TileRole, patch);
     }
 
     const atlas = encodePng(width, height, rgba);
