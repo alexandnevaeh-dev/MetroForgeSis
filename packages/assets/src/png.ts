@@ -253,8 +253,9 @@ export function generateWalkCycleSheet(spec: SpriteSpec, frameCount = 4, sourceP
   for (let f = 0; f < frameCount; f++) {
     const bob = f % 2;
     for (let y = 0; y < height; y++) {
+      const srcY = y - bob;
+      if (srcY < 0 || srcY >= height) continue;
       for (let x = 0; x < width; x++) {
-        const srcY = Math.min(height - 1, Math.max(0, y - bob));
         const si = (srcY * width + x) * 4;
         const di = (y * width * frameCount + f * width + x) * 4;
         sheet[di] = rgba[si]!;
@@ -382,6 +383,94 @@ export function generateDeathSheet(spec: SpriteSpec, frameCount = 4, sourcePng?:
   }
 
   return encodePng(width * frameCount, height, sheet);
+}
+
+export interface PoseTransformSpec {
+  /** Vertical source-sampling window [top,bottom] as a 0..1 fraction of height, stretched
+   *  to fill the full frame — crops toward the top (rise/jump) or bottom (crouch/land). */
+  cropY?: [number, number];
+  /** Per-row horizontal pixel shear at the top and bottom of the frame — creates lean/tilt. */
+  shearX?: [number, number];
+  /** Horizontal squash (<1) or stretch (>1) around the frame's center column. */
+  scaleX?: number;
+  /** RGB delta applied to every visible pixel, clamped to 0..255 — brightens or darkens the
+   *  silhouette so the pose reads as visually distinct even on a flat procedural fill. */
+  tint?: number;
+}
+
+/**
+ * Deterministic, purposeful per-animation-state transforms applied to a single reference frame
+ * (a real AI still, or the flat procedural silhouette when none is available) to produce a
+ * distinct pose for every locomotion state. This is the required fallback behavior when no AI
+ * image provider is healthy: idle/run/jump_start/jump/fall/land/dash must never collapse to "the
+ * same pose duplicated across states." Deliberately excludes attack/hurt/death — those already
+ * have dedicated multi-frame sheets (generateAttackSheet/generateHurtFlashSheet/
+ * generateDeathSheet) wired into AnimatedAssetSprite.gd via attack_sheet_path/hurt_sheet_path/
+ * death_sheet_path; producing a single-frame `<id>_attack_pose.png` etc. here would cause
+ * AnimatedAssetSprite.gd's `_load_pose_overrides()` to clear() and replace those real multi-frame
+ * animations with a static still, regressing the swing/flash/death-fade animations.
+ */
+export const POSE_TRANSFORMS: Record<string, PoseTransformSpec> = {
+  // Needs a real geometric change, not just `tint` — PixelArtProcessor quantizes every pixel to
+  // the nearest of 8 fixed palette colors, so a small color-only delta collapses right back to
+  // the source color and idle would silently end up byte-identical to walk-frame-0 again (the
+  // exact defect this phase fixes). The slight top crop shifts which rows are "inside" the
+  // silhouette, which survives quantization since alpha isn't quantized.
+  idle: { cropY: [0, 0.96], tint: -8 },
+  run: { cropY: [0.02, 1], shearX: [-4, 4] },
+  jump_start: { cropY: [0.16, 1], shearX: [3, -3] },
+  jump: { cropY: [0, 0.86], shearX: [-2, 2], tint: 14 },
+  fall: { cropY: [0.06, 1], shearX: [-6, 6], tint: -6 },
+  land: { cropY: [0.28, 1], scaleX: 1.22 },
+  dash: { scaleX: 0.82, shearX: [10, -10], tint: 26 },
+};
+
+/**
+ * Renders a single, purposeful pose still for one named locomotion state by applying that
+ * state's deterministic transform (crop/shear/scale/tint, see `POSE_TRANSFORMS`) to a source
+ * frame — a real AI still when one is available, otherwise the flat procedural silhouette.
+ * Output matches AnimatedAssetSprite.gd's `_load_pose_overrides()` naming convention
+ * (`<id>_<pose>_pose.png`, one frame_size×frame_size frame). Never byte-identical across poses.
+ */
+export function generatePoseStill(spec: SpriteSpec, poseName: string, sourcePng?: Buffer): Buffer {
+  const { rgba, width, height } = sourcePng
+    ? decodePngRgba(sourcePng)
+    : decodePngRgba(generateProceduralSprite(spec));
+  const t = POSE_TRANSFORMS[poseName] ?? {};
+  const [cropTop, cropBottom] = t.cropY ?? [0, 1];
+  const [shearTop, shearBottom] = t.shearX ?? [0, 0];
+  const scaleX = t.scaleX ?? 1;
+  const tint = t.tint ?? 0;
+  const cx = width / 2;
+  const out = new Uint8Array(width * height * 4);
+
+  for (let y = 0; y < height; y++) {
+    const frac = height > 1 ? y / (height - 1) : 0;
+    const srcYf = (cropTop + frac * (cropBottom - cropTop)) * (height - 1);
+    const srcY = Math.max(0, Math.min(height - 1, Math.round(srcYf)));
+    const shear = shearTop + (shearBottom - shearTop) * frac;
+    for (let x = 0; x < width; x++) {
+      const srcXf = (x - cx) / scaleX + cx - shear;
+      const srcX = Math.round(srcXf);
+      const di = (y * width + x) * 4;
+      if (srcX < 0 || srcX >= width) {
+        out[di + 3] = 0;
+        continue;
+      }
+      const si = (srcY * width + srcX) * 4;
+      const alpha = rgba[si + 3]!;
+      if (alpha === 0) {
+        out[di + 3] = 0;
+        continue;
+      }
+      out[di] = Math.max(0, Math.min(255, rgba[si]! + tint));
+      out[di + 1] = Math.max(0, Math.min(255, rgba[si + 1]! + tint));
+      out[di + 2] = Math.max(0, Math.min(255, rgba[si + 2]! + tint));
+      out[di + 3] = alpha;
+    }
+  }
+
+  return encodePng(width, height, out);
 }
 
 function paethPredictor(a: number, b: number, c: number): number {

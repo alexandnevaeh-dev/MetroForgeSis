@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, sep } from 'node:path';
-import type { GameDNA, ArtBible, StyleBible } from '@metroforge/schemas';
+import type { GameDNA, ArtBible, StyleBible, CharacterVisualDNA } from '@metroforge/schemas';
 import {
   generateProceduralSprite,
   generateTilesetSource,
@@ -10,18 +10,21 @@ import {
   generateDeathSheet,
   generateVfxTexture,
   knockoutVfxBackground,
+  decodePngRgba,
+  generatePoseStill,
   type SpriteSpec,
   type VfxSpec,
 } from './png.js';
 import { PixelArtProcessor } from './pixel-art-processor.js';
-import { ComfyUIProvider } from './providers/comfyui.js';
-import { DiffusersProvider } from './providers/diffusers.js';
-import { NvidiaImageProvider } from './providers/nvidia-image.js';
 import { ImageProviderRegistry } from './image-router.js';
+import { registerFoundryImageProviders } from './foundry/register.js';
 import type { VisionCritic } from './vision-critic-factory.js';
 import { createVisionCritic } from './vision-critic-factory.js';
 import { runDeterministicAssetChecks } from './vlm-critic.js';
 import { critiqueAnimationSheet, critiqueTilesetSheet } from './animation-critic.js';
+import { TileCompiler } from './tile-compiler.js';
+import { assembleContactSheet, critiqueAnimationIdentity } from './sprite-qa.js';
+import { NVIDIA_FLUX_KONTEXT, nvidiaModelForImageTask } from './image-task.js';
 import type { ImageGenerationProfile } from './types/vision.js';
 import type { ImageGenerator, ImageConditioning } from './types/image-gen.js';
 import type { GenerationMode, GenerationProfile } from '@metroforge/shared';
@@ -29,7 +32,6 @@ import {
   PROFILE_DEFAULTS,
   throwIfCancelled,
   inferAssetMaturity,
-  isProviderUserEnabled,
   critiqueEffectivelyPassed,
 } from '@metroforge/shared';
 import type { AssetMaturity, AssetSourceType } from '@metroforge/shared';
@@ -58,6 +60,8 @@ export interface GeneratedAsset {
   selectedModel?: string;
   requestedCapability?: string;
   productionAllowed?: boolean;
+  /** True when this sheet was derived from one still (bob/slide) rather than posed frames. */
+  fakeAnimation?: boolean;
 }
 
 /** `assets/foo/bar.png` → `assets/foo/bar_source.png` (never overwrites the compiled path). */
@@ -100,6 +104,11 @@ export function compiledSpriteFrameSize(kind: CompiledSpriteKind): { width: numb
   }
 }
 
+function decodeImageSize(png: Buffer): { width: number; height: number } {
+  const decoded = decodePngRgba(png);
+  return { width: decoded.width, height: decoded.height };
+}
+
 function applyStylePrompt(
   styleBible: StyleBible | undefined,
   capability: string,
@@ -122,6 +131,7 @@ export interface AssetPipelineOptions {
   artBible?: ArtBible;
   /** Compact visual spec derived from ArtBible — prepended to image prompts when present. */
   styleBible?: StyleBible;
+  characterVisualDna?: CharacterVisualDNA;
   comfyuiUrl?: string;
   diffusersPython?: string;
   diffusersModelId?: string;
@@ -129,6 +139,12 @@ export interface AssetPipelineOptions {
   nvidiaApiBaseUrl?: string;
   nvidiaImageModel?: string;
   nvidiaVisionModel?: string;
+  huggingfaceApiKey?: string;
+  huggingfaceImageModel?: string;
+  automatic1111Url?: string;
+  stabilityApiKey?: string;
+  deepaiApiKey?: string;
+  replicateApiToken?: string;
   ollamaBaseUrl?: string;
   skipVlm?: boolean;
   skipImageGen?: boolean;
@@ -171,6 +187,8 @@ export interface AssetPipelineResult {
   fallbackDepth: number;
   fallbackReason?: string;
   selectedProvider?: string;
+  /** Posed animation failed identity QA or used single-still derivation. */
+  fakeAnimationDetected?: boolean;
 }
 
 const NPC_ROLE_COLORS: Record<string, [number, number, number]> = {
@@ -314,6 +332,12 @@ async function resolveImageGenerator(options: {
   nvidiaApiKey?: string;
   nvidiaApiBaseUrl?: string;
   nvidiaImageModel?: string;
+  huggingfaceApiKey?: string;
+  huggingfaceImageModel?: string;
+  automatic1111Url?: string;
+  stabilityApiKey?: string;
+  deepaiApiKey?: string;
+  replicateApiToken?: string;
   mode?: GenerationMode;
   hardwareProfile?: string;
   providerEnabled?: Record<string, boolean>;
@@ -325,39 +349,23 @@ async function resolveImageGenerator(options: {
   selectedProvider?: string;
 }> {
   const registry = new ImageProviderRegistry();
-  const allow = (id: string) => isProviderUserEnabled(options.providerEnabled, id);
-
-  if (options.comfyuiUrl && allow('comfyui')) {
-    registry.register({
-      provider: new ComfyUIProvider({ baseUrl: options.comfyuiUrl }),
-      local: true,
-      priority: 90,
-    });
-  }
-
-  if (options.nvidiaApiKey && allow('nvidia-image')) {
-    registry.register({
-      provider: new NvidiaImageProvider({
-        apiKey: options.nvidiaApiKey,
-        baseUrl: options.nvidiaApiBaseUrl,
-        modelId: options.nvidiaImageModel,
-        pythonPath: options.diffusersPython,
-      }),
-      local: false,
-      priority: 88,
-    });
-  }
-
-  if (allow('diffusers')) {
-    registry.register({
-      provider: new DiffusersProvider({
-        pythonPath: options.diffusersPython,
-        modelId: options.diffusersModelId,
-      }),
-      local: true,
-      priority: 85,
-    });
-  }
+  registerFoundryImageProviders(registry, {
+    comfyuiUrl: options.comfyuiUrl,
+    diffusersPython: options.diffusersPython,
+    diffusersModelId: options.diffusersModelId,
+    nvidiaApiKey: options.nvidiaApiKey,
+    nvidiaApiBaseUrl: options.nvidiaApiBaseUrl,
+    nvidiaImageModel: options.nvidiaImageModel,
+    huggingfaceApiKey: options.huggingfaceApiKey,
+    huggingfaceImageModel: options.huggingfaceImageModel,
+    automatic1111Url: options.automatic1111Url,
+    stabilityApiKey: options.stabilityApiKey,
+    deepaiApiKey: options.deepaiApiKey,
+    replicateApiToken: options.replicateApiToken,
+    providerEnabled: options.providerEnabled,
+    commercialUseRequired: options.mode === 'COMMERCIAL_SAFE',
+    includeRetrieval: false,
+  });
 
   const selected = await registry.selectHealthy({
     mode: options.mode,
@@ -485,6 +493,7 @@ export class AssetPipeline {
   async generate(options: AssetPipelineOptions): Promise<AssetPipelineResult> {
     const assets: GeneratedAsset[] = [];
     const warnings: string[] = [];
+    let fakeAnimationDetected = false;
     const checkCancelled = () => throwIfCancelled(options.signal);
     const recordAsset = (asset: Omit<GeneratedAsset, 'maturity' | 'productionReady' | 'sourceType'> &
       Partial<Pick<GeneratedAsset, 'maturity' | 'productionReady' | 'sourceType'>>, assetType: string) => {
@@ -535,6 +544,12 @@ export class AssetPipeline {
           nvidiaApiKey: options.nvidiaApiKey,
           nvidiaApiBaseUrl: options.nvidiaApiBaseUrl,
           nvidiaImageModel: options.nvidiaImageModel,
+          huggingfaceApiKey: options.huggingfaceApiKey,
+          huggingfaceImageModel: options.huggingfaceImageModel,
+          automatic1111Url: options.automatic1111Url,
+          stabilityApiKey: options.stabilityApiKey,
+          deepaiApiKey: options.deepaiApiKey,
+          replicateApiToken: options.replicateApiToken,
           mode: options.mode,
           hardwareProfile: options.hardwareProfile,
           providerEnabled: options.providerEnabled,
@@ -557,8 +572,16 @@ export class AssetPipeline {
     const playerPrompt = applyStylePrompt(
       options.styleBible,
       'CHARACTER',
-      options.artBible?.characterGuidelines.player ??
-        `${options.gameDna.identity.visualStyle} player character ${options.gameDna.narrative.protagonist}`,
+      [
+        options.characterVisualDna?.prompt,
+        options.characterVisualDna
+          ? `${options.characterVisualDna.silhouette}, ${options.characterVisualDna.clothing}, weapon ${options.characterVisualDna.weapon}, ${options.characterVisualDna.orientation}, ${options.characterVisualDna.lighting}`
+          : undefined,
+        options.artBible?.characterGuidelines.player ??
+          `${options.gameDna.identity.visualStyle} player character ${options.gameDna.narrative.protagonist}`,
+      ]
+        .filter(Boolean)
+        .join('. '),
     );
 
     options.onTaskStarted?.('player_sprite', 'Generating player character sprite');
@@ -640,6 +663,52 @@ export class AssetPipeline {
       ),
       'animation',
     );
+
+    // Canonical per-animation-state pose stills (Section 6/7): idle/run/jump_start/jump/fall/
+    // land/dash must be real, distinct poses — never a copy of walk-frame-1 — so this always
+    // runs, for every profile, not only VISUAL_VERTICAL_SLICE. The expensive AI-conditioned
+    // upgrade pass (up to 7 extra image-gen calls) stays gated to VISUAL_VERTICAL_SLICE via
+    // allowAiUpgrade; every other profile (including the TINY_TEST default, and any run with no
+    // healthy image provider) still gets deterministic, purposeful procedural pose transforms —
+    // see generatePoseStill()/POSE_TRANSFORMS in png.ts — so the idle-is-walk-frame-1 defect is
+    // actually fixed everywhere, not only in the costly visual-slice path.
+    {
+      const poseSet = await this.tryCanonicalPoseSet({
+        id: 'player',
+        destDir: 'assets/characters',
+        source: playerSource,
+        imageGen,
+        styleBible: options.styleBible,
+        prompt: playerPrompt,
+        negativePrompt,
+        seed: options.seed,
+        outputDir: options.outputDir,
+        signal: options.signal,
+        tileSize,
+        spec: playerSpec,
+        allowAiUpgrade: options.profile === 'VISUAL_VERTICAL_SLICE',
+      });
+      warnings.push(...poseSet.warnings);
+      fakeAnimationDetected = fakeAnimationDetected || poseSet.fakeAnimation;
+      for (const asset of poseSet.assets) {
+        recordAsset(asset, 'animation');
+      }
+      if (poseSet.contactSheet) {
+        recordAsset(
+          {
+            id: 'player_animation_sheet',
+            path: 'assets/qa/player-animation-sheet.png',
+            buffer: poseSet.contactSheet,
+            provider: poseSet.fakeAnimation ? 'pixel-art-processor' : 'nvidia-image',
+            fallbackGenerated: poseSet.fakeAnimation,
+            critiquePassed: !poseSet.fakeAnimation,
+            critiqueScore: poseSet.fakeAnimation ? 20 : 80,
+            fakeAnimation: poseSet.fakeAnimation,
+          },
+          'animation',
+        );
+      }
+    }
 
     for (let i = 0; i < defaults.enemies; i++) {
       checkCancelled();
@@ -729,6 +798,51 @@ export class AssetPipeline {
         ),
         'animation',
       );
+      if (options.profile === 'VISUAL_VERTICAL_SLICE') {
+        const poseSet = await this.tryCanonicalPoseSet({
+          id: enemyId,
+          destDir: 'assets/enemies',
+          source: enemySource,
+          imageGen,
+          styleBible: options.styleBible,
+          prompt: applyStylePrompt(
+            options.styleBible,
+            'ENEMY',
+            options.artBible?.characterGuidelines.enemy ?? `enemy ${enemyId}`,
+          ),
+          negativePrompt,
+          seed: options.seed + 2000 + i * 17,
+          outputDir: options.outputDir,
+          signal: options.signal,
+          tileSize,
+          spec: enemySpec,
+          // EnemyController.gd only ever plays "idle"/"walk"/"attack"/"hurt"/"death" by name (no
+          // "run" check exists), and attack/hurt/death already have real multi-frame sheets wired
+          // via attack_sheet_path/hurt_sheet_path/death_sheet_path — generating single-frame pose
+          // stills for those names would make AnimatedAssetSprite.gd's _load_pose_overrides()
+          // clear() and replace those sheets with a static frame. Only "idle" is both consumed
+          // and not already covered, so that's the applicable subset for enemies in this phase.
+          poses: [{ name: 'idle', prompt: 'same creature idle, side view facing right' }],
+        });
+        warnings.push(...poseSet.warnings);
+        fakeAnimationDetected = fakeAnimationDetected || poseSet.fakeAnimation;
+        for (const asset of poseSet.assets) recordAsset(asset, 'animation');
+        if (poseSet.contactSheet) {
+          recordAsset(
+            {
+              id: `${enemyId}_animation_sheet`,
+              path: i === 0 ? 'assets/qa/enemy-animation-sheet.png' : `assets/qa/${enemyId}-animation-sheet.png`,
+              buffer: poseSet.contactSheet,
+              provider: poseSet.fakeAnimation ? 'pixel-art-processor' : 'nvidia-image',
+              fallbackGenerated: poseSet.fakeAnimation,
+              critiquePassed: !poseSet.fakeAnimation,
+              critiqueScore: poseSet.fakeAnimation ? 20 : 80,
+              fakeAnimation: poseSet.fakeAnimation,
+            },
+            'animation',
+          );
+        }
+      }
     }
 
     const npcList =
@@ -897,6 +1011,44 @@ export class AssetPipeline {
         ),
         'animation',
       );
+      if (options.profile === 'VISUAL_VERTICAL_SLICE') {
+        const poseSet = await this.tryCanonicalPoseSet({
+          id: bossId,
+          destDir: 'assets/bosses',
+          source: bossSource,
+          imageGen,
+          styleBible: options.styleBible,
+          prompt: bossPrompt,
+          negativePrompt,
+          seed: options.seed + 5000 + bi * 19,
+          outputDir: options.outputDir,
+          signal: options.signal,
+          tileSize,
+          spec: bossSpec,
+          // Same reasoning as the enemy pose set above: BossController.gd only checks "idle" by
+          // name for locomotion, and attack/hurt/death already have real multi-frame sheets that
+          // a single-frame pose still would silently replace.
+          poses: [{ name: 'idle', prompt: 'same boss idle, imposing, side view facing right' }],
+        });
+        warnings.push(...poseSet.warnings);
+        fakeAnimationDetected = fakeAnimationDetected || poseSet.fakeAnimation;
+        for (const asset of poseSet.assets) recordAsset(asset, 'animation');
+        if (poseSet.contactSheet) {
+          recordAsset(
+            {
+              id: 'boss_animation_sheet',
+              path: 'assets/qa/boss-animation-sheet.png',
+              buffer: poseSet.contactSheet,
+              provider: poseSet.fakeAnimation ? 'pixel-art-processor' : 'nvidia-image',
+              fallbackGenerated: poseSet.fakeAnimation,
+              critiquePassed: !poseSet.fakeAnimation,
+              critiqueScore: poseSet.fakeAnimation ? 20 : 80,
+              fakeAnimation: poseSet.fakeAnimation,
+            },
+            'animation',
+          );
+        }
+      }
     }
 
     for (let b = 0; b < defaults.biomes; b++) {
@@ -965,9 +1117,24 @@ export class AssetPipeline {
           tileSize,
           palette: BIOME_PALETTES[b % BIOME_PALETTES.length],
         });
-        processedBuffer = processed.buffer;
 
-        const detCheck = runDeterministicAssetChecks(processedBuffer, 128, 128);
+        if (options.profile === 'VISUAL_VERTICAL_SLICE') {
+          const compiled = new TileCompiler().compile({
+            sourcePng: tileBuffer,
+            tileSize,
+            paletteHex: options.styleBible?.palette.map((p) => p.hex),
+          });
+          processedBuffer = compiled.atlas;
+          if (!compiled.passed) {
+            warnings.push(`Tileset biome ${b} seam QA: ${compiled.seamIssues.join('; ')}`);
+          }
+          writeCheckpoint(options.outputDir, 'assets/qa/tileset-test.png', compiled.atlas);
+        } else {
+          processedBuffer = processed.buffer;
+        }
+
+        const expectedW = decodeImageSize(processedBuffer);
+        const detCheck = runDeterministicAssetChecks(processedBuffer, expectedW.width, expectedW.height);
         const sceneCheck = critiqueTilesetSheet(processedBuffer, tileSize);
         critiquePassed = detCheck.passed && sceneCheck.passed;
         critiqueScore = Math.min(detCheck.passed ? 75 : 50, sceneCheck.score);
@@ -1024,6 +1191,87 @@ export class AssetPipeline {
           'tile',
         );
       }
+
+      if (options.profile === 'VISUAL_VERTICAL_SLICE') {
+        const layers = ['far', 'mid', 'near'] as const;
+        for (let li = 0; li < layers.length; li++) {
+          const layer = layers[li]!;
+          const bgPath = `assets/backgrounds/biome_${b}/${layer}.png`;
+          options.onTaskStarted?.('background', `Generating ${layer} parallax for biome ${b}`);
+          let bgBuffer = generateTilesetSource(options.seed + b * 50 + li, 128);
+          let bgFallback = true;
+          let bgProvider = 'procedural';
+          let bgModel: string | undefined;
+          if (imageGen) {
+            try {
+              const result = await imageGen.generateImage({
+                profile: 'BACKGROUND',
+                prompt: sanitizeImagePromptText(
+                  applyStylePrompt(
+                    options.styleBible,
+                    'ENVIRONMENT',
+                    `${layer} parallax layer, empty of characters, ${options.gameDna.identity.visualStyle} biome ${b}`,
+                  ),
+                ),
+                negativePrompt,
+                width: 1024,
+                height: 512,
+                seed: options.seed + 4000 + b * 10 + li,
+                signal: options.signal,
+                modelOverride: nvidiaModelForImageTask('BACKGROUND_SOURCE'),
+              });
+              bgBuffer = result.image;
+              bgFallback = result.fallbackGenerated;
+              bgProvider = result.provider;
+              bgModel = result.modelId;
+            } catch {
+              warnings.push(`Background ${layer} biome ${b} failed — procedural fallback`);
+            }
+          }
+          const processedBg = this.pixelArt.process(bgBuffer, {
+            targetWidth: 640,
+            targetHeight: 360,
+            tileSize,
+          });
+          writeCheckpoint(options.outputDir, bgPath, processedBg.buffer);
+          recordAsset(
+            {
+              id: `bg_biome_${b}_${layer}`,
+              path: bgPath,
+              buffer: processedBg.buffer,
+              provider: bgProvider,
+              modelId: bgModel,
+              fallbackGenerated: bgFallback,
+              critiquePassed: true,
+              critiqueScore: bgFallback ? 40 : 75,
+            },
+            'background',
+          );
+        }
+        const far = loadCheckpoint(options.outputDir, `assets/backgrounds/biome_${b}/far.png`);
+        const mid = loadCheckpoint(options.outputDir, `assets/backgrounds/biome_${b}/mid.png`);
+        const near = loadCheckpoint(options.outputDir, `assets/backgrounds/biome_${b}/near.png`);
+        if (far && mid && near) {
+          const biomeSheet = assembleContactSheet([
+            { label: 'far', png: far },
+            { label: 'mid', png: mid },
+            { label: 'near', png: near },
+          ]);
+          writeCheckpoint(options.outputDir, 'assets/qa/biome-layers.png', biomeSheet);
+          recordAsset(
+            {
+              id: 'biome_layers_sheet',
+              path: 'assets/qa/biome-layers.png',
+              buffer: biomeSheet,
+              provider: 'pixel-art-processor',
+              fallbackGenerated: false,
+              critiquePassed: true,
+              critiqueScore: 80,
+            },
+            'background',
+          );
+        }
+      }
     }
 
     options.onTaskStarted?.('vfx_textures', 'Generating gameplay VFX textures');
@@ -1060,6 +1308,143 @@ export class AssetPipeline {
       fallbackDepth: imageRoute.fallbackDepth + (imageGen ? 0 : 1),
       fallbackReason: imageRoute.fallbackReason,
       selectedProvider: imageRoute.selectedProvider ?? imageGen?.id,
+      fakeAnimationDetected,
+    };
+  }
+
+  private async tryCanonicalPoseSet(opts: {
+    id: string;
+    destDir: string;
+    source?: Buffer;
+    imageGen: ImageGenerator | null;
+    styleBible?: StyleBible;
+    prompt: string;
+    negativePrompt?: string;
+    seed: number;
+    outputDir: string;
+    signal?: AbortSignal;
+    tileSize: number;
+    spec: SpriteSpec;
+    poses?: { name: string; prompt: string }[];
+    /** When false, skip the AI-conditioned upgrade pass entirely and only write the cheap
+     *  deterministic procedural pose stills (generatePoseStill in png.ts). Lets callers keep the
+     *  expensive per-pose image-generation calls gated to VISUAL_VERTICAL_SLICE while every other
+     *  profile — and any run with no healthy image provider — still gets real, distinct poses. */
+    allowAiUpgrade?: boolean;
+  }): Promise<{ assets: GeneratedAsset[]; warnings: string[]; fakeAnimation: boolean; contactSheet?: Buffer }> {
+    const poses: { name: string; prompt: string }[] = opts.poses ?? [
+      { name: 'idle', prompt: 'same character idle stance, feet planted, side view facing right' },
+      { name: 'run', prompt: 'same character running mid-stride, side view facing right' },
+      { name: 'jump_start', prompt: 'same character crouching into a jump, side view' },
+      { name: 'jump', prompt: 'same character airborne jump pose, side view' },
+      { name: 'fall', prompt: 'same character falling, limbs braced, side view' },
+      { name: 'land', prompt: 'same character landing, knees bent, side view' },
+      { name: 'dash', prompt: 'same character dashing forward, motion, side view' },
+    ];
+    const warnings: string[] = [];
+    const assets: GeneratedAsset[] = [];
+    const contactFrames: { label: string; png: Buffer }[] = [];
+    const knockedOutSource = opts.source ? knockoutVfxBackground(opts.source) : undefined;
+    const canAttemptAi = Boolean(opts.imageGen && opts.source && opts.allowAiUpgrade !== false);
+
+    if (!canAttemptAi) {
+      warnings.push(
+        opts.source
+          ? `No AI-conditioned pose upgrade for "${opts.id}" this profile — using deterministic procedural pose transforms (idle/run/jump/fall/land/dash are distinct, not literally duplicated).`
+          : `No AI-generated reference source for "${opts.id}" — using deterministic procedural pose transforms (idle/run/jump/fall/land/dash are distinct, not literally duplicated).`,
+      );
+    }
+
+    let anyAiSuccess = false;
+    for (let i = 0; i < poses.length; i++) {
+      const pose = poses[i]!;
+      const rel = `${opts.destDir}/${opts.id}_${pose.name}_pose.png`;
+      let usedAi = false;
+
+      if (canAttemptAi) {
+        try {
+          throwIfCancelled(opts.signal);
+          const result = await opts.imageGen!.generateImage({
+            profile: 'CHARACTER',
+            prompt: sanitizeImagePromptText(
+              `${opts.prompt}. ${pose.prompt}. transparent background, isolated sprite, identical costume and proportions`,
+            ),
+            negativePrompt: opts.negativePrompt,
+            width: 256,
+            height: 256,
+            seed: opts.seed + 9000 + i,
+            signal: opts.signal,
+            conditioning: { mode: 'img2img', image: opts.source!, strength: 0.35 },
+            modelOverride: NVIDIA_FLUX_KONTEXT,
+          });
+          const compiled = this.pixelArt.process(knockoutVfxBackground(result.image), {
+            targetWidth: opts.spec.width,
+            targetHeight: opts.spec.height,
+            tileSize: opts.tileSize,
+          });
+          writeCheckpoint(opts.outputDir, rel, compiled.buffer);
+          const identity = critiqueAnimationIdentity(compiled.buffer, { frameWidth: opts.spec.width, expectedFrames: 1 });
+          assets.push(
+            withMaturity({
+              id: `${opts.id}_${pose.name}_pose`,
+              path: rel,
+              buffer: compiled.buffer,
+              provider: result.provider,
+              modelId: result.modelId,
+              fallbackGenerated: false,
+              critiquePassed: identity.passed,
+              critiqueScore: identity.passed ? 80 : 40,
+              fakeAnimation: false,
+            }),
+          );
+          contactFrames.push({ label: pose.name, png: compiled.buffer });
+          usedAi = true;
+          anyAiSuccess = true;
+        } catch (err) {
+          // Continue to the next pose instead of aborting the whole set — a single transient
+          // failure (e.g. one pose's request timing out) must not leave every later pose
+          // (jump/fall/land/dash) unwritten. This pose falls through to the deterministic
+          // procedural transform below instead.
+          warnings.push(
+            `Pose "${pose.name}" AI-conditioned generation failed for "${opts.id}" — using deterministic procedural transform instead: ${err instanceof Error ? err.message : String(err)}.`,
+          );
+        }
+      }
+
+      if (!usedAi) {
+        const raw = generatePoseStill(opts.spec, pose.name, knockedOutSource);
+        const compiled = this.pixelArt.process(raw, {
+          targetWidth: opts.spec.width,
+          targetHeight: opts.spec.height,
+          tileSize: opts.tileSize,
+        });
+        writeCheckpoint(opts.outputDir, rel, compiled.buffer);
+        const identity = critiqueAnimationIdentity(compiled.buffer, { frameWidth: opts.spec.width, expectedFrames: 1 });
+        assets.push(
+          withMaturity({
+            id: `${opts.id}_${pose.name}_pose`,
+            path: rel,
+            buffer: compiled.buffer,
+            provider: knockedOutSource ? 'pixel-art-processor' : 'procedural',
+            fallbackGenerated: true,
+            critiquePassed: identity.passed,
+            critiqueScore: identity.passed ? 55 : 30,
+            fakeAnimation: false,
+            fallbackDepth: 1,
+            fallbackReason: canAttemptAi
+              ? 'AI-conditioned pose generation failed for this state — deterministic procedural transform used instead'
+              : 'No healthy AI-conditioned image provider for this profile — deterministic procedural transform used',
+          }),
+        );
+        contactFrames.push({ label: pose.name, png: compiled.buffer });
+      }
+    }
+
+    return {
+      assets,
+      warnings,
+      fakeAnimation: !anyAiSuccess,
+      contactSheet: contactFrames.length ? assembleContactSheet(contactFrames) : undefined,
     };
   }
 
@@ -1071,7 +1456,11 @@ export class AssetPipeline {
     tileSize: number,
     sourcePng?: Buffer,
   ): GeneratedAsset {
-    const sheet = generateWalkCycleSheet(spec, frameCount, sourcePng);
+    const sheet = generateWalkCycleSheet(
+      spec,
+      frameCount,
+      sourcePng ? knockoutVfxBackground(sourcePng) : undefined,
+    );
     const processed = this.pixelArt.process(sheet, {
       targetWidth: spec.width * frameCount,
       targetHeight: spec.height,
@@ -1091,6 +1480,7 @@ export class AssetPipeline {
       fallbackGenerated: !sourcePng,
       critiquePassed: critique.passed,
       critiqueScore: critique.score,
+      fakeAnimation: true,
     });
   }
 
@@ -1102,7 +1492,11 @@ export class AssetPipeline {
     tileSize: number,
     sourcePng?: Buffer,
   ): GeneratedAsset {
-    const sheet = generateHurtFlashSheet(spec, frameCount, sourcePng);
+    const sheet = generateHurtFlashSheet(
+      spec,
+      frameCount,
+      sourcePng ? knockoutVfxBackground(sourcePng) : undefined,
+    );
     const processed = this.pixelArt.process(sheet, {
       targetWidth: spec.width * frameCount,
       targetHeight: spec.height,
@@ -1133,7 +1527,11 @@ export class AssetPipeline {
     tileSize: number,
     sourcePng?: Buffer,
   ): GeneratedAsset {
-    const sheet = generateDeathSheet(spec, frameCount, sourcePng);
+    const sheet = generateDeathSheet(
+      spec,
+      frameCount,
+      sourcePng ? knockoutVfxBackground(sourcePng) : undefined,
+    );
     const processed = this.pixelArt.process(sheet, {
       targetWidth: spec.width * frameCount,
       targetHeight: spec.height,
@@ -1164,7 +1562,11 @@ export class AssetPipeline {
     tileSize: number,
     sourcePng?: Buffer,
   ): GeneratedAsset {
-    const sheet = generateAttackSheet(spec, frameCount, sourcePng);
+    const sheet = generateAttackSheet(
+      spec,
+      frameCount,
+      sourcePng ? knockoutVfxBackground(sourcePng) : undefined,
+    );
     const processed = this.pixelArt.process(sheet, {
       targetWidth: spec.width * frameCount,
       targetHeight: spec.height,
@@ -1404,7 +1806,8 @@ export class AssetPipeline {
       writeCheckpoint(opts.outputDir, sourcePath, buffer);
     }
 
-    const processed = this.pixelArt.process(buffer, {
+    const spriteSource = fallback ? buffer : knockoutVfxBackground(buffer);
+    const processed = this.pixelArt.process(spriteSource, {
       targetWidth: opts.spec.width,
       targetHeight: opts.spec.height,
       tileSize: opts.tileSize,
@@ -1546,6 +1949,12 @@ export class AssetPipeline {
     nvidiaApiBaseUrl?: string;
     nvidiaImageModel?: string;
     nvidiaVisionModel?: string;
+    huggingfaceApiKey?: string;
+    huggingfaceImageModel?: string;
+    automatic1111Url?: string;
+    stabilityApiKey?: string;
+    deepaiApiKey?: string;
+    replicateApiToken?: string;
     ollamaBaseUrl?: string;
     providerEnabled?: Record<string, boolean>;
   }): Promise<GeneratedAsset> {
@@ -1558,6 +1967,12 @@ export class AssetPipeline {
       nvidiaApiKey: opts.nvidiaApiKey,
       nvidiaApiBaseUrl: opts.nvidiaApiBaseUrl,
       nvidiaImageModel: opts.nvidiaImageModel,
+      huggingfaceApiKey: opts.huggingfaceApiKey,
+      huggingfaceImageModel: opts.huggingfaceImageModel,
+      automatic1111Url: opts.automatic1111Url,
+      stabilityApiKey: opts.stabilityApiKey,
+      deepaiApiKey: opts.deepaiApiKey,
+      replicateApiToken: opts.replicateApiToken,
       mode: opts.mode,
       hardwareProfile: opts.hardwareProfile,
       providerEnabled: opts.providerEnabled,

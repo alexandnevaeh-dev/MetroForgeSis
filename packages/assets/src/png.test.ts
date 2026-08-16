@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { encodePng, decodePngRgba, generateProceduralSprite, generateWalkCycleSheet, generateAttackSheet, generateVfxTexture, knockoutVfxBackground } from '../src/png.js';
+import { encodePng, decodePngRgba, generateProceduralSprite, generateWalkCycleSheet, generateAttackSheet, generateVfxTexture, knockoutVfxBackground, generatePoseStill, POSE_TRANSFORMS } from '../src/png.js';
 import { PixelArtProcessor } from '../src/pixel-art-processor.js';
 import { runDeterministicAssetChecks } from '../src/vlm-critic.js';
 
@@ -99,6 +99,63 @@ describe('PixelArtProcessor sliceTiles', () => {
     const processor = new PixelArtProcessor();
     const tiles = processor.sliceTiles(source, 16);
     expect(tiles.size).toBe(4);
+  });
+});
+
+describe('generatePoseStill', () => {
+  const spec = {
+    id: 'player',
+    width: 64,
+    height: 64,
+    fill: [90, 140, 220, 255] as [number, number, number, number],
+    shape: 'humanoid' as const,
+  };
+
+  it('produces a valid, non-blank still for every locomotion pose', () => {
+    for (const poseName of Object.keys(POSE_TRANSFORMS)) {
+      const png = generatePoseStill(spec, poseName);
+      const decoded = decodePngRgba(png);
+      expect(decoded.width).toBe(64);
+      expect(decoded.height).toBe(64);
+      let visible = 0;
+      for (let i = 3; i < decoded.rgba.length; i += 4) {
+        if (decoded.rgba[i]! > 0) visible++;
+      }
+      expect(visible).toBeGreaterThan(0);
+    }
+  });
+
+  it('idle is not a byte-identical copy of the base silhouette (fixes idle-is-walk-frame-1)', () => {
+    const base = generateProceduralSprite(spec);
+    const idle = generatePoseStill(spec, 'idle');
+    expect(idle.equals(base)).toBe(false);
+  });
+
+  it('every locomotion pose is visually distinct from every other pose', () => {
+    const names = Object.keys(POSE_TRANSFORMS);
+    const stills = names.map((name) => generatePoseStill(spec, name));
+    for (let i = 0; i < stills.length; i++) {
+      for (let j = i + 1; j < stills.length; j++) {
+        expect(stills[i]!.equals(stills[j]!)).toBe(false);
+      }
+    }
+  });
+
+  it('falls back to an unmodified identity transform for unknown pose names without crashing', () => {
+    const png = generatePoseStill(spec, 'not_a_real_pose');
+    const decoded = decodePngRgba(png);
+    expect(decoded.width).toBe(64);
+  });
+
+  it('conditions off a real source frame when one is provided, not just the flat procedural silhouette', () => {
+    const source = generateProceduralSprite({ ...spec, fill: [255, 10, 10, 255] });
+    const dash = generatePoseStill(spec, 'dash', source);
+    const decoded = decodePngRgba(dash);
+    let sawRed = false;
+    for (let i = 0; i < decoded.rgba.length; i += 4) {
+      if (decoded.rgba[i]! > 200 && decoded.rgba[i + 3]! > 0) sawRed = true;
+    }
+    expect(sawRed).toBe(true);
   });
 });
 

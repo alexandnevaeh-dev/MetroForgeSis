@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { mkdirSync, rmSync, existsSync, writeFileSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import { GenerationCancelledError } from '@metroforge/shared';
 import { AssetPipeline, compiledSpriteFrameSize } from '../src/asset-pipeline.js';
@@ -263,6 +263,75 @@ describe('AssetPipeline procedural path', () => {
     const merchant = result.assets.find((a) => a.id === 'npc_merchant')!;
     const sage = result.assets.find((a) => a.id === 'npc_sage')!;
     expect(merchant.buffer.equals(sage.buffer)).toBe(false);
+
+    rmSync(outputDir, { recursive: true, force: true });
+  });
+
+  it('generates distinct idle/run/jump/fall/land/dash pose stills for TINY_TEST with no image provider (Section 7: idle must not be walk-frame-1)', async () => {
+    const outputDir = join(tmpdir(), `metroforge-assets-poses-${Date.now()}`);
+    mkdirSync(outputDir, { recursive: true });
+
+    const pipeline = new AssetPipeline();
+    const result = await pipeline.generate({
+      gameDna: minimalDna,
+      profile: 'TINY_TEST',
+      seed: 42,
+      outputDir,
+      skipVlm: true,
+      skipImageGen: true,
+    });
+
+    const poseNames = ['idle', 'run', 'jump_start', 'jump', 'fall', 'land', 'dash'];
+    for (const pose of poseNames) {
+      const relPath = `assets/characters/player_${pose}_pose.png`;
+      expect(result.assets.some((a) => a.path === relPath)).toBe(true);
+      expect(existsSync(join(outputDir, relPath.replace(/\//g, sep)))).toBe(true);
+    }
+
+    // Attack/hurt/death already have real multi-frame sheets — pose stills must NOT be
+    // generated for them, or AnimatedAssetSprite.gd's _load_pose_overrides() would clobber
+    // those sheets with a single static frame.
+    expect(result.assets.some((a) => a.path === 'assets/characters/player_attack_pose.png')).toBe(false);
+    expect(result.assets.some((a) => a.path === 'assets/characters/player_hurt_pose.png')).toBe(false);
+    expect(result.assets.some((a) => a.path === 'assets/characters/player_death_pose.png')).toBe(false);
+
+    const idle = result.assets.find((a) => a.path === 'assets/characters/player_idle_pose.png')!;
+    const walk = result.assets.find((a) => a.path === 'assets/characters/player_walk.png')!;
+    // walk sheet frame 0 (first `frameWidth` columns) must differ from the idle pose still —
+    // the literal bug this phase closes.
+    const walkDecoded = decodePngRgba(walk.buffer);
+    const idleDecoded = decodePngRgba(idle.buffer);
+    let identical = true;
+    for (let y = 0; y < idleDecoded.height && identical; y++) {
+      for (let x = 0; x < idleDecoded.width; x++) {
+        const wi = (y * walkDecoded.width + x) * 4;
+        const ii = (y * idleDecoded.width + x) * 4;
+        if (
+          walkDecoded.rgba[wi] !== idleDecoded.rgba[ii] ||
+          walkDecoded.rgba[wi + 1] !== idleDecoded.rgba[ii + 1] ||
+          walkDecoded.rgba[wi + 2] !== idleDecoded.rgba[ii + 2] ||
+          walkDecoded.rgba[wi + 3] !== idleDecoded.rgba[ii + 3]
+        ) {
+          identical = false;
+          break;
+        }
+      }
+    }
+    expect(identical).toBe(false);
+
+    // Deterministic procedural fallback must be marked as such (not silently claimed as AI art).
+    expect(idle.fallbackGenerated).toBe(true);
+    expect(idle.provider).toBe('procedural');
+
+    // All locomotion poses must be pairwise distinct — not the same pose duplicated per state.
+    const buffers = poseNames.map(
+      (pose) => result.assets.find((a) => a.path === `assets/characters/player_${pose}_pose.png`)!.buffer,
+    );
+    for (let i = 0; i < buffers.length; i++) {
+      for (let j = i + 1; j < buffers.length; j++) {
+        expect(buffers[i]!.equals(buffers[j]!)).toBe(false);
+      }
+    }
 
     rmSync(outputDir, { recursive: true, force: true });
   });
