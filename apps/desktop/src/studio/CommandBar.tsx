@@ -6,6 +6,8 @@ interface CommandBarProps {
   selectedRoomId?: string;
   placeholder?: string;
   onSuccess?: (summary: string) => void;
+  /** Compact 40–44px editor command strip. */
+  compact?: boolean;
 }
 
 export function CommandBar({
@@ -13,6 +15,7 @@ export function CommandBar({
   selectedRoomId,
   placeholder = 'Try: connect room_a to room_b, add treasure room, make this room harder…',
   onSuccess,
+  compact = false,
 }: CommandBarProps) {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -84,9 +87,9 @@ export function CommandBar({
   };
 
   return (
-    <div className="command-bar panel">
-      <label>
-        AI Command
+    <div className={['command-bar', 'panel', compact ? 'command-bar-compact' : ''].filter(Boolean).join(' ')}>
+      <label className={compact ? 'command-bar-compact-label' : undefined}>
+        {compact ? <span className="type-label">AI</span> : 'AI Command'}
         <div className="row">
           <input
             value={input}
@@ -94,12 +97,14 @@ export function CommandBar({
             placeholder={placeholder}
             disabled={busy || listening}
             onKeyDown={(e) => e.key === 'Enter' && run()}
+            aria-label="AI command"
           />
           <button
             type="button"
             onClick={toggleVoice}
             disabled={busy}
             title={listening ? 'Stop recording' : 'Dictate command'}
+            aria-pressed={listening}
           >
             {listening ? 'Stop' : 'Mic'}
           </button>

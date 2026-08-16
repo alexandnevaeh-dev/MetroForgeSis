@@ -49,15 +49,24 @@ describe('CapabilityRouter — health-aware ranking', () => {
     const router = new CapabilityRouter(registry, new ModelRegistry());
     const candidates = router.getCandidates(baseContext());
 
-    expect(candidates.map((p) => p.id)).toEqual(['b', 'a']);
+    expect(candidates.map((p) => p.id)).toEqual(['b']);
   });
 
-  it('never excludes a degraded or unavailable provider — only reorders it', () => {
+  it('excludes unavailable providers from live route candidates (offline cannot win)', () => {
     const registry = new ProviderRegistry();
     registry.register(new MockProvider('a', 'A', 100, 'unavailable'));
     const router = new CapabilityRouter(registry, new ModelRegistry());
 
-    expect(router.getCandidates(baseContext()).map((p) => p.id)).toEqual(['a']);
+    expect(router.getCandidates(baseContext())).toEqual([]);
+  });
+
+  it('keeps degraded eligible but ranks healthy above degraded', () => {
+    const registry = new ProviderRegistry();
+    registry.register(new MockProvider('degraded', 'Degraded', 100, 'degraded'));
+    registry.register(new MockProvider('healthy', 'Healthy', 10, 'healthy'));
+    const router = new CapabilityRouter(registry, new ModelRegistry());
+
+    expect(router.getCandidates(baseContext()).map((p) => p.id)).toEqual(['healthy', 'degraded']);
   });
 
   it('falls back to priority ordering within the same health tier', () => {
@@ -77,7 +86,7 @@ describe('CapabilityRouter — health-aware ranking', () => {
     registry.register(steady);
     const router = new CapabilityRouter(registry, new ModelRegistry());
 
-    expect(router.getCandidates(baseContext()).map((p) => p.id)).toEqual(['steady', 'flaky']);
+    expect(router.getCandidates(baseContext()).map((p) => p.id)).toEqual(['steady']);
 
     flaky.health = 'healthy';
     expect(router.getCandidates(baseContext()).map((p) => p.id)).toEqual(['flaky', 'steady']);

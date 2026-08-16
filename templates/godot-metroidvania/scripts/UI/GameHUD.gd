@@ -18,6 +18,29 @@ func _ready() -> void:
 	if collectible_label:
 		collectible_label.add_theme_color_override("font_color", Color(0.72, 0.82, 0.95))
 	_update_abilities()
+	_style_hud()
+
+func _style_hud() -> void:
+	if health_bar:
+		health_bar.custom_minimum_size = Vector2(280, 22)
+		var fill := StyleBoxFlat.new()
+		fill.bg_color = Color(0.78, 0.22, 0.26, 1)
+		fill.set_corner_radius_all(2)
+		var bg := StyleBoxFlat.new()
+		bg.bg_color = Color(0.06, 0.07, 0.10, 0.94)
+		bg.border_color = Color(0.32, 0.28, 0.22, 1)
+		bg.set_border_width_all(2)
+		bg.content_margin_top = 2
+		bg.content_margin_bottom = 2
+		health_bar.add_theme_stylebox_override("fill", fill)
+		health_bar.add_theme_stylebox_override("background", bg)
+		health_bar.show_percentage = false
+	if ability_label:
+		ability_label.add_theme_font_size_override("font_size", 14)
+	if currency_label:
+		currency_label.add_theme_font_size_override("font_size", 13)
+	if collectible_label:
+		collectible_label.add_theme_font_size_override("font_size", 13)
 
 func _process(_delta: float) -> void:
 	var player := get_tree().get_first_node_in_group("player")
@@ -34,8 +57,14 @@ func _on_ability_acquired(ability_id: String) -> void:
 	_update_abilities()
 
 func _update_abilities() -> void:
-	var abilities := ", ".join(GameManager.player_abilities)
-	ability_label.text = "Abilities: " + (abilities if abilities else "None")
+	var raw: Array = []
+	for id in GameManager.player_abilities:
+		var sid := String(id)
+		if sid.begins_with("test_"):
+			continue
+		raw.append(sid)
+	var abilities := ", ".join(raw)
+	ability_label.text = abilities if abilities else ""
 
 func _update_currency() -> void:
 	var parts: Array[String] = []

@@ -1,0 +1,62 @@
+{
+  "phase": "P5",
+  "capturedAt": "2026-08-15T05:28:23.004Z",
+  "viewportPrimary": "1600x900",
+  "project": "C:\\Users\\alexa\\OneDrive\\Documents\\Metroidvania\\Forged\\GeneratedGames\\nvidia-image-activation-smoke",
+  "shots": [
+    {
+      "file": "01-dashboard-readiness.png",
+      "bytes": 27214
+    },
+    {
+      "file": "02-export-preflight.png",
+      "bytes": 30508
+    },
+    {
+      "file": "03-export-force-warning.png",
+      "bytes": 32220
+    },
+    {
+      "file": "04-settings-general.png",
+      "bytes": 27202
+    },
+    {
+      "file": "05-settings-paths-godot.png",
+      "bytes": 28522
+    },
+    {
+      "file": "06-settings-diagnostics.png",
+      "bytes": 33526
+    },
+    {
+      "file": "07-health-popover.png",
+      "bytes": 41227
+    },
+    {
+      "file": "08-jump-palette.png",
+      "bytes": 40974
+    },
+    {
+      "file": "09-qa-readiness.png",
+      "bytes": 40461
+    },
+    {
+      "file": "10-models-1366.png",
+      "bytes": 39400
+    },
+    {
+      "file": "11-export-1920.png",
+      "bytes": 32647
+    }
+  ],
+  "smoke": {
+    "export": 2,
+    "settings": 2,
+    "dashboard": 0,
+    "health": 1,
+    "jump": 1,
+    "models1366": 1,
+    "statusBar": 1
+  },
+  "notes": "Real IPC states only — no mocked READY/export artifacts"
+}

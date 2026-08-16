@@ -1,0 +1,268 @@
+{
+  "auditType": "visual-ui-current-state",
+  "createdAt": "2026-08-15T03:32:00.000Z",
+  "repo": "MetroForge",
+  "outputDir": "redesign-audit",
+  "reference": "docs/ui-redesign/CONCEPT_A_REFERENCE.png",
+  "capture": {
+    "script": "tools/redesign-audit/capture.mjs",
+    "project": "C:\\Users\\<user>\\OneDrive\\Documents\\Metroidvania\\Forged\\GeneratedGames\\nvidia-image-activation-smoke",
+    "projectNote": "wind-swept marsh project not present; used nvidia-image-activation-smoke",
+    "principalResolution": "1920x1080",
+    "deviceScaleFactor": 1,
+    "skipGeneration": true,
+    "appLaunched": true,
+    "buildCommand": "pnpm --filter @metroforge/desktop build",
+    "typecheck": {
+      "command": "pnpm --filter @metroforge/desktop typecheck",
+      "passed": false,
+      "errors": [
+        "GenerateAsset.tsx: Property 'fallbackGenerated' does not exist on variant type",
+        "GenerateAsset.tsx: Property 'critiquePassed' does not exist on variant type",
+        "GenerateAsset.tsx: Property 'critiqueScore' does not exist on variant type"
+      ]
+    }
+  },
+  "tokens": {
+    "source": ["apps/desktop/src/tokens.css", "apps/desktop/src/styles.css"],
+    "accent": "#258cff",
+    "bgApp": "#080d14",
+    "topbarH": "44px",
+    "sidebarW": "216px",
+    "statusH": "26px"
+  },
+  "shortcuts": [
+    { "keys": "Ctrl+K", "action": "GoTo palette" },
+    { "keys": "Ctrl+B", "action": "Toggle sidebar" },
+    { "keys": "Ctrl+1", "action": "Dashboard" },
+    { "keys": "Ctrl+2", "action": "New Game" },
+    { "keys": "Ctrl+3", "action": "Generation Studio" },
+    { "keys": "Ctrl+4", "action": "Projects" },
+    { "keys": "Ctrl+5", "action": "Asset Gallery" },
+    { "keys": "Ctrl+6", "action": "Manual Generator" }
+  ],
+  "screens": [
+    { "id": "Dashboard", "file": "screenshots/01-dashboard.png", "component": "ProjectDashboard", "rating": "NEEDS IMPROVEMENT" },
+    { "id": "Create", "file": "screenshots/02-new-game.png", "component": "CreateScreen", "rating": "GOOD" },
+    { "id": "Studio", "file": "screenshots/03-generation-studio.png", "component": "GenerationStudio", "rating": "GOOD" },
+    { "id": "Projects", "file": "screenshots/04-projects.png", "component": "ProjectsScreen", "rating": "GOOD" },
+    { "id": "Assets", "file": "screenshots/05-asset-gallery.png", "component": "AssetsGallery", "rating": "NEEDS IMPROVEMENT" },
+    { "id": "Generate Asset", "file": "screenshots/06-manual-generator.png", "component": "GenerateAssetScreen", "rating": "GOOD" },
+    { "id": "World", "file": "screenshots/07-world-editor-progression.png", "component": "WorldEditor", "rating": "NEEDS IMPROVEMENT", "modes": ["progression", "graph", "spatial"] },
+    { "id": "Rooms", "file": "screenshots/10-room-editor-visual.png", "component": "RoomEditor", "rating": "MAJOR REDESIGN REQUIRED", "modes": ["visual", "collision", "entities", "navigation", "progression", "debug"] },
+    { "id": "Dungeon", "file": "screenshots/16-dungeon-editor.png", "component": "DungeonEditor", "rating": "NEEDS IMPROVEMENT" },
+    { "id": "Preview", "file": "screenshots/17-game-preview.png", "component": "PreviewScreen", "rating": "NEEDS IMPROVEMENT" },
+    { "id": "Models", "file": "screenshots/18-models.png", "component": "ModelsScreen", "rating": "GOOD" },
+    { "id": "Providers", "file": "screenshots/19-providers.png", "component": "ProvidersScreen", "rating": "GOOD" },
+    { "id": "Routing", "file": "screenshots/20-routing-inspector.png", "component": "RoutingInspector", "rating": "GOOD" },
+    { "id": "QA", "file": "screenshots/21-qa.png", "component": "QAScreen", "rating": "GOOD" },
+    { "id": "Export", "file": "screenshots/22-export.png", "component": "ExportScreen", "rating": "GOOD" },
+    { "id": "Settings", "file": "screenshots/23-settings.png", "component": "SettingsScreen", "rating": "GOOD" }
+  ],
+  "components": [
+    { "name": "App shell / TopCommandBar", "file": "apps/desktop/src/App.tsx", "shared": true },
+    { "name": "NAV_GROUPS", "file": "apps/desktop/src/studio/nav.ts", "shared": true },
+    { "name": "StatusBar", "file": "apps/desktop/src/studio/StatusBar.tsx", "shared": true },
+    { "name": "GoToPalette", "file": "apps/desktop/src/studio/GoToPalette.tsx", "shared": true },
+    { "name": "ProjectSelect", "file": "apps/desktop/src/studio/ProjectSelect.tsx", "shared": true },
+    { "name": "ScreenHeader", "file": "apps/desktop/src/studio/ScreenHeader.tsx", "shared": true },
+    { "name": "Button/Input/Select/Panel/Badge/Tabs/EmptyState/DataTable", "file": "apps/desktop/src/studio/ui/index.tsx", "shared": true },
+    { "name": "GenerationStudio", "file": "apps/desktop/src/studio/GenerationStudio.tsx", "shared": false },
+    { "name": "RoomEditor", "file": "apps/desktop/src/studio/RoomEditor.tsx", "shared": false },
+    { "name": "WorldEditor", "file": "apps/desktop/src/studio/WorldEditor.tsx", "shared": false },
+    { "name": "RoutingInspector", "file": "apps/desktop/src/studio/RoutingInspector.tsx", "shared": false },
+    { "name": "TilePaintEditor", "file": "apps/desktop/src/studio/TilePaintEditor.tsx", "shared": false },
+    { "name": "WorldMapPreview", "file": "apps/desktop/src/studio/WorldMapPreview.tsx", "shared": false }
+  ],
+  "designTokens": {
+    "sourceFiles": ["apps/desktop/src/tokens.css", "apps/desktop/src/styles.css"],
+    "colors": {
+      "bgApp": "#080d14",
+      "bgSidebar": "#0a1018",
+      "bgSurface": "#0d141d",
+      "borderNormal": "#26394b",
+      "textPrimary": "#e8edf3",
+      "textMuted": "#667789",
+      "accent": "#258cff",
+      "success": "#3dba7a",
+      "warning": "#d4a017",
+      "danger": "#e06c75"
+    },
+    "typography": {
+      "fontUi": "Inter, Geist, 'Segoe UI', system-ui, -apple-system, sans-serif",
+      "fontMono": "'Cascadia Code', 'JetBrains Mono', Consolas, ui-monospace, monospace",
+      "bodySize": "12.5px"
+    },
+    "geometry": {
+      "radiusSm": "4px",
+      "radiusMd": "6px",
+      "radiusLg": "8px",
+      "topbarH": "44px",
+      "sidebarW": "216px",
+      "statusH": "26px"
+    }
+  },
+  "apiKeyPolicy": "Reports only configured / not set via getConfig().envKeys booleans — never secret values",
+  "issues": [
+    {
+      "id": "empty-editor-canvas",
+      "screen": "Rooms",
+      "category": "viewport-usage",
+      "severity": "critical",
+      "description": "Room Editor center canvas is a large empty void (“No room”) across Visual–Debug layers when the project has no rooms; Concept A expects a filled level-tool workspace when data exists, and a stronger structured empty state when it does not.",
+      "sourceFiles": ["apps/desktop/src/studio/RoomEditor.tsx", "apps/desktop/src/studio/TilePaintEditor.tsx", "apps/desktop/src/styles.css"],
+      "recommendedDirection": "Do not redesign in this pass. Later: denser empty-state scaffolding + true toolbelt; ensure canvas fills with authored data when present."
+    },
+    {
+      "id": "dashboard-empty-kpi",
+      "screen": "Dashboard",
+      "category": "information-density",
+      "severity": "critical",
+      "description": "Dashboard collapses to a single unavailable card with large unused viewport instead of Timeline / Environment / Checkpoints / Recent layout when getProjectDashboard fails or returns empty.",
+      "sourceFiles": ["apps/desktop/src/studio/ProjectDashboard.tsx"],
+      "recommendedDirection": "Preserve IPC honesty; improve empty/error composition so shell KPIs remain visible with unavailable badges."
+    },
+    {
+      "id": "world-graph-underfill",
+      "screen": "World",
+      "category": "editor-workspace",
+      "severity": "high",
+      "description": "World Progression/Graph/Spatial views leave large unused center regions when graph/overworld data is thin or missing.",
+      "sourceFiles": ["apps/desktop/src/studio/WorldEditor.tsx", "apps/desktop/src/studio/WorldMapPreview.tsx"],
+      "recommendedDirection": "Scale graph to use available space; stronger empty states; status-colored nodes when metadata exists."
+    },
+    {
+      "id": "sidebar-collapse-sticky",
+      "screen": "AppShell",
+      "category": "responsive",
+      "severity": "high",
+      "description": "App.tsx initializes/collapses sidebar via max-width 1366 matchMedia but does not re-expand when the window later widens; Electron audit launches can stick in collapsed abbreviation rail at 1920.",
+      "sourceFiles": ["apps/desktop/src/App.tsx"],
+      "recommendedDirection": "Re-expand when MQ no longer matches, or default expanded above 1366 after resize."
+    },
+    {
+      "id": "mixed-primitives",
+      "screen": "All",
+      "category": "consistency",
+      "severity": "high",
+      "description": "Shared ui/* primitives coexist with raw button.tab / panel markup and duplicate project selectors, producing inconsistent selected states and paddings.",
+      "sourceFiles": ["apps/desktop/src/studio/ui/index.tsx", "apps/desktop/src/styles.css"],
+      "recommendedDirection": "Converge screens onto Panel/Tabs/Button primitives without changing IPC."
+    },
+    {
+      "id": "room-tools-are-layers",
+      "screen": "Rooms",
+      "category": "editor-controls",
+      "severity": "medium",
+      "description": "Room Editor Tools grid (VIS/COL/ENT/NAV/PRO/DEB) mirrors Layers rather than Concept A selection/paint/erase/fill tools.",
+      "sourceFiles": ["apps/desktop/src/studio/RoomEditor.tsx"],
+      "recommendedDirection": "Only expose tools backed by real TilePaintEditor / IPC capabilities."
+    },
+    {
+      "id": "status-strip-easy-to-miss",
+      "screen": "AppShell",
+      "category": "hierarchy",
+      "severity": "medium",
+      "description": "Status strip at 0.64rem mono packs HW/providers/workers but is easy to overlook versus primary workspace.",
+      "sourceFiles": ["apps/desktop/src/studio/StatusBar.tsx", "apps/desktop/src/styles.css"],
+      "recommendedDirection": "Slightly stronger idle/error chroma; keep density."
+    },
+    {
+      "id": "form-stretch",
+      "screen": "Create",
+      "category": "layout",
+      "severity": "medium",
+      "description": "Create / Manual Generator / Settings forms can stretch across wide viewports and read as generic web forms.",
+      "sourceFiles": ["apps/desktop/src/studio/CreateScreen.tsx", "apps/desktop/src/studio/GenerateAsset.tsx", "apps/desktop/src/studio/SettingsScreen.tsx"],
+      "recommendedDirection": "Max-width measure + denser field groups."
+    },
+    {
+      "id": "studio-idle-preview-void",
+      "screen": "Studio",
+      "category": "empty-space",
+      "severity": "medium",
+      "description": "Generation Studio idle preview pane is a large intentional empty region; acceptable for idle but visually sparse versus Concept A board.",
+      "sourceFiles": ["apps/desktop/src/studio/GenerationStudio.tsx"],
+      "recommendedDirection": "Keep honest empty copy; optional last-artifact thumbnail when project has history."
+    },
+    {
+      "id": "typecheck-generate-asset",
+      "screen": "Generate Asset",
+      "category": "engineering",
+      "severity": "low",
+      "description": "Desktop typecheck currently fails on GenerateAsset variant critique fields (pre-existing; not introduced by audit).",
+      "sourceFiles": ["apps/desktop/src/studio/GenerateAsset.tsx"],
+      "recommendedDirection": "Align variant type with IPC payload; out of scope for visual audit."
+    }
+  ],
+  "severityCounts": {
+    "critical": 2,
+    "high": 3,
+    "medium": 4,
+    "low": 1
+  },
+  "screenshots": {
+    "principal": [
+      "screenshots/01-dashboard.png",
+      "screenshots/02-new-game.png",
+      "screenshots/03-generation-studio.png",
+      "screenshots/04-projects.png",
+      "screenshots/05-asset-gallery.png",
+      "screenshots/06-manual-generator.png",
+      "screenshots/07-world-editor-progression.png",
+      "screenshots/08-world-editor-graph.png",
+      "screenshots/09-world-editor-spatial.png",
+      "screenshots/10-room-editor-visual.png",
+      "screenshots/11-room-editor-collision.png",
+      "screenshots/12-room-editor-entities.png",
+      "screenshots/13-room-editor-navigation.png",
+      "screenshots/14-room-editor-progression.png",
+      "screenshots/15-room-editor-debug.png",
+      "screenshots/16-dungeon-editor.png",
+      "screenshots/17-game-preview.png",
+      "screenshots/18-models.png",
+      "screenshots/19-providers.png",
+      "screenshots/20-routing-inspector.png",
+      "screenshots/21-qa.png",
+      "screenshots/22-export.png",
+      "screenshots/23-settings.png"
+    ],
+    "alternates": [
+      "screenshots/generation-idle.png",
+      "screenshots/asset-gallery-player.png",
+      "screenshots/asset-gallery-tileset.png",
+      "screenshots/asset-gallery-music.png",
+      "screenshots/routing-provider-selected.png",
+      "screenshots/routing-refreshed.png",
+      "screenshots/qa-default.png",
+      "screenshots/qa-failed.png",
+      "screenshots/qa-passed.png"
+    ],
+    "responsive": [
+      "screenshots/responsive/dashboard-1600x900.png",
+      "screenshots/responsive/dashboard-1366x768.png",
+      "screenshots/responsive/generation-studio-1600x900.png",
+      "screenshots/responsive/generation-studio-1366x768.png",
+      "screenshots/responsive/asset-gallery-1600x900.png",
+      "screenshots/responsive/asset-gallery-1366x768.png",
+      "screenshots/responsive/world-editor-1600x900.png",
+      "screenshots/responsive/world-editor-1366x768.png",
+      "screenshots/responsive/room-editor-1600x900.png",
+      "screenshots/responsive/room-editor-1366x768.png",
+      "screenshots/responsive/routing-inspector-1600x900.png",
+      "screenshots/responsive/routing-inspector-1366x768.png"
+    ],
+    "overview": "metroforge-current-ui-overview.png",
+    "missing": [
+      { "file": "generation-running.png", "reason": "Skipped (hang risk)" },
+      { "file": "routing-no-provider.png", "reason": "Empty/no-provider state not distinctly visible after refresh on this config (DEGRADED selection still shown on principal/alts)" }
+    ]
+  },
+  "docs": [
+    "REDESIGN_AUDIT.md",
+    "UI_COMPONENT_INVENTORY.md",
+    "DESIGN_TOKENS.md",
+    "ROUTES.md",
+    "audit-summary.json"
+  ]
+}

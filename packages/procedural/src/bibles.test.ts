@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateDesignBible } from '../src/bibles.js';
+import { generateDesignBible, generateStyleBible, applyStyleBiblePrompt } from '../src/bibles.js';
 import type { GameDNA } from '@metroforge/schemas';
 
 const dna: GameDNA = {
@@ -44,5 +44,18 @@ describe('generateDesignBible', () => {
     const a = generateDesignBible(dna, 'SMALL', 7);
     const b = generateDesignBible(dna, 'SMALL', 7);
     expect(a.audio.moodKeywords).toEqual(b.audio.moodKeywords);
+  });
+
+  it('derives a StyleBible consumed by asset prompts', () => {
+    const bible = generateDesignBible(dna, 'RELEASE_CANDIDATE', 184729);
+    const style = generateStyleBible(dna, bible.art);
+    expect(style.renderingStyle).toBe(dna.identity.visualStyle);
+    expect(style.palette.length).toBeGreaterThan(0);
+    expect(style.pixelResolution).toBe(16);
+    expect(style.nearestNeighbor).toBe(true);
+    expect(style.tileSize).toBe(16);
+    const prompt = applyStyleBiblePrompt(style, 'CHARACTER', 'relic hunter');
+    expect(prompt.toLowerCase()).toContain('pixel');
+    expect(prompt).toContain('relic hunter');
   });
 });

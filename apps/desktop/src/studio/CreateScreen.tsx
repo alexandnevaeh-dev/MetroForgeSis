@@ -73,7 +73,7 @@ export function CreateScreen({ bridgeReady }: { bridgeReady: boolean | null }) {
   }, [prompt, profile, mode, seed, archetype, refreshProjects, setSelectedPath]);
 
   return (
-    <section className="create-screen">
+    <section className="workspace-screen create-screen">
       <ScreenHeader
         eyebrow="Create"
         title="New Game"

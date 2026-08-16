@@ -8,6 +8,10 @@ const SECRET_ENV_VARS = [
   'GROQ_API_KEY',
   'OPENROUTER_API_KEY',
   'HUGGINGFACE_API_KEY',
+  'HF_TOKEN',
+  'STABILITY_API_KEY',
+  'DEEPAI_API_KEY',
+  'REPLICATE_API_TOKEN',
 ] as const;
 
 /** Fallback patterns for secrets that didn't come from one of the known env vars above (e.g.
@@ -26,6 +30,7 @@ const WHOLE_MATCH_SECRET_PATTERNS: RegExp[] = [
   /\bsk-[A-Za-z0-9_-]{8,}\b/g,
   /\bgsk_[A-Za-z0-9_-]{8,}\b/g,
   /\bhf_[A-Za-z0-9_-]{8,}\b/g,
+  /\br8_[A-Za-z0-9_-]{8,}\b/g,
 ];
 
 export function redactString(input: string): string {

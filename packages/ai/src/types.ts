@@ -89,4 +89,6 @@ export interface RoutingContext {
    *  no declared minVramMb are never excluded on this basis alone — absence of data is not
    *  evidence the model is too large, so we don't guess. Undefined disables VRAM filtering. */
   maxVramMb?: number;
+  /** LOWEST_COST mode: prefer cheaper costClass after health/capability filters. */
+  lowestCost?: boolean;
 }

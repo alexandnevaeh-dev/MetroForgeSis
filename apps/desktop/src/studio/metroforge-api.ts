@@ -25,6 +25,18 @@ export type CatalogModel = ModelEntry & {
   providerEnabled?: boolean;
   liveListed?: boolean | null;
   downloadable?: boolean;
+  catalogEligible?: boolean;
+  providerAvailable?: boolean;
+  runtimeEligible?: boolean;
+  hardwareCompatible?: boolean;
+  providerHealth?: string;
+};
+
+export type GodotResolveInfo = {
+  path: string | null;
+  source: string;
+  sourceLabel: string;
+  version: string | null;
 };
 
 export type ConcurrencyLane = {
@@ -66,12 +78,42 @@ export type AssetListItem = {
   seed?: number;
 };
 
+/** Canonical IPC → renderer shape for generateAsset (single or variant). No buffer. */
+export type GeneratedAssetRef = {
+  id?: string;
+  path: string;
+  provider?: string;
+  modelId?: string;
+  fallbackGenerated?: boolean;
+  critiquePassed?: boolean;
+  critiqueScore?: number;
+  maturity?: string;
+  productionReady?: boolean;
+  sourceType?: string;
+};
+
+export type GenerateAssetVariantResult = {
+  success: boolean;
+  asset?: GeneratedAssetRef;
+  errors?: string[];
+  warnings?: string[];
+};
+
+export type GenerateAssetResponse = {
+  success: boolean;
+  asset?: GeneratedAssetRef;
+  errors?: string[];
+  warnings?: string[];
+  variants?: GenerateAssetVariantResult[];
+};
+
 export type DesktopConfig = {
   appName: string;
   generatedGamesDir: string;
   defaultMode: string;
   defaultProfile: string;
   godotExecutable: string | null;
+  godotResolve?: GodotResolveInfo;
   ollamaBaseUrl: string;
   repoRoot: string;
   nvidiaImageModel: string;
@@ -85,6 +127,10 @@ export type DesktopConfig = {
     huggingfaceApiKey: boolean;
     comfyuiUrl: boolean;
     diffusersPython: boolean;
+    automatic1111Url: boolean;
+    stabilityApiKey: boolean;
+    deepaiApiKey: boolean;
+    replicateApiToken: boolean;
   };
   imageProviders: {
     id: string;
@@ -168,6 +214,7 @@ export type RoomCollisionPreview = {
 export type MetroforgeBridge = {
   getVersion: () => Promise<string>;
   getConfig: () => Promise<DesktopConfig>;
+  resolveGodot: (projectPath?: string | null) => Promise<GodotResolveInfo>;
   setAppSettings: (
     settings: Record<string, string>,
   ) => Promise<{ success: boolean; saved: Record<string, string> }>;
@@ -249,22 +296,7 @@ export type MetroforgeBridge = {
     variants?: number;
     assetId?: string;
     seed?: number;
-  }) => Promise<{
-    success: boolean;
-    asset?: {
-      path: string;
-      provider?: string;
-      fallbackGenerated?: boolean;
-      critiquePassed?: boolean;
-      critiqueScore?: number;
-    };
-    errors?: string[];
-    variants?: Array<{
-      success: boolean;
-      asset?: { path: string; provider?: string };
-      errors?: string[];
-    }>;
-  }>;
+  }) => Promise<GenerateAssetResponse>;
   listRooms: (projectPath: string) => Promise<Array<Record<string, unknown> & { id: string }>>;
   updateRoom: (
     projectPath: string,
@@ -295,6 +327,15 @@ export type MetroforgeBridge = {
   ) => () => void;
   onGenerationReviewPaused: (callback: (ctx: unknown) => void) => () => void;
   approveGenerationReview: (projectPath: string, approved: boolean) => Promise<unknown>;
+  getVisualSliceReview: (projectPath: string) => Promise<{
+    project: { status?: string; notes?: string; fakeAnimationDetected?: boolean } | null;
+    global: { visualSliceApproved: boolean; status: string };
+  }>;
+  decideVisualSliceReview: (
+    projectPath: string,
+    decision: 'approve' | 'reject',
+    notes?: string,
+  ) => Promise<{ status: string }>;
   getGenerationReviewState: (projectPath: string) => Promise<unknown>;
   getPreviewReadiness: (projectPath: string) => Promise<{ ready?: boolean }>;
   getConcurrencyStatus: () => Promise<ConcurrencyStatus>;
@@ -336,7 +377,14 @@ export type MetroforgeBridge = {
   exportProject: (
     projectPath: string,
     opts?: { force?: boolean; zip?: boolean; commercialSafe?: boolean },
-  ) => Promise<{ success: boolean; archivePath?: string; errors?: string[] }>;
+  ) => Promise<{
+    success: boolean;
+    archivePath?: string;
+    manifestPath?: string;
+    manifest?: Record<string, unknown>;
+    errors?: string[];
+    warnings?: string[];
+  }>;
   runProjectAcceptance: (
     projectPath: string,
     opts?: { skipRuntime?: boolean },

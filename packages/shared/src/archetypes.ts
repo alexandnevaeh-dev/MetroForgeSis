@@ -63,9 +63,11 @@ export const TOP_DOWN_PROFILE_DEFAULTS: Record<
   { regions: number; dungeonCount: number; townCount: number; chunkCols: number; chunkRows: number }
 > = {
   TINY_TEST: { regions: 1, dungeonCount: 1, townCount: 0, chunkCols: 2, chunkRows: 2 },
+  VISUAL_VERTICAL_SLICE: { regions: 1, dungeonCount: 1, townCount: 0, chunkCols: 3, chunkRows: 2 },
   SMALL: { regions: 3, dungeonCount: 3, townCount: 1, chunkCols: 8, chunkRows: 6 },
   MEDIUM: { regions: 6, dungeonCount: 6, townCount: 3, chunkCols: 16, chunkRows: 12 },
   LARGE: { regions: 8, dungeonCount: 8, townCount: 4, chunkCols: 20, chunkRows: 16 },
+  RELEASE_CANDIDATE: { regions: 6, dungeonCount: 5, townCount: 2, chunkCols: 12, chunkRows: 9 },
 };
 
 export const TOP_DOWN_DUNGEON_ITEMS = [
@@ -85,7 +87,16 @@ export function pickTopDownDungeonItems(profile: GenerationProfile): Array<{
   category: string;
   enabled: boolean;
 }> {
-  const count = profile === 'TINY_TEST' ? 1 : profile === 'SMALL' ? 3 : profile === 'MEDIUM' ? 6 : 8;
+  const count =
+    profile === 'TINY_TEST' || profile === 'VISUAL_VERTICAL_SLICE'
+      ? 1
+      : profile === 'SMALL'
+        ? 3
+        : profile === 'MEDIUM'
+          ? 6
+          : profile === 'RELEASE_CANDIDATE'
+            ? 5
+            : 8;
   return TOP_DOWN_DUNGEON_ITEMS.slice(0, count).map((item) => ({
     id: item.id,
     name: item.name,

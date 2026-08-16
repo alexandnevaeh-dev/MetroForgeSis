@@ -1,7 +1,7 @@
 extends AnimatedSprite2D
 
 @export var sheet_path: String = "assets/characters/player_walk.png"
-@export var frame_size: Vector2i = Vector2i(32, 32)
+@export var frame_size: Vector2i = Vector2i(64, 64)
 @export var frame_count: int = 4
 @export var fallback_color: Color = Color(0.35, 0.55, 0.95, 1)
 
@@ -41,8 +41,39 @@ func _build_frames() -> void:
 		_load_animation_frames(frames, "death", death_sheet_path, false)
 
 	sprite_frames = frames
-	centered = false
-	offset = Vector2(frame_size.x / 2.0, frame_size.y)
+	texture_filter = TEXTURE_FILTER_NEAREST
+	centered = true
+	# Bottom-center on the CharacterBody origin (feet).
+	offset = Vector2(0, -frame_size.y / 2.0)
+	_load_pose_overrides(frames)
+	speed_scale = 1.0
+
+
+## Loads canonical posed stills (player_idle_pose.png etc.) when generated.
+## Pose files are single frames on the same canvas as frame_size — they replace
+## the derived sheet for that animation name. Missing files are ignored.
+func _load_pose_overrides(frames: SpriteFrames) -> void:
+	var prefix := sheet_path.get_basename()
+	if prefix.ends_with("_walk"):
+		prefix = prefix.substr(0, prefix.length() - 5)
+	var pose_anims := ["idle", "run", "jump_start", "jump", "fall", "land", "attack", "hurt", "death", "dash"]
+	for anim in pose_anims:
+		var pose_path := "%s_%s_pose.png" % [prefix, anim]
+		var res_path := pose_path if pose_path.begins_with("res://") else "res://" + pose_path
+		if not ResourceLoader.exists(res_path) and not FileAccess.file_exists(res_path):
+			continue
+		if not frames.has_animation(anim):
+			frames.add_animation(anim)
+			if anim in ["attack", "hurt", "death", "jump_start", "jump", "land", "dash"]:
+				frames.set_animation_loop(anim, false)
+		frames.clear(anim)
+		var tex: Texture2D = load(res_path)
+		if tex == null:
+			continue
+		var atlas := AtlasTexture.new()
+		atlas.atlas = tex
+		atlas.region = Rect2(0, 0, frame_size.x, frame_size.y)
+		frames.add_frame(anim, atlas, 1.0)
 
 ## Loads a horizontal frame-strip sheet into the given animation. When `copy_to_idle` is
 ## true, this sheet's first frame is also used as the (currently single-frame) "idle"

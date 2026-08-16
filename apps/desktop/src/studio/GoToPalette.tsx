@@ -87,6 +87,20 @@ export function GoToPalette({
     return [...screens, ...projectRows, ...roomRows, ...assetRows];
   }, [query, projects, rooms, assets]);
 
+  const grouped = useMemo(
+    () =>
+      (
+        [
+          { title: 'Screens', rows: rows.filter((r) => r.kind === 'screen') },
+          { title: 'Projects', rows: rows.filter((r) => r.kind === 'project') },
+          { title: 'Rooms', rows: rows.filter((r) => r.kind === 'room') },
+          { title: 'Assets', rows: rows.filter((r) => r.kind === 'asset') },
+        ] as Array<{ title: string; rows: PaletteRow[] }>
+      ).filter((g) => g.rows.length > 0),
+    [rows],
+  );
+  const flatRows = useMemo((): PaletteRow[] => grouped.flatMap((g) => g.rows), [grouped]);
+
   useEffect(() => {
     if (open) {
       setQuery('');
@@ -127,7 +141,7 @@ export function GoToPalette({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose, rows.length]);
+  }, [open, onClose, flatRows.length]);
 
   const activate = (row: PaletteRow) => {
     if (row.kind === 'screen') onSelect(row.id);
@@ -160,35 +174,45 @@ export function GoToPalette({
           onKeyDown={(e) => {
             if (e.key === 'ArrowDown') {
               e.preventDefault();
-              setActiveIndex((i) => Math.min(rows.length - 1, i + 1));
+              setActiveIndex((i) => Math.min(flatRows.length - 1, i + 1));
             }
             if (e.key === 'ArrowUp') {
               e.preventDefault();
               setActiveIndex((i) => Math.max(0, i - 1));
             }
-            if (e.key === 'Enter' && rows[activeIndex]) {
-              activate(rows[activeIndex]!);
+            if (e.key === 'Enter' && flatRows[activeIndex]) {
+              activate(flatRows[activeIndex]!);
             }
           }}
         />
-        {rows.length === 0 ? (
+        {flatRows.length === 0 ? (
           <p className="goto-empty">No matching screens, projects, rooms, or assets.</p>
         ) : (
-          <ul>
-            {rows.map((row, index) => (
-              <li key={`${row.kind}-${row.id}`}>
-                <button
-                  type="button"
-                  className={index === activeIndex ? 'goto-active' : undefined}
-                  onMouseEnter={() => setActiveIndex(index)}
-                  onClick={() => activate(row)}
-                >
-                  <strong>{row.label}</strong>
-                  <span>{row.hint}</span>
-                </button>
-              </li>
+          <div className="goto-groups">
+            {grouped.map((group) => (
+              <div key={group.title} className="goto-group">
+                <p className="goto-group-label type-label">{group.title}</p>
+                <ul>
+                  {group.rows.map((row) => {
+                    const index = flatRows.indexOf(row);
+                    return (
+                      <li key={`${row.kind}-${row.id}`}>
+                        <button
+                          type="button"
+                          className={index === activeIndex ? 'goto-active' : undefined}
+                          onMouseEnter={() => setActiveIndex(index)}
+                          onClick={() => activate(row)}
+                        >
+                          <strong>{row.label}</strong>
+                          <span>{row.hint}</span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
       </div>
     </div>

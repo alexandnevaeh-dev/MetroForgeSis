@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import './studio/metroforge-api.js';
 import { GenerationStudio } from './studio/GenerationStudio.js';
 import { AssetsGallery } from './studio/AssetsGallery.js';
@@ -11,7 +11,7 @@ import { DungeonEditor } from './studio/DungeonEditor.js';
 import { ExportScreen } from './studio/ExportScreen.js';
 import { StatusBar } from './studio/StatusBar.js';
 import { GoToPalette } from './studio/GoToPalette.js';
-import { NAV_GROUPS, type NavId } from './studio/nav.js';
+import { NAV_GROUPS, ALL_NAV_ITEMS, type NavId } from './studio/nav.js';
 import { StudioProvider, useStudio } from './studio/StudioContext.js';
 import { ProjectSelect } from './studio/ProjectSelect.js';
 import { QAScreen } from './studio/QAScreen.js';
@@ -21,6 +21,16 @@ import { CreateScreen } from './studio/CreateScreen.js';
 import { ProjectsScreen } from './studio/ProjectsScreen.js';
 import { PreviewScreen } from './studio/PreviewScreen.js';
 import { SettingsScreen } from './studio/SettingsScreen.js';
+import { HealthPopover } from './studio/HealthPopover.js';
+
+function navBreadcrumb(activeNav: NavId): { group: string; label: string } {
+  for (const group of NAV_GROUPS) {
+    const hit = group.items.find((item) => item.id === activeNav);
+    if (hit) return { group: group.label, label: hit.label };
+  }
+  const fallback = ALL_NAV_ITEMS.find((item) => item.id === activeNav);
+  return { group: 'Studio', label: fallback?.label ?? activeNav };
+}
 
 function TopCommandBar({
   version,
@@ -29,6 +39,7 @@ function TopCommandBar({
   onOpenPalette,
   sidebarCollapsed,
   onToggleSidebar,
+  bridgeReady,
 }: {
   version: string;
   activeNav: NavId;
@@ -36,8 +47,10 @@ function TopCommandBar({
   onOpenPalette: () => void;
   sidebarCollapsed: boolean;
   onToggleSidebar: () => void;
+  bridgeReady: boolean | null;
 }) {
   const { selectedProject, hasActiveProject } = useStudio();
+  const crumb = useMemo(() => navBreadcrumb(activeNav), [activeNav]);
 
   return (
     <header className="topbar" role="banner">
@@ -63,16 +76,37 @@ function TopCommandBar({
 
       <div className="topbar-project">
         <ProjectSelect compact />
-        {selectedProject?.path ? (
-          <span className="topbar-path mono" title={selectedProject.path}>
-            {selectedProject.path}
+        <nav className="topbar-breadcrumb type-caption" aria-label="Workspace context">
+          <span className="topbar-crumb-group">{crumb.group}</span>
+          <span className="topbar-crumb-sep" aria-hidden="true">
+            /
           </span>
-        ) : (
-          <span className="topbar-path muted">No active project</span>
-        )}
+          <span className="topbar-crumb-page">{crumb.label}</span>
+          {selectedProject?.title || selectedProject?.slug ? (
+            <>
+              <span className="topbar-crumb-sep" aria-hidden="true">
+                ·
+              </span>
+              <span className="topbar-crumb-project" title={selectedProject.path}>
+                {selectedProject.title ?? selectedProject.slug}
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="topbar-crumb-sep" aria-hidden="true">
+                ·
+              </span>
+              <span className="topbar-crumb-project muted">No project</span>
+            </>
+          )}
+        </nav>
       </div>
 
       <div className="topbar-actions">
+        <button type="button" className="topbar-action topbar-jump" onClick={onOpenPalette} title="Jump (Ctrl+K)">
+          <span className="topbar-jump-label">Jump</span>
+          <kbd>Ctrl+K</kbd>
+        </button>
         <button
           type="button"
           className={activeNav === 'Create' ? 'topbar-action active' : 'topbar-action'}
@@ -95,10 +129,7 @@ function TopCommandBar({
         >
           Preview
         </button>
-        <button type="button" className="topbar-action topbar-jump" onClick={onOpenPalette}>
-          Jump
-          <kbd>Ctrl+K</kbd>
-        </button>
+        <HealthPopover bridgeReady={bridgeReady} onOpenProviders={() => onNavigate('Providers')} />
       </div>
     </header>
   );
@@ -110,7 +141,7 @@ export function App() {
   const [bridgeReady, setBridgeReady] = useState<boolean | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
-    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 1366px)').matches,
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 1449px)').matches,
   );
 
   useEffect(() => {
@@ -124,12 +155,19 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 1366px)');
-    const onChange = (event: MediaQueryListEvent) => {
-      if (event.matches) setSidebarCollapsed(true);
+    const compact = window.matchMedia('(max-width: 1449px)');
+    const iconOnly = window.matchMedia('(max-width: 1199px)');
+    const onChange = () => {
+      if (iconOnly.matches || compact.matches) setSidebarCollapsed(true);
+      else setSidebarCollapsed(false);
     };
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
+    onChange();
+    compact.addEventListener('change', onChange);
+    iconOnly.addEventListener('change', onChange);
+    return () => {
+      compact.removeEventListener('change', onChange);
+      iconOnly.removeEventListener('change', onChange);
+    };
   }, []);
 
   useEffect(() => {
@@ -171,6 +209,7 @@ export function App() {
           onOpenPalette={() => setPaletteOpen(true)}
           sidebarCollapsed={sidebarCollapsed}
           onToggleSidebar={() => setSidebarCollapsed((c) => !c)}
+          bridgeReady={bridgeReady}
         />
         <aside className="sidebar" aria-label="Studio navigation">
           <nav className="sidebar-nav" aria-label="Studio">

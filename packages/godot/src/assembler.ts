@@ -28,6 +28,7 @@ import {
   type RecompileRoomsInput,
   type RecompileRoomsResult,
 } from './room-assembler.js';
+import { writePixelArtImport } from './godot-import.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..', '..', '..');
@@ -326,6 +327,9 @@ export class GodotProjectAssembler {
           const fullPath = join(input.outputDir, relPath.replace(/\//g, sep));
           mkdirSync(dirname(fullPath), { recursive: true });
           writeFileSync(fullPath, buffer);
+        if (relPath.replace(/\\/g, '/').endsWith('.png')) {
+          writePixelArtImport(fullPath, relPath.replace(/\\/g, '/'));
+        }
         }
 
         const texturePaths: Record<string, string> = {};
@@ -383,6 +387,23 @@ export class GodotProjectAssembler {
         'config/name="MetroForge Template"',
         `config/name="${input.gameDna.identity.title.replace(/"/g, '\\"')}"`,
       );
+      if (input.gameDna.profile === 'VISUAL_VERTICAL_SLICE') {
+        if (!projectGodot.includes('window/stretch/aspect=')) {
+          projectGodot = projectGodot.replace(
+            'window/stretch/mode="canvas_items"',
+            'window/stretch/mode="canvas_items"\nwindow/stretch/aspect="integer"',
+          );
+        }
+        mkdirSync(join(input.outputDir, 'data', 'quality'), { recursive: true });
+        writeFileSync(
+          join(input.outputDir, 'data', 'quality', 'camera_profile.json'),
+          JSON.stringify(
+            { zoom: 3, deadZone: 0.14, lookAheadPx: 40, pixelSnap: true },
+            null,
+            2,
+          ),
+        );
+      }
       writeFileSync(projectGodotPath, projectGodot);
 
       // Update title screen label via Main.tscn

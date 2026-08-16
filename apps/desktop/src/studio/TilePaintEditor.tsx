@@ -103,6 +103,8 @@ export function TilePalettePanel({
   );
 }
 
+export type TilePaintTool = 'paint' | 'erase';
+
 interface TilePaintEditorProps {
   projectPath: string;
   roomId: string;
@@ -112,6 +114,8 @@ interface TilePaintEditorProps {
   tileSize?: number;
   initialCells?: TileCell[];
   selectedTile: TileCoord;
+  /** Paint places the selected atlas tile; erase removes cells. */
+  tool?: TilePaintTool;
   onSaved?: () => void;
 }
 
@@ -124,6 +128,7 @@ export function TilePaintEditor({
   tileSize = 16,
   initialCells = [],
   selectedTile,
+  tool = 'paint',
   onSaved,
 }: TilePaintEditorProps) {
   const [cells, setCells] = useState<TileCell[]>(initialCells);
@@ -144,15 +149,16 @@ export function TilePaintEditor({
     return map;
   }, [cells]);
 
-  const paint = useCallback(
+  const applyTool = useCallback(
     (x: number, y: number) => {
       setCells((prev) => {
-        const next = prev.filter((c) => !(c.x === x && c.y === y));
-        next.push({ x, y, col: selectedTile.col, row: selectedTile.row });
-        return next;
+        const without = prev.filter((c) => !(c.x === x && c.y === y));
+        if (tool === 'erase') return without;
+        without.push({ x, y, col: selectedTile.col, row: selectedTile.row });
+        return without;
       });
     },
-    [selectedTile],
+    [selectedTile, tool],
   );
 
   const save = async () => {
@@ -176,17 +182,22 @@ export function TilePaintEditor({
   return (
     <div className="tile-paint">
       <div className="mf-panel-head">
-        <h3 className="mf-panel-title">Paint · {biomeId}</h3>
+        <h3 className="mf-panel-title">{tool === 'erase' ? 'Erase' : 'Paint'} · {biomeId}</h3>
         <span className="hint mono">
-          tile {selectedTile.col},{selectedTile.row}
+          {tool === 'erase' ? 'remove cells' : `tile ${selectedTile.col},${selectedTile.row}`}
         </span>
       </div>
       <div
         className="tile-canvas-wrap"
         style={{ width: width * scale, height: height * scale, overflow: 'auto' }}
       >
-        <svg width={width * scale} height={height * scale} viewBox={`0 0 ${width} ${height}`}>
-          <rect x={0} y={0} width={width} height={height} fill="#0f172a" />
+        <svg
+          width={width * scale}
+          height={height * scale}
+          viewBox={`0 0 ${width} ${height}`}
+          style={{ imageRendering: 'pixelated' }}
+        >
+          <rect x={0} y={0} width={width} height={height} fill="var(--canvas-bg, #0f172a)" />
           {Array.from({ length: cols * rows }).map((_, i) => {
             const x = i % cols;
             const y = Math.floor(i / cols);
@@ -203,8 +214,8 @@ export function TilePaintEditor({
                   fill={cell ? '#475569' : '#1e293b'}
                   stroke="#334155"
                   strokeWidth={0.5}
-                  onClick={() => paint(x, y)}
-                  style={{ cursor: 'crosshair' }}
+                  onClick={() => applyTool(x, y)}
+                  style={{ cursor: tool === 'erase' ? 'cell' : 'crosshair' }}
                 />
                 {cell && (
                   <rect

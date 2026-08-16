@@ -10,9 +10,9 @@ export const PRODUCT = {
 
 /**
  * FREE_ONLY/LOCAL_ONLY/HYBRID_FREE/CUSTOM are the original 4 modes — preserved exactly.
- * NVIDIA_ONLY/COMMERCIAL_SAFE/OFFLINE/FASTEST/HIGHEST_QUALITY/LOW_VRAM/BALANCED are the
- * generation-mode expansion (packages/ai/src/registry.ts CapabilityRouter, generation-router.ts
- * GenerationRouter.generate()). Keep in sync with GenerationModeSchema in
+ * NVIDIA_ONLY/COMMERCIAL_SAFE/OFFLINE/FASTEST/HIGHEST_QUALITY/LOW_VRAM/BALANCED/LOWEST_COST
+ * are the generation-mode expansion (packages/ai/src/registry.ts CapabilityRouter,
+ * generation-router.ts GenerationRouter.generate()). Keep in sync with GenerationModeSchema in
  * packages/schemas/src/core.ts — two independently-maintained definitions of the same set
  * (a TS type here for compile-time use, a Zod enum there for runtime validation).
  */
@@ -27,9 +27,28 @@ export type GenerationMode =
   | 'FASTEST'
   | 'HIGHEST_QUALITY'
   | 'LOW_VRAM'
-  | 'BALANCED';
+  | 'BALANCED'
+  | 'LOWEST_COST';
 
-export type GenerationProfile = 'TINY_TEST' | 'SMALL' | 'MEDIUM' | 'LARGE';
+export type GenerationProfile =
+  | 'TINY_TEST'
+  | 'VISUAL_VERTICAL_SLICE'
+  | 'SMALL'
+  | 'MEDIUM'
+  | 'LARGE'
+  | 'RELEASE_CANDIDATE';
+
+export const GENERATION_PROFILES: readonly GenerationProfile[] = [
+  'TINY_TEST',
+  'VISUAL_VERTICAL_SLICE',
+  'SMALL',
+  'MEDIUM',
+  'LARGE',
+  'RELEASE_CANDIDATE',
+] as const;
+
+/** Profiles that may emit hundreds of final visual assets. Blocked until a human approves a visual slice. */
+export const MASS_VISUAL_PROFILES: readonly GenerationProfile[] = ['LARGE', 'RELEASE_CANDIDATE'];
 
 export type GameArchetype = 'SIDE_VIEW_METROIDVANIA' | 'TOP_DOWN_ACTION_ADVENTURE';
 
@@ -97,6 +116,17 @@ export const PROFILE_DEFAULTS: Record<
     npcs: 1,
     quests: 1,
   },
+  /** One-biome visual quality reference — 10 connected rooms, not a content dump. */
+  VISUAL_VERTICAL_SLICE: {
+    biomes: 1,
+    roomsMin: 10,
+    roomsMax: 10,
+    abilities: 1,
+    enemies: 4,
+    bosses: 1,
+    npcs: 1,
+    quests: 1,
+  },
   SMALL: {
     biomes: 3,
     roomsMin: 30,
@@ -126,6 +156,17 @@ export const PROFILE_DEFAULTS: Record<
     bosses: 8,
     npcs: 15,
     quests: 20,
+  },
+  /** Side-view RC scale: 5–7 regions, 35–60 rooms — between SMALL and MEDIUM, not a fake room dump. */
+  RELEASE_CANDIDATE: {
+    biomes: 6,
+    roomsMin: 38,
+    roomsMax: 52,
+    abilities: 5,
+    enemies: 10,
+    bosses: 4,
+    npcs: 5,
+    quests: 4,
   },
 };
 

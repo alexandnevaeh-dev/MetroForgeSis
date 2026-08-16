@@ -74,6 +74,24 @@ describe('GameDNASchema', () => {
 });
 
 describe('ProjectSchema', () => {
+  it('validates RELEASE_CANDIDATE profile', () => {
+    const now = new Date().toISOString();
+    const project = {
+      id: 'proj_rc',
+      slug: 'heart-engine',
+      title: 'Heart Engine',
+      description: 'RC',
+      profile: 'RELEASE_CANDIDATE' as const,
+      mode: 'HYBRID_FREE' as const,
+      seed: 184729,
+      outputPath: 'GeneratedGames/heart-engine',
+      createdAt: now,
+      updatedAt: now,
+      status: 'draft' as const,
+    };
+    expect(ProjectSchema.parse(project).profile).toBe('RELEASE_CANDIDATE');
+  });
+
   it('validates project', () => {
     const now = new Date().toISOString();
     const project = {

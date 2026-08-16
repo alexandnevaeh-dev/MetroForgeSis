@@ -4,6 +4,7 @@ export {
   ModelRegistry,
   CapabilityRouter,
   FallbackManager,
+  isProviderLiveRouteEligible,
 } from './registry.js';
 export { OllamaProvider } from './providers/ollama.js';
 export type { OllamaConfig } from './providers/ollama.js';
@@ -35,6 +36,7 @@ export {
   reconcileModelCatalog,
   reconcileCatalogEntries,
   fetchLiveModelIdsByProvider,
+  computeHardwareCompatible,
 } from './catalog-reconciliation.js';
 export type { ReconciledCatalogEntry } from './catalog-reconciliation.js';
 export { bootstrapProviders, listProviderStatus } from './bootstrap.js';

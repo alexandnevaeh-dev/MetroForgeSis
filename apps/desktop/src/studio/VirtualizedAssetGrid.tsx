@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AssetRecord } from './types.js';
+import { Badge } from './ui/index.js';
 
-const CARD_HEIGHT = 168;
+const CARD_HEIGHT = 148;
+const CARD_WIDTH = 148;
 const OVERSCAN = 4;
 
 function maturityLabel(asset: AssetRecord): string {
@@ -26,6 +28,15 @@ function maturityLabel(asset: AssetRecord): string {
   }
 }
 
+function maturityTone(asset: AssetRecord): 'success' | 'warning' | 'danger' | 'muted' | 'info' {
+  const raw = (asset.maturity ?? '').toUpperCase();
+  if (asset.productionReady || raw === 'PRODUCTION_READY') return 'success';
+  if (asset.critiquePassed === false || raw === 'REJECTED') return 'danger';
+  if (asset.fallbackGenerated || raw === 'PLACEHOLDER' || raw === 'QA_REVIEW') return 'warning';
+  if (raw === 'COMPILED' || raw === 'GENERATED_SOURCE') return 'info';
+  return 'muted';
+}
+
 interface VirtualizedAssetGridProps {
   assets: AssetRecord[];
   selectedId?: string;
@@ -36,20 +47,25 @@ export function VirtualizedAssetGrid({ assets, selectedId, onSelect }: Virtualiz
   const containerRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(640);
+  const [viewportWidth, setViewportWidth] = useState(800);
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => setViewportHeight(el.clientHeight));
+    const ro = new ResizeObserver(() => {
+      setViewportHeight(el.clientHeight);
+      setViewportWidth(el.clientWidth);
+    });
     ro.observe(el);
     setViewportHeight(el.clientHeight);
+    setViewportWidth(el.clientWidth);
     return () => ro.disconnect();
   }, []);
 
-  const columns = useMemo(() => {
-    const width = containerRef.current?.clientWidth ?? 800;
-    return Math.max(1, Math.floor(width / 180));
-  }, [viewportHeight, assets.length]);
+  const columns = useMemo(
+    () => Math.max(1, Math.floor(viewportWidth / (CARD_WIDTH + 12))),
+    [viewportWidth],
+  );
 
   const rowCount = Math.ceil(assets.length / columns);
   const totalHeight = rowCount * CARD_HEIGHT;
@@ -72,12 +88,12 @@ export function VirtualizedAssetGrid({ assets, selectedId, onSelect }: Virtualiz
             <button
               key={asset.id}
               type="button"
-              className={selectedId === asset.id ? 'asset-card selected' : 'asset-card'}
+              className={selectedId === asset.id ? 'asset-card dense selected' : 'asset-card dense'}
               style={{
                 position: 'absolute',
                 top: row * CARD_HEIGHT,
-                left: col * 180,
-                width: 168,
+                left: col * (CARD_WIDTH + 12),
+                width: CARD_WIDTH,
                 height: CARD_HEIGHT - 8,
               }}
               onClick={() => onSelect(asset)}
@@ -93,12 +109,27 @@ export function VirtualizedAssetGrid({ assets, selectedId, onSelect }: Virtualiz
               ) : (
                 <div className="asset-placeholder">{asset.category}</div>
               )}
-              <span className="tag asset-maturity-badge" title="Asset maturity">
-                {maturityLabel(asset)}
-              </span>
+              <div className="asset-card-badges">
+                <Badge tone={maturityTone(asset)} className="asset-maturity-badge">
+                  {maturityLabel(asset)}
+                </Badge>
+                {asset.provider ? (
+                  <Badge tone="muted" className="asset-provider-badge">
+                    {asset.provider}
+                  </Badge>
+                ) : null}
+                {typeof asset.critiqueScore === 'number' ? (
+                  <Badge
+                    tone={asset.critiquePassed === false ? 'danger' : asset.critiquePassed ? 'success' : 'muted'}
+                    className="asset-qa-badge"
+                  >
+                    QA {asset.critiqueScore}
+                  </Badge>
+                ) : null}
+              </div>
               <figcaption>
                 <strong>{asset.id}</strong>
-                <span>{asset.provider ?? 'unknown'}</span>
+                <span>{asset.category}</span>
               </figcaption>
             </button>
           );

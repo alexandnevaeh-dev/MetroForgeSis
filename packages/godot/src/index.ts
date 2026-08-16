@@ -8,3 +8,5 @@ export {
   pickRoomPickupItem,
 } from './room-assembler.js';
 export type { PublishedRoomRecord, TileCell, RoomArchetypeFidelityIssue } from './room-assembler.js';
+export { buildRoomTileCells, floorTopPx } from './tile-layout.js';
+export { writePixelArtImport, pixelArtImportFile } from './godot-import.js';

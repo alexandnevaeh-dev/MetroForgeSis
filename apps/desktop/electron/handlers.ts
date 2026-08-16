@@ -2,7 +2,7 @@ import { ipcMain, shell } from 'electron';
 import { readdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve as resolvePath, basename } from 'node:path';
 import { getVersionString } from '@metroforge/core';
-import { loadConfig, resolveGeneratedGamesPath, isPathWithinRoot, type GameArchetype, parseProviderEnabledMap, isProviderEnabledSettingKey, isProviderUserEnabled } from '@metroforge/shared';
+import { loadConfig, resolveGeneratedGamesPath, isPathWithinRoot, type GameArchetype, parseProviderEnabledMap, isProviderEnabledSettingKey } from '@metroforge/shared';
 import {
   GenerationPipeline,
   computeOverallProgress,
@@ -31,6 +31,8 @@ import {
   setProjectAllowPlaceholders,
   backfillProjectAssetMaturity,
   remapProjectAbilities,
+  applyVisualReviewDecision,
+  visualReviewPath,
   type GenerationEvent,
   type WorldEditCommand,
   type GenerationControlMode,
@@ -58,18 +60,19 @@ import {
   launchGodotGame,
   exportProject,
   refreshProjectTemplate,
+  resolveGodotForProject,
+  type GodotResolveResult,
 } from '@metroforge/tools';
 import {
-  ComfyUIProvider,
-  DiffusersProvider,
-  NvidiaImageProvider,
   ImageProviderRegistry,
   explainImageProviderRouting,
   resolveImageProviderHealth,
   statusToLegacyHealth,
   createVisionCritic,
+  registerFoundryImageProviders,
 } from '@metroforge/assets';
 import type { GenerationMode, GenerationProfile } from '@metroforge/shared';
+import { writeVisualSliceApproval, readVisualSliceApproval } from '@metroforge/shared';
 import { generationEventStore } from './generation-bus.js';
 import { GenerationQueue } from './generation-queue.js';
 import {
@@ -156,86 +159,23 @@ async function probeImageProviders(
   hardwareProfile?: string,
 ) {
   const registry = new ImageProviderRegistry();
-  const disabled: Array<{
-    id: string;
-    local: boolean;
-    priority: number;
-    healthy: boolean;
-    health: string;
-    status: string;
-    reason: string;
-    userEnabled: boolean;
-  }> = [];
-
-  const allow = (id: string) => isProviderUserEnabled(providerEnabled, id);
-
-  const comfyuiUrl = process.env.COMFYUI_BASE_URL;
-  if (comfyuiUrl) {
-    if (allow('comfyui')) {
-      registry.register({
-        provider: new ComfyUIProvider({ baseUrl: comfyuiUrl }),
-        local: true,
-        priority: 90,
-      });
-    } else {
-      disabled.push({
-        id: 'comfyui',
-        local: true,
-        priority: 90,
-        healthy: false,
-        health: 'disabled',
-        status: 'DISABLED',
-        reason: 'Disabled in Settings',
-        userEnabled: false,
-      });
-    }
-  }
-  if (process.env.NVIDIA_API_KEY) {
-    if (allow('nvidia-image')) {
-      registry.register({
-        provider: new NvidiaImageProvider({
-          apiKey: process.env.NVIDIA_API_KEY,
-          baseUrl: process.env.NVIDIA_API_BASE_URL,
-          modelId: nvidiaImageModel?.trim() || process.env.NVIDIA_IMAGE_MODEL,
-          pythonPath: process.env.DIFFUSERS_PYTHON,
-        }),
-        local: false,
-        priority: 88,
-      });
-    } else {
-      disabled.push({
-        id: 'nvidia-image',
-        local: false,
-        priority: 88,
-        healthy: false,
-        health: 'disabled',
-        status: 'DISABLED',
-        reason: 'Disabled in Settings',
-        userEnabled: false,
-      });
-    }
-  }
-  if (allow('diffusers')) {
-    registry.register({
-      provider: new DiffusersProvider({
-        pythonPath: process.env.DIFFUSERS_PYTHON,
-        modelId: process.env.DIFFUSERS_MODEL_ID,
-      }),
-      local: true,
-      priority: 85,
-    });
-  } else {
-    disabled.push({
-      id: 'diffusers',
-      local: true,
-      priority: 85,
-      healthy: false,
-      health: 'disabled',
-      status: 'DISABLED',
-      reason: 'Disabled in Settings',
-      userEnabled: false,
-    });
-  }
+  const disabled = registerFoundryImageProviders(registry, {
+    comfyuiUrl: process.env.COMFYUI_BASE_URL,
+    automatic1111Url: process.env.AUTOMATIC1111_BASE_URL,
+    diffusersPython: process.env.DIFFUSERS_PYTHON,
+    diffusersModelId: process.env.DIFFUSERS_MODEL_ID,
+    nvidiaApiKey: process.env.NVIDIA_API_KEY,
+    nvidiaApiBaseUrl: process.env.NVIDIA_API_BASE_URL,
+    nvidiaImageModel: nvidiaImageModel?.trim() || process.env.NVIDIA_IMAGE_MODEL,
+    huggingfaceApiKey: process.env.HUGGINGFACE_API_KEY ?? process.env.HF_TOKEN,
+    huggingfaceImageModel: process.env.HF_IMAGE_MODEL,
+    stabilityApiKey: process.env.STABILITY_API_KEY,
+    deepaiApiKey: process.env.DEEPAI_API_KEY,
+    replicateApiToken: process.env.REPLICATE_API_TOKEN,
+    providerEnabled,
+    commercialUseRequired: mode === 'COMMERCIAL_SAFE',
+    includeRetrieval: false,
+  });
 
   const providers: Array<{
     id: string;
@@ -386,6 +326,19 @@ export function registerIpcHandlers(cwd: string): void {
   const dataDir = config.dataDir || join(cwd, '.metroforge');
   void applyStoredConcurrency(dataDir);
 
+  /** Canonical Godot path for Settings / Doctor / Preview / Play / QA / export — prefs beat env. */
+  async function resolveCanonicalGodot(
+    projectPath?: string | null,
+  ): Promise<GodotResolveResult> {
+    const cfg = loadConfig();
+    const prefs = await loadAppPreferences(cfg.dataDir || join(cwd, '.metroforge'));
+    return resolveGodotForProject({
+      preference: prefs[APP_SETTING_KEYS.godotExecutable] ?? null,
+      envPath: cfg.godotExecutable,
+      projectPath: projectPath ?? null,
+    });
+  }
+
   generationQueue.setExecutor(async (job) => {
     if (job.type === 'generate_game') {
       const active = activeGenerations.get(job.id);
@@ -464,6 +417,10 @@ export function registerIpcHandlers(cwd: string): void {
 
   ipcMain.handle('get-version', () => getVersionString());
 
+  ipcMain.handle('resolve-godot', async (_event, projectPath?: string | null) => {
+    return resolveCanonicalGodot(projectPath ?? null);
+  });
+
   ipcMain.handle('get-config', async () => {
     const config = loadConfig();
     const dataDir = config.dataDir || join(cwd, '.metroforge');
@@ -488,13 +445,20 @@ export function registerIpcHandlers(cwd: string): void {
     const visionCriticAvailable = await visionCritic.isAvailable();
     const defaultMode = prefs[APP_SETTING_KEYS.defaultMode] ?? config.defaultMode;
     const defaultProfile = prefs[APP_SETTING_KEYS.defaultProfile] ?? config.defaultProfile;
-    const godotExecutable = prefs[APP_SETTING_KEYS.godotExecutable] ?? config.godotExecutable ?? null;
+    const godotResolved = await resolveCanonicalGodot();
+    const godotExecutable = godotResolved.path;
     return {
       appName: config.appName,
       generatedGamesDir: resolveGeneratedGamesPath(config, cwd),
       defaultMode,
       defaultProfile,
       godotExecutable,
+      godotResolve: {
+        path: godotResolved.path,
+        source: godotResolved.source,
+        sourceLabel: godotResolved.sourceLabel,
+        version: godotResolved.version,
+      },
       ollamaBaseUrl: config.ollamaBaseUrl,
       repoRoot: cwd,
       nvidiaImageModel,
@@ -505,9 +469,13 @@ export function registerIpcHandlers(cwd: string): void {
         geminiApiKey: Boolean(process.env.GEMINI_API_KEY),
         groqApiKey: Boolean(process.env.GROQ_API_KEY),
         openrouterApiKey: Boolean(process.env.OPENROUTER_API_KEY),
-        huggingfaceApiKey: Boolean(process.env.HUGGINGFACE_API_KEY),
+        huggingfaceApiKey: Boolean(process.env.HUGGINGFACE_API_KEY ?? process.env.HF_TOKEN),
         comfyuiUrl: Boolean(process.env.COMFYUI_BASE_URL),
         diffusersPython: Boolean(process.env.DIFFUSERS_PYTHON ?? process.env.DIFFUSERS_MODEL_ID),
+        automatic1111Url: Boolean(process.env.AUTOMATIC1111_BASE_URL),
+        stabilityApiKey: Boolean(process.env.STABILITY_API_KEY),
+        deepaiApiKey: Boolean(process.env.DEEPAI_API_KEY),
+        replicateApiToken: Boolean(process.env.REPLICATE_API_TOKEN),
       },
       imageProviders,
       visionCritic: {
@@ -542,21 +510,38 @@ export function registerIpcHandlers(cwd: string): void {
 
   ipcMain.handle('run-doctor', async () => {
     const config = loadConfig();
+    const dataDir = config.dataDir || join(cwd, '.metroforge');
+    const prefs = await loadAppPreferences(dataDir);
+    const godotResolved = await resolveCanonicalGodot();
     const registry = new ToolRegistry();
     const tools = await registry.detectAll({
-      godotPath: config.godotExecutable,
+      godotPreference: prefs[APP_SETTING_KEYS.godotExecutable] ?? null,
+      godotEnvPath: config.godotExecutable,
       ollamaUrl: config.ollamaBaseUrl,
     });
-    const toolResults = tools.map((t) => ({
-      name: t.name,
-      status: t.status,
-      message: t.message,
-    }));
+    // Prefer canonical message so Doctor matches Settings source label.
+    const toolResults = tools.map((t) => {
+      if (t.id === 'godot') {
+        return {
+          name: t.name,
+          status: godotResolved.version ? 'PASS' : godotResolved.path ? 'WARN' : 'WARN',
+          message: godotResolved.version
+            ? `${godotResolved.version} · ${godotResolved.sourceLabel} · ${godotResolved.path}`
+            : godotResolved.path
+              ? `Configured but --version failed (${godotResolved.sourceLabel}): ${godotResolved.path}`
+              : 'Not detected — set Settings Godot path or GODOT_EXECUTABLE',
+        };
+      }
+      return {
+        name: t.name,
+        status: t.status,
+        message: t.message,
+      };
+    });
 
     const { registry: textRegistry } = await bootstrapProviders(
       await textBootstrapConfig(dataDir, 'HYBRID_FREE', config.ollamaBaseUrl),
     );
-    const prefs = await loadAppPreferences(dataDir);
     const hwDoctor = new HardwareProfiler().profile();
     const { providers: imageProviders } = await probeImageProviders(
       config.defaultMode,
@@ -635,7 +620,12 @@ export function registerIpcHandlers(cwd: string): void {
     );
     const liveIds = await fetchLiveModelIdsByProvider(registry);
     const providerIds = new Set(registry.listEnabled().map((p) => p.id));
-    let entries = reconcileCatalogEntries(catalog, models, liveIds, providerIds);
+    const providerHealthById = new Map(registry.list().map((p) => [p.id, p.health]));
+    const hw = new HardwareProfiler().profile();
+    let entries = reconcileCatalogEntries(catalog, models, liveIds, providerIds, {
+      hardware: hw,
+      providerHealthById,
+    });
     if (filter?.capability) {
       entries = entries.filter((m) =>
         m.capabilities.includes(filter.capability as import('@metroforge/schemas').ModelCapability),
@@ -713,8 +703,12 @@ export function registerIpcHandlers(cwd: string): void {
     );
     const liveIds = await fetchLiveModelIdsByProvider(registry);
     const providerIds = new Set(registry.listEnabled().map((p) => p.id));
-    const entries = reconcileCatalogEntries(catalog, models, liveIds, providerIds);
+    const providerHealthById = new Map(registry.list().map((p) => [p.id, p.health]));
     const hw = new HardwareProfiler().profile();
+    const entries = reconcileCatalogEntries(catalog, models, liveIds, providerIds, {
+      hardware: hw,
+      providerHealthById,
+    });
     const textTrace = explainModelRouting(
       entries,
       capability as import('@metroforge/schemas').ModelCapability,
@@ -834,6 +828,30 @@ export function registerIpcHandlers(cwd: string): void {
         local: true,
         configured: true,
         hint: 'Diffusers local worker (may still be unhealthy)',
+      },
+      {
+        id: 'automatic1111',
+        local: true,
+        configured: Boolean(process.env.AUTOMATIC1111_BASE_URL),
+        hint: 'Set AUTOMATIC1111_BASE_URL (default http://127.0.0.1:7860 with --api)',
+      },
+      {
+        id: 'huggingface-image',
+        local: false,
+        configured: Boolean(process.env.HUGGINGFACE_API_KEY ?? process.env.HF_TOKEN),
+        hint: 'Set HUGGINGFACE_API_KEY for hosted image inference',
+      },
+      {
+        id: 'stability',
+        local: false,
+        configured: Boolean(process.env.STABILITY_API_KEY),
+        hint: 'Set STABILITY_API_KEY (paid — excluded from FREE_ONLY)',
+      },
+      {
+        id: 'replicate',
+        local: false,
+        configured: Boolean(process.env.REPLICATE_API_TOKEN),
+        hint: 'Set REPLICATE_API_TOKEN (paid escape hatch)',
       },
     ];
     for (const expected of expectedImageProviders) {
@@ -1007,12 +1025,23 @@ export function registerIpcHandlers(cwd: string): void {
 
   ipcMain.handle('open-in-godot', async (_event, projectPath: string) => {
     const config = loadConfig();
-    return launchGodotEditor(projectPath, { godotPath: config.godotExecutable });
+    const dataDir = config.dataDir || join(cwd, '.metroforge');
+    const prefs = await loadAppPreferences(dataDir);
+    return launchGodotEditor(projectPath, {
+      preference: prefs[APP_SETTING_KEYS.godotExecutable] ?? null,
+      envPath: config.godotExecutable,
+      projectPath,
+    });
   });
 
   ipcMain.handle('play-in-godot', async (_event, projectPath: string) => {
     const config = loadConfig();
-    return launchGodotGame(projectPath, { godotPath: config.godotExecutable });
+    const dataDir = config.dataDir || join(cwd, '.metroforge');
+    const prefs = await loadAppPreferences(dataDir);
+    return launchGodotGame(projectPath, {
+      preference: prefs[APP_SETTING_KEYS.godotExecutable] ?? null,
+      envPath: config.godotExecutable,
+    });
   });
 
   ipcMain.handle(
@@ -1231,6 +1260,40 @@ export function registerIpcHandlers(cwd: string): void {
       persisted: readReviewState(projectPath),
     };
   });
+
+  ipcMain.handle('get-visual-slice-review', async (_event, projectPath: string) => {
+    assertProjectPath(projectPath, cwd);
+    const path = visualReviewPath(projectPath);
+    let project = null;
+    if (existsSync(path)) {
+      try {
+        project = JSON.parse(readFileSync(path, 'utf-8'));
+      } catch {
+        project = null;
+      }
+    }
+    return {
+      project,
+      global: readVisualSliceApproval(),
+    };
+  });
+
+  ipcMain.handle(
+    'decide-visual-slice-review',
+    async (_event, projectPath: string, decision: 'approve' | 'reject', notes?: string) => {
+      assertProjectPath(projectPath, cwd);
+      const state = applyVisualReviewDecision(projectPath, decision, notes);
+      writeVisualSliceApproval({
+        visualSliceApproved: decision === 'approve',
+        status: decision === 'approve' ? 'VISUAL_SLICE_APPROVED' : 'VISUAL_SLICE_REJECTED',
+        projectSlug: basename(projectPath),
+        approvedAt: decision === 'approve' ? new Date().toISOString() : undefined,
+        rejectedAt: decision === 'reject' ? new Date().toISOString() : undefined,
+        notes,
+      });
+      return state;
+    },
+  );
 
   ipcMain.handle('get-preview-readiness', async (_event, projectPath: string) => {
     assertProjectPath(projectPath, cwd);
@@ -1742,8 +1805,15 @@ export function registerIpcHandlers(cwd: string): void {
       const project = loadProjectContext(projectPath);
       const completion = analyzeProjectCompletion(project);
       const config = loadConfig();
-      const tools = await new ToolRegistry().detectAll({ godotPath: config.godotExecutable });
-      const godotPath = config.godotExecutable ?? tools.find((t) => t.id === 'godot')?.path ?? null;
+      const dataDir = config.dataDir || join(cwd, '.metroforge');
+      const prefs = await loadAppPreferences(dataDir);
+      const tools = await new ToolRegistry().detectAll({
+        godotPreference: prefs[APP_SETTING_KEYS.godotExecutable] ?? null,
+        godotEnvPath: config.godotExecutable,
+        godotProjectOverride: undefined,
+      });
+      const godotResolved = await resolveCanonicalGodot(projectPath);
+      const godotPath = godotResolved.path ?? tools.find((t) => t.id === 'godot')?.path ?? null;
       const report = await runProjectAcceptance({
         slug,
         projectPath,

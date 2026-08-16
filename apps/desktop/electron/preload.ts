@@ -3,6 +3,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 contextBridge.exposeInMainWorld('metroforge', {
   getVersion: () => ipcRenderer.invoke('get-version') as Promise<string>,
   getConfig: () => ipcRenderer.invoke('get-config'),
+  resolveGodot: (projectPath?: string | null) => ipcRenderer.invoke('resolve-godot', projectPath),
   setAppSettings: (settings: Record<string, string>) =>
     ipcRenderer.invoke('set-app-settings', settings) as Promise<{ success: boolean; saved: Record<string, string> }>,
   runDoctor: () => ipcRenderer.invoke('run-doctor'),
@@ -94,6 +95,9 @@ contextBridge.exposeInMainWorld('metroforge', {
   },
   approveGenerationReview: (projectPath: string, approved: boolean) =>
     ipcRenderer.invoke('approve-generation-review', projectPath, approved),
+  getVisualSliceReview: (projectPath: string) => ipcRenderer.invoke('get-visual-slice-review', projectPath),
+  decideVisualSliceReview: (projectPath: string, decision: 'approve' | 'reject', notes?: string) =>
+    ipcRenderer.invoke('decide-visual-slice-review', projectPath, decision, notes),
   getGenerationReviewState: (projectPath: string) =>
     ipcRenderer.invoke('get-generation-review-state', projectPath),
   getPreviewReadiness: (projectPath: string) =>

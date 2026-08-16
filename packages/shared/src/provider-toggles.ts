@@ -9,6 +9,13 @@ export const TOGGLEABLE_PROVIDER_IDS = [
   'comfyui',
   'nvidia-image',
   'diffusers',
+  'automatic1111',
+  'huggingface-image',
+  'kenney',
+  'opengameart',
+  'stability',
+  'deepai',
+  'replicate',
 ] as const;
 
 export type ToggleableProviderId = (typeof TOGGLEABLE_PROVIDER_IDS)[number];
@@ -26,6 +33,13 @@ export const IMAGE_PROVIDER_TOGGLE_IDS = [
   'comfyui',
   'nvidia-image',
   'diffusers',
+  'automatic1111',
+  'huggingface-image',
+  'kenney',
+  'opengameart',
+  'stability',
+  'deepai',
+  'replicate',
 ] as const satisfies readonly ToggleableProviderId[];
 
 const PROVIDER_ENABLED_KEY_RE = /^app\.provider\.([a-z0-9-]+)\.enabled$/;

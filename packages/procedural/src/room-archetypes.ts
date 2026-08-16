@@ -47,11 +47,29 @@ export interface AssignRoomArchetypesOptions {
   npcCount: number;
   biomeCount: number;
   seed: number;
+  profile?: GenerationProfile;
 }
+
+/** Visual slice: 10 purpose-built rooms. Ability shrine index must match abilityGateRoomIndex. */
+export const VISUAL_SLICE_ROOM_ARCHETYPES = [
+  'tutorial',
+  'traversal',
+  'combat',
+  'challenge',
+  'npc',
+  'ability_shrine',
+  'ability_gate',
+  'secret',
+  'save',
+  'boss',
+] as const;
 
 /** Deterministic + seeded archetype tags for every room in the world graph. */
 export function assignRoomArchetypes(options: AssignRoomArchetypesOptions): string[] {
   const rng = new SeededRNG(options.seed + 7919);
+  if (options.profile === 'VISUAL_VERTICAL_SLICE') {
+    return VISUAL_SLICE_ROOM_ARCHETYPES.slice(0, options.roomCount).map((tag) => tag);
+  }
   const interiorCount = Math.max(0, options.roomCount - 2);
 
   const abilityGateIndices = new Set(

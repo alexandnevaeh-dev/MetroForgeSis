@@ -1,10 +1,18 @@
 import type { GenerationMode } from '@metroforge/shared';
+import type { FoundryCostClass } from '@metroforge/schemas';
 import type {
   ImageGenerator,
   ImageProviderHealthReport,
   ImageProviderHealthStatus,
 } from './types/image-gen.js';
 import { healthReportIsSelectable, resolveImageProviderHealth } from './types/image-gen.js';
+import {
+  allowedByFreeOnly,
+  imageCostRank,
+  imageModeFlags,
+  nvidiaFamily,
+  resolveImageCostClass,
+} from './foundry/mode-flags.js';
 
 export interface ImageProviderRegistration {
   provider: ImageGenerator;
@@ -12,6 +20,17 @@ export interface ImageProviderRegistration {
    *  (ComfyUI/Diffusers today). A future hosted image provider would register `false`. */
   local: boolean;
   priority: number;
+  costClass?: FoundryCostClass;
+  family?: string;
+  kind?: 'generate' | 'retrieve';
+  capabilities?: string[];
+  supportsReferenceImages?: boolean;
+  qualityScore?: number;
+  speedScore?: number;
+  consistencyScore?: number;
+  reliabilityScore?: number;
+  license?: string;
+  commercialUse?: 'allowed' | 'restricted' | 'unknown';
 }
 
 export interface ImageRoutingContext {
@@ -66,20 +85,42 @@ export class ImageProviderRegistry {
     this.registrations.push(registration);
   }
 
-  /** Candidates in priority order, filtered by mode. LOCAL_ONLY excludes any non-local
-   *  provider. Remote providers are never filtered by local VRAM. On LOW_RESOURCE hardware,
+  /** Candidates in priority order, filtered by mode. LOCAL_ONLY/OFFLINE exclude non-local
+   *  providers. FREE_ONLY excludes paid/credit. NVIDIA_ONLY keeps nvidia-family providers.
+   *  Remote providers are never filtered by local VRAM. On LOW_RESOURCE hardware,
    *  remote/hosted candidates sort ahead of local runtimes so ~1GB iGPU machines prefer NVIDIA. */
   getCandidates(context: ImageRoutingContext = {}): ImageProviderRegistration[] {
-    const localOnly = context.mode === 'LOCAL_ONLY';
-    const preferRemote = context.hardwareProfile === 'LOW_RESOURCE';
+    const flags = imageModeFlags(context.mode);
+    const preferRemote = context.hardwareProfile === 'LOW_RESOURCE' && !flags.localOnly;
     return this.registrations
-      .filter((r) => !localOnly || r.local)
+      .filter((r) => {
+        if ((flags.localOnly || flags.offline) && !r.local) return false;
+        const cost = resolveImageCostClass(r.local, r.costClass);
+        if (flags.freeOnly && !allowedByFreeOnly(cost)) return false;
+        if (flags.nvidiaOnly && !nvidiaFamily(r.provider.id, r.family)) return false;
+        if (flags.commercialSafeOnly && r.commercialUse !== undefined && r.commercialUse !== 'allowed') {
+          return false;
+        }
+        return true;
+      })
       .sort((a, b) => {
+        if (flags.lowestCost) {
+          const cost =
+            imageCostRank(resolveImageCostClass(a.local, a.costClass)) -
+            imageCostRank(resolveImageCostClass(b.local, b.costClass));
+          if (cost !== 0) return cost;
+        }
         if (preferRemote && a.local !== b.local) {
           return a.local ? 1 : -1;
         }
+        if (flags.fastest) return (b.speedScore ?? b.priority) - (a.speedScore ?? a.priority);
+        if (flags.highestQuality) return (b.qualityScore ?? b.priority) - (a.qualityScore ?? a.priority);
         return b.priority - a.priority;
       });
+  }
+
+  list(): ImageProviderRegistration[] {
+    return [...this.registrations];
   }
 
   /** Health-checks candidates in priority order, returning the first reachable one.

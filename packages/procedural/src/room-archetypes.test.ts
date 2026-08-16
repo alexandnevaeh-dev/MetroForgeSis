@@ -76,4 +76,28 @@ describe('assignRoomArchetypes', () => {
       expect(allowed.has(archetype)).toBe(true);
     }
   });
+
+  it('locks VISUAL_VERTICAL_SLICE to the ten purpose-built rooms', () => {
+    const archetypes = assignRoomArchetypes({
+      roomCount: 10,
+      abilityCount: 1,
+      npcCount: 1,
+      biomeCount: 1,
+      seed: 1,
+      profile: 'VISUAL_VERTICAL_SLICE',
+    });
+    expect(archetypes).toEqual([
+      'tutorial',
+      'traversal',
+      'combat',
+      'challenge',
+      'npc',
+      'ability_shrine',
+      'ability_gate',
+      'secret',
+      'save',
+      'boss',
+    ]);
+    expect(archetypes[abilityGateRoomIndex(0, 1, 10)]).toBe('ability_shrine');
+  });
 });

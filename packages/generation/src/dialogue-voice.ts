@@ -18,9 +18,11 @@ export interface SynthesizeDialogueVoicesOptions {
 
 const VOICE_LINE_CAP: Record<GenerationProfile, number> = {
   TINY_TEST: 4,
+  VISUAL_VERTICAL_SLICE: 6,
   SMALL: 12,
   MEDIUM: 32,
   LARGE: 64,
+  RELEASE_CANDIDATE: 24,
 };
 
 /** Locate a Piper ONNX model under models/speech/ or PIPER_MODEL_PATH. */

@@ -409,5 +409,27 @@ describe('generateRoomScene combat sprites', () => {
     expect(scene).toContain('[node name="Background" type="ColorRect"');
     expect(scene).not.toContain('stretch_mode = 6');
     expect(scene).toContain('RoomTileMap.gd');
+    expect(scene).toContain('z_index = 0');
+    expect(scene).toContain('visible = false');
+  });
+
+  it('aligns floor collision with the ground tile row when a tileset is present', () => {
+    const scene = generateRoomScene('room_000', 0, {
+      ...baseOptions,
+      hasEnemy: false,
+      enemyIndex: 0,
+      isBossRoom: false,
+      bossId: '',
+      hasTileset: true,
+      tileSize: 32,
+      height: 600,
+      biomeTexturePath: 'assets/tilesets/biome_0/source.png',
+    });
+    const floorTop = Math.max(1, Math.floor((600 - 32 * 2) / 32)) * 32;
+    const thickness = 64;
+    const floorCenter = floorTop + thickness / 2;
+    expect(scene).toContain(`size = Vector2(800, ${thickness})`);
+    expect(scene).toContain(`position = Vector2(400, ${floorCenter})`);
+    expect(scene).toContain(`position = Vector2(100, ${floorTop})`);
   });
 });

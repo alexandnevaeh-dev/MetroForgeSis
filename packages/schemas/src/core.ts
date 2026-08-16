@@ -12,9 +12,17 @@ export const GenerationModeSchema = z.enum([
   'HIGHEST_QUALITY',
   'LOW_VRAM',
   'BALANCED',
+  'LOWEST_COST',
 ]);
 
-export const GenerationProfileSchema = z.enum(['TINY_TEST', 'SMALL', 'MEDIUM', 'LARGE']);
+export const GenerationProfileSchema = z.enum([
+  'TINY_TEST',
+  'VISUAL_VERTICAL_SLICE',
+  'SMALL',
+  'MEDIUM',
+  'LARGE',
+  'RELEASE_CANDIDATE',
+]);
 
 /** Gameplay genre plugin. Distinct from room `archetype` (tutorial/boss/shop). */
 export const GameArchetypeSchema = z.enum(['SIDE_VIEW_METROIDVANIA', 'TOP_DOWN_ACTION_ADVENTURE']);
@@ -81,6 +89,39 @@ export const ProjectMetadataSchema = z.object({
   gameDnaVersion: z.string(),
   generatorVersion: z.string(),
   archetype: GameArchetypeSchema.default('SIDE_VIEW_METROIDVANIA'),
+  /** Human visual-direction approval for this project (slice). Distinct from technical QA. */
+  visualSliceApproved: z.boolean().optional(),
+  visualReviewStatus: z
+    .enum([
+      'NOT_APPLICABLE',
+      'VISUAL_SLICE_REVIEW_REQUIRED',
+      'VISUAL_SLICE_APPROVED',
+      'VISUAL_SLICE_REJECTED',
+    ])
+    .optional(),
+  /** Per-project Asset Foundry overlay. Missing means inherit global mode/providers. */
+  assetFoundry: z
+    .object({
+      routingMode: z
+        .enum([
+          'free-only',
+          'local-only',
+          'offline',
+          'balanced',
+          'fastest',
+          'highest-quality',
+          'lowest-cost',
+          'nvidia-first',
+          'custom',
+        ])
+        .optional(),
+      enabledProviders: z.array(z.string()).optional(),
+      preferredImageProvider: z.string().optional(),
+      allowPaidFallback: z.boolean().optional(),
+      completionMode: z.enum(['prototype', 'production']).optional(),
+      localOnly: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 export type ProjectMetadata = z.infer<typeof ProjectMetadataSchema>;

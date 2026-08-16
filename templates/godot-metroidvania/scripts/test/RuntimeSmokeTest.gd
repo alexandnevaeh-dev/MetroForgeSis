@@ -68,11 +68,16 @@ func _ready() -> void:
 			_check("player_has_attack_animation", false)
 			_check("player_has_hurt_animation", false)
 
+	# Capture the visual-slice contact shots before test pickups and the Victory overlay.
+	await _capture_visual_slice_rooms(world)
+	player = get_tree().get_first_node_in_group("player")
+
 	_check_ability_pickup(player)
 	await _capture_named_screenshot("ability")
 	_check_npc_interaction(player)
 	await _check_boss_victory_flow()
 	await _check_quest_system(world)
+	player = get_tree().get_first_node_in_group("player")
 	_check_item_pickups(player)
 	_check_inventory_equip_ui(world)
 	await get_tree().process_frame
@@ -86,6 +91,7 @@ func _ready() -> void:
 	_check_boss_placement()
 	await _check_boss_attack_variety(player)
 	await _capture_named_screenshot("boss")
+	player = get_tree().get_first_node_in_group("player")
 	await _check_boss_weakness(player)
 	await _check_ability_gated_transition(player, world)
 
@@ -1046,6 +1052,85 @@ func _capture_named_screenshot(shot_id: String, hard: bool = false) -> bool:
 		shot_id, strategy, distinct.size(), img.get_width(), img.get_height(),
 	])
 	return err == OK
+
+
+func _is_visual_slice() -> bool:
+	if not FileAccess.file_exists("res://game_dna.json"):
+		return false
+	var file := FileAccess.open("res://game_dna.json", FileAccess.READ)
+	if file == null:
+		return false
+	var parsed = JSON.parse_string(file.get_as_text())
+	file.close()
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return false
+	return String(parsed.get("profile", "")) == "VISUAL_VERTICAL_SLICE"
+
+
+func _save_report_shot(shot_id: String, dest_name: String) -> void:
+	var qa := ProjectSettings.globalize_path("res://qa")
+	var reports := ProjectSettings.globalize_path("res://reports")
+	DirAccess.make_dir_recursive_absolute(reports)
+	var src := qa.path_join("screenshot_%s.png" % shot_id)
+	if FileAccess.file_exists(src):
+		DirAccess.copy_absolute(src, reports.path_join(dest_name))
+
+
+func _capture_visual_slice_rooms(world: Node) -> void:
+	if not _is_visual_slice():
+		return
+	if world == null or not world.has_method("transition_to_room"):
+		return
+	var mapping := {
+		"tutorial": "01-start.png",
+		"traversal": "02-traversal.png",
+		"combat": "03-combat.png",
+		"challenge": "04-vertical-room.png",
+		"ability_shrine": "05-ability-room.png",
+		"secret": "06-secret.png",
+		"save": "07-checkpoint.png",
+		"boss": "08-boss-room.png",
+	}
+	var rooms_path := "res://data/rooms/rooms.json"
+	if not FileAccess.file_exists(rooms_path):
+		return
+	var file := FileAccess.open(rooms_path, FileAccess.READ)
+	if file == null:
+		return
+	var parsed = JSON.parse_string(file.get_as_text())
+	file.close()
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return
+	var previous_room := GameManager.current_room_id
+	var rooms: Dictionary = parsed.get("rooms", {})
+	for room_id in rooms.keys():
+		var info = rooms[room_id]
+		if typeof(info) != TYPE_DICTIONARY:
+			continue
+		var tag := String(info.get("worldArchetype", info.get("archetype", "")))
+		if not mapping.has(tag):
+			continue
+		await world.transition_to_room(String(room_id))
+		await get_tree().process_frame
+		await get_tree().process_frame
+		# Room loads instantiate a new Player — never reuse a stale reference.
+		var _player := get_tree().get_first_node_in_group("player")
+		if _player == null:
+			push_warning("visual slice capture: no player in %s" % String(room_id))
+			continue
+		var shot_id := "slice_%s" % tag
+		await _capture_named_screenshot(shot_id)
+		_save_report_shot(shot_id, String(mapping[tag]))
+		if tag == "tutorial":
+			_save_report_shot(shot_id, "hud.png")
+		if tag == "boss":
+			await get_tree().create_timer(0.35).timeout
+			await _capture_named_screenshot("slice_boss_combat")
+			_save_report_shot("slice_boss_combat", "09-boss-combat.png")
+	if previous_room != "" and world.has_method("transition_to_room"):
+		await world.transition_to_room(previous_room)
+		await get_tree().process_frame
+		await get_tree().process_frame
 
 
 func _capture_gameplay_screenshot() -> void:

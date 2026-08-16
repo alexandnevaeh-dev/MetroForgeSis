@@ -136,6 +136,12 @@ export async function generateManualAsset(request: ManualAssetRequest): Promise<
       nvidiaApiKey: process.env.NVIDIA_API_KEY,
       nvidiaApiBaseUrl: process.env.NVIDIA_API_BASE_URL,
       nvidiaImageModel: request.nvidiaImageModel ?? process.env.NVIDIA_IMAGE_MODEL,
+      huggingfaceApiKey: process.env.HUGGINGFACE_API_KEY ?? process.env.HF_TOKEN,
+      huggingfaceImageModel: process.env.HF_IMAGE_MODEL,
+      automatic1111Url: process.env.AUTOMATIC1111_BASE_URL,
+      stabilityApiKey: process.env.STABILITY_API_KEY,
+      deepaiApiKey: process.env.DEEPAI_API_KEY,
+      replicateApiToken: process.env.REPLICATE_API_TOKEN,
       ollamaBaseUrl: config.ollamaBaseUrl,
       hardwareProfile: request.hardwareProfile,
     });

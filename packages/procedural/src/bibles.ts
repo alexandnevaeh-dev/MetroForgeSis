@@ -1,6 +1,13 @@
-import type { ArtBible, AudioBible, DesignBible, GameDNA } from '@metroforge/schemas';
+import type {
+  ArtBible,
+  AudioBible,
+  CharacterVisualDNA,
+  DesignBible,
+  GameDNA,
+  StyleBible,
+} from '@metroforge/schemas';
 import type { GenerationProfile } from '@metroforge/shared';
-import { PROFILE_DEFAULTS } from '@metroforge/shared';
+import { PROFILE_DEFAULTS, slugify, tileSizeForProfile } from '@metroforge/shared';
 import { SeededRNG } from './rng.js';
 
 const STYLE_PALETTES: Record<string, { name: string; hex: string; usage: string }[]> = {
@@ -48,9 +55,9 @@ export function generateArtBible(gameDna: GameDNA, seed: number): ArtBible {
       npc: `${gameDna.identity.visualStyle}, friendly readable silhouette`,
     },
     environmentGuidelines: {
-      tileStyle: `${gameDna.identity.visualStyle}, 16px grid, modular tiles`,
-      lighting: bucket === 'dark' ? 'low-key rim lighting' : 'soft ambient fill',
-      parallax: '2-3 layered backgrounds with subtle drift',
+      tileStyle: `${gameDna.identity.visualStyle}, ${gameDna.technical.tileSize}px grid, modular autotiles`,
+      lighting: bucket === 'dark' ? 'key light from upper-left, hard 1px rims' : 'soft ambient fill, key from upper-left',
+      parallax: '3 layered backgrounds (far, mid, near) plus optional foreground silhouette; no stretching',
     },
     uiGuidelines: {
       fontStyle: 'pixel or condensed sans',
@@ -127,4 +134,92 @@ export function generateDesignBible(
     art: generateArtBible(gameDna, seed),
     audio: generateAudioBible(gameDna, profile, seed + 1000),
   };
+}
+
+/** Persistable StyleBible derived from the existing ArtBible so asset prompts stay on one creative source. */
+export function generateStyleBible(gameDna: GameDNA, art: ArtBible): StyleBible {
+  const sideView = gameDna.archetype !== 'TOP_DOWN_ACTION_ADVENTURE';
+  const tileSize = gameDna.technical.tileSize || tileSizeForProfile(gameDna.profile);
+  const visualSlice = gameDna.profile === 'VISUAL_VERTICAL_SLICE';
+  const cameraZoom = visualSlice ? 3 : 2;
+  return {
+    styleId: slugify(gameDna.identity.visualStyle) || 'default-style',
+    renderingStyle: art.visualStyle,
+    pixelResolution: tileSize,
+    palette: art.palette,
+    outlineRules: '1px dark outline on characters and collidable tiles; no extra outlines on far BG',
+    lighting: art.environmentGuidelines.lighting,
+    materials: art.environmentGuidelines.tileStyle,
+    characterScale: `${tileSize * 2}px player height on ${tileSize}px grid`,
+    spritePerspective: sideView ? 'side view' : 'top-down',
+    environmentDensity: art.environmentGuidelines.parallax,
+    VFXStyle: art.promptPrefixes.VFX ?? `${art.visualStyle} particle VFX`,
+    UIStyle: art.uiGuidelines.hudTheme,
+    promptPrefixes: art.promptPrefixes,
+    negativePrompts: art.negativePrompts,
+    artStyle: art.visualStyle,
+    projection: sideView ? 'side-view' : 'top-down',
+    targetResolution: { width: 1920, height: 1080 },
+    internalRenderResolution: { width: 640, height: 360 },
+    tileSize,
+    pixelsPerUnit: tileSize,
+    playerSpriteWidth: 64,
+    playerSpriteHeight: 64,
+    enemyScaleRange: [48, 80],
+    bossScaleRange: [96, 160],
+    maximumPaletteSize: Math.max(8, art.palette.length),
+    shadingRules: 'flat base fills, one shadow step, one highlight step; no painterly gradients on gameplay sprites',
+    highlightRules: 'single specular catch from upper-left on metal/glass; never on far parallax',
+    lightingDirection: 'upper-left',
+    lightingContrast: visualSlice ? 'medium-high, readable silhouettes' : art.environmentGuidelines.lighting,
+    backgroundLayerCount: 3,
+    parallaxRules: 'far 0.15x, mid 0.4x, near 0.75x; no single stretched plate across rooms',
+    animationFPS: 10,
+    animationFrameRules: '4–8 unique posed frames per action; never scale/rotate/squash one still',
+    VFXScaleRules: 'hit sparks ≤ 24px; combat VFX never cover the player silhouette',
+    UIResolution: { width: 640, height: 360 },
+    cameraZoom,
+    cameraLookAhead: 40,
+    cameraDeadZone: 0.14,
+    pixelFiltering: 'nearest',
+    nearestNeighbor: true,
+    pixelSnap: true,
+    contrast: 'readable midtones, avoid crushed blacks covering the player',
+    saturation: 'controlled, biome-locked',
+    cameraScale: `${cameraZoom}x integer zoom`,
+    backgroundDepthRules: 'far dimmer, mid lit from left, near highest contrast',
+    dimension: '2d',
+  };
+}
+
+export function generateCharacterVisualDNA(gameDna: GameDNA, art: ArtBible): CharacterVisualDNA {
+  const tile = gameDna.technical.tileSize || 32;
+  return {
+    id: 'player',
+    silhouette: `readable two-tile (${tile * 2}px) humanoid, distinct head/weapon mass`,
+    bodyProportions: 'head ~1/3 of sprite, torso compact, feet planted on canvas bottom',
+    palette: art.palette.map((p) => p.hex),
+    clothing: `${gameDna.identity.visualStyle} fitted explorer kit, no costume swaps between frames`,
+    equipment: 'single visible weapon and belt pouches, same across all poses',
+    faceHair: `${gameDna.narrative.protagonist} face, consistent hair mass`,
+    weapon: gameDna.combat.meleeEnabled ? 'one-handed side-view melee blade, sheathed or in-hand consistently' : 'holstered tool',
+    spriteWidth: 64,
+    spriteHeight: 64,
+    orientation: 'side view, facing right in source',
+    lighting: 'upper-left key, 1px dark outline',
+    outline: art.uiGuidelines.iconStyle,
+    anchor: 'feet-center',
+    prompt: art.characterGuidelines.player,
+  };
+}
+
+export function applyStyleBiblePrompt(
+  styleBible: StyleBible | undefined,
+  capability: string,
+  prompt: string,
+): string {
+  if (!styleBible) return prompt;
+  const prefix = styleBible.promptPrefixes[capability] ?? `${styleBible.renderingStyle},`;
+  const palette = styleBible.palette.map((p) => `${p.name} ${p.hex}`).join(', ');
+  return `${prefix} ${styleBible.spritePerspective}, ${styleBible.lighting}, palette [${palette}]. ${prompt}`.trim();
 }

@@ -96,6 +96,7 @@ const COLLECTIBLE_NAMES = [
 export function collectibleCountForProfile(profile: GenerationProfile): number {
   switch (profile) {
     case 'TINY_TEST':
+    case 'VISUAL_VERTICAL_SLICE':
       return 1;
     case 'SMALL':
       return 3;
@@ -103,6 +104,8 @@ export function collectibleCountForProfile(profile: GenerationProfile): number {
       return 5;
     case 'LARGE':
       return 8;
+    case 'RELEASE_CANDIDATE':
+      return 4;
   }
 }
 

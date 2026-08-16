@@ -144,6 +144,62 @@ describe('NvidiaImageProvider', () => {
     expect(body.model).toBeUndefined();
   });
 
+  it('sends Kontext conditioning as a data URI without extra strength field', async () => {
+    const pngBytes = colorfulPng(96);
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(JSON.stringify({ artifacts: [{ base64: pngBytes.toString('base64'), finishReason: 'SUCCESS' }] }), {
+        status: 200,
+      }),
+    );
+    const provider = new NvidiaImageProvider({
+      apiKey: 'nvapi-test-key',
+      modelId: 'black-forest-labs/flux.1-kontext-dev',
+      maxRetries: 0,
+    });
+    await provider.generateImage({
+      profile: 'CHARACTER',
+      prompt: 'idle pose',
+      width: 64,
+      height: 64,
+      seed: 9,
+      conditioning: { mode: 'img2img', image: pngBytes, strength: 0.35 },
+      modelOverride: 'black-forest-labs/flux.1-kontext-dev',
+    });
+    const [, init] = vi.mocked(fetch).mock.calls[0]!;
+    const body = JSON.parse(String(init?.body));
+    expect(String(body.image)).toMatch(/^data:image\/png;base64,/);
+    expect(body.strength).toBeUndefined();
+  });
+
+  it('posts Kontext conditioning as a data URI and never sends strength', async () => {
+    const pngBytes = colorfulPng(96);
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(JSON.stringify({ artifacts: [{ base64: pngBytes.toString('base64'), finishReason: 'SUCCESS' }] }), {
+        status: 200,
+        headers: { 'nvcf-status': 'fulfilled' },
+      }),
+    );
+    const provider = new NvidiaImageProvider({
+      apiKey: 'nvapi-test-key',
+      modelId: 'black-forest-labs/flux.1-kontext-dev',
+      maxRetries: 0,
+    });
+    await provider.generateImage({
+      profile: 'CHARACTER',
+      prompt: 'same character idle',
+      width: 256,
+      height: 256,
+      seed: 11,
+      conditioning: { mode: 'img2img', image: pngBytes, strength: 0.35 },
+      modelOverride: 'black-forest-labs/flux.1-kontext-dev',
+    });
+    const [, init] = vi.mocked(fetch).mock.calls[0]!;
+    const body = JSON.parse(String(init?.body));
+    expect(String(body.image)).toMatch(/^data:image\/png;base64,/);
+    expect(body.strength).toBeUndefined();
+    expect(body.width).toBe(1024);
+  });
+
   it('retries blank/empty NVCF payloads then succeeds on a valid artifact', async () => {
     const validPng = colorfulPng(96);
     const tinyJunk = Buffer.alloc(120, 0); // below MIN + not PNG/JPEG

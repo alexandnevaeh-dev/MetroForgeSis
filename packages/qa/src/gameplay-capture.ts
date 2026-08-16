@@ -197,7 +197,7 @@ export function captureGameplayScreenshots(opts: {
   const windowed = runGodotSync({
     godotPath: opts.godotPath,
     projectPath: opts.projectPath,
-    args: ['--path', opts.projectPath, '--rendering-driver', 'vulkan', scene, '--quit-after', '900'],
+    args: ['--path', opts.projectPath, '--rendering-driver', 'd3d12', scene, '--quit-after', '900'],
     timeoutMs: 120_000,
     windowsHide: false,
     env: {

@@ -80,3 +80,12 @@ for asset QA, abstracted the same way the Ollama vision critic is.
   unified under the same facade class as text — see `docs/NEXT_PASS_BASELINE.md`'s deferred-work
   list for why that unification wasn't attempted this pass.
   Migrating everything to `GenerationRouter` is a separate, larger, already-documented follow-up.
+
+## Asset Foundry (image libraries + extra image adapters)
+
+See [`docs/ASSET_FOUNDRY.md`](./ASSET_FOUNDRY.md). Image providers are registered through
+`registerFoundryImageProviders()` (`packages/assets/src/foundry/register.ts`) so `AssetPipeline`
+and the desktop Providers probe share one list. New adapters: AUTOMATIC1111, Hugging Face image,
+Kenney (CC0 retrieval), OpenGameArt (per-asset license), Stability, DeepAI, Replicate. FREE_ONLY
+excludes `paid`/`credit` image providers.
+

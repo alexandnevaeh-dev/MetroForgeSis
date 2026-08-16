@@ -24,7 +24,7 @@ export interface AppConfig {
   generatedGamesDir: string;
   logLevel: 'debug' | 'info' | 'warn' | 'error';
   defaultMode: 'FREE_ONLY' | 'LOCAL_ONLY' | 'HYBRID_FREE' | 'CUSTOM';
-  defaultProfile: 'TINY_TEST' | 'SMALL' | 'MEDIUM' | 'LARGE';
+  defaultProfile: 'TINY_TEST' | 'VISUAL_VERTICAL_SLICE' | 'SMALL' | 'MEDIUM' | 'LARGE' | 'RELEASE_CANDIDATE';
   godotExecutable: string | null;
   ollamaBaseUrl: string;
 }

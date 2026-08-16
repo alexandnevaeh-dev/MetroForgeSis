@@ -152,10 +152,33 @@ describe('explainModelRouting', () => {
     expect(rejection?.reasons).toContain('provider not configured or not enabled');
   });
 
-  it('excludes models with no matching capability entirely, not as a rejection', () => {
-    const trace = explainModelRouting(routable, 'MUSIC_GENERATION', mockHardware);
-    expect(trace.candidates).toHaveLength(0);
-    expect(trace.rejected).toHaveLength(0);
-    expect(trace.selected).toBeUndefined();
+  it('rejects offline provider health from live route selection', () => {
+    const offline: RoutableModelEntry[] = [
+      {
+        ...mockModels[0]!,
+        id: 'ollama-offline',
+        provider: 'ollama',
+        local: true,
+        providerEnabled: true,
+        providerHealth: 'unavailable',
+        enabled: true,
+        capabilities: ['JSON_GENERATION'],
+      },
+      {
+        ...mockModels[1]!,
+        id: 'hosted-ok',
+        provider: 'nvidia',
+        local: false,
+        providerEnabled: true,
+        providerHealth: 'healthy',
+        enabled: true,
+        capabilities: ['JSON_GENERATION'],
+        minVramMb: 0,
+      },
+    ];
+    const trace = explainModelRouting(offline, 'JSON_GENERATION', mockHardware);
+    expect(trace.selected?.modelId).toBe('hosted-ok');
+    const rejected = trace.rejected.find((r) => r.modelId === 'ollama-offline');
+    expect(rejected?.reasons.some((r) => /health|unavailable|offline/i.test(r))).toBe(true);
   });
 });

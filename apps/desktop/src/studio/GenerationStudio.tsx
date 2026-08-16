@@ -125,6 +125,11 @@ export function GenerationStudio() {
   const [previewMode, setPreviewMode] = useState<'artifact' | 'world'>('world');
   const [previewRoomId, setPreviewRoomId] = useState('');
   const [activityQuery, setActivityQuery] = useState('');
+  const [visualReview, setVisualReview] = useState<{
+    status?: string;
+    fakeAnimationDetected?: boolean;
+    notes?: string;
+  } | null>(null);
 
   const refreshState = useCallback(async (projectPath: string) => {
     if (!window.metroforge?.getGenerationState) return;
@@ -135,6 +140,10 @@ export function GenerationStudio() {
     setOverallProgress(state.overallProgress ?? 0);
     setValidationReport(state.validationReport ?? null);
     if (state.worldGraph) setWorldGraph(state.worldGraph as WorldGraphPreview);
+    if (window.metroforge?.getVisualSliceReview) {
+      const vr = await window.metroforge.getVisualSliceReview(projectPath);
+      setVisualReview(vr.project);
+    }
 
     const lastArtifact = [...nextEvents].reverse().find((event) => event.type === 'ArtifactGenerated');
     if (lastArtifact) setPreviewArtifact(lastArtifact);
@@ -302,6 +311,12 @@ export function GenerationStudio() {
     setReviewPaused(null);
   };
 
+  const handleVisualSliceDecision = async (decision: 'approve' | 'reject') => {
+    if (!selectedPath || !window.metroforge?.decideVisualSliceReview) return;
+    const next = await window.metroforge.decideVisualSliceReview(selectedPath, decision);
+    setVisualReview(next);
+  };
+
   const handlePartialPreview = async () => {
     if (!reviewPaused?.projectPath) return;
     setGodotError(null);
@@ -340,7 +355,7 @@ export function GenerationStudio() {
   ).map((id) => ({ id, label: id }));
 
   return (
-    <section className="studio-layout">
+    <section className="workspace-screen studio-layout">
       <ScreenHeader
         eyebrow="Create"
         title="Generation Studio"
@@ -413,6 +428,24 @@ export function GenerationStudio() {
             </Button>
             <Button variant="danger" onClick={() => handleReviewDecision(false)}>
               Cancel Generation
+            </Button>
+          </div>
+        </Panel>
+      )}
+
+      {visualReview?.status === 'VISUAL_SLICE_REVIEW_REQUIRED' && (
+        <Panel level={2} title="Visual Slice Review">
+          <p className="hint">
+            Status: VISUAL_SLICE_REVIEW_REQUIRED. A deterministic critic PASS is not aesthetic approval. MASS art for
+            LARGE / RELEASE_CANDIDATE stays blocked until Approve Visual Direction.
+            {visualReview.fakeAnimationDetected ? ' Fake or unstable animation was flagged.' : ''}
+          </p>
+          <div className="row">
+            <Button variant="primary" onClick={() => handleVisualSliceDecision('approve')}>
+              Approve Visual Direction
+            </Button>
+            <Button variant="danger" onClick={() => handleVisualSliceDecision('reject')}>
+              Reject / Request Revision
             </Button>
           </div>
         </Panel>

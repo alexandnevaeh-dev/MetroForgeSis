@@ -60,3 +60,5 @@ func _process(_delta: float) -> void:
 		offset.y = _room_size.y * 0.5 - parent.global_position.y
 	else:
 		offset.y = lerpf(offset.y, -20.0, 0.08)
+	offset.x = round(offset.x)
+	offset.y = round(offset.y)

@@ -6,6 +6,16 @@ import { ProjectSelect } from './ProjectSelect.js';
 import { NoProjectHint } from './NoProjectHint.js';
 import { CommandBar } from './CommandBar.js';
 import { useStudio } from './StudioContext.js';
+import {
+  Button,
+  EditorToolbar,
+  EditorViewport,
+  EditorWorkbench,
+  EmptyState,
+  EmptyViewport,
+  InspectorSection,
+  Select,
+} from './ui/index.js';
 
 const DUNGEON_ARCHETYPES = new Set([
   'dungeon',
@@ -158,43 +168,36 @@ export function DungeonEditor() {
   }, [dungeonGraph, authoredDungeon]);
 
   return (
-    <section className="dungeon-editor">
+    <section className="workspace-screen dungeon-editor">
       <ScreenHeader
+        compact
         eyebrow="Top-down / dungeon"
         title="Dungeon Editor"
-        description="Prefers getDungeonGraph when present; otherwise filters dungeon-like rooms from world_graph.json."
+        description="getDungeonGraph when present; else dungeon-filtered world_graph."
         actions={<ProjectSelect />}
       />
       <NoProjectHint />
 
       {isSideViewProject && (
-        <div className="empty-state panel-l1" style={{ marginBottom: '0.85rem' }}>
-          <h3>Dungeon Editor is for top-down projects</h3>
-          <p>
-            This project is side-view Metroidvania. Dungeon graphs (keys, locked doors, overworld POIs) belong
-            to <code>TOP_DOWN_ACTION_ADVENTURE</code> generations.
-          </p>
-          <p className="hint">
-            Use World Editor / Room Editor for side-view room graphs. Generate or select a top-down project to
-            edit dungeons here.
-          </p>
-          <div className="row" style={{ marginTop: '0.75rem' }}>
-            <button type="button" className="primary" onClick={() => navigate('World')}>
-              Open World Editor
-            </button>
-            <button type="button" onClick={() => navigate('Rooms')}>
-              Open Room Editor
-            </button>
-            <button type="button" onClick={() => navigate('Create')}>
-              New top-down game
-            </button>
-          </div>
-        </div>
+        <EmptyState
+          title="Dungeon Editor is for top-down projects"
+          description="This project is side-view Metroidvania. Dungeon graphs (keys, locked doors, overworld POIs) belong to TOP_DOWN_ACTION_ADVENTURE generations. Use World / Room editors for side-view graphs."
+          actions={
+            <>
+              <Button variant="primary" onClick={() => navigate('World')}>
+                Open World Editor
+              </Button>
+              <Button onClick={() => navigate('Rooms')}>Open Room Editor</Button>
+              <Button onClick={() => navigate('Create')}>New top-down game</Button>
+            </>
+          }
+        />
       )}
 
       {hasActiveProject && isTopDownProject && (
         <>
           <CommandBar
+            compact
             projectPath={selectedPath}
             selectedRoomId={selectedId}
             placeholder="Try: connect rooms, add a locked door, make this dungeon harder…"
@@ -203,7 +206,7 @@ export function DungeonEditor() {
 
           {error && <p className="result error">{error}</p>}
           {authoredDungeon?.dungeonId && (
-            <p className="hint">
+            <p className="hint type-caption">
               Authored dungeon {authoredDungeon.dungeonId}
               {authoredDungeon.dungeonItem ? ` · item ${authoredDungeon.dungeonItem}` : ''}
               {authoredDungeon.bossId ? ` · boss ${authoredDungeon.bossId}` : ''}
@@ -212,118 +215,142 @@ export function DungeonEditor() {
           )}
 
           {!dungeonGraph?.nodes?.length ? (
-            <div className="empty-state panel-l1">
-              <p>No dungeon graph yet for this top-down project. Regenerate or wait until dungeon data is written.</p>
-              <button type="button" onClick={() => selectedPath && void loadGraph(selectedPath, dungeonFilter)}>
-                Reload dungeon graph
-              </button>
-            </div>
+            <EmptyState
+              title="No dungeon graph yet"
+              description="No getDungeonGraph / dungeon-filtered world_graph nodes for this top-down project."
+              actions={
+                <Button onClick={() => selectedPath && void loadGraph(selectedPath, dungeonFilter)}>
+                  Reload dungeon graph
+                </Button>
+              }
+            />
           ) : (
-            <div className="editor-workspace dungeon-workspace">
+            <EditorWorkbench variant="dungeon" className="dungeon-workspace-large">
               <aside className="panel editor-palette">
-                <h3>Rooms</h3>
-                {dungeonIds.length > 0 && (
-                  <label>
-                    Dungeon
-                    <select value={dungeonFilter} onChange={(e) => setDungeonFilter(e.target.value)}>
-                      <option value="all">All dungeon rooms</option>
-                      {dungeonIds.map((id) => (
-                        <option key={id} value={id}>
-                          {id}
-                        </option>
+                <InspectorSection title="Rooms">
+                  {dungeonIds.length > 0 && (
+                    <label>
+                      Dungeon
+                      <Select value={dungeonFilter} onChange={(e) => setDungeonFilter(e.target.value)}>
+                        <option value="all">All dungeon rooms</option>
+                        {dungeonIds.map((id) => (
+                          <option key={id} value={id}>
+                            {id}
+                          </option>
+                        ))}
+                      </Select>
+                    </label>
+                  )}
+                  {(dungeonGraph?.nodes?.length ?? 0) === 0 ? (
+                    <p className="hint">No rooms in this dungeon filter.</p>
+                  ) : (
+                    <ul className="room-list">
+                      {(dungeonGraph?.nodes ?? []).map((node) => (
+                        <li key={node.id}>
+                          <button
+                            type="button"
+                            className={selectedId === node.id ? 'room-item active room-item-compact' : 'room-item room-item-compact'}
+                            onClick={() => setSelectedId(node.id)}
+                          >
+                            <strong>{node.label ?? node.id}</strong>
+                            <span>{nodeArchetype(node)}</span>
+                          </button>
+                        </li>
                       ))}
-                    </select>
-                  </label>
-                )}
-                {(dungeonGraph?.nodes?.length ?? 0) === 0 ? (
-                  <p className="hint">No rooms in this dungeon filter.</p>
-                ) : (
-                  <ul className="room-list">
-                    {(dungeonGraph?.nodes ?? []).map((node) => (
-                      <li key={node.id}>
-                        <button
-                          type="button"
-                          className={selectedId === node.id ? 'room-item active' : 'room-item'}
-                          onClick={() => setSelectedId(node.id)}
-                        >
-                          <strong>{node.label ?? node.id}</strong>
-                          <span>{nodeArchetype(node)}</span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                    </ul>
+                  )}
+                </InspectorSection>
               </aside>
 
-              <div className="panel editor-canvas editor-canvas-fill">
-                <div className="editor-toolbar">
-                  <span>Room graph</span>
-                  <span className="hint">
-                    {dungeonGraph?.nodes?.length ?? 0} rooms · {keys.length} lock types
-                  </span>
-                </div>
+              <EditorViewport
+                className="dungeon-editor-canvas"
+                toolbar={
+                  <EditorToolbar>
+                    <span>Room graph</span>
+                    <span className="hint">
+                      {dungeonGraph?.nodes?.length ?? 0} rooms · {keys.length} lock types ·{' '}
+                      {criticalPath.length} critical
+                      {authoredDungeon?.criticalPath?.length ? ' (authored)' : ''}
+                    </span>
+                    <span className="status-grow" />
+                    <span className="hint type-caption">cyan = critical · amber = locked · boss fill</span>
+                  </EditorToolbar>
+                }
+              >
                 <WorldMapPreview
                   worldGraph={dungeonGraph}
                   view="graph"
                   selectedId={selectedId}
                   onSelect={setSelectedId}
                   onActivate={openRoom}
+                  fitView
+                  criticalPathIds={criticalPath.map((n) => n.id)}
+                  emptyTitle="Empty dungeon graph"
+                  emptyDescription="Filtered dungeon nodes are empty for this selection."
                 />
-              </div>
+              </EditorViewport>
 
               <aside className="panel editor-inspector">
-                <h3>Inspector</h3>
-                {selected ? (
-                  <dl className="settings-dl">
-                    <dt>Room</dt>
-                    <dd>{selected.label ?? selected.id}</dd>
-                    <dt>Archetype</dt>
-                    <dd>{nodeArchetype(selected)}</dd>
-                    <dt>Dungeon id</dt>
-                    <dd>{authoredDungeon?.dungeonId || dungeonIdOf(selected) || '—'}</dd>
-                    <dt>Keys on outbound edges</dt>
-                    <dd>
-                      {(dungeonGraph?.edges ?? [])
-                        .filter((e) => e.from === selected.id && (e.requirements?.length ?? 0) > 0)
-                        .map((e) => `${e.to}: ${(e.requirements ?? []).join(', ')}`)
-                        .join(' · ') || 'none'}
-                    </dd>
-                  </dl>
-                ) : (
-                  <p className="hint">Select a room.</p>
-                )}
-                {selected && (
-                  <div className="row" style={{ marginTop: '0.75rem' }}>
-                    <button type="button" className="primary" onClick={() => openRoom(selected.id)}>
-                      Open in Room Editor
-                    </button>
-                  </div>
-                )}
+                <InspectorSection title="Selection">
+                  {selected ? (
+                    <dl className="settings-dl">
+                      <dt>Room</dt>
+                      <dd>{selected.label ?? selected.id}</dd>
+                      <dt>Archetype</dt>
+                      <dd>{nodeArchetype(selected)}</dd>
+                      <dt>Dungeon id</dt>
+                      <dd>{authoredDungeon?.dungeonId || dungeonIdOf(selected) || '—'}</dd>
+                      <dt>Keys on outbound edges</dt>
+                      <dd>
+                        {(dungeonGraph?.edges ?? [])
+                          .filter((e) => e.from === selected.id && (e.requirements?.length ?? 0) > 0)
+                          .map((e) => `${e.to}: ${(e.requirements ?? []).join(', ')}`)
+                          .join(' · ') || 'none'}
+                      </dd>
+                    </dl>
+                  ) : (
+                    <EmptyViewport
+                      className="inspector-empty"
+                      title="No room selected"
+                      description="Pick a room from the list or graph."
+                    />
+                  )}
+                  {selected && (
+                    <div className="row" style={{ marginTop: '0.55rem' }}>
+                      <Button variant="primary" size="sm" onClick={() => openRoom(selected.id)}>
+                        Open in Room Editor
+                      </Button>
+                    </div>
+                  )}
+                </InspectorSection>
 
-                <h3>Locks & items</h3>
-                <ul className="stat-list">
-                  {keys.length === 0 && <li>No edge requirements in this graph</li>}
-                  {keys.map((key) => (
-                    <li key={key}>{key}</li>
-                  ))}
-                </ul>
+                <InspectorSection title="Locks & keys">
+                  <ul className="stat-list">
+                    {keys.length === 0 && <li>No edge requirements in this graph</li>}
+                    {keys.map((key) => (
+                      <li key={key}>{key}</li>
+                    ))}
+                  </ul>
+                </InspectorSection>
 
-                <h3>Critical path</h3>
-                <ol className="stat-list">
-                  {criticalPath.map((node) => (
-                    <li key={node.id}>
-                      <button
-                        type="button"
-                        className={selectedId === node.id ? 'room-item active' : 'room-item'}
-                        onClick={() => setSelectedId(node.id)}
-                      >
-                        {'label' in node ? (node.label ?? node.id) : node.id}
-                      </button>
-                    </li>
-                  ))}
-                </ol>
+                <InspectorSection title="Critical path">
+                  <ol className="stat-list">
+                    {criticalPath.length === 0 && <li className="hint">No critical path in authored data</li>}
+                    {criticalPath.map((node) => (
+                      <li key={node.id}>
+                        <button
+                          type="button"
+                          className={selectedId === node.id ? 'room-item active' : 'room-item'}
+                          onClick={() => setSelectedId(node.id)}
+                        >
+                          {'label' in node ? (node.label ?? node.id) : node.id}
+                        </button>
+                      </li>
+                    ))}
+                  </ol>
+                </InspectorSection>
               </aside>
-            </div>
+            </EditorWorkbench>
           )}
         </>
       )}

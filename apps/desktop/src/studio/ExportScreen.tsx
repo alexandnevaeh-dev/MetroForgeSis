@@ -4,50 +4,79 @@ import { ProjectSelect } from './ProjectSelect.js';
 import { NoProjectHint } from './NoProjectHint.js';
 import { useStudio } from './StudioContext.js';
 import { openProjectInGodot, playProjectInGodot } from './godot-actions.js';
-import {
-  AssetProductionGatePanel,
-  type AssetProductionGateView,
-} from './AssetProductionGatePanel.js';
+import { AssetProductionGatePanel } from './AssetProductionGatePanel.js';
 import { AllowPlaceholdersControl } from './AllowPlaceholdersControl.js';
+import { ProjectReadinessSummary } from './ProjectReadinessSummary.js';
+import type { ReadinessCompletion } from './projectReadiness.js';
+import { deriveProjectReadiness } from './projectReadiness.js';
 import { Badge, Button, EmptyState, Panel } from './ui/index.js';
 
-type Completion = {
-  productionReady?: boolean;
-  completionScore?: number;
-  blockers?: string[];
+type ExportResultView = {
+  success: boolean;
+  archivePath?: string;
+  manifestPath?: string;
+  manifest?: Record<string, unknown>;
+  errors?: string[];
   warnings?: string[];
-  assetProductionGate?: AssetProductionGateView;
 };
 
-type PreflightStatus = 'READY' | 'WARNING' | 'BLOCKING';
+type CommercialSafeView = {
+  included: number;
+  excluded: number;
+  unknown: number;
+  commercialSafe: boolean | null;
+};
 
-function preflightStatus(completion: Completion | null): PreflightStatus {
-  if (!completion) return 'BLOCKING';
-  if (completion.productionReady === true) {
-    return (completion.warnings?.length ?? 0) > 0 ? 'WARNING' : 'READY';
+function summarizeCommercialSafe(manifest: Record<string, unknown> | undefined): CommercialSafeView | null {
+  if (!manifest) return null;
+  const license = manifest.licenseSummary as
+    | {
+        commercialSafe?: boolean;
+        artifactClassifications?: Array<{ status?: string }>;
+        blockedArtifactCount?: number;
+      }
+    | undefined;
+  if (!license) return null;
+  const classifications = license.artifactClassifications ?? [];
+  if (classifications.length === 0) {
+    return {
+      included: 0,
+      excluded: typeof license.blockedArtifactCount === 'number' ? license.blockedArtifactCount : 0,
+      unknown: 0,
+      commercialSafe: typeof license.commercialSafe === 'boolean' ? license.commercialSafe : null,
+    };
   }
-  return 'BLOCKING';
-}
-
-function preflightTone(status: PreflightStatus): 'success' | 'warning' | 'danger' {
-  if (status === 'READY') return 'success';
-  if (status === 'WARNING') return 'warning';
-  return 'danger';
+  let included = 0;
+  let excluded = 0;
+  let unknown = 0;
+  for (const row of classifications) {
+    const status = String(row.status ?? '').toUpperCase();
+    if (status === 'COMMERCIAL_SAFE') included += 1;
+    else if (status === 'UNKNOWN' || status === '') unknown += 1;
+    else excluded += 1;
+  }
+  return {
+    included,
+    excluded,
+    unknown,
+    commercialSafe: typeof license.commercialSafe === 'boolean' ? license.commercialSafe : null,
+  };
 }
 
 export function ExportScreen() {
   const { selectedPath, hasActiveProject, navigate } = useStudio();
-  const [force, setForce] = useState(true);
+  const [force, setForce] = useState(false);
   const [zip, setZip] = useState(true);
   const [commercialSafe, setCommercialSafe] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [exportResult, setExportResult] = useState<ExportResultView | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [godotError, setGodotError] = useState<string | null>(null);
-  const [completion, setCompletion] = useState<Completion | null>(null);
+  const [godotLabel, setGodotLabel] = useState<string | null>(null);
+  const [completion, setCompletion] = useState<ReadinessCompletion | null>(null);
   const [backfillMessage, setBackfillMessage] = useState<string | null>(null);
   const [backfillBusy, setBackfillBusy] = useState(false);
-  const [imageHealthSummary, setImageHealthSummary] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const refreshCompletion = useCallback(
     async (path = selectedPath) => {
@@ -55,55 +84,63 @@ export function ExportScreen() {
         setCompletion(null);
         return;
       }
-      const dash = await window.metroforge.getProjectDashboard(path);
-      const data = dash as { completion?: Completion };
-      setCompletion(data.completion ?? null);
+      setLoading(true);
+      try {
+        const dash = await window.metroforge.getProjectDashboard(path);
+        const data = dash as { completion?: ReadinessCompletion };
+        setCompletion(data.completion ?? null);
+      } finally {
+        setLoading(false);
+      }
     },
     [selectedPath],
   );
 
-  const refreshImageHealth = useCallback(async () => {
-    if (!window.metroforge?.getConfig) {
-      setImageHealthSummary(null);
+  const refreshGodot = useCallback(async () => {
+    if (!window.metroforge?.resolveGodot) {
+      setGodotLabel(null);
       return;
     }
     try {
-      const cfg = await window.metroforge.getConfig();
-      const providers = cfg.imageProviders ?? [];
-      if (providers.length === 0) {
-        setImageHealthSummary('Image providers: none probed (configure ComfyUI / NVIDIA / Diffusers)');
+      const resolved = await window.metroforge.resolveGodot(selectedPath);
+      if (!resolved.path) {
+        setGodotLabel('Godot: not found');
         return;
       }
-      const parts = providers.map((p) => {
-        const status = p.status ?? (p.healthy ? 'HEALTHY' : 'UNAVAILABLE');
-        return `${p.id}=${status}`;
-      });
-      setImageHealthSummary(`Image provider health: ${parts.join(' · ')}`);
+      setGodotLabel(
+        `Godot: ${resolved.version ?? '—'} · ${resolved.sourceLabel}${resolved.path ? ` · ${resolved.path}` : ''}`,
+      );
     } catch {
-      setImageHealthSummary(null);
+      setGodotLabel(null);
     }
-  }, []);
+  }, [selectedPath]);
 
   useEffect(() => {
     void refreshCompletion(selectedPath);
   }, [selectedPath, refreshCompletion]);
 
   useEffect(() => {
-    void refreshImageHealth();
-  }, [refreshImageHealth]);
+    void refreshGodot();
+  }, [refreshGodot]);
+
+  const readiness = deriveProjectReadiness(completion);
+  const commercialPreview = summarizeCommercialSafe(exportResult?.manifest);
 
   const runExport = async () => {
     if (!selectedPath || !window.metroforge?.exportProject) return;
-    setBusy(true);
-    setError(null);
-    setMessage(null);
-    const result = await window.metroforge.exportProject(selectedPath, { force, zip, commercialSafe });
-    setBusy(false);
-    if (!result.success) {
-      setError(result.errors?.join('; ') ?? 'Export failed');
+    if (readiness.status === 'BLOCKED' && !force) {
+      setError('Export blocked by preflight. Enable force export only if you intentionally bypass gates.');
       return;
     }
-    setMessage(result.archivePath ? `Exported to ${result.archivePath}` : 'Export completed');
+    setBusy(true);
+    setError(null);
+    setExportResult(null);
+    const result = await window.metroforge.exportProject(selectedPath, { force, zip, commercialSafe });
+    setBusy(false);
+    setExportResult(result);
+    if (!result.success) {
+      setError(result.errors?.join('; ') ?? 'Export failed');
+    }
   };
 
   const runBackfill = async () => {
@@ -128,122 +165,53 @@ export function ExportScreen() {
     }
   };
 
-  const blockers = completion?.blockers ?? [];
-  const warnings = completion?.warnings ?? [];
-  const readiness = typeof completion?.completionScore === 'number' ? completion.completionScore : null;
-  const status = preflightStatus(completion);
-  const gateBlocking =
-    completion?.assetProductionGate && !completion.assetProductionGate.passed
-      ? completion.assetProductionGate.blockedAssets.length
-      : 0;
-
   return (
-    <section className="export-screen">
+    <section className="workspace-screen export-screen">
       <ScreenHeader
         eyebrow="Ship"
         title="Export"
-        description="Packages a generated Godot project using the existing exportProject contract. No simulated archives."
+        description="Release pipeline — real preflight from project completion, QA gates, and asset production. Packages ZIP / Godot project only."
         actions={<ProjectSelect />}
       />
       <NoProjectHint />
 
       {hasActiveProject && (
-        <>
-          <div className="export-preflight-layout">
-            <Panel
-              level={1}
-              className="export-preflight-center"
-              title="Preflight"
-              actions={<Badge tone={preflightTone(status)}>{status}</Badge>}
-            >
-              {!completion ? (
-                <EmptyState
-                  title="Preflight unavailable"
-                  description="Completion data from getProjectDashboard is not loaded yet."
-                  actions={
-                    <Button onClick={() => void refreshCompletion()}>Refresh preflight</Button>
-                  }
-                />
-              ) : (
-                <>
-                  <div className="export-readiness-row">
-                    <div className="progress-bar-wrap" aria-label="Export readiness">
-                      <div
-                        className="progress-bar"
-                        style={{ width: `${Math.max(0, Math.min(100, readiness ?? 0))}%` }}
-                      />
-                    </div>
-                    <span className="export-readiness-pct">
-                      {readiness != null ? `${readiness}%` : '—'} readiness
-                    </span>
-                  </div>
-                  <p className={status === 'READY' ? 'check-pass' : 'check-warn'}>
-                    {status === 'READY'
-                      ? 'Production ready'
-                      : status === 'WARNING'
-                        ? 'Production ready with warnings'
-                        : 'Not production ready'}
-                    {gateBlocking > 0 ? ` · ${gateBlocking} asset gate blocker(s)` : ''}
-                  </p>
-                  {imageHealthSummary && <p className="hint">{imageHealthSummary}</p>}
+        <div className="export-preflight-layout">
+          <div className="export-preflight-center form-stack">
+            <ProjectReadinessSummary
+              completion={completion}
+              title="Export preflight"
+              loading={loading}
+              onNavigate={navigate}
+              onRefresh={() => void refreshCompletion()}
+            />
 
-                  <h3 className="mf-panel-title" style={{ marginTop: '0.65rem' }}>
-                    Blockers
-                  </h3>
-                  {blockers.length === 0 && gateBlocking === 0 ? (
-                    <p className="hint">No completion blockers reported.</p>
-                  ) : (
-                    <ul className="check-list">
-                      {blockers.map((blocker) => (
-                        <li key={blocker} className="check-warn">
-                          <Badge tone="danger">BLOCKING</Badge> {blocker}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  <AssetProductionGatePanel gate={completion.assetProductionGate} />
+            {completion?.assetProductionGate ? (
+              <Panel level={1} title="Asset production gate">
+                <AssetProductionGatePanel gate={completion.assetProductionGate} />
+                <div style={{ marginTop: '0.75rem' }}>
+                  <AllowPlaceholdersControl onChanged={() => void refreshCompletion()} />
+                </div>
+                <div className="row" style={{ marginTop: '0.5rem' }}>
+                  <Button disabled={backfillBusy} onClick={() => void runBackfill()}>
+                    {backfillBusy ? 'Backfilling…' : 'Backfill maturity'}
+                  </Button>
+                  <Button onClick={() => navigate('QA')}>Open QA</Button>
+                  <Button onClick={() => navigate('Dashboard')}>Dashboard</Button>
+                </div>
+                {backfillMessage && <p className="hint">{backfillMessage}</p>}
+              </Panel>
+            ) : null}
+          </div>
 
-                  {warnings.length > 0 && (
-                    <>
-                      <h3 className="mf-panel-title" style={{ marginTop: '0.65rem' }}>
-                        Warnings
-                      </h3>
-                      <ul className="check-list">
-                        {warnings.map((warning) => (
-                          <li key={warning} className="check-warn">
-                            <Badge tone="warning">WARNING</Badge> {warning}
-                          </li>
-                        ))}
-                      </ul>
-                    </>
-                  )}
-
-                  <div style={{ marginTop: '0.75rem' }}>
-                    <h4 className="mf-panel-title">Prototype gate</h4>
-                    <AllowPlaceholdersControl onChanged={() => void refreshCompletion()} />
-                  </div>
-                  <div className="row" style={{ marginTop: '0.5rem' }}>
-                    <Button disabled={backfillBusy} onClick={() => void runBackfill()}>
-                      {backfillBusy ? 'Backfilling…' : 'Backfill maturity'}
-                    </Button>
-                    <Button onClick={() => navigate('QA')}>Open QA</Button>
-                    <Button onClick={() => navigate('Dashboard')}>Dashboard</Button>
-                    <Button onClick={() => navigate('Providers')}>Image providers</Button>
-                    <Button onClick={() => navigate('Settings')}>Settings</Button>
-                  </div>
-                  {backfillMessage && <p className="hint">{backfillMessage}</p>}
-                </>
-              )}
-            </Panel>
-
-            <Panel level={1} className="form-stack" title="Export actions">
-              <label className="check-inline">
-                <input type="checkbox" checked={force} onChange={(e) => setForce(e.target.checked)} />
-                Force export even if QA is incomplete
-              </label>
+          <div className="form-stack">
+            <Panel level={1} title="Build configuration">
+              <p className="hint">
+                Real package options only — ZIP archive and Godot project folder. No platform executable builders.
+              </p>
               <label className="check-inline">
                 <input type="checkbox" checked={zip} onChange={(e) => setZip(e.target.checked)} />
-                Create zip archive
+                Create ZIP archive
               </label>
               <label className="check-inline">
                 <input
@@ -251,14 +219,25 @@ export function ExportScreen() {
                   checked={commercialSafe}
                   onChange={(e) => setCommercialSafe(e.target.checked)}
                 />
-                Commercial-safe license filter
+                Require commercial-safe licenses
               </label>
-              <p className="hint">
-                Commercial-safe asks the exporter to drop assets whose licenses are not cleared for sale. Force
-                bypasses incomplete QA gates.
-              </p>
+              <label className="check-inline">
+                <input type="checkbox" checked={force} onChange={(e) => setForce(e.target.checked)} />
+                Force export (bypass incomplete QA)
+              </label>
+              {force && (
+                <p className="result error" role="alert">
+                  Force export is on — incomplete validation / production gates will be bypassed. Use only for
+                  prototypes.
+                </p>
+              )}
+              {godotLabel && <p className="hint mono">{godotLabel}</p>}
               <div className="row">
-                <Button variant="primary" disabled={!selectedPath || busy} onClick={runExport}>
+                <Button
+                  variant="primary"
+                  disabled={!selectedPath || busy || (readiness.status === 'BLOCKED' && !force)}
+                  onClick={() => void runExport()}
+                >
                   {busy ? 'Exporting…' : 'Export package'}
                 </Button>
                 <Button
@@ -286,12 +265,64 @@ export function ExportScreen() {
                   Open in Godot
                 </Button>
               </div>
-              {message && <p className="result success">{message}</p>}
               {error && <p className="result error">{error}</p>}
               {godotError && <p className="result error">{godotError}</p>}
             </Panel>
+
+            <Panel level={1} title="Commercial-safe report">
+              {!exportResult ? (
+                <EmptyState
+                  title="No export yet"
+                  description="Run export to see included / excluded / unknown license classifications from the real license audit."
+                />
+              ) : commercialPreview ? (
+                <div className="export-commercial-grid">
+                  <Badge tone="success">Included {commercialPreview.included}</Badge>
+                  <Badge tone="danger">Excluded {commercialPreview.excluded}</Badge>
+                  <Badge tone="warning">Unknown {commercialPreview.unknown}</Badge>
+                  <Badge tone={commercialPreview.commercialSafe ? 'success' : 'danger'}>
+                    {commercialPreview.commercialSafe == null
+                      ? 'Commercial-safe —'
+                      : commercialPreview.commercialSafe
+                        ? 'Commercial-safe YES'
+                        : 'Commercial-safe NO'}
+                  </Badge>
+                </div>
+              ) : (
+                <p className="hint">Manifest had no license summary.</p>
+              )}
+            </Panel>
+
+            {exportResult?.success && (
+              <Panel level={1} title="Artifacts">
+                <ul className="check-list">
+                  {exportResult.archivePath && (
+                    <li className="check-pass">
+                      <Badge tone="success">ZIP</Badge> {exportResult.archivePath}
+                    </li>
+                  )}
+                  {exportResult.manifestPath && (
+                    <li className="check-pass">
+                      <Badge tone="success">Manifest</Badge> {exportResult.manifestPath}
+                    </li>
+                  )}
+                  {!exportResult.archivePath && !exportResult.manifestPath && (
+                    <li className="hint">Export succeeded — open the project Exports folder for packages.</li>
+                  )}
+                </ul>
+                {(exportResult.warnings?.length ?? 0) > 0 && (
+                  <ul className="check-list">
+                    {exportResult.warnings!.map((w) => (
+                      <li key={w} className="check-warn">
+                        <Badge tone="warning">WARN</Badge> {w}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Panel>
+            )}
           </div>
-        </>
+        </div>
       )}
     </section>
   );

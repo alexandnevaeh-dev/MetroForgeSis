@@ -64,6 +64,7 @@ const DEFAULT_MODEL = 'black-forest-labs/flux.1-dev';
 const KNOWN_GENAI_IMAGE_MODELS = [
   'black-forest-labs/flux.1-dev',
   'black-forest-labs/flux.1-schnell',
+  'black-forest-labs/flux.1-kontext-dev',
 ] as const;
 
 export type NvidiaImageHealthStatus =
@@ -477,7 +478,22 @@ export class NvidiaImageProvider implements ImageGenerator {
   private async generateImageOnce(request: ImageGenRequest, seed: number): Promise<ImageGenResult> {
     const width = clampFluxDim(request.width);
     const height = clampFluxDim(request.height);
-    const url = `${this.imageApiBaseUrl}/${this.modelId}`;
+    const modelId = request.modelOverride ?? this.modelId;
+    const url = `${this.imageApiBaseUrl}/${modelId}`;
+
+    const payload: Record<string, unknown> = {
+      prompt: request.prompt,
+      seed,
+      width,
+      height,
+    };
+    if (request.conditioning?.image) {
+      // Hosted Kontext infers a data URI. Raw base64 (or extra fields like `strength`)
+      // 422s the preview schema. NIM docs: `data:image/png;base64,<bytes>`.
+      const img = request.conditioning.image;
+      const mime = isPng(img) ? 'image/png' : isJpeg(img) ? 'image/jpeg' : 'image/png';
+      payload.image = `data:${mime};base64,${img.toString('base64')}`;
+    }
 
     // FLUX hosted preview: keep payload minimal (extra fields → 422 on some variants).
     // NVCF-POLL-SECONDS required — without it the client can hang with 0 bytes.
@@ -489,12 +505,7 @@ export class NvidiaImageProvider implements ImageGenerator {
         Accept: 'application/json',
         'NVCF-POLL-SECONDS': '120',
       },
-      body: JSON.stringify({
-        prompt: request.prompt,
-        seed,
-        width,
-        height,
-      }),
+      body: JSON.stringify(payload),
       signal: mergeAbortSignal(request.signal, 180_000),
     });
 
@@ -514,16 +525,22 @@ export class NvidiaImageProvider implements ImageGenerator {
     }
     if (res.status === 404) {
       throw new Error(
-        `NVIDIA image model unavailable (HTTP 404) for ${this.modelId}. Set NVIDIA_IMAGE_MODEL to a working genai id (e.g. black-forest-labs/flux.1-dev).`,
+        `NVIDIA image model unavailable (HTTP 404) for ${modelId}. Set NVIDIA_IMAGE_MODEL to a working genai id (e.g. black-forest-labs/flux.1-dev).`,
       );
     }
     if (res.status === 504 || res.headers.get('nvcf-status') === 'errored') {
       throw new NvidiaInvalidImagePayloadError(
-        `NVIDIA image generation errored/timeout (HTTP ${res.status}) for ${this.modelId}. Try NVIDIA_IMAGE_MODEL=black-forest-labs/flux.1-dev.`,
+        `NVIDIA image generation errored/timeout (HTTP ${res.status}) for ${modelId}. Try NVIDIA_IMAGE_MODEL=black-forest-labs/flux.1-dev.`,
       );
     }
     if (!res.ok) {
-      throw new Error(parseErrorMessage(body, res.status));
+      const msg = parseErrorMessage(body, res.status);
+      if (res.status === 422 && /example_id/i.test(`${msg} ${rawText}`)) {
+        throw new Error(
+          'NVIDIA flux.1-kontext-dev hosted preview only accepts canned example_id images, not custom sprites (HTTP 422). Pose generation STOPPED.',
+        );
+      }
+      throw new Error(msg);
     }
 
     // Fulfilled but empty/tiny bodies (~6KB) are the flaky Manual Generator failure mode.
@@ -567,12 +584,12 @@ export class NvidiaImageProvider implements ImageGenerator {
     return {
       image,
       provider: this.id,
-      modelId: this.modelId,
+      modelId,
       seed,
       fallbackGenerated: false,
       fallbackDepth: 0,
       selectedProvider: this.id,
-      selectedModel: this.modelId,
+      selectedModel: modelId,
       requestedCapability: 'IMAGE_GENERATION',
       productionAllowed: true,
     };

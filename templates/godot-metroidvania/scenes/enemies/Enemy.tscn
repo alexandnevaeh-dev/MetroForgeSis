@@ -7,10 +7,10 @@
 [ext_resource type="Script" path="res://scripts/core/AnimatedAssetSprite.gd" id="5_sprite"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
-size = Vector2(28, 28)
+size = Vector2(32, 48)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hurt"]
-size = Vector2(24, 24)
+size = Vector2(28, 44)
 
 [node name="Enemy" type="CharacterBody2D"]
 collision_layer = 4
@@ -20,7 +20,7 @@ script = ExtResource("1_enemy")
 [node name="Sprite" type="AnimatedSprite2D" parent="."]
 script = ExtResource("5_sprite")
 sheet_path = "assets/enemies/enemy_000_walk.png"
-frame_size = Vector2i(32, 32)
+frame_size = Vector2i(64, 64)
 frame_count = 4
 hurt_sheet_path = "assets/enemies/enemy_000_hurt.png"
 death_sheet_path = "assets/enemies/enemy_000_death.png"
@@ -28,7 +28,7 @@ attack_sheet_path = "assets/enemies/enemy_000_attack.png"
 fallback_color = Color(0.9, 0.3, 0.3, 1)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, -14)
+position = Vector2(0, -24)
 shape = SubResource("RectangleShape2D_body")
 
 [node name="HealthComponent" type="Node" parent="."]
@@ -41,7 +41,7 @@ collision_mask = 8
 script = ExtResource("3_hurtbox")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="HurtboxComponent"]
-position = Vector2(0, -14)
+position = Vector2(0, -22)
 shape = SubResource("RectangleShape2D_hurt")
 
 [node name="ContactHitbox" type="Area2D" parent="."]
@@ -50,5 +50,5 @@ collision_mask = 16
 script = ExtResource("4_hitbox")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="ContactHitbox"]
-position = Vector2(0, -14)
+position = Vector2(0, -22)
 shape = SubResource("RectangleShape2D_hurt")

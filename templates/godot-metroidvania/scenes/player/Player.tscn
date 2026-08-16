@@ -9,10 +9,10 @@
 [ext_resource type="Script" path="res://scripts/player/CameraDirector.gd" id="7_camera"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
-size = Vector2(24, 40)
+size = Vector2(24, 48)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hurt"]
-size = Vector2(20, 36)
+size = Vector2(20, 44)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hit"]
 size = Vector2(30, 24)
@@ -25,14 +25,14 @@ script = ExtResource("1_player")
 [node name="Sprite" type="AnimatedSprite2D" parent="."]
 script = ExtResource("5_sprite")
 sheet_path = "assets/characters/player_walk.png"
-frame_size = Vector2i(32, 32)
+frame_size = Vector2i(64, 64)
 frame_count = 4
 attack_sheet_path = "assets/characters/player_attack.png"
 hurt_sheet_path = "assets/characters/player_hurt.png"
 death_sheet_path = "assets/characters/player_death.png"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, -20)
+position = Vector2(0, -24)
 shape = SubResource("RectangleShape2D_body")
 
 [node name="HealthComponent" type="Node" parent="."]
@@ -44,7 +44,7 @@ collision_mask = 8
 script = ExtResource("3_hurtbox")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="HurtboxComponent"]
-position = Vector2(0, -18)
+position = Vector2(0, -22)
 shape = SubResource("RectangleShape2D_hurt")
 
 [node name="AttackHitbox" type="Area2D" parent="."]
@@ -63,6 +63,6 @@ one_shot = true
 script = ExtResource("6_ability")
 
 [node name="Camera2D" type="Camera2D" parent="."]
-position = Vector2(0, -20)
+position = Vector2(0, -32)
 zoom = Vector2(2.4, 2.4)
 script = ExtResource("7_camera")

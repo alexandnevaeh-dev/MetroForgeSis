@@ -1,126 +1,241 @@
 /**
- * MetroForge Concept A — design tokens
- * Premium dark IDE / workstation (electric blue, slate borders, high density)
+ * MetroForge P2 — central design tokens (Concept A)
+ * Source of truth: --forge-*  →  Concept A / legacy aliases map here.
+ * Palette: obsidian/graphite + #38B2F6 / #238CFF
  */
 :root {
+  /* ── Surfaces (user palette) ── */
+  --forge-bg-app: #080b0f;
+  --forge-bg-sidebar: #0a0f15;
+  --forge-bg-surface: #0b1016;
+  --forge-bg-panel: #10161d;
+  --forge-bg-raised: #141c25;
+  --forge-bg-hover: #17222e;
+  --forge-bg-input: #0a0f15;
+  --forge-bg-accent-tint: #102737;
+
+  /* ── Borders ── */
+  --forge-border-subtle: #1a2430;
+  --forge-border: #243040;
+  --forge-border-strong: #334658;
+  --forge-border-focus: #238cff;
+
+  /* ── Text ── */
+  --forge-text: #e8edf3;
+  --forge-text-secondary: #9aa9b8;
+  --forge-text-muted: #667789;
+  --forge-text-inverse: #061018;
+
+  /* ── Accents ── */
+  --forge-accent: #238cff;
+  --forge-accent-bright: #38b2f6;
+  --forge-accent-hover: #399cff;
+  --forge-accent-pressed: #1a74d9;
+  --forge-accent-soft: rgba(35, 140, 255, 0.14);
+  --forge-accent-soft-strong: rgba(56, 178, 246, 0.22);
+  --forge-nav-active-bg: rgba(35, 140, 255, 0.28);
+  --forge-nav-active-fg: #f2f7fc;
+
+  /* ── Semantic status ── */
+  --forge-success: #3dba7a;
+  --forge-success-soft: rgba(61, 186, 122, 0.14);
+  --forge-warn: #d4a017;
+  --forge-warn-soft: rgba(212, 160, 23, 0.14);
+  --forge-fail: #e06c75;
+  --forge-fail-soft: rgba(224, 108, 117, 0.14);
+  --forge-info: #38b2f6;
+  --forge-info-soft: rgba(56, 178, 246, 0.14);
+  --forge-pending: #667789;
+  --forge-running: #38b2f6;
+
+  /* ── Spacing (4–32) ── */
+  --forge-space-1: 4px;
+  --forge-space-2: 8px;
+  --forge-space-3: 12px;
+  --forge-space-4: 16px;
+  --forge-space-5: 20px;
+  --forge-space-6: 24px;
+  --forge-space-8: 32px;
+
+  /* ── Control metrics (tool density) ── */
+  --forge-control-h: 32px;
+  --forge-control-h-sm: 28px;
+  --forge-control-h-lg: 34px;
+  --forge-control-h-compact: 26px;
+  --forge-panel-pad: 14px;
+  --forge-panel-pad-sm: 12px;
+  --forge-panel-pad-lg: 16px;
+
+  /* ── Radius (5–7) ── */
+  --forge-radius-sm: 5px;
+  --forge-radius: 6px;
+  --forge-radius-lg: 7px;
+
+  /* ── Shadows (minimal) ── */
+  --forge-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --forge-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+
+  /* ── Motion ── */
+  --forge-ease-fast: 100ms ease;
+  --forge-ease: 160ms ease;
+  --forge-ease-slow: 220ms ease;
+
+  /* ── Typography ── */
+  --forge-font-ui: 'Segoe UI', Inter, Geist, system-ui, -apple-system, sans-serif;
+  --forge-font-mono: 'Cascadia Code', 'JetBrains Mono', Consolas, ui-monospace, monospace;
+  --forge-fs-page: 1.05rem;
+  --forge-fs-section: 0.88rem;
+  --forge-fs-panel: 0.72rem;
+  --forge-fs-body: 0.78rem;
+  --forge-fs-body-secondary: 0.74rem;
+  --forge-fs-label: 0.68rem;
+  --forge-fs-caption: 0.64rem;
+  --forge-fs-technical: 0.68rem;
+  --forge-fs-status: 0.64rem;
+  --forge-fs-numeric: 0.74rem;
+  --forge-lh-tight: 1.25;
+  --forge-lh: 1.4;
+
+  /* ── Shell metrics ── */
+  --forge-topbar-h: 44px;
+  --forge-sidebar-w: 216px;
+  --forge-sidebar-w-collapsed: 52px;
+  --forge-status-h: 26px;
+  --forge-inspector-w: 280px;
+
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     Concept A / legacy aliases → --forge-*
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
   /* Surfaces */
-  --bg-app: #080d14;
-  --bg-sidebar: #0a1018;
-  --bg-surface: #0d141d;
-  --bg-surface-raised: #111a25;
-  --bg-surface-hover: #152131;
-  --bg-input: #080d13;
+  --bg-app: var(--forge-bg-app);
+  --bg-sidebar: var(--forge-bg-sidebar);
+  --bg-surface: var(--forge-bg-surface);
+  --bg-surface-raised: var(--forge-bg-raised);
+  --bg-surface-hover: var(--forge-bg-hover);
+  --bg-input: var(--forge-bg-input);
+  --bg-root: var(--forge-bg-app);
+  --bg-panel: var(--forge-bg-panel);
+  --bg-panel-elevated: var(--forge-bg-raised);
+  --bg-hover: var(--forge-bg-hover);
+  --bg-active: var(--forge-bg-hover);
+  --bg: var(--forge-bg-app);
+  --bg-elevated: var(--forge-bg-panel);
+  --surface: var(--forge-bg-panel);
+  --surface-2: var(--forge-bg-raised);
+  --panel: var(--forge-bg-raised);
 
   /* Borders */
-  --border-subtle: #1b2a39;
-  --border-normal: #26394b;
-  --border-focus: #258cff;
-  --border-strong: #344b63;
+  --border-subtle: var(--forge-border-subtle);
+  --border-normal: var(--forge-border);
+  --border-focus: var(--forge-border-focus);
+  --border-strong: var(--forge-border-strong);
+  --border: var(--forge-border);
+  --focus: var(--forge-border-focus);
 
   /* Text */
-  --text-primary: #e8edf3;
-  --text-secondary: #9aa9b8;
-  --text-muted: #667789;
-  --text-inverse: #061018;
+  --text-primary: var(--forge-text);
+  --text-secondary: var(--forge-text-secondary);
+  --text-muted: var(--forge-text-muted);
+  --text-inverse: var(--forge-text-inverse);
+  --text: var(--forge-text);
+  --text-dim: var(--forge-text-secondary);
+  --muted: var(--forge-text-muted);
 
   /* Accent */
-  --accent: #258cff;
-  --accent-hover: #399cff;
-  --accent-soft: rgba(37, 140, 255, 0.12);
-  --accent-pressed: #1a74d9;
-  --nav-active-bg: rgba(37, 140, 255, 0.32);
-  --nav-active-fg: #f2f7fc;
-
-  /* Semantic */
-  --success: #3dba7a;
-  --success-soft: rgba(61, 186, 122, 0.12);
-  --warning: #d4a017;
-  --warning-soft: rgba(212, 160, 23, 0.12);
-  --danger: #e06c75;
-  --danger-soft: rgba(224, 108, 117, 0.12);
-  --info: #258cff;
-  --info-soft: rgba(37, 140, 255, 0.12);
-
-  /* Spacing (4–32) */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-8: 32px;
-
-  /* Radius (4–8 max) */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-
-  /* Shadows — minimal */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
-
-  /* Motion */
-  --ease-fast: 100ms ease;
-  --ease: 160ms ease;
-  --ease-slow: 220ms ease;
-
-  /* Typography */
-  --font-ui: Inter, Geist, 'Segoe UI', system-ui, -apple-system, sans-serif;
-  --font-display: Inter, Geist, 'Segoe UI', system-ui, -apple-system, sans-serif;
-  --font-mono: 'Cascadia Code', 'JetBrains Mono', Consolas, ui-monospace, monospace;
-
-  /* Shell metrics */
-  --topbar-h: 44px;
-  --sidebar-w: 216px;
-  --sidebar-w-collapsed: 52px;
-  --status-h: 26px;
-  --inspector-w: 280px;
-
-  /* —— Legacy aliases (existing class names) —— */
-  --bg-root: var(--bg-app);
-  --bg-panel: var(--bg-surface);
-  --bg-panel-elevated: var(--bg-surface-raised);
-  --bg-hover: var(--bg-surface-hover);
-  --bg-active: var(--bg-surface-hover);
-  --bg: var(--bg-app);
-  --bg-elevated: var(--bg-surface);
-  --surface: var(--bg-surface);
-  --surface-2: var(--bg-surface-raised);
-  --panel: var(--bg-surface-raised);
-
-  --border: var(--border-normal);
-
-  --text: var(--text-primary);
-  --text-dim: var(--text-secondary);
-  --muted: var(--text-muted);
-
-  --accent-cyan: var(--accent);
-  --accent-cyan-hover: var(--accent-hover);
-  --accent-cyan-muted: var(--accent-soft);
-  --accent-blue: var(--accent);
-  --accent-blue-muted: var(--accent-soft);
+  --accent: var(--forge-accent);
+  --accent-hover: var(--forge-accent-hover);
+  --accent-soft: var(--forge-accent-soft);
+  --accent-pressed: var(--forge-accent-pressed);
+  --nav-active-bg: var(--forge-nav-active-bg);
+  --nav-active-fg: var(--forge-nav-active-fg);
+  --accent-cyan: var(--forge-accent-bright);
+  --accent-cyan-hover: var(--forge-accent-hover);
+  --accent-cyan-muted: var(--forge-accent-soft);
+  --accent-blue: var(--forge-accent);
+  --accent-blue-muted: var(--forge-accent-soft);
   --accent-violet: #6b8caf;
   --accent-violet-muted: rgba(107, 140, 175, 0.12);
-  --accent-amber: var(--warning);
+  --accent-amber: var(--forge-warn);
   --accent-amber-hover: #e0b020;
-  --accent-amber-muted: var(--warning-soft);
-  --accent-muted: var(--accent-soft);
+  --accent-amber-muted: var(--forge-warn-soft);
+  --accent-muted: var(--forge-accent-soft);
 
-  --success-muted: var(--success-soft);
-  --warning-muted: var(--warning-soft);
-  --danger-muted: var(--danger-soft);
-  --info-muted: var(--info-soft);
+  /* Semantic */
+  --success: var(--forge-success);
+  --success-soft: var(--forge-success-soft);
+  --success-muted: var(--forge-success-soft);
+  --warning: var(--forge-warn);
+  --warning-soft: var(--forge-warn-soft);
+  --warning-muted: var(--forge-warn-soft);
+  --danger: var(--forge-fail);
+  --danger-soft: var(--forge-fail-soft);
+  --danger-muted: var(--forge-fail-soft);
+  --info: var(--forge-info);
+  --info-soft: var(--forge-info-soft);
+  --info-muted: var(--forge-info-soft);
+  --ok: var(--forge-success);
+  --warn: var(--forge-warn);
 
-  --ok: var(--success);
-  --warn: var(--warning);
-  --focus: var(--border-focus);
-  --shadow: var(--shadow-sm);
-  --radius: var(--radius-md);
+  /* Spacing / radius / motion / fonts */
+  --space-1: var(--forge-space-1);
+  --space-2: var(--forge-space-2);
+  --space-3: var(--forge-space-3);
+  --space-4: var(--forge-space-4);
+  --space-5: var(--forge-space-5);
+  --space-6: var(--forge-space-6);
+  --space-8: var(--forge-space-8);
+  --radius-sm: var(--forge-radius-sm);
+  --radius-md: var(--forge-radius);
+  --radius-lg: var(--forge-radius-lg);
+  --radius: var(--forge-radius);
+  --radius-xl: var(--forge-radius-lg);
+  --shadow-sm: var(--forge-shadow-sm);
+  --shadow-md: var(--forge-shadow-md);
+  --shadow: var(--forge-shadow-sm);
+  --ease-fast: var(--forge-ease-fast);
+  --ease: var(--forge-ease);
+  --ease-slow: var(--forge-ease-slow);
+  --font-ui: var(--forge-font-ui);
+  --font-display: var(--forge-font-ui);
+  --font-mono: var(--forge-font-mono);
 
-  /* Neutralize previous neon glow tokens */
+  /* Shell */
+  --topbar-h: var(--forge-topbar-h);
+  --sidebar-w: var(--forge-sidebar-w);
+  --sidebar-w-collapsed: var(--forge-sidebar-w-collapsed);
+  --status-h: var(--forge-status-h);
+  --inspector-w: var(--forge-inspector-w);
+  --forge-inspector-w-lg: 320px;
+
+  /* Editor canvas (P3) → forge surfaces */
+  --forge-canvas-bg: var(--forge-bg-app);
+  --forge-canvas-grid: rgba(128, 140, 160, 0.22);
+  --forge-canvas-border: var(--forge-border-subtle);
+  --canvas-bg: var(--forge-canvas-bg);
+  --canvas-grid: var(--forge-canvas-grid);
+  --canvas-border: var(--forge-canvas-border);
+  --canvas-node: #3a372f;
+  --canvas-node-stroke: #9a9284;
+  --canvas-critical: var(--forge-accent-bright);
+  --canvas-locked: var(--forge-warn);
+  --canvas-boss: #5a2e2a;
+
+  /* --mf-* aliases (shared component namespace) */
+  --mf-bg-app: var(--forge-bg-app);
+  --mf-bg-panel: var(--forge-bg-panel);
+  --mf-bg-raised: var(--forge-bg-raised);
+  --mf-border: var(--forge-border);
+  --mf-accent: var(--forge-accent);
+  --mf-text: var(--forge-text);
+  --mf-control-h: var(--forge-control-h);
+  --mf-panel-pad: var(--forge-panel-pad);
+  --mf-radius: var(--forge-radius);
+  --mf-grid-min: 200px;
+
+  /* Neutralize legacy neon glow */
   --glow-cyan: none;
   --glow-amber: none;
   --glow-violet: none;
   --border-glow: transparent;
-  --radius-xl: var(--radius-lg);
 }

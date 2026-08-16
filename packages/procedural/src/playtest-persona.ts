@@ -69,7 +69,7 @@ export function resolvePlaytestPersona(id?: string): PlaytestPersona {
 /** Default persona for a profile — larger worlds get a more patient collector bot. */
 export function defaultPlaytestPersonaForProfile(profile: GenerationProfile): PlaytestPersona {
   if (profile === 'RELEASE_CANDIDATE') return PLAYTEST_PERSONAS.critical_path;
-  return profile === 'TINY_TEST' || profile === 'SMALL'
+  return profile === 'TINY_TEST' || profile === 'SMALL' || profile === 'VISUAL_VERTICAL_SLICE'
     ? PLAYTEST_PERSONAS.victory_rusher
     : PLAYTEST_PERSONAS.ability_collector;
 }

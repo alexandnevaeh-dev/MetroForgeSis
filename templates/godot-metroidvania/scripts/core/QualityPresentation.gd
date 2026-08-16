@@ -31,6 +31,8 @@ func apply_room(room: Node2D, room_id: String) -> void:
 	var biome := String(info.get("biomeId", "biome_0"))
 	var archetype := String(info.get("archetype", "connector"))
 	_replace_stretched_background(room, size, biome)
+	_hide_collision_slabs(room)
+	_tune_parallax(room, size)
 	_inject_depth_layers(room, size, biome)
 	_inject_lights(room, size, biome, archetype)
 	_inject_decor(room, size, biome, archetype, info)
@@ -125,12 +127,64 @@ func _clear_injected(room: Node) -> void:
 
 func _replace_stretched_background(room: Node, size: Vector2, biome: String) -> void:
 	var bg := room.get_node_or_null("Background")
+	if bg is CanvasItem:
+		(bg as CanvasItem).visible = false
+		(bg as CanvasItem).modulate = Color(1, 1, 1, 0)
+	if bg is ColorRect:
+		(bg as ColorRect).color.a = 0
 	if bg is TextureRect:
 		(bg as TextureRect).visible = false
-		(bg as TextureRect).modulate = Color(1, 1, 1, 0)
+
+func _hide_collision_slabs(room: Node) -> void:
+	for path in ["Floor/FloorVisual", "FloorLeft/FloorVisual", "FloorRight/FloorVisual"]:
+		var slab := room.get_node_or_null(path)
+		if slab is CanvasItem:
+			(slab as CanvasItem).visible = false
+			(slab as CanvasItem).modulate = Color(1, 1, 1, 0)
+	for child in room.get_children():
+		if child is Area2D and child.has_node("Visual"):
+			var vis := child.get_node_or_null("Visual")
+			if vis is CanvasItem:
+				(vis as CanvasItem).visible = false
+
+func _tune_parallax(room: Node, size: Vector2) -> void:
+	var px := room.get_node_or_null("ParallaxBg")
+	if px == null:
+		return
+	var far := px.get_node_or_null("far/Sprite") as Sprite2D
+	if far:
+		far.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		far.position = Vector2(size.x * 0.5, size.y * 0.28)
+		far.modulate = Color(1, 1, 1, 1)
+	var mid := px.get_node_or_null("mid/Sprite") as Sprite2D
+	if mid:
+		mid.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		mid.position = Vector2(size.x * 0.5, size.y * 0.48)
+		mid.modulate = Color(1, 1, 1, 0.72)
+	var near := px.get_node_or_null("near/Sprite") as Sprite2D
+	if near:
+		near.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		near.position = Vector2(size.x * 0.5, size.y * 0.68)
+		near.modulate = Color(1, 1, 1, 0.42)
 
 func _inject_depth_layers(room: Node, size: Vector2, biome: String) -> void:
+	## ParallaxBg already carries far/mid/near. Injecting full plates again covers the tileset.
+	if room.get_node_or_null("ParallaxBg") != null:
+		return
+	## Tileset rooms must not get opaque ColorRect slabs.
+	if room.get_node_or_null("Ground") != null:
+		return
 	var host := _host(room)
+	var far_path := "res://assets/backgrounds/%s/far.png" % biome
+	if ResourceLoader.exists(far_path):
+		_inject_parallax_sprite(host, "DepthFarSprite", far_path, size * 0.5, -8)
+		var mid_path := "res://assets/backgrounds/%s/mid.png" % biome
+		if ResourceLoader.exists(mid_path):
+			_inject_parallax_sprite(host, "DepthMidSprite", mid_path, Vector2(size.x * 0.5, size.y * 0.62), -6)
+		var near_path := "res://assets/backgrounds/%s/near.png" % biome
+		if ResourceLoader.exists(near_path):
+			_inject_parallax_sprite(host, "DepthNearSprite", near_path, Vector2(size.x * 0.5, size.y * 0.78), -3)
+		return
 	var pad := Vector2(240, 180)
 	var far := ColorRect.new()
 	far.name = "DepthFar"
@@ -233,6 +287,9 @@ func _inject_decor(
 	archetype: String,
 	info: Dictionary,
 ) -> void:
+	## ColorRect "pillars" read as opaque slabs over the tileset. Skip when tiles exist.
+	if room.get_node_or_null("Ground") != null:
+		return
 	var host := _host(room)
 	var excluded := _exclusion_rects(size, archetype, info)
 	var rng := RandomNumberGenerator.new()
@@ -319,6 +376,16 @@ func _host(room: Node) -> Node2D:
 	room.add_child(host)
 	room.move_child(host, 0)
 	return host
+
+func _inject_parallax_sprite(host: Node, node_name: String, path: String, pos: Vector2, z: int) -> void:
+	var sprite := Sprite2D.new()
+	sprite.name = node_name
+	sprite.texture = load(path)
+	sprite.position = pos
+	sprite.centered = true
+	sprite.z_index = z
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	host.add_child(sprite)
 
 func _biome_far(biome: String) -> Color:
 	var idx := _biome_index(biome)

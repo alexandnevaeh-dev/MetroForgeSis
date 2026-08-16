@@ -55,6 +55,7 @@ export function generateWorldTopology(options: WorldGenOptions): WorldGenResult 
     npcCount: npcCountForProfile(options.profile),
     biomeCount: options.biomeCount,
     seed: options.seed,
+    profile: options.profile,
   });
 
   const nodes = roomIds.map((id, i) => ({

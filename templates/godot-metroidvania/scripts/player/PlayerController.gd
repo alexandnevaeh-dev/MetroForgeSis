@@ -172,7 +172,7 @@ func _update_locomotion_animation(input_dir: float) -> void:
 
 	var animation_locked := sprite.sprite_frames \
 
-		and (sprite.animation == "attack" or sprite.animation == "hurt") \
+		and (sprite.animation == "attack" or sprite.animation == "hurt" or sprite.animation == "death") \
 
 		and sprite.is_playing()
 
@@ -180,11 +180,39 @@ func _update_locomotion_animation(input_dir: float) -> void:
 
 		return
 
-	if input_dir != 0 and sprite.sprite_frames and sprite.sprite_frames.has_animation("walk"):
+	if not sprite.sprite_frames:
 
-		sprite.play("walk")
+		return
 
-	elif sprite.sprite_frames and sprite.sprite_frames.has_animation("idle"):
+	if ability_controller.is_dashing and sprite.sprite_frames.has_animation("dash"):
+
+		sprite.play("dash")
+
+		return
+
+	if not is_on_floor():
+
+		if velocity.y < 0.0 and sprite.sprite_frames.has_animation("jump"):
+
+			sprite.play("jump")
+
+		elif sprite.sprite_frames.has_animation("fall"):
+
+			sprite.play("fall")
+
+		return
+
+	if input_dir != 0:
+
+		if sprite.sprite_frames.has_animation("run"):
+
+			sprite.play("run")
+
+		elif sprite.sprite_frames.has_animation("walk"):
+
+			sprite.play("walk")
+
+	elif sprite.sprite_frames.has_animation("idle"):
 
 		sprite.play("idle")
 

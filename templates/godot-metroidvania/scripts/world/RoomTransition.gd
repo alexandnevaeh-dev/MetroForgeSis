@@ -10,14 +10,15 @@ func _ready() -> void:
 	add_to_group("room_transition")
 	match transition_direction:
 		"up":
-			$Visual.color = Color(0.9, 0.75, 0.3, 0.45)
+			$Visual.color = Color(0.9, 0.75, 0.3, 0.0)
 		"down":
-			$Visual.color = Color(0.85, 0.5, 0.3, 0.45)
+			$Visual.color = Color(0.85, 0.5, 0.3, 0.0)
 		_:
 			if is_optional:
-				$Visual.color = Color(0.45, 0.65, 1.0, 0.4)
+				$Visual.color = Color(0.45, 0.65, 1.0, 0.0)
+	$Visual.visible = false
 	if not required_abilities.is_empty():
-		$Visual.color = Color(0.95, 0.45, 0.25, 0.65)
+		$Visual.color = Color(0.95, 0.45, 0.25, 0.0)
 	body_entered.connect(_on_body_entered)
 
 func _on_body_entered(body: Node2D) -> void:

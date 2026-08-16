@@ -1,0 +1,59 @@
+{
+  "capturedAt": "2026-08-15T04:35:11.267Z",
+  "projectPath": "C:\\Users\\alexa\\OneDrive\\Documents\\Metroidvania\\Forged\\GeneratedGames\\nvidia-image-activation-smoke",
+  "note": "P1 after screenshots; generation-running skipped; wind-swept preferred when present",
+  "files": [
+    {
+      "file": "after-dashboard.png",
+      "bytes": 29508
+    },
+    {
+      "file": "after-gallery.png",
+      "bytes": 27746
+    },
+    {
+      "file": "after-world-progression.png",
+      "bytes": 33502
+    },
+    {
+      "file": "after-world-graph.png",
+      "bytes": 33373
+    },
+    {
+      "file": "after-world-spatial.png",
+      "bytes": 39953
+    },
+    {
+      "file": "after-room-visual.png",
+      "bytes": 43571
+    },
+    {
+      "file": "after-room-collision.png",
+      "bytes": 43963
+    },
+    {
+      "file": "after-room-entities.png",
+      "bytes": 43950
+    },
+    {
+      "file": "after-dungeon.png",
+      "bytes": 25329
+    },
+    {
+      "file": "after-manual-generator.png",
+      "bytes": 29769
+    },
+    {
+      "file": "after-room-visual-1600.png",
+      "bytes": 40138
+    },
+    {
+      "file": "after-room-visual-1440.png",
+      "bytes": 40210
+    },
+    {
+      "file": "after-room-visual-1366.png",
+      "bytes": 34981
+    }
+  ]
+}

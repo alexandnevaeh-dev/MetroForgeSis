@@ -62,6 +62,13 @@ Closed largest gaps vs the board (Dashboard / Room Editor / status strip / sideb
 - Live visual QA at 1366 / 1440 / 1920 after electron run
 - Recompile existing GeneratedGames assets to pick up 64×64 defaults (new gens only unless re-run)
 
+### P4 — AI ops (2026-08-14)
+
+- Shared `AiOps*` workbench + Models / Providers / Routing / QA Concept A polish
+- Real IPC only; rejection tags are display maps; no fake FLUX routes
+- Screenshots: `redesign-audit/screenshots/p4/` · report: `P4_IMPLEMENTATION_REPORT.md`
+- **Stop after P4** (P5 not started)
+
 ## Notes
 
 - Run desktop: `pnpm --filter @metroforge/desktop typecheck` then `pnpm --filter @metroforge/desktop build` or repo `pnpm dev:desktop`

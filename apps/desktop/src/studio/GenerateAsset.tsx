@@ -4,6 +4,7 @@ import { ProjectSelect } from './ProjectSelect.js';
 import { NoProjectHint } from './NoProjectHint.js';
 import { useStudio } from './StudioContext.js';
 import { GENERATION_MODES } from './generation-options.js';
+import type { GenerateAssetResponse, GeneratedAssetRef } from './metroforge-api.js';
 
 const ASSET_TYPES = [
   'character_concept',
@@ -32,6 +33,25 @@ type VariantResult = {
   critiqueScore?: number;
   errors?: string[];
 };
+
+function toVariantResult(success: boolean, asset?: GeneratedAssetRef, errors?: string[]): VariantResult {
+  return {
+    success,
+    assetPath: asset?.path,
+    provider: asset?.provider,
+    fallbackGenerated: asset?.fallbackGenerated,
+    critiquePassed: asset?.critiquePassed,
+    critiqueScore: asset?.critiqueScore,
+    errors,
+  };
+}
+
+function flattenGenerateResponse(response: GenerateAssetResponse): VariantResult[] {
+  if (response.variants && response.variants.length > 0) {
+    return response.variants.map((v) => toVariantResult(v.success, v.asset, v.errors));
+  }
+  return [toVariantResult(response.success, response.asset, response.errors)];
+}
 
 export function GenerateAssetScreen() {
   const { selectedPath, hasActiveProject, generatorPrefill, openRoom } = useStudio();
@@ -84,32 +104,10 @@ export function GenerateAssetScreen() {
       seed: Number.isFinite(parseInt(seed, 10)) ? parseInt(seed, 10) : undefined,
     });
     setGenerating(false);
-    if ('variants' in response && Array.isArray(response.variants)) {
-      const list = response.variants.map((v) => ({
-        success: v.success,
-        assetPath: v.asset?.path,
-        provider: v.asset?.provider,
-        fallbackGenerated: v.asset?.fallbackGenerated,
-        critiquePassed: v.asset?.critiquePassed,
-        critiqueScore: v.asset?.critiqueScore,
-        errors: v.errors,
-      }));
-      setVariantResults(list);
-      const first = list.find((v) => v.success && v.assetPath);
-      if (first?.assetPath) await inspectAsset(first.assetPath);
-    } else {
-      const single: VariantResult = {
-        success: response.success,
-        assetPath: response.asset?.path,
-        provider: response.asset?.provider,
-        fallbackGenerated: response.asset?.fallbackGenerated,
-        critiquePassed: response.asset?.critiquePassed,
-        critiqueScore: response.asset?.critiqueScore,
-        errors: response.errors,
-      };
-      setVariantResults([single]);
-      if (single.success && single.assetPath) await inspectAsset(single.assetPath);
-    }
+    const list = flattenGenerateResponse(response);
+    setVariantResults(list);
+    const first = list.find((v) => v.success && v.assetPath);
+    if (first?.assetPath) await inspectAsset(first.assetPath);
   };
 
   const restoreVersion = async (version: number) => {
@@ -122,7 +120,7 @@ export function GenerateAssetScreen() {
   };
 
   return (
-    <section>
+    <section className="workspace-screen generate-asset-screen">
       <ScreenHeader
         eyebrow="Library"
         title="Manual Asset Generator"
@@ -217,6 +215,11 @@ export function GenerateAssetScreen() {
               Variant {i + 1}: {v.success ? v.assetPath : v.errors?.join('; ') ?? 'failed'}
               {v.provider ? ` · ${v.provider}` : ''}
               {v.fallbackGenerated ? ' · fallback' : ''}
+              {typeof v.critiquePassed === 'boolean'
+                ? v.critiquePassed
+                  ? ' · critique passed'
+                  : ' · critique failed'
+                : ''}
               {typeof v.critiqueScore === 'number' ? ` · QA ${v.critiqueScore}` : ''}
             </p>
           ))}

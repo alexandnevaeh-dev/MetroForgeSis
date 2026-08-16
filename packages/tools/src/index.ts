@@ -4,8 +4,11 @@ export {
   launchGodotEditor,
   launchGodotGame,
   resolveGodotExecutable,
+  resolveGodotForProject,
+  resolveGodotExecutableCanonical,
+  readProjectGodotOverride,
 } from './godot-launcher.js';
-export type { LaunchGodotResult } from './godot-launcher.js';
+export type { LaunchGodotResult, GodotResolveResult, GodotResolveSource, ResolveGodotOptions } from './godot-launcher.js';
 export { exportProject } from './project-export.js';
 export type { ExportManifest, ExportProjectOptions, ExportProjectResult } from './project-export.js';
 export {

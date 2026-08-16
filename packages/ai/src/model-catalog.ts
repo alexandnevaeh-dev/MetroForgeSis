@@ -130,7 +130,13 @@ export function rankModelsForCapability(
   models: ModelEntry[],
   capability: ModelCapability,
   hardware: HardwareProfile,
-  opts: { freeOnly?: boolean; localOnly?: boolean; preferInstalled?: boolean } = {},
+  opts: {
+    freeOnly?: boolean;
+    localOnly?: boolean;
+    preferInstalled?: boolean;
+    /** When set, entries are RoutableModelEntry and offline providers are excluded. */
+    enforceProviderHealth?: boolean;
+  } = {},
 ): RankedModel[] {
   const capKey = capabilityToScoreKey(capability);
 
@@ -145,11 +151,17 @@ export function rankModelsForCapability(
       if (m.local && m.minVramMb && m.minVramMb > 0) {
         if (!hardware.vramMb || hardware.vramMb < m.minVramMb * 0.85) return false;
       }
+      if (opts.enforceProviderHealth) {
+        const entry = m as RoutableModelEntry;
+        if (!entry.providerEnabled) return false;
+        if (providerHealthBlocksLiveRoute(entry.providerHealth)) return false;
+      }
       return true;
     })
     .map((model) => {
       const reasons: string[] = [];
       let score = model.priority;
+      const entry = model as RoutableModelEntry;
 
       if (capKey && model.specializationScores?.[capKey]) {
         score += model.specializationScores[capKey]!;
@@ -170,6 +182,12 @@ export function rankModelsForCapability(
       if (model.estimatedSpeed === 'fast') score += 5;
       if (model.commercialUse === 'allowed') score += 3;
 
+      const healthPenalty = providerHealthPenalty(entry.providerHealth);
+      if (healthPenalty !== 0) {
+        score += healthPenalty;
+        reasons.push(`provider degraded ${healthPenalty}`);
+      }
+
       return { model, score, reasons };
     })
     .sort((a, b) => b.score - a.score);
@@ -181,6 +199,11 @@ export function rankModelsForCapability(
  *  this field, so it satisfies this type structurally with no cast needed at call sites. */
 export interface RoutableModelEntry extends ModelEntry {
   providerEnabled: boolean;
+  /**
+   * Live provider health when known. unavailable / offline / disabled / unconfigured
+   * reject the model from live route selection. degraded remains eligible but penalized.
+   */
+  providerHealth?: 'healthy' | 'degraded' | 'unavailable' | 'disabled' | 'unconfigured' | 'offline';
 }
 
 export interface ModelRoutingCandidate {
@@ -205,6 +228,25 @@ export interface ModelRoutingExplanation {
   fallbacks: Array<{ modelId: string; provider: string }>;
   license?: string;
   hardware?: { profile: string; ramMb: number; vramMb?: number };
+  /** When true, selected is a theoretical catalog pick (provider not live-healthy). */
+  theoreticalRoute?: boolean;
+}
+
+function providerHealthBlocksLiveRoute(
+  health: RoutableModelEntry['providerHealth'] | undefined,
+): boolean {
+  if (!health) return false;
+  return (
+    health === 'unavailable' ||
+    health === 'offline' ||
+    health === 'disabled' ||
+    health === 'unconfigured'
+  );
+}
+
+function providerHealthPenalty(health: RoutableModelEntry['providerHealth'] | undefined): number {
+  if (health === 'degraded') return -25;
+  return 0;
 }
 
 /**
@@ -222,7 +264,10 @@ export function explainModelRouting(
   opts: { freeOnly?: boolean; localOnly?: boolean; preferInstalled?: boolean } = {},
 ): ModelRoutingExplanation {
   const relevant = entries.filter((e) => e.capabilities.includes(capability));
-  const ranked = rankModelsForCapability(relevant, capability, hardware, opts);
+  const ranked = rankModelsForCapability(relevant, capability, hardware, {
+    ...opts,
+    enforceProviderHealth: true,
+  });
   const rankedIds = new Set(ranked.map((r) => r.model.id));
   const licenseRouter = new LicenseRouter();
 
@@ -249,6 +294,7 @@ export function explainModelRouting(
     fallbacks: candidates.slice(1, 4).map((c) => ({ modelId: c.modelId, provider: c.provider })),
     license: selectedEntry?.license,
     hardware: { profile: hardware.profile, ramMb: hardware.totalRamMb, vramMb: hardware.vramMb },
+    theoreticalRoute: false,
   };
 }
 
@@ -262,6 +308,9 @@ function rejectionReasons(
 ): string[] {
   const reasons: string[] = [];
   if (!entry.providerEnabled) reasons.push('provider not configured or not enabled');
+  if (providerHealthBlocksLiveRoute(entry.providerHealth)) {
+    reasons.push(`provider health ${entry.providerHealth} — rejected for live route`);
+  }
   if (!entry.enabled) reasons.push('model not routable (disabled or provider unreachable)');
   if (opts.freeOnly && entry.costClass !== 'free') reasons.push('not a free-tier model');
   if (opts.localOnly && !entry.local) reasons.push('not a local model');

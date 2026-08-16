@@ -12,6 +12,7 @@ export interface ModeRoutingFlags {
   commercialSafeOnly: boolean;
   qualityTarget: RoutingContext['qualityTarget'];
   maxVramMb?: number;
+  lowestCost?: boolean;
 }
 
 /** Maps a GenerationMode to CapabilityRouter filter flags — single source of truth for
@@ -100,6 +101,16 @@ export function modeRoutingFlags(mode: GenerationMode): ModeRoutingFlags {
         qualityTarget: 'balanced',
         maxVramMb: DEFAULT_LOW_VRAM_BUDGET_MB,
       };
+    case 'LOWEST_COST':
+      return {
+        freeOnly: false,
+        localOnly: false,
+        nvidiaOnly: false,
+        offline: false,
+        commercialSafeOnly: false,
+        qualityTarget: 'fast',
+        lowestCost: true,
+      };
     case 'BALANCED':
     case 'CUSTOM':
     default:
@@ -125,7 +136,8 @@ export function modeRegistersHostedProviders(mode: GenerationMode): boolean {
     mode === 'FASTEST' ||
     mode === 'HIGHEST_QUALITY' ||
     mode === 'LOW_VRAM' ||
-    mode === 'BALANCED'
+    mode === 'BALANCED' ||
+    mode === 'LOWEST_COST'
   );
 }
 
@@ -145,5 +157,6 @@ export function buildTextRoutingContext(
     commercialSafeOnly: flags.commercialSafeOnly,
     qualityTarget: overrides?.qualityTarget ?? flags.qualityTarget,
     maxVramMb: overrides?.maxVramMb ?? flags.maxVramMb,
+    lowestCost: flags.lowestCost,
   };
 }

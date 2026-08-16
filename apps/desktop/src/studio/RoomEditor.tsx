@@ -8,7 +8,20 @@ import { ProjectSelect } from './ProjectSelect.js';
 import { NoProjectHint } from './NoProjectHint.js';
 import { useStudio } from './StudioContext.js';
 import type { RoomCollisionPreview } from './metroforge-api.js';
-import { Badge, Button, Input, Panel } from './ui/index.js';
+import {
+  Badge,
+  Button,
+  EditorToolButton,
+  EditorToolbar,
+  EditorViewport,
+  EditorWorkbench,
+  EditorZoomControls,
+  EmptyViewport,
+  InspectorSection,
+  Panel,
+  SearchField,
+  ViewModeTabs,
+} from './ui/index.js';
 
 type RoomRecord = {
   id: string;
@@ -26,9 +39,10 @@ type RoomRecord = {
   weakFloors?: Array<{ x: number; width: number; targetRoomId: string }>;
 };
 
-type LayerId = 'visual' | 'collision' | 'entities' | 'navigation' | 'progression' | 'debug';
+/** View-mode tabs (Concept A Room Editor reference). */
+type ViewModeId = 'visual' | 'collision' | 'entities' | 'navigation' | 'progression' | 'debug';
 
-const LAYERS: Array<{ id: LayerId; label: string }> = [
+const VIEW_MODES: Array<{ id: ViewModeId; label: string }> = [
   { id: 'visual', label: 'Visual' },
   { id: 'collision', label: 'Collision' },
   { id: 'entities', label: 'Entities' },
@@ -37,7 +51,28 @@ const LAYERS: Array<{ id: LayerId; label: string }> = [
   { id: 'debug', label: 'Debug' },
 ];
 
+/** Overlay channels derived from real room IPC — not inventing Ground/Props/Lights. */
+const OVERLAY_LAYERS: Array<{ id: ViewModeId; label: string }> = [
+  { id: 'visual', label: 'Tiles' },
+  { id: 'collision', label: 'Collision' },
+  { id: 'entities', label: 'Entities' },
+  { id: 'navigation', label: 'Navigation' },
+  { id: 'progression', label: 'Progression' },
+  { id: 'debug', label: 'Debug' },
+];
+
+type PaintTool = 'select' | 'paint' | 'erase';
+
 const TILE = 16;
+
+function roomHasGeometry(room: RoomRecord, collision: RoomCollisionPreview | null): boolean {
+  return (
+    (room.tileCells?.length ?? 0) > 0 ||
+    (collision?.rects?.length ?? 0) > 0 ||
+    (room.weakFloors?.length ?? 0) > 0 ||
+    (room.connections?.length ?? 0) > 0
+  );
+}
 
 export function RoomEditor() {
   const { selectedPath, hasActiveProject, focusRoomId, setFocusRoomId, navigate } = useStudio();
@@ -46,10 +81,12 @@ export function RoomEditor() {
   const [query, setQuery] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [layer, setLayer] = useState<LayerId>('visual');
+  const [viewMode, setViewMode] = useState<ViewModeId>('visual');
   const [collision, setCollision] = useState<RoomCollisionPreview | null>(null);
   const [zoom, setZoom] = useState(100);
   const [selectedTile, setSelectedTile] = useState<TileCoord>({ col: 0, row: 2 });
+  const [paintTool, setPaintTool] = useState<PaintTool>('paint');
+  const [gridSnap, setGridSnap] = useState(true);
 
   const loadRooms = async (path: string) => {
     if (!window.metroforge?.listRooms) return;
@@ -104,6 +141,7 @@ export function RoomEditor() {
   }, [rooms, query]);
 
   const selected = rooms.find((r) => r.id === selectedRoomId) ?? filtered[0];
+  const hasGeometry = selected ? roomHasGeometry(selected, collision) : false;
 
   const runRoomAction = async (action: () => Promise<{ success?: boolean; error?: string; message?: string }>) => {
     setError(null);
@@ -116,13 +154,15 @@ export function RoomEditor() {
 
   const widthTiles = selected ? Math.round((selected.width ?? 800) / TILE) : 0;
   const heightTiles = selected ? Math.round((selected.height ?? 600) / TILE) : 0;
+  const tileSize = collision?.tileSize ?? TILE;
 
   return (
-    <section className="room-editor-screen">
+    <section className="workspace-screen room-editor-screen">
       <ScreenHeader
+        compact
         eyebrow="World"
         title="Room Editor"
-        description="Layers, tools, and palette left — canvas center — inspector with mini preview."
+        description="View modes · layers/tools · canvas · inspector. Authored geometry only."
         actions={
           <>
             <ProjectSelect />
@@ -135,67 +175,29 @@ export function RoomEditor() {
       {hasActiveProject && (
         <>
           <CommandBar
+            compact
             projectPath={selectedPath}
             selectedRoomId={selectedRoomId}
             onSuccess={() => loadRooms(selectedPath)}
           />
 
-          <div className="editor-workspace">
+          <ViewModeTabs
+            label="Room view mode"
+            items={VIEW_MODES.map((item) => ({ id: item.id, label: item.label }))}
+            value={viewMode}
+            onChange={(id) => setViewMode(id as ViewModeId)}
+          />
+
+          <EditorWorkbench className="room-editor-workspace">
             <aside className="editor-left-rail">
-              <Panel level={1} title="Layers">
-                <ul className="layer-list">
-                  {LAYERS.map((item) => (
-                    <li key={item.id}>
-                      <button
-                        type="button"
-                        className={layer === item.id ? 'layer-list-item active' : 'layer-list-item'}
-                        onClick={() => setLayer(item.id)}
-                        aria-pressed={layer === item.id}
-                      >
-                        <span>{item.label}</span>
-                        <span className="layer-vis" aria-hidden="true">
-                          {layer === item.id ? '●' : '○'}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </Panel>
-
-              <Panel level={1} title="Tools">
-                <div className="editor-tools-grid" role="toolbar" aria-label="Room layer tools">
-                  {LAYERS.map((item) => (
-                    <button
-                      key={`tool-${item.id}`}
-                      type="button"
-                      className={layer === item.id ? 'editor-tool-btn active' : 'editor-tool-btn'}
-                      onClick={() => setLayer(item.id)}
-                      title={item.label}
-                    >
-                      {item.label.slice(0, 3)}
-                    </button>
-                  ))}
-                </div>
-              </Panel>
-
-              {selected && (
-                <TilePalettePanel
-                  projectPath={selectedPath}
-                  biomeId={selected.biomeId ?? 'biome_0'}
-                  selectedTile={selectedTile}
-                  onSelect={setSelectedTile}
-                  interactive={layer === 'visual'}
-                />
-              )}
-
-              <Panel level={1} title="Rooms" fill>
-                <Input
+              <Panel level={1} title="Hierarchy">
+                <SearchField
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Filter rooms…"
                   aria-label="Filter rooms"
                 />
-                <p className="hint">
+                <p className="hint type-caption">
                   {filtered.length} of {rooms.length}
                 </p>
                 {filtered.length === 0 && (
@@ -220,176 +222,428 @@ export function RoomEditor() {
                     setFocusRoomId(room.id);
                   }}
                   renderItem={(room, active) => (
-                    <span className={active ? 'room-item active' : 'room-item'}>
+                    <span className={active ? 'room-item active room-item-compact' : 'room-item room-item-compact'}>
                       <strong>{room.id}</strong>
                       <span>{room.worldArchetype ?? room.archetype ?? 'room'}</span>
                     </span>
                   )}
                 />
               </Panel>
+
+              <Panel level={1} title="Layers">
+                <ul className="layer-list">
+                  {OVERLAY_LAYERS.map((item) => (
+                    <li key={item.id}>
+                      <button
+                        type="button"
+                        className={viewMode === item.id ? 'layer-list-item active' : 'layer-list-item'}
+                        onClick={() => setViewMode(item.id)}
+                        aria-pressed={viewMode === item.id}
+                      >
+                        <span>{item.label}</span>
+                        <span className="layer-vis" aria-hidden="true">
+                          {viewMode === item.id ? '●' : '○'}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </Panel>
+
+              <Panel level={1} title="Tools">
+                <div className="editor-tools-grid" role="toolbar" aria-label="Room paint tools">
+                  {(
+                    [
+                      { id: 'select' as const, label: 'Select', hint: 'Select' },
+                      { id: 'paint' as const, label: 'Paint', hint: 'Paint tiles (Visual)' },
+                      { id: 'erase' as const, label: 'Erase', hint: 'Erase (Visual)' },
+                    ] as const
+                  ).map((tool) => (
+                    <EditorToolButton
+                      key={tool.id}
+                      active={paintTool === tool.id}
+                      onClick={() => {
+                        setPaintTool(tool.id);
+                        if (tool.id !== 'select') setViewMode('visual');
+                      }}
+                      title={tool.hint}
+                      disabled={tool.id !== 'select' && viewMode !== 'visual' && paintTool !== tool.id}
+                    >
+                      {tool.label}
+                    </EditorToolButton>
+                  ))}
+                </div>
+                <p className="hint type-caption" style={{ marginTop: '0.35rem' }}>
+                  Paint/Erase apply on Visual via TilePaintEditor → tileCells → rooms.json → Godot.
+                </p>
+              </Panel>
+
+              {selected && (
+                <div className="tile-palette-dock-slot">
+                  <TilePalettePanel
+                    projectPath={selectedPath}
+                    biomeId={selected.biomeId ?? 'biome_0'}
+                    selectedTile={selectedTile}
+                    onSelect={setSelectedTile}
+                    interactive={viewMode === 'visual' && paintTool !== 'select'}
+                  />
+                </div>
+              )}
             </aside>
 
-            <div className="panel editor-canvas editor-canvas-fill">
-              <div className="editor-toolbar">
-                <span className="hint mono">{selected?.id ?? 'No room'}</span>
-                <span className="status-grow" />
-                <Button size="sm" onClick={() => setZoom((z) => Math.max(50, z - 25))} aria-label="Zoom out">
-                  −
-                </Button>
-                <span className="mono hint">{zoom}%</span>
-                <Button size="sm" onClick={() => setZoom((z) => Math.min(200, z + 25))} aria-label="Zoom in">
-                  +
-                </Button>
-                <Button size="sm" onClick={() => setZoom(100)}>
-                  Reset
-                </Button>
-              </div>
-
-              {selected && layer !== 'debug' && (
-                <div style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top left' }}>
-                  <RoomCanvasPreview room={selected} layer={layer} collision={collision} fill />
-                </div>
-              )}
-              {selected && layer === 'collision' && (
-                <p className="hint">
-                  {collision?.rects?.length
-                    ? `Authored collision: ${collision.rects.length} rects (${collision.widthTiles}×${collision.heightTiles} @ ${collision.tileSize}px).`
-                    : collision?.error
-                      ? `${collision.error} Showing painted tileCells occupancy instead.`
-                      : `Occupancy from ${selected.tileCells?.length ?? 0} painted tile cells.`}
-                </p>
-              )}
-              {selected && layer === 'visual' && (
-                <TilePaintEditor
-                  projectPath={selectedPath}
-                  roomId={selected.id}
-                  biomeId={selected.biomeId ?? 'biome_0'}
-                  width={selected.width ?? 800}
-                  height={selected.height ?? 600}
-                  initialCells={selected.tileCells ?? []}
-                  selectedTile={selectedTile}
-                  onSaved={() => loadRooms(selectedPath)}
+            <EditorViewport
+              className="room-editor-canvas"
+              toolbar={
+                <EditorToolbar>
+                  <span className="hint mono">{selected?.id ?? 'No room selected'}</span>
+                  <Badge tone="muted">{viewMode}</Badge>
+                  <span className="status-grow" />
+                  <Button
+                    size="sm"
+                    aria-pressed={gridSnap}
+                    onClick={() => setGridSnap((v) => !v)}
+                    title="Grid snap preference (paint uses tile grid)"
+                  >
+                    Snap {gridSnap ? 'On' : 'Off'}
+                  </Button>
+                  <EditorZoomControls zoom={zoom} onZoomChange={setZoom} onFit={() => setZoom(100)} />
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    disabled={!selectedPath}
+                    onClick={async () => {
+                      setError(null);
+                      if (!selectedPath) return;
+                      const r = await window.metroforge!.playInGodot!(selectedPath);
+                      if (!r.success) setError(r.message);
+                    }}
+                  >
+                    Play Preview
+                  </Button>
+                </EditorToolbar>
+              }
+              footer={
+                selected ? (
+                  <div className="room-canvas-status" role="status">
+                    <span>Grid: {tileSize}px</span>
+                    <span>Snap {gridSnap ? 'On' : 'Off'}</span>
+                    <span>
+                      Size: {widthTiles} × {heightTiles} tiles
+                    </span>
+                    <span>Cells: {selected.tileCells?.length ?? 0}</span>
+                    <span>
+                      Collision: {collision?.rects?.length ?? 0}
+                      {collision?.error ? ' (fallback)' : ''}
+                    </span>
+                    <span className="status-grow" />
+                    <span className="mono">{selected.id}</span>
+                  </div>
+                ) : null
+              }
+            >
+              {!selected ? (
+                <EmptyViewport
+                  title={rooms.length === 0 ? 'No rooms in this project' : 'Select a room'}
+                  description={
+                    rooms.length === 0
+                      ? 'listRooms returned no room records. Generate or open a project that has authored rooms.'
+                      : 'Choose a room from the left list to inspect metadata and paint tiles when geometry exists.'
+                  }
+                  meta={
+                    <dl className="settings-dl empty-viewport-dl">
+                      <dt>Project rooms</dt>
+                      <dd>{rooms.length}</dd>
+                      <dt>Active filter</dt>
+                      <dd>{query.trim() ? `"${query.trim()}" → ${filtered.length}` : 'none'}</dd>
+                      <dt>View mode</dt>
+                      <dd>{viewMode}</dd>
+                    </dl>
+                  }
+                  actions={
+                    <>
+                      <Button variant="primary" size="sm" onClick={() => navigate('Studio')}>
+                        Generation Studio
+                      </Button>
+                      <Button size="sm" onClick={() => navigate('World')}>
+                        World Editor
+                      </Button>
+                      <Button size="sm" onClick={() => navigate('Create')}>
+                        New Game
+                      </Button>
+                      {rooms.length > 0 && query && (
+                        <Button size="sm" onClick={() => setQuery('')}>
+                          Clear filter
+                        </Button>
+                      )}
+                    </>
+                  }
                 />
-              )}
-              {selected && layer === 'debug' && (
-                <pre className="panel" style={{ whiteSpace: 'pre-wrap', fontSize: '0.75rem' }}>
+              ) : viewMode === 'debug' ? (
+                <pre className="panel room-debug-json mono" role="region" aria-label="Room debug JSON">
                   {JSON.stringify(selected, null, 2)}
                 </pre>
+              ) : viewMode === 'visual' ? (
+                <>
+                  {!hasGeometry && (
+                    <EmptyViewport
+                      title="No authored geometry yet"
+                      description="This room has no tileCells, collision rects, weak floors, or connections. Paint tiles below or regenerate the room — the canvas will not invent tiles or enemies."
+                      meta={
+                        <dl className="settings-dl empty-viewport-dl">
+                          <dt>Room</dt>
+                          <dd className="mono">{selected.id}</dd>
+                          <dt>Archetype</dt>
+                          <dd>{selected.archetype ?? '—'}</dd>
+                          <dt>Size</dt>
+                          <dd>
+                            {widthTiles} × {heightTiles} @ {tileSize}px
+                          </dd>
+                          <dt>Biome</dt>
+                          <dd>{selected.biomeId ?? '—'}</dd>
+                        </dl>
+                      }
+                      actions={
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              runRoomAction(() =>
+                                window.metroforge!.regenerateRoom!(selectedPath, selected.id, 'full'),
+                              )
+                            }
+                          >
+                            Regenerate Room
+                          </Button>
+                          <Button size="sm" onClick={() => navigate('Studio')}>
+                            Generation Studio
+                          </Button>
+                        </>
+                      }
+                    />
+                  )}
+                  {hasGeometry && (
+                    <div
+                      className="room-canvas-zoom"
+                      style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top left' }}
+                    >
+                      <RoomCanvasPreview room={selected} layer={viewMode} collision={collision} fill />
+                    </div>
+                  )}
+                  <TilePaintEditor
+                    projectPath={selectedPath}
+                    roomId={selected.id}
+                    biomeId={selected.biomeId ?? 'biome_0'}
+                    width={selected.width ?? 800}
+                    height={selected.height ?? 600}
+                    initialCells={selected.tileCells ?? []}
+                    selectedTile={selectedTile}
+                    tool={paintTool === 'erase' ? 'erase' : 'paint'}
+                    onSaved={() => loadRooms(selectedPath)}
+                  />
+                </>
+              ) : !hasGeometry && viewMode !== 'entities' ? (
+                <EmptyViewport
+                  title={`No ${viewMode} geometry`}
+                  description="Authored overlay data is empty for this room. Entity counts still appear in the inspector when present on the room record."
+                  meta={
+                    <dl className="settings-dl empty-viewport-dl">
+                      <dt>Room</dt>
+                      <dd className="mono">{selected.id}</dd>
+                      <dt>Tile cells</dt>
+                      <dd>{selected.tileCells?.length ?? 0}</dd>
+                      <dt>Collision rects</dt>
+                      <dd>{collision?.rects?.length ?? 0}</dd>
+                    </dl>
+                  }
+                />
+              ) : (
+                <>
+                  <div
+                    className="room-canvas-zoom"
+                    style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top left' }}
+                  >
+                    <RoomCanvasPreview room={selected} layer={viewMode} collision={collision} fill />
+                  </div>
+                  {viewMode === 'collision' && (
+                    <p className="hint">
+                      {collision?.rects?.length
+                        ? `Authored collision: ${collision.rects.length} rects (${collision.widthTiles}×${collision.heightTiles} @ ${collision.tileSize}px).`
+                        : collision?.error
+                          ? `${collision.error} Showing painted tileCells occupancy instead.`
+                          : `Occupancy from ${selected.tileCells?.length ?? 0} painted tile cells.`}
+                    </p>
+                  )}
+                  {viewMode === 'entities' && (
+                    <p className="hint">
+                      Entity lists come from the room record. Positions are not authored — canvas shows counts
+                      only, not invented spawn markers.
+                    </p>
+                  )}
+                </>
               )}
+            </EditorViewport>
 
-              <div className="row" style={{ marginTop: 'auto', justifyContent: 'flex-end', gap: '0.4rem' }}>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={async () => {
-                    setError(null);
-                    if (!selectedPath) return;
-                    const r = await window.metroforge!.playInGodot!(selectedPath);
-                    if (!r.success) setError(r.message);
-                  }}
-                >
-                  Play Preview
-                </Button>
-              </div>
-            </div>
-
-            {selected && (
-              <aside className="room-detail panel editor-inspector">
-                <div className="room-mini-preview" aria-label="Room mini preview">
-                  <RoomCanvasPreview room={selected} layer="visual" collision={collision} mini />
-                </div>
-                <h3 style={{ textTransform: 'none', letterSpacing: 0 }}>{selected.id}</h3>
-                <dl className="settings-dl">
-                  <dt>Name</dt>
-                  <dd>{selected.id}</dd>
-                  <dt>ID</dt>
-                  <dd className="mono">{selected.id}</dd>
-                  <dt>Archetype</dt>
-                  <dd>
-                    {selected.archetype ?? '—'}
-                    {selected.worldArchetype && selected.worldArchetype !== selected.archetype
-                      ? ` · world ${selected.worldArchetype}`
-                      : ''}
-                  </dd>
-                  <dt>Width (tiles)</dt>
-                  <dd>{widthTiles}</dd>
-                  <dt>Height (tiles)</dt>
-                  <dd>{heightTiles}</dd>
-                  <dt>Biome / Theme</dt>
-                  <dd>{selected.biomeId ?? '—'}</dd>
-                  <dt>Enemies</dt>
-                  <dd>{(selected.enemies ?? []).join(', ') || 'none'}</dd>
-                  <dt>NPCs</dt>
-                  <dd>{(selected.npcs ?? []).join(', ') || 'none'}</dd>
-                  <dt>Collectibles</dt>
-                  <dd>{(selected.collectibles ?? []).join(', ') || 'none'}</dd>
-                  <dt>Connections</dt>
-                  <dd>
-                    {(selected.connections ?? [])
-                      .map((c) => `${c.direction}→${c.targetRoomId}`)
-                      .join(', ') || 'none'}
-                  </dd>
-                  <dt>Painted cells</dt>
-                  <dd>{selected.tileCells?.length ?? 0}</dd>
-                </dl>
-                <div className="row" style={{ marginTop: '0.45rem' }}>
-                  {(selected.enemies ?? []).slice(0, 3).map((tag) => (
-                    <Badge key={tag} tone="muted">
-                      {tag}
-                    </Badge>
-                  ))}
-                  {(selected.biomeId ? [selected.biomeId] : []).map((tag) => (
-                    <Badge key={tag} tone="info">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-                <div className="row" style={{ marginTop: '0.55rem' }}>
-                  <Button
-                    size="sm"
-                    onClick={() =>
-                      runRoomAction(() =>
-                        window.metroforge!.updateRoom!(selectedPath, {
-                          roomId: selected.id,
-                          hasEnemy: true,
-                        }),
-                      )
-                    }
-                  >
-                    Add Enemy
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() =>
-                      runRoomAction(() =>
-                        window.metroforge!.regenerateRoom!(selectedPath, selected.id, 'encounter'),
-                      )
-                    }
-                  >
-                    Regenerate Encounter
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() =>
-                      runRoomAction(() =>
-                        window.metroforge!.regenerateRoom!(selectedPath, selected.id, 'full'),
-                      )
-                    }
-                  >
-                    Regenerate Room
-                  </Button>
-                </div>
-                <div className="row" style={{ marginTop: '0.45rem' }}>
-                  <Button variant="primary" size="sm" onClick={() => navigate('World')}>
-                    Open in World Editor
-                  </Button>
-                  <Button size="sm" onClick={() => navigate('Dungeon')}>
-                    Dungeon
-                  </Button>
-                </div>
-              </aside>
-            )}
-          </div>
+            <aside className="room-detail panel editor-inspector">
+              {selected ? (
+                <>
+                  <InspectorSection title="Preview">
+                    {hasGeometry ? (
+                      <div className="room-mini-preview" aria-label="Room mini preview">
+                        <RoomCanvasPreview room={selected} layer="visual" collision={collision} mini />
+                      </div>
+                    ) : (
+                      <p className="hint">No geometry thumbnail — room has no authored tiles/collision yet.</p>
+                    )}
+                  </InspectorSection>
+                  <InspectorSection title="Room">
+                    <dl className="settings-dl">
+                      <dt>Name</dt>
+                      <dd>{selected.id}</dd>
+                      <dt>ID</dt>
+                      <dd className="mono">{selected.id}</dd>
+                      <dt>Archetype</dt>
+                      <dd>
+                        {selected.archetype ?? '—'}
+                        {selected.worldArchetype && selected.worldArchetype !== selected.archetype
+                          ? ` · world ${selected.worldArchetype}`
+                          : ''}
+                      </dd>
+                      <dt>Dimensions</dt>
+                      <dd>
+                        {widthTiles} × {heightTiles} tiles · {selected.width ?? 800}×{selected.height ?? 600}px
+                      </dd>
+                      <dt>Biome</dt>
+                      <dd>{selected.biomeId ?? '—'}</dd>
+                    </dl>
+                    <div className="row" style={{ marginTop: '0.45rem', flexWrap: 'wrap', gap: '0.25rem' }}>
+                      {(selected.enemies ?? []).slice(0, 3).map((tag) => (
+                        <Badge key={tag} tone="muted">
+                          {tag}
+                        </Badge>
+                      ))}
+                      {(selected.biomeId ? [selected.biomeId] : []).map((tag) => (
+                        <Badge key={tag} tone="info">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </InspectorSection>
+                  <InspectorSection title="Contents">
+                    <ul className="stat-list">
+                      <li>Enemies ({(selected.enemies ?? []).length})</li>
+                      <li>NPCs ({(selected.npcs ?? []).length})</li>
+                      <li>Collectibles ({(selected.collectibles ?? []).length})</li>
+                      <li>Painted cells ({selected.tileCells?.length ?? 0})</li>
+                      <li>Weak floors ({selected.weakFloors?.length ?? 0})</li>
+                      <li>Connections ({selected.connections?.length ?? 0})</li>
+                    </ul>
+                    {(selected.enemies?.length || selected.npcs?.length || selected.collectibles?.length) ? (
+                      <dl className="settings-dl" style={{ marginTop: '0.4rem' }}>
+                        {(selected.enemies ?? []).length > 0 && (
+                          <>
+                            <dt>Enemy ids</dt>
+                            <dd>{selected.enemies!.join(', ')}</dd>
+                          </>
+                        )}
+                        {(selected.npcs ?? []).length > 0 && (
+                          <>
+                            <dt>NPC ids</dt>
+                            <dd>{selected.npcs!.join(', ')}</dd>
+                          </>
+                        )}
+                        {(selected.collectibles ?? []).length > 0 && (
+                          <>
+                            <dt>Collectible ids</dt>
+                            <dd>{selected.collectibles!.join(', ')}</dd>
+                          </>
+                        )}
+                      </dl>
+                    ) : null}
+                  </InspectorSection>
+                  <InspectorSection title="Connections">
+                    {(selected.connections ?? []).length === 0 ? (
+                      <p className="hint">No connections on this room record.</p>
+                    ) : (
+                      <ul className="stat-list">
+                        {(selected.connections ?? []).map((c, i) => (
+                          <li key={`${c.direction}-${c.targetRoomId}-${i}`}>
+                            <button
+                              type="button"
+                              className="status-link"
+                              onClick={() => {
+                                setSelectedRoomId(c.targetRoomId);
+                                setFocusRoomId(c.targetRoomId);
+                              }}
+                            >
+                              {c.direction} → {c.targetRoomId}
+                            </button>
+                            {(c.requirements?.length ?? 0) > 0 ? (
+                              <span className="hint"> · {c.requirements!.join(', ')}</span>
+                            ) : null}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </InspectorSection>
+                  <InspectorSection title="Actions">
+                    <div className="row" style={{ flexWrap: 'wrap', gap: '0.35rem' }}>
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          runRoomAction(() =>
+                            window.metroforge!.updateRoom!(selectedPath, {
+                              roomId: selected.id,
+                              hasEnemy: true,
+                            }),
+                          )
+                        }
+                      >
+                        Add Enemy
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          runRoomAction(() =>
+                            window.metroforge!.regenerateRoom!(selectedPath, selected.id, 'encounter'),
+                          )
+                        }
+                      >
+                        Regenerate Encounter
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          runRoomAction(() =>
+                            window.metroforge!.regenerateRoom!(selectedPath, selected.id, 'full'),
+                          )
+                        }
+                      >
+                        Regenerate Room
+                      </Button>
+                      <Button variant="primary" size="sm" onClick={() => navigate('World')}>
+                        World Editor
+                      </Button>
+                      <Button size="sm" onClick={() => navigate('Dungeon')}>
+                        Dungeon
+                      </Button>
+                    </div>
+                  </InspectorSection>
+                </>
+              ) : (
+                <EmptyViewport
+                  className="inspector-empty"
+                  title="Inspector"
+                  description="Room properties appear when a room is selected from listRooms."
+                  meta={
+                    <dl className="settings-dl empty-viewport-dl">
+                      <dt>Rooms loaded</dt>
+                      <dd>{rooms.length}</dd>
+                    </dl>
+                  }
+                />
+              )}
+            </aside>
+          </EditorWorkbench>
 
           {message && <p className="result success">{message}</p>}
           {error && <p className="result error">{error}</p>}
@@ -407,7 +661,7 @@ function RoomCanvasPreview({
   fill = false,
 }: {
   room: RoomRecord;
-  layer: LayerId;
+  layer: ViewModeId;
   collision?: RoomCollisionPreview | null;
   mini?: boolean;
   fill?: boolean;
@@ -416,18 +670,50 @@ function RoomCanvasPreview({
   const h = room.height ?? 600;
   const scale = mini ? 0.18 : fill ? 0.55 : 0.35;
   const showTiles = layer === 'visual' || layer === 'collision';
-  const showEntities = layer === 'visual' || layer === 'entities';
   const showNav = layer === 'visual' || layer === 'navigation' || layer === 'progression';
   const authoredRects = layer === 'collision' ? collision?.rects ?? [] : [];
+  const tileCells = room.tileCells ?? [];
+  const hasPaint = tileCells.length > 0 || authoredRects.length > 0;
+
+  if (layer === 'entities') {
+    return (
+      <div className={`room-canvas-wrap${fill ? ' room-canvas-fill' : ''} room-entities-summary`}>
+        <ul className="stat-list">
+          <li>Enemies: {(room.enemies ?? []).length || 'none'}</li>
+          <li>NPCs: {(room.npcs ?? []).length || 'none'}</li>
+          <li>Collectibles: {(room.collectibles ?? []).length || 'none'}</li>
+        </ul>
+        <p className="hint">No authored entity coordinates — listing ids only (no fake spawn markers).</p>
+        {(room.enemies ?? []).length > 0 && <p className="mono hint">{room.enemies!.join(', ')}</p>}
+        {(room.npcs ?? []).length > 0 && <p className="mono hint">{room.npcs!.join(', ')}</p>}
+        {(room.collectibles ?? []).length > 0 && (
+          <p className="mono hint">{room.collectibles!.join(', ')}</p>
+        )}
+      </div>
+    );
+  }
 
   return (
-    <div className={`room-canvas-wrap${fill ? ' room-canvas-fill' : ''}`}>
-      <svg className="room-canvas" width={w * scale} height={h * scale} viewBox={`0 0 ${w} ${h}`}>
+    <div className={`room-canvas-wrap${fill ? ' room-canvas-fill' : ''} room-canvas-pixelated`}>
+      <svg
+        className="room-canvas"
+        width={w * scale}
+        height={h * scale}
+        viewBox={`0 0 ${w} ${h}`}
+        style={{ imageRendering: 'pixelated' }}
+      >
         <rect className="room-floor" x={0} y={0} width={w} height={h} />
-        <rect className="room-ground" x={0} y={h - 64} width={w} height={64} />
+        {hasPaint && (
+          <defs>
+            <pattern id={`room-grid-${room.id}`} width={TILE} height={TILE} patternUnits="userSpaceOnUse">
+              <path d={`M ${TILE} 0 L 0 0 0 ${TILE}`} fill="none" stroke="rgba(128,140,160,0.25)" strokeWidth="0.5" />
+            </pattern>
+          </defs>
+        )}
+        {hasPaint && <rect x={0} y={0} width={w} height={h} fill={`url(#room-grid-${room.id})`} />}
         {showTiles &&
           authoredRects.length === 0 &&
-          (room.tileCells ?? []).map((cell, i) => (
+          tileCells.map((cell, i) => (
             <rect
               key={`tile-${i}`}
               className={layer === 'collision' ? 'room-occupancy' : 'room-paint'}
@@ -460,28 +746,6 @@ function RoomCanvasPreview({
               <title>Weak floor → {floor.targetRoomId}</title>
             </rect>
           ))}
-        {showEntities && <circle className="room-player" cx={100} cy={h - 114} r={12} />}
-        {showEntities &&
-          (room.enemies ?? []).map((enemy, i) => (
-            <g key={`e-${enemy}-${i}`}>
-              <rect className="room-enemy" x={w - 150 - i * 40} y={h - 94} width={24} height={24} />
-              <title>{enemy}</title>
-            </g>
-          ))}
-        {showEntities &&
-          (room.npcs ?? []).map((npc, i) => (
-            <g key={`n-${npc}-${i}`}>
-              <circle className="room-npc" cx={160 + i * 36} cy={h - 120} r={10} />
-              <title>{npc}</title>
-            </g>
-          ))}
-        {showEntities &&
-          (room.collectibles ?? []).map((item, i) => (
-            <g key={`c-${item}-${i}`}>
-              <rect className="room-collectible" x={220 + i * 28} y={h - 160} width={14} height={14} />
-              <title>{item}</title>
-            </g>
-          ))}
         {showNav &&
           (room.connections ?? []).map((c, i) => {
             let x = w / 2;
@@ -513,9 +777,7 @@ function RoomCanvasPreview({
             ? authoredRects.length > 0
               ? 'Collision layer from getRoomCollision.'
               : 'Occupancy overlay from painted cells — authored collision unavailable for this room.'
-            : layer === 'entities'
-              ? 'Entity markers are count layout from the room record (no authored x/y yet).'
-              : 'Visual preview from room data. Weak floors use authored x/width when present.'}
+            : 'Visual preview from authored tileCells / connections only — no invented player or enemy sprites.'}
         </p>
       )}
     </div>

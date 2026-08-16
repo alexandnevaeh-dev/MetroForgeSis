@@ -7,8 +7,10 @@ const CHECKPOINT_DIR = '.metroforge/checkpoints';
 const SNAPSHOT_FILES = [
   'world_graph.json',
   'progression_graph.json',
+  'progression_proof.json',
   'game_dna.json',
   'design_bible.json',
+  'style_bible.json',
   'generation_manifest.json',
 ];
 

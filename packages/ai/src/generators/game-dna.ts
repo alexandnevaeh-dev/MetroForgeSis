@@ -52,8 +52,13 @@ export function createDeterministicGameDNA(input: GameDNAInput): GameDNA {
     },
     technical: {
       resolution: { width: 1920, height: 1080 },
-      tileSize: 16,
-      targetPlaytimeHours: input.profile === 'TINY_TEST' ? 0.5 : 4,
+      tileSize: input.profile === 'VISUAL_VERTICAL_SLICE' ? 32 : 16,
+      targetPlaytimeHours:
+        input.profile === 'TINY_TEST' || input.profile === 'VISUAL_VERTICAL_SLICE'
+          ? 0.5
+          : input.profile === 'RELEASE_CANDIDATE'
+            ? 3
+            : 4,
       difficulty: 'normal',
     },
     combat: {
@@ -121,7 +126,7 @@ export async function generateGameDNA(
 {
   "version": "0.1.0",
   "identity": { "title": string, "tagline": string, "genre": "Metroidvania", "tone": string, "visualStyle": string },
-  "technical": { "resolution": { "width": 1920, "height": 1080 }, "tileSize": 16, "targetPlaytimeHours": number, "difficulty": "easy"|"normal"|"hard" },
+  "technical": { "resolution": { "width": 1920, "height": 1080 }, "tileSize": ${input.profile === 'VISUAL_VERTICAL_SLICE' ? 32 : 16}, "targetPlaytimeHours": number, "difficulty": "easy"|"normal"|"hard" },
   "combat": { "style": string, "meleeEnabled": boolean, "rangedEnabled": boolean },
   "movement": { "walkSpeed": 200, "runSpeed": 350, "jumpHeight": 120, "gravity": 980, "grappleSpeed": 620, "swimSpeed": 180, "phaseDuration": 0.22 },
   "abilities": [{ "id": string, "name": string, "category": string, "enabled": boolean }],

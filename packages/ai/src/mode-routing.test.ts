@@ -28,6 +28,11 @@ describe('modeRoutingFlags', () => {
   it('LOW_VRAM sets maxVramMb budget', () => {
     expect(modeRoutingFlags('LOW_VRAM').maxVramMb).toBeGreaterThan(0);
   });
+
+  it('LOWEST_COST sets lowestCost', () => {
+    expect(modeRoutingFlags('LOWEST_COST').lowestCost).toBe(true);
+    expect(modeRoutingFlags('LOWEST_COST').qualityTarget).toBe('fast');
+  });
 });
 
 describe('buildTextRoutingContext', () => {

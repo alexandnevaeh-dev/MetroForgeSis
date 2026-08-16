@@ -19,9 +19,33 @@ export const PROVIDER_LICENSE_DEFAULTS: Record<string, LicenseSubject> = {
     commercialUse: 'unknown',
     license: 'Local diffusion — model license unverified',
   },
-  manual: {
+  kenney: {
+    commercialUse: 'allowed',
+    license: 'CC0-1.0 (Kenney)',
+  },
+  opengameart: {
     commercialUse: 'unknown',
-    license: 'Manual asset — license unverified',
+    license: 'OpenGameArt per-asset — never assumed CC0',
+  },
+  automatic1111: {
+    commercialUse: 'unknown',
+    license: 'AUTOMATIC1111 checkpoint — model license unverified',
+  },
+  'huggingface-image': {
+    commercialUse: 'unknown',
+    license: 'Hugging Face model card',
+  },
+  stability: {
+    commercialUse: 'allowed',
+    license: 'Stability API terms',
+  },
+  deepai: {
+    commercialUse: 'unknown',
+    license: 'DeepAI terms — unverified commercial status',
+  },
+  replicate: {
+    commercialUse: 'unknown',
+    license: 'Replicate model-dependent',
   },
 };
 

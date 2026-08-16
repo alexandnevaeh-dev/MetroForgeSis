@@ -4,7 +4,19 @@ import { ProjectSelect } from './ProjectSelect.js';
 import { NoProjectHint } from './NoProjectHint.js';
 import { useStudio } from './StudioContext.js';
 import type { NavId } from './nav.js';
-import { Badge, Button, EmptyState, Input, Panel, Tabs } from './ui/index.js';
+import { doctorCategory } from './aiOpsShared.js';
+import { ProjectReadinessSummary } from './ProjectReadinessSummary.js';
+import type { ReadinessCompletion } from './projectReadiness.js';
+import {
+  AiOpsWorkbench,
+  Badge,
+  Button,
+  EmptyState,
+  HealthDot,
+  Input,
+  Panel,
+  Tabs,
+} from './ui/index.js';
 
 type DoctorCheck = { name: string; status: string; message: string };
 type ValidationRow = {
@@ -38,12 +50,84 @@ function doctorTone(status: string): 'success' | 'warning' | 'danger' | 'muted' 
   return 'muted';
 }
 
-function doctorRowClass(status: string): string {
-  const tone = doctorTone(status);
-  if (tone === 'success') return 'check-pass';
-  if (tone === 'danger') return 'check-warn';
-  if (tone === 'warning') return 'check-warn';
-  return 'hint';
+function isDoctorOk(status: string): boolean {
+  const s = status.toLowerCase();
+  return s === 'ok' || s === 'pass' || s === 'passed';
+}
+
+function DoctorRow({ check }: { check: DoctorCheck }) {
+  const [open, setOpen] = useState(false);
+  const tone = doctorTone(check.status);
+  return (
+    <li className={['qa-doctor-row', tone === 'success' ? 'check-pass' : 'check-warn'].join(' ')}>
+      <button type="button" className="qa-doctor-row-btn" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+        <HealthDot
+          status={tone === 'success' ? 'healthy' : tone === 'warning' ? 'degraded' : 'unavailable'}
+        />
+        <span className="qa-doctor-name mono">{check.name}</span>
+        <Badge tone={tone}>{check.status}</Badge>
+      </button>
+      <p className="hint qa-doctor-summary">{check.message}</p>
+      {open ? (
+        <div className="qa-doctor-detail panel-l2">
+          <dl className="settings-dl">
+            <dt>Component</dt>
+            <dd className="mono">{check.name}</dd>
+            <dt>Status</dt>
+            <dd>{check.status}</dd>
+            <dt>Message</dt>
+            <dd>{check.message}</dd>
+          </dl>
+        </div>
+      ) : null}
+    </li>
+  );
+}
+
+function GateRow({
+  row,
+  onNavigate,
+}: {
+  row: ValidationRow;
+  onNavigate: (dest: NavId) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const dest = gateDestination(row.gate);
+  const failLines = row.message
+    .split(/[;\n•]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  return (
+    <li className={row.passed ? 'qa-gate-row check-pass' : 'qa-gate-row check-warn'}>
+      <button type="button" className="qa-gate-row-btn" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+        <Badge tone={row.passed ? 'success' : 'danger'}>{row.passed ? 'PASS' : 'FAIL'}</Badge>
+        <span className="qa-gate-name">{row.gate}</span>
+        <span className="hint mono">{new Date(row.timestamp).toLocaleString()}</span>
+      </button>
+      <p className="hint">{failLines[0] ?? row.message}</p>
+      {open ? (
+        <div className="qa-gate-detail panel-l2">
+          <ul className="qa-gate-checks">
+            {failLines.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+          {dest ? (
+            <Button size="sm" variant="ghost" onClick={() => onNavigate(dest)}>
+              Open {dest}
+            </Button>
+          ) : null}
+        </div>
+      ) : (
+        dest && (
+          <Button size="sm" variant="ghost" onClick={() => onNavigate(dest)}>
+            Open {dest}
+          </Button>
+        )
+      )}
+    </li>
+  );
 }
 
 export function QAScreen() {
@@ -57,6 +141,7 @@ export function QAScreen() {
   const [busy, setBusy] = useState(false);
   const [skipRuntime, setSkipRuntime] = useState(false);
   const [gateFilter, setGateFilter] = useState<'all' | 'failed' | 'passed'>('all');
+  const [completion, setCompletion] = useState<ReadinessCompletion | null>(null);
 
   const loadDoctor = async () => {
     if (!window.metroforge?.runDoctor) {
@@ -88,6 +173,21 @@ export function QAScreen() {
     setCheckpoints(await window.metroforge.listProjectCheckpoints(selectedPath));
   };
 
+  const loadCompletion = async () => {
+    if (!selectedPath || !window.metroforge?.getProjectDashboard) {
+      setCompletion(null);
+      return;
+    }
+    try {
+      const dash = (await window.metroforge.getProjectDashboard(selectedPath)) as {
+        completion?: ReadinessCompletion;
+      };
+      setCompletion(dash.completion ?? null);
+    } catch {
+      setCompletion(null);
+    }
+  };
+
   useEffect(() => {
     void loadDoctor();
   }, []);
@@ -95,6 +195,7 @@ export function QAScreen() {
   useEffect(() => {
     void loadGates();
     void loadCheckpoints();
+    void loadCompletion();
   }, [selectedPath]);
 
   const visibleRows = useMemo(() => {
@@ -104,12 +205,21 @@ export function QAScreen() {
   }, [rows, gateFilter]);
 
   const failedCount = rows.filter((row) => !row.passed).length;
-  const doctorOk = checks.filter((c) => {
-    const s = c.status.toLowerCase();
-    return s === 'ok' || s === 'pass' || s === 'passed';
-  }).length;
+  const doctorOk = checks.filter((c) => isDoctorOk(c.status)).length;
   const doctorWarn = checks.length - doctorOk;
   const envHealthy = checks.length > 0 && doctorWarn === 0;
+  const readyPct = checks.length ? Math.round((doctorOk / checks.length) * 100) : 0;
+
+  const groupedDoctor = useMemo(() => {
+    const map = new Map<string, DoctorCheck[]>();
+    for (const check of checks) {
+      const cat = doctorCategory(check.name);
+      const list = map.get(cat) ?? [];
+      list.push(check);
+      map.set(cat, list);
+    }
+    return [...map.entries()];
+  }, [checks]);
 
   const runAcceptance = async () => {
     if (!selectedPath || !window.metroforge?.runProjectAcceptance) return;
@@ -142,177 +252,220 @@ export function QAScreen() {
   };
 
   return (
-    <section className="qa-screen">
+    <section className="workspace-screen qa-screen">
       <ScreenHeader
-        eyebrow="AI"
+        eyebrow="AI / Validation"
         title="QA"
-        description="Environment doctor plus stored validation gates for the active project. Acceptance runs the real project QA contract."
+        description="Environment health, generated-project validation, acceptance tests and project checkpoints."
+        compact
         actions={
           <div className="row">
             <ProjectSelect />
-            <Button onClick={() => void loadDoctor()}>Refresh doctor</Button>
+            <Button onClick={() => void loadDoctor()}>Refresh Doctor</Button>
+            <Button
+              variant="primary"
+              disabled={!selectedPath || busy}
+              onClick={() => void runAcceptance()}
+            >
+              {busy ? 'Running…' : 'Run Acceptance'}
+            </Button>
           </div>
         }
       />
       <NoProjectHint />
       {error && <p className="result error">{error}</p>}
+      {hasActiveProject && (
+        <ProjectReadinessSummary
+          completion={completion}
+          title="Project readiness"
+          compact
+          onNavigate={navigate}
+          onRefresh={() => void loadCompletion()}
+        />
+      )}
 
-      <div className="qa-layout">
-        <div className="qa-env-col">
+      <AiOpsWorkbench variant="qa">
+        <div className="qa-layout-3">
           <Panel
             level={1}
+            className="qa-env-col"
             title="Environment"
             actions={
               <Badge tone={doctorWarn > 0 ? 'warning' : checks.length ? 'success' : 'muted'}>
-                {checks.length} checks
-                {doctorWarn > 0 ? ` · ${doctorWarn} not OK` : checks.length ? ' · all OK' : ''}
+                {checks.length ? `${doctorOk}/${checks.length} ready` : '—'}
               </Badge>
             }
           >
             <div className="dashboard-env-status">
-              <span className={envHealthy ? 'status-dot ok' : checks.length ? 'status-dot error' : 'status-dot'} aria-hidden="true" />
+              <span
+                className={envHealthy ? 'status-dot ok' : checks.length ? 'status-dot error' : 'status-dot'}
+                aria-hidden="true"
+              />
               <span>
-                Overall Status:{' '}
-                <strong style={{ color: envHealthy ? 'var(--success)' : checks.length ? 'var(--warning)' : 'var(--text-muted)' }}>
+                Overall:{' '}
+                <strong
+                  style={{
+                    color: envHealthy
+                      ? 'var(--success)'
+                      : checks.length
+                        ? 'var(--warning)'
+                        : 'var(--text-muted)',
+                  }}
+                >
                   {checks.length === 0 ? 'Unknown' : envHealthy ? 'Healthy' : 'Attention'}
                 </strong>
               </span>
             </div>
+            <div className="qa-ready-meter" aria-label={`Environment ${readyPct}% ready`}>
+              <div className="qa-ready-meter-fill" style={{ width: `${readyPct}%` }} />
+            </div>
             <div className="dashboard-env-stats qa-env-stats">
               <div>
                 <span>OK</span>
-                <strong>{doctorOk || '—'}</strong>
+                <strong className="mono">{doctorOk || '—'}</strong>
               </div>
               <div>
                 <span>Not OK</span>
-                <strong>{doctorWarn || '—'}</strong>
+                <strong className="mono">{doctorWarn || '—'}</strong>
               </div>
               <div>
                 <span>Gates fail</span>
-                <strong>{hasActiveProject ? failedCount : '—'}</strong>
+                <strong className="mono">{hasActiveProject ? failedCount : '—'}</strong>
               </div>
             </div>
-            <h3 className="mf-panel-title" style={{ marginTop: '0.55rem' }}>
-              Health log
-            </h3>
             {checks.length === 0 ? (
               <EmptyState title="No doctor results" description="runDoctor has not returned checks yet." />
             ) : (
-              <ul className="check-list">
-                {checks.map((check) => (
-                  <li key={check.name} className={doctorRowClass(check.status)}>
-                    <Badge tone={doctorTone(check.status)}>{check.status}</Badge> {check.name}: {check.message}
-                  </li>
+              <div className="qa-doctor-groups">
+                {groupedDoctor.map(([category, list]) => (
+                  <div key={category} className="qa-doctor-group">
+                    <h3 className="type-label mf-panel-title">{category}</h3>
+                    <ul className="qa-doctor-list">
+                      {list.map((check) => (
+                        <DoctorRow key={check.name} check={check} />
+                      ))}
+                    </ul>
+                  </div>
                 ))}
-              </ul>
+              </div>
             )}
           </Panel>
 
-          {hasActiveProject && (
-            <Panel
-              level={1}
-              title="Checkpoints"
-              actions={<Badge tone="muted">{checkpoints.length}</Badge>}
-            >
-              <p className="hint">Snapshots from createProjectCheckpoint for this project.</p>
-              <div className="row">
-                <Input
-                  value={checkpointLabel}
-                  onChange={(e) => setCheckpointLabel(e.target.value)}
-                  placeholder="Checkpoint label"
-                />
-                <Button disabled={!selectedPath} onClick={() => void saveCheckpoint()}>
-                  Save
-                </Button>
-              </div>
-              {checkpoints.length === 0 ? (
-                <EmptyState title="No checkpoints" description="Save a QA snapshot to restore later." />
-              ) : (
-                <ul className="checkpoint-list">
-                  {checkpoints.map((c) => (
-                    <li key={c.id}>
-                      <Button size="sm" variant="ghost" onClick={() => void restoreCheckpoint(c.id)}>
-                        {c.label} · {new Date(c.timestamp).toLocaleString()}
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Panel>
-          )}
-        </div>
-
-        <div className="qa-gates-col">
-          {hasActiveProject ? (
-            <Panel
-              level={1}
-              title="Project gates"
-              actions={
+          <Panel
+            level={1}
+            className="qa-gates-col"
+            title="Project validation"
+            actions={
+              hasActiveProject ? (
                 <Badge tone={failedCount > 0 ? 'danger' : rows.length ? 'success' : 'muted'}>
                   {rows.length} stored · {failedCount} failing
                 </Badge>
-              }
-            >
-              <Tabs
-                items={[
-                  { id: 'all', label: 'all' },
-                  { id: 'failed', label: 'failed' },
-                  { id: 'passed', label: 'passed' },
-                ]}
-                value={gateFilter}
-                onChange={(id) => setGateFilter(id as typeof gateFilter)}
-              />
-              {visibleRows.length === 0 ? (
-                <EmptyState
-                  title="No gates for filter"
-                  description="No stored validation rows for this filter. Run project acceptance to refresh."
-                />
               ) : (
-                <ul className="check-list">
-                  {visibleRows.map((row) => {
-                    const dest = gateDestination(row.gate);
-                    return (
-                      <li key={row.id} className={row.passed ? 'check-pass' : 'check-warn'}>
-                        <Badge tone={row.passed ? 'success' : 'danger'}>{row.passed ? 'PASS' : 'FAIL'}</Badge>{' '}
-                        {row.gate}: {row.message}
-                        <span className="hint">{new Date(row.timestamp).toLocaleString()}</span>
-                        {dest && (
-                          <Button size="sm" variant="ghost" onClick={() => navigate(dest)}>
-                            Open {dest}
-                          </Button>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-              <label className="check-inline" style={{ marginTop: '0.75rem' }}>
-                <input type="checkbox" checked={skipRuntime} onChange={(e) => setSkipRuntime(e.target.checked)} />
-                Skip Godot runtime during acceptance
-              </label>
-              <div className="row" style={{ marginTop: '0.75rem' }}>
-                <Button variant="primary" disabled={!selectedPath || busy} onClick={runAcceptance}>
-                  {busy ? 'Running acceptance…' : 'Run project acceptance'}
-                </Button>
-                <Button onClick={() => navigate('Export')}>Export</Button>
-                <Button onClick={() => navigate('Routing')}>Routing</Button>
-              </div>
-              {acceptResult && (
-                <pre className="panel-l2" style={{ marginTop: '0.75rem', whiteSpace: 'pre-wrap' }}>
-                  {acceptResult}
-                </pre>
-              )}
-            </Panel>
-          ) : (
-            <Panel level={1} title="Project gates">
+                <Badge tone="muted">No project</Badge>
+              )
+            }
+          >
+            {hasActiveProject ? (
+              <>
+                <Tabs
+                  items={[
+                    { id: 'all', label: 'all' },
+                    { id: 'failed', label: 'failed' },
+                    { id: 'passed', label: 'passed' },
+                  ]}
+                  value={gateFilter}
+                  onChange={(id) => setGateFilter(id as typeof gateFilter)}
+                />
+                {visibleRows.length === 0 ? (
+                  <EmptyState
+                    title="No gates for filter"
+                    description="No stored validation rows for this filter. Run project acceptance to refresh."
+                  />
+                ) : (
+                  <ul className="qa-gate-list">
+                    {visibleRows.map((row) => (
+                      <GateRow key={row.id} row={row} onNavigate={navigate} />
+                    ))}
+                  </ul>
+                )}
+                <label
+                  className={['check-inline', 'qa-skip-runtime', skipRuntime ? 'qa-skip-runtime-warn' : '']
+                    .filter(Boolean)
+                    .join(' ')}
+                >
+                  <input
+                    type="checkbox"
+                    checked={skipRuntime}
+                    onChange={(e) => setSkipRuntime(e.target.checked)}
+                  />
+                  Skip Godot runtime during acceptance
+                  {skipRuntime ? <Badge tone="warning">BYPASS</Badge> : null}
+                </label>
+                <div className="row" style={{ marginTop: '0.55rem' }}>
+                  <Button variant="primary" disabled={!selectedPath || busy} onClick={() => void runAcceptance()}>
+                    {busy ? 'Running acceptance…' : 'Run project acceptance'}
+                  </Button>
+                  <Button onClick={() => navigate('Export')}>Export</Button>
+                  <Button onClick={() => navigate('Routing')}>Routing</Button>
+                </div>
+                {acceptResult && (
+                  <pre className="panel-l2 qa-accept-result" style={{ marginTop: '0.55rem', whiteSpace: 'pre-wrap' }}>
+                    {acceptResult}
+                  </pre>
+                )}
+              </>
+            ) : (
               <EmptyState
                 title="Select a project"
                 description="Validation gates and acceptance require an active project."
               />
-            </Panel>
-          )}
+            )}
+          </Panel>
+
+          <Panel
+            level={1}
+            className="qa-checkpoints-col"
+            title="Checkpoints"
+            actions={<Badge tone="muted">{hasActiveProject ? checkpoints.length : '—'}</Badge>}
+          >
+            {!hasActiveProject ? (
+              <EmptyState title="No project" description="Checkpoints require an active project." />
+            ) : (
+              <>
+                <p className="hint">Snapshots from createProjectCheckpoint for this project.</p>
+                <div className="row">
+                  <Input
+                    value={checkpointLabel}
+                    onChange={(e) => setCheckpointLabel(e.target.value)}
+                    placeholder="Checkpoint label"
+                    aria-label="Checkpoint label"
+                  />
+                  <Button disabled={!selectedPath} onClick={() => void saveCheckpoint()}>
+                    Save
+                  </Button>
+                </div>
+                {checkpoints.length === 0 ? (
+                  <EmptyState title="No checkpoints" description="Save a QA snapshot to restore later." />
+                ) : (
+                  <ul className="checkpoint-list qa-checkpoint-list">
+                    {checkpoints.map((c) => (
+                      <li key={c.id}>
+                        <div className="qa-checkpoint-meta">
+                          <strong>{c.label}</strong>
+                          <span className="hint mono">{new Date(c.timestamp).toLocaleString()}</span>
+                        </div>
+                        <Button size="sm" variant="ghost" onClick={() => void restoreCheckpoint(c.id)}>
+                          Restore
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            )}
+          </Panel>
         </div>
-      </div>
+      </AiOpsWorkbench>
     </section>
   );
 }

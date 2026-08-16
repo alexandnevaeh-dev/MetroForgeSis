@@ -21,6 +21,12 @@ export const DEFAULT_SFX: SfxSpec[] = [
   { id: 'death', frequency: 200, duration: 0.4, type: 'sweep', sweepTo: 60, volume: 0.35 },
   { id: 'ability', frequency: 523, duration: 0.2, type: 'sine', volume: 0.35 },
   { id: 'boss_hit', frequency: 100, duration: 0.15, type: 'noise', volume: 0.5 },
+  { id: 'player_attack', frequency: 310, duration: 0.09, type: 'square', volume: 0.32 },
+  { id: 'player_hurt', frequency: 180, duration: 0.14, type: 'noise', volume: 0.42 },
+  { id: 'enemy_attack', frequency: 120, duration: 0.12, type: 'square', volume: 0.28 },
+  { id: 'door', frequency: 90, duration: 0.22, type: 'sweep', sweepTo: 40, volume: 0.3 },
+  { id: 'checkpoint', frequency: 523, duration: 0.28, type: 'sine', volume: 0.28 },
+  { id: 'boss_attack', frequency: 70, duration: 0.2, type: 'noise', volume: 0.55 },
 ];
 
 const SAMPLE_RATE = 44100;

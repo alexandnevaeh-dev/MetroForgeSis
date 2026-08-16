@@ -1,0 +1,325 @@
+{
+  "capturedAt": "2026-08-15T03:30:06.828Z",
+  "project": "C:\\Users\\<user>\\OneDrive\\Documents\\Metroidvania\\Forged\\GeneratedGames\\nvidia-image-activation-smoke",
+  "resolution": "1920x1080",
+  "screenshots": [
+    {
+      "file": "screenshots/01-dashboard.png",
+      "screen": "Dashboard",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/02-new-game.png",
+      "screen": "Create",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/03-generation-studio.png",
+      "screen": "Studio",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/04-projects.png",
+      "screen": "Projects",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/05-asset-gallery.png",
+      "screen": "Assets",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/06-manual-generator.png",
+      "screen": "Generate Asset",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/07-world-editor-progression.png",
+      "screen": "World",
+      "state": "Progression view",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/08-world-editor-graph.png",
+      "screen": "World",
+      "state": "Graph view",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/09-world-editor-spatial.png",
+      "screen": "World",
+      "state": "Spatial / overworld",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/10-room-editor-visual.png",
+      "screen": "Rooms",
+      "state": "Visual layer",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/11-room-editor-collision.png",
+      "screen": "Rooms",
+      "state": "Collision layer",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/12-room-editor-entities.png",
+      "screen": "Rooms",
+      "state": "Entities layer",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/13-room-editor-navigation.png",
+      "screen": "Rooms",
+      "state": "Navigation layer",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/14-room-editor-progression.png",
+      "screen": "Rooms",
+      "state": "Progression layer",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/15-room-editor-debug.png",
+      "screen": "Rooms",
+      "state": "Debug layer",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/16-dungeon-editor.png",
+      "screen": "Dungeon",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/17-game-preview.png",
+      "screen": "Preview",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/18-models.png",
+      "screen": "Models",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/19-providers.png",
+      "screen": "Providers",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/20-routing-inspector.png",
+      "screen": "Routing",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/21-qa.png",
+      "screen": "QA",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/22-export.png",
+      "screen": "Export",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/23-settings.png",
+      "screen": "Settings",
+      "state": "Default with active project",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/generation-idle.png",
+      "screen": "Studio",
+      "state": "Idle / ready",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/asset-gallery-player.png",
+      "screen": "Assets",
+      "state": "Player category",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/asset-gallery-tileset.png",
+      "screen": "Assets",
+      "state": "Tileset category",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/asset-gallery-music.png",
+      "screen": "Assets",
+      "state": "Music category",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/routing-provider-selected.png",
+      "screen": "Routing",
+      "state": "Default / selected capability",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/routing-refreshed.png",
+      "screen": "Routing",
+      "state": "After refresh",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/qa-default.png",
+      "screen": "QA",
+      "state": "Default project QA view",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/qa-failed.png",
+      "screen": "QA",
+      "state": "Failure indicators visible",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/qa-passed.png",
+      "screen": "QA",
+      "state": "Pass/healthy indicators visible",
+      "resolution": "1920x1080",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/responsive/dashboard-1600x900.png",
+      "screen": "Dashboard",
+      "state": "Responsive check",
+      "resolution": "1600x900",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/responsive/generation-studio-1600x900.png",
+      "screen": "Generation Studio",
+      "state": "Responsive check",
+      "resolution": "1600x900",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/responsive/asset-gallery-1600x900.png",
+      "screen": "Asset Gallery",
+      "state": "Responsive check",
+      "resolution": "1600x900",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/responsive/world-editor-1600x900.png",
+      "screen": "World Editor",
+      "state": "Responsive check",
+      "resolution": "1600x900",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/responsive/room-editor-1600x900.png",
+      "screen": "Room Editor",
+      "state": "Responsive check",
+      "resolution": "1600x900",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/responsive/routing-inspector-1600x900.png",
+      "screen": "Routing Inspector",
+      "state": "Responsive check",
+      "resolution": "1600x900",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/responsive/dashboard-1366x768.png",
+      "screen": "Dashboard",
+      "state": "Responsive check",
+      "resolution": "1366x768",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/responsive/generation-studio-1366x768.png",
+      "screen": "Generation Studio",
+      "state": "Responsive check",
+      "resolution": "1366x768",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/responsive/asset-gallery-1366x768.png",
+      "screen": "Asset Gallery",
+      "state": "Responsive check",
+      "resolution": "1366x768",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/responsive/world-editor-1366x768.png",
+      "screen": "World Editor",
+      "state": "Responsive check",
+      "resolution": "1366x768",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/responsive/room-editor-1366x768.png",
+      "screen": "Room Editor",
+      "state": "Responsive check",
+      "resolution": "1366x768",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/responsive/routing-inspector-1366x768.png",
+      "screen": "Routing Inspector",
+      "state": "Responsive check",
+      "resolution": "1366x768",
+      "notes": ""
+    }
+  ],
+  "missing": [
+    {
+      "file": "generation-running.png",
+      "reason": "Skipped (hang risk; set METROFORGE_SCREENSHOT_SKIP_GENERATION=0 to attempt)"
+    },
+    {
+      "file": "routing-no-provider.png",
+      "reason": "No unavailable/no-provider empty state visible with current config"
+    }
+  ]
+}

@@ -20,6 +20,8 @@ export interface ImageGenRequest {
   seed?: number;
   signal?: AbortSignal;
   conditioning?: ImageConditioning;
+  /** Override provider model for this request (e.g. flux.1-kontext-dev for reference poses). */
+  modelOverride?: string;
 }
 
 /** Structured provider health — richer than a bare boolean; never includes API keys. */

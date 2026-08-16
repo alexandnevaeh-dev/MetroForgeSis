@@ -1,0 +1,65 @@
+{
+  "capturedAt": "2026-08-15T04:49:53.049Z",
+  "projectPath": "C:\\Users\\alexa\\OneDrive\\Documents\\Metroidvania\\Forged\\GeneratedGames\\nvidia-image-activation-smoke",
+  "note": "P3 world-building screenshots; wind-swept preferred when present; no fake data",
+  "smoke": {
+    "worldDock": 4,
+    "roomTools": true,
+    "preview": true,
+    "dungeon": true
+  },
+  "files": [
+    {
+      "file": "01-world-progression.png",
+      "bytes": 36961
+    },
+    {
+      "file": "02-world-graph.png",
+      "bytes": 36294
+    },
+    {
+      "file": "03-world-spatial.png",
+      "bytes": 41835
+    },
+    {
+      "file": "04-world-dock.png",
+      "bytes": 35041
+    },
+    {
+      "file": "05-room-visual.png",
+      "bytes": 44436
+    },
+    {
+      "file": "06-room-collision.png",
+      "bytes": 44571
+    },
+    {
+      "file": "07-room-entities.png",
+      "bytes": 44434
+    },
+    {
+      "file": "08-room-navigation.png",
+      "bytes": 44440
+    },
+    {
+      "file": "09-room-debug.png",
+      "bytes": 44416
+    },
+    {
+      "file": "10-dungeon.png",
+      "bytes": 25026
+    },
+    {
+      "file": "11-game-preview.png",
+      "bytes": 24285
+    },
+    {
+      "file": "05-room-visual-1600.png",
+      "bytes": 38524
+    },
+    {
+      "file": "05-room-visual-1366.png",
+      "bytes": 32895
+    }
+  ]
+}

@@ -28,7 +28,7 @@ export function ProjectsScreen() {
   }, [projects, query]);
 
   return (
-    <section className="projects-screen">
+    <section className="workspace-screen projects-screen">
       <ScreenHeader
         eyebrow="Library"
         title="Projects"

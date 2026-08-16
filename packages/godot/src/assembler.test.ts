@@ -102,7 +102,8 @@ describe('GodotProjectAssembler', () => {
     const room0 = readFileSync(join(outputDir, 'scenes', 'rooms', 'room_000.tscn'), 'utf-8');
     expect(room0).toContain('RoomTransition');
     expect(room0).toContain('target_room_id = "room_001"');
-    expect(room0).toContain('TextureRect');
+    expect(room0).toContain('ColorRect');
+    expect(room0).toContain('RoomTileMap.gd');
     expect(existsSync(join(outputDir, 'assets_manifest.json'))).toBe(true);
 
     const room1 = readFileSync(join(outputDir, 'scenes', 'rooms', 'room_001.tscn'), 'utf-8');

@@ -85,6 +85,15 @@ export function isRegisteredAbilityId(id: string): id is RegisteredAbilityId {
   return (REGISTERED_ABILITY_IDS as readonly string[]).includes(id);
 }
 
+/** RELEASE_CANDIDATE traversal set matching the Heart Engine prompt — all registered. */
+export const RELEASE_CANDIDATE_ABILITY_IDS: RegisteredAbilityId[] = [
+  'air_dash',
+  'wall_slide',
+  'wall_jump',
+  'swim',
+  'phase',
+];
+
 /** Profile-scaled ability pick — only returns IDs with runtime implementations. */
 export function pickRegisteredAbilities(profile: GenerationProfile): {
   id: RegisteredAbilityId;
@@ -92,11 +101,24 @@ export function pickRegisteredAbilities(profile: GenerationProfile): {
   category: string;
   enabled: boolean;
 }[] {
+  if (profile === 'RELEASE_CANDIDATE') {
+    return RELEASE_CANDIDATE_ABILITY_IDS.map((id) => {
+      const a = REGISTERED_ABILITIES.find((entry) => entry.id === id)!;
+      return {
+        id: a.id,
+        name: a.name,
+        category: a.category,
+        enabled: true,
+      };
+    });
+  }
   const counts: Record<GenerationProfile, number> = {
     TINY_TEST: 1,
+    VISUAL_VERTICAL_SLICE: 1,
     SMALL: 3,
     MEDIUM: 6,
     LARGE: 9,
+    RELEASE_CANDIDATE: RELEASE_CANDIDATE_ABILITY_IDS.length,
   };
   const count = Math.min(counts[profile], REGISTERED_ABILITIES.length);
   return REGISTERED_ABILITIES.slice(0, count).map((a) => ({
@@ -111,5 +133,28 @@ export function assertRegisteredAbilityIds(ids: string[]): void {
   const unknown = ids.filter((id) => !isRegisteredAbilityId(id));
   if (unknown.length > 0) {
     throw new Error(`Unknown ability IDs (no runtime implementation): ${unknown.join(', ')}`);
+  }
+}
+
+/**
+ * RELEASE_CANDIDATE DNA must include air dash, a wall traversal ability, water traversal,
+ * and one unusual world-interaction ability (phase or grapple).
+ */
+export function missingReleaseCandidateAbilities(ids: readonly string[]): string[] {
+  const set = new Set(ids);
+  const missing: string[] = [];
+  if (!set.has('air_dash')) missing.push('air_dash');
+  if (!set.has('wall_jump') && !set.has('wall_slide')) missing.push('wall_jump|wall_slide');
+  if (!set.has('swim')) missing.push('swim');
+  if (!set.has('phase') && !set.has('grapple')) missing.push('phase|grapple');
+  return missing;
+}
+
+export function assertReleaseCandidateAbilities(ids: readonly string[]): void {
+  const missing = missingReleaseCandidateAbilities(ids);
+  if (missing.length > 0) {
+    throw new Error(
+      `RELEASE_CANDIDATE DNA is missing required registered abilities: ${missing.join(', ')}`,
+    );
   }
 }

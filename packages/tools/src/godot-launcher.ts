@@ -1,17 +1,47 @@
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { detectGodot } from './registry.js';
+import {
+  resolveGodotExecutableCanonical,
+  readProjectGodotOverride,
+  type GodotResolveResult,
+  type ResolveGodotOptions,
+} from './godot-resolver.js';
 
 export interface LaunchGodotResult {
   success: boolean;
   message: string;
+  resolve?: GodotResolveResult;
 }
 
-export async function resolveGodotExecutable(customPath?: string | null): Promise<string | null> {
-  const info = await detectGodot(customPath);
-  if (customPath) return customPath;
-  return info.path;
+export type { GodotResolveResult, ResolveGodotOptions, GodotResolveSource } from './godot-resolver.js';
+export { resolveGodotExecutableCanonical, readProjectGodotOverride } from './godot-resolver.js';
+
+/**
+ * Resolve Godot for launch / doctor / play.
+ * Prefer passing full ResolveGodotOptions; `customPath` alone is treated as preference.
+ */
+export async function resolveGodotExecutable(
+  customPath?: string | null,
+  options: Omit<ResolveGodotOptions, 'preference'> & { preference?: string | null } = {},
+): Promise<string | null> {
+  const result = resolveGodotExecutableCanonical({
+    ...options,
+    preference: options.preference ?? customPath,
+  });
+  return result.path;
+}
+
+/** Sync helper used by IPC handlers that already have preference/env loaded. */
+export function resolveGodotForProject(
+  options: ResolveGodotOptions & { projectPath?: string | null },
+): GodotResolveResult {
+  const projectOverride =
+    options.projectOverride ?? readProjectGodotOverride(options.projectPath ?? null);
+  return resolveGodotExecutableCanonical({
+    ...options,
+    projectOverride,
+  });
 }
 
 function assertGodotProject(projectPath: string): void {
@@ -23,45 +53,67 @@ function assertGodotProject(projectPath: string): void {
 /** Opens the generated project in the Godot editor. */
 export async function launchGodotEditor(
   projectPath: string,
-  options: { godotPath?: string | null } = {},
+  options: ResolveGodotOptions & { godotPath?: string | null; projectPath?: string } = {},
 ): Promise<LaunchGodotResult> {
   assertGodotProject(projectPath);
-  const godotPath = await resolveGodotExecutable(options.godotPath);
-  if (!godotPath) {
+  const resolve = resolveGodotForProject({
+    preference: options.preference ?? options.godotPath,
+    projectOverride: options.projectOverride,
+    envPath: options.envPath,
+    projectPath,
+    extraKnownPaths: options.extraKnownPaths,
+  });
+  if (!resolve.path) {
     return {
       success: false,
-      message: 'Godot not found — install Godot 4.x or set GODOT_EXECUTABLE in .env',
+      message: 'Godot not found — install Godot 4.x, set Settings path, or GODOT_EXECUTABLE',
+      resolve,
     };
   }
 
-  const proc = spawn(godotPath, ['--editor', '--path', projectPath], {
+  const proc = spawn(resolve.path, ['--editor', '--path', projectPath], {
     detached: true,
     stdio: 'ignore',
     windowsHide: false,
   });
   proc.unref();
-  return { success: true, message: 'Opened in Godot editor' };
+  return {
+    success: true,
+    message: `Opened in Godot editor (${resolve.sourceLabel})`,
+    resolve,
+  };
 }
 
 /** Runs the project's main scene (same as pressing F5 in the editor). */
 export async function launchGodotGame(
   projectPath: string,
-  options: { godotPath?: string | null } = {},
+  options: ResolveGodotOptions & { godotPath?: string | null } = {},
 ): Promise<LaunchGodotResult> {
   assertGodotProject(projectPath);
-  const godotPath = await resolveGodotExecutable(options.godotPath);
-  if (!godotPath) {
+  const resolve = resolveGodotForProject({
+    preference: options.preference ?? options.godotPath,
+    projectOverride: options.projectOverride,
+    envPath: options.envPath,
+    projectPath,
+    extraKnownPaths: options.extraKnownPaths,
+  });
+  if (!resolve.path) {
     return {
       success: false,
-      message: 'Godot not found — install Godot 4.x or set GODOT_EXECUTABLE in .env',
+      message: 'Godot not found — install Godot 4.x, set Settings path, or GODOT_EXECUTABLE',
+      resolve,
     };
   }
 
-  const proc = spawn(godotPath, ['--path', projectPath], {
+  const proc = spawn(resolve.path, ['--path', projectPath], {
     detached: true,
     stdio: 'ignore',
     windowsHide: false,
   });
   proc.unref();
-  return { success: true, message: 'Launched game in Godot' };
+  return {
+    success: true,
+    message: `Launched game in Godot (${resolve.sourceLabel})`,
+    resolve,
+  };
 }

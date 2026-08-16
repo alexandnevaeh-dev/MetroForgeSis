@@ -57,7 +57,8 @@ function hexToRgb01(hex: string | undefined): [number, number, number] {
 export function resolveQualityTier(projectPath: string, override?: QualityTier): QualityTier {
   if (override) return override;
   const dna = readJson<{ profile?: string }>(join(projectPath, 'game_dna.json'));
-  if (dna?.profile === 'RELEASE_CANDIDATE' || dna?.profile === 'TINY_TEST') return 'LOW';
+  if (dna?.profile === 'RELEASE_CANDIDATE' || dna?.profile === 'TINY_TEST' || dna?.profile === 'VISUAL_VERTICAL_SLICE')
+    return 'LOW';
   if (dna?.profile === 'LARGE') return 'HIGH';
   return 'MEDIUM';
 }
@@ -244,6 +245,7 @@ export class QualityDirector {
     const technical = loadTechnical(projectPath);
     const provenance = loadProvenance(projectPath, technical);
     const bible = readJson<StyleBibleLike>(join(projectPath, 'style_bible.json'));
+    const dna = readJson<{ profile?: string }>(join(projectPath, 'game_dna.json'));
     const palette = paletteFromBible(bible);
     const before = combineQualityScores(scoreTechnical(technical), scorePresentation(snapshot));
 
@@ -314,9 +316,9 @@ export class QualityDirector {
       reason: 'Room-lock / dead-zone / look-ahead; do not change transition colliders',
       payload: {
         tier,
-        zoom: tier === 'LOW' ? 2.4 : tier === 'MEDIUM' ? 2.1 : 1.85,
-        deadZone: 0.18,
-        lookAheadPx: 28,
+        zoom: dna?.profile === 'VISUAL_VERTICAL_SLICE' ? 3 : tier === 'LOW' ? 2.4 : tier === 'MEDIUM' ? 2.1 : 1.85,
+        deadZone: dna?.profile === 'VISUAL_VERTICAL_SLICE' ? 0.14 : 0.18,
+        lookAheadPx: dna?.profile === 'VISUAL_VERTICAL_SLICE' ? 40 : 28,
       },
     });
     actions.push({

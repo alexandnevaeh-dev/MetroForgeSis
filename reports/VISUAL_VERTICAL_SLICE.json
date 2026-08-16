@@ -1,0 +1,70 @@
+{
+  "status": "VISUAL SLICE READY FOR HUMAN REVIEW",
+  "notFullGameReady": true,
+  "visualReviewStatus": "VISUAL_SLICE_REVIEW_REQUIRED",
+  "heartEngineFrozen": "git tag heart-engine-p7-technical-checkpoint (7269970)",
+  "projectPath": "apps/cli/GeneratedGames/dusk-glass-lantern-keep",
+  "seed": 77,
+  "profile": "VISUAL_VERTICAL_SLICE",
+  "rooms": 10,
+  "fakeAnimation": true,
+  "animationStopReason": "NVIDIA flux.1-kontext-dev hosted preview returned HTTP 422: Expected: example_id, got: base64. Custom sprite conditioning is not accepted. Pose generation STOPPED. Bob/slide sheets are not production-ready.",
+  "iterationNotes": {
+    "improved": [
+      "Character PNG alpha (studio pale square knocked out on disk)",
+      "FloorVisual and transition ColorRects hidden",
+      "QualityPresentation no longer injects ColorRect decor or duplicate full-bleed plates over tiled rooms",
+      "TileMapLayer paints floor + walls; HUD filters test_* leftover kit ids",
+      "Windowed d3d12 recapture after Godot --import"
+    ],
+    "stillFails": [
+      "Player still a silhouette with yellow baked ground blob; some shots still read boxed",
+      "Navy autotile walls photograph as opaque dark slabs",
+      "Background remains stretched FLUX plates with seams, not true parallax",
+      "Kontext poses impossible on hosted preview (example_id only)",
+      "HUD still debug-like"
+    ]
+  },
+  "technicalQa": {
+    "staticGodot": true,
+    "windowedGpuSmokePlayable": true,
+    "captureDriver": "d3d12",
+    "kontextPoses": false,
+    "compiledTilesetAtlas": true,
+    "frameSizeMatch64": true,
+    "playerPngHasAlpha": true
+  },
+  "aestheticQa": {
+    "autoApproved": false,
+    "notes": "Alpha knockout and slab hide landed. Shots still fail as a readable tiled Metroidvania. Human scoring required."
+  },
+  "screenshots": [
+    "reports/01-start.png",
+    "reports/02-traversal.png",
+    "reports/03-combat.png",
+    "reports/04-vertical-room.png",
+    "reports/05-ability-room.png",
+    "reports/06-secret.png",
+    "reports/07-checkpoint.png",
+    "reports/08-boss-room.png",
+    "reports/09-boss-combat.png",
+    "reports/hud.png",
+    "reports/tileset-test.png",
+    "reports/biome-layers.png",
+    "reports/visual-slice-contact-sheet.png"
+  ],
+  "rubric": {
+    "artCoherence": "1-5 human",
+    "playerReadability": "1-5 human",
+    "environmentCoherence": "1-5 human",
+    "tilesetQuality": "1-5 human",
+    "animationQuality": "1-5 human",
+    "lightingDepth": "1-5 human",
+    "combatReadability": "1-5 human",
+    "vfxIntegration": "1-5 human",
+    "roomComposition": "1-5 human",
+    "hud": "1-5 human",
+    "bossPresentation": "1-5 human",
+    "overallPolish": "1-5 human"
+  }
+}

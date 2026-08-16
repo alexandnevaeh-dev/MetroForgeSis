@@ -1,13 +1,23 @@
 import type { ModelMetadata, ProviderHealth, RoutingContext, TextGenerationProvider } from './types.js';
 import { LicenseRouter, type LicenseSubject } from './license-router.js';
 
-/** Ranks candidates healthy-first without ever excluding a degraded/unavailable provider —
- *  ProviderHealthMonitor (provider-health-monitor.ts) reads this same `provider.health` field
- *  for dashboards, so this is the live routing-side counterpart, not a second health source.
- *  Exclusion would defeat FallbackManager's whole purpose (trying the next candidate after a
- *  failure) and, since nothing here is cached, a provider's rank corrects itself the instant its
- *  live `health` changes back — there is no "permanently disabled" state to get stuck in. */
+/** Ranks candidates healthy-first. Live route eligibility excludes OFFLINE / unavailable
+ *  providers so they cannot win (FallbackManager then only retries providers that passed
+ *  health gating). DEGRADED remains eligible but ranks below HEALTHY. Disabled providers
+ *  are already dropped by listEnabled(). */
 const HEALTH_TIER: Record<ProviderHealth, number> = { healthy: 2, degraded: 1, unavailable: 0 };
+const COST_TIER: Record<'free' | 'low' | 'medium' | 'high', number> = {
+  free: 0,
+  low: 1,
+  medium: 2,
+  high: 3,
+};
+
+/** True when a provider may be selected as the live route winner / FallbackManager candidate. */
+export function isProviderLiveRouteEligible(health: ProviderHealth, enabled = true): boolean {
+  if (!enabled) return false;
+  return health === 'healthy' || health === 'degraded';
+}
 
 export class ProviderRegistry {
   private providers = new Map<string, TextGenerationProvider>();
@@ -91,6 +101,7 @@ export class CapabilityRouter {
     return this.providers
       .listEnabled()
       .filter((p) => {
+        if (!isProviderLiveRouteEligible(p.health, p.enabled)) return false;
         if ((context.localOnly || context.offline) && !p.local) return false;
         if (context.freeOnly && p.costClass !== 'free') return false;
         if (context.nvidiaOnly && p.id !== 'nvidia') return false;
@@ -98,6 +109,10 @@ export class CapabilityRouter {
         return p.capabilities.includes(context.capability);
       })
       .sort((a, b) => {
+        if (context.lowestCost) {
+          const costDiff = COST_TIER[a.costClass] - COST_TIER[b.costClass];
+          if (costDiff !== 0) return costDiff;
+        }
         const healthDiff = HEALTH_TIER[b.health] - HEALTH_TIER[a.health];
         return healthDiff !== 0 ? healthDiff : b.priority - a.priority;
       });
@@ -111,8 +126,11 @@ export class CapabilityRouter {
     if (context.commercialSafeOnly) {
       models = models.filter((m) => passesCommercialSafe(this.licenseRouter, m));
     }
+    // Local VRAM budget applies only to local runtimes — hosted/remote models are not blocked by GPU room.
     if (context.maxVramMb !== undefined) {
-      models = models.filter((m) => m.minVramMb === undefined || m.minVramMb <= context.maxVramMb!);
+      models = models.filter(
+        (m) => !m.local || m.minVramMb === undefined || m.minVramMb <= context.maxVramMb!,
+      );
     }
     return [...models].sort((a, b) => {
       if (b.priority !== a.priority) return b.priority - a.priority;

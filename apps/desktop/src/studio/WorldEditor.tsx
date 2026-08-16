@@ -7,6 +7,18 @@ import type { OverworldMapPreview, WorldGraphPreview } from './metroforge-api.js
 import { ProjectSelect } from './ProjectSelect.js';
 import { NoProjectHint } from './NoProjectHint.js';
 import { useStudio } from './StudioContext.js';
+import {
+  Button,
+  EditorDock,
+  EditorPropertyRow,
+  EditorToolbar,
+  EditorViewport,
+  EditorWorkbench,
+  Input,
+  InspectorSection,
+  Select,
+  ViewModeTabs,
+} from './ui/index.js';
 
 function overworldToGraph(map: OverworldMapPreview | null): WorldGraphPreview | null {
   if (!map?.nodes?.length) return null;
@@ -26,12 +38,15 @@ function overworldToGraph(map: OverworldMapPreview | null): WorldGraphPreview | 
   };
 }
 
+type DockTab = 'structure' | 'connections' | 'checkpoints';
+
 export function WorldEditor() {
   const { selectedPath, hasActiveProject, openRoom, navigate } = useStudio();
   const [worldGraph, setWorldGraph] = useState<WorldGraphPreview | null>(null);
   const [overworld, setOverworld] = useState<OverworldMapPreview | null>(null);
   const [selectedId, setSelectedId] = useState('');
   const [view, setView] = useState<'progression' | 'graph' | 'spatial'>('progression');
+  const [dockTab, setDockTab] = useState<DockTab>('structure');
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [canUndo, setCanUndo] = useState(false);
@@ -85,6 +100,9 @@ export function WorldEditor() {
   const spatialGraph = useMemo(() => overworldToGraph(overworld) ?? worldGraph, [overworld, worldGraph]);
   const previewGraph = view === 'spatial' ? spatialGraph : worldGraph;
   const hasDedicatedOverworld = Boolean(overworld?.nodes?.length);
+  const selectedNode = previewGraph?.nodes?.find((n) => n.id === selectedId);
+  const outbound = (previewGraph?.edges ?? []).filter((e) => e.from === selectedId);
+  const inbound = (previewGraph?.edges ?? []).filter((e) => e.to === selectedId);
 
   const handleAddRoom = async () => {
     if (!selectedPath || !connectFrom || !window.metroforge?.updateWorldGraph) return;
@@ -161,12 +179,19 @@ export function WorldEditor() {
     await refreshHistory();
   };
 
+  const nodeOptions = (worldGraph?.nodes ?? []).map((n) => (
+    <option key={n.id} value={n.id}>
+      {n.label ?? n.id}
+    </option>
+  ));
+
   return (
-    <section>
+    <section className="workspace-screen world-editor-screen">
       <ScreenHeader
+        compact
         eyebrow="World"
         title="World Editor"
-        description="Canonical WorldGraph from the project. Layout is visual; topology changes go through validated updateWorldGraph commands."
+        description="Canonical WorldGraph · topology via validated updateWorldGraph."
         actions={
           <>
             <ProjectSelect />
@@ -178,150 +203,257 @@ export function WorldEditor() {
 
       {hasActiveProject && (
         <>
-      <CommandBar projectPath={selectedPath} onSuccess={() => loadGraph(selectedPath)} />
-
-      <div className="editor-toolbar">
-        <button type="button" className={view === 'progression' ? 'tab active' : 'tab'} onClick={() => setView('progression')}>
-          Progression
-        </button>
-        <button type="button" className={view === 'graph' ? 'tab active' : 'tab'} onClick={() => setView('graph')}>
-          Graph
-        </button>
-        <button type="button" className={view === 'spatial' ? 'tab active' : 'tab'} onClick={() => setView('spatial')}>
-          Spatial / overworld
-        </button>
-      </div>
-      {view === 'spatial' && (
-        <p className="contract-note">
-          {hasDedicatedOverworld
-            ? `Spatial view uses getOverworldMap (${overworld?.regions?.[0]?.name ?? overworld?.archetype ?? 'overworld'}).`
-            : overworld?.error
-              ? `${overworld.error} Falling back to world_graph node metadata x/y when present.`
-              : 'Spatial layout uses node metadata x/y when present. Dedicated overworld maps appear when getOverworldMap returns data.'}
-        </p>
-      )}
-      <div className="editor-workspace world-workspace">
-        <div className="panel editor-canvas editor-canvas-fill">
-          <WorldMapPreview
-            worldGraph={previewGraph}
-            view={view}
-            selectedId={selectedId}
-            onSelect={(id) => {
-              setSelectedId(id);
-              setConnectFrom(id);
-              setDisconnectFrom(id);
-            }}
-            onActivate={openRoom}
+          <CommandBar
+            compact
+            projectPath={selectedPath}
+            onSuccess={() => loadGraph(selectedPath)}
           />
-        </div>
-        <aside className="panel editor-inspector">
-          <h3>Inspector</h3>
-          {previewGraph?.nodes?.find((n) => n.id === selectedId) ? (
-            <dl className="settings-dl">
-              <dt>Room</dt>
-              <dd>{previewGraph.nodes.find((n) => n.id === selectedId)?.label ?? selectedId}</dd>
-              <dt>Id</dt>
-              <dd>
-                <code>{selectedId}</code>
-              </dd>
-              <dt>Archetype</dt>
-              <dd>{String(previewGraph.nodes.find((n) => n.id === selectedId)?.metadata?.archetype ?? 'room')}</dd>
-              <dt>Outbound</dt>
-              <dd>
-                {(previewGraph.edges ?? [])
-                  .filter((e) => e.from === selectedId)
-                  .map((e) => `${e.to}${e.requirements?.length ? ` (${e.requirements.join(', ')})` : ''}`)
-                  .join(' · ') || 'none'}
-              </dd>
-            </dl>
-          ) : (
-            <p className="hint">Select a room on the map.</p>
+
+          <ViewModeTabs
+            label="World view mode"
+            items={[
+              { id: 'progression', label: 'Progression' },
+              { id: 'graph', label: 'Graph' },
+              { id: 'spatial', label: 'Spatial' },
+            ]}
+            value={view}
+            onChange={(id) => setView(id as 'progression' | 'graph' | 'spatial')}
+          />
+          {view === 'spatial' && (
+            <p className="contract-note type-caption">
+              {hasDedicatedOverworld
+                ? `Spatial uses getOverworldMap (${overworld?.regions?.[0]?.name ?? overworld?.archetype ?? 'overworld'}).`
+                : overworld?.error
+                  ? `${overworld.error} Falling back to world_graph node metadata x/y when present.`
+                  : 'Spatial layout uses node metadata x/y when present. Dedicated overworld maps appear when getOverworldMap returns data.'}
+            </p>
           )}
-          <div className="row" style={{ marginTop: '0.75rem' }}>
-            <button type="button" className="primary" disabled={!selectedId} onClick={() => openRoom(selectedId)}>
-              Open in Room Editor
-            </button>
-            <button type="button" onClick={() => navigate('Dungeon')}>
-              Dungeon
-            </button>
-          </div>
-        </aside>
-      </div>
 
-      <div className="world-edit panel">
-        <h3>Add Optional Room</h3>
-        <div className="row">
-          <input value={newRoomId} onChange={(e) => setNewRoomId(e.target.value)} placeholder="room id" />
-          <select value={connectFrom} onChange={(e) => setConnectFrom(e.target.value)}>
-            {(worldGraph?.nodes ?? []).map((n) => (
-              <option key={n.id} value={n.id}>
-                {n.label ?? n.id}
-              </option>
-            ))}
-          </select>
-          <button type="button" className="primary" onClick={handleAddRoom}>
-            Add &amp; Validate
-          </button>
-          <button type="button" disabled={!canUndo} onClick={handleUndo}>
-            Undo
-          </button>
-        </div>
-        {message && <p className="result success">{message}</p>}
-        {error && <p className="result error">{error}</p>}
-      </div>
+          <EditorWorkbench variant="world" className="world-editor-workbench">
+            <EditorViewport
+              className="world-editor-canvas"
+              toolbar={
+                <EditorToolbar>
+                  <span className="hint">
+                    {(previewGraph?.nodes?.length ?? 0)} nodes · {(previewGraph?.edges?.length ?? 0)} edges ·{' '}
+                    {view}
+                  </span>
+                  <span className="status-grow" />
+                  <span className="hint mono">{selectedId || 'none selected'}</span>
+                </EditorToolbar>
+              }
+            >
+              <WorldMapPreview
+                worldGraph={previewGraph}
+                view={view}
+                selectedId={selectedId}
+                fitView
+                emptyTitle={
+                  view === 'spatial'
+                    ? 'Sparse spatial layout'
+                    : view === 'progression'
+                      ? 'No progression graph yet'
+                      : 'No world graph yet'
+                }
+                emptyDescription={
+                  view === 'spatial'
+                    ? 'Intentional empty: overworld/spatial coordinates are not authored for this project yet. Switch to Graph or Progression, or regenerate a project that writes getOverworldMap.'
+                    : undefined
+                }
+                onSelect={(id) => {
+                  setSelectedId(id);
+                  setConnectFrom(id);
+                  setDisconnectFrom(id);
+                }}
+                onActivate={openRoom}
+              />
+            </EditorViewport>
 
-      <div className="world-edit panel">
-        <h3>Connect / Disconnect Rooms</h3>
-        <div className="row">
-          <select value={connectFrom} onChange={(e) => setConnectFrom(e.target.value)}>
-            {(worldGraph?.nodes ?? []).map((n) => (
-              <option key={`cf-${n.id}`} value={n.id}>{n.label ?? n.id}</option>
-            ))}
-          </select>
-          <span>→</span>
-          <select value={connectTo} onChange={(e) => setConnectTo(e.target.value)}>
-            {(worldGraph?.nodes ?? []).map((n) => (
-              <option key={`ct-${n.id}`} value={n.id}>{n.label ?? n.id}</option>
-            ))}
-          </select>
-          <button type="button" className="primary" onClick={handleConnect}>Connect</button>
-        </div>
-        <div className="row">
-          <select value={disconnectFrom} onChange={(e) => setDisconnectFrom(e.target.value)}>
-            {(worldGraph?.nodes ?? []).map((n) => (
-              <option key={`df-${n.id}`} value={n.id}>{n.label ?? n.id}</option>
-            ))}
-          </select>
-          <span>↮</span>
-          <select value={disconnectTo} onChange={(e) => setDisconnectTo(e.target.value)}>
-            {(worldGraph?.nodes ?? []).map((n) => (
-              <option key={`dt-${n.id}`} value={n.id}>{n.label ?? n.id}</option>
-            ))}
-          </select>
-          <button type="button" onClick={handleDisconnect}>Disconnect</button>
-        </div>
-      </div>
+            <aside className="panel editor-inspector">
+              <InspectorSection title="General">
+                {selectedNode ? (
+                  <>
+                    <EditorPropertyRow label="Room">
+                      {selectedNode.label ?? selectedId}
+                    </EditorPropertyRow>
+                    <EditorPropertyRow label="Id">
+                      <code>{selectedId}</code>
+                    </EditorPropertyRow>
+                    <EditorPropertyRow label="Archetype">
+                      {String(selectedNode.metadata?.archetype ?? 'room')}
+                    </EditorPropertyRow>
+                    {(selectedNode.metadata?.x != null || selectedNode.metadata?.y != null) && (
+                      <EditorPropertyRow label="Coords">
+                        <span className="mono">
+                          {String(selectedNode.metadata?.x ?? '—')}, {String(selectedNode.metadata?.y ?? '—')}
+                        </span>
+                      </EditorPropertyRow>
+                    )}
+                  </>
+                ) : (
+                  <p className="hint">Select a room on the map.</p>
+                )}
+              </InspectorSection>
 
-      <div className="world-edit panel">
-        <h3>Project Checkpoints</h3>
-        <div className="row">
-          <input
-            value={checkpointLabel}
-            onChange={(e) => setCheckpointLabel(e.target.value)}
-            placeholder="Checkpoint label"
-          />
-          <button type="button" onClick={handleCheckpoint}>Save Checkpoint</button>
-        </div>
-        <ul className="checkpoint-list">
-          {checkpoints.map((c) => (
-            <li key={c.id}>
-              <button type="button" className="tab" onClick={() => handleRestoreCheckpoint(c.id)}>
-                {c.label} · {new Date(c.timestamp).toLocaleString()}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
+              <InspectorSection title="Connections">
+                {selectedNode ? (
+                  <dl className="settings-dl">
+                    <dt>Outbound</dt>
+                    <dd>
+                      {outbound
+                        .map((e) => `${e.to}${e.requirements?.length ? ` (${e.requirements.join(', ')})` : ''}`)
+                        .join(' · ') || 'none'}
+                    </dd>
+                    <dt>Inbound</dt>
+                    <dd>{inbound.map((e) => e.from).join(' · ') || 'none'}</dd>
+                  </dl>
+                ) : (
+                  <p className="hint">No selection.</p>
+                )}
+              </InspectorSection>
+
+              <InspectorSection title="Progression">
+                <p className="hint">
+                  View mode <strong>{view}</strong>
+                  {view === 'progression'
+                    ? ' — depth layout from graph BFS starting at the first world_graph node.'
+                    : view === 'spatial'
+                      ? ' — positions from getOverworldMap / metadata x,y only.'
+                      : ' — topological grid layout.'}
+                </p>
+                <EditorPropertyRow label="Edges from selection">
+                  {outbound.length}
+                </EditorPropertyRow>
+              </InspectorSection>
+
+              <InspectorSection title="Actions">
+                <div className="row" style={{ flexWrap: 'wrap', gap: '0.35rem' }}>
+                  <Button variant="primary" size="sm" disabled={!selectedId} onClick={() => openRoom(selectedId)}>
+                    Open in Room Editor
+                  </Button>
+                  <Button size="sm" onClick={() => navigate('Dungeon')}>
+                    Dungeon
+                  </Button>
+                  <Button size="sm" disabled={!canUndo} onClick={() => void handleUndo()}>
+                    Undo
+                  </Button>
+                </div>
+              </InspectorSection>
+            </aside>
+          </EditorWorkbench>
+
+          <EditorDock
+            className="world-editor-dock"
+            tabs={[
+              { id: 'structure', label: 'Structure' },
+              { id: 'connections', label: 'Connections' },
+              { id: 'checkpoints', label: 'Checkpoints' },
+            ]}
+            activeTab={dockTab}
+            onTabChange={(id) => setDockTab(id as DockTab)}
+          >
+            {dockTab === 'structure' && (
+              <div className="world-dock-pane">
+                <div className="row world-dock-row">
+                  <Input
+                    value={newRoomId}
+                    onChange={(e) => setNewRoomId(e.target.value)}
+                    placeholder="room id"
+                    aria-label="New room id"
+                  />
+                  <Select value={connectFrom} onChange={(e) => setConnectFrom(e.target.value)} aria-label="Connect from">
+                    {nodeOptions}
+                  </Select>
+                  <Button variant="primary" size="sm" onClick={() => void handleAddRoom()}>
+                    Add &amp; Validate
+                  </Button>
+                  <Button size="sm" disabled={!canUndo} onClick={() => void handleUndo()}>
+                    Undo
+                  </Button>
+                </div>
+              </div>
+            )}
+            {dockTab === 'connections' && (
+              <div className="world-dock-pane">
+                <div className="row world-dock-row">
+                  <Select value={connectFrom} onChange={(e) => setConnectFrom(e.target.value)} aria-label="Connect from">
+                    {(worldGraph?.nodes ?? []).map((n) => (
+                      <option key={`cf-${n.id}`} value={n.id}>
+                        {n.label ?? n.id}
+                      </option>
+                    ))}
+                  </Select>
+                  <span aria-hidden="true">→</span>
+                  <Select value={connectTo} onChange={(e) => setConnectTo(e.target.value)} aria-label="Connect to">
+                    {(worldGraph?.nodes ?? []).map((n) => (
+                      <option key={`ct-${n.id}`} value={n.id}>
+                        {n.label ?? n.id}
+                      </option>
+                    ))}
+                  </Select>
+                  <Button variant="primary" size="sm" onClick={() => void handleConnect()}>
+                    Connect
+                  </Button>
+                </div>
+                <div className="row world-dock-row">
+                  <Select
+                    value={disconnectFrom}
+                    onChange={(e) => setDisconnectFrom(e.target.value)}
+                    aria-label="Disconnect from"
+                  >
+                    {(worldGraph?.nodes ?? []).map((n) => (
+                      <option key={`df-${n.id}`} value={n.id}>
+                        {n.label ?? n.id}
+                      </option>
+                    ))}
+                  </Select>
+                  <span aria-hidden="true">↮</span>
+                  <Select
+                    value={disconnectTo}
+                    onChange={(e) => setDisconnectTo(e.target.value)}
+                    aria-label="Disconnect to"
+                  >
+                    {(worldGraph?.nodes ?? []).map((n) => (
+                      <option key={`dt-${n.id}`} value={n.id}>
+                        {n.label ?? n.id}
+                      </option>
+                    ))}
+                  </Select>
+                  <Button size="sm" onClick={() => void handleDisconnect()}>
+                    Disconnect
+                  </Button>
+                </div>
+              </div>
+            )}
+            {dockTab === 'checkpoints' && (
+              <div className="world-dock-pane">
+                <div className="row world-dock-row">
+                  <Input
+                    value={checkpointLabel}
+                    onChange={(e) => setCheckpointLabel(e.target.value)}
+                    placeholder="Checkpoint label"
+                    aria-label="Checkpoint label"
+                  />
+                  <Button size="sm" onClick={() => void handleCheckpoint()}>
+                    Save Checkpoint
+                  </Button>
+                </div>
+                <ul className="checkpoint-list">
+                  {checkpoints.length === 0 && <li className="hint">No checkpoints yet.</li>}
+                  {checkpoints.map((c) => (
+                    <li key={c.id}>
+                      <button type="button" className="tab" onClick={() => void handleRestoreCheckpoint(c.id)}>
+                        {c.label} · {new Date(c.timestamp).toLocaleString()}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </EditorDock>
+
+          {message && <p className="result success">{message}</p>}
+          {error && <p className="result error">{error}</p>}
         </>
       )}
     </section>

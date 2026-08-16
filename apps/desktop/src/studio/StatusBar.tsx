@@ -28,14 +28,25 @@ export function StatusBar({
         ]);
         if (hw) {
           setHwProfile(hw.profile || '—');
-          if (hw.vramMb) setVram(`${Math.round(hw.vramMb / 1024)} GB VRAM`);
-          else setVram(`${Math.round(hw.totalRamMb / 1024)} GB RAM`);
+          if (typeof hw.vramMb === 'number' && Number.isFinite(hw.vramMb) && hw.vramMb > 0) {
+            setVram(`${Math.round(hw.vramMb / 1024)} GB VRAM`);
+          } else if (typeof hw.totalRamMb === 'number' && Number.isFinite(hw.totalRamMb)) {
+            setVram(`${Math.round(hw.totalRamMb / 1024)} GB RAM`);
+          } else {
+            setVram('—');
+          }
+        } else {
+          setHwProfile('—');
+          setVram('—');
         }
-        if (list) {
+        if (list && Array.isArray(list)) {
           const healthy = list.filter((p) => p.health === 'healthy' && p.enabled).length;
           setProviders(`${healthy}/${list.length} providers`);
+        } else {
+          setProviders('—');
         }
-        setQueue(jobs?.filter((j) => j.status === 'queued' || j.status === 'running').length ?? 0);
+        const activeJobs = jobs?.filter((j) => j.status === 'queued' || j.status === 'running').length;
+        setQueue(typeof activeJobs === 'number' ? activeJobs : 0);
       } catch {
         /* status bar is optional */
       }
@@ -53,40 +64,49 @@ export function StatusBar({
         className={bridgeReady === false ? 'status-dot error' : 'status-dot ok'}
         aria-hidden="true"
       />
-      <span>{bridgeReady === false ? 'Bridge offline' : version}</span>
+      <span className="type-status" title="App version">
+        {bridgeReady === false ? 'Bridge offline' : version}
+      </span>
       <span className="status-sep" aria-hidden="true" />
-      <span>{activeNav}</span>
+      <span className="type-status" title="Workspace">
+        {activeNav}
+      </span>
       <span className="status-sep" aria-hidden="true" />
       <button
         type="button"
-        className="status-link status-context"
+        className="status-link status-context type-status"
         onClick={() => navigate('Dashboard')}
         title={selectedProject?.path ?? projectLabel}
       >
         {projectLabel}
       </button>
       <span className="status-sep" aria-hidden="true" />
-      <button type="button" className="status-link" onClick={() => navigate('Models')}>
+      <button type="button" className="status-link type-status" onClick={() => navigate('Models')} title="Hardware profile">
         {hwProfile}
       </button>
       <span className="status-sep" aria-hidden="true" />
-      <button type="button" className="status-link" onClick={() => navigate('Models')}>
+      <button type="button" className="status-link type-status" onClick={() => navigate('Models')} title="VRAM / RAM">
         {vram}
       </button>
       <span className="status-sep" aria-hidden="true" />
-      <button type="button" className="status-link" onClick={() => navigate('Providers')}>
+      <button type="button" className="status-link type-status" onClick={() => navigate('Providers')} title="Providers">
         {providers}
       </button>
       <span className="status-sep" aria-hidden="true" />
-      <button type="button" className="status-link" onClick={() => navigate('Settings')} title="Worker pool">
+      <button type="button" className="status-link type-status" onClick={() => navigate('Settings')} title="Worker pool">
         <ConcurrencyMeters compact />
       </button>
       <span className="status-grow" />
-      <button type="button" className="status-link" onClick={() => navigate('Studio')}>
+      <button
+        type="button"
+        className={`status-link type-status${queue > 0 ? ' status-busy' : ''}`}
+        onClick={() => navigate('Studio')}
+        title="Generation queue"
+      >
         {queue > 0 ? `${queue} generation job${queue === 1 ? '' : 's'}` : 'Idle'}
       </button>
       <span className="status-sep" aria-hidden="true" />
-      <span className="status-hint">Ctrl+K to Jump</span>
+      <span className="status-hint type-status">Ctrl+K to Jump</span>
     </footer>
   );
 }

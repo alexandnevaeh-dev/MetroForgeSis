@@ -9,6 +9,7 @@ import {
   type AssetProductionGateView,
 } from './AssetProductionGatePanel.js';
 import { AllowPlaceholdersControl } from './AllowPlaceholdersControl.js';
+import { ProjectReadinessSummary } from './ProjectReadinessSummary.js';
 import { Badge, Button, DataTable, EmptyState, Panel } from './ui/index.js';
 
 type PlaytestRouteSummary = {
@@ -204,7 +205,7 @@ export function ProjectDashboard() {
     (dashboard?.validationReport?.passed !== false || qaLabel == null);
 
   return (
-    <section className="dashboard-screen">
+    <section className="workspace-screen dashboard-screen">
       <ScreenHeader
         eyebrow="Create"
         title="Dashboard"
@@ -224,12 +225,56 @@ export function ProjectDashboard() {
       {hasActiveProject && !dashboard && loading && <p className="hint">Loading dashboard…</p>}
       {hasActiveProject && !dashboard && !loading && (
         <EmptyState
+          className="dashboard-empty-error"
           title="Dashboard unavailable"
-          description="Dashboard data is unavailable for this project."
+          description="getProjectDashboard returned no data for this project. Environment widgets below still use live provider/model IPC when available."
           actions={
-            <Button onClick={() => void refreshDashboard()}>Try again</Button>
+            <>
+              <Button variant="primary" onClick={() => void refreshDashboard()}>
+                Try again
+              </Button>
+              <Button onClick={() => jump('Studio')}>Generation Studio</Button>
+              <Button onClick={() => jump('QA')}>Open QA</Button>
+              <Button onClick={() => jump('Providers')}>Providers</Button>
+            </>
           }
         />
+      )}
+
+      {hasActiveProject && !dashboard && !loading && (
+        <div className="dashboard-layout-concept dashboard-fallback-env">
+          <Panel level={1} title="Environment (live)">
+            <div className="dashboard-env-stats">
+              <div>
+                <span>Providers</span>
+                <strong>{providerStats ? `${providerStats.healthy}/${providerStats.total}` : '—'}</strong>
+              </div>
+              <div>
+                <span>Models</span>
+                <strong>{modelCount ?? '—'}</strong>
+              </div>
+              <div>
+                <span>Hardware</span>
+                <strong>{hardware ?? 'unavailable'}</strong>
+              </div>
+            </div>
+          </Panel>
+          <Panel level={1} title="Quick Launch">
+            <div className="quick-launch">
+              {QUICK_LAUNCH.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className="quick-launch-item"
+                  onClick={() => jump(item.id)}
+                >
+                  <span>{item.label}</span>
+                  {item.shortcut ? <kbd>{item.shortcut}</kbd> : <span className="quick-launch-hint">—</span>}
+                </button>
+              ))}
+            </div>
+          </Panel>
+        </div>
       )}
 
       {dashboard && (
@@ -302,6 +347,15 @@ export function ProjectDashboard() {
                 )}
               </Panel>
             </div>
+
+            <ProjectReadinessSummary
+              completion={dashboard.completion}
+              title="Project readiness"
+              compact
+              loading={loading}
+              onNavigate={jump}
+              onRefresh={() => void refreshDashboard()}
+            />
 
             <div className="dashboard-mid-row">
               <Panel

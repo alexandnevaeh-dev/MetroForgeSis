@@ -7,7 +7,7 @@ import { ScreenHeader } from './ScreenHeader.js';
 import { ProjectSelect } from './ProjectSelect.js';
 import { NoProjectHint } from './NoProjectHint.js';
 import { useStudio } from './StudioContext.js';
-import { Badge, EmptyState } from './ui/index.js';
+import { Badge, Button, EmptyState, SearchField, Tabs } from './ui/index.js';
 
 export function AssetsGallery() {
   const { selectedPath, hasActiveProject, openRoom, openGenerator, focusAssetId } = useStudio();
@@ -128,7 +128,7 @@ export function AssetsGallery() {
   }, [classified]);
 
   return (
-    <section>
+    <section className="workspace-screen assets-gallery-screen">
       <ScreenHeader
         eyebrow="Library"
         title="Asset Gallery"
@@ -140,62 +140,64 @@ export function AssetsGallery() {
       {hasActiveProject && (
         <>
       <div className="toolbar">
-        <input
+        <SearchField
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search id, path, provider, prompt…"
           aria-label="Search assets"
         />
-        <button type="button" disabled={!selectedPath || backfillBusy} onClick={() => void runBackfill()}>
+        <Button disabled={!selectedPath || backfillBusy} onClick={() => void runBackfill()}>
           {backfillBusy ? 'Backfilling…' : 'Backfill maturity'}
-        </button>
+        </Button>
       </div>
       {backfillMessage && <p className="hint">{backfillMessage}</p>}
 
-      <div className="category-bar row" role="tablist" aria-label="Asset categories">
-        {GALLERY_CATEGORIES.map((c) => (
-          <button
-            key={c}
-            type="button"
-            role="tab"
-            aria-selected={category === c}
-            className={category === c ? 'tab active' : 'tab'}
-            onClick={() => setCategory(c)}
-          >
-            {c}
-            {c !== 'All' && counts.get(c) ? ` ${counts.get(c)}` : c === 'All' ? ` ${classified.length}` : ''}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        className="category-bar"
+        items={GALLERY_CATEGORIES.map((c) => ({
+          id: c,
+          label:
+            c === 'All'
+              ? `All ${classified.length}`
+              : counts.get(c)
+                ? `${c} ${counts.get(c)}`
+                : c,
+        }))}
+        value={category}
+        onChange={setCategory}
+      />
 
       {loading && <p className="hint">Loading assets…</p>}
 
       {!loading && classified.length === 0 && (
         <EmptyState
           title="No assets in this project yet"
-          description="Generate a game or create assets manually to populate the gallery."
+          description="Generate a game or create assets manually to populate the gallery. Categories stay empty until real artifacts exist."
           actions={
-            <button type="button" className="primary" onClick={() => openGenerator()}>
+            <Button variant="primary" onClick={() => openGenerator()}>
               Manual Generator
-            </button>
+            </Button>
           }
         />
       )}
 
       {!loading && classified.length > 0 && filtered.length === 0 && (
         <EmptyState
-          title="No matching assets"
-          description="No assets match this search or category."
+          title={category === 'All' ? 'No matching assets' : `No ${category} assets`}
+          description={
+            category === 'All'
+              ? 'No assets match this search.'
+              : `This category is empty for the current project — not a placeholder browser.`
+          }
           actions={
-            <button
-              type="button"
+            <Button
               onClick={() => {
                 setQuery('');
                 setCategory('All');
               }}
             >
               Clear filters
-            </button>
+            </Button>
           }
         />
       )}
@@ -347,9 +349,9 @@ export function AssetsGallery() {
             {(selected.category === 'SFX' || selected.category === 'Music' || selected.category === 'Voice') &&
               selectedPath && <AudioPreview projectPath={selectedPath} relPath={selected.path} />}
             <div className="asset-inspector-actions">
-              <button
-                type="button"
-                className="primary asset-inspector-cta"
+              <Button
+                variant="primary"
+                className="asset-inspector-cta"
                 onClick={() =>
                   openGenerator({
                     description: selected.prompt || `Regenerate ${selected.id} in this project's art style.`,
@@ -359,7 +361,7 @@ export function AssetsGallery() {
                 }
               >
                 Open in Manual Generator
-              </button>
+              </Button>
             </div>
           </aside>
         )}

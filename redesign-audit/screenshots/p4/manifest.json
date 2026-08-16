@@ -1,0 +1,26 @@
+{
+  "capturedAt": "2026-08-15T05:07:35.476Z",
+  "project": "C:\\Users\\alexa\\OneDrive\\Documents\\Metroidvania\\Forged\\GeneratedGames\\nvidia-image-activation-smoke",
+  "viewportPrimary": "1600x900",
+  "shots": [
+    "01-models.png",
+    "02-model-selected.png",
+    "03-providers.png",
+    "04-routing-no-route.png",
+    "05-routing-candidates.png",
+    "06-routing-rejected.png",
+    "07-qa-full.png",
+    "08-qa-environment.png",
+    "09-qa-project-gates.png",
+    "10-qa-checkpoints.png",
+    "01-models-1920.png",
+    "01-models-1366.png"
+  ],
+  "smoke": {
+    "models": 2,
+    "providers": 2,
+    "routing": 3,
+    "qa": 4
+  },
+  "statusBarVisible": true
+}

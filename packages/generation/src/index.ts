@@ -1,3 +1,5 @@
+export { assertPhaseArtifacts, phaseCompleteStatus } from './phase-contract.js';
+export type { PhaseArtifactCheck } from './phase-contract.js';
 export { GenerationPipeline } from './pipeline.js';
 export type { GenerateOptions, GenerateResult } from './pipeline.js';
 export * from './events.js';
@@ -66,6 +68,7 @@ export type { ProjectMetaResult } from './project-meta.js';
 export { buildAssetCoverageReport } from './asset-coverage.js';
 export type { AssetCoverageReport, AssetCoverageEntry } from './asset-coverage.js';
 export { runProjectAcceptance, formatAcceptanceReport } from './run-acceptance.js';
+export { runQualityPass } from '@metroforge/qa';
 export type { AcceptanceReport, RunProjectAcceptanceOptions } from './run-acceptance.js';
 export {
   GenerationCancelledError,
@@ -74,7 +77,8 @@ export {
 } from '@metroforge/shared';
 export { parseProjectCommandWithLlm } from './ai-commands-llm.js';
 export type { LlmCommandSource, LlmCommandContext } from './ai-commands-llm.js';
-export { buildProjectMemoryChunks } from './project-memory-chunks.js';
+export { writeVisualSliceReviewRequired, applyVisualReviewDecision, visualReviewPath } from './visual-review.js';
+export { writeVisualSliceReports, collectVisualSliceEvidence } from './visual-slice-report.js';
 export {
   buildProjectMemoryIndex,
   loadProjectMemoryIndex,

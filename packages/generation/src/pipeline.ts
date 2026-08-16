@@ -13,10 +13,16 @@ import {
   type StageStatus,
   isTopDownArchetype,
   inferGameArchetypeFromPrompt,
+  isRegisteredAbilityId,
+  missingReleaseCandidateAbilities,
+  assertMassVisualGenerationAllowed,
+  isMassVisualProfile,
+  GenerationCancelledError,
+  throwIfCancelled,
 } from '@metroforge/shared';
 import { remapGameDnaAbilities } from './remap-project-abilities.js';
 import { createDatabase, type MetroForgeDatabase } from '@metroforge/database';
-import { bootstrapProviders, licenseFieldsForProvider, OllamaEmbeddingProvider } from '@metroforge/ai';
+import { bootstrapProviders, licenseFieldsForArtifact, OllamaEmbeddingProvider, HardwareProfiler } from '@metroforge/ai';
 import { generateGameDNA, type GameDNATextSource } from '@metroforge/ai';
 import { GameDNASchema, ProjectMetadataSchema, type GenerationJob } from '@metroforge/schemas';
 import {
@@ -28,14 +34,19 @@ import {
   synthesizeAllSfx,
   resolveRoomCount,
   generateDesignBible,
+  generateStyleBible,
+  generateCharacterVisualDNA,
   generateMusicFromAudioBible,
   enhanceMusicWithStableAudio,
   generateTopDownWorld,
+  buildProgressionProof,
 } from '@metroforge/procedural';
 import { AssetPipeline } from '@metroforge/assets';
 import { GodotProjectAssembler } from '@metroforge/godot';
-import { ToolRegistry, exportProject } from '@metroforge/tools';
-import { QAValidator, RepairEngineer, deriveValidationLevel, type QAReport, type QAGateResult } from '@metroforge/qa';
+import { ToolRegistry, exportProject, resolveGodotExecutableCanonical, readProjectGodotOverride } from '@metroforge/tools';
+import { QAValidator, RepairEngineer, deriveValidationLevel, runQualityPass, type QAReport, type QAGateResult } from '@metroforge/qa';
+import { createProjectCheckpoint } from './project-checkpoint.js';
+import { assertPhaseArtifacts, phaseCompleteStatus } from './phase-contract.js';
 import { withCategory, type GenerationEvent } from './events.js';
 import {
   shouldPauseAtMilestone,
@@ -48,7 +59,8 @@ import { loadProjectContext } from './project-loader.js';
 import { buildProjectMemoryIndex } from './project-memory-service.js';
 import { synthesizeDialogueVoices } from './dialogue-voice.js';
 import { buildAssetCoverageReport } from './asset-coverage.js';
-import { GenerationCancelledError, throwIfCancelled } from '@metroforge/shared';
+import { writeVisualSliceReviewRequired } from './visual-review.js';
+import { writeVisualSliceReports, collectVisualSliceEvidence } from './visual-slice-report.js';
 
 export interface GenerateOptions {
   prompt: string;
@@ -273,6 +285,8 @@ export class GenerationPipeline {
     const dataDir = config.dataDir || join(cwd, '.metroforge');
     mkdirSync(dataDir, { recursive: true });
     db = await createDatabase(dataDir);
+    const hardwareProfile =
+      options.hardwareProfile ?? new HardwareProfiler().profile().profile;
 
     report('intake', 'PASSED');
 
@@ -341,6 +355,10 @@ export class GenerationPipeline {
     // (packages/generation/src/remap-project-abilities.ts) for why.
     const abilityRemap = remapGameDnaAbilities(gameDna);
     gameDna = abilityRemap.dna;
+    if (options.profile === 'VISUAL_VERTICAL_SLICE') {
+      gameDna.technical.tileSize = 32;
+      writeFileSync(gameDnaCheckpointPath, JSON.stringify(gameDna, null, 2));
+    }
     if (abilityRemap.changed) {
       writeFileSync(gameDnaCheckpointPath, JSON.stringify(gameDna, null, 2));
       for (const pair of abilityRemap.remapped) {
@@ -354,13 +372,51 @@ export class GenerationPipeline {
       }
     }
 
+    const enabledAbilityIds = gameDna.abilities.filter((a) => a.enabled !== false).map((a) => a.id);
+    if (!isTopDownArchetype(gameDna.archetype)) {
+      const unknownRequired = enabledAbilityIds.filter((id) => !isRegisteredAbilityId(id));
+      if (unknownRequired.length > 0) {
+        errors.push(
+          `Unknown required abilities remain after remap (no runtime implementation): ${unknownRequired.join(', ')}`,
+        );
+      }
+      if (options.profile === 'RELEASE_CANDIDATE') {
+        const missingRc = missingReleaseCandidateAbilities(enabledAbilityIds);
+        if (missingRc.length > 0) {
+          errors.push(
+            `RELEASE_CANDIDATE DNA missing required registered abilities: ${missingRc.join(', ')}`,
+          );
+        }
+      }
+    }
+
     report('design_bible', 'RUNNING');
     const designBible = generateDesignBible(gameDna, options.profile, options.seed);
     writeFileSync(
       join(outputPath, 'design_bible.json'),
       JSON.stringify(designBible, null, 2),
     );
-    report('design_bible', 'PASSED', `${designBible.art.palette.length} palette colors, ${designBible.audio.biomeThemes.length} biome themes`);
+    const styleBible = generateStyleBible(gameDna, designBible.art);
+    writeFileSync(join(outputPath, 'style_bible.json'), JSON.stringify(styleBible, null, 2));
+    const characterVisualDna = generateCharacterVisualDNA(gameDna, designBible.art);
+    writeFileSync(
+      join(outputPath, 'character_visual_dna.json'),
+      JSON.stringify(characterVisualDna, null, 2),
+    );
+    const bibleArtifacts = assertPhaseArtifacts(outputPath, [
+      'game_dna.json',
+      'design_bible.json',
+      'style_bible.json',
+      'character_visual_dna.json',
+    ]);
+    report(
+      'design_bible',
+      phaseCompleteStatus(bibleArtifacts, errors.length === 0 || options.profile !== 'RELEASE_CANDIDATE'),
+      bibleArtifacts.ok
+        ? `${designBible.art.palette.length} palette colors, ${designBible.audio.biomeThemes.length} biome themes`
+        : `missing artifacts: ${bibleArtifacts.missing.join(', ')}`,
+    );
+    createProjectCheckpoint(outputPath, 'after_design_bible');
     if (!(await maybePause('game_dna', 'design_bible', 'Review Game DNA and design bible'))) {
       db?.close();
       return { success: false, projectSlug: slug, outputPath, jobId: emitJobId ?? '', errors: ['Cancelled at review gate'], warnings, phases };
@@ -464,12 +520,15 @@ export class GenerationPipeline {
     if (!connected) {
       warnings.push(`Disconnected rooms in generated world: ${unreachableRoomIds.join(', ')}`);
     }
+    const worldArtifacts = assertPhaseArtifacts(outputPath, ['world_graph.json', 'progression_graph.json']);
     report(
       'world_topology',
-      connected ? 'PASSED' : 'FAILED',
-      connected
-        ? `${roomIds.length} rooms, ${defaults.biomes} biomes`
-        : `${unreachableRoomIds.length} room(s) disconnected from start`,
+      phaseCompleteStatus(worldArtifacts, connected),
+      !worldArtifacts.ok
+        ? `missing artifacts: ${worldArtifacts.missing.join(', ')}`
+        : connected
+          ? `${roomIds.length} rooms, ${defaults.biomes} biomes`
+          : `${unreachableRoomIds.length} room(s) disconnected from start`,
     );
 
     report('progression_graph', 'RUNNING');
@@ -491,16 +550,33 @@ export class GenerationPipeline {
         `Rooms unreachable via progressive ability pickup: ${worldUnreachableRoomIds.join(', ')}`,
       );
     }
-    const progressionOk = reachable && worldReachable;
-    report(
-      'progression_graph',
-      progressionOk ? 'PASSED' : 'FAILED',
-      progressionOk
-        ? undefined
-        : !reachable
-          ? 'Abstract ability chain unsolvable'
-          : `${worldUnreachableRoomIds.length} room(s) unreachable via ability pickup`,
-    );
+    const progressionProof = buildProgressionProof(worldGraph, progressionGraph);
+    writeFileSync(join(outputPath, 'progression_proof.json'), JSON.stringify(progressionProof, null, 2));
+    if (!progressionProof.passed) {
+      warnings.push(
+        `Progression proof failed: start=${progressionProof.startReachable} boss=${progressionProof.bossReachable} selfLocks=${progressionProof.selfLocks.length} unknown=${progressionProof.unknownAbilities.join(',') || 'none'}`,
+      );
+    }
+    if (errors.some((e) => e.includes('Unknown required abilities') || e.includes('missing required registered'))) {
+      report('progression_graph', 'FAILED', errors[errors.length - 1]);
+    } else {
+      const proofArtifacts = assertPhaseArtifacts(outputPath, ['progression_proof.json']);
+      const progressionOk = reachable && worldReachable && progressionProof.passed && proofArtifacts.ok;
+      report(
+        'progression_graph',
+        progressionOk ? 'PASSED' : 'FAILED',
+        progressionOk
+          ? `${progressionProof.trace.length} proof steps, boss ${progressionProof.bossRoomId}`
+          : !reachable
+            ? 'Abstract ability chain unsolvable'
+            : !worldReachable
+              ? `${worldUnreachableRoomIds.length} room(s) unreachable via ability pickup`
+              : !proofArtifacts.ok
+                ? `missing artifacts: ${proofArtifacts.missing.join(', ')}`
+                : 'Progression proof failed',
+      );
+    }
+    createProjectCheckpoint(outputPath, 'after_world_progression');
     if (!(await maybePause('world_layout', 'progression_graph', 'Review world layout and progression'))) {
       db.projects.updateStatus(project.id, 'cancelled');
       db.jobs.updateJobStatus(job.id, 'cancelled', 'progression_graph');
@@ -560,6 +636,28 @@ export class GenerationPipeline {
     );
 
     report('environment_assets', 'RUNNING');
+    if (isMassVisualProfile(options.profile)) {
+      try {
+        assertMassVisualGenerationAllowed(options.profile);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        errors.push(msg);
+        report('environment_assets', 'FAILED', msg);
+        db.projects.updateStatus(project.id, 'validation_failed');
+        db.jobs.updateJobStatus(job.id, 'validation_failed', 'environment_assets');
+        db.close();
+        return {
+          success: false,
+          projectSlug: slug,
+          outputPath,
+          jobId: job.id,
+          errors,
+          warnings,
+          phases,
+          projectStatus: 'validation_failed',
+        };
+      }
+    }
     const assetPipeline = new AssetPipeline();
     const assetResult = await assetPipeline.generate({
       gameDna,
@@ -580,6 +678,8 @@ export class GenerationPipeline {
         role: n.role,
       })),
       artBible: designBible.art,
+      styleBible,
+      characterVisualDna,
       comfyuiUrl: process.env.COMFYUI_BASE_URL,
       diffusersPython: process.env.DIFFUSERS_PYTHON,
       diffusersModelId: process.env.DIFFUSERS_MODEL_ID,
@@ -587,10 +687,16 @@ export class GenerationPipeline {
       nvidiaApiBaseUrl: process.env.NVIDIA_API_BASE_URL,
       nvidiaImageModel: options.nvidiaImageModel ?? process.env.NVIDIA_IMAGE_MODEL,
       nvidiaVisionModel: process.env.NVIDIA_VISION_MODEL,
+      huggingfaceApiKey: process.env.HUGGINGFACE_API_KEY ?? process.env.HF_TOKEN,
+      huggingfaceImageModel: process.env.HF_IMAGE_MODEL,
+      automatic1111Url: process.env.AUTOMATIC1111_BASE_URL,
+      stabilityApiKey: process.env.STABILITY_API_KEY,
+      deepaiApiKey: process.env.DEEPAI_API_KEY,
+      replicateApiToken: process.env.REPLICATE_API_TOKEN,
       ollamaBaseUrl: config.ollamaBaseUrl,
       resume: options.resume,
       mode: options.mode,
-      hardwareProfile: options.hardwareProfile,
+      hardwareProfile,
       signal: options.signal,
       providerEnabled: options.providerEnabled,
       onTaskStarted: (task, message) => {
@@ -655,6 +761,11 @@ export class GenerationPipeline {
       },
     });
     warnings.push(...assetResult.warnings);
+    if (assetResult.fakeAnimationDetected) {
+      warnings.push(
+        'ANIMATION GENERATION did not produce production-ready posed frames. Derived bob/slide sheets must not be treated as ready.',
+      );
+    }
     const textureFiles = new Map(assetResult.assets.map((a) => [a.path, a.buffer]));
     const assetMetadata = assetResult.assets.map((a) => ({
       id: a.id,
@@ -670,12 +781,15 @@ export class GenerationPipeline {
       sourceType: a.sourceType,
       fallbackDepth: a.fallbackDepth,
       fallbackReason: a.fallbackReason,
-      selectedProvider: a.selectedProvider,
+      selectedProvider: a.selectedProvider ?? a.provider,
       selectedModel: a.selectedModel,
       requestedCapability: a.requestedCapability ?? 'IMAGE_GENERATION',
       productionAllowed: a.productionAllowed,
-      ...licenseFieldsForProvider(a.provider),
+      sourcePath: a.sourcePath,
     }));
+    for (const meta of assetMetadata) {
+      Object.assign(meta, licenseFieldsForArtifact(meta, assetMetadata));
+    }
     const assetPassCount = assetResult.assets.filter((a) => a.critiquePassed).length;
     const placeholderCount = assetResult.assets.filter(
       (a) => a.fallbackGenerated || a.maturity === 'PLACEHOLDER' || a.maturity === 'BLOCKOUT',
@@ -702,6 +816,7 @@ export class GenerationPipeline {
     }
 
     report('project_assembly', 'RUNNING');
+    createProjectCheckpoint(outputPath, 'before_assembly');
     const assemblyResult = this.assembler.assemble({
       outputDir: outputPath,
       gameDna,
@@ -760,8 +875,15 @@ export class GenerationPipeline {
       godotPath: config.godotExecutable,
       ollamaUrl: config.ollamaBaseUrl,
     });
-    const godotTool = tools.find((t) => t.id === 'godot');
-    const godotPath = config.godotExecutable ?? godotTool?.path ?? null;
+    const resolvedGodot = resolveGodotExecutableCanonical({
+      preference: config.godotExecutable,
+      projectOverride: readProjectGodotOverride(outputPath),
+      envPath: process.env.GODOT_EXECUTABLE,
+    });
+    const detectedGodot = tools.find((t) => t.id === 'godot')?.path ?? null;
+    const godotCandidate = resolvedGodot.path ?? detectedGodot;
+    const godotPath =
+      godotCandidate && existsSync(godotCandidate) ? godotCandidate : null;
 
     const pushGate = (target: QAReport, gate: QAGateResult) => {
       target.results.push(gate);
@@ -815,9 +937,12 @@ export class GenerationPipeline {
         });
         pushGate(target, {
           gate: 'gameplay_screenshot_qa',
-          passed: true,
-          state: 'SKIPPED',
-          message: 'NEEDS_RUNTIME_VALIDATION: GODOT_NOT_AVAILABLE',
+          passed: options.profile !== 'RELEASE_CANDIDATE',
+          state: options.profile === 'RELEASE_CANDIDATE' ? 'FAIL' : 'SKIPPED',
+          message:
+            options.profile === 'RELEASE_CANDIDATE'
+              ? 'RELEASE_CANDIDATE requires gameplay screenshot evidence — Godot not available'
+              : 'NEEDS_RUNTIME_VALIDATION: GODOT_NOT_AVAILABLE',
         });
         return;
       }
@@ -840,9 +965,12 @@ export class GenerationPipeline {
         });
         pushGate(target, {
           gate: 'gameplay_screenshot_qa',
-          passed: true,
-          state: 'SKIPPED',
-          message: 'SCREENSHOT_QA_SKIPPED: godot_imports failed',
+          passed: options.profile !== 'RELEASE_CANDIDATE',
+          state: options.profile === 'RELEASE_CANDIDATE' ? 'FAIL' : 'SKIPPED',
+          message:
+            options.profile === 'RELEASE_CANDIDATE'
+              ? 'RELEASE_CANDIDATE requires gameplay screenshot evidence — godot_imports failed'
+              : 'SCREENSHOT_QA_SKIPPED: godot_imports failed',
         });
         return;
       }
@@ -877,7 +1005,11 @@ export class GenerationPipeline {
         passed: runtimeGate.passed,
         message: runtimeGate.message,
       });
-      pushGate(target, this.qa.validateGameplayScreenshot(outputPath));
+      pushGate(target, this.qa.validateGameplayScreenshot(outputPath, {
+        required: options.profile === 'RELEASE_CANDIDATE',
+        godotPath,
+        headlessOutput: String(runtimeGate.details?.output ?? ''),
+      }));
 
       if (runtimeGate.passed) {
         const playtestGate = this.qa.validateGodotPlaytest(godotPath, outputPath);
@@ -910,6 +1042,7 @@ export class GenerationPipeline {
 
     if (!qaReport.passed) {
       report('automated_repair', 'RUNNING');
+      createProjectCheckpoint(outputPath, 'before_repair');
       let attempt = 0;
       while (!qaReport.passed && attempt < MAX_REPAIR_ATTEMPTS) {
         attempt++;
@@ -987,6 +1120,27 @@ export class GenerationPipeline {
       validationLevel === 'RUNTIME_VALIDATED' ||
       (validationLevel === 'IMPORT_VALIDATED' && Boolean(options.skipRuntimeValidation));
 
+    if (gameDna.profile === 'RELEASE_CANDIDATE' && godotPath && validationPassed) {
+      try {
+        const qualityReport = runQualityPass({
+          projectPath: outputPath,
+          godotPath,
+          apply: true,
+          recapture: !options.skipRuntimeValidation,
+          playtest: false,
+        });
+        writeFileSync(
+          join(outputPath, 'data', 'quality', 'quality_report.json'),
+          JSON.stringify(qualityReport, null, 2),
+        );
+        if (qualityReport.rolledBack) {
+          warnings.push(`QualityDirector rolled back: ${qualityReport.rollbackReason ?? 'score regression'}`);
+        }
+      } catch (err) {
+        warnings.push(`QualityDirector skipped: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
     report(
       'final_qa',
       validationPassed ? 'PASSED' : validationLevel === 'NEEDS_RUNTIME_VALIDATION' ? 'SKIPPED' : 'WARN',
@@ -1013,6 +1167,7 @@ export class GenerationPipeline {
 
     let exportPath: string | undefined;
     report('export', 'RUNNING');
+    createProjectCheckpoint(outputPath, 'before_export');
     if (options.skipExport) {
       report('export', 'SKIPPED', 'EXPORT_SKIPPED: skipExport');
     } else {
@@ -1047,6 +1202,60 @@ export class GenerationPipeline {
     // failure (real gameplay code broken, not just a soft-fail/skip) must never be silently
     // reported as COMPLETE.
     const finalStatus = validationPassed ? 'complete' : 'validation_failed';
+
+    if (options.profile === 'VISUAL_VERTICAL_SLICE') {
+      const review = writeVisualSliceReviewRequired(outputPath, {
+        fakeAnimationDetected: assetResult.fakeAnimationDetected === true,
+        notes: 'Technical QA is not aesthetic approval. Use Approve Visual Direction / Reject in Generation Studio.',
+        technicalQa: {
+          passed: validationPassed === true,
+          issues: errors,
+          checks: {
+            runtimeValidated: validationPassed === true,
+            fakeAnimation: assetResult.fakeAnimationDetected !== true,
+          },
+        },
+      });
+      const evidence = collectVisualSliceEvidence(outputPath);
+      writeVisualSliceReports({
+        projectPath: outputPath,
+        slug,
+        styleBible,
+        characterDna: characterVisualDna,
+        providerModels: {
+          nvidiaImage: String(options.nvidiaImageModel ?? process.env.NVIDIA_IMAGE_MODEL ?? 'black-forest-labs/flux.1-dev'),
+          kontext: 'black-forest-labs/flux.1-kontext-dev',
+        },
+        spriteQa: { fakeAnimationDetected: assetResult.fakeAnimationDetected === true },
+        tilesetQa: { compiler: 'TileCompiler autotile' },
+        roomQa: { roomCount: gameDna.world.roomCount, biomeCount: 1 },
+        fakeAnimation: assetResult.fakeAnimationDetected === true,
+        screenshots: evidence.length > 0 ? evidence : [
+          'qa/screenshot_gameplay.png',
+          'reports/visual-slice-contact-sheet.png',
+        ],
+        review,
+      });
+      try {
+        const projectJson = ProjectMetadataSchema.parse(JSON.parse(readFileSync(projectJsonPath, 'utf-8')));
+        writeFileSync(
+          projectJsonPath,
+          JSON.stringify(
+            {
+              ...projectJson,
+              visualSliceApproved: false,
+              visualReviewStatus: 'VISUAL_SLICE_REVIEW_REQUIRED',
+            },
+            null,
+            2,
+          ),
+        );
+      } catch {
+        warnings.push('Could not stamp visualReviewStatus onto project.json');
+      }
+      warnings.push('VISUAL SLICE READY FOR HUMAN REVIEW — not FULL GAME READY');
+    }
+
     db.projects.updateStatus(project.id, finalStatus);
     db.jobs.updateJobStatus(job.id, finalStatus, 'export');
     db.close();

@@ -25,20 +25,36 @@ async function tryExec(commands: string[]): Promise<{ version: string; path: str
   return null;
 }
 
-export async function detectGodot(customPath?: string | null): Promise<ToolInfo> {
-  const commands = customPath
-    ? [`"${customPath}" --version`]
-    : ['godot --version', 'godot4 --version'];
-  const result = await tryExec(commands);
+export async function detectGodot(
+  customPath?: string | null,
+  options: {
+    preference?: string | null;
+    projectOverride?: string | null;
+    envPath?: string | null;
+  } = {},
+): Promise<ToolInfo> {
+  // Lazy import to keep registry usable without circular init issues in tests.
+  const { resolveGodotExecutableCanonical } = await import('./godot-resolver.js');
+  const resolved = resolveGodotExecutableCanonical({
+    preference: options.preference ?? customPath,
+    projectOverride: options.projectOverride,
+    envPath: options.envPath ?? (customPath ? null : process.env.GODOT_EXECUTABLE),
+  });
+  const installed = Boolean(resolved.path && resolved.version);
+  const pathLabel = resolved.path ?? 'none';
   return {
     id: 'godot',
     name: 'Godot',
-    installed: !!result,
-    version: result?.version ?? null,
-    path: customPath ?? result?.path ?? null,
-    status: result ? 'PASS' : 'WARN',
-    message: result?.version ?? 'Not detected — set GODOT_EXECUTABLE in .env',
-    capabilities: result ? ['headless_validation', 'project_run'] : [],
+    installed: Boolean(resolved.path),
+    version: resolved.version,
+    path: resolved.path,
+    status: installed ? 'PASS' : resolved.path ? 'WARN' : 'WARN',
+    message: installed
+      ? `${resolved.version} · ${resolved.sourceLabel} · ${pathLabel}`
+      : resolved.path
+        ? `Configured but --version failed (${resolved.sourceLabel}): ${pathLabel}`
+        : 'Not detected — set Settings Godot path or GODOT_EXECUTABLE',
+    capabilities: installed ? ['headless_validation', 'project_run'] : [],
   };
 }
 
@@ -93,9 +109,21 @@ export async function detectGeneric(
 export class ToolRegistry {
   private tools: Map<string, ToolInfo> = new Map();
 
-  async detectAll(options: { godotPath?: string | null; ollamaUrl?: string } = {}): Promise<ToolInfo[]> {
+  async detectAll(
+    options: {
+      godotPath?: string | null;
+      godotPreference?: string | null;
+      godotProjectOverride?: string | null;
+      godotEnvPath?: string | null;
+      ollamaUrl?: string;
+    } = {},
+  ): Promise<ToolInfo[]> {
     const results = await Promise.all([
-      detectGodot(options.godotPath),
+      detectGodot(options.godotPath, {
+        preference: options.godotPreference ?? options.godotPath,
+        projectOverride: options.godotProjectOverride,
+        envPath: options.godotEnvPath,
+      }),
       detectOllama(options.ollamaUrl ?? 'http://localhost:11434'),
       detectGeneric('python', 'Python', ['python --version', 'python3 --version'], ['scripting', 'diffusers_worker']),
       detectGeneric('ffmpeg', 'FFmpeg', ['ffmpeg -version'], ['audio_processing']),

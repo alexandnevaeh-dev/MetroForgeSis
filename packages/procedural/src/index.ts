@@ -34,6 +34,7 @@ export {
   npcRoomIndex,
   npcCountForProfile,
   PROCEDURAL_ARCHETYPE_POOL,
+  VISUAL_SLICE_ROOM_ARCHETYPES,
 } from './room-archetypes.js';
 export {
   generateGameContent,
@@ -56,6 +57,15 @@ export {
 export type { TrackerPattern, TrackerEvent, MusicGenerationResult, TrackerInterchangeModule } from './music.js';
 export { StableAudioProvider } from './stable-audio.js';
 export type { StableAudioRequest, StableAudioResult } from './stable-audio.js';
-export { generateArtBible, generateAudioBible, generateDesignBible } from './bibles.js';
+export {
+  generateArtBible,
+  generateAudioBible,
+  generateDesignBible,
+  generateStyleBible,
+  generateCharacterVisualDNA,
+  applyStyleBiblePrompt,
+} from './bibles.js';
+export { buildProgressionProof } from './progression-proof.js';
+export type { ProgressionProof, ProgressionTraceStep } from './progression-proof.js';
 export { generateTopDownWorld, collisionRectsFromTiles, isWalkableTile } from './topdown/world.js';
 export type { TopDownOverworld, TopDownArea, TopDownPoi, TopDownWorldGenResult } from './topdown/world.js';
