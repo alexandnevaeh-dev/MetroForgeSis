@@ -1,6 +1,56 @@
 # METROFORGE — CHANGE HISTORY
 
-Superseded audit findings, moved out of `docs/METROFORGE_CURRENT_BUILD.md` so that document can describe current state only without contradiction. Each entry states the previous (now-false) claim, the current (verified) state, and the evidence used to verify it during either the original 2026-08-14 audit (branch `feature/claude-generation-runtime`, commit `5917bf9`) or the 2026-08-16 refresh pass (commit `827c1f4`) — each entry below says which.
+Superseded audit findings, moved out of `docs/METROFORGE_CURRENT_BUILD.md` so that document can describe current state only without contradiction. Each entry states the previous (now-false) claim, the current (verified) state, and the evidence used to verify it during the original 2026-08-14 audit (`5917bf9`), the 2026-08-16 morning refresh (`827c1f4`), or the 2026-08-16 evening refresh (`8e3e093`).
+
+---
+
+## [Superseded 2026-08-16 evening] Auto-gen rooms used a fixed rectangular floor/wall fallback → tileCells wired
+
+**Previous state (through `827c1f4`)**: `buildRoomAssemblyOptions` never produced `tileCells`; auto-gen rooms fell through `RoomTileMap.gd`'s single floor row + two wall columns. Tracked as P1 / Top-20 #2.
+
+**Current state**: `324951d` + vgf-1 (`1da2d80`, `c26c1f4`) + `8e3e093` call `buildRoomTileCells()` during automatic assembly. Rooms emit `painted_cells_json`, climb rows, archetype silhouettes; wallpapering playable air is rejected (scene critic + validator hard-fail). Remaining gap is atlas/parallax *look*, not wiring.
+
+**Evidence**: `packages/godot/src/room-assembler.ts` `buildRoomAssemblyOptions`; `tile-layout.ts`; `RoomTileMap.gd`; `8e3e093` commit.
+
+---
+
+## [Superseded 2026-08-16 evening] Desktop UI exposed only 4 of 11 generation modes
+
+**Previous state**: `GENERATION_MODES` was `FREE_ONLY, LOCAL_ONLY, HYBRID_FREE, CUSTOM`.
+
+**Current state (VGF-2)**: all 12 backend modes including `LOW_VRAM` are in `GENERATION_MODES`.
+
+**Evidence**: `generation-options.ts`; `packages/shared/src/constants.ts`; `mode-routing.ts`.
+
+---
+
+## [Superseded 2026-08-16 evening] Idle = walk-frame-1; player death sheet orphaned
+
+**Previous state**: `AnimatedAssetSprite` reused walk[0] as idle; `Player.tscn` never set `death_sheet_path`.
+
+**Current state**: `599244e` deterministic pose stills + runtime pose overrides (idle fallback only if pose missing). `Player.tscn` sets `death_sheet_path = "assets/characters/player_death.png"`.
+
+**Evidence**: `AnimatedAssetSprite.gd`, `Player.tscn`, `599244e`.
+
+---
+
+## [Superseded 2026-08-16 evening] No GPUParticles; Whisper dead; derived frames always unknown license
+
+**Previous state**: VFX was sprite+Tween only; Whisper had no call sites; pixel-art-processor frames inherited `commercialUse: unknown`.
+
+**Current state**: `VFXManager.gd` is pooled GPUParticles2D with `landing_dust`. Whisper is wired (`transcribe-speech` / CommandBar). Derived frames inherit parent license via `inheritDerivativeLicense` + `parentArtifactIds` when the parent is known.
+
+**Evidence**: `VFXManager.gd`; `handlers.ts` `transcribe-speech`; `export-license-audit.test.ts`; `8e3e093`.
+
+---
+
+## [Superseded 2026-08-16 evening] RELEASE_CANDIDATE / LOWEST_COST were uncommitted WIP breaking test/build
+
+**Previous state (Step 42 at `827c1f4`)**: ~182 dirty paths; `LOWEST_COST` mid-edit failed `nvidia.test.ts`; `config.ts` widening broke `apps/desktop` Vite bundle.
+
+**Current state**: Landed in `784b5b3` / vgf-1 / `8e3e093`. `config.ts` imports `GenerationMode`/`GenerationProfile` from `constants.js`. Theme packages are clean. `8e3e093` is local-only (ahead of origin by 1). This evening refresh did not re-run `pnpm test`/`pnpm build`.
+
+**Evidence**: `git log 827c1f4..8e3e093`; `constants.ts`; `config.ts`.
 
 ---
 
@@ -138,8 +188,10 @@ Superseded audit findings, moved out of `docs/METROFORGE_CURRENT_BUILD.md` so th
 
 ## Note on items NOT superseded — still current, do not treat as fixed
 
-The following limitations from prior audit passes were re-verified and remain genuinely true today (re-checked again during the 2026-08-16 refresh unless noted). They are intentionally **not** listed above and remain in `METROFORGE_CURRENT_BUILD.md` as current blockers/gaps:
+The following limitations from prior audit passes were re-verified and remain genuinely true today (re-checked 2026-08-16 evening at `8e3e093` unless noted). They are intentionally **not** listed as superseded and remain in `METROFORGE_CURRENT_BUILD.md`:
 
-- **"Fixed rectangular floor/wall" tileset layout** — a real per-cell `tileCells` system exists, but only for the manual room-edit path; automatic/initial room generation still falls through to the fixed floor/wall fallback in `RoomTileMap.gd`. Do not mark this resolved.
-- **No AI-generated GDScript** — the `GDSCRIPT` routing capability is registered in the model catalog but has zero real call sites in the generation pipeline, by explicit design. This was true before the baseline audit and remains true as of the 2026-08-16 refresh.
-- ~~**Production-asset-maturity gate does not block export**~~ — **RESOLVED 2026-08-16**, see the superseded entry above. Do not cite this bullet as current; it is kept here only so anyone diffing this file against an older copy can see explicitly that it moved, rather than silently disappearing.
+- ~~**"Fixed rectangular floor/wall" tileset layout**~~ — **RESOLVED as wiring 2026-08-16 evening.** Atlas/autotile *look* and dusk-plate parallax are still current; do not cite the old unwired-`tileCells` claim.
+- **No AI-generated GDScript** — the `GDSCRIPT` routing capability is registered in the model catalog but has zero real call sites in the generation pipeline, by explicit design.
+- ~~**Production-asset-maturity gate does not block export**~~ — **RESOLVED 2026-08-16 morning** (`--require-production-assets`). Desktop UI still does not expose the flag.
+- **Visual slice not approved / Kontext 422 on custom sprites** — current product gate. Do not start LARGE/RC mass art.
+- **Shop sell, fast-travel, IPC root confinement, unread job DB readers, PROCESSED enum drift** — still current.

@@ -1,0 +1,51 @@
+{
+  "slug": "vgf2-tideglass-nave",
+  "seed": 20260817,
+  "profile": "VISUAL_VERTICAL_SLICE",
+  "archetype": "SIDE_VIEW_METROIDVANIA",
+  "verdict": "AUTOMATED_VISUAL_PASS_HUMAN_REVIEW_REQUIRED",
+  "humanApproval": "Only a human can set HUMAN_APPROVED or HUMAN_REJECTED.",
+  "providerSummary": {
+    "mode": "NVIDIA_ONLY",
+    "nvidiaImage": "black-forest-labs/flux.1-dev",
+    "selectedImage": "nvidia-image"
+  },
+  "visualDNA": {
+    "styleFingerprint": "c837cdafdc1603d6",
+    "artStyle": "gothic-ruin",
+    "biomeName": "Glass Citadel"
+  },
+  "maturity": {
+    "production": 0,
+    "placeholder": 90,
+    "rejected": 9,
+    "unknownLicense": 0
+  },
+  "godot": {
+    "imports": "PASS",
+    "runtime": "PASS_SOFT_FAIL 183/208",
+    "screenshotQa": "PASS score 100 (windowed_gpu)",
+    "playtest": "PASS 8/8 victory_rusher 38008ms gameComplete true"
+  },
+  "scores": {
+    "overall": 81,
+    "characterReadability": 92,
+    "enemyReadability": 82,
+    "backgroundDepth": 86,
+    "paletteHarmony": 90,
+    "environmentCoherence": 95,
+    "assetStyleConsistency": 86,
+    "hudReadability": 88,
+    "tileRepetition": 35
+  },
+  "defects": ["TILE_REPETITION_HIGH"],
+  "repairs": [],
+  "hardFailReasons": [],
+  "screenshots": [
+    "reports/vgf2/01-start.png",
+    "reports/vgf2/03-combat.png",
+    "reports/vgf2/08-boss-room.png",
+    "reports/vgf2/visual-slice-contact-sheet.png",
+    "reports/vgf2/qa-gameplay.png"
+  ]
+}
