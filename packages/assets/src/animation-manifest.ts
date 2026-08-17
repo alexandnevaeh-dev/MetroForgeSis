@@ -12,7 +12,11 @@ export type AnimationStateId =
   | 'death'
   | 'dash'
   | 'wall_slide'
-  | 'wall_jump';
+  | 'wall_jump'
+  | 'ground_slam'
+  | 'grapple'
+  | 'swim'
+  | 'phase';
 
 export interface AnimationStateSpec {
   id: AnimationStateId;
@@ -61,6 +65,18 @@ export function buildPlayerAnimationManifest(input: {
   }
   if (abilities.has('wall_jump')) {
     states.push({ id: 'wall_jump', loop: false, poseSuffix: 'wall_jump', required: true });
+  }
+  if (abilities.has('ground_slam')) {
+    states.push({ id: 'ground_slam' as AnimationStateId, loop: false, poseSuffix: 'ground_slam', required: true });
+  }
+  if (abilities.has('grapple')) {
+    states.push({ id: 'grapple' as AnimationStateId, loop: false, poseSuffix: 'grapple', required: true });
+  }
+  if (abilities.has('swim')) {
+    states.push({ id: 'swim' as AnimationStateId, loop: false, poseSuffix: 'swim', required: true });
+  }
+  if (abilities.has('phase')) {
+    states.push({ id: 'phase' as AnimationStateId, loop: false, poseSuffix: 'phase', required: true });
   }
   return {
     characterId: 'player',

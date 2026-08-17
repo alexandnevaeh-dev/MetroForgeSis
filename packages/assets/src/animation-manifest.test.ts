@@ -14,7 +14,21 @@ describe('player animation manifest', () => {
   });
 
   it('has a distinct procedural pose transform for every locomotion fallback state', () => {
-    for (const name of ['idle', 'run', 'jump_start', 'jump', 'fall', 'land', 'dash', 'wall_slide', 'wall_jump']) {
+    for (const name of [
+      'idle',
+      'run',
+      'jump_start',
+      'jump',
+      'fall',
+      'land',
+      'dash',
+      'wall_slide',
+      'wall_jump',
+      'ground_slam',
+      'grapple',
+      'swim',
+      'phase',
+    ]) {
       expect(POSE_TRANSFORMS[name]).toBeTruthy();
     }
   });

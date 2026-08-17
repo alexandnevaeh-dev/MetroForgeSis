@@ -713,6 +713,10 @@ export const POSE_TRANSFORMS: Record<string, PoseTransformSpec> = {
   dash: { scaleX: 0.82, shearX: [10, -10], tint: 26 },
   wall_slide: { cropY: [0.04, 0.92], shearX: [8, 2], scaleX: 0.9 },
   wall_jump: { cropY: [0, 0.84], shearX: [-8, 8], tint: 18 },
+  ground_slam: { cropY: [0.22, 1], scaleX: 1.18, tint: -12 },
+  grapple: { cropY: [0, 0.9], shearX: [12, -4], tint: 10 },
+  swim: { cropY: [0.08, 0.94], shearX: [-5, 5], scaleX: 0.95 },
+  phase: { cropY: [0.04, 0.96], tint: 22, scaleX: 0.88 },
 };
 
 /**

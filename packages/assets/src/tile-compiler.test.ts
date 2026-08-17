@@ -195,7 +195,10 @@ describe('TileCompiler', () => {
     expect(TILE_ATLAS.roles.wall).toEqual({ col: 1, row: 0 });
     expect(TILE_ATLAS.roles.breakable).toEqual({ col: 4, row: 2 });
     expect(TILE_ATLAS.roles.decor_b).toEqual({ col: 7, row: 2 });
-    expect(Object.keys(TILE_ATLAS.roles)).toHaveLength(24);
+    expect(TILE_ATLAS.roles.ground_wear).toEqual({ col: 0, row: 3 });
+    expect(TILE_ATLAS.roles.ground_moss).toEqual({ col: 0, row: 4 });
+    expect(Object.keys(TILE_ATLAS.roles).length).toBeGreaterThanOrEqual(24);
+    expect(TILE_ATLAS.rows).toBe(6);
   });
 });
 

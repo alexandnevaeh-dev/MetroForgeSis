@@ -53,6 +53,24 @@ describe('parallax strips', () => {
     expect(punchParallaxAlpha(plate, 'far')).toEqual(plate);
   });
 
+  it('keeps the upper far plate as sky instead of a repeating clerestory grid', () => {
+    const { rgba, width, height } = decodePngRgba(generateParallaxStrip('far', 7, 160, 90));
+    const skyRows = Math.floor(height * 0.45);
+    let masonryLike = 0;
+    let sampled = 0;
+    for (let y = 0; y < skyRows; y++) {
+      for (let x = 0; x < width; x++) {
+        const i = (y * width + x) * 4;
+        const r = rgba[i]!;
+        const g = rgba[i + 1]!;
+        const b = rgba[i + 2]!;
+        sampled += 1;
+        if (b < 90 && Math.abs(r - g) < 12 && g < 55) masonryLike += 1;
+      }
+    }
+    expect(masonryLike / sampled).toBeLessThan(0.08);
+  });
+
   it('rejects green pine/landscape far plates and accepts procedural citadel far', () => {
     const w = 80;
     const h = 40;

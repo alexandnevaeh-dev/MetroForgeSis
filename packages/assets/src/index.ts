@@ -87,6 +87,18 @@ export { critiqueGameplayScreenshot, critiqueScreenshotDiversity } from './scene
 export type { GameplayScreenshotCritique } from './scene-critic.js';
 export { TileCompiler, TILE_ATLAS, tileRoleAt } from './tile-compiler.js';
 export type { CompiledTileset, TileRole } from './tile-compiler.js';
+export { pickTerrainVariant, variantAtlasForCell, TERRAIN_VARIANT_ROLES } from './tile-variants.js';
+export { generateUiPanel, generateUiIcon, UI_FOUNDRY_ASSETS } from './ui-foundry.js';
+export { generatePropSprite } from './prop-art.js';
+export {
+  wrapIdentityProvider,
+  capabilitiesFromRegistration,
+  selectAnimationTier,
+  NVIDIA_KONTEXT_CUSTOM_REFERENCE_SUPPORTED,
+  IdentityProviderUnavailableError,
+} from './identity/provider.js';
+export type { IdentityPreservingImageProvider, IdentityGenerationRequest, PoseGenerationRequest } from './identity/provider.js';
+export { writeCharacterIdentityPack, identityPackDir } from './identity/pack.js';
 export { REQUIRED_TILE_ROLES, buildTileTerrainMetadata, missingRequiredTileRoles } from './tile-roles.js';
 export { buildPlayerAnimationManifest, poseNamesFromManifest } from './animation-manifest.js';
 export type { AnimationManifest, AnimationStateSpec } from './animation-manifest.js';

@@ -9,6 +9,7 @@ export interface NvidiaModelDescriptor {
   supportsEditing: boolean;
   supportsTransparency?: boolean;
   supports3D?: boolean;
+  supportsCustomReferenceImages?: boolean;
   maxResolution?: { width: number; height: number };
   license?: string;
   commercialUse?: boolean;
@@ -60,6 +61,7 @@ export const NVIDIA_MODEL_CATALOG: NvidiaModelDescriptor[] = [
     modalities: ['image'],
     supportsReferenceImages: true,
     supportsEditing: true,
+    supportsCustomReferenceImages: false,
     costClass: 'credit',
     qualityScore: 86,
     speedScore: 60,

@@ -30,6 +30,18 @@ export const TILE_ATLAS = {
     door: { col: 5, row: 2 },
     decor_a: { col: 6, row: 2 },
     decor_b: { col: 7, row: 2 },
+    ground_wear: { col: 0, row: 3 },
+    wall_wear: { col: 1, row: 3 },
+    ceiling_wear: { col: 2, row: 3 },
+    platform_wear: { col: 3, row: 3 },
+    ground_crack: { col: 4, row: 3 },
+    wall_crack: { col: 5, row: 3 },
+    ground_moss: { col: 0, row: 4 },
+    wall_moss: { col: 1, row: 4 },
+    ceiling_moss: { col: 2, row: 4 },
+    platform_moss: { col: 3, row: 4 },
+    ground_rare: { col: 4, row: 4 },
+    wall_rare: { col: 5, row: 4 },
   },
 } as const;
 
@@ -138,6 +150,11 @@ function fillForRole(kind: TileRole, fills: RoleFills): [number, number, number]
   if (kind.startsWith('decor')) return fills.accent;
   if (kind === 'breakable') return shade(fills.wall, 0.88);
   if (kind.includes('platform') || kind === 'one_way') return fills.platform;
+  if (kind.includes('moss')) return mixRgb(fillForRole(kind.replace('_moss', '') as TileRole, fills), [72, 110, 86], 0.28);
+  if (kind.includes('wear') || kind.includes('crack') || kind.includes('rare')) {
+    const base = fillForRole(kind.replace(/_wear|_crack|_rare/g, '') as TileRole, fills);
+    return kind.includes('crack') ? shade(base, 0.82) : mixRgb(base, fills.mortar, 0.18);
+  }
   if (kind === 'ground' || kind === 'bottom_edge' || kind === 'outside_bl' || kind === 'outside_br') {
     return fills.ground;
   }

@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, sep } from 'node:path';
-import type { GameDNA, ArtBible, StyleBible, CharacterVisualDNA } from '@metroforge/schemas';
+import type { GameDNA, ArtBible, StyleBible, CharacterVisualDNA, VisualDNA, BiomeVisualDNA, EnvironmentKit } from '@metroforge/schemas';
 import {
   generateProceduralSprite,
   generateTilesetSource,
@@ -30,7 +30,7 @@ import { runDeterministicAssetChecks } from './vlm-critic.js';
 import { critiqueAnimationSheet, critiqueTilesetSheet } from './animation-critic.js';
 import { TileCompiler, TILE_ATLAS } from './tile-compiler.js';
 import { assembleContactSheet, critiqueAnimationIdentity } from './sprite-qa.js';
-import { NVIDIA_FLUX_KONTEXT, nvidiaModelForImageTask } from './image-task.js';
+import { nvidiaModelForImageTask } from './image-task.js';
 import { buildPlayerAnimationManifest, poseNamesFromManifest } from './animation-manifest.js';
 import { buildTileTerrainMetadata, missingRequiredTileRoles } from './tile-roles.js';
 import { createHash } from 'node:crypto';
@@ -45,7 +45,11 @@ import {
   isTopDownArchetype,
 } from '@metroforge/shared';
 import type { AssetMaturity, AssetSourceType } from '@metroforge/shared';
-import { applyVisualStyleContract, buildVisualStyleContract } from '@metroforge/procedural';
+import { applyVisualStyleContract, buildVisualStyleContract, compileVisualPrompt } from '@metroforge/procedural';
+import { wrapIdentityProvider, capabilitiesFromRegistration, selectAnimationTier } from './identity/provider.js';
+import { writeCharacterIdentityPack } from './identity/pack.js';
+import { generateUiPanel, generateUiIcon, UI_FOUNDRY_ASSETS } from './ui-foundry.js';
+import { generatePropSprite } from './prop-art.js';
 import { sanitizeImagePromptText } from './sanitize-image-prompt.js';
 
 export interface GeneratedAsset {
@@ -74,6 +78,11 @@ export interface GeneratedAsset {
   /** True when this sheet was derived from one still (bob/slide) rather than posed frames. */
   fakeAnimation?: boolean;
   promptHash?: string;
+  negativePromptHash?: string;
+  styleFingerprint?: string;
+  requestedProvider?: string;
+  requestedModel?: string;
+  generationTimestamp?: string;
   parentArtifactIds?: string[];
   compiler?: string;
   godotResourcePath?: string;
@@ -132,7 +141,24 @@ function applyStylePrompt(
   styleBible: StyleBible | undefined,
   capability: string,
   prompt: string,
+  visualDNA?: VisualDNA,
+  category?: 'player' | 'npc' | 'enemy' | 'boss' | 'tileset' | 'background' | 'ui' | 'icon' | 'portrait' | 'vfx' | 'prop',
 ): string {
+  if (visualDNA && category) {
+    return compileVisualPrompt({
+      visualDNA,
+      category: category === 'tileset' ? 'tileset' : category === 'background' ? 'background' : category === 'icon' ? 'icon' : category,
+      subject: prompt,
+      role: capability,
+      technicalSpec: {
+        width: visualDNA.resolution.tileSize * 2,
+        height: visualDNA.resolution.tileSize * 2,
+        transparentBackground: category !== 'background' && category !== 'tileset',
+        tileSize: visualDNA.resolution.tileSize,
+      },
+      variantSeed: visualDNA.seed,
+    }).prompt;
+  }
   if (!styleBible) return prompt;
   const prefix = styleBible.promptPrefixes?.[capability];
   const extras = [prefix, styleBible.lighting].filter(Boolean).join(', ');
@@ -160,6 +186,9 @@ export interface AssetPipelineOptions {
   /** Compact visual spec derived from ArtBible — prepended to image prompts when present. */
   styleBible?: StyleBible;
   characterVisualDna?: CharacterVisualDNA;
+  visualDNA?: VisualDNA;
+  biomeVisualDNAs?: BiomeVisualDNA[];
+  environmentKits?: EnvironmentKit[];
   comfyuiUrl?: string;
   diffusersPython?: string;
   diffusersModelId?: string;
@@ -623,6 +652,8 @@ export class AssetPipeline {
       ]
         .filter(Boolean)
         .join('. '),
+      options.visualDNA,
+      'player',
     );
 
     options.onTaskStarted?.('player_sprite', 'Generating player character sprite');
@@ -654,6 +685,20 @@ export class AssetPipeline {
       signal: options.signal,
     });
     recordAsset(playerAsset, 'player');
+    if (options.visualDNA) {
+      writeCharacterIdentityPack({
+        outputDir: options.outputDir,
+        characterId: 'player',
+        role: 'player',
+        source: playerAsset.buffer,
+        visualDNA: options.visualDNA,
+        characterDna: options.characterVisualDna,
+        animationTier: selectAnimationTier({
+          hasSource: !playerAsset.fallbackGenerated,
+          identityProviderAvailable: Boolean(imageGen && imageGen.id !== 'nvidia-image'),
+        }),
+      });
+    }
 
     // Reuse the real generated still as the animation source (matches the NPC/boss path below) —
     // previously these three always ran off generateProceduralSprite(spec)'s flat placeholder
@@ -742,7 +787,7 @@ export class AssetPipeline {
         // NVIDIA flux.1-kontext-dev hosted preview returns HTTP 422 for custom sprites (example_id
         // only). Do not burn 3 retries per pose — the interface still accepts conditioning when a
         // future provider actually supports it; this flag stays off until that day.
-        allowAiUpgrade: false,
+        allowAiUpgrade: Boolean(imageGen && imageGen.id !== 'nvidia-image' && playerSource),
         poses: poseNamesFromManifest(animManifest)
           .filter((name) => !['attack', 'hurt', 'death'].includes(name))
           .map((name) => ({
@@ -1301,10 +1346,35 @@ export class AssetPipeline {
                 missingRoles,
                 seamIssues: compiled.seamIssues,
                 passed: compiled.passed && missingRoles.length === 0,
+                styleFingerprint: options.visualDNA?.styleFingerprint,
               },
               null,
               2,
             ),
+            'utf8',
+          ),
+        );
+        writeCheckpoint(
+          options.outputDir,
+          `assets/tilesets/biome_${b}/terrain.tres`,
+          Buffer.from(
+            [
+              '[gd_resource type="TileSet" format=3]',
+              '',
+              `[ext_resource type="Texture2D" path="res://assets/tilesets/biome_${b}/source.png" id="1_atlas"]`,
+              '',
+              '[sub_resource type="TileSetAtlasSource" id="Atlas_0"]',
+              'texture = ExtResource("1_atlas")',
+              `texture_region_size = Vector2i(${tileSize}, ${tileSize})`,
+              ...Object.values(TILE_ATLAS.roles).map((pos) => `0:${pos.col}/${pos.row} = 0`),
+              '',
+              '[resource]',
+              `tile_size = Vector2i(${tileSize}, ${tileSize})`,
+              'terrain_set_0/mode = 0',
+              'terrain_set_0/terrain_0/name = "masonry"',
+              'sources/0 = SubResource("Atlas_0")',
+              '',
+            ].join('\n'),
             'utf8',
           ),
         );
@@ -1502,6 +1572,73 @@ export class AssetPipeline {
       recordAsset(vfxAsset, 'vfx');
     }
 
+    if (options.visualDNA) {
+      options.onTaskStarted?.('ui_foundry', 'Generating UI art foundry assets');
+      const uiFill = options.visualDNA.palette.ui[0] ?? '#141820';
+      const uiBorder = options.visualDNA.palette.highlights[0] ?? '#dce6f0';
+      const uiAccent = options.visualDNA.palette.accents[0] ?? '#5a8cdc';
+      for (const spec of UI_FOUNDRY_ASSETS) {
+        const buffer =
+          spec.kind === 'icon'
+            ? generateUiIcon({ size: spec.width, fill: uiFill, accent: uiAccent, kind: spec.id })
+            : generateUiPanel({
+                width: spec.width,
+                height: spec.height,
+                fill: uiFill,
+                border: uiBorder,
+                accent: uiAccent,
+              });
+        writeCheckpoint(options.outputDir, spec.path, buffer);
+        recordAsset(
+          {
+            id: spec.id,
+            path: spec.path,
+            buffer,
+            provider: 'procedural',
+            fallbackGenerated: true,
+            critiquePassed: true,
+            critiqueScore: 70,
+            styleFingerprint: options.visualDNA.styleFingerprint,
+            compiler: 'ui-foundry',
+            transformation: 'visual-dna-ui',
+            godotResourcePath: `res://${spec.path}`,
+          },
+          'ui',
+        );
+      }
+      for (const kit of options.environmentKits ?? []) {
+        const propBudget = kit.props.slice(0, options.profile === 'TINY_TEST' ? 4 : kit.props.length);
+        for (const prop of propBudget) {
+          const rel = `assets/props/${kit.biomeId}/${prop.id}.png`;
+          const buffer = generatePropSprite({
+            width: 32,
+            height: 32,
+            fill: options.visualDNA.palette.global[1] ?? '#3c4454',
+            accent: options.visualDNA.palette.accents[0] ?? '#5a8cdc',
+            family: prop.family,
+            seed: options.seed + hashPrompt(prop.id).charCodeAt(0),
+          });
+          writeCheckpoint(options.outputDir, rel, buffer);
+          recordAsset(
+            {
+              id: prop.id,
+              path: rel,
+              buffer,
+              provider: 'procedural',
+              fallbackGenerated: true,
+              critiquePassed: true,
+              critiqueScore: 65,
+              styleFingerprint: kit.styleFingerprint,
+              compiler: 'prop-art',
+              transformation: 'environment-kit-prop',
+              godotResourcePath: `res://${rel}`,
+            },
+            'prop',
+          );
+        }
+      }
+    }
+
     return {
       assets,
       warnings,
@@ -1565,10 +1702,28 @@ export class AssetPipeline {
       let usedAi = false;
 
       if (canAttemptAi) {
+        const identityProvider = wrapIdentityProvider(
+          opts.imageGen,
+          capabilitiesFromRegistration({
+            provider: opts.imageGen!,
+            local: false,
+            priority: 0,
+            family: opts.imageGen!.id.includes('nvidia') ? 'nvidia' : opts.imageGen!.id,
+            supportsReferenceImages: opts.imageGen!.id !== 'nvidia-image',
+            capabilities:
+              opts.imageGen!.id === 'nvidia-image'
+                ? ['image-generation']
+                : ['image-generation', 'image-editing'],
+          }),
+        );
+        if (!identityProvider.supportsReferenceImage()) {
+          warnings.push(
+            `Identity-preserving pose provider unavailable for "${opts.id}" (custom reference unsupported) — deterministic poses, no Kontext retries.`,
+          );
+        } else {
         try {
           throwIfCancelled(opts.signal);
-          const result = await opts.imageGen!.generateImage({
-            profile: 'CHARACTER',
+          const result = await identityProvider.generatePose({
             prompt: sanitizeImagePromptText(
               `${opts.prompt}. ${pose.prompt}. transparent background, isolated sprite, identical costume and proportions`,
             ),
@@ -1577,8 +1732,9 @@ export class AssetPipeline {
             height: 256,
             seed: opts.seed + 9000 + i,
             signal: opts.signal,
-            conditioning: { mode: 'img2img', image: opts.source!, strength: 0.35 },
-            modelOverride: NVIDIA_FLUX_KONTEXT,
+            referenceImage: opts.source!,
+            poseName: pose.name,
+            posePrompt: pose.prompt,
           });
           const compiled = this.pixelArt.process(knockoutVfxBackground(result.image), {
             targetWidth: opts.spec.width,
@@ -1615,6 +1771,7 @@ export class AssetPipeline {
           warnings.push(
             `Pose "${pose.name}" AI-conditioned generation failed for "${opts.id}" — using deterministic procedural transform instead: ${err instanceof Error ? err.message : String(err)}.`,
           );
+        }
         }
       }
 
@@ -2070,7 +2227,6 @@ export class AssetPipeline {
       fallbackGenerated: fallback,
       critiquePassed,
       critiqueScore,
-      // Compiled game sprite; source sidecar kept when AI succeeded.
       sourceType: fallback ? undefined : 'compiled',
       sourcePath,
       fallbackDepth: fallback ? 1 : 0,
@@ -2079,6 +2235,10 @@ export class AssetPipeline {
       selectedModel: modelId,
       requestedCapability: 'IMAGE_GENERATION',
       productionAllowed: !fallback,
+      promptHash: hashPrompt(opts.prompt),
+      requestedProvider: opts.imageGen?.id,
+      requestedModel: undefined,
+      generationTimestamp: new Date().toISOString(),
     });
   }
 

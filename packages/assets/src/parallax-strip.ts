@@ -71,7 +71,6 @@ export function generateParallaxStrip(
   const skyBot: [number, number, number] = [36 + Math.floor(hash01(seed, 4) * 10), 64 + Math.floor(hash01(seed, 5) * 14), 108 + Math.floor(hash01(seed, 6) * 16)];
   const masonry: [number, number, number] = [32 + Math.floor(hash01(seed, 7) * 10), 42 + Math.floor(hash01(seed, 8) * 8), 62 + Math.floor(hash01(seed, 9) * 10)];
   const dark: [number, number, number] = [10 + Math.floor(hash01(seed, 10) * 8), 14 + Math.floor(hash01(seed, 11) * 8), 22 + Math.floor(hash01(seed, 12) * 10)];
-  const glass: [number, number, number] = [48, 78, 118];
 
   for (let y = 0; y < height; y++) {
     const t = y / Math.max(1, height - 1);
@@ -85,21 +84,21 @@ export function generateParallaxStrip(
         const moonY = Math.floor(height * 0.16);
         const md = (x - moonX) * (x - moonX) + (y - moonY) * (y - moonY);
         if (md < 36) setPx(rgba, width, x, y, 210, 220, 236, 255);
-        const span = 22 + Math.floor(hash01(seed, 40) * 8);
-        const pier = x % span;
-        const hallTop = Math.floor(height * 0.34);
-        if (y > hallTop) {
-          const inPier = pier < 7 || pier > span - 4;
-          const vault = Math.abs(y - hallTop - 10) < 3;
-          const windowSlot = !inPier && y > hallTop + 14 && y < height * 0.72 && (y % 18) > 6 && (y % 18) < 14;
-          if (inPier || vault) {
-            const n = hash01(seed, x + y * 3);
-            setPx(rgba, width, x, y, masonry[0] + n * 10, masonry[1] + n * 8, masonry[2] + n * 10, 255);
-          } else if (windowSlot) {
-            setPx(rgba, width, x, y, glass[0], glass[1], glass[2], 255);
-          } else {
-            setPx(rgba, width, x, y, dark[0] + 8, dark[1] + 10, dark[2] + 18, 255);
-          }
+        // Distant irregular mass, not a repeating clerestory arcade (RearWall owns mid architecture).
+        const ridge = ridgeAt(x, width, seed + 71, height * 0.72, height * 0.12);
+        if (y > ridge) {
+          const n = hash01(seed, x + y * 3);
+          const depth = (y - ridge) / Math.max(1, height - ridge);
+          setPx(
+            rgba,
+            width,
+            x,
+            y,
+            Math.round(dark[0] + masonry[0] * 0.25 + n * 8 + depth * 6),
+            Math.round(dark[1] + masonry[1] * 0.2 + n * 6 + depth * 4),
+            Math.round(dark[2] + masonry[2] * 0.2 + n * 8 + depth * 8),
+            255,
+          );
         }
         continue;
       }
