@@ -46,7 +46,13 @@ func _build_tilemap() -> void:
 		if parsed is Array:
 			for cell in parsed:
 				if cell is Array and cell.size() >= 4:
-					var atlas_coords := _variant_coords(int(cell[0]), int(cell[1]), Vector2i(int(cell[2]), int(cell[3])))
+					var atlas_coords := Vector2i(int(cell[2]), int(cell[3]))
+					# Atlas decor/moss cells were bible gold/lime, not masonry. Skip the tufts.
+					if atlas_coords.y == 2 and atlas_coords.x >= 6:
+						continue
+					if atlas_coords.y == 4:
+						atlas_coords = Vector2i(atlas_coords.x, 3)
+					atlas_coords = _variant_coords(int(cell[0]), int(cell[1]), atlas_coords)
 					set_cell(Vector2i(int(cell[0]), int(cell[1])), 0, atlas_coords)
 			_paint_visual_mass()
 			call_deferred("_paint_rear_wall")
@@ -86,15 +92,31 @@ func _configure_terrain_set(tile_set: TileSet, atlas: TileSetAtlasSource, cols: 
 
 
 func _variant_coords(cell_x: int, cell_y: int, atlas_coords: Vector2i) -> Vector2i:
-	## Seeded wear/moss variants live on atlas rows 3–4. Keep the canonical tile most of the time
-	## so rooms do not checkerboard.
-	var h: int = hash("%s-%d-%d-%d-%d" % [biome_id, cell_x, cell_y, atlas_coords.x, atlas_coords.y])
-	var n: int = posmod(h, 100)
-	if n > 88 and atlas_coords.y == 0 and atlas_coords.x <= 3:
-		return Vector2i(atlas_coords.x, 3)
-	if n > 70 and atlas_coords.y == 0 and atlas_coords.x <= 3:
-		return Vector2i(atlas_coords.x, 4)
-	return atlas_coords
+	## Seeded wear/moss/crack/rare variants live on atlas rows 3-4. Keep the canonical tile a
+	## majority of the time so rooms do not checkerboard, but rotate through the fuller variant
+	## palette instead of one wear stamp.
+	## Group neighboring cells on BOTH axes so a horizontal run does not checkerboard tile-to-tile
+	## and a *vertical* run (a tall wall/pillar) does not stamp the identical variant top to
+	## bottom — cell_y used to be accepted here and never hashed, so every row of a pillar landed
+	## on the same decision.
+	if atlas_coords.y != 0 or atlas_coords.x > 3:
+		return atlas_coords
+	var run_x: int = int(cell_x / 3)
+	var run_y: int = int(cell_y / 3)
+	var h: int = hash("%s-%d-%d-%d-%d" % [biome_id, run_x, run_y, atlas_coords.x, atlas_coords.y])
+	var n: int = posmod(h, 8)
+	# Crack/rare rows only exist for ground (x=0) and wall (x=1) roles; ceiling/platform fall
+	# back to wear/moss so every bucket still lands on real painted content, never a blank cell.
+	var has_special := atlas_coords.x <= 1
+	if n == 4:
+		return Vector2i(atlas_coords.x, 3)  # wear
+	if n == 5:
+		return Vector2i(atlas_coords.x, 4)  # moss
+	if n == 6:
+		return Vector2i(4 + atlas_coords.x, 3) if has_special else Vector2i(atlas_coords.x, 3)  # crack
+	if n == 7:
+		return Vector2i(4 + atlas_coords.x, 4) if has_special else Vector2i(atlas_coords.x, 4)  # rare
+	return atlas_coords  # n in 0..3: canonical, kept as the plurality outcome
 
 
 func _pit_columns() -> Array:
@@ -227,13 +249,22 @@ func _paint_night_apse(
 	wall: Vector2i,
 	ceiling: Vector2i,
 ) -> void:
-	## Ground already has collision walls at col 0 / cols-1. Full-height rear piers next to
-	## those read as 3-tile towers that slice the hall into shafts. Keep the vault empty.
-	rear.modulate = Color(0.84, 0.90, 0.94, 1)
+	## Low dado, corner haunches, two broken vault ribs. Empty air in the hall so
+	## FarSky can be depth, not a mountain range, and Ground keeps the collision walls.
+	rear.modulate = Color(0.78, 0.84, 0.90, 1)
 	var lintel := maxi(1, crop_rows)
 	for x in range(2, cols - 2):
-		if x % 7 == 3:
-			_rear_cell(rear, x, lintel, ceiling if wall.x >= 0 else wall)
+		_rear_cell(rear, x, floor_row - 1, wall)
+		if x % 5 != 2:
+			_rear_cell(rear, x, floor_row - 2, wall)
+	for x in [2, 3, cols - 4, cols - 3]:
+		for y in range(maxi(lintel + 3, floor_row - 6), floor_row):
+			_rear_cell(rear, x, y, wall)
+	for rib in [int(cols * 0.34), int(cols * 0.66)]:
+		for y in range(lintel + 2, floor_row - 4):
+			if y % 4 == 1:
+				continue
+			_rear_cell(rear, rib, y, ceiling if y < lintel + 5 else wall)
 
 
 func _paint_gallery_wall(
@@ -298,16 +329,20 @@ func _paint_ruin_mass(
 	var lintel := maxi(1, crop_rows)
 	var chunks := 3 + rng.randi() % 3
 	for i in range(chunks):
-		var x0 := 1 + rng.randi() % maxi(1, cols - 6)
-		var w := 2 + rng.randi() % 4
-		var top := lintel + rng.randi() % 3
-		var bot := floor_row - rng.randi() % 3
-		for x in range(x0, mini(x0 + w, cols - 1)):
-			_rear_cell(rear, x, top, ceiling)
-			for y in range(top + 1, bot):
-				_rear_cell(rear, x, y, wall)
-			if rng.randf() < 0.35 and bot - 1 > top:
-				_rear_cell(rear, x, bot - 1, ceiling)
+		var x0 := 2 + rng.randi() % maxi(1, cols - 8)
+		var w := 2 + rng.randi() % 3
+		if rng.randf() < 0.5:
+			var top := lintel
+			var bot := mini(lintel + 2 + rng.randi() % 3, floor_row - 4)
+			for x in range(x0, mini(x0 + w, cols - 2)):
+				for y in range(top, bot):
+					_rear_cell(rear, x, y, ceiling if y == top else wall)
+		else:
+			var bot := floor_row
+			var top := maxi(lintel + 3, floor_row - (2 + rng.randi() % 3))
+			for x in range(x0, mini(x0 + w, cols - 2)):
+				for y in range(top, bot):
+					_rear_cell(rear, x, y, wall)
 
 func _paint_bay_architecture(
 	layer: TileMapLayer,
