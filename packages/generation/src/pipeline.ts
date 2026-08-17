@@ -44,7 +44,17 @@ import {
 import { AssetPipeline } from '@metroforge/assets';
 import { GodotProjectAssembler } from '@metroforge/godot';
 import { ToolRegistry, exportProject, resolveGodotExecutableCanonical, readProjectGodotOverride } from '@metroforge/tools';
-import { QAValidator, RepairEngineer, deriveValidationLevel, runQualityPass, type QAReport, type QAGateResult } from '@metroforge/qa';
+import {
+  QAValidator,
+  RepairEngineer,
+  deriveValidationLevel,
+  runQualityPass,
+  runModernMetroidvaniaGate,
+  modernGateToQAGateResult,
+  MODERN_METROIDVANIA_GATE,
+  type QAReport,
+  type QAGateResult,
+} from '@metroforge/qa';
 import { createProjectCheckpoint } from './project-checkpoint.js';
 import { assertPhaseArtifacts, phaseCompleteStatus } from './phase-contract.js';
 import { withCategory, type GenerationEvent } from './events.js';
@@ -1114,8 +1124,20 @@ export class GenerationPipeline {
       report('automated_repair', 'SKIPPED', 'No repair needed — all QA gates passed on first validation');
     }
 
+    // MODERN_METROIDVANIA_GATE — a first-class, provider-independent presentation-readiness gate.
+    // It is computed AFTER the repair loop (repair cannot fix visual quality, so it must not
+    // trigger repair cycles) and is deliberately excluded from the runtime validation-level
+    // derivation below: a game that compiles + runs is RUNTIME_VALIDATED, but that is NOT the
+    // same as export-ready. This gate gates presentation/export readiness, not runtime.
+    const modernGate = runModernMetroidvaniaGate(outputPath, { profile: gameDna.profile });
+    pushGate(qaReport, modernGateToQAGateResult(modernGate));
+    warnings.push(modernGate.message);
+
     const staticGateResults = qaReport.results.filter(
-      (r) => r.gate !== 'godot_imports' && r.gate !== 'godot_runtime',
+      (r) =>
+        r.gate !== 'godot_imports' &&
+        r.gate !== 'godot_runtime' &&
+        r.gate !== MODERN_METROIDVANIA_GATE,
     );
     const staticPassed = staticGateResults.every((r) => r.passed);
     const importGate = qaReport.results.find((r) => r.gate === 'godot_imports');
@@ -1135,6 +1157,13 @@ export class GenerationPipeline {
           passed: qaReport.passed,
           validationLevel,
           results: qaReport.results,
+          modernMetroidvaniaGate: {
+            passed: modernGate.passed,
+            state: modernGate.state,
+            overallScore: modernGate.overallScore,
+            summary: modernGate.summary,
+            dimensions: modernGate.dimensions,
+          },
           repairAttempts,
           timestamp: new Date().toISOString(),
         },
@@ -1207,6 +1236,11 @@ export class GenerationPipeline {
           zip: false,
           requireValidation: false,
           requireCommercialSafe: options.mode === 'COMMERCIAL_SAFE',
+          // RELEASE_CANDIDATE is the "presentation-ready" profile: block export when the
+          // MODERN_METROIDVANIA_GATE fails. Lower profiles still compute + report the gate
+          // (visible in validation_report.json / export manifest) but do not hard-block, so
+          // technical iteration builds are unaffected.
+          requireModernMetroidvaniaGate: gameDna.profile === 'RELEASE_CANDIDATE',
         });
         warnings.push(...exportResult.warnings);
         if (!exportResult.success) {

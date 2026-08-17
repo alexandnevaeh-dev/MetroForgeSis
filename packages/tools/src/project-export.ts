@@ -34,6 +34,13 @@ export interface ExportManifest {
   };
   archivePath?: string;
   qaGates?: Array<{ gate: string; passed: boolean; message: string }>;
+  /** Presentation-readiness gate summary (MODERN_METROIDVANIA_GATE), when recorded. */
+  modernMetroidvaniaGate?: {
+    passed: boolean;
+    state: string;
+    overallScore: number;
+    failedDimensions: string[];
+  };
   assetCoverage?: {
     coveragePercent: number;
     totalExpected: number;
@@ -59,6 +66,11 @@ export interface ExportProjectOptions {
   requireCommercialSafe?: boolean;
   /** When true, block export if any artifact's maturity is in NON_PRODUCTION_MATURITIES. */
   requireProductionAssets?: boolean;
+  /**
+   * When true, block export if the MODERN_METROIDVANIA_GATE (recorded in validation_report.json)
+   * did not pass. This is the presentation-readiness gate: compiling + launching is not enough.
+   */
+  requireModernMetroidvaniaGate?: boolean;
 }
 
 export interface ExportProjectResult {
@@ -156,6 +168,26 @@ export function exportProject(options: ExportProjectOptions): ExportProjectResul
   const validationLevel =
     typeof validationReport?.validationLevel === 'string' ? validationReport.validationLevel : undefined;
 
+  // MODERN_METROIDVANIA_GATE result (presentation-readiness), recorded by the pipeline.
+  const modernGateRaw = validationReport?.modernMetroidvaniaGate as
+    | {
+        passed?: boolean;
+        state?: string;
+        overallScore?: number;
+        dimensions?: Array<{ dimension?: string; passed?: boolean; applicable?: boolean }>;
+      }
+    | undefined;
+  const modernGateSummary = modernGateRaw
+    ? {
+        passed: modernGateRaw.passed === true,
+        state: String(modernGateRaw.state ?? (modernGateRaw.passed ? 'PASS' : 'FAIL')),
+        overallScore: Number(modernGateRaw.overallScore ?? 0),
+        failedDimensions: (modernGateRaw.dimensions ?? [])
+          .filter((d) => d.applicable !== false && d.passed === false)
+          .map((d) => String(d.dimension ?? '')),
+      }
+    : undefined;
+
   if (options.requireValidation && !validationPassed) {
     return {
       success: false,
@@ -240,6 +272,22 @@ export function exportProject(options: ExportProjectOptions): ExportProjectResul
     );
   }
 
+  if (options.requireModernMetroidvaniaGate && modernGateSummary && !modernGateSummary.passed) {
+    return {
+      success: false,
+      errors: [
+        `Export blocked: MODERN_METROIDVANIA_GATE failed (overall ${modernGateSummary.overallScore}) — a game must look presentation-ready, not merely compile and launch`,
+        ...modernGateSummary.failedDimensions.map((d) => `Failed dimension: ${d}`),
+      ],
+      warnings,
+    };
+  }
+  if (modernGateSummary && !modernGateSummary.passed) {
+    warnings.push(
+      `MODERN_METROIDVANIA_GATE not passed (overall ${modernGateSummary.overallScore}; failed: ${modernGateSummary.failedDimensions.join(', ') || 'n/a'}) — not presentation-ready`,
+    );
+  }
+
   const roomCount = roomsJson?.rooms
     ? Object.keys(roomsJson.rooms as Record<string, unknown>).length
     : 0;
@@ -307,6 +355,7 @@ export function exportProject(options: ExportProjectOptions): ExportProjectResul
     })),
     assetCoverage,
     completionSummary,
+    modernMetroidvaniaGate: modernGateSummary,
   };
 
   writeFileSync(join(projectPath, 'export_manifest.json'), JSON.stringify(manifest, null, 2));

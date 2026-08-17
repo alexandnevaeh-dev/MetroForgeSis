@@ -20,6 +20,26 @@ export { runQualityPass } from './quality-pass.js';
 export type { QualityPassOptions } from './quality-types.js';
 export { QualityDirector } from './quality-director.js';
 export { QualityRepairEngine } from './quality-repair-engine.js';
+export {
+  MODERN_METROIDVANIA_GATE,
+  DIMENSION_PASS_THRESHOLD,
+  evaluateModernMetroidvaniaGate,
+  runModernMetroidvaniaGate,
+  modernGateToQAGateResult,
+} from './modern-metroidvania-gate.js';
+export type {
+  ModernGateDimension,
+  ModernMetroidvaniaGateResult,
+  ModernGateInputs,
+  ManifestArtifactLike,
+  RoomRecordLike,
+  RoomLayoutMetricsLike,
+  CompositionRoomLike,
+  CompositionLayerLike,
+  TerrainSetLike,
+  ScreenshotStatLike,
+  RunModernGateOptions,
+} from './modern-metroidvania-gate.js';
 export type {
   QualityReport,
   QualityPlan,
