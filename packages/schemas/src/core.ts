@@ -270,6 +270,7 @@ export const AssetMaturitySchema = z.enum([
   'PLACEHOLDER',
   'BLOCKOUT',
   'GENERATED_SOURCE',
+  'PROCESSED',
   'COMPILED',
   'QA_REVIEW',
   'PRODUCTION_READY',
@@ -304,6 +305,17 @@ export const ArtifactSchema = z.object({
   sourceType: z
     .enum(['ai_generated', 'procedural', 'checkpoint', 'manual', 'compiled', 'unknown'])
     .optional(),
+  styleFingerprint: z.string().optional(),
+  negativePromptHash: z.string().nullable().optional(),
+  requestedProvider: z.string().optional(),
+  requestedModel: z.string().optional(),
+  selectedProvider: z.string().optional(),
+  selectedModel: z.string().optional(),
+  fallbackDepth: z.number().int().nonnegative().optional(),
+  fallbackReason: z.string().optional(),
+  modelVersion: z.string().nullable().optional(),
+  capability: z.string().optional(),
+  generationTimestamp: z.string().optional(),
   metadata: z.record(z.unknown()).default({}),
 });
 

@@ -67,6 +67,21 @@ export {
 } from './bibles.js';
 export { buildVisualStyleContract, applyVisualStyleContract } from './style-contract.js';
 export type { VisualStyleContract } from './style-contract.js';
+export {
+  generateVisualDNA,
+  generateBiomeVisualDNA,
+  generateAllBiomeVisualDNA,
+  compileVisualPrompt,
+  VISUAL_PROMPT_COMPILER_VERSION,
+  generateEnvironmentKit,
+  environmentKitScaleFor,
+  generateRoomStorytelling,
+  lightingDirectiveForRoom,
+  computeStyleFingerprint,
+  fingerprintFromVisualDNA,
+  resolveVisualStyleTemplate,
+} from './visual/index.js';
+export type { CompileVisualPromptInput, RoomLightingDirective, VisualStyleTemplate } from './visual/index.js';
 export { buildProgressionProof } from './progression-proof.js';
 export type { ProgressionProof, ProgressionTraceStep } from './progression-proof.js';
 export { generateTopDownWorld, collisionRectsFromTiles, isWalkableTile } from './topdown/world.js';
