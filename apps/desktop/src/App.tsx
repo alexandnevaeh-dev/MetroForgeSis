@@ -21,6 +21,7 @@ import { CreateScreen } from './studio/CreateScreen.js';
 import { ProjectsScreen } from './studio/ProjectsScreen.js';
 import { PreviewScreen } from './studio/PreviewScreen.js';
 import { SettingsScreen } from './studio/SettingsScreen.js';
+import { VisualReviewScreen } from './studio/VisualReviewScreen.js';
 import { HealthPopover } from './studio/HealthPopover.js';
 
 function navBreadcrumb(activeNav: NavId): { group: string; label: string } {
@@ -266,6 +267,7 @@ export function App() {
           {activeNav === 'Providers' && <ProvidersScreen />}
           {activeNav === 'Routing' && <RoutingInspector />}
           {activeNav === 'QA' && <QAScreen />}
+          {activeNav === 'Visual Review' && <VisualReviewScreen />}
           {activeNav === 'Export' && <ExportScreen />}
           {activeNav === 'Settings' && <SettingsScreen />}
         </main>

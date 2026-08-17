@@ -68,6 +68,7 @@ export function ExportScreen() {
   const [force, setForce] = useState(false);
   const [zip, setZip] = useState(true);
   const [commercialSafe, setCommercialSafe] = useState(false);
+  const [requireProductionAssets, setRequireProductionAssets] = useState(false);
   const [busy, setBusy] = useState(false);
   const [exportResult, setExportResult] = useState<ExportResultView | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -135,7 +136,12 @@ export function ExportScreen() {
     setBusy(true);
     setError(null);
     setExportResult(null);
-    const result = await window.metroforge.exportProject(selectedPath, { force, zip, commercialSafe });
+    const result = await window.metroforge.exportProject(selectedPath, {
+      force,
+      zip,
+      commercialSafe,
+      requireProductionAssets,
+    });
     setBusy(false);
     setExportResult(result);
     if (!result.success) {
@@ -220,6 +226,14 @@ export function ExportScreen() {
                   onChange={(e) => setCommercialSafe(e.target.checked)}
                 />
                 Require commercial-safe licenses
+              </label>
+              <label className="check-inline">
+                <input
+                  type="checkbox"
+                  checked={requireProductionAssets}
+                  onChange={(e) => setRequireProductionAssets(e.target.checked)}
+                />
+                Require production-ready assets
               </label>
               <label className="check-inline">
                 <input type="checkbox" checked={force} onChange={(e) => setForce(e.target.checked)} />

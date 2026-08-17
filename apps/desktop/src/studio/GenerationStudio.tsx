@@ -130,6 +130,12 @@ export function GenerationStudio() {
     fakeAnimationDetected?: boolean;
     notes?: string;
   } | null>(null);
+  const [visualInspector, setVisualInspector] = useState<{
+    fingerprint?: string;
+    rendering?: string;
+    verdict?: string;
+    defects?: string[];
+  } | null>(null);
 
   const refreshState = useCallback(async (projectPath: string) => {
     if (!window.metroforge?.getGenerationState) return;
@@ -143,6 +149,15 @@ export function GenerationStudio() {
     if (window.metroforge?.getVisualSliceReview) {
       const vr = await window.metroforge.getVisualSliceReview(projectPath);
       setVisualReview(vr.project);
+    }
+    if (window.metroforge?.getProjectPreview) {
+      const preview = await window.metroforge.getProjectPreview(projectPath);
+      setVisualInspector({
+        fingerprint: preview.visualDNA?.styleFingerprint,
+        rendering: preview.visualDNA?.renderingStyle ?? preview.visualDNA?.artStyle?.label,
+        verdict: preview.visualQa?.verdict ?? preview.visualReview?.status,
+        defects: preview.visualQa?.defects,
+      });
     }
 
     const lastArtifact = [...nextEvents].reverse().find((event) => event.type === 'ArtifactGenerated');
@@ -430,6 +445,21 @@ export function GenerationStudio() {
               Cancel Generation
             </Button>
           </div>
+        </Panel>
+      )}
+
+      {visualInspector && (
+        <Panel level={2} title="Visual production">
+          <dl className="kv">
+            <dt>Style fingerprint</dt>
+            <dd className="mono">{visualInspector.fingerprint ?? '—'}</dd>
+            <dt>Rendering / biome identity</dt>
+            <dd>{visualInspector.rendering ?? '—'}</dd>
+            <dt>Visual QA</dt>
+            <dd>{visualInspector.verdict ?? '—'}</dd>
+            <dt>Defects</dt>
+            <dd>{visualInspector.defects?.join(', ') || 'none recorded'}</dd>
+          </dl>
         </Panel>
       )}
 

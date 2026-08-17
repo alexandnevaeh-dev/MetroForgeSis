@@ -35,6 +35,7 @@ export const NAV_GROUPS = [
       { id: 'Providers', label: 'Providers' },
       { id: 'Routing', label: 'Routing Inspector' },
       { id: 'QA', label: 'QA' },
+      { id: 'Visual Review', label: 'Visual Review' },
     ],
   },
   {

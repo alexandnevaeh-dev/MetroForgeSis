@@ -37,6 +37,9 @@ import {
   generateDesignBible,
   generateStyleBible,
   generateCharacterVisualDNA,
+  generateVisualDNA,
+  generateAllBiomeVisualDNA,
+  generateEnvironmentKit,
   generateMusicFromAudioBible,
   enhanceMusicWithStableAudio,
   generateTopDownWorld,
@@ -45,7 +48,7 @@ import {
 import { AssetPipeline } from '@metroforge/assets';
 import { GodotProjectAssembler } from '@metroforge/godot';
 import { ToolRegistry, exportProject, resolveGodotExecutableCanonical, readProjectGodotOverride } from '@metroforge/tools';
-import { QAValidator, RepairEngineer, deriveValidationLevel, runQualityPass, type QAReport, type QAGateResult } from '@metroforge/qa';
+import { QAValidator, RepairEngineer, deriveValidationLevel, runQualityPass, scoreVisualQuality, fingerprintFile, planVisualRepairs, applyVisualRepairs, VISUAL_REPAIR_BUDGET, type QAReport, type QAGateResult } from '@metroforge/qa';
 import { createProjectCheckpoint } from './project-checkpoint.js';
 import { assertPhaseArtifacts, phaseCompleteStatus } from './phase-contract.js';
 import { withCategory, type GenerationEvent } from './events.js';
@@ -62,6 +65,7 @@ import { synthesizeDialogueVoices } from './dialogue-voice.js';
 import { buildAssetCoverageReport } from './asset-coverage.js';
 import { writeVisualSliceReviewRequired } from './visual-review.js';
 import { writeVisualSliceReports, collectVisualSliceEvidence } from './visual-slice-report.js';
+import { writeVgf2VisualSliceReport } from './vgf2-report.js';
 import { inheritDerivativeLicense } from './derivative-license.js';
 
 export interface GenerateOptions {
@@ -74,7 +78,7 @@ export interface GenerateOptions {
   archetype?: GameArchetype;
   /** Skip the AI/network-dependent Game DNA phase if a checkpoint already exists on disk. */
   resume?: boolean;
-  /** Skip Godot runtime smoke validation (import/static still run when Godot is available). */
+  /** Skip Godot import, runtime smoke, and playtest subprocesses. Static validation still runs. */
   skipRuntimeValidation?: boolean;
   /** Skip staging a packaged copy under Exports/<slug>/ after final QA. */
   skipExport?: boolean;
@@ -421,12 +425,40 @@ export class GenerationPipeline {
       join(outputPath, 'character_visual_dna.json'),
       JSON.stringify(characterVisualDna, null, 2),
     );
+    const visualDNA = generateVisualDNA({ gameDna, artBible: designBible.art, styleBible });
+    const visualDir = join(outputPath, 'data', 'visual');
+    mkdirSync(visualDir, { recursive: true });
+    writeFileSync(join(visualDir, 'visual_dna.json'), JSON.stringify(visualDNA, null, 2));
+    writeFileSync(join(outputPath, 'visual_dna.json'), JSON.stringify(visualDNA, null, 2));
+    const biomeVisualDNAs = generateAllBiomeVisualDNA({ visualDNA, gameDna });
+    writeFileSync(join(visualDir, 'biomes.json'), JSON.stringify(biomeVisualDNAs, null, 2));
+    const environmentKits = biomeVisualDNAs.map((biome) =>
+      generateEnvironmentKit({ visualDNA, biome, profile: options.profile, seed: options.seed }),
+    );
+    writeFileSync(join(visualDir, 'environment_kits.json'), JSON.stringify(environmentKits, null, 2));
+    writeFileSync(
+      join(visualDir, 'lighting.json'),
+      JSON.stringify(
+        {
+          energy: 1,
+          biomes: biomeVisualDNAs.map((biome) => ({
+            biomeId: biome.biomeId,
+            lighting: biome.lighting,
+            ambientVfx: biome.ambientVfx,
+            fog: biome.fog,
+          })),
+        },
+        null,
+        2,
+      ),
+    );
     const bibleArtifacts = assertPhaseArtifacts(outputPath, [
       'game_dna.json',
       'design_bible.json',
       'style_bible.json',
       'style_contract.json',
       'character_visual_dna.json',
+      'data/visual/visual_dna.json',
     ]);
     report(
       'design_bible',
@@ -699,6 +731,9 @@ export class GenerationPipeline {
       artBible: designBible.art,
       styleBible,
       characterVisualDna,
+      visualDNA,
+      biomeVisualDNAs,
+      environmentKits,
       comfyuiUrl: process.env.COMFYUI_BASE_URL,
       diffusersPython: process.env.DIFFUSERS_PYTHON,
       diffusersModelId: process.env.DIFFUSERS_MODEL_ID,
@@ -965,6 +1000,34 @@ export class GenerationPipeline {
     // but the skip is recorded as an explicit SKIPPED gate with reason GODOT_NOT_AVAILABLE
     // rather than silently treating the project as fully validated.
     const runGodotGates = (target: QAReport): void => {
+      if (options.skipRuntimeValidation) {
+        pushGate(target, {
+          gate: 'godot_imports',
+          passed: true,
+          state: 'SKIPPED',
+          message: 'IMPORT_VALIDATION_SKIPPED: --skip-runtime-validation',
+        });
+        pushGate(target, {
+          gate: 'godot_runtime',
+          passed: true,
+          state: 'SKIPPED',
+          message: 'RUNTIME_VALIDATION_SKIPPED: --skip-runtime-validation',
+        });
+        pushGate(target, {
+          gate: 'godot_playtest',
+          passed: true,
+          state: 'SKIPPED',
+          message: 'PLAYTEST_SKIPPED: --skip-runtime-validation',
+        });
+        pushGate(target, {
+          gate: 'gameplay_screenshot_qa',
+          passed: true,
+          state: 'SKIPPED',
+          message: 'SCREENSHOT_QA_SKIPPED: --skip-runtime-validation',
+        });
+        return;
+      }
+
       if (!godotPath) {
         pushGate(target, {
           gate: 'godot_imports',
@@ -1020,28 +1083,6 @@ export class GenerationPipeline {
             options.profile === 'RELEASE_CANDIDATE'
               ? 'RELEASE_CANDIDATE requires gameplay screenshot evidence — godot_imports failed'
               : 'SCREENSHOT_QA_SKIPPED: godot_imports failed',
-        });
-        return;
-      }
-
-      if (options.skipRuntimeValidation) {
-        pushGate(target, {
-          gate: 'godot_runtime',
-          passed: true,
-          state: 'SKIPPED',
-          message: 'RUNTIME_VALIDATION_SKIPPED: --skip-runtime-validation',
-        });
-        pushGate(target, {
-          gate: 'godot_playtest',
-          passed: true,
-          state: 'SKIPPED',
-          message: 'PLAYTEST_SKIPPED: --skip-runtime-validation',
-        });
-        pushGate(target, {
-          gate: 'gameplay_screenshot_qa',
-          passed: true,
-          state: 'SKIPPED',
-          message: 'SCREENSHOT_QA_SKIPPED: --skip-runtime-validation',
         });
         return;
       }
@@ -1134,7 +1175,11 @@ export class GenerationPipeline {
     }
 
     const staticGateResults = qaReport.results.filter(
-      (r) => r.gate !== 'godot_imports' && r.gate !== 'godot_runtime',
+      (r) =>
+        r.gate !== 'godot_imports' &&
+        r.gate !== 'godot_runtime' &&
+        r.gate !== 'godot_playtest' &&
+        r.gate !== 'gameplay_screenshot_qa',
     );
     const staticPassed = staticGateResults.every((r) => r.passed);
     const importGate = qaReport.results.find((r) => r.gate === 'godot_imports');
@@ -1284,6 +1329,61 @@ export class GenerationPipeline {
           'reports/visual-slice-contact-sheet.png',
         ],
         review,
+      });
+      const farFp = fingerprintFile(join(outputPath, 'assets', 'backgrounds', 'biome_0', 'far.png'));
+      const midFp = fingerprintFile(join(outputPath, 'assets', 'backgrounds', 'biome_0', 'mid.png'));
+      const nearFp = fingerprintFile(join(outputPath, 'assets', 'backgrounds', 'biome_0', 'near.png'));
+      const scoreSlice = () =>
+        scoreVisualQuality({
+          projectPath: outputPath,
+          playerVisible: existsSync(join(outputPath, 'assets', 'characters', 'player.png')),
+          enemyVisible: existsSync(join(outputPath, 'assets', 'enemies')) || existsSync(join(outputPath, 'assets', 'enemies', 'enemy_0.png')),
+          terrainTextureExists: existsSync(join(outputPath, 'assets', 'tilesets', 'biome_0', 'source.png')),
+          uiTextureExists: existsSync(join(outputPath, 'assets', 'ui', 'hud_frame.png')),
+          parallaxFingerprints: { far: farFp, mid: midFp, near: nearFp },
+          propCount: assetResult.assets.filter((a) => a.path.includes('/props/')).length,
+          placeholderRatio:
+            assetResult.assets.length > 0
+              ? assetResult.assets.filter((a) => a.maturity === 'PLACEHOLDER' || a.fallbackGenerated).length /
+                assetResult.assets.length
+              : 1,
+          wallpaperCapture: false,
+        });
+      let visualQa = scoreSlice();
+      const repairLog: string[] = [];
+      for (let round = 0; round < VISUAL_REPAIR_BUDGET.maxSliceRepairRounds; round++) {
+        if (visualQa.verdict !== 'AUTOMATED_VISUAL_FAIL') break;
+        const planned = planVisualRepairs(visualQa, round);
+        if (planned.length === 0) break;
+        const applied = applyVisualRepairs(outputPath, planned);
+        repairLog.push(...applied.filter((r) => r.applied).map((r) => `${r.defect}: ${r.detail}`));
+        if (!applied.some((r) => r.applied)) break;
+        visualQa = scoreSlice();
+      }
+      writeVgf2VisualSliceReport({
+        projectPath: outputPath,
+        slug,
+        seed: options.seed,
+        profile: options.profile,
+        archetype: gameDna.archetype,
+        providerSummary: {
+          nvidiaImage: String(options.nvidiaImageModel ?? process.env.NVIDIA_IMAGE_MODEL ?? 'black-forest-labs/flux.1-dev'),
+          selectedImage: String(assetResult.selectedProvider ?? 'procedural'),
+        },
+        visualDNA,
+        biomeName: biomeVisualDNAs[0]?.displayName ?? 'biome_0',
+        maturity: {
+          production: assetResult.assets.filter((a) => a.productionReady).length,
+          placeholder: assetResult.assets.filter((a) => a.maturity === 'PLACEHOLDER').length,
+          rejected: assetResult.assets.filter((a) => a.maturity === 'REJECTED').length,
+          unknownLicense: 0,
+        },
+        scores: visualQa.scores,
+        defects: visualQa.defects,
+        repairs: repairLog,
+        verdict: visualQa.verdict,
+        screenshots: evidence,
+        hardFailReasons: visualQa.hardFailReasons,
       });
       try {
         const projectJson = ProjectMetadataSchema.parse(JSON.parse(readFileSync(projectJsonPath, 'utf-8')));

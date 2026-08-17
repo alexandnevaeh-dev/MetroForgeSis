@@ -920,6 +920,7 @@ export function registerIpcHandlers(cwd: string): void {
   });
 
   ipcMain.handle('get-project-preview', async (_event, projectPath: string) => {
+    assertProjectPath(projectPath, cwd);
     if (!existsSync(join(projectPath, 'project.godot'))) {
       return { error: 'Not a Godot project (project.godot missing)' };
     }
@@ -988,7 +989,30 @@ export function registerIpcHandlers(cwd: string): void {
       }
     }
 
-    return { title, profile, manifest, worldGraph, assetPreviews };
+    let visualDNA: Record<string, unknown> | null = null;
+    try {
+      visualDNA = JSON.parse(readFileSync(join(projectPath, 'data', 'visual', 'visual_dna.json'), 'utf-8'));
+    } catch {
+      try {
+        visualDNA = JSON.parse(readFileSync(join(projectPath, 'visual_dna.json'), 'utf-8'));
+      } catch {
+        visualDNA = null;
+      }
+    }
+    let visualReview: Record<string, unknown> | null = null;
+    try {
+      visualReview = JSON.parse(readFileSync(join(projectPath, 'visual_review.json'), 'utf-8'));
+    } catch {
+      visualReview = null;
+    }
+    let visualQa: Record<string, unknown> | null = null;
+    try {
+      visualQa = JSON.parse(readFileSync(join(projectPath, 'reports', 'VGF2_VISUAL_VERTICAL_SLICE.json'), 'utf-8'));
+    } catch {
+      visualQa = null;
+    }
+
+    return { title, profile, manifest, worldGraph, assetPreviews, visualDNA, visualReview, visualQa };
   });
 
   ipcMain.handle('list-projects', () => {
@@ -1024,6 +1048,7 @@ export function registerIpcHandlers(cwd: string): void {
   });
 
   ipcMain.handle('open-in-godot', async (_event, projectPath: string) => {
+    assertProjectPath(projectPath, cwd);
     const config = loadConfig();
     const dataDir = config.dataDir || join(cwd, '.metroforge');
     const prefs = await loadAppPreferences(dataDir);
@@ -1035,6 +1060,7 @@ export function registerIpcHandlers(cwd: string): void {
   });
 
   ipcMain.handle('play-in-godot', async (_event, projectPath: string) => {
+    assertProjectPath(projectPath, cwd);
     const config = loadConfig();
     const dataDir = config.dataDir || join(cwd, '.metroforge');
     const prefs = await loadAppPreferences(dataDir);
@@ -1835,13 +1861,14 @@ export function registerIpcHandlers(cwd: string): void {
 
   ipcMain.handle(
     'export-project',
-    async (_event, projectPath: string, opts?: { force?: boolean; zip?: boolean; commercialSafe?: boolean }) => {
+    async (_event, projectPath: string, opts?: { force?: boolean; zip?: boolean; commercialSafe?: boolean; requireProductionAssets?: boolean }) => {
       assertProjectPath(projectPath, cwd);
       return exportProject({
         projectPath,
         zip: opts?.zip !== false,
         requireValidation: !opts?.force,
         requireCommercialSafe: opts?.commercialSafe,
+        requireProductionAssets: opts?.requireProductionAssets,
       });
     },
   );

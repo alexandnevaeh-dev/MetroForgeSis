@@ -23,6 +23,7 @@ export {
   descendantRelPaths,
 } from './artifact-lineage.js';
 export type { ArtifactLineage, LineageEdge } from './artifact-lineage.js';
+export { visualExecutionGraph } from './visual-graph.js';
 export { inheritDerivativeLicense } from './derivative-license.js';
 export { scanGodotResourceGraph, assetPathToResPath } from './godot-resource-graph.js';
 export type { GodotResourceGraph, GodotResourceReference } from './godot-resource-graph.js';
@@ -88,6 +89,7 @@ export { parseProjectCommandWithLlm } from './ai-commands-llm.js';
 export type { LlmCommandSource, LlmCommandContext } from './ai-commands-llm.js';
 export { writeVisualSliceReviewRequired, applyVisualReviewDecision, visualReviewPath } from './visual-review.js';
 export { writeVisualSliceReports, collectVisualSliceEvidence } from './visual-slice-report.js';
+export { writeVgf2VisualSliceReport } from './vgf2-report.js';
 export {
   buildProjectMemoryIndex,
   loadProjectMemoryIndex,

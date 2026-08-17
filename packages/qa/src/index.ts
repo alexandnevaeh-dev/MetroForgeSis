@@ -19,6 +19,11 @@ export type { RunProjectAcceptanceOptions } from './run-acceptance.js';
 export { runQualityPass } from './quality-pass.js';
 export type { QualityPassOptions } from './quality-types.js';
 export { QualityDirector } from './quality-director.js';
+export { scoreVisualQuality, fingerprintFile, mapDefectToRepair, VISUAL_QUALITY_GATES, VISUAL_REPAIR_BUDGET } from './visual-quality.js';
+export type { VisualQaInputs, VisualQaResult } from './visual-quality.js';
+export { planVisualRepairs, applyVisualRepairs } from './visual-repair.js';
+export type { VisualRepairRecord } from './visual-repair.js';
+export { evaluateTerrainProject, evaluateParallaxProject } from './visual-gates.js';
 export { QualityRepairEngine } from './quality-repair-engine.js';
 export type {
   QualityReport,

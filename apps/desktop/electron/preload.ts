@@ -126,7 +126,7 @@ contextBridge.exposeInMainWorld('metroforge', {
     ipcRenderer.invoke('restore-project-checkpoint', projectPath, checkpointId),
   getAssetVersionPreview: (projectPath: string, backupRelPath: string) =>
     ipcRenderer.invoke('get-asset-version-preview', projectPath, backupRelPath),
-  exportProject: (projectPath: string, opts?: { force?: boolean; zip?: boolean; commercialSafe?: boolean }) =>
+  exportProject: (projectPath: string, opts?: { force?: boolean; zip?: boolean; commercialSafe?: boolean; requireProductionAssets?: boolean }) =>
     ipcRenderer.invoke('export-project', projectPath, opts),
   refreshProjectTemplate: (projectPath: string) =>
     ipcRenderer.invoke('refresh-project-template', projectPath) as Promise<{

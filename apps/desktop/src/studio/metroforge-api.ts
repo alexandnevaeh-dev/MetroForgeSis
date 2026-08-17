@@ -159,6 +159,18 @@ export type ProjectPreview = {
     dataUrl: string;
   }>;
   worldGraph?: WorldGraphPreview;
+  visualDNA?: {
+    styleFingerprint?: string;
+    renderingStyle?: string;
+    artStyle?: { id?: string; label?: string };
+    palette?: { global?: string[] };
+  } | null;
+  visualReview?: { status?: string; notes?: string } | null;
+  visualQa?: {
+    verdict?: string;
+    scores?: Record<string, number>;
+    defects?: string[];
+  } | null;
 };
 
 export type WorldGraphPreview = {
@@ -376,7 +388,7 @@ export type MetroforgeBridge = {
   getAssetVersionPreview: (projectPath: string, backupRelPath: string) => Promise<{ dataUrl?: string }>;
   exportProject: (
     projectPath: string,
-    opts?: { force?: boolean; zip?: boolean; commercialSafe?: boolean },
+    opts?: { force?: boolean; zip?: boolean; commercialSafe?: boolean; requireProductionAssets?: boolean },
   ) => Promise<{
     success: boolean;
     archivePath?: string;

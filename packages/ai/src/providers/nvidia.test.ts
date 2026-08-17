@@ -200,6 +200,7 @@ describe('NvidiaProvider — routing constraints', () => {
   it('is included as a candidate under FREE_ONLY (its costClass is free)', () => {
     const registry = new ProviderRegistry();
     const provider = new NvidiaProvider({ apiKey: FAKE_KEY, baseUrl: 'https://x', defaultModel: 'm', enabled: true });
+    provider.health = 'healthy';
     registry.register(provider);
     const router = new CapabilityRouter(registry, new ModelRegistry());
 
