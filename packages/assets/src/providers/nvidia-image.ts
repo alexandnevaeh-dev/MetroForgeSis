@@ -45,6 +45,23 @@ export class NvidiaInvalidImagePayloadError extends Error {
   }
 }
 
+/**
+ * NVIDIA's hosted safety classifier rejected the prompt outright. Confirmed by direct probe
+ * (see investigation notes): the response is HTTP 200 with `finishReason: "CONTENT_FILTERED"`
+ * and a fixed ~6.4KB placeholder image, byte-for-byte identical across widely different seeds.
+ * Retrying with a jittered seed cannot change a text-classifier's verdict on the same prompt,
+ * so unlike `NvidiaInvalidImagePayloadError` this is NOT retried — it fails once, fast, with an
+ * accurate reason instead of burning 2 more attempts (and their backoff delay) on a foregone
+ * conclusion.
+ */
+export class NvidiaContentFilteredError extends Error {
+  readonly retryable = false as const;
+  constructor(message: string) {
+    super(message);
+    this.name = 'NvidiaContentFilteredError';
+  }
+}
+
 /** Real FLUX 1024² artifacts are far larger; ~6KB HTTP bodies with tiny/empty base64 fail here. */
 export const NVIDIA_MIN_DECODED_IMAGE_BYTES = 5_000;
 const DEFAULT_MAX_RETRIES = 2;
@@ -159,6 +176,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 function isRetryableNvidiaImageError(err: unknown): boolean {
+  if (err instanceof NvidiaContentFilteredError) return false;
   if (err instanceof NvidiaInvalidImagePayloadError) return true;
   if (!(err instanceof Error)) return false;
   const msg = err.message;
@@ -560,8 +578,20 @@ export class NvidiaImageProvider implements ImageGenerator {
       );
     }
 
-    // CONTENT_FILTERED / ERROR without usable bytes already handled above. If base64 is present,
-    // continue into size/magic/visible checks — flaky NVCF sometimes labels good JPEGs oddly.
+    // Explicit content-safety rejection: NVCF still returns HTTP 200 + a small placeholder
+    // image (base64 identical across seeds — confirmed by direct probe), so this must be
+    // checked by finishReason, not inferred from size/blankness downstream. Not retryable:
+    // a jittered seed does not change a text classifier's verdict on the same prompt.
+    if (finishReason === 'CONTENT_FILTERED') {
+      throw new NvidiaContentFilteredError(
+        `NVIDIA image request rejected by provider content-safety classifier ` +
+          `(finishReason=${artifact?.finishReason}) — the prompt itself was flagged, not a ` +
+          `transient failure; retrying the same prompt will not change the outcome`,
+      );
+    }
+    // Other explicit failure labels without usable bytes are already handled above. If
+    // base64 is present, continue into size/magic/visible checks — flaky NVCF sometimes
+    // labels good JPEGs oddly.
     if (finishReason && /ERROR|FAIL|REJECT/.test(finishReason) && rawText.length < 8_000) {
       throw new NvidiaInvalidImagePayloadError(
         `NVIDIA image artifact finishReason=${artifact?.finishReason ?? 'unknown'}`,

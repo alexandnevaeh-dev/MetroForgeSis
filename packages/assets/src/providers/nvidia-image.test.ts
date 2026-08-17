@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   NvidiaImageProvider,
   NvidiaInvalidImagePayloadError,
+  NvidiaContentFilteredError,
   assertValidNvidiaImageBytes,
   NVIDIA_MIN_DECODED_IMAGE_BYTES,
 } from './nvidia-image.js';
@@ -305,6 +306,48 @@ describe('NvidiaImageProvider', () => {
         height: 64,
       }),
     ).rejects.toThrow(/too small|blank|near-black/i);
+  });
+
+  it('fails fast on CONTENT_FILTERED without burning retries — the classifier verdict cannot change on retry', async () => {
+    // Confirmed via direct probe against the live NVIDIA endpoint: a content-filtered prompt
+    // returns HTTP 200 with finishReason "CONTENT_FILTERED" and a small placeholder image,
+    // byte-for-byte identical across widely different seeds. Retrying with a jittered seed
+    // (the existing retry strategy) cannot escape a text classifier's verdict on the same
+    // prompt, so this must fail on the first attempt instead of spending 2 more attempts
+    // (plus backoff) on a foregone conclusion.
+    const placeholder = colorfulPng(8);
+    vi.mocked(fetch).mockImplementation(
+      async () =>
+        new Response(
+          JSON.stringify({ artifacts: [{ base64: placeholder.toString('base64'), finishReason: 'CONTENT_FILTERED' }] }),
+          { status: 200 },
+        ),
+    );
+
+    const provider = new NvidiaImageProvider({
+      apiKey: 'nvapi-test-key',
+      maxRetries: 2,
+      retryBackoffMs: [0, 0],
+    });
+
+    let caught: unknown;
+    try {
+      await provider.generateImage({
+        profile: 'VFX_TEXTURE',
+        prompt: 'boss phase-shift shockwave',
+        width: 1024,
+        height: 1024,
+        seed: 1,
+      });
+    } catch (err) {
+      caught = err;
+    }
+
+    expect(caught).toBeInstanceOf(NvidiaContentFilteredError);
+    expect((caught as Error).message).toMatch(/content-safety classifier/i);
+    expect((caught as Error).message).toMatch(/CONTENT_FILTERED/);
+    // Exactly one HTTP call — the whole point is not wasting the 2 retries + backoff.
+    expect(vi.mocked(fetch).mock.calls.length).toBe(1);
   });
 });
 
