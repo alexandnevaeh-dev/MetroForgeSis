@@ -88,8 +88,8 @@ func _configure_terrain_set(tile_set: TileSet, atlas: TileSetAtlasSource, cols: 
 func _variant_coords(cell_x: int, cell_y: int, atlas_coords: Vector2i) -> Vector2i:
 	## Seeded wear/moss variants live on atlas rows 3–4. Keep the canonical tile most of the time
 	## so rooms do not checkerboard.
-	var h := hash("%s-%d-%d-%d-%d" % [biome_id, cell_x, cell_y, atlas_coords.x, atlas_coords.y])
-	var n := abs(h) % 100
+	var h: int = hash("%s-%d-%d-%d-%d" % [biome_id, cell_x, cell_y, atlas_coords.x, atlas_coords.y])
+	var n: int = posmod(h, 100)
 	if n > 88 and atlas_coords.y == 0 and atlas_coords.x <= 3:
 		return Vector2i(atlas_coords.x, 3)
 	if n > 70 and atlas_coords.y == 0 and atlas_coords.x <= 3:
