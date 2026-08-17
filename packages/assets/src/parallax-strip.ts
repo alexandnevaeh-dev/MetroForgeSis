@@ -75,16 +75,16 @@ function paintMidArchitecture(
   seed: number,
   masonry: [number, number, number],
 ): void {
-  const count = 2 + (hash01(seed, 9) > 0.45 ? 1 : 0);
-  const cols = columnCenters(width, seed + 17, count, Math.round(width * 0.1));
-  const colW = Math.max(5, Math.round(width * 0.022));
+  const count = 2;
+  const cols = columnCenters(width, seed + 17, count, Math.round(width * 0.14));
   let hit = false;
   for (let ci = 0; ci < cols.length; ci++) {
     const cx = cols[ci]!;
-    const capital = Math.round(height * (0.28 + hash01(seed, 40 + ci) * 0.22));
-    const floor = Math.round(height * (0.78 + hash01(seed, 60 + ci) * 0.16));
+    const colW = Math.max(4, Math.round(width * (0.014 + hash01(seed, 21 + ci) * 0.012)));
+    const capital = Math.round(height * (0.42 + hash01(seed, 40 + ci) * 0.18));
+    const floor = Math.round(height * (0.68 + hash01(seed, 60 + ci) * 0.1));
     if (Math.abs(x - cx) <= colW && y >= capital && y <= floor) hit = true;
-    if (Math.abs(x - cx) <= colW + 2 && y >= capital - 5 && y <= capital + 3) hit = true;
+    if (Math.abs(x - cx) <= colW + 2 && y >= capital - 4 && y <= capital + 2) hit = true;
     if (ci > 0 && hash01(seed, 90 + ci) > 0.35) {
       const a = cols[ci - 1]!;
       const midX = (a + cx) / 2;
@@ -232,6 +232,7 @@ export function farPlateLooksLikeOutdoorLandscape(png: Buffer): boolean {
   let sampled = 0;
   let pine = 0;
   let skin = 0;
+  let moonWater = 0;
   const step = Math.max(1, Math.floor(Math.min(width, height) / 80));
   for (let y = 0; y < height; y += step) {
     for (let x = 0; x < width; x += step) {
@@ -248,10 +249,14 @@ export function farPlateLooksLikeOutdoorLandscape(png: Buffer): boolean {
       if (midX && midY && r > 140 && g > 80 && g < 175 && b > 50 && b < 145 && r > g + 12 && r > b + 18) {
         skin += 1;
       }
+      const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+      // FLUX often paints a moon/window looking onto lake water instead of a citadel hall.
+      const inWindow = midX && y > height * 0.12 && y < height * 0.88;
+      if (inWindow && luma > 168 && b > 130 && g > 110 && r > 90) moonWater += 1;
     }
   }
   if (sampled === 0) return false;
-  return pine / sampled > 0.032 || skin / sampled > 0.01;
+  return pine / sampled > 0.032 || skin / sampled > 0.01 || moonWater / sampled > 0.045;
 }
 
 /** Punch AI landscape plates into horizon strips so stacked layers do not ghost. */

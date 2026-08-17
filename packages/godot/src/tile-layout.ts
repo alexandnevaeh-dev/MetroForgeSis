@@ -446,7 +446,7 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
 
   if (archetype === 'transition') {
     const split = Math.floor(cols * 0.5);
-    cells.push(cell(split, floorRow - 1, 'hazard'));
+    cells.push(cell(split, floorRow - 1, 'decor_a'));
     const leftPlat = rng.int(3, Math.max(4, Math.floor(cols * 0.22)));
     placePlatform(cells, platforms, tileSize, Math.floor(cols * 0.12), leftPlat, platMaxRow);
     placePlatform(cells, platforms, tileSize, Math.floor(cols * 0.62), 4, platMinRow);
@@ -473,7 +473,7 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
   if (archetype === 'miniboss') {
     const midCol = Math.max(3, Math.floor(cols * 0.38));
     placePlatform(cells, platforms, tileSize, midCol, 6, platMaxRow);
-    cells.push(cell(midCol + 2, platMaxRow - 1 > 1 ? platMaxRow - 1 : platMaxRow, 'hazard'));
+    cells.push(cell(midCol + 2, platMaxRow - 1 > 1 ? platMaxRow - 1 : platMaxRow, 'decor_b'));
   }
 
   const composed = composePlayableVisuals({

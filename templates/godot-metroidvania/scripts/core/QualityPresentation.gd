@@ -173,12 +173,12 @@ func _layout_parallax_strip(sprite: Sprite2D, size: Vector2, kind: String) -> vo
 		return
 	var s: float
 	if kind == "far":
-		# One full back plate. Overscan so camera look-ahead does not flash the sky ColorRect.
-		s = maxf(size.x / tw, size.y / th) * 2.1
+		# Contain the authored plate, then overscan so look-ahead does not flash the sky ColorRect.
+		s = minf(size.x / tw, size.y / th) * 2.1
 		sprite.scale = Vector2(s, s)
 		sprite.position = size * 0.5
 	elif kind == "mid_full" or kind == "near_full":
-		s = maxf(size.x / tw, size.y / th)
+		s = minf(size.x / tw, size.y / th)
 		sprite.scale = Vector2(s, s)
 		sprite.position = size * 0.5
 	else:
@@ -300,14 +300,14 @@ func _inject_atmosphere_layers(room: Node, size: Vector2, biome: String) -> void
 		(mid_node as CanvasItem).visible = true
 		var mid_sprite := mid_node.get_node_or_null("Sprite") as Sprite2D
 		if mid_sprite:
-			_layout_parallax_strip(mid_sprite, size, "mid_full")
+			_layout_parallax_strip(mid_sprite, size, "mid")
 	else:
 		var mid_path := "res://assets/backgrounds/%s/mid.png" % biome
 		if ResourceLoader.exists(mid_path) and host.get_node_or_null("QualityMidSprite") == null:
 			_inject_parallax_sprite(host, "QualityMidSprite", mid_path, size * 0.5, -40)
 			var created := host.get_node_or_null("QualityMidSprite") as Sprite2D
 			if created:
-				_layout_parallax_strip(created, size, "mid_full")
+				_layout_parallax_strip(created, size, "mid")
 	var near_node := room.get_node_or_null("ParallaxNear")
 	if near_node:
 		(near_node as CanvasItem).visible = true
@@ -347,18 +347,10 @@ func _inject_lights(room: Node, size: Vector2, _biome: String, _archetype: Strin
 	fill.z_index = 5
 	fill.shadow_enabled = false
 	host.add_child(fill)
-	if tiled:
-		var sun := DirectionalLight2D.new()
-		sun.name = "QualitySun"
-		sun.rotation = deg_to_rad(-42.0)
-		sun.color = Color(0.80, 0.90, 1.0, 1)
-		sun.energy = 0.32
-		sun.shadow_enabled = false
-		sun.height = 24.0
-		host.add_child(sun)
-		_attach_floor_occluder(room, size)
-		_attach_actor_occluders(room)
-		_enable_terrain_lighting(room)
+	# Tiled rooms already have PointLight2D fill. A DirectionalLight2D plus floor
+	# occluder stamped huge repeating shadows across every masonry cell.
+	_attach_actor_occluders(room)
+	_enable_terrain_lighting(room)
 
 
 func _enable_terrain_lighting(room: Node) -> void:

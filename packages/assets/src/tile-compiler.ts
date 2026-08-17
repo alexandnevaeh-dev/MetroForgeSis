@@ -116,9 +116,9 @@ function ensureLuma(rgb: [number, number, number], minL: number, maxL: number): 
 }
 
 function asMasonry(rgb: [number, number, number]): [number, number, number] {
-  // Drowned-citadel wet stone: teal-slate with enough chroma to not read as greybox.
-  const wet: [number, number, number] = [42, 118, 124];
-  return ensureLuma(mixRgb(rgb, wet, 0.78), 68, 108);
+  // Drowned-citadel wet glass-stone. Keep G/B ahead of R so screenshots do not read as greybox.
+  const wet: [number, number, number] = [36, 148, 158];
+  return ensureLuma(mixRgb(rgb, wet, 0.88), 78, 128);
 }
 
 function pickRoleFills(extracted: [number, number, number][], hex: [number, number, number][]): RoleFills {
@@ -377,7 +377,7 @@ function paintTile(
         tier = Math.max(0, Math.min(ramp.length - 1, tier));
         c = ramp[tier]!;
       }
-      if (kind === 'hazard' && (x + y) % 6 < 2) c = [180, 70, 50];
+      if (kind === 'hazard' && (x + y) % 8 === 0) c = mixRgb(fill, [48, 96, 118], 0.45);
       if (kind === 'one_way' && y > tileSize / 3) {
         setPixel(rgba, atlasW, originX + x, originY + y, fill, 0);
         continue;

@@ -27,9 +27,9 @@ export function composeBossArena(input: {
     roleToCell(cx + 1, landmarkRow, 'decor_a'),
     roleToCell(cx, landmarkRow - 1 > 1 ? landmarkRow - 1 : landmarkRow, 'decor_b'),
   ];
-  // Arena boundary markers at the flanks, not a box frame.
-  cells.push(roleToCell(2, input.floorRow - 1, 'hazard'));
-  cells.push(roleToCell(input.cols - 3, input.floorRow - 1, 'hazard'));
+  // Arena flanks — moss, never hazard candy-stripe next to spawn.
+  cells.push(roleToCell(2, input.floorRow - 1, 'decor_a'));
+  cells.push(roleToCell(input.cols - 3, input.floorRow - 1, 'decor_b'));
 
   const lighting = defaultLightingPlan('boss', input.width, input.height);
   lighting.focalPoint = {

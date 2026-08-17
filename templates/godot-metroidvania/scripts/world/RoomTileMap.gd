@@ -171,23 +171,23 @@ func _paint_rear_wall() -> void:
 	# collapse to the same arcade. Hash variant only flavors leftover connectors.
 	match room_archetype:
 		"traversal", "challenge", "tutorial":
-			_paint_colonnade(rear, cols, floor_row, crop_rows, wall, ceiling)
+			_paint_night_apse(rear, cols, floor_row, crop_rows, wall, ceiling)
 		"combat", "arena", "miniboss":
-			_paint_colonnade(rear, cols, floor_row, crop_rows, wall, ceiling)
+			_paint_night_apse(rear, cols, floor_row, crop_rows, wall, ceiling)
 		"boss":
 			_paint_ruin_mass(rear, cols, floor_row, crop_rows, wall, ceiling, rng)
 		"npc", "shop", "save":
-			_paint_colonnade(rear, cols, floor_row, crop_rows, wall, ceiling)
+			_paint_night_apse(rear, cols, floor_row, crop_rows, wall, ceiling)
 		"ability_shrine", "ability_gate":
-			_paint_colonnade(rear, cols, floor_row, crop_rows, wall, ceiling)
+			_paint_night_apse(rear, cols, floor_row, crop_rows, wall, ceiling)
 		"secret", "treasure":
 			_paint_ruin_mass(rear, cols, floor_row, crop_rows, wall, ceiling, rng)
 		_:
 			match variant:
 				0:
-					_paint_colonnade(rear, cols, floor_row, crop_rows, wall, ceiling)
+					_paint_night_apse(rear, cols, floor_row, crop_rows, wall, ceiling)
 				1:
-					_paint_colonnade(rear, cols, floor_row, crop_rows, wall, ceiling)
+					_paint_night_apse(rear, cols, floor_row, crop_rows, wall, ceiling)
 				2:
 					_paint_ruin_mass(rear, cols, floor_row, crop_rows, wall, ceiling, rng)
 				_:
