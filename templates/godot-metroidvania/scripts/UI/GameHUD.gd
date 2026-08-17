@@ -1,5 +1,6 @@
 extends CanvasLayer
 
+@onready var hud_frame_panel: Panel = $HUD/HUDFrame
 @onready var health_bar: ProgressBar = $HUD/MarginContainer/VBox/HealthBar
 @onready var ability_label: Label = $HUD/MarginContainer/VBox/AbilityLabel
 @onready var currency_label: Label = $HUD/MarginContainer/VBox/CurrencyLabel
@@ -21,27 +22,80 @@ func _ready() -> void:
 	_style_hud()
 	_apply_hud_mode()
 
+## Real UI-foundry textures (assets/ui/hud_frame.png, assets/ui/health_meter.png) are generated
+## from this game's actual biome palette by generateUiPanel() in packages/assets/src/ui-foundry.ts
+## (see asset-pipeline.ts ~L1591-1624), but generation there is gated on `options.visualDNA` being
+## present for the run, not guaranteed for every profile (e.g. TINY_TEST) — so both textures are
+## loaded defensively and the original hardcoded StyleBoxFlat look is kept as the fallback when a
+## file is missing, same ResourceLoader.exists()-then-load() convention AnimatedAssetSprite.gd uses
+## for its animation sheets.
 func _style_hud() -> void:
+	_apply_hud_frame()
 	if health_bar:
 		health_bar.custom_minimum_size = Vector2(280, 22)
-		var fill := StyleBoxFlat.new()
-		fill.bg_color = Color(0.78, 0.22, 0.26, 1)
-		fill.set_corner_radius_all(2)
-		var bg := StyleBoxFlat.new()
-		bg.bg_color = Color(0.06, 0.07, 0.10, 0.94)
-		bg.border_color = Color(0.32, 0.28, 0.22, 1)
-		bg.set_border_width_all(2)
-		bg.content_margin_top = 2
-		bg.content_margin_bottom = 2
-		health_bar.add_theme_stylebox_override("fill", fill)
-		health_bar.add_theme_stylebox_override("background", bg)
-		health_bar.show_percentage = false
+		_apply_health_bar_style()
 	if ability_label:
 		ability_label.add_theme_font_size_override("font_size", 14)
 	if currency_label:
 		currency_label.add_theme_font_size_override("font_size", 13)
 	if collectible_label:
 		collectible_label.add_theme_font_size_override("font_size", 13)
+
+## Backs the whole health/ability/currency/collectible stack with the generated 320x48 framed
+## panel instead of leaving the labels floating bare over the game world. Hidden (its scene
+## default) when the texture wasn't generated for this run.
+func _apply_hud_frame() -> void:
+	if hud_frame_panel == null:
+		return
+	var tex := _load_ui_texture("res://assets/ui/hud_frame.png")
+	if tex == null:
+		hud_frame_panel.visible = false
+		return
+	var panel_box := StyleBoxTexture.new()
+	panel_box.texture = tex
+	panel_box.texture_margin_left = 4
+	panel_box.texture_margin_top = 4
+	panel_box.texture_margin_right = 4
+	panel_box.texture_margin_bottom = 4
+	hud_frame_panel.add_theme_stylebox_override("panel", panel_box)
+	hud_frame_panel.visible = true
+
+## health_meter.png is the generated bordered meter frame (128x16) — used as the bar's
+## background/track so the border reflects the game's real palette instead of a hardcoded
+## dark-with-tan-border box. The fill stays a flat color (no separate fill asset is generated)
+## so bar value is still readable at a glance.
+func _apply_health_bar_style() -> void:
+	var frame_tex := _load_ui_texture("res://assets/ui/health_meter.png")
+	if frame_tex:
+		var bg := StyleBoxTexture.new()
+		bg.texture = frame_tex
+		bg.texture_margin_left = 3
+		bg.texture_margin_top = 3
+		bg.texture_margin_right = 3
+		bg.texture_margin_bottom = 3
+		health_bar.add_theme_stylebox_override("background", bg)
+	else:
+		var bg := StyleBoxFlat.new()
+		bg.bg_color = Color(0.06, 0.07, 0.10, 0.94)
+		bg.border_color = Color(0.32, 0.28, 0.22, 1)
+		bg.set_border_width_all(2)
+		bg.content_margin_top = 2
+		bg.content_margin_bottom = 2
+		health_bar.add_theme_stylebox_override("background", bg)
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = Color(0.78, 0.22, 0.26, 1)
+	fill.set_corner_radius_all(2)
+	health_bar.add_theme_stylebox_override("fill", fill)
+	health_bar.show_percentage = false
+
+## No boss health bar UI element exists anywhere in this template (HealthComponent tracks boss
+## HP in code — see RuntimeSmokeTest.gd's boss damage checks — but nothing ever renders it), so
+## the generated assets/ui/boss_bar.png has no current consumer. Out of scope here: adding a
+## boss health bar is a separate feature, not a wiring fix.
+func _load_ui_texture(res_path: String) -> Texture2D:
+	if not ResourceLoader.exists(res_path):
+		return null
+	return load(res_path)
 
 func _process(_delta: float) -> void:
 	var player := get_tree().get_first_node_in_group("player")
@@ -85,6 +139,9 @@ func _apply_hud_mode() -> void:
 	var tracker := get_node_or_null("HUD/QuestTrackerPanel")
 	if tracker:
 		tracker.visible = false
+	var mini := get_node_or_null("HUD/MinimapPanel")
+	if mini:
+		mini.visible = false
 
 func _update_currency() -> void:
 	if currency_label == null:
