@@ -415,7 +415,7 @@ describe('generateRoomScene combat sprites', () => {
     });
     expect(scene).toContain('[node name="FarSky" type="Sprite2D"');
     expect(scene).not.toContain('type="CanvasLayer"');
-    const farScale = Math.max(800 / 640, 600 / 360) * 1.4;
+    const farScale = Math.min(800 / 640, 600 / 360) * 2.1;
     expect(scene).toContain(`scale = Vector2(${farScale.toFixed(4)}, ${farScale.toFixed(4)})`);
     expect(scene).toContain('assets/backgrounds/biome_0/far.png');
     expect(scene).not.toContain('[node name="ParallaxBg"');
