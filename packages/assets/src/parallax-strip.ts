@@ -179,7 +179,7 @@ export function generateParallaxStrip(
         const md = (x - moonX) * (x - moonX) + (y - moonY) * (y - moonY);
         if (md < 36) setPx(rgba, width, x, y, 210, 220, 236, 255);
         // Distant irregular mass, not a repeating clerestory arcade (RearWall owns mid architecture).
-        const ridge = ridgeAt(x, width, seed + 71, height * 0.72, height * 0.12);
+        const ridge = ridgeAt(x, width, seed + 71, height * 0.88, height * 0.05);
         if (y > ridge) {
           const n = hash01(seed, x + y * 3);
           const depth = (y - ridge) / Math.max(1, height - ridge);

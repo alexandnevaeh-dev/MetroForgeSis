@@ -4,9 +4,10 @@
 **Seed:** 20260817  
 **Profile:** VISUAL_VERTICAL_SLICE  
 **Archetype:** SIDE_VIEW_METROIDVANIA  
-**Automated verdict:** AUTOMATED_VISUAL_PASS_HUMAN_REVIEW_REQUIRED
+**Automated verdict:** AUTOMATED_VISUAL_PASS_HUMAN_REVIEW_REQUIRED  
+**Human verdict:** HUMAN_REJECTED
 
-Human approval is not assigned automatically. Final human status is unset.
+Human rejection recorded 2026-08-16 (America/Chicago) after review of the VGF-2 stills. LARGE / RELEASE_CANDIDATE mass art stays blocked.
 
 ## Provider / model
 
@@ -113,6 +114,14 @@ Repo copies (this folder):
 
 ## Human review
 
-**Not approved.** A human must set `HUMAN_APPROVED` or `HUMAN_REJECTED` in Generation Studio Visual Review.
+**HUMAN_REJECTED** by the project owner after inspecting the recaptured stills.
 
-What to look at: player silhouette vs masonry, tile repetition, hanging mid columns vs far citadel plate, HUD contrast, prop placeholders.
+Reasons preserved:
+
+- `TILE_REPETITION_HIGH` — masonry platforms/walls still read as repeating grey cubes, not art-directed terrain.
+- Character identity is insufficient in gameplay: player/enemies are small or placeholder-like versus the far plate; identity packs did not produce a readable in-world silhouette.
+- Props remain neon/blockout blobs.
+- HUD is raw text and a red bar, not production UI.
+- 0 production-ready assets / 90 placeholders — slice is not commercially believable art direction.
+
+`visual_review.json` status: `VISUAL_SLICE_REJECTED`. Global gate: `.metroforge/visual-slice-approval.json` (`visualSliceApproved: false`).

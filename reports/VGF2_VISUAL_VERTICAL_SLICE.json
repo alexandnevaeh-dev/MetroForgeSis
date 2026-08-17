@@ -3,8 +3,17 @@
   "seed": 20260817,
   "profile": "VISUAL_VERTICAL_SLICE",
   "archetype": "SIDE_VIEW_METROIDVANIA",
-  "verdict": "AUTOMATED_VISUAL_PASS_HUMAN_REVIEW_REQUIRED",
-  "humanApproval": "Only a human can set HUMAN_APPROVED or HUMAN_REJECTED.",
+  "verdict": "HUMAN_REJECTED",
+  "automatedVerdict": "AUTOMATED_VISUAL_PASS_HUMAN_REVIEW_REQUIRED",
+  "humanApproval": "HUMAN_REJECTED",
+  "rejectedAt": "2026-08-17T02:16:18.356Z",
+  "rejectionReasons": [
+    "TILE_REPETITION_HIGH: masonry platforms/walls still read as repeating grey cubes, not art-directed terrain",
+    "Character identity is insufficient in gameplay: player/enemies are small or placeholder-like versus the far plate",
+    "Props remain neon/blockout blobs",
+    "HUD is raw text and a red bar, not production UI",
+    "0 production-ready assets / 90 placeholders — slice is not commercially believable art direction"
+  ],
   "providerSummary": {
     "mode": "NVIDIA_ONLY",
     "nvidiaImage": "black-forest-labs/flux.1-dev",

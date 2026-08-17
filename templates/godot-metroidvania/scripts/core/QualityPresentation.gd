@@ -36,6 +36,7 @@ func apply_room(room: Node2D, room_id: String) -> void:
 	_hide_collision_slabs(room)
 	_tune_parallax(room, size)
 	_inject_depth_layers(room, size, biome)
+	_inject_atmosphere_layers(room, size, biome)
 	_inject_lights(room, size, biome, archetype)
 	_inject_ambient(room, size, biome, room_id)
 	_inject_decor(room, size, biome, archetype, info)
@@ -47,9 +48,7 @@ func apply_room(room: Node2D, room_id: String) -> void:
 		if cm:
 			# Tiled citadel interiors are already dark teal; extra dimming turns masonry into mud.
 			if room.get_node_or_null("Ground") != null:
-				# Dim the plate so key/fill/sun actually read as lighting, not flat teal.
-				# Pure white modulate made PointLights invisible against masonry.
-				cm.color = Color(0.78, 0.82, 0.88, 1)
+				cm.color = Color(0.86, 0.90, 0.96, 1)
 			else:
 				cm.color = _modulate_for_biome(biome)
 
@@ -178,6 +177,10 @@ func _layout_parallax_strip(sprite: Sprite2D, size: Vector2, kind: String) -> vo
 		s = maxf(size.x / tw, size.y / th) * 2.1
 		sprite.scale = Vector2(s, s)
 		sprite.position = size * 0.5
+	elif kind == "mid_full" or kind == "near_full":
+		s = maxf(size.x / tw, size.y / th)
+		sprite.scale = Vector2(s, s)
+		sprite.position = size * 0.5
 	else:
 		s = size.x / tw
 		sprite.scale = Vector2(s, s)
@@ -290,6 +293,36 @@ func _inject_depth_layers(room: Node, size: Vector2, biome: String) -> void:
 	floor_wash.mouse_filter = mouse
 	host.add_child(floor_wash)
 
+func _inject_atmosphere_layers(room: Node, size: Vector2, biome: String) -> void:
+	var host := _host(room)
+	var mid_node := room.get_node_or_null("ParallaxMid")
+	if mid_node:
+		(mid_node as CanvasItem).visible = true
+		var mid_sprite := mid_node.get_node_or_null("Sprite") as Sprite2D
+		if mid_sprite:
+			_layout_parallax_strip(mid_sprite, size, "mid_full")
+	else:
+		var mid_path := "res://assets/backgrounds/%s/mid.png" % biome
+		if ResourceLoader.exists(mid_path) and host.get_node_or_null("QualityMidSprite") == null:
+			_inject_parallax_sprite(host, "QualityMidSprite", mid_path, size * 0.5, -40)
+			var created := host.get_node_or_null("QualityMidSprite") as Sprite2D
+			if created:
+				_layout_parallax_strip(created, size, "mid_full")
+	var near_node := room.get_node_or_null("ParallaxNear")
+	if near_node:
+		(near_node as CanvasItem).visible = true
+		var near_sprite := near_node.get_node_or_null("Sprite") as Sprite2D
+		if near_sprite:
+			_layout_parallax_strip(near_sprite, size, "near_full")
+	else:
+		var near_path := "res://assets/backgrounds/%s/near.png" % biome
+		if ResourceLoader.exists(near_path) and host.get_node_or_null("QualityNearSprite") == null:
+			_inject_parallax_sprite(host, "QualityNearSprite", near_path, size * 0.5, -18)
+			var created_near := host.get_node_or_null("QualityNearSprite") as Sprite2D
+			if created_near:
+				_layout_parallax_strip(created_near, size, "near_full")
+
+
 func _inject_lights(room: Node, size: Vector2, _biome: String, _archetype: String) -> void:
 	var host := _host(room)
 	var tex := _light_texture()
@@ -299,28 +332,28 @@ func _inject_lights(room: Node, size: Vector2, _biome: String, _archetype: Strin
 	key.position = Vector2(size.x * 0.22, size.y * 0.26)
 	key.texture = tex
 	key.color = Color(0.72, 0.86, 1.0, 1)
-	key.energy = 1.55 if tiled else 0.4
-	key.texture_scale = 2.15 if tiled else 1.35
+	key.energy = 0.72 if tiled else 0.4
+	key.texture_scale = 1.55 if tiled else 1.35
 	key.z_index = 5
-	key.shadow_enabled = tiled
+	key.shadow_enabled = false
 	host.add_child(key)
 	var fill := PointLight2D.new()
 	fill.name = "QualityLightFill"
 	fill.position = Vector2(size.x * 0.62, size.y * 0.74)
 	fill.texture = tex
 	fill.color = Color(1.0, 0.82, 0.62, 1)
-	fill.energy = 0.95 if tiled else 0.22
-	fill.texture_scale = 1.85 if tiled else 1.05
+	fill.energy = 0.42 if tiled else 0.22
+	fill.texture_scale = 1.35 if tiled else 1.05
 	fill.z_index = 5
-	fill.shadow_enabled = tiled
+	fill.shadow_enabled = false
 	host.add_child(fill)
 	if tiled:
 		var sun := DirectionalLight2D.new()
 		sun.name = "QualitySun"
 		sun.rotation = deg_to_rad(-42.0)
 		sun.color = Color(0.80, 0.90, 1.0, 1)
-		sun.energy = 0.78
-		sun.shadow_enabled = true
+		sun.energy = 0.32
+		sun.shadow_enabled = false
 		sun.height = 24.0
 		host.add_child(sun)
 		_attach_floor_occluder(room, size)
@@ -337,7 +370,7 @@ func _enable_terrain_lighting(room: Node) -> void:
 			continue
 		layer.light_mask = 1
 		if node_name == "Ground":
-			layer.modulate = Color(1.0, 0.94, 0.88, 1)
+			layer.modulate = Color(0.86, 0.94, 0.98, 1)
 
 
 func _attach_floor_occluder(room: Node, size: Vector2) -> void:
