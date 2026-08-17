@@ -200,6 +200,10 @@ describe('NvidiaProvider — routing constraints', () => {
   it('is included as a candidate under FREE_ONLY (its costClass is free)', () => {
     const registry = new ProviderRegistry();
     const provider = new NvidiaProvider({ apiKey: FAKE_KEY, baseUrl: 'https://x', defaultModel: 'm', enabled: true });
+    // Live routing only considers providers that have passed a health check (default health is
+    // 'unavailable' until checkHealth runs). Mark it healthy so this test exercises the
+    // costClass/freeOnly filter — the thing under test — rather than the health precondition.
+    provider.health = 'healthy';
     registry.register(provider);
     const router = new CapabilityRouter(registry, new ModelRegistry());
 

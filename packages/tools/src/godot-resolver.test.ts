@@ -50,24 +50,40 @@ describe('resolveGodotExecutableCanonical precedence', () => {
     const known = join(dir, 'known-godot.exe');
     writeFileSync(env, '');
     writeFileSync(known, '');
-    const byEnv = resolveGodotExecutableCanonical({
-      preference: null,
-      envPath: env,
-      probeVersion: false,
-      extraKnownPaths: [known],
-    });
-    expect(byEnv.source).toBe('env');
-    expect(byEnv.path).toBe(env);
+    // Isolate from an ambient GODOT_EXECUTABLE (the resolver reads it as a fallback when envPath
+    // is null) so this precedence test is hermetic regardless of the host's Godot configuration.
+    const savedEnv = process.env.GODOT_EXECUTABLE;
+    delete process.env.GODOT_EXECUTABLE;
+    try {
+      const byEnv = resolveGodotExecutableCanonical({
+        preference: null,
+        envPath: env,
+        probeVersion: false,
+        extraKnownPaths: [known],
+      });
+      expect(byEnv.source).toBe('env');
+      expect(byEnv.path).toBe(env);
 
-    const byKnown = resolveGodotExecutableCanonical({
-      preference: null,
-      envPath: null,
-      probeVersion: false,
-      extraKnownPaths: [known],
-    });
-    expect(byKnown.source).toBe('known_path');
-    expect(byKnown.path).toBe(known);
-    rmSync(dir, { recursive: true, force: true });
+      const byKnown = resolveGodotExecutableCanonical({
+        preference: null,
+        envPath: null,
+        probeVersion: false,
+        extraKnownPaths: [known],
+      });
+      // Documented precedence is env → PATH → known_path. On a host with a real Godot installed
+      // (common for a Godot generator's CI, e.g. /usr/local/bin/godot), the PATH hit legitimately
+      // outranks the known_path fallback — assert the known_path branch only when PATH has no Godot,
+      // mirroring the guard in the 'returns none' test below.
+      if (byKnown.source === 'known_path') {
+        expect(byKnown.path).toBe(known);
+      } else {
+        expect(byKnown.source).toBe('path');
+      }
+    } finally {
+      if (savedEnv === undefined) delete process.env.GODOT_EXECUTABLE;
+      else process.env.GODOT_EXECUTABLE = savedEnv;
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it('returns none when nothing resolves', () => {

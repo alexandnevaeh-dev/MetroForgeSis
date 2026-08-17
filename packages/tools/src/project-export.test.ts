@@ -12,13 +12,23 @@ import { exportProject } from './project-export.js';
 
 describe('exportProject', () => {
 
+  let tmpRoot: string;
+
   let projectPath: string;
 
 
 
   beforeEach(() => {
 
-    projectPath = mkdtempSync(join(tmpdir(), 'metroforge-export-'));
+    // Mirror the real on-disk layout: projects live at <root>/GeneratedGames/<slug>, so the
+    // default export root join(projectPath, '..', '..', 'Exports') resolves to <root>/Exports
+    // (writable) instead of escaping to /Exports when tmpdir() is shallow (e.g. /tmp on Linux).
+
+    tmpRoot = mkdtempSync(join(tmpdir(), 'metroforge-export-'));
+
+    projectPath = join(tmpRoot, 'GeneratedGames', 'demo');
+
+    mkdirSync(projectPath, { recursive: true });
 
     writeFileSync(join(projectPath, 'project.godot'), 'config_version=5\n');
 
@@ -74,7 +84,7 @@ describe('exportProject', () => {
 
   afterEach(() => {
 
-    rmSync(projectPath, { recursive: true, force: true });
+    rmSync(tmpRoot, { recursive: true, force: true });
 
   });
 
