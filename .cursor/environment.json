@@ -1,0 +1,4 @@
+{
+  "name": "MetroForge AI",
+  "install": "bash .cursor/install.sh"
+}
