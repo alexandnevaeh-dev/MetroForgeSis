@@ -65,6 +65,18 @@ describe('archetype geometry is distinct', () => {
     expect(cM.platformCount).toBeGreaterThanOrEqual(2);
     expect(vM.uniquePlatformHeights).toBeGreaterThanOrEqual(2);
     expect(sM.uniquePlatformHeights).toBeGreaterThanOrEqual(2);
+    const gate = buildRoomTileCells({
+      ...input,
+      height: 780,
+      archetype: 'ability_gate',
+      connections: [
+        { direction: 'left', requirements: ['dash'] },
+        { direction: 'right', requirements: [] },
+      ],
+      availableAbilities: ['dash'],
+    });
+    expect(gate.pits).toHaveLength(0);
+    expect(measureRoomLayout({ ...input, height: 780, layout: gate }).uniquePlatformHeights).toBeGreaterThanOrEqual(2);
   });
 
   it('puzzle rooms create multiple elevations', () => {

@@ -37,6 +37,7 @@ func _build_tilemap() -> void:
 	# the default packs the whole layout into a postage stamp in the camera corner.
 	tile_set.tile_size = Vector2i(tile_size, tile_size)
 	tile_set.add_source(atlas, 0)
+	_configure_terrain_set(tile_set, atlas, cols, rows)
 	self.tile_set = tile_set
 	self.texture_filter = TEXTURE_FILTER_NEAREST
 
@@ -45,7 +46,8 @@ func _build_tilemap() -> void:
 		if parsed is Array:
 			for cell in parsed:
 				if cell is Array and cell.size() >= 4:
-					set_cell(Vector2i(int(cell[0]), int(cell[1])), 0, Vector2i(int(cell[2]), int(cell[3])))
+					var atlas_coords := _variant_coords(int(cell[0]), int(cell[1]), Vector2i(int(cell[2]), int(cell[3])))
+					set_cell(Vector2i(int(cell[0]), int(cell[1])), 0, atlas_coords)
 			_paint_visual_mass()
 			call_deferred("_paint_rear_wall")
 			return
@@ -61,6 +63,38 @@ func _build_tilemap() -> void:
 		set_cell(Vector2i(int(room_width / tile_size) - 1, y), 0, wall_tile)
 	_paint_visual_mass()
 	call_deferred("_paint_rear_wall")
+
+
+func _configure_terrain_set(tile_set: TileSet, atlas: TileSetAtlasSource, cols: int, rows: int) -> void:
+	tile_set.add_terrain_set()
+	tile_set.set_terrain_set_mode(0, TileSet.TERRAIN_MODE_MATCH_SIDES)
+	tile_set.add_terrain(0)
+	tile_set.set_terrain_name(0, 0, "masonry")
+	tile_set.add_terrain(0)
+	tile_set.set_terrain_name(0, 1, "platform")
+	for y in range(rows):
+		for x in range(cols):
+			var td := atlas.get_tile_data(Vector2i(x, y), 0)
+			if td == null:
+				continue
+			td.terrain_set = 0
+			td.terrain = 1 if (x == 3 and y == 0) or (x <= 1 and y == 2) else 0
+			td.set_terrain_peering_bit(TileSet.CELL_NEIGHBOR_RIGHT_SIDE, td.terrain)
+			td.set_terrain_peering_bit(TileSet.CELL_NEIGHBOR_LEFT_SIDE, td.terrain)
+			td.set_terrain_peering_bit(TileSet.CELL_NEIGHBOR_BOTTOM_SIDE, td.terrain)
+			td.set_terrain_peering_bit(TileSet.CELL_NEIGHBOR_TOP_SIDE, td.terrain)
+
+
+func _variant_coords(cell_x: int, cell_y: int, atlas_coords: Vector2i) -> Vector2i:
+	## Seeded wear/moss variants live on atlas rows 3–4. Keep the canonical tile most of the time
+	## so rooms do not checkerboard.
+	var h := hash("%s-%d-%d-%d-%d" % [biome_id, cell_x, cell_y, atlas_coords.x, atlas_coords.y])
+	var n := abs(h) % 100
+	if n > 88 and atlas_coords.y == 0 and atlas_coords.x <= 3:
+		return Vector2i(atlas_coords.x, 3)
+	if n > 70 and atlas_coords.y == 0 and atlas_coords.x <= 3:
+		return Vector2i(atlas_coords.x, 4)
+	return atlas_coords
 
 
 func _pit_columns() -> Array:
@@ -122,15 +156,15 @@ func _paint_visual_mass() -> void:
 ## Architecture behind the player on a sibling layer. Four silhouettes so rooms
 ## are not copies of the same arcade: night apse, solid gallery, colonnade, ruin.
 ## Playable air on Ground stays empty. Window/sky openings on RearWall stay empty.
-## Cover-zoom on 4:3 rooms crops the authored ceiling, so the lintel is placed on the first
-## on-screen row rather than world row 1.
+## Camera contain-framing shows the authored ceiling. Do not drop a masonry lintel
+## onto the 16:9 crop row — that turned every room into a window-box.
 func _paint_rear_wall() -> void:
 	var rear := _ensure_rear_layer()
 	var cols := int(room_width / float(tile_size))
 	var floor_row := int((room_height - tile_size * 2) / float(tile_size))
 	var wall := Vector2i(1, 0)
 	var ceiling := Vector2i(2, 0)
-	var crop_rows := maxi(0, int((float(room_height) - float(room_width) * 9.0 / 16.0) / float(tile_size)))
+	var crop_rows := 1
 	var rng := _arch_rng()
 	var variant := rng.randi() % 4
 	# Archetype chooses the silhouette family so traversal/combat/boss/NPC cannot
@@ -193,10 +227,10 @@ func _paint_night_apse(
 	wall: Vector2i,
 	ceiling: Vector2i,
 ) -> void:
-	## Two side masses + one tall night opening. Not a repeating arcade.
+	## Thin side piers + open night vault. No spanning lintel/dado — those read as a window-box.
 	rear.modulate = Color(0.84, 0.90, 0.94, 1)
 	var lintel := maxi(1, crop_rows)
-	var mass_w := maxi(3, int(cols / 5.0))
+	var mass_w := 2
 	for x in range(1, 1 + mass_w):
 		_rear_cell(rear, x, lintel, ceiling)
 		for y in range(lintel + 1, floor_row):
@@ -205,13 +239,6 @@ func _paint_night_apse(
 		_rear_cell(rear, x, lintel, ceiling)
 		for y in range(lintel + 1, floor_row):
 			_rear_cell(rear, x, y, wall)
-	for x in range(1 + mass_w, cols - 1 - mass_w):
-		_rear_cell(rear, x, lintel, ceiling)
-		if floor_row - 1 > lintel:
-			_rear_cell(rear, x, floor_row - 1, wall)
-	if 1 + mass_w + 2 < cols - 1 - mass_w:
-		_rear_cell(rear, 1 + mass_w, lintel + 1, ceiling)
-		_rear_cell(rear, cols - 2 - mass_w, lintel + 1, ceiling)
 
 
 func _paint_gallery_wall(
@@ -261,7 +288,7 @@ func _paint_colonnade(
 			_rear_cell(rear, x + px, lintel, ceiling)
 			for y in range(lintel + 1, floor_row):
 				_rear_cell(rear, x + px, y, wall)
-		x += 8
+		x += 11
 
 
 func _paint_ruin_mass(

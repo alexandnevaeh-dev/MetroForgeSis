@@ -47,6 +47,7 @@ export interface RoomAssemblyOptions {
   /** Real gaps carved into the main floor collider (see buildFloorSection). */
   pits?: PitGap[];
   backgroundLayers?: { far?: string; mid?: string; near?: string; overlay?: string; foreground?: string };
+  propSprites?: string[];
   uniquenessSalt?: number;
 }
 
@@ -499,6 +500,9 @@ export function buildRoomAssemblyOptions(
       overlay: textureExists(overlay) ? overlay : undefined,
       foreground: textureExists(foreground) ? foreground : undefined,
     },
+    propSprites: Array.from({ length: 6 }, (_, i) => `assets/props/biome_${biomeIndex}/biome_${biomeIndex}_prop_${i}.png`).filter(
+      (p) => textureExists(p),
+    ),
   };
 }
 
@@ -843,8 +847,8 @@ export function generateRoomScene(roomId: string, _index: number, options: RoomA
   );
   const platformSection = buildPlatformColliders(realPlatforms);
   const layers = options.backgroundLayers ?? {};
-  // Far is a viewport-filling CanvasLayer plate. Mid/near Parallax2D strips stack
-  // as extra hill silhouettes and slide off-camera, leaking the clear color.
+  // Far is an opaque room-space plate so clear color cannot leak. Mid/near are true
+  // Parallax2D layers with distinct scroll scales and transparent air.
   const farPath = layers.far;
   let loadSteps = 6 + floorSection.extraSubResources + realPlatforms.length;
   if (weakFloors.length > 0) loadSteps += 1;
@@ -857,6 +861,10 @@ export function generateRoomScene(roomId: string, _index: number, options: RoomA
   if (options.hasItemPickup) loadSteps += 1;
   if (options.abilityPickups.length > 0) loadSteps += options.abilityPickups.length;
   if (farPath) loadSteps += 1;
+  if (layers.mid) loadSteps += 1;
+  if (layers.near) loadSteps += 1;
+  const propSprites = options.propSprites ?? [];
+  if (propSprites.length > 0) loadSteps += propSprites.length;
 
   let scene = `[gd_scene load_steps=${loadSteps} format=3]
 
@@ -903,6 +911,18 @@ export function generateRoomScene(roomId: string, _index: number, options: RoomA
     scene += `[ext_resource type="Texture2D" path="res://${farPath}" id="21_bg_far"]
 `;
   }
+  if (layers.mid) {
+    scene += `[ext_resource type="Texture2D" path="res://${layers.mid}" id="22_bg_mid"]
+`;
+  }
+  if (layers.near) {
+    scene += `[ext_resource type="Texture2D" path="res://${layers.near}" id="23_bg_near"]
+`;
+  }
+  propSprites.forEach((rel, i) => {
+    scene += `[ext_resource type="Texture2D" path="res://${rel}" id="30_prop_${i}"]
+`;
+  });
 
   scene += `
 ${floorSection.subResources}${platformSection.subResources}
@@ -970,6 +990,51 @@ scale = Vector2(${farScale.toFixed(4)}, ${farScale.toFixed(4)})
 
 `;
   }
+  if (layers.mid) {
+    scene += `[node name="ParallaxMid" type="Parallax2D" parent="."]
+z_index = -40
+z_as_relative = false
+scroll_scale = Vector2(0.3, 0.12)
+repeat_size = Vector2(640, 0)
+repeat_times = 4
+
+[node name="Sprite" type="Sprite2D" parent="ParallaxMid"]
+texture_filter = 0
+texture = ExtResource("22_bg_mid")
+centered = true
+position = Vector2(320, ${Math.round(options.height * 0.72)})
+
+`;
+  }
+  if (layers.near) {
+    scene += `[node name="ParallaxNear" type="Parallax2D" parent="."]
+z_index = -20
+z_as_relative = false
+scroll_scale = Vector2(0.65, 0.2)
+repeat_size = Vector2(640, 0)
+repeat_times = 4
+
+[node name="Sprite" type="Sprite2D" parent="ParallaxNear"]
+texture_filter = 0
+texture = ExtResource("23_bg_near")
+centered = true
+position = Vector2(320, ${Math.round(options.height * 0.82)})
+
+`;
+  }
+  propSprites.forEach((rel, i) => {
+    const x = Math.round(options.width * (0.22 + (i % 4) * 0.18));
+    const y = floorTop - 8;
+    scene += `[node name="EnvProp_${i}" type="Sprite2D" parent="."]
+z_index = 3
+texture_filter = 0
+position = Vector2(${x}, ${y})
+texture = ExtResource("30_prop_${i}")
+centered = true
+
+`;
+    void rel;
+  });
 
   scene += floorSection.nodes;
   scene += platformSection.nodes;

@@ -13,4 +13,4 @@ export { measureRoomLayout, layoutsTooSimilar, roomSetHasExcessDuplicates } from
 export type { RoomLayoutMetrics } from './room-variety.js';
 export { composeEnvironment, biomeCompositionRule } from './environment-composition.js';
 export type { EnvironmentCompositionSpec, CompositionLayer } from './environment-composition.js';
-export { writePixelArtImport, pixelArtImportFile } from './godot-import.js';
+export { compileGodotTerrainSet } from './terrain-set.js';

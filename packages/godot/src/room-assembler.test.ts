@@ -420,8 +420,10 @@ describe('generateRoomScene combat sprites', () => {
     expect(scene).toContain('assets/backgrounds/biome_0/far.png');
     expect(scene).not.toContain('[node name="ParallaxBg"');
     expect(scene).not.toContain('[node name="far" type="Parallax2D"');
-    expect(scene).not.toContain('[node name="mid" type="Parallax2D"');
-    expect(scene).not.toContain('[node name="near" type="Parallax2D"');
+    expect(scene).toContain('[node name="ParallaxMid" type="Parallax2D"');
+    expect(scene).toContain('[node name="ParallaxNear" type="Parallax2D"');
+    expect(scene).toContain('scroll_scale = Vector2(0.3, 0.12)');
+    expect(scene).toContain('scroll_scale = Vector2(0.65, 0.2)');
     expect(scene).not.toContain('overlay.png');
     expect(scene).not.toContain('foreground.png');
   });

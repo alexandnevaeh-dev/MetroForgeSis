@@ -370,7 +370,6 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
     const verticalAbility = [...required].find(
       (r) => r === 'double_jump' || r === 'air_dash' || r === 'grapple' || r === 'wall_jump' || r === 'wall_slide',
     );
-    const dashAbility = required.has('dash') || required.has('air_dash');
     const gx = rng.int(Math.floor(cols * 0.4), Math.floor(cols * 0.68));
     const approachCol = Math.max(2, Math.floor(cols * 0.18));
     const altarCol = Math.min(cols - 6, Math.max(approachCol + 6, Math.floor(cols * 0.52)));
@@ -394,26 +393,9 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
         cells.push(cell(gx, y, 'door'));
       }
     }
-    if (
-      dashAbility &&
-      hasHorizontalReachAbility &&
-      !hasWeakFloorGap &&
-      archetype === 'ability_gate'
-    ) {
-      const pitWidthTiles = Math.max(2, Math.min(3, maxPitWidthTiles));
-      const pitCol = Math.max(marginTiles, Math.min(cols - marginTiles - pitWidthTiles, altarCol - pitWidthTiles - 1));
-      if (pitCol > 1 && pitCol + pitWidthTiles < cols - 1) {
-        for (let x = pitCol; x < pitCol + pitWidthTiles; x++) {
-          for (let i = cells.length - 1; i >= 0; i--) {
-            const c = cells[i]!;
-            if (c.x === x && (c.y === floorRow || c.y === floorRow + 1 || c.y === floorRow + 2 || c.y === floorRow + 3)) {
-              cells.splice(i, 1);
-            }
-          }
-        }
-        pits.push({ x: pitCol * tileSize, width: pitWidthTiles * tileSize });
-      }
-    }
+    // Ability-gate requirements live on RoomTransition. Carving a floor pit here severs the
+    // walk corridor after dash is already granted (room_006 → room_007) and the playtest
+    // bot cannot dash — it times out / never fires the right-hand door.
   }
 
   if (archetype === 'arena' || archetype === 'boss' || archetype === 'miniboss') {

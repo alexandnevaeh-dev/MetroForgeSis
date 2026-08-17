@@ -175,7 +175,7 @@ func _layout_parallax_strip(sprite: Sprite2D, size: Vector2, kind: String) -> vo
 	var s: float
 	if kind == "far":
 		# One full back plate. Overscan so camera look-ahead does not flash the sky ColorRect.
-		s = maxf(size.x / tw, size.y / th) * 1.6
+		s = maxf(size.x / tw, size.y / th) * 2.1
 		sprite.scale = Vector2(s, s)
 		sprite.position = size * 0.5
 	else:
@@ -384,20 +384,19 @@ func _attach_actor_occluders(room: Node) -> void:
 		actor.add_child(occ)
 
 func _inject_ambient(room: Node, size: Vector2, biome: String, room_id: String) -> void:
-	## Dust quads sit on the actor and read as a leftover cluster. Tiled rooms
-	## already have window key / floor fill.
-	if room.get_node_or_null("Ground") != null:
-		return
 	var spec: Dictionary = _composition.get(room_id, {})
 	var biome_spec: Dictionary = spec.get("biome", {})
 	var kind := String(biome_spec.get("ambientVfx", "none"))
+	var tiled := room.get_node_or_null("Ground") != null
+	if tiled and (kind == "" or kind == "none"):
+		kind = "mist"
 	if kind == "" or kind == "none":
 		return
 	var host := _host(room)
 	var emitter := GPUParticles2D.new()
 	emitter.name = "QualityAmbient"
 	emitter.position = Vector2(size.x * 0.5, size.y * 0.35)
-	emitter.amount = 8
+	emitter.amount = 6 if tiled else 8
 	emitter.lifetime = 3.2
 	emitter.preprocess = 0.8
 	emitter.explosiveness = 0.0
