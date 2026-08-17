@@ -75,23 +75,24 @@ function paintMidArchitecture(
   seed: number,
   masonry: [number, number, number],
 ): void {
-  const cols = columnCenters(width, seed + 17, 4, Math.round(width * 0.08));
-  const colW = Math.max(6, Math.round(width * 0.028));
-  const capital = Math.round(height * 0.22);
-  const floor = Math.round(height * 0.92);
+  const count = 2 + (hash01(seed, 9) > 0.45 ? 1 : 0);
+  const cols = columnCenters(width, seed + 17, count, Math.round(width * 0.1));
+  const colW = Math.max(5, Math.round(width * 0.022));
   let hit = false;
-  for (const cx of cols) {
+  for (let ci = 0; ci < cols.length; ci++) {
+    const cx = cols[ci]!;
+    const capital = Math.round(height * (0.28 + hash01(seed, 40 + ci) * 0.22));
+    const floor = Math.round(height * (0.78 + hash01(seed, 60 + ci) * 0.16));
     if (Math.abs(x - cx) <= colW && y >= capital && y <= floor) hit = true;
-    if (Math.abs(x - cx) <= colW + 3 && y >= capital - 6 && y <= capital + 4) hit = true;
-  }
-  for (let i = 0; i < cols.length - 1; i++) {
-    const a = cols[i]!;
-    const b = cols[i + 1]!;
-    const midX = (a + b) / 2;
-    const archR = (b - a) / 2;
-    const archY = capital + 8;
-    const dist = Math.hypot(x - midX, y - archY);
-    if (y >= archY && y < archY + 10 && dist < archR && dist > archR - 5) hit = true;
+    if (Math.abs(x - cx) <= colW + 2 && y >= capital - 5 && y <= capital + 3) hit = true;
+    if (ci > 0 && hash01(seed, 90 + ci) > 0.35) {
+      const a = cols[ci - 1]!;
+      const midX = (a + cx) / 2;
+      const archR = Math.abs(cx - a) / 2;
+      const archY = capital + 6;
+      const dist = Math.hypot(x - midX, y - archY);
+      if (y >= archY && y < archY + 8 && dist < archR && dist > archR - 4) hit = true;
+    }
   }
   if (!hit) {
     setPx(rgba, width, x, y, 0, 0, 0, 0);

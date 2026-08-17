@@ -116,10 +116,9 @@ function ensureLuma(rgb: [number, number, number], minL: number, maxL: number): 
 }
 
 function asMasonry(rgb: [number, number, number]): [number, number, number] {
-  // Drowned-citadel wet stone: teal-slate, not dry graybox and not the night-sky plate.
-  // Lift into a readable band so masonry sits lighter than #284878 and stays cooler than grass.
-  const wet: [number, number, number] = [64, 92, 90];
-  return ensureLuma(mixRgb(rgb, wet, 0.72), 74, 98);
+  // Drowned-citadel wet stone: teal-slate with enough chroma to not read as greybox.
+  const wet: [number, number, number] = [42, 118, 124];
+  return ensureLuma(mixRgb(rgb, wet, 0.78), 68, 108);
 }
 
 function pickRoleFills(extracted: [number, number, number][], hex: [number, number, number][]): RoleFills {
