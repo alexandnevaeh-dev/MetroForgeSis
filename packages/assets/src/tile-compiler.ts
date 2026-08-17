@@ -136,7 +136,7 @@ function pickRoleFills(extracted: [number, number, number][], hex: [number, numb
     ground,
     ceiling,
     platform,
-    hazard: clampTerrainFill(extracted[3] ?? hex[3] ?? [200, 80, 80]),
+    hazard: ensureLuma(mixRgb(wall, [88, 58, 52], 0.2), 58, 96),
     door: clampTerrainFill(extracted.find((c) => c[2] > c[0]) ?? hex[2] ?? [90, 140, 220]),
     accent: clampTerrainFill(extracted[2] ?? hex[2] ?? [90, 140, 220]),
     mortar: shade(wall, 0.32),

@@ -80,9 +80,9 @@ function paintMidArchitecture(
   let hit = false;
   for (let ci = 0; ci < cols.length; ci++) {
     const cx = cols[ci]!;
-    const colW = Math.max(4, Math.round(width * (0.014 + hash01(seed, 21 + ci) * 0.012)));
-    const capital = Math.round(height * (0.42 + hash01(seed, 40 + ci) * 0.18));
-    const floor = Math.round(height * (0.68 + hash01(seed, 60 + ci) * 0.1));
+    const colW = Math.max(5, Math.round(width * (0.02 + hash01(seed, 21 + ci) * 0.014)));
+    const capital = Math.round(height * (0.36 + hash01(seed, 40 + ci) * 0.14));
+    const floor = Math.round(height * (0.72 + hash01(seed, 60 + ci) * 0.08));
     if (Math.abs(x - cx) <= colW && y >= capital && y <= floor) hit = true;
     if (Math.abs(x - cx) <= colW + 2 && y >= capital - 4 && y <= capital + 2) hit = true;
     if (ci > 0 && hash01(seed, 90 + ci) > 0.35) {
