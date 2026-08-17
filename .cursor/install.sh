@@ -33,3 +33,20 @@ else
   rm -rf "${tmp}"
   echo "Godot installed: $(${GODOT_BIN} --version --headless 2>/dev/null | tail -1 || echo 'installed')"
 fi
+
+# 3. Pillow + a `python` alias for python3. The NVIDIA image API returns JPEG; MetroForge converts
+#    JPEG -> PNG for the pixel-art pipeline via a Python/Pillow subprocess that invokes `python`
+#    (see packages/assets/src/providers/nvidia-image.ts). Without these, every NVIDIA image falls
+#    back to a procedural placeholder. Best-effort and non-fatal so the bootstrap never fails here.
+if ! command -v python >/dev/null 2>&1 || ! python -c 'import PIL' >/dev/null 2>&1; then
+  echo "Installing Pillow / python-is-python3 (best-effort) ..."
+  if command -v sudo >/dev/null 2>&1 && command -v apt-get >/dev/null 2>&1; then
+    sudo apt-get update -qq || true
+    sudo apt-get install -y -qq python3-pil python-is-python3 || true
+  fi
+  if command -v python >/dev/null 2>&1 && python -c 'import PIL' >/dev/null 2>&1; then
+    echo "Pillow available for python."
+  else
+    echo "WARN: python+Pillow unavailable — NVIDIA image JPEG->PNG conversion will fall back to procedural art."
+  fi
+fi
