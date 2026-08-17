@@ -36,12 +36,16 @@ export function generatePropSprite(opts: {
       } else if (opts.family.includes('chain') || opts.family.includes('vine')) {
         inside = Math.abs(nx - 0.5) < 0.12 && ny > 0.05;
       } else {
-        inside = ny > 0.35 + h(x) * 0.15 && nx > 0.15 && nx < 0.85;
+        inside = ny > 0.45 + h(x) * 0.12 && nx > 0.22 && nx < 0.78 && ny < 0.98;
       }
       if (!inside) continue;
-      const useAccent = h(x * 7 + y * 13) > 0.72;
+      const useAccent = h(x * 7 + y * 13) > 0.88;
       const i = (y * width + x) * 4;
-      const rgb = useAccent ? accent : fill;
+      const grass = fill[1] > fill[0] + 20 && fill[1] > fill[2] + 10;
+      const gold = fill[0] > 140 && fill[1] > 100 && fill[2] < 90;
+      const masonry: [number, number, number] = grass || gold ? [58, 72, 78] : fill;
+      const trim: [number, number, number] = grass || gold ? [168, 142, 88] : accent;
+      const rgb = useAccent ? trim : masonry;
       rgba[i] = rgb[0];
       rgba[i + 1] = rgb[1];
       rgba[i + 2] = rgb[2];
