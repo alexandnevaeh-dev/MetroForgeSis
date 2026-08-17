@@ -190,6 +190,26 @@ describe('TileCompiler', () => {
     expect(wb - wg).toBeLessThan(18);
   });
 
+  it('does not paint hazard as construction-tape candy stripe', () => {
+    const compiled = new TileCompiler().compile({
+      tileSize: 32,
+      paletteHex: ['#141820', '#3c4454', '#5a8cdc', '#c84848'],
+    });
+    const hazard = compiled.tiles.get('tile_3_2')!;
+    const { rgba, width, height } = decodePngRgba(hazard);
+    let candy = 0;
+    let n = 0;
+    for (let y = 1; y < height - 1; y++) {
+      for (let x = 1; x < width - 1; x++) {
+        const i = (y * width + x) * 4;
+        if (rgba[i + 3]! < 16) continue;
+        n++;
+        if (rgba[i]! > 160 && rgba[i + 1]! < 90 && rgba[i + 2]! < 80) candy++;
+      }
+    }
+    expect(candy / Math.max(n, 1)).toBeLessThan(0.08);
+  });
+
   it('keeps every role at its documented atlas (col,row) — tile-layout.ts/room-assembler.ts depend on this exact mapping', () => {
     expect(TILE_ATLAS.roles.ground).toEqual({ col: 0, row: 0 });
     expect(TILE_ATLAS.roles.wall).toEqual({ col: 1, row: 0 });

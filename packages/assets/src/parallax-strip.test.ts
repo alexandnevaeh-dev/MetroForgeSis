@@ -94,4 +94,32 @@ describe('parallax strips', () => {
     expect(farPlateLooksLikeOutdoorLandscape(encodePng(w, h, pine))).toBe(true);
     expect(farPlateLooksLikeOutdoorLandscape(generateParallaxStrip('far', 7, w, h))).toBe(false);
   });
+
+  it('rejects moon-window-on-water far plates as outdoor landscape', () => {
+    const w = 80;
+    const h = 40;
+    const plate = new Uint8Array(w * h * 4);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        plate[i + 3] = 255;
+        const cx = x - w * 0.5;
+        const cy = y - h * 0.42;
+        if (cx * cx + cy * cy < 90) {
+          plate[i] = 220;
+          plate[i + 1] = 230;
+          plate[i + 2] = 240;
+        } else if (y > h * 0.55) {
+          plate[i] = 120;
+          plate[i + 1] = 170;
+          plate[i + 2] = 210;
+        } else {
+          plate[i] = 20;
+          plate[i + 1] = 30;
+          plate[i + 2] = 60;
+        }
+      }
+    }
+    expect(farPlateLooksLikeOutdoorLandscape(encodePng(w, h, plate))).toBe(true);
+  });
 });

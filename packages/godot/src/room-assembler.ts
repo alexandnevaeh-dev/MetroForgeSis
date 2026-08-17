@@ -983,7 +983,7 @@ color = Color(${shadow.toFixed(3)}, ${steel.toFixed(3)}, ${(0.16 + (options.biom
 `;
 
   if (farPath) {
-    const farScale = Math.max(options.width / 640, options.height / 360) * 1.4;
+    const farScale = Math.min(options.width / 640, options.height / 360) * 2.1;
     scene += `[node name="FarSky" type="Sprite2D" parent="."]
 z_index = -80
 z_as_relative = false
