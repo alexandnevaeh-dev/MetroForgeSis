@@ -216,10 +216,10 @@ func _wait_room(host: Node, room_id: String, timeout_sec: float) -> bool:
 	return GameManager.current_room_id == room_id
 
 func _transition_entry_point(transition: Node) -> Vector2:
-	# Walk to the lip of the Area2D, not its shape center. Parking deep inside
-	# the sensor tears the current room down mid-_walk_player_to (player freed)
-	# and looks like a walk_timeout on even the first corridor door.
-	return (transition as Node2D).global_position
+	# RoomTransition.tscn CollisionShape2D is offset (12, 40) from the node origin.
+	# Walking to the origin with a 12px arrive threshold stops short of a right-hand
+	# door (node at x=776, sensor starts at 776, arrive at 764). Walk into the sensor.
+	return (transition as Node2D).global_position + Vector2(12.0, 0.0)
 
 func _door_nudge(transition: Node) -> Vector2:
 	match String(transition.get("transition_direction")):
