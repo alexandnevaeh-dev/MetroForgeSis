@@ -4,6 +4,7 @@ import type { GameDNA, Room, WorldGraph } from '@metroforge/schemas';
 import type { GameContent } from '@metroforge/procedural';
 import { buildMovementJson, movementFeasibilityStats } from '@metroforge/shared';
 import { buildRoomTileCells, floorTopPx, type PlatformRect, type PitGap } from './tile-layout.js';
+import type { RoomBlueprint } from './composition/index.js';
 
 export interface RoomConnection {
   direction: 'left' | 'right' | 'up' | 'down';
@@ -49,6 +50,7 @@ export interface RoomAssemblyOptions {
   backgroundLayers?: { far?: string; mid?: string; near?: string; overlay?: string; foreground?: string };
   propSprites?: string[];
   uniquenessSalt?: number;
+  blueprint?: RoomBlueprint;
 }
 
 export interface TileCell {
@@ -75,6 +77,7 @@ export interface PublishedRoomRecord {
   weakFloors?: { x: number; width: number; targetRoomId: string }[];
   platforms?: PlatformRect[];
   pits?: PitGap[];
+  blueprint?: RoomBlueprint;
 }
 
 /**
@@ -493,6 +496,7 @@ export function buildRoomAssemblyOptions(
     tileCells: layout.cells,
     platforms: layout.platforms,
     pits: layout.pits,
+    blueprint: layout.blueprint,
     backgroundLayers: {
       far: textureExists(far) ? far : undefined,
       mid: textureExists(mid) ? mid : undefined,
@@ -545,6 +549,7 @@ export function buildPublishedRoomRecord(
     })),
     platforms: opts.platforms,
     pits: opts.pits,
+    blueprint: opts.blueprint,
   };
 }
 

@@ -63,7 +63,7 @@ theme_override_colors/font_color = Color(0.92, 0.93, 0.96, 1)
 theme_override_colors/font_shadow_color = Color(0.05, 0.06, 0.08, 0.85)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
-text = "Abilities: None"
+text = ""
 
 [node name="CurrencyLabel" type="Label" parent="GameHUD/HUD/MarginContainer/VBox"]
 layout_mode = 2

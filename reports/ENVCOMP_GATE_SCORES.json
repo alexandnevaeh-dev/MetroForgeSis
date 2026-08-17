@@ -1,0 +1,29 @@
+{
+  "project": "GeneratedGames/envcomp-citadel",
+  "seed": 20260817,
+  "profile": "TINY_TEST",
+  "mode": "LOCAL_ONLY",
+  "layoutPresentationScore": 92,
+  "layoutViolations": [],
+  "fullHeightWallFrame": false,
+  "floorMassRows": 2,
+  "bossArenaComposed": true,
+  "gates": {
+    "functionalQuality": 70,
+    "assetIntegrity": 100,
+    "visualCohesion": 82.5,
+    "roomComposition": 50,
+    "gameplayReadability": 82.7,
+    "presentationQuality": 70,
+    "overall": 50,
+    "showcaseReady": false
+  },
+  "notes": [
+    "Layout commercial checks pass (no cube-frame, no excessive identical-tile runs after variant cycling).",
+    "presentationQuality capped at 70 because no GPU gameplay screenshot exists for this project.",
+    "roomComposition is 50 because critiqueGameplayScreenshot has no capture (default critic 50).",
+    "overall is min(weighted, cohesion, composition, presentation) = 50. Not SHOWCASE_READY.",
+    "Godot runtime/import was skipped (sqlite lock on first generate; --skip-runtime-validation).",
+    "VISUAL_VERTICAL_SLICE NVIDIA regeneration was not completed in this pass."
+  ]
+}

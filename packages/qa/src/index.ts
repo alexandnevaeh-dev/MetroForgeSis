@@ -24,6 +24,15 @@ export type { VisualQaInputs, VisualQaResult } from './visual-quality.js';
 export { planVisualRepairs, applyVisualRepairs } from './visual-repair.js';
 export type { VisualRepairRecord } from './visual-repair.js';
 export { evaluateTerrainProject, evaluateParallaxProject } from './visual-gates.js';
+export {
+  aggregateIndependentGates,
+  evaluateCharacterScale,
+  evaluateProjectPresentation,
+  loadPublishedRooms,
+  detectDebugHud,
+  DEFAULT_CHARACTER_SCALE,
+} from './presentation-gates.js';
+export type { IndependentQualityGates, CharacterScaleProfile } from './presentation-gates.js';
 export { QualityRepairEngine } from './quality-repair-engine.js';
 export type {
   QualityReport,

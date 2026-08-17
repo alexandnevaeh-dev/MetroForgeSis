@@ -1,5 +1,6 @@
 import type { TileCell } from './room-assembler.js';
 import { SeededRNG, DEFAULT_MOVEMENT_STATS, type MovementStats } from '@metroforge/procedural';
+import { composePlayableVisuals, type RoomBlueprint } from './composition/index.js';
 
 /** Must match packages/assets/src/tile-compiler.ts TILE_ATLAS.roles */
 const ROLES = {
@@ -121,6 +122,8 @@ export interface RoomTileLayoutResult {
   cells: TileCell[];
   platforms: PlatformRect[];
   pits: PitGap[];
+  /** Visual composition metadata. Collision is platforms/pits, not this. */
+  blueprint?: RoomBlueprint;
 }
 
 /** Inclusive/exclusive row range a platform can occupy and still be a) reachable by a single jump
@@ -473,7 +476,22 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
     cells.push(cell(midCol + 2, platMaxRow - 1 > 1 ? platMaxRow - 1 : platMaxRow, 'hazard'));
   }
 
-  return { cells, platforms, pits };
+  const composed = composePlayableVisuals({
+    cells,
+    platforms,
+    pits: pits.map((p) => ({ x: p.x, y: 0, width: p.width, height: tileSize })),
+    cols,
+    rows,
+    floorRow,
+    tileSize,
+    width,
+    height,
+    archetype,
+    seed: (((input.seed ?? 1) + (input.uniquenessSalt ?? 0) * 9973) >>> 0) || 1,
+    connections,
+  });
+
+  return { cells: composed.cells, platforms, pits, blueprint: composed.blueprint };
 }
 
 /** Pixel Y of the walkable floor top (agrees with ground tile row). */

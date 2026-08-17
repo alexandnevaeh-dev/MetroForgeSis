@@ -9,6 +9,7 @@
     { "path": "../shared" },
     { "path": "../schemas" },
     { "path": "../procedural" },
-    { "path": "../assets" }
+    { "path": "../assets" },
+    { "path": "../godot" }
   ]
 }

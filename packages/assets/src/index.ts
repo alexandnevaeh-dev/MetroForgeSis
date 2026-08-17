@@ -85,6 +85,8 @@ export { critiqueAnimationSheet, critiqueTilesetSheet } from './animation-critic
 export type { AnimationKind, AnimationCritiqueOptions } from './animation-critic.js';
 export { critiqueGameplayScreenshot, critiqueScreenshotDiversity } from './scene-critic.js';
 export type { GameplayScreenshotCritique } from './scene-critic.js';
+export { evaluateSpriteDimensions, classifySpriteKind, SPRITE_SIZE_CLASSES, expectedGridSize } from './asset-normalizer.js';
+export type { SpriteSizeClass, NormalizationViolation } from './asset-normalizer.js';
 export { TileCompiler, TILE_ATLAS, tileRoleAt } from './tile-compiler.js';
 export type { CompiledTileset, TileRole } from './tile-compiler.js';
 export { pickTerrainVariant, variantAtlasForCell, TERRAIN_VARIANT_ROLES } from './tile-variants.js';

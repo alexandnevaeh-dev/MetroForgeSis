@@ -40,6 +40,7 @@ import {
   generateVisualDNA,
   generateAllBiomeVisualDNA,
   generateEnvironmentKit,
+  biomeKitFromEnvironment,
   generateMusicFromAudioBible,
   enhanceMusicWithStableAudio,
   generateTopDownWorld,
@@ -436,6 +437,14 @@ export class GenerationPipeline {
       generateEnvironmentKit({ visualDNA, biome, profile: options.profile, seed: options.seed }),
     );
     writeFileSync(join(visualDir, 'environment_kits.json'), JSON.stringify(environmentKits, null, 2));
+    writeFileSync(
+      join(visualDir, 'biome_kits.json'),
+      JSON.stringify(
+        environmentKits.map((kit) => biomeKitFromEnvironment(kit, visualDNA.palette.global ?? [])),
+        null,
+        2,
+      ),
+    );
     writeFileSync(
       join(visualDir, 'lighting.json'),
       JSON.stringify(
@@ -1348,6 +1357,7 @@ export class GenerationPipeline {
                 assetResult.assets.length
               : 1,
           wallpaperCapture: false,
+          functionalQuality: validationPassed ? 90 : 40,
         });
       let visualQa = scoreSlice();
       const repairLog: string[] = [];
@@ -1360,6 +1370,30 @@ export class GenerationPipeline {
         if (!applied.some((r) => r.applied)) break;
         visualQa = scoreSlice();
       }
+      mkdirSync(join(outputPath, 'reports'), { recursive: true });
+      writeFileSync(
+        join(outputPath, 'reports', 'visual-composition-telemetry.json'),
+        JSON.stringify(
+          {
+            slug,
+            repairPasses: repairLog.length,
+            gates: visualQa.gates,
+            scores: {
+              functionalQuality: visualQa.scores.functionalQuality,
+              assetIntegrity: visualQa.scores.assetIntegrity,
+              visualCohesion: visualQa.scores.visualCohesion,
+              roomComposition: visualQa.scores.roomComposition,
+              gameplayReadability: visualQa.scores.gameplayReadability,
+              presentationQuality: visualQa.scores.presentationQuality,
+              overall: visualQa.scores.overall,
+            },
+            violations: visualQa.gates.violations,
+            showcaseReady: visualQa.gates.showcaseReady,
+          },
+          null,
+          2,
+        ),
+      );
       writeVgf2VisualSliceReport({
         projectPath: outputPath,
         slug,

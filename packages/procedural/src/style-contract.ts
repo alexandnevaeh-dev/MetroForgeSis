@@ -3,9 +3,16 @@ import type { StyleBible } from '@metroforge/schemas';
 /** Machine-readable visual contract consumed by every image-generation prompt. */
 export interface VisualStyleContract {
   artStyle: string;
+  perspective: string;
   pixelDensity: number;
   targetResolution: { width: number; height: number };
+  referenceResolution: { width: number; height: number };
   palette: string[];
+  paletteRoles: {
+    primary: string[];
+    secondary: string[];
+    accent: string[];
+  };
   contrast: string;
   silhouetteRules: string;
   outlineRules: string;
@@ -18,6 +25,23 @@ export interface VisualStyleContract {
   enemyScale: string;
   propScale: string;
   uiVocabulary: string;
+  characterRules: {
+    outlineStrength: number;
+    contrast: number;
+    saturation: number;
+  };
+  environmentRules: {
+    textureDensity: number;
+    detailDensity: number;
+    silhouetteComplexity: number;
+  };
+  backgroundRules: {
+    contrastMultiplier: number;
+    saturationMultiplier: number;
+  };
+  uiRules: {
+    visualLanguage: string;
+  };
   promptFragment: string;
   negativeFragment: string;
 }
@@ -39,9 +63,16 @@ export function buildVisualStyleContract(styleBible: StyleBible | undefined): Vi
   const materials = styleBible?.materials ?? 'stone, metal, vegetation matching biome';
   const contract: VisualStyleContract = {
     artStyle,
+    perspective: 'side-view 2D',
     pixelDensity,
     targetResolution: target,
+    referenceResolution: target,
     palette,
+    paletteRoles: {
+      primary: palette.slice(0, 3),
+      secondary: palette.slice(3, 6),
+      accent: palette.slice(6, 9),
+    },
     contrast,
     silhouetteRules: 'readable silhouettes; player darker than far background; no camouflage',
     outlineRules: outline,
@@ -57,6 +88,10 @@ export function buildVisualStyleContract(styleBible: StyleBible | undefined): Vi
     enemyScale,
     propScale: 'props read as smaller than the player unless architectural',
     uiVocabulary: ui,
+    characterRules: { outlineStrength: 1, contrast: 0.7, saturation: 0.55 },
+    environmentRules: { textureDensity: 0.55, detailDensity: 0.5, silhouetteComplexity: 0.45 },
+    backgroundRules: { contrastMultiplier: 0.72, saturationMultiplier: 0.65 },
+    uiRules: { visualLanguage: ui },
     promptFragment: '',
     negativeFragment:
       'UI chrome, HUD, readable text, logos, watermarks, people, person, human figure, character silhouette, pine trees, conifer forest, mountain range, lake vista, outdoor landscape photography, alpine woodland, fjord shoreline, mismatched perspective, wrong biome palette',

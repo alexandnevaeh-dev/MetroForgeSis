@@ -132,7 +132,7 @@ func _paint_visual_mass() -> void:
 	var pits := _pit_columns()
 	var variant := _arch_variant()
 	# Floor mass is the room's silhouette against the camera crop, not a wallpaper.
-	var extra_earth := 1 if variant == 0 else (2 if variant == 1 else (1 if variant == 2 else 0))
+	var extra_earth := 0
 	if variant == 2:
 		ground = Vector2i(3, 0)
 		bottom_edge = Vector2i(4, 0)
@@ -171,7 +171,7 @@ func _paint_rear_wall() -> void:
 	# collapse to the same arcade. Hash variant only flavors leftover connectors.
 	match room_archetype:
 		"traversal", "challenge", "tutorial":
-			_paint_night_apse(rear, cols, floor_row, crop_rows, wall, ceiling)
+			_paint_colonnade(rear, cols, floor_row, crop_rows, wall, ceiling)
 		"combat", "arena", "miniboss":
 			_paint_colonnade(rear, cols, floor_row, crop_rows, wall, ceiling)
 		"boss":
@@ -179,17 +179,17 @@ func _paint_rear_wall() -> void:
 		"npc", "shop", "save":
 			_paint_colonnade(rear, cols, floor_row, crop_rows, wall, ceiling)
 		"ability_shrine", "ability_gate":
-			_paint_night_apse(rear, cols, floor_row, crop_rows, wall, ceiling)
+			_paint_colonnade(rear, cols, floor_row, crop_rows, wall, ceiling)
 		"secret", "treasure":
 			_paint_ruin_mass(rear, cols, floor_row, crop_rows, wall, ceiling, rng)
 		_:
 			match variant:
 				0:
-					_paint_night_apse(rear, cols, floor_row, crop_rows, wall, ceiling)
+					_paint_colonnade(rear, cols, floor_row, crop_rows, wall, ceiling)
 				1:
 					_paint_colonnade(rear, cols, floor_row, crop_rows, wall, ceiling)
 				2:
-					_paint_colonnade(rear, cols, floor_row, crop_rows, wall, ceiling)
+					_paint_ruin_mass(rear, cols, floor_row, crop_rows, wall, ceiling, rng)
 				_:
 					_paint_ruin_mass(rear, cols, floor_row, crop_rows, wall, ceiling, rng)
 
@@ -227,18 +227,13 @@ func _paint_night_apse(
 	wall: Vector2i,
 	ceiling: Vector2i,
 ) -> void:
-	## Thin side piers + open night vault. No spanning lintel/dado — those read as a window-box.
+	## Ground already has collision walls at col 0 / cols-1. Full-height rear piers next to
+	## those read as 3-tile towers that slice the hall into shafts. Keep the vault empty.
 	rear.modulate = Color(0.84, 0.90, 0.94, 1)
 	var lintel := maxi(1, crop_rows)
-	var mass_w := 2
-	for x in range(1, 1 + mass_w):
-		_rear_cell(rear, x, lintel, ceiling)
-		for y in range(lintel + 1, floor_row):
-			_rear_cell(rear, x, y, wall)
-	for x in range(cols - 1 - mass_w, cols - 1):
-		_rear_cell(rear, x, lintel, ceiling)
-		for y in range(lintel + 1, floor_row):
-			_rear_cell(rear, x, y, wall)
+	for x in range(2, cols - 2):
+		if x % 7 == 3:
+			_rear_cell(rear, x, lintel, ceiling if wall.x >= 0 else wall)
 
 
 func _paint_gallery_wall(
@@ -277,18 +272,16 @@ func _paint_colonnade(
 	wall: Vector2i,
 	ceiling: Vector2i,
 ) -> void:
-	## Isolated piers, no connecting lintel, no window frames. Sky is the wall.
+	## Short 1-tile pilasters from the floor, not ceiling-height towers.
 	rear.modulate = Color(0.90, 0.86, 0.80, 1)
 	var lintel := maxi(1, crop_rows)
-	var x := 2
-	while x < cols - 3:
-		for px in range(2):
-			if x + px >= cols - 1:
-				break
-			_rear_cell(rear, x + px, lintel, ceiling)
-			for y in range(lintel + 1, floor_row):
-				_rear_cell(rear, x + px, y, wall)
-		x += 11
+	var pier_h := maxi(3, int((floor_row - lintel) * 0.38))
+	var x := 6
+	while x < cols - 6:
+		for y in range(floor_row - pier_h, floor_row):
+			_rear_cell(rear, x, y, wall)
+		_rear_cell(rear, x, floor_row - pier_h, ceiling)
+		x += 10
 
 
 func _paint_ruin_mass(

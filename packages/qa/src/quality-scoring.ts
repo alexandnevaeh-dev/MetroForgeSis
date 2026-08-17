@@ -48,7 +48,8 @@ export function combineQualityScores(
   technical: number,
   presentation: number,
 ): QualityScorecard {
-  const qualityScore = clamp(technical * 0.45 + presentation * 0.55);
+  const weighted = clamp(technical * 0.45 + presentation * 0.55);
+  const qualityScore = clamp(Math.min(weighted, presentation));
   return {
     qualityScore: Math.round(qualityScore * 10) / 10,
     technicalScore: Math.round(technical * 10) / 10,

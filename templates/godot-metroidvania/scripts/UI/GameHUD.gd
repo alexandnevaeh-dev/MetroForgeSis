@@ -19,6 +19,7 @@ func _ready() -> void:
 		collectible_label.add_theme_color_override("font_color", Color(0.72, 0.82, 0.95))
 	_update_abilities()
 	_style_hud()
+	_apply_hud_mode()
 
 func _style_hud() -> void:
 	if health_bar:
@@ -66,19 +67,54 @@ func _update_abilities() -> void:
 	var abilities := ", ".join(raw)
 	ability_label.text = abilities if abilities else ""
 
+func _hud_mode() -> String:
+	var env := OS.get_environment("METROFORGE_HUD_MODE")
+	if env != "":
+		return env
+	if OS.get_environment("METROFORGE_CAPTURE") == "1":
+		return "QA_CAPTURE"
+	return "DEBUG"
+
+func _is_presentation_hud() -> bool:
+	var mode := _hud_mode()
+	return mode == "PLAYER" or mode == "RELEASE" or mode == "QA_CAPTURE"
+
+func _apply_hud_mode() -> void:
+	if not _is_presentation_hud():
+		return
+	var tracker := get_node_or_null("HUD/QuestTrackerPanel")
+	if tracker:
+		tracker.visible = false
+
 func _update_currency() -> void:
+	if currency_label == null:
+		return
+	if _is_presentation_hud():
+		currency_label.text = ""
+		currency_label.visible = false
+		return
 	var parts: Array[String] = []
 	for currency_id in QuestManager.currency.keys():
-		parts.append("%s: %d" % [String(currency_id).capitalize(), int(QuestManager.currency[currency_id])])
+		var amount := int(QuestManager.currency[currency_id])
+		if amount <= 0:
+			continue
+		parts.append("%s: %d" % [String(currency_id).capitalize(), amount])
 	currency_label.text = ", ".join(parts)
+	currency_label.visible = not parts.is_empty()
 
 func _update_collectibles() -> void:
 	if collectible_label == null:
 		return
+	if _is_presentation_hud():
+		collectible_label.text = ""
+		collectible_label.visible = false
+		return
 	var total := InventoryManager.get_collectible_total_count()
 	if total <= 0:
 		collectible_label.text = ""
+		collectible_label.visible = false
 		return
+	collectible_label.visible = true
 	collectible_label.text = "Echoes: %d/%d" % [
 		InventoryManager.get_collectible_found_count(),
 		total,

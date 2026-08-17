@@ -26,6 +26,14 @@ export const VisualDefectSchema = z.enum([
   'ASSET_STYLE_MISMATCH',
   'WALLPAPER_CAPTURE',
   'MATERIAL_LANGUAGE_MISMATCH',
+  'EXCESSIVE_TILE_REPETITION',
+  'RAW_PLATFORM_PRESENTATION',
+  'RAW_COLLISION_GEOMETRY',
+  'DEBUG_HUD_VISIBLE',
+  'BOSS_ROOM_GENERIC',
+  'PLAYER_SCALE_OUT_OF_BOUNDS',
+  'MISSING_ARCHITECTURAL_TREATMENT',
+  'UNSTYLED_PLATFORMS',
 ]);
 
 export type VisualDefect = z.infer<typeof VisualDefectSchema>;
@@ -305,6 +313,13 @@ export const VisualQualityScoreSchema = z.object({
   hudReadability: z.number().min(0).max(100),
   vfxReadability: z.number().min(0).max(100),
   assetStyleConsistency: z.number().min(0).max(100),
+  functionalQuality: z.number().min(0).max(100).default(0),
+  assetIntegrity: z.number().min(0).max(100).default(0),
+  visualCohesion: z.number().min(0).max(100).default(0),
+  roomComposition: z.number().min(0).max(100).default(0),
+  gameplayReadability: z.number().min(0).max(100).default(0),
+  presentationQuality: z.number().min(0).max(100).default(0),
+  overallConfidence: z.number().min(0).max(100).default(0),
   overall: z.number().min(0).max(100),
 });
 
