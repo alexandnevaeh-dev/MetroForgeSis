@@ -92,7 +92,7 @@ describe('parallax strips', () => {
       pine[i + 3] = 255;
     }
     expect(farPlateLooksLikeOutdoorLandscape(encodePng(w, h, pine))).toBe(true);
-    expect(farPlateLooksLikeOutdoorLandscape(generateParallaxStrip('far', 7, w, h))).toBe(false);
+    expect(farPlateLooksLikeOutdoorLandscape(generateParallaxStrip('far', 7, 640, 360))).toBe(false);
   });
 
   it('rejects moon-window-on-water far plates as outdoor landscape', () => {
@@ -121,5 +121,36 @@ describe('parallax strips', () => {
       }
     }
     expect(farPlateLooksLikeOutdoorLandscape(encodePng(w, h, plate))).toBe(true);
+  });
+
+  it('paints receding hall mass in the lower far plate instead of empty night', () => {
+    const { rgba, width, height } = decodePngRgba(generateParallaxStrip('far', 7, 160, 90));
+    let mass = 0;
+    let sampled = 0;
+    for (let y = Math.floor(height * 0.55); y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const i = (y * width + x) * 4;
+        const g = rgba[i + 1]!;
+        const b = rgba[i + 2]!;
+        sampled += 1;
+        if (b < 110 && g < 80) mass += 1;
+      }
+    }
+    expect(mass / sampled).toBeGreaterThan(0.18);
+  });
+
+  it('does not paint a circular moon in the upper far plate', () => {
+    const { rgba, width, height } = decodePngRgba(generateParallaxStrip('far', 7, 160, 90));
+    let bright = 0;
+    let sampled = 0;
+    for (let y = 0; y < Math.floor(height * 0.28); y++) {
+      for (let x = 0; x < width; x++) {
+        const i = (y * width + x) * 4;
+        sampled += 1;
+        const luma = 0.299 * rgba[i]! + 0.587 * rgba[i + 1]! + 0.114 * rgba[i + 2]!;
+        if (luma > 160) bright += 1;
+      }
+    }
+    expect(bright / sampled).toBeLessThan(0.012);
   });
 });

@@ -13,7 +13,7 @@ export const PARALLAX_STRIP_SIZE: Record<ParallaxLayerName, { width: number; hei
 export const PARALLAX_LAYER_PROMPTS: Record<ParallaxLayerName, string> = {
   far: 'orthographic side-view INTERIOR FAR PLATE filling the entire frame, viewed from INSIDE a drowned tideglass citadel hall: receding glass-masonry vaults, iron ribs, moonlit clerestory ON THE BUILDING, flooded stone colonnades, architecture only, empty of people animals characters silhouettes figures, NOT an outdoor landscape, no pine trees, no conifers, no forest, no mountains, no lake, no shoreline, no nature vista, no UI, tileable left-right',
   mid: 'full-frame mid-ground parallax with SPARSE citadel arches and ruined columns, MOSTLY transparent air between masses, orthographic side-view, tileable left-right, no characters, no people, no trees, no UI, not a solid horizon bar',
-  near: 'full-frame near parallax with hanging chains, vines, and side-pillar occluders, MOSTLY transparent playable air, orthographic side-view, tileable left-right, no characters, no trees, no UI, not a solid floor slab',
+  near: 'full-frame near parallax with hanging chains, vines, and low rubble at the sides, MOSTLY transparent playable air, orthographic side-view, tileable left-right, no characters, no trees, no UI, no full-height side piers, not a solid floor slab',
   overlay: 'sparse tide mist overlay, mostly transparent, no characters, no UI',
   foreground: 'dark citadel side occluders and hanging silhouettes, transparent playable air, no UI, no characters',
 };
@@ -44,17 +44,6 @@ function setPx(
   rgba[i + 3] = a;
 }
 
-function ridgeAt(x: number, width: number, seed: number, base: number, amp: number): number {
-  const sx = Math.floor(x / 4) * 4;
-  const t = sx / Math.max(1, width - 1);
-  return (
-    base +
-    Math.sin(t * Math.PI * 2 + seed) * amp +
-    Math.sin(t * Math.PI * 5 + seed * 0.3) * amp * 0.35 +
-    (hash01(seed, sx) - 0.5) * amp * 0.05
-  );
-}
-
 function columnCenters(width: number, seed: number, count: number, inset: number): number[] {
   const span = Math.max(1, width - inset * 2);
   const out: number[] = [];
@@ -80,9 +69,9 @@ function paintMidArchitecture(
   let hit = false;
   for (let ci = 0; ci < cols.length; ci++) {
     const cx = cols[ci]!;
-    const colW = Math.max(5, Math.round(width * (0.02 + hash01(seed, 21 + ci) * 0.014)));
-    const capital = Math.round(height * (0.36 + hash01(seed, 40 + ci) * 0.14));
-    const floor = Math.round(height * (0.72 + hash01(seed, 60 + ci) * 0.08));
+    const colW = Math.max(11, Math.round(width * (0.036 + hash01(seed, 21 + ci) * 0.02)));
+    const capital = Math.round(height * (0.48 + hash01(seed, 40 + ci) * 0.1));
+    const floor = Math.round(height * (0.74 + hash01(seed, 60 + ci) * 0.06));
     if (Math.abs(x - cx) <= colW && y >= capital && y <= floor) hit = true;
     if (Math.abs(x - cx) <= colW + 2 && y >= capital - 4 && y <= capital + 2) hit = true;
     if (ci > 0 && hash01(seed, 90 + ci) > 0.35) {
@@ -122,10 +111,11 @@ function paintNearOccluders(
   dark: [number, number, number],
   alpha: number,
 ): void {
-  const leftPier = x < width * 0.055 && y > height * 0.12;
-  const rightPier = x > width * 0.945 && y > height * 0.12;
-  const chainXs = columnCenters(width, seed + 31, 5, Math.round(width * 0.12));
-  const onChain = chainXs.some((cx) => Math.abs(x - cx) <= 1 && y < height * 0.42);
+  const leftPier = x < width * 0.04 && y > height * 0.72;
+  const rightPier = x > width * 0.96 && y > height * 0.72;
+  const chainXs = columnCenters(width, seed + 31, 4, Math.round(width * 0.16));
+  const onChain =
+    chainXs.some((cx) => Math.abs(x - cx) <= 1 && y < height * 0.22 && y % 5 < 2);
   const vine = chainXs.some(
     (cx) => Math.abs(x - cx) <= 3 && y < height * 0.28 && hash01(seed, x * 9 + Math.floor(y / 4)) > 0.55,
   );
@@ -148,6 +138,65 @@ function paintNearOccluders(
     Math.round(dark[2] + n * 10),
     alpha,
   );
+}
+
+/** Receding drowned-hall: floor, dado, and vertical bays — not a filled hill silhouette. */
+function paintFarHallMass(
+  rgba: Uint8Array,
+  width: number,
+  height: number,
+  x: number,
+  y: number,
+  seed: number,
+  masonry: [number, number, number],
+  dark: [number, number, number],
+): boolean {
+  const t = y / Math.max(1, height - 1);
+  const bay = Math.max(28, Math.round(width / 6));
+  const local = ((x % bay) + bay) % bay;
+  const pierW = Math.max(5, Math.round(bay * 0.18));
+  const onPier = local < pierW || local > bay - 1 - pierW;
+  const floor = t > 0.8;
+  const dado = t > 0.7 && t <= 0.8;
+  const pier = onPier && t > 0.48;
+  const capital = onPier && t > 0.46 && t < 0.5;
+  const soffit =
+    t > 0.5 &&
+    t < 0.58 &&
+    !onPier &&
+    Math.abs(local - bay * 0.5) < 3;
+  if (!(floor || dado || pier || capital || soffit)) return false;
+  const n = hash01(seed, x + y * 3);
+  const depth = Math.min(1, Math.max(0, (t - 0.48) / 0.52));
+  const r = Math.round(dark[0] + masonry[0] * 0.32 + n * 8 + depth * 12);
+  const g = Math.round(dark[1] + masonry[1] * 0.28 + n * 6 + depth * 10);
+  const b = Math.round(dark[2] + masonry[2] * 0.45 + n * 10 + depth * 14);
+  setPx(rgba, width, x, y, r, g, b, 255);
+  if ((floor || dado) && hash01(seed, x * 5 + y) > 0.9) {
+    setPx(rgba, width, x, y, Math.min(255, r + 22), Math.min(255, g + 16), Math.max(0, b - 6), 255);
+  }
+  return true;
+}
+
+function paintFarVaultAndLanterns(
+  rgba: Uint8Array,
+  width: number,
+  height: number,
+  x: number,
+  y: number,
+  seed: number,
+): void {
+  const bay = Math.max(28, Math.round(width / 6));
+  const cell = Math.floor(x / bay);
+  const cx = Math.round(cell * bay + bay * 0.5);
+  if (Math.abs(x - cx) <= 1 && y > height * 0.16 && y < height * 0.48) {
+    setPx(rgba, width, x, y, 34, 52, 108, 255);
+  }
+  const ly = Math.floor(height * 0.47);
+  const d = (x - cx) * (x - cx) + (y - ly) * (y - ly);
+  if (d <= 4 && hash01(seed, cell + 4) > 0.35) {
+    setPx(rgba, width, x, y, 168, 148, 78, 255);
+  }
 }
 
 /**
@@ -175,26 +224,8 @@ export function generateParallaxStrip(
         const g = Math.round(skyTop[1] + (skyBot[1] - skyTop[1]) * t);
         const b = Math.round(skyTop[2] + (skyBot[2] - skyTop[2]) * t);
         setPx(rgba, width, x, y, r, g, b, 255);
-        const moonX = Math.floor(width * 0.78);
-        const moonY = Math.floor(height * 0.16);
-        const md = (x - moonX) * (x - moonX) + (y - moonY) * (y - moonY);
-        if (md < 36) setPx(rgba, width, x, y, 210, 220, 236, 255);
-        // Distant irregular mass, not a repeating clerestory arcade (RearWall owns mid architecture).
-        const ridge = ridgeAt(x, width, seed + 71, height * 0.88, height * 0.05);
-        if (y > ridge) {
-          const n = hash01(seed, x + y * 3);
-          const depth = (y - ridge) / Math.max(1, height - ridge);
-          setPx(
-            rgba,
-            width,
-            x,
-            y,
-            Math.round(dark[0] + masonry[0] * 0.25 + n * 8 + depth * 6),
-            Math.round(dark[1] + masonry[1] * 0.2 + n * 6 + depth * 4),
-            Math.round(dark[2] + masonry[2] * 0.2 + n * 8 + depth * 8),
-            255,
-          );
-        }
+        paintFarHallMass(rgba, width, height, x, y, seed, masonry, dark);
+        paintFarVaultAndLanterns(rgba, width, height, x, y, seed);
         continue;
       }
 
@@ -256,7 +287,7 @@ export function farPlateLooksLikeOutdoorLandscape(png: Buffer): boolean {
     }
   }
   if (sampled === 0) return false;
-  return pine / sampled > 0.032 || skin / sampled > 0.01 || moonWater / sampled > 0.045;
+  return pine / sampled > 0.032 || skin / sampled > 0.01 || moonWater / sampled > 0.03;
 }
 
 /** Punch AI landscape plates into horizon strips so stacked layers do not ghost. */
