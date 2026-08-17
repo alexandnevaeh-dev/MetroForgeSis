@@ -424,6 +424,7 @@ describe('generateRoomScene combat sprites', () => {
     expect(scene).toContain('[node name="ParallaxNear" type="Parallax2D"');
     expect(scene).toContain('scroll_scale = Vector2(0.3, 0.12)');
     expect(scene).toContain('scroll_scale = Vector2(0.65, 0.2)');
+    expect(scene).toContain('position = Vector2(400, 300)');
     expect(scene).not.toContain('overlay.png');
     expect(scene).not.toContain('foreground.png');
   });

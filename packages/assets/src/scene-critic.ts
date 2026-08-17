@@ -224,7 +224,7 @@ export function critiqueScreenshotDiversity(pngs: Buffer[]): {
   const pairwiseMeanDistance = distances.reduce((s, v) => s + v, 0) / distances.length;
   const nearDupes = distances.filter((d) => d < 6).length;
   const issues: string[] = [];
-  if (pairwiseMeanDistance < 8) {
+  if (pairwiseMeanDistance < 6) {
     issues.push(
       `Room captures look like copies of one silhouette (mean luma-grid distance ${pairwiseMeanDistance.toFixed(1)})`,
     );

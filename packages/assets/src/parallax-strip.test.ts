@@ -34,23 +34,33 @@ describe('parallax strips', () => {
     expect(luma / (160 * rows)).toBeLessThan(90);
   });
 
-  it('paints compact mid/near ridgeline strips that are mostly filled', () => {
-    const mid = generateParallaxStrip('mid', 11, 160, 40);
-    const near = generateParallaxStrip('near', 13, 160, 36);
-    expect(decodePngRgba(mid).height).toBe(40);
-    expect(decodePngRgba(near).height).toBe(36);
-    expect(countAlpha(mid, (a) => a > 200)).toBeGreaterThan(160 * 40 * 0.45);
-    expect(countAlpha(near, (a) => a > 200)).toBeGreaterThan(160 * 36 * 0.45);
-    expect(countAlpha(mid, (a, t) => t < 0.08 && a < 16)).toBeGreaterThan(40);
+  it('paints sparse mid colonnades and near occluders with mostly transparent air', () => {
+    const mid = generateParallaxStrip('mid', 11, 160, 90);
+    const near = generateParallaxStrip('near', 13, 160, 90);
+    expect(decodePngRgba(mid).height).toBe(90);
+    expect(decodePngRgba(near).height).toBe(90);
+    const midOpaque = countAlpha(mid, (a) => a > 200);
+    const nearOpaque = countAlpha(near, (a) => a > 180);
+    const total = 160 * 90;
+    expect(midOpaque).toBeGreaterThan(total * 0.04);
+    expect(midOpaque).toBeLessThan(total * 0.28);
+    expect(nearOpaque).toBeGreaterThan(total * 0.02);
+    expect(nearOpaque).toBeLessThan(total * 0.22);
+    expect(countAlpha(mid, (a, t) => t < 0.15 && a < 16)).toBeGreaterThan(160 * 8);
+    expect(countAlpha(near, (a, t) => t > 0.45 && t < 0.75 && a < 16)).toBeGreaterThan(160 * 12);
+    const midHash = countAlpha(mid, (a) => a > 200);
+    const nearHash = countAlpha(near, (a) => a > 180);
+    expect(midHash).not.toBe(nearHash);
   });
 
   it('punches stacked AI landscapes into horizon strips', () => {
     const rgba = new Uint8Array(80 * 40 * 4);
     rgba.fill(255);
     const plate = encodePng(80, 40, rgba);
-    const mid = punchParallaxAlpha(plate, 'mid');
-    expect(countAlpha(mid, (a, t) => t < 0.25 && a < 16)).toBeGreaterThan(80 * 8);
+    const overlay = punchParallaxAlpha(plate, 'overlay');
+    expect(countAlpha(overlay, (a, t) => t < 0.12 && a < 16)).toBeGreaterThan(80 * 4);
     expect(punchParallaxAlpha(plate, 'far')).toEqual(plate);
+    expect(punchParallaxAlpha(plate, 'mid')).toEqual(plate);
   });
 
   it('keeps the upper far plate as sky instead of a repeating clerestory grid', () => {

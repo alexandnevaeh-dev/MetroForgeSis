@@ -1002,7 +1002,7 @@ repeat_times = 4
 texture_filter = 0
 texture = ExtResource("22_bg_mid")
 centered = true
-position = Vector2(320, ${Math.round(options.height * 0.72)})
+position = Vector2(${Math.round(options.width / 2)}, ${Math.round(options.height / 2)})
 
 `;
   }
@@ -1018,7 +1018,7 @@ repeat_times = 4
 texture_filter = 0
 texture = ExtResource("23_bg_near")
 centered = true
-position = Vector2(320, ${Math.round(options.height * 0.82)})
+position = Vector2(${Math.round(options.width / 2)}, ${Math.round(options.height / 2)})
 
 `;
   }

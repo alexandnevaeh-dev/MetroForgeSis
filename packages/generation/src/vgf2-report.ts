@@ -86,5 +86,9 @@ export function writeVgf2VisualSliceReport(input: {
     '',
   ].join('\n');
   writeFileSync(mdPath, md);
+  const repoReports = join(process.cwd(), 'reports');
+  mkdirSync(repoReports, { recursive: true });
+  writeFileSync(join(repoReports, 'VGF2_VISUAL_VERTICAL_SLICE.md'), md);
+  writeFileSync(join(repoReports, 'VGF2_VISUAL_VERTICAL_SLICE.json'), JSON.stringify(payload, null, 2));
   return { md: mdPath, json: jsonPath };
 }

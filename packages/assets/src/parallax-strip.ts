@@ -4,18 +4,18 @@ export type ParallaxLayerName = 'far' | 'mid' | 'near' | 'overlay' | 'foreground
 
 export const PARALLAX_STRIP_SIZE: Record<ParallaxLayerName, { width: number; height: number }> = {
   far: { width: 640, height: 360 },
-  mid: { width: 640, height: 64 },
-  near: { width: 640, height: 56 },
-  overlay: { width: 640, height: 64 },
-  foreground: { width: 640, height: 64 },
+  mid: { width: 640, height: 360 },
+  near: { width: 640, height: 360 },
+  overlay: { width: 640, height: 360 },
+  foreground: { width: 640, height: 360 },
 };
 
 export const PARALLAX_LAYER_PROMPTS: Record<ParallaxLayerName, string> = {
   far: 'orthographic side-view INTERIOR FAR PLATE filling the entire frame, viewed from INSIDE a drowned tideglass citadel hall: receding glass-masonry vaults, iron ribs, moonlit clerestory ON THE BUILDING, flooded stone colonnades, architecture only, empty of people animals characters silhouettes figures, NOT an outdoor landscape, no pine trees, no conifers, no forest, no mountains, no lake, no shoreline, no nature vista, no UI, tileable left-right',
-  mid: 'horizontal mid-ground parallax STRIP of citadel INTERIOR architecture silhouettes, iron ribs and glass masonry columns, transparent empty air above, orthographic side-view, tileable left-right, no characters, no people, no trees, no UI',
-  near: 'horizontal near parallax STRIP of dark citadel foreground silhouettes along the bottom, transparent above, orthographic side-view, tileable left-right, no characters, no trees, no UI',
-  overlay: 'sparse tide mist overlay STRIP, mostly transparent, no characters, no UI',
-  foreground: 'dark citadel foreground occluder silhouettes along the very bottom edge, transparent above, no UI, no characters',
+  mid: 'full-frame mid-ground parallax with SPARSE citadel arches and ruined columns, MOSTLY transparent air between masses, orthographic side-view, tileable left-right, no characters, no people, no trees, no UI, not a solid horizon bar',
+  near: 'full-frame near parallax with hanging chains, vines, and side-pillar occluders, MOSTLY transparent playable air, orthographic side-view, tileable left-right, no characters, no trees, no UI, not a solid floor slab',
+  overlay: 'sparse tide mist overlay, mostly transparent, no characters, no UI',
+  foreground: 'dark citadel side occluders and hanging silhouettes, transparent playable air, no UI, no characters',
 };
 
 function hash01(seed: number, n: number): number {
@@ -52,6 +52,100 @@ function ridgeAt(x: number, width: number, seed: number, base: number, amp: numb
     Math.sin(t * Math.PI * 2 + seed) * amp +
     Math.sin(t * Math.PI * 5 + seed * 0.3) * amp * 0.35 +
     (hash01(seed, sx) - 0.5) * amp * 0.05
+  );
+}
+
+function columnCenters(width: number, seed: number, count: number, inset: number): number[] {
+  const span = Math.max(1, width - inset * 2);
+  const out: number[] = [];
+  for (let i = 0; i < count; i++) {
+    const jitter = (hash01(seed, 80 + i) - 0.5) * (span / count) * 0.28;
+    out.push(Math.round(inset + ((i + 0.5) / count) * span + jitter));
+  }
+  return out;
+}
+
+/** Sparse ruined colonnade — playable air stays transparent. Never a filled horizon bar. */
+function paintMidArchitecture(
+  rgba: Uint8Array,
+  width: number,
+  height: number,
+  x: number,
+  y: number,
+  seed: number,
+  masonry: [number, number, number],
+): void {
+  const cols = columnCenters(width, seed + 17, 4, Math.round(width * 0.08));
+  const colW = Math.max(6, Math.round(width * 0.028));
+  const capital = Math.round(height * 0.22);
+  const floor = Math.round(height * 0.92);
+  let hit = false;
+  for (const cx of cols) {
+    if (Math.abs(x - cx) <= colW && y >= capital && y <= floor) hit = true;
+    if (Math.abs(x - cx) <= colW + 3 && y >= capital - 6 && y <= capital + 4) hit = true;
+  }
+  for (let i = 0; i < cols.length - 1; i++) {
+    const a = cols[i]!;
+    const b = cols[i + 1]!;
+    const midX = (a + b) / 2;
+    const archR = (b - a) / 2;
+    const archY = capital + 8;
+    const dist = Math.hypot(x - midX, y - archY);
+    if (y >= archY && y < archY + 10 && dist < archR && dist > archR - 5) hit = true;
+  }
+  if (!hit) {
+    setPx(rgba, width, x, y, 0, 0, 0, 0);
+    return;
+  }
+  const n = hash01(seed, x + y * 2);
+  setPx(
+    rgba,
+    width,
+    x,
+    y,
+    Math.round(masonry[0] + n * 10),
+    Math.round(masonry[1] + n * 8),
+    Math.round(masonry[2] + n * 10),
+    210,
+  );
+}
+
+/** Hanging chains / side piers / sparse ground debris — not a solid occupancy slab. */
+function paintNearOccluders(
+  rgba: Uint8Array,
+  width: number,
+  height: number,
+  x: number,
+  y: number,
+  seed: number,
+  dark: [number, number, number],
+  alpha: number,
+): void {
+  const leftPier = x < width * 0.055 && y > height * 0.12;
+  const rightPier = x > width * 0.945 && y > height * 0.12;
+  const chainXs = columnCenters(width, seed + 31, 5, Math.round(width * 0.12));
+  const onChain = chainXs.some((cx) => Math.abs(x - cx) <= 1 && y < height * 0.42);
+  const vine = chainXs.some(
+    (cx) => Math.abs(x - cx) <= 3 && y < height * 0.28 && hash01(seed, x * 9 + Math.floor(y / 4)) > 0.55,
+  );
+  const debris =
+    y > height * 0.9 &&
+    hash01(seed, Math.floor(x / 6) * 13) > 0.72 &&
+    Math.abs(x - width / 2) > width * 0.18;
+  if (!(leftPier || rightPier || onChain || vine || debris)) {
+    setPx(rgba, width, x, y, 0, 0, 0, 0);
+    return;
+  }
+  const n = hash01(seed, x * 5 + y);
+  setPx(
+    rgba,
+    width,
+    x,
+    y,
+    Math.round(dark[0] + n * 8),
+    Math.round(dark[1] + n * 8),
+    Math.round(dark[2] + n * 10),
+    alpha,
   );
 }
 
@@ -104,33 +198,12 @@ export function generateParallaxStrip(
       }
 
       if (layer === 'mid') {
-        const ridge = ridgeAt(x, width, seed + 17, height * 0.28, height * 0.16);
-        if (y > ridge) {
-          const n = hash01(seed, x + y * 2);
-          setPx(rgba, width, x, y, masonry[0] + n * 8, masonry[1] + n * 6, masonry[2] + n * 8, 255);
-        } else {
-          setPx(rgba, width, x, y, 0, 0, 0, 0);
-        }
+        paintMidArchitecture(rgba, width, height, x, y, seed, masonry);
         continue;
       }
 
       if (layer === 'near' || layer === 'foreground') {
-        const ridge = ridgeAt(x, width, seed + 31, height * 0.22, height * 0.14);
-        if (y > ridge) {
-          const n = hash01(seed, x * 5 + y);
-          setPx(
-            rgba,
-            width,
-            x,
-            y,
-            dark[0] + n * 6,
-            dark[1] + n * 6,
-            dark[2] + n * 8,
-            layer === 'foreground' ? 230 : 255,
-          );
-        } else {
-          setPx(rgba, width, x, y, 0, 0, 0, 0);
-        }
+        paintNearOccluders(rgba, width, height, x, y, seed, dark, layer === 'foreground' ? 230 : 220);
         continue;
       }
 
@@ -143,18 +216,8 @@ export function generateParallaxStrip(
 
 function stripMask(layer: ParallaxLayerName, t: number): number {
   if (layer === 'far') return 1;
-  if (layer === 'mid') {
-    if (t < 0.32) return 0;
-    if (t < 0.42) return (t - 0.32) / 0.1;
-    if (t > 0.84) return 0;
-    if (t > 0.74) return (0.84 - t) / 0.1;
-    return 1;
-  }
-  if (layer === 'near' || layer === 'foreground') {
-    if (t < 0.62) return 0;
-    if (t < 0.72) return (t - 0.62) / 0.1;
-    return 1;
-  }
+  // Do not punch mid/near into a horizontal occupancy bar — keep authored transparency.
+  if (layer === 'mid' || layer === 'near' || layer === 'foreground') return 1;
   if (t < 0.16 || t > 0.62) return 0;
   return 1;
 }
@@ -192,7 +255,7 @@ export function farPlateLooksLikeOutdoorLandscape(png: Buffer): boolean {
 
 /** Punch AI landscape plates into horizon strips so stacked layers do not ghost. */
 export function punchParallaxAlpha(png: Buffer, layer: ParallaxLayerName): Buffer {
-  if (layer === 'far') return png;
+  if (layer === 'far' || layer === 'mid' || layer === 'near' || layer === 'foreground') return png;
   const { rgba, width, height } = decodePngRgba(png);
   for (let y = 0; y < height; y++) {
     const m = stripMask(layer, y / Math.max(1, height - 1));

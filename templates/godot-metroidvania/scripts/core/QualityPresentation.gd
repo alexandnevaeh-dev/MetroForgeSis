@@ -222,16 +222,15 @@ func _tune_parallax(room: Node, size: Vector2) -> void:
 		_layout_parallax_strip(sprite, size, "far")
 
 func _hide_collision_slabs(room: Node) -> void:
-	for path in ["Floor/FloorVisual", "FloorLeft/FloorVisual", "FloorRight/FloorVisual"]:
-		var slab := room.get_node_or_null(path)
-		if slab is CanvasItem:
-			(slab as CanvasItem).visible = false
-			(slab as CanvasItem).modulate = Color(1, 1, 1, 0)
 	for child in room.get_children():
+		var vis := child.get_node_or_null("FloorVisual")
+		if vis is CanvasItem:
+			(vis as CanvasItem).visible = false
+			(vis as CanvasItem).modulate = Color(1, 1, 1, 0)
 		if child is Area2D and child.has_node("Visual"):
-			var vis := child.get_node_or_null("Visual")
-			if vis is CanvasItem:
-				(vis as CanvasItem).visible = false
+			var area_vis := child.get_node_or_null("Visual")
+			if area_vis is CanvasItem:
+				(area_vis as CanvasItem).visible = false
 
 func _inject_depth_layers(room: Node, size: Vector2, biome: String) -> void:
 	## ParallaxBg already carries far/mid/near. Injecting full plates again covers the tileset.
