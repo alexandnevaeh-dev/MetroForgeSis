@@ -557,6 +557,22 @@ function loadManifestArtifacts(outputDir: string): GeneratedAsset[] | null {
 export class AssetPipeline {
   private readonly pixelArt = new PixelArtProcessor();
 
+  /** Character/enemy/NPC/boss compile: punch studio, crop the actor, fill the game frame. */
+  private compileActorFrame(
+    sourcePng: Buffer,
+    targetWidth: number,
+    targetHeight: number,
+    tileSize?: number,
+  ) {
+    return this.pixelArt.process(sourcePng, {
+      targetWidth,
+      targetHeight,
+      tileSize,
+      skipQuantize: true,
+      fitOpaque: true,
+    });
+  }
+
   async generate(options: AssetPipelineOptions): Promise<AssetPipelineResult> {
     const assets: GeneratedAsset[] = [];
     const warnings: string[] = [];
@@ -1613,9 +1629,9 @@ export class AssetPipeline {
           const buffer = generatePropSprite({
             width: 32,
             height: 32,
-            fill: options.visualDNA.palette.global[1] ?? '#3c4454',
-            accent: options.visualDNA.palette.accents[0] ?? '#5a8cdc',
-            family: prop.family,
+            fill: options.visualDNA.palette.global[0] ?? '#284878',
+            accent: options.visualDNA.palette.highlights[0] ?? '#c4a060',
+            family: prop.family.includes('moss') || prop.family.includes('plant') ? 'debris' : prop.family,
             seed: options.seed + hashPrompt(prop.id).charCodeAt(0),
           });
           writeCheckpoint(options.outputDir, rel, buffer);
@@ -1685,6 +1701,9 @@ export class AssetPipeline {
     const assets: GeneratedAsset[] = [];
     const contactFrames: { label: string; png: Buffer }[] = [];
     const knockedOutSource = opts.source ? knockoutVfxBackground(opts.source) : undefined;
+    const actorStill = knockedOutSource
+      ? this.compileActorFrame(knockedOutSource, opts.spec.width, opts.spec.height, opts.tileSize).buffer
+      : undefined;
     const canAttemptAi = Boolean(opts.imageGen && opts.source && opts.allowAiUpgrade === true);
 
     if (!canAttemptAi) {
@@ -1736,12 +1755,12 @@ export class AssetPipeline {
             poseName: pose.name,
             posePrompt: pose.prompt,
           });
-          const compiled = this.pixelArt.process(knockoutVfxBackground(result.image), {
-            targetWidth: opts.spec.width,
-            targetHeight: opts.spec.height,
-            tileSize: opts.tileSize,
-            skipQuantize: true,
-          });
+          const compiled = this.compileActorFrame(
+            knockoutVfxBackground(result.image),
+            opts.spec.width,
+            opts.spec.height,
+            opts.tileSize,
+          );
           writeCheckpoint(opts.outputDir, rel, compiled.buffer);
           const identity = critiqueAnimationIdentity(compiled.buffer, { frameWidth: opts.spec.width, expectedFrames: 1 });
           assets.push(
@@ -1776,7 +1795,7 @@ export class AssetPipeline {
       }
 
       if (!usedAi) {
-        const raw = generatePoseStill(opts.spec, pose.name, knockedOutSource);
+        const raw = generatePoseStill(opts.spec, pose.name, actorStill);
         const compiled = this.pixelArt.process(raw, {
           targetWidth: opts.spec.width,
           targetHeight: opts.spec.height,
@@ -1825,11 +1844,15 @@ export class AssetPipeline {
     tileSize: number,
     sourcePng?: Buffer,
   ): GeneratedAsset {
-    const sheet = generateWalkCycleSheet(
-      spec,
-      frameCount,
-      sourcePng ? knockoutVfxBackground(sourcePng) : undefined,
-    );
+    const still = sourcePng
+      ? this.compileActorFrame(
+          knockoutVfxBackground(sourcePng),
+          spec.width,
+          spec.height,
+          tileSize,
+        ).buffer
+      : undefined;
+    const sheet = generateWalkCycleSheet(spec, frameCount, still);
     const processed = this.pixelArt.process(sheet, {
       targetWidth: spec.width * frameCount,
       targetHeight: spec.height,
@@ -1867,11 +1890,15 @@ export class AssetPipeline {
     tileSize: number,
     sourcePng?: Buffer,
   ): GeneratedAsset {
-    const sheet = generateHurtFlashSheet(
-      spec,
-      frameCount,
-      sourcePng ? knockoutVfxBackground(sourcePng) : undefined,
-    );
+    const still = sourcePng
+      ? this.compileActorFrame(
+          knockoutVfxBackground(sourcePng),
+          spec.width,
+          spec.height,
+          tileSize,
+        ).buffer
+      : undefined;
+    const sheet = generateHurtFlashSheet(spec, frameCount, still);
     const processed = this.pixelArt.process(sheet, {
       targetWidth: spec.width * frameCount,
       targetHeight: spec.height,
@@ -1903,11 +1930,15 @@ export class AssetPipeline {
     tileSize: number,
     sourcePng?: Buffer,
   ): GeneratedAsset {
-    const sheet = generateDeathSheet(
-      spec,
-      frameCount,
-      sourcePng ? knockoutVfxBackground(sourcePng) : undefined,
-    );
+    const still = sourcePng
+      ? this.compileActorFrame(
+          knockoutVfxBackground(sourcePng),
+          spec.width,
+          spec.height,
+          tileSize,
+        ).buffer
+      : undefined;
+    const sheet = generateDeathSheet(spec, frameCount, still);
     const processed = this.pixelArt.process(sheet, {
       targetWidth: spec.width * frameCount,
       targetHeight: spec.height,
@@ -1939,11 +1970,15 @@ export class AssetPipeline {
     tileSize: number,
     sourcePng?: Buffer,
   ): GeneratedAsset {
-    const sheet = generateAttackSheet(
-      spec,
-      frameCount,
-      sourcePng ? knockoutVfxBackground(sourcePng) : undefined,
-    );
+    const still = sourcePng
+      ? this.compileActorFrame(
+          knockoutVfxBackground(sourcePng),
+          spec.width,
+          spec.height,
+          tileSize,
+        ).buffer
+      : undefined;
+    const sheet = generateAttackSheet(spec, frameCount, still);
     const processed = this.pixelArt.process(sheet, {
       targetWidth: spec.width * frameCount,
       targetHeight: spec.height,
@@ -2006,6 +2041,7 @@ export class AssetPipeline {
     let provider = 'procedural';
     let fallback = true;
     let modelId: string | undefined;
+    let fallbackErrorMessage: string | undefined;
 
     const prompt = applyStylePrompt(
       opts.styleBible,
@@ -2050,10 +2086,11 @@ export class AssetPipeline {
         modelId = result.modelId;
         fallback = false;
       } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
         if (!allowProceduralFallback) {
-          const msg = err instanceof Error ? err.message : String(err);
           throw new Error(`VFX image generation failed (${opts.imageGen.id}): ${msg}`);
         }
+        fallbackErrorMessage = `${opts.imageGen.id}: ${msg}`;
       }
     } else if (!allowProceduralFallback) {
       throw new Error(
@@ -2093,7 +2130,9 @@ export class AssetPipeline {
       sourceType: fallback ? undefined : 'compiled',
       sourcePath,
       fallbackDepth: fallback ? 1 : 0,
-      fallbackReason: fallback ? 'Image provider unavailable or failed — procedural placeholder' : undefined,
+      fallbackReason: fallback
+        ? (fallbackErrorMessage ?? 'Image provider unavailable or failed — procedural placeholder')
+        : undefined,
       selectedProvider: provider,
       selectedModel: modelId,
       requestedCapability: 'IMAGE_GENERATION',
@@ -2144,6 +2183,7 @@ export class AssetPipeline {
     let provider = 'procedural';
     let fallback = true;
     let modelId: string | undefined;
+    let fallbackErrorMessage: string | undefined;
 
     if (opts.imageGen) {
       try {
@@ -2165,13 +2205,18 @@ export class AssetPipeline {
         modelId = result.modelId;
         fallback = false;
       } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
         if (!allowProceduralFallback) {
-          const msg = err instanceof Error ? err.message : String(err);
           throw new Error(
             `Manual image generation failed (${opts.imageGen.id}): ${msg}`,
           );
         }
-        // keep procedural
+        // keep procedural, but preserve *why* so the manifest can be diagnosed later —
+        // previously this catch discarded the real error entirely, leaving every fallback
+        // asset (player/boss/enemy included) with an identical generic reason no matter
+        // whether the cause was a rate limit, a content-policy rejection, a timeout, or a
+        // malformed request.
+        fallbackErrorMessage = `${opts.imageGen.id}: ${msg}`;
       }
     } else if (!allowProceduralFallback) {
       throw new Error(
@@ -2188,12 +2233,12 @@ export class AssetPipeline {
     }
 
     const spriteSource = fallback ? buffer : knockoutVfxBackground(buffer);
-    const processed = this.pixelArt.process(spriteSource, {
-      targetWidth: opts.spec.width,
-      targetHeight: opts.spec.height,
-      tileSize: opts.tileSize,
-      skipQuantize: true,
-    });
+    const processed = this.compileActorFrame(
+      spriteSource,
+      opts.spec.width,
+      opts.spec.height,
+      opts.tileSize,
+    );
 
     const det = runDeterministicAssetChecks(processed.buffer, opts.spec.width, opts.spec.height);
     let critiquePassed = det.passed;
@@ -2230,7 +2275,9 @@ export class AssetPipeline {
       sourceType: fallback ? undefined : 'compiled',
       sourcePath,
       fallbackDepth: fallback ? 1 : 0,
-      fallbackReason: fallback ? 'Image provider unavailable or failed — procedural placeholder' : undefined,
+      fallbackReason: fallback
+        ? (fallbackErrorMessage ?? 'Image provider unavailable or failed — procedural placeholder')
+        : undefined,
       selectedProvider: provider,
       selectedModel: modelId,
       requestedCapability: 'IMAGE_GENERATION',
@@ -2263,12 +2310,12 @@ export class AssetPipeline {
     const sourceRel = opts.sourceRelPath ?? derivedSourceRelPath(opts.compiledRelPath);
     writeCheckpoint(opts.outputDir, sourceRel, opts.sourcePng);
 
-    const processed = this.pixelArt.process(knockoutVfxBackground(opts.sourcePng), {
-      targetWidth: opts.targetWidth,
-      targetHeight: opts.targetHeight,
-      tileSize: opts.tileSize,
-      skipQuantize: true,
-    });
+    const processed = this.compileActorFrame(
+      knockoutVfxBackground(opts.sourcePng),
+      opts.targetWidth,
+      opts.targetHeight,
+      opts.tileSize,
+    );
     writeCheckpoint(opts.outputDir, opts.compiledRelPath, processed.buffer);
 
     const det = runDeterministicAssetChecks(
