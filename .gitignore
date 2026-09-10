@@ -41,3 +41,5 @@ __*_import*__*
 __terrain_probe_output__.txt
 kernel.errors.txt
 *.zip
+*.db-shm
+*.db-wal

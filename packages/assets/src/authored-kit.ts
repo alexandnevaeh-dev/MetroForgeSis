@@ -1,7 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { CharacterVisualDNA, GameDNA } from '@metroforge/schemas';
-import { packageDirFromMeta, type GenerationProfile } from '@metroforge/shared';
+import {
+  isTopDownArchetype,
+  packageDirFromMeta,
+  type GenerationProfile,
+} from '@metroforge/shared';
 
 export const AUTHORED_COURIER_PROVIDER = 'authored-original';
 export const AUTHORED_COURIER_LICENSE = 'Original-MetroForge (commercial OK)';
@@ -32,13 +36,16 @@ export function loadAuthoredMasonryPng(filename: string): Buffer | null {
   return loadAuthoredPng(authoredMasonryDir(), filename);
 }
 
-/** Foundry visual-slice (and foundry-themed LOCAL_ONLY gens) ship the hand-authored courier kit. */
+/** The hand-authored courier kit is a SIDE-VIEW foundry-courier design (visor/pack/blade,
+ *  foundry-tender). It ships for the side-view Foundry visual slice and for any side-view gen
+ *  whose theme is explicitly foundry/courier/wanderer. It must never apply to a top-down game
+ *  (wrong genre) or to an unrelated side-view theme just because the profile is the slice. */
 export function shouldUseFoundryCourierKit(input: {
   profile: GenerationProfile;
   gameDna: GameDNA;
   characterVisualDna?: CharacterVisualDNA;
 }): boolean {
-  if (input.profile === 'VISUAL_VERTICAL_SLICE') return true;
+  if (isTopDownArchetype(input.gameDna.archetype)) return false;
   const hay = [
     input.gameDna.identity.title,
     input.gameDna.identity.tagline,

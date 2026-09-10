@@ -267,7 +267,7 @@ describe('AssetPipeline procedural path', () => {
     rmSync(outputDir, { recursive: true, force: true });
   });
 
-  it('loads authored foundry courier actors for VISUAL_VERTICAL_SLICE', async () => {
+  it('loads authored foundry courier actors for the side-view foundry visual slice', async () => {
     const outputDir = join(tmpdir(), `metroforge-assets-authored-${Date.now()}`);
     mkdirSync(outputDir, { recursive: true });
 
@@ -276,6 +276,9 @@ describe('AssetPipeline procedural path', () => {
       gameDna: {
         ...minimalDna,
         profile: 'VISUAL_VERTICAL_SLICE',
+        // The authored courier kit is gated on a side-view foundry/courier theme, not on the
+        // profile alone (it must never reach a top-down or unrelated side-view game).
+        narrative: { ...minimalDna.narrative, premise: 'a lone courier delves a ruined foundry' },
         technical: { ...minimalDna.technical, tileSize: 32 },
       },
       profile: 'VISUAL_VERTICAL_SLICE',
