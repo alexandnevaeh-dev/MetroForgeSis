@@ -381,11 +381,17 @@ func _inject_lights(room: Node, size: Vector2, _biome: String, archetype: String
 		return
 	var key := PointLight2D.new()
 	key.name = "QualityLightKey"
-	key.position = Vector2(size.x * 0.22, size.y * 0.26)
+	# Anchor the key as a warm focal pool on the courier's spawn so the frame has a clear starting
+	# subject and a real light->dark falloff, instead of a flat cool wash in the empty upper sky.
+	var focal := Vector2(size.x * 0.22, size.y * 0.26)
+	var player := room.get_node_or_null("Player") as Node2D
+	if tiled and player:
+		focal = Vector2(clampf(player.position.x + 24.0, size.x * 0.14, size.x * 0.52), player.position.y - 40.0)
+	key.position = focal
 	key.texture = tex
-	key.color = Color(0.72, 0.86, 1.0, 1)
-	key.energy = 0.72 if tiled else 0.4
-	key.texture_scale = 1.55 if tiled else 1.35
+	key.color = Color(1.0, 0.9, 0.74, 1) if tiled else Color(0.72, 0.86, 1.0, 1)
+	key.energy = 1.05 if tiled else 0.4
+	key.texture_scale = 1.25 if tiled else 1.35
 	key.z_index = 5
 	key.shadow_enabled = false
 	host.add_child(key)
@@ -423,6 +429,11 @@ func _enable_terrain_lighting(room: Node, archetype: String = "") -> void:
 		elif node_name == "RearWall" and archetype == "ability_shrine":
 			layer.light_mask = 2
 			layer.modulate = Color(0.34, 0.24, 0.22, 1)
+		elif node_name == "RearWall":
+			# Recede the rear architecture (mask 2 = not lit by the key/fill) and darken it so the
+			# lit walkable floor/platforms and the courier separate from the backdrop as depth.
+			layer.light_mask = 2
+			layer.modulate = Color(0.40, 0.40, 0.46, 1)
 
 
 func _attach_floor_occluder(room: Node, size: Vector2) -> void:
