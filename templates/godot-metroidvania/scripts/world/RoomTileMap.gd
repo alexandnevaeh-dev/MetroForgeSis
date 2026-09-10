@@ -279,14 +279,16 @@ func _paint_furnace_hearth(
 	wall: Vector2i,
 	ceiling: Vector2i,
 ) -> void:
-	## Ability shrine only. A furnace mouth behind the altar — darker rear masonry
-	## with an empty firebox so the pickup reads against the opening. No collision.
+	## Ability shrine only. A furnace mouth behind the floor pickup — darker rear
+	## masonry, empty firebox, hood, and two chimney stacks. No collision.
 	rear.modulate = Color(0.52, 0.36, 0.30, 1)
 	var lintel := maxi(1, crop_rows)
 	for x in range(2, cols - 2):
 		_rear_cell(rear, x, floor_row - 1, wall)
-	var mouth_x0 := maxi(4, int(cols * 0.40))
-	var mouth_x1 := mini(cols - 3, int(cols * 0.78))
+	# Pickup sits at x≈220 (col ~7 on 32px). Open the firebox around it so gold
+	# reads against the empty mouth instead of matching wall masonry.
+	var mouth_x0 := maxi(4, int(cols * 0.22))
+	var mouth_x1 := mini(cols - 3, int(cols * 0.72))
 	var mouth_top := maxi(lintel + 3, floor_row - 8)
 	var mouth_sill := floor_row - 1
 	for x in range(mouth_x0 - 2, mouth_x1 + 2):
@@ -294,13 +296,21 @@ func _paint_furnace_hearth(
 			var in_mouth := x >= mouth_x0 and x < mouth_x1 and y > mouth_top and y < mouth_sill
 			if in_mouth:
 				continue
-			_rear_cell(rear, x, y, ceiling if y == mouth_top else wall)
+			_rear_cell(rear, x, y, ceiling if y <= mouth_top + 1 else wall)
 	for x in range(mouth_x0, mouth_x1):
 		_rear_cell(rear, x, mouth_top, ceiling)
+		_rear_cell(rear, x, mouth_top + 1, ceiling)
 		_rear_cell(rear, x, mouth_sill, ceiling)
 	for y in range(mouth_top, mouth_sill + 1):
 		_rear_cell(rear, mouth_x0, y, wall)
 		_rear_cell(rear, mouth_x1, y, wall)
+	var stack_h := 5
+	for stack_x in [mouth_x0 + 1, mouth_x1 - 1]:
+		for y in range(maxi(lintel + 2, mouth_top - stack_h), mouth_top):
+			_rear_cell(rear, stack_x, y, wall)
+			_rear_cell(rear, stack_x + 1, y, wall)
+		_rear_cell(rear, stack_x, maxi(lintel + 2, mouth_top - stack_h), ceiling)
+		_rear_cell(rear, stack_x + 1, maxi(lintel + 2, mouth_top - stack_h), ceiling)
 
 
 func _paint_gallery_wall(

@@ -178,12 +178,14 @@ func _layout_parallax_strip(sprite: Sprite2D, size: Vector2, kind: String) -> vo
 	if tw < 2.0 or th < 2.0:
 		return
 	var s: float
-	if kind == "far":
-		# Cover the contain-zoom world view (and the room). Contain×2.1 of a wide
-		# cinematic plate left navy above/below a tall room. This is background
-		# coverage — CameraDirector still contain-zooms climb rooms.
-		var view := _visible_world_size(size)
-		var cover := Vector2(maxf(size.x, view.x), maxf(size.y, view.y))
+	if kind == "far" or kind == "far_room":
+		# Cover the authored room (far_room) or the contain-zoom world view (far).
+		# Ability shrine uses far_room so empty sky is not filled by stretching FarSky;
+		# CameraDirector frames the playable band instead.
+		var cover := size
+		if kind == "far":
+			var view := _visible_world_size(size)
+			cover = Vector2(maxf(size.x, view.x), maxf(size.y, view.y))
 		s = maxf(cover.x / tw, cover.y / th) * 1.02
 		sprite.scale = Vector2(s, s)
 		sprite.position = size * 0.5
@@ -217,10 +219,13 @@ func _tune_parallax(room: Node, size: Vector2, archetype: String = "") -> void:
 		# Fullscreen CanvasLayer composites over the tilemap. Hide leftovers from older rooms.
 		far_sky.visible = false
 	elif far_sky is Sprite2D:
-		_layout_parallax_strip(far_sky as Sprite2D, size, "far")
 		if archetype == "ability_shrine":
-			# Darken the plate so masonry/actors/pickup separate. Do not rescale.
+			# Cover the room plate only. Darken so masonry/actors/pickup separate.
+			# Do not cover-zoom to leftover contain-view sky.
+			_layout_parallax_strip(far_sky as Sprite2D, size, "far_room")
 			(far_sky as Sprite2D).modulate = Color(0.38, 0.30, 0.28, 1)
+		else:
+			_layout_parallax_strip(far_sky as Sprite2D, size, "far")
 		return
 	if px == null:
 		return

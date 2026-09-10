@@ -70,18 +70,19 @@ func apply_room_bounds(
 	var contain := minf(vp.x / maxf(room_size.x, 1.0), vp.y / maxf(room_size.y, 1.0))
 	var cover := maxf(vp.x / maxf(room_size.x, 1.0), vp.y / maxf(room_size.y, 1.0))
 	var fit := contain
-	# Foundry / cinematic plates are much wider than they are tall. Contain-zoom leaves a
-	# navy ColorRect band above/below the plate; cover a 360px gameplay band instead.
-	if visual_kit == "foundry" or room_size.x >= room_size.y * 2.5:
-		var floor_zoom := maxf(MIN_GAMEPLAY_ZOOM, _profile_zoom)
-		fit = maxf(cover, vp.y / FOUNDRY_VIEW_HEIGHT)
-		fit = clampf(fit, floor_zoom, MAX_GAMEPLAY_ZOOM)
-	elif _frame_playable:
-		# Contain the playable rect (full room width × reachable band). Not background
-		# cover-zoom and not a crop of platforms — empty sky above the climb is dropped.
+	if _frame_playable:
+		# Ability shrine only: contain the playable rect (full room width × reachable
+		# band). Takes precedence over foundry cover-zoom so empty sky is not the subject.
+		# Does not stretch FarSky and does not crop climb platforms.
 		var band_h := maxf(240.0, playable_bottom - playable_top)
 		fit = minf(vp.x / maxf(room_size.x, 1.0), vp.y / band_h)
 		fit = clampf(fit, contain, MAX_GAMEPLAY_ZOOM)
+	elif visual_kit == "foundry" or room_size.x >= room_size.y * 2.5:
+		# Foundry / cinematic plates are much wider than they are tall. Contain-zoom
+		# leaves a navy ColorRect band above/below the plate; cover a 360px gameplay band.
+		var floor_zoom := maxf(MIN_GAMEPLAY_ZOOM, _profile_zoom)
+		fit = maxf(cover, vp.y / FOUNDRY_VIEW_HEIGHT)
+		fit = clampf(fit, floor_zoom, MAX_GAMEPLAY_ZOOM)
 	zoom = Vector2(fit, fit)
 	position_smoothing_enabled = false
 	drag_horizontal_enabled = false
