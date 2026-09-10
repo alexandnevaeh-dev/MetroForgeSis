@@ -281,7 +281,7 @@ func _paint_furnace_hearth(
 ) -> void:
 	## Ability shrine only. A furnace mouth behind the floor pickup — darker rear
 	## masonry, empty firebox, hood, and two chimney stacks. No collision.
-	rear.modulate = Color(0.52, 0.36, 0.30, 1)
+	rear.modulate = Color(0.36, 0.24, 0.22, 1)
 	var lintel := maxi(1, crop_rows)
 	for x in range(2, cols - 2):
 		_rear_cell(rear, x, floor_row - 1, wall)

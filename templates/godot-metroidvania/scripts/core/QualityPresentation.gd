@@ -41,6 +41,8 @@ func apply_room(room: Node2D, room_id: String) -> void:
 	_inject_ambient(room, size, biome, room_id)
 	_inject_decor(room, size, biome, archetype, info)
 	_apply_outline(room)
+	if archetype == "ability_shrine":
+		_dress_ability_shrine(room, size)
 	_apply_camera(room, size, info)
 	var modulate := get_tree().get_first_node_in_group("world_manager")
 	if modulate:
@@ -145,6 +147,16 @@ func _clear_injected(room: Node) -> void:
 	var floor_occ := room.get_node_or_null("QualityFloorOccluder")
 	if floor_occ:
 		floor_occ.free()
+	for child in room.get_children():
+		var n := String(child.name)
+		if n.begins_with("AbilityPickup"):
+			child.z_index = 0
+			var sprite := child.get_node_or_null("Sprite") as CanvasItem
+			if sprite:
+				sprite.material = null
+				sprite.modulate = Color.WHITE
+		elif n.begins_with("NPC"):
+			(child as CanvasItem).modulate = Color.WHITE
 
 func _replace_stretched_background(room: Node, size: Vector2, biome: String) -> void:
 	var bg := room.get_node_or_null("Background")
@@ -351,23 +363,28 @@ func _inject_lights(room: Node, size: Vector2, _biome: String, archetype: String
 	var tex := _light_texture()
 	var tiled := room.get_node_or_null("Ground") != null
 	var shrine := archetype == "ability_shrine"
+	if shrine:
+		_inject_shrine_hearth_lights(room, size, host, tex)
+		_attach_actor_occluders(room)
+		_enable_terrain_lighting(room, archetype)
+		return
 	var key := PointLight2D.new()
 	key.name = "QualityLightKey"
-	key.position = Vector2(size.x * 0.58, size.y * 0.62) if shrine else Vector2(size.x * 0.22, size.y * 0.26)
+	key.position = Vector2(size.x * 0.22, size.y * 0.26)
 	key.texture = tex
-	key.color = Color(1.0, 0.48, 0.18, 1) if shrine else Color(0.72, 0.86, 1.0, 1)
-	key.energy = 1.15 if shrine else (0.72 if tiled else 0.4)
-	key.texture_scale = 1.85 if shrine else (1.55 if tiled else 1.35)
+	key.color = Color(0.72, 0.86, 1.0, 1)
+	key.energy = 0.72 if tiled else 0.4
+	key.texture_scale = 1.55 if tiled else 1.35
 	key.z_index = 5
 	key.shadow_enabled = false
 	host.add_child(key)
 	var fill := PointLight2D.new()
 	fill.name = "QualityLightFill"
-	fill.position = Vector2(size.x * 0.72, size.y * 0.78) if shrine else Vector2(size.x * 0.62, size.y * 0.74)
+	fill.position = Vector2(size.x * 0.62, size.y * 0.74)
 	fill.texture = tex
-	fill.color = Color(1.0, 0.62, 0.28, 1) if shrine else Color(1.0, 0.82, 0.62, 1)
-	fill.energy = 0.7 if shrine else (0.42 if tiled else 0.22)
-	fill.texture_scale = 1.2 if shrine else (1.35 if tiled else 1.05)
+	fill.color = Color(1.0, 0.82, 0.62, 1)
+	fill.energy = 0.42 if tiled else 0.22
+	fill.texture_scale = 1.35 if tiled else 1.05
 	fill.z_index = 5
 	fill.shadow_enabled = false
 	host.add_child(fill)
@@ -387,9 +404,14 @@ func _enable_terrain_lighting(room: Node, archetype: String = "") -> void:
 		layer.light_mask = 1
 		if node_name == "Ground":
 			if archetype == "ability_shrine":
-				layer.modulate = Color(1.0, 0.90, 0.78, 1)
+				# Walkable floor/platforms pick up the localized furnace light.
+				# RearWall uses a different mask so the glow does not flatten the hearth.
+				layer.modulate = Color(1.02, 0.94, 0.84, 1)
 			else:
 				layer.modulate = Color(0.86, 0.94, 0.98, 1)
+		elif node_name == "RearWall" and archetype == "ability_shrine":
+			layer.light_mask = 2
+			layer.modulate = Color(0.34, 0.24, 0.22, 1)
 
 
 func _attach_floor_occluder(room: Node, size: Vector2) -> void:
@@ -439,6 +461,10 @@ func _inject_ambient(room: Node, size: Vector2, biome: String, room_id: String) 
 	var biome_spec: Dictionary = spec.get("biome", {})
 	var kind := String(biome_spec.get("ambientVfx", "none"))
 	var tiled := room.get_node_or_null("Ground") != null
+	var archetype := String(_rooms.get(room_id, {}).get("archetype", ""))
+	if archetype == "ability_shrine":
+		_inject_shrine_mouth_embers(room, size)
+		return
 	if tiled and (kind == "" or kind == "none"):
 		kind = "mist"
 	if kind == "" or kind == "none":
@@ -484,6 +510,157 @@ func _light_texture() -> GradientTexture2D:
 	tex.fill_from = Vector2(0.5, 0.5)
 	tex.fill_to = Vector2(0.5, 0.0)
 	return tex
+
+
+func _ability_shrine_mouth_rect(size: Vector2) -> Rect2:
+	## Matches RoomTileMap._paint_furnace_hearth interior (no collision).
+	var ts := 32.0
+	var cols := int(size.x / ts)
+	var floor_row := int((size.y - ts * 2.0) / ts)
+	var mouth_x0 := maxi(4, int(cols * 0.22))
+	var mouth_x1 := mini(cols - 3, int(cols * 0.72))
+	var mouth_top := maxi(4, floor_row - 8)
+	var mouth_sill := floor_row - 1
+	var x := float(mouth_x0 + 1) * ts
+	var w := float(maxi(2, mouth_x1 - mouth_x0 - 1)) * ts
+	var y := float(mouth_top + 1) * ts
+	var h := float(maxi(2, mouth_sill - mouth_top - 1)) * ts
+	return Rect2(x, y, w, h)
+
+
+func _ember_gradient_texture() -> GradientTexture2D:
+	var g := Gradient.new()
+	g.offsets = PackedFloat32Array([0.0, 0.42, 1.0])
+	g.colors = PackedColorArray([
+		Color(0.10, 0.02, 0.01, 1),
+		Color(0.62, 0.14, 0.03, 1),
+		Color(1.0, 0.48, 0.08, 1),
+	])
+	var tex := GradientTexture2D.new()
+	tex.gradient = g
+	tex.width = 128
+	tex.height = 256
+	tex.fill = GradientTexture2D.FILL_LINEAR
+	tex.fill_from = Vector2(0.5, 0.0)
+	tex.fill_to = Vector2(0.5, 1.0)
+	return tex
+
+
+func _inject_shrine_hearth_lights(room: Node, size: Vector2, host: Node, tex: Texture2D) -> void:
+	var mouth := _ability_shrine_mouth_rect(size)
+	var hearth := PointLight2D.new()
+	hearth.name = "ShrineHearthLight"
+	hearth.position = Vector2(mouth.position.x + mouth.size.x * 0.5, mouth.position.y + mouth.size.y * 0.72)
+	hearth.texture = tex
+	hearth.color = Color(1.0, 0.46, 0.14, 1)
+	hearth.energy = 1.05
+	hearth.texture_scale = 0.72
+	hearth.range_item_cull_mask = 1
+	hearth.z_index = 5
+	hearth.shadow_enabled = false
+	host.add_child(hearth)
+	var sill := PointLight2D.new()
+	sill.name = "ShrineSillLight"
+	sill.position = Vector2(mouth.position.x + mouth.size.x * 0.5, mouth.end.y - 8.0)
+	sill.texture = tex
+	sill.color = Color(1.0, 0.58, 0.18, 1)
+	sill.energy = 0.55
+	sill.texture_scale = 0.38
+	sill.range_item_cull_mask = 1
+	sill.z_index = 5
+	sill.shadow_enabled = false
+	host.add_child(sill)
+	var pickup := _find_named_prefix(room, "AbilityPickup")
+	if pickup:
+		var halo := PointLight2D.new()
+		halo.name = "ShrinePickupHalo"
+		halo.position = pickup.position + Vector2(0, -14.0)
+		halo.texture = tex
+		halo.color = Color(0.95, 0.92, 0.72, 1)
+		halo.energy = 0.7
+		halo.texture_scale = 0.22
+		halo.range_item_cull_mask = 1
+		halo.z_index = 8
+		halo.shadow_enabled = false
+		host.add_child(halo)
+
+
+func _inject_shrine_mouth_embers(room: Node, size: Vector2) -> void:
+	var host := _host(room)
+	var mouth := _ability_shrine_mouth_rect(size)
+	var emitter := GPUParticles2D.new()
+	emitter.name = "ShrineMouthEmbers"
+	emitter.position = Vector2(mouth.position.x + mouth.size.x * 0.5, mouth.end.y - 12.0)
+	emitter.amount = 10
+	emitter.lifetime = 1.6
+	emitter.preprocess = 0.6
+	emitter.explosiveness = 0.0
+	emitter.z_index = -3
+	emitter.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	var mat := ParticleProcessMaterial.new()
+	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+	mat.emission_box_extents = Vector3(mouth.size.x * 0.28, 8.0, 1)
+	mat.direction = Vector3(0, -1, 0)
+	mat.spread = 12.0
+	mat.initial_velocity_min = 10.0
+	mat.initial_velocity_max = 28.0
+	mat.gravity = Vector3(0, -18.0, 0)
+	mat.scale_min = 0.08
+	mat.scale_max = 0.16
+	mat.color = Color(1.0, 0.48, 0.12, 0.7)
+	emitter.process_material = mat
+	host.add_child(emitter)
+
+
+func _dress_ability_shrine(room: Node, size: Vector2) -> void:
+	## Shrine-only readability: hot firebox, pickup halo/outline, muted NPC block.
+	## Does not change collision, camera, or HUD.
+	var host := _host(room)
+	var mouth := _ability_shrine_mouth_rect(size)
+	var ember := Sprite2D.new()
+	ember.name = "ShrineHearthEmber"
+	ember.texture = _ember_gradient_texture()
+	ember.centered = true
+	ember.position = mouth.position + mouth.size * 0.5
+	ember.scale = Vector2(mouth.size.x / 128.0, mouth.size.y / 256.0)
+	ember.z_index = -5
+	ember.z_as_relative = false
+	ember.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	host.add_child(ember)
+	var coals := ColorRect.new()
+	coals.name = "ShrineHearthCoals"
+	coals.position = Vector2(mouth.position.x + 8.0, mouth.end.y - 22.0)
+	coals.size = Vector2(mouth.size.x - 16.0, 18.0)
+	coals.color = Color(1.0, 0.38, 0.06, 0.92)
+	coals.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	coals.z_index = -5
+	coals.z_as_relative = false
+	host.add_child(coals)
+	var pickup := _find_named_prefix(room, "AbilityPickup")
+	if pickup:
+		pickup.z_index = 8
+		var sprite := pickup.get_node_or_null("Sprite") as CanvasItem
+		if sprite:
+			sprite.modulate = Color(1.18, 1.12, 1.05, 1)
+			if ResourceLoader.exists("res://scripts/shaders/sprite_outline.gdshader"):
+				var shader: Shader = load("res://scripts/shaders/sprite_outline.gdshader")
+				if shader:
+					var mat := ShaderMaterial.new()
+					mat.shader = shader
+					mat.set_shader_parameter("outline_color", Color(0.98, 0.94, 0.72, 0.95))
+					mat.set_shader_parameter("outline_width", 1.0)
+					sprite.material = mat
+	var npc := _find_named_prefix(room, "NPC")
+	if npc:
+		# Keep the block readable as an actor; pull the saturated yellow down.
+		(npc as CanvasItem).modulate = Color(0.42, 0.40, 0.38, 1)
+
+
+func _find_named_prefix(room: Node, prefix: String) -> Node2D:
+	for child in room.get_children():
+		if String(child.name).begins_with(prefix) and child is Node2D:
+			return child as Node2D
+	return null
 
 func _inject_decor(
 	room: Node,
