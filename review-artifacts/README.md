@@ -12,7 +12,7 @@ Actors are now procedural courier silhouettes (not mustard cubes). Spawn `gamepl
 
 | Field | Value |
 |---|---|
-| Code commit (after stills) | `b293f22b744f42c132e710009742d41bdc8f8e39` (`b293f22`) |
+| Code commit (after stills) | `30d350a` (warm beacons) on the playable-band framing pass |
 | Message | composition + ability-shrine camera pass + palette color pass + readability pass (brighter ledges, courier silhouette, shrine focal core) |
 | Before stills | Pre-pass recapture of the same prompt/seed, generated from `a04ce27` |
 | Slug | `foundry-visual-slice-v3` (before: `foundry-visual-slice-pr2`) |

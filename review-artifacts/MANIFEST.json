@@ -1,6 +1,5 @@
 {
-  "codeCommit": "b293f22b744f42c132e710009742d41bdc8f8e39",
-  "codeCommitShort": "b293f22",
+  "codeCommit": "30d350a",
   "generation": {
     "slug": "foundry-visual-slice-v3",
     "prompt": "Ashen Foundry: a lone courier delves a ruined mechanical forge of brass and sooted iron, side-view metroidvania",
@@ -130,5 +129,6 @@
       "bytes": 137262,
       "sha256": "a6651f38c3e0bfbc0e4cf83483c022d4101f05c4c2ea01be2ec42707b313d5a5"
     }
-  ]
+  ],
+  "codeCommitShort": "30d350a"
 }
