@@ -7,6 +7,12 @@ export * from './progress.js';
 export * from './world-edit.js';
 export { generateManualAsset } from './manual-asset.js';
 export type { ManualAssetRequest, ManualAssetResult, ManualAssetType } from './manual-asset.js';
+export { generateGameAsset, localAssetRelPath } from './local-game-asset.js';
+export type {
+  LocalGameAssetOptions,
+  LocalGameAssetResult,
+  LocalGameAssetType,
+} from './local-game-asset.js';
 export { loadProjectContext } from './project-loader.js';
 export type {
   LoadedProject,

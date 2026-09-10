@@ -93,6 +93,17 @@ export { pickTerrainVariant, variantAtlasForCell, TERRAIN_VARIANT_ROLES } from '
 export { generateUiPanel, generateUiIcon, UI_FOUNDRY_ASSETS } from './ui-foundry.js';
 export { generatePropSprite } from './prop-art.js';
 export {
+  processLocalAssetImage,
+  runAssetGenWorker,
+  resolveAssetGenWorker,
+  DEFAULT_ASSET_GEN_WORKER,
+} from './local-asset-worker.js';
+export type {
+  ProcessLocalAssetInput,
+  ProcessLocalAssetResult,
+  AssetGenWorkerResponse,
+} from './local-asset-worker.js';
+export {
   wrapIdentityProvider,
   capabilitiesFromRegistration,
   selectAnimationTier,
