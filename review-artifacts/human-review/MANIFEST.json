@@ -4,6 +4,7 @@
   "actorMaturity": "QA_REVIEW",
   "masonryMaturity": "QA_REVIEW",
   "architectureCommit": "fb7c08e",
+  "packetCommit": "013ba86",
   "roomIdentityCommit": "f5af11b",
   "slug": "foundry-visual-slice-pr2",
   "spawnStillSha256": "88a5f37af7d5d97488b20b3a7d1fa341f3d042ef4d9beada59a100c7ced0509b",

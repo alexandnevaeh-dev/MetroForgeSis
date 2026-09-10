@@ -38,7 +38,7 @@ Human rubric (score in Studio, 1–5): `artCoherence`, `playerReadability`, `env
 
 | Field | Value |
 |---|---|
-| Architecture / occlusion code | `fb7c08e` `feat(foundry): authored masonry kit, actor z-order, shrine architecture` plus the follow-up spawn mid-plate / tender-light tweak on this branch |
+| Architecture / occlusion code | `fb7c08e` + `013ba86` (tutorial mid-plate hide, tender fill, recapture packet) |
 | Per-role room identity (preserved) | `f5af11b` |
 | Authored courier kit (unchanged) | `232922d` |
 | Generation slug (recapture) | `foundry-visual-slice-pr2` with templates + authored atlas copied in |
