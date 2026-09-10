@@ -8,6 +8,17 @@ const SPAWN_MARGIN := 80
 var _current_room: Node2D = null
 var _room_data: Dictionary = {}
 var _transitioning: bool = false
+## Health-continuity fix: every room is its own scene with its own embedded Player node (see
+## _load_room below), so the outgoing Player instance and its HealthComponent are destroyed on
+## every transition. Without carrying the value forward here, an ordinary door — with no death,
+## no save/load, and no explicit heal — silently restored the player to full health every single
+## time, because the *new* Player's HealthComponent simply starts at its scene default. Captured
+## fresh on every _load_room() call (reset first, then conditionally repopulated) so a player who
+## died in the outgoing room never carries a stale positive value forward from an earlier,
+## unrelated transition. -1.0 means "nothing to carry" (fresh game's first room, or the outgoing
+## player was already dead).
+var _carried_health: float = -1.0
+var _carried_max_health: float = -1.0
 
 func _ready() -> void:
 	add_to_group("world_manager")
@@ -29,7 +40,19 @@ func _load_room_data() -> void:
 		file.close()
 
 func _load_room(room_id: String, spawn_side: String = "left") -> void:
+	# Capture the outgoing player's current health BEFORE tearing the room down — see the
+	# _carried_health doc comment above for why this exists. Reset unconditionally first so a
+	# stale value from an earlier transition never survives a room where the player died without
+	# ever leaving it (is_alive() correctly excludes that case below).
+	_carried_health = -1.0
+	_carried_max_health = -1.0
 	if _current_room:
+		var outgoing_player := _current_room.get_node_or_null("Player")
+		if outgoing_player:
+			var outgoing_health: HealthComponent = outgoing_player.get_node_or_null("HealthComponent")
+			if outgoing_health and outgoing_health.is_alive():
+				_carried_health = outgoing_health.current_health
+				_carried_max_health = outgoing_health.max_health
 		_current_room.queue_free()
 		_current_room = null
 
@@ -37,6 +60,14 @@ func _load_room(room_id: String, spawn_side: String = "left") -> void:
 	if not ResourceLoader.exists(scene_path):
 		push_warning("Room scene not found: %s" % scene_path)
 		return
+
+	# A pending save/checkpoint restore (SaveManager.consume_pending_player_health(), consumed by
+	# the new Player's own _ready() during add_child() below) must win over ordinary carryover —
+	# check it *before* add_child() consumes the flag, so a death/load respawn always applies the
+	# checkpoint's saved health rather than whatever the previous, unrelated instant happened to
+	# hold. This keeps the two flows distinct: ordinary transitions carry current health forward;
+	# a save/checkpoint load always restores the persisted value instead.
+	var used_save_restore := SaveManager.has_pending_health_restore()
 
 	var scene: PackedScene = load(scene_path)
 	_current_room = scene.instantiate()
@@ -59,6 +90,13 @@ func _load_room(room_id: String, spawn_side: String = "left") -> void:
 
 	var player := _current_room.get_node_or_null("Player")
 	if player:
+		if not used_save_restore and _carried_health >= 0.0:
+			var incoming_health: HealthComponent = player.get_node_or_null("HealthComponent")
+			if incoming_health:
+				if _carried_max_health > 0.0:
+					incoming_health.max_health = _carried_max_health
+				incoming_health.current_health = _carried_health
+				incoming_health.health_changed.emit(incoming_health.current_health, incoming_health.max_health)
 		_position_player_for_spawn(player, spawn_side)
 		_move_camera_to_room(player)
 		if has_node("/root/QualityPresentation"):
@@ -154,10 +192,10 @@ func _position_player_for_spawn(player: Node2D, spawn_side: String) -> void:
 		"left":
 			player.position.x = SPAWN_MARGIN
 		"bottom":
-			player.position.x = room_width / 2.0
+			player.position.x = min(room_width - SPAWN_MARGIN, room_width / 2.0 + SPAWN_MARGIN)
 			player.position.y = floor_y
 		"top":
-			player.position.x = room_width / 2.0
+			player.position.x = min(room_width - SPAWN_MARGIN, room_width / 2.0 + SPAWN_MARGIN)
 			player.position.y = 120.0
 		_:
 			player.position.x = SPAWN_MARGIN
@@ -174,4 +212,10 @@ func _on_room_entered(room_id: String) -> void:
 func _move_camera_to_room(player: Node2D) -> void:
 	var camera := player.get_node_or_null("Camera2D")
 	if camera:
+		var room_width := _current_room_width()
+		var room_height := float(_current_room.get_node_or_null("Ground").get("room_height")) if _current_room and _current_room.get_node_or_null("Ground") else 600.0
+		if camera.has_method("apply_room_bounds"):
+			var ground := _current_room.get_node_or_null("Ground") if _current_room else null
+			var kit := String(ground.get("visual_kit")) if ground else ""
+			camera.apply_room_bounds(Vector2(room_width, room_height), kit)
 		camera.make_current()

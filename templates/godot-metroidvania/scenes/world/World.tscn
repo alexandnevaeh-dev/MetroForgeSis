@@ -35,8 +35,8 @@ anchor_right = 0.0
 anchor_bottom = 0.0
 offset_left = 12.0
 offset_top = 12.0
-offset_right = 288.0
-offset_bottom = 148.0
+offset_right = 224.0
+offset_bottom = 54.0
 grow_horizontal = 0
 grow_vertical = 0
 mouse_filter = 2
@@ -47,9 +47,9 @@ anchors_preset = 0
 anchor_right = 0.0
 anchor_bottom = 0.0
 offset_left = 20.0
-offset_top = 20.0
-offset_right = 280.0
-offset_bottom = 140.0
+offset_top = 18.0
+offset_right = 216.0
+offset_bottom = 48.0
 grow_horizontal = 0
 grow_vertical = 0
 theme_override_constants/margin_left = 0
@@ -63,7 +63,7 @@ size_flags_horizontal = 0
 theme_override_constants/separation = 4
 
 [node name="HealthBar" type="ProgressBar" parent="GameHUD/HUD/MarginContainer/VBox"]
-custom_minimum_size = Vector2(220, 16)
+custom_minimum_size = Vector2(196, 14)
 layout_mode = 2
 size_flags_horizontal = 4
 max_value = 100.0
@@ -89,9 +89,9 @@ text = ""
 [node name="QuestTrackerPanel" type="PanelContainer" parent="GameHUD/HUD"]
 layout_mode = 1
 offset_left = 20.0
-offset_top = 110.0
+offset_top = 84.0
 offset_right = 280.0
-offset_bottom = 230.0
+offset_bottom = 204.0
 
 [node name="QuestTrackerView" type="Control" parent="GameHUD/HUD/QuestTrackerPanel"]
 custom_minimum_size = Vector2(260, 120)

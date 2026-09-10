@@ -1,7 +1,12 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { spawn, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { critiqueGameplayScreenshot } from '@metroforge/assets';
+import {
+  getPlatformInfo,
+  isolatedUserDataEnvironment,
+  terminateProcessTree,
+} from '@metroforge/shared';
 
 export type GameplayCaptureStrategy = 'headless' | 'windowed_gpu' | 'failed';
 
@@ -22,6 +27,83 @@ export interface GameplayCaptureTelemetry {
   }>;
   shots: string[];
   reason?: string;
+}
+
+export interface CaptureManifestEntry {
+  filename: string;
+  capturePurpose: string;
+  roomId?: string;
+  biomeId?: string;
+  entityId?: string;
+  enemyArchetype?: string;
+  playerState?: string;
+  bossPhase?: number | string;
+  runtimeTimestamp?: string;
+  candidateSlug?: string;
+  sourceShot?: string;
+}
+
+export const REQUIRED_CAPTURE_FILES = [
+  'spawn.png',
+  'player_idle.png',
+  'player_run.png',
+  'player_jump.png',
+  'player_dash.png',
+  'player_combat.png',
+  'enemy_A.png',
+  'enemy_B.png',
+  'enemy_C.png',
+  'biome_0.png',
+  'biome_1.png',
+  'biome_2.png',
+  'checkpoint.png',
+  'ability_pickup.png',
+  'ability_gate.png',
+  'npc_dialogue.png',
+  'boss_phase_1.png',
+  'boss_phase_2.png',
+  'boss_death.png',
+  'victory.png',
+] as const;
+
+export function collectCaptureFiles(qaDir: string): string[] {
+  if (!existsSync(qaDir)) return [];
+  const present = new Set<string>();
+  for (const entry of REQUIRED_CAPTURE_FILES) {
+    if (existsSync(join(qaDir, entry))) present.add(entry);
+  }
+  const entries = readdirSync(qaDir).filter((name) => name.endsWith('.png'));
+  for (const name of entries) {
+    if (REQUIRED_CAPTURE_FILES.includes(name as (typeof REQUIRED_CAPTURE_FILES)[number])) {
+      present.add(name);
+    }
+  }
+  return [...present].sort();
+}
+
+export function buildCaptureManifest(
+  entries: Array<Partial<CaptureManifestEntry> & Pick<CaptureManifestEntry, 'filename' | 'capturePurpose'>>,
+  candidateSlug: string,
+): CaptureManifestEntry[] {
+  const unique = new Map<string, CaptureManifestEntry>();
+  for (const entry of entries) {
+    const filename = entry.filename;
+    const base: CaptureManifestEntry = {
+      filename,
+      capturePurpose: entry.capturePurpose,
+      roomId: entry.roomId,
+      biomeId: entry.biomeId,
+      entityId: entry.entityId,
+      enemyArchetype: entry.enemyArchetype,
+      playerState: entry.playerState,
+      bossPhase: entry.bossPhase,
+      runtimeTimestamp: entry.runtimeTimestamp ?? new Date().toISOString(),
+      candidateSlug,
+      sourceShot: entry.sourceShot,
+    };
+    unique.set(filename, base);
+  }
+  return [...unique.values()].sort((a, b) => a.filename.localeCompare(b.filename));
 }
 
 export function headlessTextureNull(output: string): boolean {
@@ -46,22 +128,6 @@ export function needsWindowedCaptureFallback(opts: {
   }
 }
 
-function killProcessTree(pid: number): void {
-  try {
-    if (process.platform === 'win32') {
-      spawn('taskkill', ['/PID', String(pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true });
-    } else {
-      process.kill(-pid, 'SIGKILL');
-    }
-  } catch {
-    try {
-      process.kill(pid, 'SIGKILL');
-    } catch {
-      /* already gone */
-    }
-  }
-}
-
 function runGodotSync(opts: {
   godotPath: string;
   projectPath: string;
@@ -81,7 +147,7 @@ function runGodotSync(opts: {
   });
   const output = `${result.stdout ?? ''}\n${result.stderr ?? ''}${result.error ? `\n${result.error.message}` : ''}`;
   const killed = Boolean(result.error && /TIMEDOUT/i.test(result.error.message));
-  if (result.pid) killProcessTree(result.pid);
+  if (result.pid && killed) terminateProcessTree(result.pid);
   return {
     output,
     exitCode: result.status,
@@ -121,6 +187,7 @@ export function captureGameplayScreenshots(opts: {
   godotPath: string;
   projectPath: string;
   headlessOutput?: string;
+  userDataDir?: string;
 }): GameplayCaptureTelemetry {
   const qaDir = join(opts.projectPath, 'qa');
   mkdirSync(qaDir, { recursive: true });
@@ -149,6 +216,7 @@ export function captureGameplayScreenshots(opts: {
     ],
       timeoutMs: 90_000,
       windowsHide: true,
+      env: isolatedUserDataEnvironment(opts.userDataDir),
     });
     const critique = recordShotCritique(screenshotPath);
     telemetry.attempts.push({
@@ -210,7 +278,7 @@ export function captureGameplayScreenshots(opts: {
       '--path',
       opts.projectPath,
       '--rendering-driver',
-      'd3d12',
+      getPlatformInfo().capabilities.godotRenderingDriver,
       '--resolution',
       readViewportResolution(opts.projectPath),
       scene,
@@ -220,6 +288,8 @@ export function captureGameplayScreenshots(opts: {
     env: {
       METROFORGE_CAPTURE: '1',
       METROFORGE_CAPTURE_STRATEGY: 'windowed_gpu',
+      METROFORGE_HUD_MODE: 'PRESENTATION_CAPTURE',
+      ...isolatedUserDataEnvironment(opts.userDataDir),
     },
   });
 
@@ -268,6 +338,7 @@ function readViewportResolution(projectPath: string): string {
 
 function collectShots(qaDir: string): string[] {
   const names = [
+    ...REQUIRED_CAPTURE_FILES,
     'screenshot_gameplay.png',
     'screenshot_spawn.png',
     'screenshot_exploration.png',
@@ -275,9 +346,21 @@ function collectShots(qaDir: string): string[] {
     'screenshot_ability.png',
     'screenshot_boss.png',
   ];
-  return names.filter((name) => existsSync(join(qaDir, name)));
+  return [...new Set(names.filter((name) => existsSync(join(qaDir, name))))];
 }
 
 function writeTelemetry(qaDir: string, telemetry: GameplayCaptureTelemetry): void {
-  writeFileSync(join(qaDir, 'capture_telemetry.json'), JSON.stringify(telemetry, null, 2));
+  const shots = collectShots(qaDir);
+  telemetry.shots = shots;
+  const manifest = buildCaptureManifest(
+    shots.map((filename) => ({
+      filename,
+      capturePurpose: filename.replace(/\.(png|jpg)$/i, ''),
+      runtimeTimestamp: new Date().toISOString(),
+      candidateSlug: 'heart-engine-visual-candidate-09',
+    })),
+    'heart-engine-visual-candidate-09',
+  );
+  writeFileSync(join(qaDir, 'capture_telemetry.json'), JSON.stringify({ ...telemetry, shots }, null, 2));
+  writeFileSync(join(qaDir, 'capture_manifest.json'), JSON.stringify(manifest, null, 2));
 }

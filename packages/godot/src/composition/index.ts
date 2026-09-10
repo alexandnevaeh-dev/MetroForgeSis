@@ -25,6 +25,9 @@ export type {
   LightingPlan,
   AtmospherePlan,
   LandmarkPlan,
+  RoomPlan,
+  RoomPlanZone,
+  MajorArchitectureRole,
   RoomVisualIntent,
   GeometryRect,
 } from './room-blueprint.js';

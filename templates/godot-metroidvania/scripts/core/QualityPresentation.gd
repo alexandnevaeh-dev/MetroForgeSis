@@ -32,25 +32,25 @@ func apply_room(room: Node2D, room_id: String) -> void:
 	var size := Vector2(float(info.get("width", 800)), float(info.get("height", 600)))
 	var biome := String(info.get("biomeId", "biome_0"))
 	var archetype := String(info.get("archetype", "connector"))
-	_replace_stretched_background(room, size, biome)
 	_hide_collision_slabs(room)
+	_apply_camera(room, size)
+	_replace_stretched_background(room, size, biome)
 	_tune_parallax(room, size)
 	_inject_depth_layers(room, size, biome)
 	_inject_atmosphere_layers(room, size, biome)
-	_inject_lights(room, size, biome, archetype)
+	_inject_lights(room, size, biome, archetype, room_id)
 	_inject_ambient(room, size, biome, room_id)
 	_inject_decor(room, size, biome, archetype, info)
+	_hide_env_prop_lawn(room)
 	_apply_outline(room)
-	_apply_camera(room, size)
 	var modulate := get_tree().get_first_node_in_group("world_manager")
 	if modulate:
 		var cm := modulate.get_node_or_null("WorldCanvasModulate") as CanvasModulate
 		if cm:
-			# Tiled citadel interiors are already dark teal; extra dimming turns masonry into mud.
 			if room.get_node_or_null("Ground") != null:
-				cm.color = Color(0.86, 0.90, 0.96, 1)
+				cm.color = Color(1, 1, 1, 1)
 			else:
-				cm.color = _modulate_for_biome(biome)
+				cm.color = _modulate_for_biome(biome, room_id)
 
 func _on_room_entered(room_id: String) -> void:
 	var world := get_tree().get_first_node_in_group("world_manager")
@@ -147,15 +147,16 @@ func _replace_stretched_background(room: Node, size: Vector2, biome: String) -> 
 	var bg := room.get_node_or_null("Background")
 	if bg is ColorRect:
 		var sky := bg as ColorRect
-		sky.visible = room.get_node_or_null("FarSky") == null and room.get_node_or_null("ParallaxBg/far") == null
-		sky.color = _biome_far(biome)
-		sky.z_index = -30
+		# Camera contain-zoom often sees past the 800px room. Unfilled world
+		# reads as full-height black piers on the left and right of stills.
+		sky.visible = true
+		sky.color = Color(0.09, 0.16, 0.28, 1)
+		sky.z_index = -90
 		sky.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		# Cover the whole room so uncovered camera edges aren't a black void.
-		sky.offset_left = -240.0
-		sky.offset_top = -180.0
-		sky.offset_right = size.x + 240.0
-		sky.offset_bottom = size.y + 180.0
+		sky.offset_left = -640.0
+		sky.offset_top = -360.0
+		sky.offset_right = size.x + 640.0
+		sky.offset_bottom = size.y + 360.0
 	elif bg is CanvasItem:
 		(bg as CanvasItem).visible = false
 
@@ -173,10 +174,20 @@ func _layout_parallax_strip(sprite: Sprite2D, size: Vector2, kind: String) -> vo
 		return
 	var s: float
 	if kind == "far":
-		# Contain the authored plate, then overscan so look-ahead does not flash the sky ColorRect.
-		s = minf(size.x / tw, size.y / th) * 2.1
+		# Cover the camera view with the whole 16:9 plate. Room-sized contain left
+		# navy bars beside tall rooms after capture zoom.
+		var view := size
+		var cam := get_viewport().get_camera_2d()
+		if cam:
+			var vp := get_viewport().get_visible_rect().size
+			if cam.zoom.x > 0.01:
+				view = vp / cam.zoom
+		s = maxf(view.x / tw, view.y / th) * 1.04
 		sprite.scale = Vector2(s, s)
-		sprite.position = size * 0.5
+		if cam:
+			sprite.global_position = cam.global_position
+		else:
+			sprite.position = size * 0.5
 	elif kind == "mid_full" or kind == "near_full":
 		s = minf(size.x / tw, size.y / th)
 		sprite.scale = Vector2(s, s)
@@ -234,6 +245,13 @@ func _hide_collision_slabs(room: Node) -> void:
 			var area_vis := child.get_node_or_null("Visual")
 			if area_vis is CanvasItem:
 				(area_vis as CanvasItem).visible = false
+
+
+func _hide_env_prop_lawn(room: Node) -> void:
+	## Six evenly spaced 32px grass/mushroom blobs on the floor read as prototype tufts.
+	for child in room.get_children():
+		if String(child.name).begins_with("EnvProp_") and child is CanvasItem:
+			(child as CanvasItem).visible = false
 
 func _inject_depth_layers(room: Node, size: Vector2, biome: String) -> void:
 	## ParallaxBg already carries far/mid/near. Injecting full plates again covers the tileset.
@@ -313,27 +331,28 @@ func _inject_atmosphere_layers(room: Node, size: Vector2, biome: String) -> void
 		(near_node as CanvasItem).visible = true
 		var near_sprite := near_node.get_node_or_null("Sprite") as Sprite2D
 		if near_sprite:
-			_layout_parallax_strip(near_sprite, size, "near_full")
+			_layout_parallax_strip(near_sprite, size, "near")
 	else:
 		var near_path := "res://assets/backgrounds/%s/near.png" % biome
 		if ResourceLoader.exists(near_path) and host.get_node_or_null("QualityNearSprite") == null:
 			_inject_parallax_sprite(host, "QualityNearSprite", near_path, size * 0.5, -18)
 			var created_near := host.get_node_or_null("QualityNearSprite") as Sprite2D
 			if created_near:
-				_layout_parallax_strip(created_near, size, "near_full")
+				_layout_parallax_strip(created_near, size, "near")
 
 
-func _inject_lights(room: Node, size: Vector2, _biome: String, _archetype: String) -> void:
+func _inject_lights(room: Node, size: Vector2, biome: String, archetype: String, room_id: String) -> void:
 	var host := _host(room)
 	var tex := _light_texture()
 	var tiled := room.get_node_or_null("Ground") != null
+	var profile := _biome_light_profile(biome, room_id)
 	var key := PointLight2D.new()
 	key.name = "QualityLightKey"
 	key.position = Vector2(size.x * 0.22, size.y * 0.26)
 	key.texture = tex
-	key.color = Color(0.72, 0.86, 1.0, 1)
-	key.energy = 0.72 if tiled else 0.4
-	key.texture_scale = 1.55 if tiled else 1.35
+	key.color = _color(profile["key"])
+	key.energy = clampf(float(profile["keyEnergy"]), 0.2, 1.8)
+	key.texture_scale = 1.35 if tiled else 1.35
 	key.z_index = 5
 	key.shadow_enabled = false
 	host.add_child(key)
@@ -341,16 +360,49 @@ func _inject_lights(room: Node, size: Vector2, _biome: String, _archetype: Strin
 	fill.name = "QualityLightFill"
 	fill.position = Vector2(size.x * 0.62, size.y * 0.74)
 	fill.texture = tex
-	fill.color = Color(1.0, 0.82, 0.62, 1)
-	fill.energy = 0.42 if tiled else 0.22
+	fill.color = _color(profile["fill"])
+	fill.energy = clampf(float(profile["fillEnergy"]), 0.1, 1.4)
 	fill.texture_scale = 1.35 if tiled else 1.05
 	fill.z_index = 5
 	fill.shadow_enabled = false
 	host.add_child(fill)
-	# Tiled rooms already have PointLight2D fill. A DirectionalLight2D plus floor
-	# occluder stamped huge repeating shadows across every masonry cell.
+	if tiled:
+		call_deferred("_attach_actor_light")
 	_attach_actor_occluders(room)
 	_enable_terrain_lighting(room)
+	if archetype == "boss" or archetype == "miniboss":
+		var arena := PointLight2D.new()
+		arena.name = "QualityBossArenaLight"
+		arena.position = Vector2(size.x * 0.5, size.y * 0.34)
+		arena.texture = tex
+		arena.color = _color(profile["arena"])
+		arena.energy = clampf(float(profile["arenaEnergy"]), 0.25, 1.8)
+		arena.texture_scale = 2.2
+		arena.z_index = 5
+		arena.shadow_enabled = false
+		host.add_child(arena)
+	var existing := host.get_children()
+	if existing.size() > 4:
+		var limit := 4 if (archetype == "boss" or archetype == "miniboss") else 3
+		for i in range(existing.size() - limit):
+			var light_node := existing[i] as Node
+			if light_node and light_node.is_in_group("dynamic_light"):
+				light_node.queue_free()
+
+
+func _attach_actor_light() -> void:
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if player == null or player.get_node_or_null("QualityActorLight") != null:
+		return
+	var lantern := PointLight2D.new()
+	lantern.name = "QualityActorLight"
+	lantern.texture = _light_texture()
+	lantern.color = Color(1.0, 0.9, 0.74, 1)
+	lantern.energy = 0.85
+	lantern.texture_scale = 0.9
+	lantern.z_index = 6
+	lantern.shadow_enabled = false
+	player.add_child(lantern)
 
 
 func _enable_terrain_lighting(room: Node) -> void:
@@ -362,7 +414,7 @@ func _enable_terrain_lighting(room: Node) -> void:
 			continue
 		layer.light_mask = 1
 		if node_name == "Ground":
-			layer.modulate = Color(0.86, 0.94, 0.98, 1)
+			layer.modulate = Color(1, 1, 1, 1)
 
 
 func _attach_floor_occluder(room: Node, size: Vector2) -> void:
@@ -561,7 +613,10 @@ func _apply_camera(room: Node, size: Vector2) -> void:
 		return
 	var camera := player.get_node_or_null("Camera2D")
 	if camera and camera.has_method("apply_room_bounds"):
-		camera.apply_room_bounds(size)
+		var ground := room.get_node_or_null("Ground")
+		var kit := String(ground.get("visual_kit")) if ground else ""
+		camera.apply_room_bounds(size, kit)
+
 
 func _host(room: Node) -> Node2D:
 	var existing := room.get_node_or_null("QualityInjected") as Node2D
@@ -597,17 +652,34 @@ func _biome_far(biome: String) -> Color:
 func _biome_mid(biome: String) -> Color:
 	return _palette.steel.darkened(0.25).lerp(_palette.shadow, 0.35)
 
-func _modulate_for_biome(biome: String) -> Color:
-	var idx := _biome_index(biome)
-	if idx % 3 == 1:
-		return Color(0.88, 0.90, 0.98, 1)
-	if idx % 3 == 2:
-		return Color(0.92, 0.86, 0.86, 1)
-	return Color(0.90, 0.91, 0.96, 1)
+func _modulate_for_biome(biome: String, room_id: String = "") -> Color:
+	var profile := _biome_light_profile(biome, room_id)
+	return _color(profile["ambient"])
 
 func _biome_index(biome: String) -> int:
 	var digits := biome.get_slice("_", 1)
 	return int(digits)
+
+func _biome_light_profile(biome: String, room_id: String) -> Dictionary:
+	var idx := _biome_index(biome)
+	var seed_value := hash(str(room_id) + biome + "quality_light")
+	var palettes: Array = [
+		{"ambient": Color(0.90, 0.92, 0.98, 1.0), "key": Color(1.0, 0.85, 0.68, 1.0), "fill": Color(0.82, 0.86, 0.98, 1.0), "arena": Color(1.0, 0.88, 0.72, 1.0), "keyEnergy": 0.62, "fillEnergy": 0.24, "arenaEnergy": 0.92},
+		{"ambient": Color(0.88, 0.83, 0.80, 1.0), "key": Color(1.0, 0.72, 0.50, 1.0), "fill": Color(0.95, 0.75, 0.56, 1.0), "arena": Color(1.0, 0.54, 0.30, 1.0), "keyEnergy": 0.72, "fillEnergy": 0.28, "arenaEnergy": 1.18},
+		{"ambient": Color(0.80, 0.86, 0.92, 1.0), "key": Color(0.82, 0.92, 1.0, 1.0), "fill": Color(0.64, 0.78, 0.90, 1.0), "arena": Color(0.72, 0.88, 0.98, 1.0), "keyEnergy": 0.64, "fillEnergy": 0.26, "arenaEnergy": 1.08},
+	]
+	var base: Dictionary = palettes[idx % palettes.size()]
+	var drift := float(seed_value % 11) / 20.0 - 0.25
+	base["keyEnergy"] = clampf(float(base["keyEnergy"]) + drift, 0.4, 1.0)
+	base["fillEnergy"] = clampf(float(base["fillEnergy"]) + (drift * 0.5), 0.16, 0.7)
+	return base
+
+func _color(value) -> Color:
+	if value is Color:
+		return value
+	if value is Array and value.size() >= 3:
+		return Color(float(value[0]), float(value[1]), float(value[2]), 1.0)
+	return Color(0.9, 0.92, 0.96, 1.0)
 
 func _hex_color(hex: String) -> Color:
 	if hex.begins_with("#"):

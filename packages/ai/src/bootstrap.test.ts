@@ -14,6 +14,7 @@ describe('bootstrapProviders — canonical model catalog reconciliation', () => 
     const { models } = await bootstrapProviders({
       mode: 'LOCAL_ONLY',
       ollamaBaseUrl: 'http://localhost:11434',
+      skipHealthChecks: true,
     });
     const nvidiaModels = models.list().filter((m) => m.provider === 'nvidia');
     // The catalog entries still parse and map correctly...
@@ -31,6 +32,7 @@ describe('bootstrapProviders — canonical model catalog reconciliation', () => 
       mode: 'HYBRID_FREE',
       ollamaBaseUrl: 'http://localhost:11434',
       nvidiaApiKey: 'nvapi-test-fake-key-for-bootstrap-test-only',
+      skipHealthChecks: true,
     });
 
     expect(registry.get('nvidia')?.enabled).toBe(true);
@@ -56,6 +58,7 @@ describe('bootstrapProviders — canonical model catalog reconciliation', () => 
     const { models } = await bootstrapProviders({
       mode: 'LOCAL_ONLY',
       ollamaBaseUrl: 'http://localhost:11434',
+      skipHealthChecks: true,
     });
     const ollamaModels = models.list().filter((m) => m.provider === 'ollama');
     expect(ollamaModels.length).toBeGreaterThan(0);
@@ -66,6 +69,7 @@ describe('bootstrapProviders — canonical model catalog reconciliation', () => 
     const { models } = await bootstrapProviders({
       mode: 'LOCAL_ONLY',
       ollamaBaseUrl: 'http://localhost:11434',
+      skipHealthChecks: true,
     });
     // sdxl-turbo etc. are image-generation models with no text-generation capability mapping —
     // they must not leak into ModelRegistry (which packages/assets' separate
@@ -73,5 +77,19 @@ describe('bootstrapProviders — canonical model catalog reconciliation', () => 
     const ids = models.list().map((m) => m.id);
     expect(ids).not.toContain('sdxl-turbo');
     expect(ids).not.toContain('whisper-base');
+  });
+
+  it('keeps the canonical diffusion model family in the catalog for image routing', async () => {
+    const { catalog } = await bootstrapProviders({
+      mode: 'LOCAL_ONLY',
+      ollamaBaseUrl: 'http://localhost:11434',
+      skipHealthChecks: true,
+    });
+
+    const imageIds = catalog.list().filter((m) => m.modality === 'image').map((m) => m.id);
+    expect(imageIds).toContain('sdxl-base-1.0');
+    expect(imageIds).toContain('sdxl-lightning');
+    expect(imageIds).toContain('sdxl-turbo');
+    expect(imageIds).toContain('sd-1.5');
   });
 });

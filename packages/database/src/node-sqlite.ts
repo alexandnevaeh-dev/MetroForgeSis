@@ -58,6 +58,7 @@ export async function openNodeSqliteDatabase(dbPath: string): Promise<SqliteData
   const { DatabaseSync } = await import('node:sqlite');
   const db = new DatabaseSync(dbPath) as NodeDatabase;
   db.exec('PRAGMA journal_mode = WAL');
+  db.exec('PRAGMA busy_timeout = 30000');
   db.exec('PRAGMA foreign_keys = ON');
   return new NodeSqliteDatabase(db);
 }

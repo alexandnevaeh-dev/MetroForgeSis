@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 
 export type ToolStatus = 'PASS' | 'WARN' | 'FAIL';
 
@@ -13,11 +13,17 @@ export interface ToolInfo {
   capabilities: string[];
 }
 
-async function tryExec(commands: string[]): Promise<{ version: string; path: string } | null> {
-  for (const cmd of commands) {
+type CommandSpec = readonly [executable: string, ...args: string[]];
+
+async function tryExec(commands: CommandSpec[]): Promise<{ version: string; path: string } | null> {
+  for (const [executable, ...args] of commands) {
     try {
-      const output = execSync(cmd, { encoding: 'utf-8', timeout: 8000, windowsHide: true });
-      return { version: output.trim().split('\n')[0] ?? 'detected', path: cmd.split(' ')[0] ?? cmd };
+      const output = execFileSync(executable, args, {
+        encoding: 'utf-8',
+        timeout: 8000,
+        windowsHide: true,
+      });
+      return { version: output.trim().split('\n')[0] ?? 'detected', path: executable };
     } catch {
       // try next
     }
@@ -59,7 +65,7 @@ export async function detectGodot(
 }
 
 export async function detectOllama(baseUrl?: string): Promise<ToolInfo> {
-  const cliResult = await tryExec(['ollama --version']);
+  const cliResult = await tryExec([['ollama', '--version']]);
   let serverHealthy = false;
   if (baseUrl) {
     try {
@@ -90,7 +96,7 @@ export async function detectOllama(baseUrl?: string): Promise<ToolInfo> {
 export async function detectGeneric(
   id: string,
   name: string,
-  commands: string[],
+  commands: CommandSpec[],
   capabilities: string[] = [],
 ): Promise<ToolInfo> {
   const result = await tryExec(commands);
@@ -125,9 +131,9 @@ export class ToolRegistry {
         envPath: options.godotEnvPath,
       }),
       detectOllama(options.ollamaUrl ?? 'http://localhost:11434'),
-      detectGeneric('python', 'Python', ['python --version', 'python3 --version'], ['scripting', 'diffusers_worker']),
-      detectGeneric('ffmpeg', 'FFmpeg', ['ffmpeg -version'], ['audio_processing']),
-      detectGeneric('git', 'Git', ['git --version'], ['version_control']),
+      detectGeneric('python', 'Python', [['python', '--version'], ['python3', '--version']], ['scripting', 'diffusers_worker']),
+      detectGeneric('ffmpeg', 'FFmpeg', [['ffmpeg', '-version']], ['audio_processing']),
+      detectGeneric('git', 'Git', [['git', '--version']], ['version_control']),
     ]);
 
     for (const tool of results) {

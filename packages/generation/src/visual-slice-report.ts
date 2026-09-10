@@ -34,7 +34,6 @@ const EVIDENCE_COPIES: Array<{ from: string; to: string }> = [
   { from: 'assets/qa/enemy-animation-sheet.png', to: 'reports/enemy-animation-sheet.png' },
   { from: 'assets/qa/boss-animation-sheet.png', to: 'reports/boss-animation-sheet.png' },
   { from: 'assets/qa/tileset-test.png', to: 'reports/tileset-test.png' },
-  { from: 'assets/qa/biome-layers.png', to: 'reports/biome-layers.png' },
   { from: 'qa/screenshot_gameplay.png', to: 'reports/qa-gameplay.png' },
 ];
 
@@ -69,6 +68,17 @@ export function collectVisualSliceEvidence(projectPath: string): string[] {
         /* skip unreadable frame */
       }
     }
+  }
+
+  for (let biomeIndex = 0; biomeIndex < 3; biomeIndex++) {
+    const rel = `assets/qa/biome_${biomeIndex}-layers.png`;
+    const src = join(projectPath, rel);
+    const destRel = `reports/biome_${biomeIndex}-layers.png`;
+    const dest = join(projectPath, destRel);
+    if (!existsSync(src)) continue;
+    copyFileSync(src, dest);
+    present.push(destRel);
+    contactFrames.push({ label: `biome_${biomeIndex}-layers`, png: readFileSync(dest) });
   }
 
   if (contactFrames.length > 0) {

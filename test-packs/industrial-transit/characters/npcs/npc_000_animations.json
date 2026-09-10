@@ -1,0 +1,22 @@
+{
+  "walk": {
+    "frameCount": 6,
+    "fps": 8,
+    "loop": true
+  },
+  "attack": {
+    "frameCount": 4,
+    "fps": 8,
+    "loop": false
+  },
+  "hurt": {
+    "frameCount": 4,
+    "fps": 8,
+    "loop": false
+  },
+  "death": {
+    "frameCount": 4,
+    "fps": 8,
+    "loop": false
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "source": "deterministic-control-fixture",
+  "poses": [
+    { "id": "idle", "control": "pose-fixtures/idle.json" },
+    { "id": "run-contact", "control": "pose-fixtures/run-contact.json" },
+    { "id": "run-passing", "control": "pose-fixtures/run-passing.json" },
+    { "id": "attack-anticipation", "control": "pose-fixtures/attack-anticipation.json" },
+    { "id": "attack-strike", "control": "pose-fixtures/attack-strike.json" },
+    { "id": "hurt", "control": "pose-fixtures/hurt.json" },
+    { "id": "death", "control": "pose-fixtures/death.json" }
+  ],
+  "productionUse": false,
+  "note": "Controls only; never promoted as final artwork."
+}

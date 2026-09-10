@@ -7,6 +7,11 @@ extends StaticBody2D
 ## via LockedDoor.new() (OverworldManager._spawn_pois()), not from a .tscn — every child node is
 ## built here in code rather than assumed to already exist in a scene tree.
 
+## Real, always-generated "ability-locked gate marker" art (see packages/assets/src/
+## visual-enhancement/planner.ts) — shared with ItemGate.gd, which is the same "locked until you
+## own the right item" concept gated by a different rule (any owned item vs. specifically a key).
+const GENERATED_TEXTURE_PATH := "res://assets/generated/gate/interactive_ability_gate.png"
+
 @export var key_id: String = ""
 @export var door_id: String = ""
 @export var target_area_id: String = ""
@@ -14,6 +19,7 @@ extends StaticBody2D
 var unlocked: bool = false
 
 var _area: Area2D
+var _sprite: Sprite2D
 
 func _ready() -> void:
 	add_to_group("interactable")
@@ -26,11 +32,17 @@ func _ready() -> void:
 	body_shape.shape.size = Vector2(16, 16)
 	add_child(body_shape)
 
-	var visual := ColorRect.new()
-	visual.color = Color(0.55, 0.35, 0.2, 1.0)
-	visual.position = Vector2(-8, -8)
-	visual.size = Vector2(16, 16)
-	add_child(visual)
+	if ResourceLoader.exists(GENERATED_TEXTURE_PATH):
+		_sprite = Sprite2D.new()
+		_sprite.texture = load(GENERATED_TEXTURE_PATH)
+		_sprite.scale = Vector2(0.5, 0.5)
+		add_child(_sprite)
+	else:
+		var visual := ColorRect.new()
+		visual.color = Color(0.55, 0.35, 0.2, 1.0)
+		visual.position = Vector2(-8, -8)
+		visual.size = Vector2(16, 16)
+		add_child(visual)
 
 	_area = Area2D.new()
 	_area.collision_layer = 0
@@ -59,6 +71,14 @@ func unlock() -> void:
 	set_collision_layer_value(1, false)
 	modulate = Color(0.5, 0.9, 0.6, 1.0)
 	AudioManager.play_sfx("pickup")
+	# Real motion instead of an instant tint swap — the panel visibly retracts (slides up, fades
+	# toward translucent) rather than just changing color in place, giving the unlock a readable
+	# "parting" beat.
+	if _sprite:
+		var tween := create_tween()
+		tween.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+		tween.tween_property(_sprite, "position:y", _sprite.position.y - 14.0, 0.35)
+		tween.parallel().tween_property(_sprite, "modulate:a", 0.4, 0.35)
 
 func _on_body_entered(body: Node2D) -> void:
 	if not unlocked or not body.is_in_group("player") or target_area_id.is_empty():

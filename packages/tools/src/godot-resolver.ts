@@ -1,5 +1,5 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { execSync } from 'node:child_process';
+import { accessSync, constants, existsSync, readFileSync, readdirSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
@@ -25,8 +25,13 @@ export interface ResolveGodotOptions {
   preference?: string | null;
   /** Optional per-project override from project.json `godotExecutable`. */
   projectOverride?: string | null;
-  /** `GODOT_EXECUTABLE` / loadConfig().godotExecutable. */
+  /** Explicit environment/config path. Falls back to GODOT_EXECUTABLE, GODOT4_PATH, GODOT_PATH. */
   envPath?: string | null;
+  /** Dependency-injection seams for cross-platform tests and embedded runtimes. */
+  platform?: NodeJS.Platform;
+  architecture?: string;
+  environment?: NodeJS.ProcessEnv;
+  homeDir?: string;
   /** Extra candidate absolute paths (tests / custom). */
   extraKnownPaths?: string[];
   /** When false, skip `--version` probe (path existence only). Default true. */
@@ -36,7 +41,7 @@ export interface ResolveGodotOptions {
 const SOURCE_LABELS: Record<GodotResolveSource, string> = {
   preference: 'App preference',
   project_override: 'Project override',
-  env: 'GODOT_EXECUTABLE',
+  env: 'Godot environment override',
   path: 'PATH',
   known_path: 'Known install path',
   none: 'Not found',
@@ -48,20 +53,30 @@ function normalizePath(raw: string | null | undefined): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
-function pathExists(candidate: string): boolean {
+function executableFromCandidate(candidate: string, platform: NodeJS.Platform): string {
+  if (platform === 'darwin' && /\.app\/?$/i.test(candidate)) {
+    return join(candidate.replace(/\/$/, ''), 'Contents', 'MacOS', 'Godot');
+  }
+  return candidate;
+}
+
+function pathExists(candidate: string, platform: NodeJS.Platform): boolean {
   try {
-    return existsSync(candidate);
+    if (!existsSync(candidate)) return false;
+    if (platform !== 'win32') accessSync(candidate, constants.X_OK);
+    return true;
   } catch {
     return false;
   }
 }
 
-function probeVersion(executable: string): string | null {
+function probeVersion(executable: string, environment: NodeJS.ProcessEnv): string | null {
   try {
-    const output = execSync(`"${executable}" --version`, {
+    const output = execFileSync(executable, ['--version'], {
       encoding: 'utf-8',
       timeout: 8000,
       windowsHide: true,
+      env: environment,
     });
     return output.trim().split('\n')[0] ?? null;
   } catch {
@@ -74,14 +89,17 @@ function pathCommands(): string[] {
   return ['godot', 'godot4'];
 }
 
-function defaultKnownPaths(): string[] {
-  const home = homedir();
-  const localAppData = process.env.LOCALAPPDATA;
-  const programFiles = process.env.ProgramFiles;
-  const programFilesX86 = process.env['ProgramFiles(x86)'];
+export function defaultGodotKnownPaths(
+  platform: NodeJS.Platform = process.platform,
+  home = homedir(),
+  environment: NodeJS.ProcessEnv = process.env,
+): string[] {
+  const localAppData = environment.LOCALAPPDATA;
+  const programFiles = environment.ProgramFiles;
+  const programFilesX86 = environment['ProgramFiles(x86)'];
   const candidates: string[] = [];
 
-  if (process.platform === 'win32') {
+  if (platform === 'win32') {
     if (localAppData) {
       candidates.push(
         join(localAppData, 'Godot', 'Godot_v4.exe'),
@@ -98,10 +116,12 @@ function defaultKnownPaths(): string[] {
       candidates.push(join(programFilesX86, 'Godot', 'Godot.exe'));
     }
     candidates.push('C:\\Godot\\Godot.exe', 'C:\\Godot\\Godot_v4.exe');
-  } else if (process.platform === 'darwin') {
+  } else if (platform === 'darwin') {
     candidates.push(
       '/Applications/Godot.app/Contents/MacOS/Godot',
       join(home, 'Applications', 'Godot.app', 'Contents', 'MacOS', 'Godot'),
+      '/opt/homebrew/bin/godot',
+      '/usr/local/bin/godot',
     );
   } else {
     candidates.push(
@@ -115,60 +135,84 @@ function defaultKnownPaths(): string[] {
   return candidates;
 }
 
+/** Where `remote:model:install` / prior sessions have cached a downloaded Godot runtime. */
+function managedRuntimeDir(
+  platform: NodeJS.Platform,
+  home: string,
+  environment: NodeJS.ProcessEnv,
+): string | null {
+  if (platform === 'win32') {
+    const localAppData = environment.LOCALAPPDATA;
+    return localAppData ? join(localAppData, 'MetroForge', 'Godot') : null;
+  }
+  if (platform === 'darwin') {
+    return join(home, 'Library', 'Application Support', 'MetroForge', 'Godot');
+  }
+  return join(home, '.local', 'share', 'MetroForge', 'Godot');
+}
+
+/** Scans the managed runtime cache for a Godot executable without hardcoding a version number. */
+function managedRuntimeCandidates(
+  platform: NodeJS.Platform,
+  home: string,
+  environment: NodeJS.ProcessEnv,
+): string[] {
+  const dir = managedRuntimeDir(platform, home, environment);
+  if (!dir || !existsSync(dir)) return [];
+  try {
+    return readdirSync(dir)
+      .filter((f) => /^godot/i.test(f) && !/console/i.test(f))
+      .filter((f) => (platform === 'win32' ? f.toLowerCase().endsWith('.exe') : true))
+      .map((f) => executableFromCandidate(join(dir, f), platform));
+  } catch {
+    return [];
+  }
+}
+
 function tryAbsolute(
   candidate: string,
   source: GodotResolveSource,
   probe: boolean,
+  platform: NodeJS.Platform,
+  environment: NodeJS.ProcessEnv,
 ): GodotResolveResult | null {
-  if (!pathExists(candidate)) return null;
-  const version = probe ? probeVersion(candidate) : null;
+  const executable = executableFromCandidate(candidate, platform);
+  if (!pathExists(executable, platform)) return null;
+  const version = probe ? probeVersion(executable, environment) : null;
   // Preference/env/project may point at a path that exists but fails --version (wrong binary).
   // Still accept existence for preference/project/env so Settings "Test" can surface the failure.
   if (probe && version == null && (source === 'path' || source === 'known_path')) {
     return null;
   }
   return {
-    path: candidate,
+    path: executable,
     source,
     version,
     sourceLabel: SOURCE_LABELS[source],
   };
 }
 
-function tryPathCommand(cmd: string, probe: boolean): GodotResolveResult | null {
+function tryPathCommand(
+  cmd: string,
+  probe: boolean,
+  platform: NodeJS.Platform,
+  environment: NodeJS.ProcessEnv,
+): GodotResolveResult | null {
   try {
-    const output = execSync(`${cmd} --version`, {
+    const locator = platform === 'win32' ? 'where.exe' : '/usr/bin/which';
+    const whereOut = execFileSync(locator, [cmd], {
       encoding: 'utf-8',
-      timeout: 8000,
+      timeout: 5000,
       windowsHide: true,
+      env: environment,
     });
-    const version = output.trim().split('\n')[0] ?? null;
-    // Resolve which binary PATH used when possible
-    let resolved: string | null = cmd;
-    try {
-      if (process.platform === 'win32') {
-        const whereOut = execSync(`where ${cmd}`, {
-          encoding: 'utf-8',
-          timeout: 5000,
-          windowsHide: true,
-        });
-        resolved = whereOut.trim().split(/\r?\n/)[0] ?? cmd;
-      } else {
-        const whichOut = execSync(`command -v ${cmd}`, {
-          encoding: 'utf-8',
-          timeout: 5000,
-          windowsHide: true,
-          shell: '/bin/sh',
-        });
-        resolved = whichOut.trim() || cmd;
-      }
-    } catch {
-      resolved = cmd;
-    }
+    const resolved = whereOut.trim().split(/\r?\n/)[0] ?? cmd;
+    const version = probeVersion(resolved, environment);
+    if (probe && version == null) return null;
     return {
       path: resolved,
       source: 'path',
-      version: probe ? version : version,
+      version,
       sourceLabel: SOURCE_LABELS.path,
     };
   } catch {
@@ -184,9 +228,15 @@ export function resolveGodotExecutableCanonical(
   options: ResolveGodotOptions = {},
 ): GodotResolveResult {
   const probe = options.probeVersion !== false;
+  const platform = options.platform ?? process.platform;
+  const environment = options.environment ?? process.env;
+  const home = options.homeDir ?? homedir();
   const preference = normalizePath(options.preference);
   const projectOverride = normalizePath(options.projectOverride);
-  const envPath = normalizePath(options.envPath ?? process.env.GODOT_EXECUTABLE);
+  const explicitEnvPath = Object.prototype.hasOwnProperty.call(options, 'envPath')
+    ? options.envPath
+    : environment.GODOT_EXECUTABLE ?? environment.GODOT4_PATH ?? environment.GODOT_PATH;
+  const envPath = normalizePath(explicitEnvPath);
 
   const ordered: Array<{ value: string; source: GodotResolveSource }> = [];
   if (preference) ordered.push({ value: preference, source: 'preference' });
@@ -194,11 +244,11 @@ export function resolveGodotExecutableCanonical(
   if (envPath) ordered.push({ value: envPath, source: 'env' });
 
   for (const entry of ordered) {
-    const hit = tryAbsolute(entry.value, entry.source, probe);
+    const hit = tryAbsolute(entry.value, entry.source, probe, platform, environment);
     if (hit) return hit;
     // Preference / override / env that do not exist still "win" as the declared path so UI can show
     // the configured value and Test can fail honestly — only when the path string was set.
-    if (!pathExists(entry.value) && (entry.source === 'preference' || entry.source === 'project_override' || entry.source === 'env')) {
+    if (!pathExists(executableFromCandidate(entry.value, platform), platform) && (entry.source === 'preference' || entry.source === 'project_override' || entry.source === 'env')) {
       return {
         path: entry.value,
         source: entry.source,
@@ -209,13 +259,17 @@ export function resolveGodotExecutableCanonical(
   }
 
   for (const cmd of pathCommands()) {
-    const hit = tryPathCommand(cmd, probe);
+    const hit = tryPathCommand(cmd, probe, platform, environment);
     if (hit) return hit;
   }
 
-  const known = [...(options.extraKnownPaths ?? []), ...defaultKnownPaths()];
+  const known = [
+    ...(options.extraKnownPaths ?? []),
+    ...managedRuntimeCandidates(platform, home, environment),
+    ...defaultGodotKnownPaths(platform, home, environment),
+  ];
   for (const candidate of known) {
-    const hit = tryAbsolute(candidate, 'known_path', probe);
+    const hit = tryAbsolute(candidate, 'known_path', probe, platform, environment);
     if (hit) return hit;
   }
 

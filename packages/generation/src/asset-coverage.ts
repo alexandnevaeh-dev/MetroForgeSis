@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import type { LoadedProject } from './project-loader.js';
 import { analyzeProjectCompletion } from './project-completion.js';
 
@@ -25,6 +27,10 @@ function manifestPaths(project: LoadedProject): Set<string> {
       String(a.path ?? '').replace(/\\/g, '/'),
     ),
   );
+}
+
+function assetPresent(project: LoadedProject, manifest: Set<string>, path: string): boolean {
+  return manifest.has(path) || existsSync(join(project.projectPath, path));
 }
 
 function expectedAssetPaths(project: LoadedProject): AssetCoverageEntry[] {
@@ -68,11 +74,25 @@ function expectedAssetPaths(project: LoadedProject): AssetCoverageEntry[] {
     }
   }
 
+  // gameDna.world.biomeCount is the declared world size, not what this generated slice actually
+  // built rooms for — a VISUAL_VERTICAL_SLICE deliberately generates a small room subset, so most
+  // declared biomes may have zero rooms and therefore no reason to have tileset art. Require
+  // coverage only for biomes real rooms reference, falling back to biomeCount when room data is
+  // unavailable (e.g. an older project without biomeId recorded per room).
+  const usedBiomeIds = new Set(
+    Object.values(project.roomsData ?? {})
+      .map((room) => (typeof room?.biomeId === 'string' ? room.biomeId : undefined))
+      .filter((id): id is string => Boolean(id)),
+  );
   const biomeCount = project.gameDna.world?.biomeCount ?? 1;
-  for (let b = 0; b < biomeCount; b++) {
+  const biomeIdsToCheck =
+    usedBiomeIds.size > 0
+      ? [...usedBiomeIds]
+      : Array.from({ length: biomeCount }, (_, b) => `biome_${b}`);
+  for (const biomeId of biomeIdsToCheck) {
     entries.push({
-      id: `tileset_biome_${b}`,
-      path: `assets/tilesets/biome_${b}/source.png`,
+      id: `tileset_${biomeId}`,
+      path: `assets/tilesets/${biomeId}/source.png`,
       category: 'tileset',
       present: false,
     });
@@ -103,7 +123,7 @@ export function buildAssetCoverageReport(project: LoadedProject): AssetCoverageR
   const paths = manifestPaths(project);
   const entries = expectedAssetPaths(project).map((entry) => ({
     ...entry,
-    present: paths.has(entry.path),
+    present: assetPresent(project, paths, entry.path),
   }));
 
   const totalExpected = entries.length;

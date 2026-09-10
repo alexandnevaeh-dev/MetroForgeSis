@@ -1,7 +1,7 @@
 import type { Command } from 'commander';
 import { getVersionString } from '@metroforge/core';
 import { loadConfig } from '@metroforge/shared';
-import { ToolRegistry } from '@metroforge/tools';
+import { getPlatformInfo, probeWorkspaceWritable, ToolRegistry } from '@metroforge/tools';
 import { NvidiaProvider } from '@metroforge/ai';
 
 interface CheckResult {
@@ -35,21 +35,26 @@ async function checkNvidia(): Promise<CheckResult> {
 }
 
 async function checkNode(): Promise<CheckResult> {
-  const major = parseInt(process.version.slice(1).split('.')[0] ?? '0', 10);
-  if (major >= 20) {
+  const [major = 0, minor = 0] = process.versions.node.split('.').map(Number);
+  if (major > 22 || (major === 22 && minor >= 5)) {
     return { name: 'Node.js', status: 'PASS', message: process.version };
   }
   return {
     name: 'Node.js',
     status: 'FAIL',
-    message: `${process.version} — requires Node 20+`,
+    message: `${process.version} — requires Node 22.5+`,
   };
 }
 
 async function checkPnpm(): Promise<CheckResult> {
   try {
-    const { execSync } = await import('node:child_process');
-    const version = execSync('pnpm --version', { encoding: 'utf-8' }).trim();
+    const { execFileSync } = await import('node:child_process');
+    let version: string;
+    try {
+      version = execFileSync('pnpm', ['--version'], { encoding: 'utf-8' }).trim();
+    } catch {
+      version = execFileSync('corepack', ['pnpm', '--version'], { encoding: 'utf-8' }).trim();
+    }
     return { name: 'pnpm', status: 'PASS', message: `v${version}` };
   } catch {
     return { name: 'pnpm', status: 'WARN', message: 'Not found in PATH' };
@@ -65,6 +70,8 @@ export function registerDoctorCommand(program: Command): void {
       console.log('--- Environment Check ---\n');
 
       const config = loadConfig();
+      const platform = getPlatformInfo();
+      const workspace = probeWorkspaceWritable(process.cwd());
       const toolRegistry = new ToolRegistry();
       const tools = await toolRegistry.detectAll({
         godotPath: config.godotExecutable,
@@ -74,6 +81,16 @@ export function registerDoctorCommand(program: Command): void {
       const checks: CheckResult[] = [
         await checkNode(),
         await checkPnpm(),
+        {
+          name: 'Platform',
+          status: platform.runtime === 'unsupported' || platform.isRosetta ? 'WARN' : 'PASS',
+          message: `${platform.runtime}${platform.isRosetta ? ' (Rosetta translated)' : ' (native)'}`,
+        },
+        {
+          name: 'Workspace filesystem',
+          status: workspace.writable ? 'PASS' : 'FAIL',
+          message: `${workspace.message} ${workspace.root}`,
+        },
         ...tools.map((t) => ({
           name: t.name,
           status: t.status,

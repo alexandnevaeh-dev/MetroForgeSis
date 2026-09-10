@@ -31,9 +31,9 @@ function stubProject(overrides: Partial<LoadedProject> = {}): LoadedProject {
     roomsData: {},
     manifest: {
       artifacts: [
-        { path: 'assets/characters/player_attack.png' },
-        { path: 'assets/enemies/enemy_000_attack.png' },
-        { path: 'assets/bosses/boss_final_attack.png' },
+        { path: 'assets/characters/player_attack.png', maturity: 'PRODUCTION_READY' },
+        { path: 'assets/enemies/enemy_000_attack.png', maturity: 'PRODUCTION_READY' },
+        { path: 'assets/bosses/boss_final_attack.png', maturity: 'PRODUCTION_READY' },
       ],
     },
     validationReport: { passed: true, validationLevel: 'RUNTIME_VALIDATED' },
@@ -113,8 +113,8 @@ describe('analyzeProjectCompletion', () => {
               maturity: 'PLACEHOLDER',
               provider: 'procedural',
             },
-            { path: 'assets/enemies/enemy_000_attack.png', maturity: 'QA_REVIEW' },
-            { path: 'assets/bosses/boss_final_attack.png', maturity: 'QA_REVIEW' },
+            { path: 'assets/enemies/enemy_000_attack.png', maturity: 'PRODUCTION_READY' },
+            { path: 'assets/bosses/boss_final_attack.png', maturity: 'PRODUCTION_READY' },
           ],
         },
       }),
@@ -122,6 +122,27 @@ describe('analyzeProjectCompletion', () => {
     expect(allowed.assetProductionGate?.passed).toBe(true);
     expect(allowed.assetProductionGate?.allowPlaceholders).toBe(true);
     expect(allowed.productionReady).toBe(true);
+  });
+
+  it('blocks unreviewed GENERATED_SOURCE and COMPILED visuals under the strict production gate', () => {
+    const status = analyzeProjectCompletion(
+      stubProject({
+        manifest: {
+          artifacts: [
+            { path: 'assets/characters/player_attack.png', maturity: 'GENERATED_SOURCE' },
+            { path: 'assets/enemies/enemy_000_attack.png', maturity: 'COMPILED' },
+            { path: 'assets/bosses/boss_final_attack.png', maturity: 'PRODUCTION_READY' },
+          ],
+        },
+      }),
+    );
+
+    expect(status.assetProductionGate?.passed).toBe(false);
+    expect(status.assetProductionGate?.blockedAssets.map((asset) => asset.maturity)).toEqual([
+      'GENERATED_SOURCE',
+      'COMPILED',
+    ]);
+    expect(status.productionReady).toBe(false);
   });
 
   it('blocks unknown abilities with repairable=false guidance', () => {

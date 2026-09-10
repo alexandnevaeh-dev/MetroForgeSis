@@ -2,7 +2,6 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   isRegisteredAbilityId,
-  isNonProductionMaturity,
   projectAllowsPlaceholders,
   type AssetMaturity,
 } from '@metroforge/shared';
@@ -118,10 +117,7 @@ function isVisualAssetPath(path: string): boolean {
   );
 }
 
-/**
- * Blocks productionReady when required visual assets are PLACEHOLDER / BLOCKOUT / REJECTED
- * unless the project explicitly allows placeholders (project.json allowPlaceholders).
- */
+/** Blocks productionReady unless every visual has an explicit final QA promotion. */
 export function evaluateAssetProductionGate(project: LoadedProject): AssetProductionGateResult {
   const allowPlaceholders = projectAllowsPlaceholders(project.projectMeta);
   const blockedAssets: AssetProductionGateResult['blockedAssets'] = [];
@@ -136,20 +132,18 @@ export function evaluateAssetProductionGate(project: LoadedProject): AssetProduc
       (String(artifact.provider ?? '').toLowerCase() === 'procedural' ? 'PLACEHOLDER' : undefined);
 
     const maturity = (maturityRaw ?? 'GENERATED_SOURCE') as AssetMaturity | string;
-    const markedNotReady = artifact.productionReady === false;
-    const nonProd = isNonProductionMaturity(maturity) || (artifact.fallbackGenerated === true && maturity !== 'PRODUCTION_READY');
-
-    if (nonProd || (markedNotReady && isNonProductionMaturity(maturity))) {
-      if (isNonProductionMaturity(maturity) || artifact.fallbackGenerated === true) {
-        blockedAssets.push({
-          path,
-          maturity: String(maturity),
-          reason:
-            maturity === 'REJECTED'
-              ? 'Asset critique rejected this visual'
-              : 'Procedural/placeholder visual cannot ship as production-ready',
-        });
-      }
+    const productionMaturity = maturity === 'PRODUCTION_READY';
+    if (!productionMaturity) {
+      blockedAssets.push({
+        path,
+        maturity: String(maturity),
+        reason:
+          maturity === 'REJECTED'
+            ? 'QA rejected asset'
+            : maturity === 'QA_REVIEW'
+              ? 'Asset awaiting explicit QA approval'
+              : `Visual requires PRODUCTION_READY maturity, received ${maturity}`,
+      });
     }
   }
 
@@ -251,8 +245,8 @@ export function analyzeProjectCompletion(project: LoadedProject): ProjectComplet
     detail: assetGate.allowPlaceholders
       ? 'placeholders explicitly allowed'
       : assetGate.blockedAssets.length === 0
-        ? 'no placeholder/blockout/rejected visuals'
-        : `${assetGate.blockedAssets.length} non-production visual(s)`,
+        ? 'all visuals passed QA maturity gate'
+        : `${assetGate.blockedAssets.length} visual(s) below QA maturity`,
   });
   if (!assetGate.passed) {
     blockers.push(

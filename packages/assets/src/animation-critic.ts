@@ -1,7 +1,9 @@
 import type { VisionAnalysisResponse } from './types/vision.js';
 import { decodePngRgba } from './png.js';
 
-export type AnimationKind = 'walk' | 'hurt' | 'attack' | 'death' | 'tileset';
+export type AnimationKind =
+  | 'walk' | 'run' | 'hurt' | 'attack' | 'attack_2' | 'attack_3' | 'death' | 'tileset'
+  | 'idle' | 'jump_start' | 'jump' | 'fall' | 'land' | 'dash' | 'wall_slide' | 'wall_jump' | 'swim';
 
 export interface AnimationCritiqueOptions {
   frameCount: number;
@@ -121,11 +123,12 @@ export function critiqueAnimationSheet(
   const paletteDrift = frames.slice(1).reduce((max, frame) => {
     return Math.max(max, colorDistance(frames[0]!, frame));
   }, 0);
-  if (paletteDrift > 80 && options.kind === 'walk') {
+  const paletteCheckedKinds: AnimationKind[] = ['walk', 'run', 'idle', 'jump', 'fall', 'wall_slide', 'swim'];
+  if (paletteDrift > 80 && paletteCheckedKinds.includes(options.kind)) {
     issues.push(`Palette drifts across frames (distance ${paletteDrift.toFixed(1)})`);
   }
 
-  if (options.kind === 'attack' && frames.length > 1) {
+  if ((options.kind === 'attack' || options.kind === 'attack_2' || options.kind === 'attack_3') && frames.length > 1) {
     const first = frames[0]!;
     const last = frames[frames.length - 1]!;
     const firstLum = (first.meanR + first.meanG + first.meanB) / 3;

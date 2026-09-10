@@ -51,6 +51,8 @@ export interface ProviderBootstrapConfig {
   nvidiaApiBaseUrl?: string;
   /** Per-provider user toggles from app settings (missing ⇒ enabled). */
   providerEnabled?: Record<string, boolean>;
+  /** Avoid live provider probes in deterministic tests and offline planning. */
+  skipHealthChecks?: boolean;
 }
 
 export interface ProviderBootstrapResult {
@@ -76,7 +78,8 @@ export async function bootstrapProviders(
     enabled: (providerDefaults.ollama?.enabled ?? true) && userEnabled('ollama'),
     priority: providerDefaults.ollama?.priority,
   });
-  await ollama.initialize();
+  if (config.skipHealthChecks) ollama.health = 'degraded';
+  else await ollama.initialize();
   registry.register(ollama);
 
   if (modeRegistersHostedProviders(config.mode)) {
@@ -124,7 +127,8 @@ export async function bootstrapProviders(
         : hosted;
 
     for (const provider of toRegister) {
-      await provider.initialize();
+      if (config.skipHealthChecks) provider.health = 'degraded';
+      else await provider.initialize();
       // Register even when user-disabled so list-providers can show enabled:false.
       registry.register(provider);
     }

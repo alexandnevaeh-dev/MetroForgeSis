@@ -120,7 +120,6 @@ export function SettingsScreen() {
 
   useEffect(() => {
     void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPath]);
 
   const savePreferences = async () => {

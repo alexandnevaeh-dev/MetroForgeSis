@@ -83,6 +83,19 @@ describe('NvidiaImageProvider', () => {
     expect(details.status).toBe('RATE_LIMITED');
   });
 
+  it('does not blindly retry a hosted HTTP 422 request validation failure', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(JSON.stringify({ detail: [{ loc: ['body', 'width'], msg: 'invalid dimension', type: 'value_error' }] }), {
+        status: 422,
+        headers: { 'content-type': 'application/json', 'x-request-id': 'safe-test-request-id' },
+      }),
+    );
+    const provider = new NvidiaImageProvider({ apiKey: 'nvapi-test-key', maxRetries: 2, retryBackoffMs: [0, 0] });
+    await expect(provider.generateImage({ profile: 'CHARACTER', prompt: 'hero', width: 64, height: 64 })).rejects.toThrow(/request invalid/i);
+    expect(vi.mocked(fetch).mock.calls.length).toBe(1);
+    expect(provider.getLastDiagnostic()).toMatchObject({ category: 'PROVIDER_REQUEST_INVALID', field: undefined, location: 'body.width', requestId: 'safe-test-request-id' });
+  });
+
   it('marks MODEL_UNAVAILABLE when genai path 404s', async () => {
     vi.mocked(fetch).mockImplementation(async (input) => {
       const url = String(input);

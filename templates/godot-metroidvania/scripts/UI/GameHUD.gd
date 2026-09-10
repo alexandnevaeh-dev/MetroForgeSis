@@ -32,7 +32,7 @@ func _ready() -> void:
 func _style_hud() -> void:
 	_apply_hud_frame()
 	if health_bar:
-		health_bar.custom_minimum_size = Vector2(280, 22)
+		health_bar.custom_minimum_size = Vector2(196, 14)
 		_apply_health_bar_style()
 	if ability_label:
 		ability_label.add_theme_font_size_override("font_size", 14)
@@ -120,6 +120,14 @@ func _update_abilities() -> void:
 		raw.append(sid)
 	var abilities := ", ".join(raw)
 	ability_label.text = abilities if abilities else ""
+	# Sixteenth-session fix: currency/collectible labels already hide themselves when empty
+	# (see _update_currency/_update_collectibles below); this one didn't, so a fresh level with
+	# no ability yet reserved a permanently-blank line in the HUD's VBox — contributing to the
+	# "large mostly empty panel, little visible contextual information" finding in the
+	# independent visual assessment (docs/audit/MODERN_COHESION_TEST_PROJECT.md's sixteenth
+	# session). Collapsing it when empty lets the frame hug just the health bar until there's
+	# real ability text to show.
+	ability_label.visible = not abilities.is_empty()
 
 func _hud_mode() -> String:
 	var env := OS.get_environment("METROFORGE_HUD_MODE")
@@ -127,11 +135,21 @@ func _hud_mode() -> String:
 		return env
 	if OS.get_environment("METROFORGE_CAPTURE") == "1":
 		return "QA_CAPTURE"
+	# Sixteenth-session fix: this previously defaulted to "DEBUG" unconditionally, which is not
+	# a presentation mode (see _is_presentation_hud() below) — so an exported, double-clicked
+	# game (no env vars set at all, same as any real player's launch) shipped with the raw
+	# debug-only QuestTrackerPanel (an empty rounded box when the level has no active quest, as
+	# in this compact level) and MinimapPanel left visible, contributing to the assessment's
+	# "unfinished HUD" finding. Godot defines the "standalone" feature tag only for an exported
+	# binary (never true when run from the editor with F5), so this keeps the existing DEBUG
+	# default for in-editor iteration while a real exported build now defaults to PLAYER.
+	if OS.has_feature("standalone"):
+		return "PLAYER"
 	return "DEBUG"
 
 func _is_presentation_hud() -> bool:
 	var mode := _hud_mode()
-	return mode == "PLAYER" or mode == "RELEASE" or mode == "QA_CAPTURE"
+	return mode == "PLAYER" or mode == "RELEASE" or mode == "QA_CAPTURE" or mode == "PRESENTATION_CAPTURE"
 
 func _apply_hud_mode() -> void:
 	if not _is_presentation_hud():

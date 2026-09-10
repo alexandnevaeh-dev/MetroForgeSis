@@ -1,0 +1,12 @@
+{
+  "workflowId": "dreamo",
+  "version": "1.0.0",
+  "capabilities": ["REFERENCE_IMAGE", "IDENTITY_CONDITIONING", "IMAGE_CUSTOMIZATION", "STYLE_CONDITIONING"],
+  "requiredModels": ["dreamo-v1.1"],
+  "requiredAdapters": [],
+  "requiredCustomNodes": [],
+  "inputMappings": { "referenceImage": "conditioning.image", "prompt": "prompt", "seed": "seed" },
+  "outputMappings": { "image": "images[0]" },
+  "licenseRequirements": ["DreamO v1.1 model terms"],
+  "vramProfile": "remote GPU recommended; local CPU not practical"
+}

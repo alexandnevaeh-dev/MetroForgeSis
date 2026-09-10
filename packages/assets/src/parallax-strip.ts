@@ -26,6 +26,102 @@ function hash01(seed: number, n: number): number {
   return (h >>> 0) / 4294967296;
 }
 
+/** Background overlay features generateParallaxStrip can actually render — a deliberate subset
+ *  of TILESET_SUPPORTED_FEATURES (packages/assets/src/png.ts): 'panel_grates' is a structural
+ *  wall-panel texture that doesn't apply to an atmospheric depth layer, so it's intentionally
+ *  excluded here rather than silently accepted and ignored. */
+export const BACKGROUND_SUPPORTED_FEATURES = ['corrosion', 'stains', 'damaged_modules', 'vegetation'] as const;
+export type BackgroundFeature = (typeof BACKGROUND_SUPPORTED_FEATURES)[number];
+
+export function partitionBackgroundFeatures(requested: readonly string[] | undefined): {
+  supported: BackgroundFeature[];
+  unsupported: string[];
+} {
+  const supported: BackgroundFeature[] = [];
+  const unsupported: string[] = [];
+  for (const f of requested ?? []) {
+    if ((BACKGROUND_SUPPORTED_FEATURES as readonly string[]).includes(f)) supported.push(f as BackgroundFeature);
+    else unsupported.push(f);
+  }
+  return { supported, unsupported };
+}
+
+function blendChannel(base: number, target: number, amount: number): number {
+  return Math.round(base + (target - base) * amount);
+}
+
+/**
+ * Adds sparse, deterministic material dressing on top of already-opaque pixels only — never
+ * paints into transparent playable-air regions (mid/near/foreground layers are deliberately
+ * "mostly transparent", see PARALLAX_LAYER_PROMPTS, and this must not change that), and never
+ * touches the 'far' layer (the outdoor-landscape-vs-citadel QA check in
+ * farPlateLooksLikeOutdoorLandscape looks for exactly this kind of green speckle and must keep
+ * seeing the unmodified far plate for real AI-generated images — this overlay is procedural-only
+ * dressing on mid/near/foreground, applied after the base paint pass, not before).
+ */
+function applyBackgroundMaterialFeatures(
+  rgba: Uint8Array,
+  width: number,
+  height: number,
+  seed: number,
+  features: readonly BackgroundFeature[],
+  accent: [number, number, number],
+  accent2: [number, number, number],
+): void {
+  if (features.length === 0) return;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      const a = rgba[i + 3]!;
+      if (a < 40) continue; // only dress already-opaque architecture/occluder pixels
+      let r = rgba[i]!;
+      let g = rgba[i + 1]!;
+      let b = rgba[i + 2]!;
+
+      if (features.includes('corrosion')) {
+        const speck = hash01(seed, x * 3 + y * 97 + 500);
+        if (speck > 0.9) {
+          const amt = 0.4 + (speck - 0.9) * 4;
+          r = blendChannel(r, accent[0], amt);
+          g = blendChannel(g, accent[1], amt);
+          b = blendChannel(b, accent[2], amt);
+        }
+      }
+      if (features.includes('stains')) {
+        const col = Math.floor(x / 6);
+        const streakOn = hash01(seed, col * 13 + 700) > 0.75;
+        if (streakOn) {
+          const amt = 0.25;
+          r = blendChannel(r, accent2[0], amt);
+          g = blendChannel(g, accent2[1], amt);
+          b = blendChannel(b, accent2[2], amt);
+        }
+      }
+      if (features.includes('damaged_modules')) {
+        const block = Math.floor(x / 40) + Math.floor(y / 40) * 97;
+        if (hash01(seed, block + 900) > 0.85) {
+          r = blendChannel(r, accent[0], 0.5);
+          g = blendChannel(g, accent[1], 0.5);
+          b = blendChannel(b, accent[2], 0.5);
+        }
+      }
+      if (features.includes('vegetation')) {
+        const speck = hash01(seed, x * 5 + y * 31 + 1100);
+        if (speck > 0.93) {
+          const amt = 0.5;
+          r = blendChannel(r, accent2[0], amt);
+          g = blendChannel(g, accent2[1], amt);
+          b = blendChannel(b, accent2[2], amt);
+        }
+      }
+
+      rgba[i] = r;
+      rgba[i + 1] = g;
+      rgba[i + 2] = b;
+    }
+  }
+}
+
 function setPx(
   rgba: Uint8Array,
   w: number,
@@ -150,6 +246,7 @@ function paintFarHallMass(
   seed: number,
   masonry: [number, number, number],
   dark: [number, number, number],
+  glow: [number, number, number],
 ): boolean {
   const t = y / Math.max(1, height - 1);
   const bay = Math.max(28, Math.round(width / 6));
@@ -167,12 +264,26 @@ function paintFarHallMass(
     Math.abs(local - bay * 0.5) < 3;
   if (!(floor || dado || pier || capital || soffit)) return false;
   const n = hash01(seed, x + y * 3);
+  // The floor is a lit surface (warm glow bleeding across the ground), distinct in luma from the
+  // dark pier/wall silhouette above it — a uniform dark blend here erased the sky's brightness
+  // range exactly where the room reads "ground vs void" depth, collapsing lumaStdDev to ~5-7.
+  if (floor) {
+    const r = Math.round(glow[0] * 0.8 + masonry[0] * 0.25 + n * 10);
+    const g = Math.round(glow[1] * 0.75 + masonry[1] * 0.22 + n * 8);
+    const b = Math.round(glow[2] * 0.5 + masonry[2] * 0.25 + n * 8);
+    setPx(rgba, width, x, y, Math.min(255, r), Math.min(255, g), Math.min(255, b), 255);
+    return true;
+  }
+  // Pier/wall/dado mass (t≈0.46–0.8) gets a modest ramp toward the floor glow — enough that a
+  // camera crop landing entirely within this band still sees real internal contrast, without
+  // pushing so far that architecture and background converge to the same washed-out hue.
+  const archT = Math.min(1, Math.max(0, (t - 0.46) / 0.34));
   const depth = Math.min(1, Math.max(0, (t - 0.48) / 0.52));
-  const r = Math.round(dark[0] + masonry[0] * 0.32 + n * 8 + depth * 12);
-  const g = Math.round(dark[1] + masonry[1] * 0.28 + n * 6 + depth * 10);
-  const b = Math.round(dark[2] + masonry[2] * 0.45 + n * 10 + depth * 14);
+  const r = Math.round(dark[0] + masonry[0] * 0.32 + n * 8 + depth * 12 + archT * glow[0] * 0.55);
+  const g = Math.round(dark[1] + masonry[1] * 0.28 + n * 6 + depth * 10 + archT * glow[1] * 0.46);
+  const b = Math.round(dark[2] + masonry[2] * 0.45 + n * 10 + depth * 14 + archT * glow[2] * 0.24);
   setPx(rgba, width, x, y, r, g, b, 255);
-  if ((floor || dado) && hash01(seed, x * 5 + y) > 0.9) {
+  if (dado && hash01(seed, x * 5 + y) > 0.9) {
     setPx(rgba, width, x, y, Math.min(255, r + 22), Math.min(255, g + 16), Math.max(0, b - 6), 255);
   }
   return true;
@@ -199,32 +310,75 @@ function paintFarVaultAndLanterns(
   }
 }
 
+function scaleColor(c: [number, number, number], factor: number): [number, number, number] {
+  return [
+    Math.max(0, Math.min(255, Math.round(c[0] * factor))),
+    Math.max(0, Math.min(255, Math.round(c[1] * factor))),
+    Math.max(0, Math.min(255, Math.round(c[2] * factor))),
+  ];
+}
+
 /**
  * Procedural side-view parallax plates. Far is an opaque night-citadel interior (not a
  * pine/mountain/lake vista); mid/near keep empty air transparent so they sit as depth silhouettes.
+ *
+ * `biomePalette` (when given, shape `[dark, mid, bright, accent]` — matches
+ * asset-pipeline.ts's BIOME_PALETTES entries) drives the actual hue family, so 3 different
+ * biomes read as 3 different places instead of the same "drowned citadel blue" regardless of
+ * which biome was requested — the seed alone only ever produced small in-family jitter.
  */
 export function generateParallaxStrip(
   layer: ParallaxLayerName,
   seed: number,
   width = 640,
   height = 360,
+  biomePalette?: [number, number, number][],
+  /** Optional material dressing (see BACKGROUND_SUPPORTED_FEATURES) applied on top of already-
+   *  opaque architecture pixels on mid/near/foreground layers — never on 'far' (see
+   *  applyBackgroundMaterialFeatures' doc comment). Omitted -> byte-identical to every existing
+   *  caller. */
+  features?: readonly string[],
 ): Buffer {
   const rgba = new Uint8Array(width * height * 4);
-  // Drowned-citadel night sky (#284878 family). Do not drift into cream/green landscape slabs.
-  const skyTop: [number, number, number] = [22 + Math.floor(hash01(seed, 1) * 10), 38 + Math.floor(hash01(seed, 2) * 12), 70 + Math.floor(hash01(seed, 3) * 14)];
-  const skyBot: [number, number, number] = [36 + Math.floor(hash01(seed, 4) * 10), 64 + Math.floor(hash01(seed, 5) * 14), 108 + Math.floor(hash01(seed, 6) * 16)];
-  const masonry: [number, number, number] = [32 + Math.floor(hash01(seed, 7) * 10), 42 + Math.floor(hash01(seed, 8) * 8), 62 + Math.floor(hash01(seed, 9) * 10)];
-  const dark: [number, number, number] = [10 + Math.floor(hash01(seed, 10) * 8), 14 + Math.floor(hash01(seed, 11) * 8), 22 + Math.floor(hash01(seed, 12) * 10)];
+  // Drowned-citadel night sky (#284878 family) is the default when no biome palette is supplied.
+  // Wide top-to-bottom luma spread (near-void top -> warm lantern glow near the floor) so the
+  // depth axis has real contrast instead of a narrow 25-unit navy band — a flat gradient here
+  // reads as "wallpaper" to the deterministic screenshot QA critic (occupancy~1, lumaStdDev<10)
+  // regardless of how much geometric detail is painted on top of it.
+  const jitter = (n: number, span: number) => Math.floor(hash01(seed, n) * span);
+  const paletteDark = biomePalette?.[0];
+  const paletteMid = biomePalette?.[1];
+  const paletteBright = biomePalette?.[2] ?? biomePalette?.[3];
+  const skyTop: [number, number, number] = paletteDark
+    ? scaleColor(paletteDark, 0.22 + hash01(seed, 1) * 0.1)
+    : [4 + jitter(1, 6), 26 + jitter(2, 8), 36 + jitter(3, 14)];
+  const skyBot: [number, number, number] = paletteBright
+    ? scaleColor(paletteBright, 0.85 + hash01(seed, 4) * 0.25)
+    : [34 + jitter(4, 16), 108 + jitter(5, 20), 185 + jitter(6, 20)];
+  const masonry: [number, number, number] = paletteMid
+    ? scaleColor(paletteMid, 0.55 + hash01(seed, 7) * 0.15)
+    : [32 + jitter(7, 10), 42 + jitter(8, 8), 62 + jitter(9, 10)];
+  // Near-black silhouette base for the hall mass/piers/occluders — deliberately below the QA
+  // critic's visibility luma threshold so architecture reads as true silhouette against the glow
+  // instead of a mid-tone blend barely distinguishable from the sky at the same height.
+  const dark: [number, number, number] = paletteDark
+    ? scaleColor(paletteDark, 0.08 + hash01(seed, 10) * 0.05)
+    : [3 + jitter(10, 4), 5 + jitter(11, 4), 9 + jitter(12, 6)];
 
   for (let y = 0; y < height; y++) {
     const t = y / Math.max(1, height - 1);
+    // Eased so most of the frame stays near the dark void and brightness concentrates lower —
+    // paired with the pier/wall archT ramp above so a crop landing entirely in the architecture
+    // band (floor off-screen) still has real internal contrast instead of depending solely on
+    // where the floor happens to be relative to the camera.
+    const tEased = t * t * t * t * t;
     for (let x = 0; x < width; x++) {
       if (layer === 'far') {
-        const r = Math.round(skyTop[0] + (skyBot[0] - skyTop[0]) * t);
-        const g = Math.round(skyTop[1] + (skyBot[1] - skyTop[1]) * t);
-        const b = Math.round(skyTop[2] + (skyBot[2] - skyTop[2]) * t);
+        const r = Math.round(skyTop[0] + (skyBot[0] - skyTop[0]) * tEased);
+        const g = Math.round(skyTop[1] + (skyBot[1] - skyTop[1]) * tEased);
+        const b = Math.round(skyTop[2] + (skyBot[2] - skyTop[2]) * tEased);
         setPx(rgba, width, x, y, r, g, b, 255);
-        paintFarHallMass(rgba, width, height, x, y, seed, masonry, dark);
+        paintFarHallMass(rgba, width, height, x, y, seed, masonry, dark, skyBot);
         paintFarVaultAndLanterns(rgba, width, height, x, y, seed);
         continue;
       }
@@ -241,6 +395,14 @@ export function generateParallaxStrip(
 
       const inBand = t > 0.18 && t < 0.55 && hash01(seed, x + y * 7) > 0.88;
       setPx(rgba, width, x, y, skyBot[0], skyBot[1], skyBot[2], inBand ? 48 : 0);
+    }
+  }
+  if (layer !== 'far') {
+    const { supported } = partitionBackgroundFeatures(features);
+    if (supported.length > 0) {
+      const accent = biomePalette?.[4] ?? masonry;
+      const accent2 = biomePalette?.[5] ?? dark;
+      applyBackgroundMaterialFeatures(rgba, width, height, seed, supported, accent, accent2);
     }
   }
   return encodePng(width, height, rgba);

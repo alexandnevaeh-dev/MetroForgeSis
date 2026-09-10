@@ -5,3 +5,6 @@ export * from './bibles.js';
 export * from './foundry.js';
 export * from './visual-slice.js';
 export * from './visual-dna.js';
+export * from './visual-constitution.js';
+export * from './asset-family.js';
+export * from './visual-reference-template.js';

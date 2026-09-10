@@ -9,6 +9,7 @@ import {
   generateEnvironmentKit,
   generateRoomStorytelling,
   fingerprintFromVisualDNA,
+  buildDeterministicBiomeLightingProfile,
 } from '../index.js';
 
 const dna: GameDNA = {
@@ -81,6 +82,27 @@ describe('VisualDNA', () => {
     });
     expect(story.placements.length).toBeGreaterThan(0);
     expect(story.archetype).toBe('boss');
+  });
+
+  it('derives distinct deterministic biome lighting profiles with room variation', () => {
+    const art = generateArtBible(dna, 42);
+    const style = generateStyleBible(dna, art);
+    const visual = generateVisualDNA({ gameDna: dna, artBible: art, styleBible: style });
+    const biomes = generateAllBiomeVisualDNA({ visualDNA: visual, gameDna: dna });
+    const profiles = biomes.map((biome, index) =>
+      buildDeterministicBiomeLightingProfile({ biome, seed: 184729, roomId: `room_${index}` }),
+    );
+
+    expect(profiles).toHaveLength(1);
+    expect(profiles[0]).toMatchObject({
+      ambientColor: expect.any(String),
+      keyLightColor: expect.any(String),
+      accentLightColor: expect.any(String),
+      fogColor: expect.any(String),
+    });
+    expect(profiles[0].ambientIntensity).toBeGreaterThan(0);
+    expect(profiles[0].fogStrength).toBeGreaterThan(0.05);
+    expect(profiles[0].emissiveAccent).toMatch(/^#/);
   });
 
   it('compiles a stable visual prompt with hashes', () => {

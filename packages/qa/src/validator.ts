@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, readdirSync, writeFileSync, mkdirSync, copyFileSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import type { ValidationResult, WorldGraph } from '@metroforge/schemas';
 import {
   generateId,
@@ -11,6 +11,7 @@ import {
   getGameArchetypePlugin,
   resolveGameArchetype,
   type GameArchetype,
+  isolatedUserDataEnvironment,
 } from '@metroforge/shared';
 
 const TOP_DOWN_ITEM_IDS = new Set<string>(TOP_DOWN_DUNGEON_ITEMS.map((item) => item.id));
@@ -409,6 +410,18 @@ export class QAValidator {
       details: { roomCount, isTopDown },
     });
 
+    // Gate: scenes/world/World.tscn's root "World" node actually uses this archetype's own
+    // manager script — catches a step (a genre-blind post-processing pass, a stray manual copy,
+    // anything run after the rest of these gates already passed) silently swapping the scene for
+    // the other genre's. Not hypothetical: a genre-blind quality-repair pass used to copy the
+    // side-view WorldManager.gd into a top-down project and rewrite World.tscn to use it, *after*
+    // every other gate here had already validated the real OverworldManager.gd-based scene — see
+    // docs/debug/TOPDOWN_GENRE_MILESTONE.md. That pass is now archetype-gated off
+    // (packages/generation/src/pipeline.ts), but this gate is the regression check that would
+    // actually catch it (or anything else with the same failure shape) if that scoping ever
+    // regresses, rather than relying on the scoping fix alone.
+    results.push(validateWorldSceneArchetypeIntegrity(projectPath, isTopDown));
+
     // Gate: every ext_resource path referenced by a scene file actually exists on disk —
     // catches missing textures/audio/scripts/scenes the asset pipeline or assembler failed to
     // write (spec §33), which no other gate here checks.
@@ -536,19 +549,22 @@ export class QAValidator {
    *  type X" / "No loader found for resource" errors that have nothing to do with
    *  whether the generated project is actually correct. Failure here is tolerated
    *  (best-effort) — the subsequent gate still runs and will surface any real problem. */
-  private runGodotImport(godotPath: string, projectPath: string): void {
+  private runGodotImport(godotPath: string, projectPath: string, userDataDir?: string): void {
     try {
-      execSync(`"${godotPath}" --headless --path "${projectPath}" --import`, {
+      execFileSync(godotPath, ['--headless', '--path', projectPath, '--import'], {
         encoding: 'utf-8',
         timeout: 120000,
         windowsHide: true,
+        env: userDataDir
+          ? { ...process.env, ...isolatedUserDataEnvironment(userDataDir) }
+          : undefined,
       });
     } catch {
       // best-effort — an import failure will surface as a real error in the gate that follows
     }
   }
 
-  validateGodotHeadless(godotPath: string, projectPath: string): QAGateResult {
+  validateGodotHeadless(godotPath: string, projectPath: string, options?: { userDataDir?: string }): QAGateResult {
     if (!existsSync(godotPath)) {
       return {
         gate: 'godot_imports',
@@ -557,13 +573,16 @@ export class QAValidator {
         message: 'NEEDS_RUNTIME_VALIDATION: GODOT_NOT_AVAILABLE',
       };
     }
-    this.runGodotImport(godotPath, projectPath);
+    this.runGodotImport(godotPath, projectPath, options?.userDataDir);
 
     try {
-      const output = execSync(`"${godotPath}" --headless --path "${projectPath}" --quit-after 1`, {
+      const output = execFileSync(godotPath, ['--headless', '--path', projectPath, '--quit-after', '1'], {
         encoding: 'utf-8',
         timeout: 60000,
         windowsHide: true,
+        env: options?.userDataDir
+          ? { ...process.env, ...isolatedUserDataEnvironment(options.userDataDir) }
+          : undefined,
       });
       const hasParseError =
         output.includes('Parse Error') ||
@@ -600,7 +619,7 @@ export class QAValidator {
    *  actually blocks/unblocks, and exercises save/load. Distinct from
    *  `validateGodotHeadless`, which only proves the project *imports* — this proves
    *  core gameplay systems actually run. */
-  validateGodotRuntime(godotPath: string, projectPath: string): QAGateResult {
+  validateGodotRuntime(godotPath: string, projectPath: string, options?: { userDataDir?: string }): QAGateResult {
     const smokeTestScene = join(projectPath, 'scenes', 'test', 'RuntimeSmokeTest.tscn');
     if (!existsSync(smokeTestScene)) {
       return {
@@ -611,23 +630,30 @@ export class QAValidator {
       };
     }
 
-    this.runGodotImport(godotPath, projectPath);
+    this.runGodotImport(godotPath, projectPath, options?.userDataDir);
 
-    const command = `"${godotPath}" --headless --path "${projectPath}" res://scenes/test/RuntimeSmokeTest.tscn --quit-after 1800`;
-    let output: string;
-    let exitCode = 0;
-    try {
-      output = execSync(command, { encoding: 'utf-8', timeout: 90000, windowsHide: true });
-    } catch (err) {
-      exitCode = 1;
-      output =
-        err instanceof Error && 'stdout' in err
-          ? String((err as { stdout?: string }).stdout ?? err.message)
-          : String(err);
-    }
+    const runtime = spawnSync(godotPath, [
+      '--headless',
+      '--path',
+      projectPath,
+      '--scene',
+      'res://scenes/test/RuntimeSmokeTest.tscn',
+      '--quit-after',
+      '1800',
+    ], {
+      encoding: 'utf-8',
+      timeout: 90000,
+      windowsHide: true,
+      env: options?.userDataDir
+        ? { ...process.env, ...isolatedUserDataEnvironment(options.userDataDir) }
+        : undefined,
+    });
+    const output = `${runtime.stdout ?? ''}\n${runtime.stderr ?? ''}${runtime.error ? `\n${runtime.error.message}` : ''}`;
+    const exitCode = runtime.status ?? 1;
 
     const parsed = parseSmokeTestOutput(output);
     const { checks, ranToCompletion, passedCount, failed } = parsed;
+    const runtimeReady = output.includes('METROFORGE_RUNTIME_READY');
     const softFailed = parsed.softFailed.length > 0;
     // A soft-fail (e.g. "this seed happened to generate zero projectile-type enemies, so
     // there was nothing to test") must never be conflated with a hard failure — it's still a
@@ -635,7 +661,7 @@ export class QAValidator {
     // that didn't reach the results marker at all (crash/hang/timeout) is UNKNOWN, not a
     // silent pass — we genuinely don't know whether the gameplay it never got to exercise
     // actually works.
-    const state: QAGateState = !ranToCompletion
+    const state: QAGateState = !ranToCompletion || !runtimeReady
       ? 'UNKNOWN'
       : failed.length > 0 || exitCode !== 0
         ? 'FAIL'
@@ -650,8 +676,15 @@ export class QAValidator {
       state,
       message: ranToCompletion
         ? `${passedCount}/${checks.length} runtime checks passed${failed.length > 0 ? ` (failed: ${failed.join(', ')})` : ''}`
-        : 'Smoke test did not complete — Godot crashed or hung',
-      details: { checks: parsed.checks, output: output.slice(-2000) },
+        : 'Smoke test did not emit gameplay-ready evidence — Godot crashed or hung',
+      details: {
+        checks: parsed.checks,
+        runtimeReady,
+        runtimeReadyMarker: runtimeReady ? 'METROFORGE_RUNTIME_READY' : null,
+        exitCode,
+        timedOut: runtime.error?.message?.includes('ETIMEDOUT') ?? false,
+        output: output.slice(-4000),
+      },
     };
   }
 
@@ -660,7 +693,7 @@ export class QAValidator {
    *  For RELEASE_CANDIDATE (`required: true`), missing or blank capture is a hard FAIL. */
   validateGameplayScreenshot(
     projectPath: string,
-    options?: { required?: boolean; godotPath?: string; headlessOutput?: string },
+    options?: { required?: boolean; godotPath?: string; headlessOutput?: string; userDataDir?: string },
   ): QAGateResult {
     const required = options?.required === true;
     if (options?.godotPath && (required || options.headlessOutput)) {
@@ -669,6 +702,7 @@ export class QAValidator {
           godotPath: options.godotPath,
           projectPath,
           headlessOutput: options.headlessOutput,
+          userDataDir: options.userDataDir,
         });
       } catch {
         /* screenshot gate below reports missing/blank honestly */
@@ -797,13 +831,23 @@ export class QAValidator {
     // tick), not wall-clock seconds. 12000 was enough for 8-room TINY worlds, but RELEASE_CANDIDATE
     // maps (30+ transitions, several minibosses at MIN_BOSS_ATTACK_TIMEOUT_SEC=45, plus a final
     // boss) need a frame budget that cannot fire before the runner's own _finish(). The outer
-    // execSync timeout is what actually bounds the gate.
-    const command = `"${godotPath}" --headless --path "${projectPath}" res://scenes/test/PlaytestRunner.tscn --quit-after 360000`;
+    // The child-process timeout is what actually bounds the gate.
     let output: string;
     let exitCode = 0;
     try {
       // 10 minutes: 45-room critical-path with 4 real boss fights and 10s walk timeouts per room.
-      output = execSync(command, { encoding: 'utf-8', timeout: 600000, windowsHide: true });
+      output = execFileSync(
+        godotPath,
+        [
+          '--headless',
+          '--path',
+          projectPath,
+          'res://scenes/test/PlaytestRunner.tscn',
+          '--quit-after',
+          '360000',
+        ],
+        { encoding: 'utf-8', timeout: 600000, windowsHide: true },
+      );
     } catch (err) {
       exitCode = 1;
       output =
@@ -989,6 +1033,63 @@ function readProjectArchetype(projectPath: string): GameArchetype | undefined {
   } catch {
     return undefined;
   }
+}
+
+/** Which scripts/world/*.gd a genuine World.tscn for this archetype should — and must not —
+ *  resolve its root "World" node's script to. Exported so a caller can re-run this specific
+ *  check on its own right after a step that can rewrite scene files (see pipeline.ts's
+ *  quality-pass call site), not only as part of the full validateProject() gate list. */
+export function validateWorldSceneArchetypeIntegrity(
+  projectPath: string,
+  isTopDown: boolean,
+): QAGateResult {
+  const expectedScript = isTopDown ? 'OverworldManager.gd' : 'WorldManager.gd';
+  const wrongScript = isTopDown ? 'WorldManager.gd' : 'OverworldManager.gd';
+  const scenePath = join(projectPath, 'scenes', 'world', 'World.tscn');
+
+  let scene: string;
+  try {
+    scene = readFileSync(scenePath, 'utf-8');
+  } catch {
+    return {
+      gate: 'world_scene_archetype_integrity',
+      passed: false,
+      message: 'scenes/world/World.tscn missing or unreadable',
+    };
+  }
+
+  // Resolve the ext_resource id declared for this archetype's expected script, then confirm the
+  // root "World" node's own script= line actually points at that id — not just that the right
+  // path string appears somewhere in the file (e.g. an unrelated ext_resource another node uses).
+  const expectedIdMatch = scene.match(
+    new RegExp(`\\[ext_resource type="Script" path="res://scripts/world/${expectedScript}" id="([^"]+)"`),
+  );
+  const hasWrongScriptReference = scene.includes(`res://scripts/world/${wrongScript}`);
+
+  if (!expectedIdMatch) {
+    return {
+      gate: 'world_scene_archetype_integrity',
+      passed: false,
+      message: hasWrongScriptReference
+        ? `World.tscn references ${wrongScript} instead of ${expectedScript} — overwritten by an incompatible genre pass`
+        : `World.tscn does not reference the expected ${expectedScript} at all`,
+      details: { expectedScript, wrongScript, hasWrongScriptReference },
+    };
+  }
+
+  const expectedId = expectedIdMatch[1];
+  const worldNodeMatch = scene.match(/\[node name="World"[^\]]*\]\s*\n(?:[^\n[][^\n]*\n)*/);
+  const rootScriptMatch = worldNodeMatch?.[0]?.match(/script = ExtResource\("([^"]+)"\)/);
+  const rootUsesExpectedScript = rootScriptMatch?.[1] === expectedId;
+
+  return {
+    gate: 'world_scene_archetype_integrity',
+    passed: rootUsesExpectedScript,
+    message: rootUsesExpectedScript
+      ? `World.tscn's root node correctly uses ${expectedScript}`
+      : `World.tscn's root "World" node does not use ${expectedScript} (id ${expectedId}) — likely overwritten by an incompatible genre pass`,
+    details: { expectedScript, wrongScript, hasWrongScriptReference },
+  };
 }
 
 /** Reads this project's title from its persisted game_dna.json, if present and parseable. */

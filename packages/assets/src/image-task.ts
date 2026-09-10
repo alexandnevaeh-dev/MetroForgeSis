@@ -1,33 +1,28 @@
 import type { ImageTaskKind } from '@metroforge/schemas';
-import { NVIDIA_MODEL_CATALOG } from './foundry/nvidia-catalog.js';
+import {
+  nvidiaModelById,
+  nvidiaSelectModelForImageTask,
+} from './foundry/nvidia-catalog.js';
 
+/** @deprecated Prefer catalog lookup; kept for existing imports. */
 export const NVIDIA_FLUX_DEV = 'black-forest-labs/flux.1-dev';
+/** @deprecated Prefer catalog lookup; kept for existing imports. */
 export const NVIDIA_FLUX_SCHNELL = 'black-forest-labs/flux.1-schnell';
+/** @deprecated Prefer catalog lookup; kept for existing imports. */
 export const NVIDIA_FLUX_KONTEXT = 'black-forest-labs/flux.1-kontext-dev';
 
 /**
- * Capability router: do not send every visual task to flux.1-dev.
- * Kontext is the only cataloged model that supports reference/editing.
+ * Capability router: model choice comes from NVIDIA_MODEL_CATALOG metadata
+ * (imageTaskKinds / supportsEditing), not hardcoded model if/else branches.
  */
 export function nvidiaModelForImageTask(kind: ImageTaskKind): string {
-  switch (kind) {
-    case 'REFERENCE_VARIATION':
-    case 'IMAGE_EDIT':
-      return NVIDIA_FLUX_KONTEXT;
-    case 'CONCEPT_IMAGE':
-    case 'SPRITE_SOURCE':
-      return NVIDIA_FLUX_DEV;
-    case 'TILESET_SOURCE':
-    case 'BACKGROUND_SOURCE':
-      return NVIDIA_FLUX_DEV;
-    case 'VFX_SOURCE':
-      return NVIDIA_FLUX_SCHNELL;
-    default:
-      return NVIDIA_FLUX_DEV;
-  }
+  return nvidiaSelectModelForImageTask(kind).modelId;
 }
 
 export function nvidiaSupportsReference(modelId: string): boolean {
-  const row = NVIDIA_MODEL_CATALOG.find((m) => m.modelId === modelId);
-  return row?.supportsReferenceImages === true;
+  return nvidiaModelById(modelId)?.supportsReferenceImages === true;
+}
+
+export function nvidiaSupportsEditing(modelId: string): boolean {
+  return nvidiaModelById(modelId)?.supportsEditing === true;
 }

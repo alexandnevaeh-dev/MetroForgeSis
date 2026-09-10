@@ -16,6 +16,7 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
 	name_label.text = npc_name
+	name_label.visible = false
 	prompt_label.visible = false
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -31,12 +32,14 @@ func _on_body_entered(body: Node2D) -> void:
 	if not body.is_in_group("player"):
 		return
 	_player_in_range = true
+	name_label.visible = true
 	prompt_label.visible = true
 
 func _on_body_exited(body: Node2D) -> void:
 	if not body.is_in_group("player"):
 		return
 	_player_in_range = false
+	name_label.visible = false
 	prompt_label.visible = false
 
 func _begin_dialogue() -> void:

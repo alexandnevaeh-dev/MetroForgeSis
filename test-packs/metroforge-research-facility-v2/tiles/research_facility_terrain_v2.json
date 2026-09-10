@@ -1,0 +1,149 @@
+{
+  "tileSize": 32,
+  "roles": [
+    {
+      "role": "ground",
+      "col": 0,
+      "row": 0,
+      "terrainSet": 0,
+      "terrain": 0,
+      "peering": {}
+    },
+    {
+      "role": "ground_wear",
+      "col": 1,
+      "row": 0,
+      "terrainSet": 0,
+      "terrain": 0,
+      "peering": {}
+    },
+    {
+      "role": "ground_grate",
+      "col": 2,
+      "row": 0,
+      "terrainSet": 0,
+      "terrain": 0,
+      "peering": {}
+    },
+    {
+      "role": "ground_cable",
+      "col": 3,
+      "row": 0,
+      "terrainSet": 0,
+      "terrain": 0,
+      "peering": {}
+    },
+    {
+      "role": "ground_hazard",
+      "col": 4,
+      "row": 0,
+      "terrainSet": 0,
+      "terrain": 0,
+      "peering": {}
+    },
+    {
+      "role": "ground_stain",
+      "col": 5,
+      "row": 0,
+      "terrainSet": 0,
+      "terrain": 0,
+      "peering": {}
+    },
+    {
+      "role": "wall",
+      "col": 0,
+      "row": 1,
+      "terrainSet": 0,
+      "terrain": 0,
+      "peering": {}
+    },
+    {
+      "role": "wall_accent",
+      "col": 1,
+      "row": 1,
+      "terrainSet": 0,
+      "terrain": 0,
+      "peering": {}
+    },
+    {
+      "role": "wall_wear",
+      "col": 2,
+      "row": 1,
+      "terrainSet": 0,
+      "terrain": 0,
+      "peering": {}
+    },
+    {
+      "role": "ground_dirty",
+      "col": 3,
+      "row": 1,
+      "terrainSet": 0,
+      "terrain": 0,
+      "peering": {}
+    },
+    {
+      "role": "shadow",
+      "col": 4,
+      "row": 1,
+      "terrainSet": 0,
+      "terrain": 0,
+      "peering": {}
+    },
+    {
+      "role": "hazard",
+      "col": 5,
+      "row": 1,
+      "terrainSet": 0,
+      "terrain": 0,
+      "peering": {}
+    },
+    {
+      "role": "door",
+      "col": 0,
+      "row": 2,
+      "terrainSet": 0,
+      "terrain": 0,
+      "peering": {}
+    },
+    {
+      "role": "ceiling",
+      "col": 1,
+      "row": 2,
+      "terrainSet": 0,
+      "terrain": 0,
+      "peering": {}
+    },
+    {
+      "role": "platform",
+      "col": 2,
+      "row": 2,
+      "terrainSet": 0,
+      "terrain": 0,
+      "peering": {}
+    },
+    {
+      "role": "left_edge",
+      "col": 3,
+      "row": 2,
+      "terrainSet": 0,
+      "terrain": 0,
+      "peering": {}
+    },
+    {
+      "role": "right_edge",
+      "col": 4,
+      "row": 2,
+      "terrainSet": 0,
+      "terrain": 0,
+      "peering": {}
+    },
+    {
+      "role": "decor_a",
+      "col": 5,
+      "row": 2,
+      "terrainSet": 0,
+      "terrain": 0,
+      "peering": {}
+    }
+  ]
+}

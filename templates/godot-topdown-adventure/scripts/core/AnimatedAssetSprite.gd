@@ -12,12 +12,62 @@ extends AnimatedSprite2D
 ## back to a solid-color placeholder with a warning, not a crash.
 @export var attack_sheet_path: String = ""
 @export var hurt_sheet_path: String = ""
+## Was never wired at all in this template despite the asset pipeline always generating
+## `<id>_death.png` for every character/enemy/boss (packages/assets/src/asset-pipeline.ts's
+## buildDeathSheetAsset — genre-agnostic, the same call side-view's own Boss.tscn already
+## consumes via this exact export name) — no top-down actor ever showed a death animation.
+@export var death_sheet_path: String = ""
+
+## A single-pose still image (e.g. "assets/bosses/boss_final.png") generated at this actor's
+## *real* frame size, used to correct `frame_size` above at runtime instead of trusting it — the
+## asset pipeline's `compiledSpriteFrameSize()` returns 96x96 for a non-final boss and 128x128
+## for the final one (packages/assets/src/asset-pipeline.ts), so one fixed `frame_size` hardcoded
+## on a shared Boss.tscn cannot be correct for both. Confirmed directly: this template's
+## Boss.tscn shipped with frame_size=48x48 against real 128x128-per-frame sheets, so every walk/
+## attack/hurt frame was a wrong, tiny top-left crop of the real sprite (a hood-shaped fragment,
+## tinted red by the telegraph modulate — the reported "plain triangle"), never the sheet's
+## actual per-frame content. Empty string (the default) skips this and trusts `frame_size` as
+## exported, so every non-boss actor (correctly sized already) is unaffected.
+@export var reference_pose_path: String = ""
 
 func _ready() -> void:
 	_build_frames()
 	play("walk")
 
+## Runtime re-skin entry point — lets a controller swap this actor's entire sheet family (e.g.
+## a field enemy picking its real melee/ranged/heavy art by combat type, set after `_ready()` has
+## already run once with Enemy.tscn's shared default paths) without duplicating `_build_frames()`'s
+## own logic. Any path left empty ("") keeps its current value rather than clearing it, so a caller
+## only needs to name the paths it actually wants to change. No-op safe: if none of the new paths
+## point at a file that exists, `_load_animation_frames()`'s own fallback-placeholder behavior
+## applies exactly as it would from `_ready()`, so this can never leave the sprite in a broken
+## half-built state. The currently-playing animation name is preserved across the rebuild (falling
+## back to "walk" if the old one no longer exists in the new sheet set, e.g. switching to a family
+## with no death sheet while "death" was playing).
+func configure_and_rebuild(
+	new_sheet_path: String = "",
+	new_attack_sheet_path: String = "",
+	new_hurt_sheet_path: String = "",
+	new_death_sheet_path: String = "",
+	new_reference_pose_path: String = "",
+) -> void:
+	if not new_sheet_path.is_empty():
+		sheet_path = new_sheet_path
+	if not new_attack_sheet_path.is_empty():
+		attack_sheet_path = new_attack_sheet_path
+	if not new_hurt_sheet_path.is_empty():
+		hurt_sheet_path = new_hurt_sheet_path
+	if not new_death_sheet_path.is_empty():
+		death_sheet_path = new_death_sheet_path
+	if not new_reference_pose_path.is_empty():
+		reference_pose_path = new_reference_pose_path
+	var current_anim := animation
+	_build_frames()
+	play(current_anim if sprite_frames.has_animation(current_anim) else "walk")
+
 func _build_frames() -> void:
+	_resolve_frame_size_from_reference_pose()
+
 	var frames := SpriteFrames.new()
 	frames.add_animation("idle")
 	frames.add_animation("walk")
@@ -34,9 +84,40 @@ func _build_frames() -> void:
 		frames.set_animation_loop("hurt", false)
 		_load_animation_frames(frames, "hurt", hurt_sheet_path, false)
 
+	if not death_sheet_path.is_empty():
+		frames.add_animation("death")
+		frames.set_animation_loop("death", false)
+		_load_animation_frames(frames, "death", death_sheet_path, false)
+
 	sprite_frames = frames
-	centered = false
-	offset = Vector2(frame_size.x / 2.0, frame_size.y)
+	# `centered = false` with a large 2D offset (frame_size.x/2, frame_size.y) is mathematically
+	# the same bottom-center anchor as `centered = true` with offset (0, -frame_size.y/2) — but at
+	# 128x128 (the final boss's real size — see reference_pose_path above), the `centered = false`
+	## form renders only a small top-left fragment of the real texture instead of the whole frame,
+	# confirmed directly by toggling nothing but this property with the same real boss sprite:
+	# offset zeroed out drew the full, correct character; restoring the real offset atop
+	# `centered = false` reproduced the fragment again. Every actor in this template stayed at
+	# 32-48px, where the bug never showed. Side-view's own AnimatedAssetSprite.gd already uses
+	# this exact `centered = true` form (and already renders 128x128 bosses correctly) — adopting
+	# the same convention here instead of chasing the underlying engine behavior further. The two
+	# forms are equivalent for every existing actor (same anchor point, just derived differently),
+	# so this is not expected to shift the player/enemy/NPC sprites already using this script.
+	centered = true
+	offset = Vector2(0, -frame_size.y / 2.0)
+
+## Overrides `frame_size` from the real dimensions of `reference_pose_path`, when set and the
+## file actually exists — a single-pose still is never a frame-strip, so its width/height *is*
+## exactly one frame's real size, more trustworthy than a value hand-typed into a shared .tscn.
+func _resolve_frame_size_from_reference_pose() -> void:
+	if reference_pose_path.is_empty():
+		return
+	var res_path := reference_pose_path if reference_pose_path.begins_with("res://") else "res://" + reference_pose_path
+	if not ResourceLoader.exists(res_path):
+		return
+	var tex: Texture2D = load(res_path)
+	if tex == null or tex.get_width() <= 0 or tex.get_height() <= 0:
+		return
+	frame_size = Vector2i(tex.get_width(), tex.get_height())
 
 ## Loads a horizontal frame-strip sheet into the given animation. When `copy_to_idle` is
 ## true, this sheet's first frame is also used as the (currently single-frame) "idle"
@@ -45,9 +126,26 @@ func _build_frames() -> void:
 ## of crashing the scene.
 func _load_animation_frames(frames: SpriteFrames, anim: String, path: String, copy_to_idle: bool) -> void:
 	var res_path := path if path.begins_with("res://") else "res://" + path
-	if ResourceLoader.exists(res_path):
+	# ResourceLoader.exists() can be true (the .import metadata is on disk) for a moment before
+	# load() can actually return the compiled texture — observed directly running RuntimeSmokeTest
+	# immediately after a large fresh --import pass under heavy concurrent machine load, where
+	# load() returned null for a real, present, correctly-imported file and crashed the very next
+	# .get_width() call. Falls through to the same missing-file placeholder path below instead of
+	# crashing the whole script (and, transitively, every check downstream of it).
+	if ResourceLoader.exists(res_path) and load(res_path) != null:
 		var tex: Texture2D = load(res_path)
-		for i in range(frame_count):
+		# Derive the real frame count from the sheet's actual width instead of trusting the single
+		# shared `frame_count` export — a sheet whose actual layout doesn't match `frame_count`
+		# (the same class of mismatch `frame_size` had — see reference_pose_path above) would
+		# otherwise crop a partial or out-of-bounds frame instead of the sheet's real content.
+		# Falls back to `frame_count` when the width isn't a clean multiple of frame_size.x.
+		var sheet_frame_count := frame_count
+		if frame_size.x > 0:
+			var tex_width := tex.get_width()
+			if tex_width > 0 and tex_width % frame_size.x == 0:
+				@warning_ignore("integer_division")  # exact multiple guaranteed by the modulo check above
+				sheet_frame_count = tex_width / frame_size.x
+		for i in range(sheet_frame_count):
 			var atlas := AtlasTexture.new()
 			atlas.atlas = tex
 			atlas.region = Rect2(i * frame_size.x, 0, frame_size.x, frame_size.y)

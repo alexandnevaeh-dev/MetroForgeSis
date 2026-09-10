@@ -1,0 +1,12 @@
+{
+  "workflowId": "qwen-edit",
+  "version": "1.0.0",
+  "capabilities": ["IMAGE_EDITING", "REFERENCE_IMAGE", "IDENTITY_CONDITIONING", "POSE_CONDITIONING"],
+  "requiredModels": ["qwen-image-edit-2509"],
+  "requiredAdapters": [],
+  "requiredCustomNodes": [],
+  "inputMappings": { "referenceImage": "conditioning.image", "prompt": "prompt", "seed": "seed" },
+  "outputMappings": { "image": "images[0]" },
+  "licenseRequirements": ["Qwen-Image-Edit-2509 model terms"],
+  "vramProfile": "remote GPU recommended; local CPU not practical"
+}

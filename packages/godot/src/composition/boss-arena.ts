@@ -1,4 +1,4 @@
-import { roleToCell, type VisualCell } from './surface-roles.js';
+import type { VisualCell } from './surface-roles.js';
 import type { GeometryRect, LandmarkPlan, LightingPlan } from './room-blueprint.js';
 import { defaultLightingPlan } from './room-blueprint.js';
 
@@ -21,15 +21,8 @@ export function composeBossArena(input: {
 }): BossArenaComposition {
   const cx = Math.floor(input.cols / 2);
   const landmarkRow = Math.max(2, input.floorRow - 3);
-  const cells: VisualCell[] = [
-    roleToCell(cx - 1, landmarkRow, 'decor_a'),
-    roleToCell(cx, landmarkRow, 'decor_b'),
-    roleToCell(cx + 1, landmarkRow, 'decor_a'),
-    roleToCell(cx, landmarkRow - 1 > 1 ? landmarkRow - 1 : landmarkRow, 'decor_b'),
-  ];
-  // Arena flanks — moss, never hazard candy-stripe next to spawn.
-  cells.push(roleToCell(2, input.floorRow - 1, 'decor_a'));
-  cells.push(roleToCell(input.cols - 3, input.floorRow - 1, 'decor_b'));
+  const cells: VisualCell[] = [];
+  // Arena flanks stay masonry — gold/lime atlas cells read as cartoon grass.
 
   const lighting = defaultLightingPlan('boss', input.width, input.height);
   lighting.focalPoint = {

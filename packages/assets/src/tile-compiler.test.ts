@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { TileCompiler, TILE_ATLAS } from '../src/tile-compiler.js';
+import { TileCompiler, TILE_ATLAS, softenCompiledAtlasSeams } from '../src/tile-compiler.js';
+import { groundTerrainPeeringForMask, groundTerrainRoleForMask, GROUND_TERRAIN_MASK_ROLES } from '../src/tile-roles.js';
 import { decodePngRgba, encodePng } from '../src/png.js';
 import { critiqueAnimationIdentity, assembleContactSheet } from '../src/sprite-qa.js';
 import { generateProceduralSprite } from '../src/png.js';
@@ -219,6 +220,48 @@ describe('TileCompiler', () => {
     expect(TILE_ATLAS.roles.ground_moss).toEqual({ col: 0, row: 4 });
     expect(Object.keys(TILE_ATLAS.roles).length).toBeGreaterThanOrEqual(24);
     expect(TILE_ATLAS.rows).toBe(6);
+  });
+
+  it('maps every cardinal ground connectivity mask to a deterministic documented atlas role', () => {
+    expect(Object.keys(GROUND_TERRAIN_MASK_ROLES)).toHaveLength(16);
+    expect(groundTerrainRoleForMask(0)).toBe('ground');
+    expect(groundTerrainRoleForMask(1)).toBe('bottom_edge');
+    expect(groundTerrainRoleForMask(2)).toBe('left_edge');
+    expect(groundTerrainRoleForMask(4)).toBe('top_edge');
+    expect(groundTerrainRoleForMask(8)).toBe('right_edge');
+    expect(groundTerrainRoleForMask(3)).toBe('outside_bl');
+    expect(groundTerrainRoleForMask(12)).toBe('outside_tr');
+    expect(groundTerrainRoleForMask(15)).toBe('ceiling');
+    for (let mask = 0; mask < 16; mask++) {
+      const role = groundTerrainRoleForMask(mask);
+      expect(TILE_ATLAS.roles[role]).toBeDefined();
+    }
+    expect(groundTerrainPeeringForMask(0)).toEqual({ top: -1, right: -1, bottom: -1, left: -1 });
+    expect(groundTerrainPeeringForMask(5)).toEqual({ top: 0, right: -1, bottom: 0, left: -1 });
+    expect(groundTerrainPeeringForMask(15)).toEqual({ top: 0, right: 0, bottom: 0, left: 0 });
+  });
+
+  it('does not stamp a dark mortar line on every 32px cell top', () => {
+    const compiled = new TileCompiler().compile({
+      tileSize: 32,
+      paletteHex: ['#141820', '#3c4454', '#5a8cdc', '#c84848'],
+    });
+    const { rgba, width, height } = decodePngRgba(compiled.atlas);
+    let darker = 0;
+    let n = 0;
+    for (let y = 0; y < height; y += 32) {
+      for (let x = 0; x < width; x++) {
+        const i = (y * width + x) * 4;
+        const j = (Math.min(height - 1, y + 4) * width + x) * 4;
+        const l0 = 0.299 * rgba[i]! + 0.587 * rgba[i + 1]! + 0.114 * rgba[i + 2]!;
+        const l1 = 0.299 * rgba[j]! + 0.587 * rgba[j + 1]! + 0.114 * rgba[j + 2]!;
+        n += 1;
+        if (l0 < l1 - 10) darker += 1;
+      }
+    }
+    expect(darker / n).toBeLessThan(0.28);
+    const softened = softenCompiledAtlasSeams(compiled.atlas, 32);
+    expect(decodePngRgba(softened).width).toBe(width);
   });
 });
 

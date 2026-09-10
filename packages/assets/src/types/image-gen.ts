@@ -9,6 +9,9 @@ export interface ImageConditioning {
   image: Buffer;
   /** Conditioning strength / denoise (0–1). Defaults vary by mode. */
   strength?: number;
+  sourceAssetId?: string;
+  sourceHash?: string;
+  referenceMechanism?: 'IP_ADAPTER' | 'IMG2IMG' | 'CONTROLNET';
 }
 
 export interface ImageGenRequest {
@@ -22,6 +25,13 @@ export interface ImageGenRequest {
   conditioning?: ImageConditioning;
   /** Override provider model for this request (e.g. flux.1-kontext-dev for reference poses). */
   modelOverride?: string;
+  /** Per-request inference step count. Optional and additive — a provider that doesn't read it
+   *  keeps its own existing default/env-var behavior unchanged. Providers that DO read it must
+   *  prefer it over any global default so a caller's declared step count and the value actually
+   *  executed cannot silently diverge (a real provenance-honesty gap found and fixed while
+   *  running a step-count quality experiment against the Apple-native MPS profile — see
+   *  docs/audit/MODERN_COHESION_TEST_PROJECT.md). */
+  inferenceSteps?: number;
 }
 
 /** Structured provider health — richer than a bare boolean; never includes API keys. */
@@ -62,6 +72,10 @@ export interface ImageGenResult {
   requestedCapability?: string;
   /** False when this result is procedural/placeholder and must not gate as production. */
   productionAllowed?: boolean;
+  /** Provider correlation id when available (e.g. NVCF request id). */
+  requestId?: string;
+  /** Optional local backend execution telemetry, excluding image payload data. */
+  executionMetadata?: Record<string, unknown>;
 }
 
 export interface ImageGenerator {

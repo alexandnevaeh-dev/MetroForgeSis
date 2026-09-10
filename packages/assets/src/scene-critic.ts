@@ -49,6 +49,77 @@ function lumaStdFromMeans(cellMeans: number[]): number {
   );
 }
 
+function brightnessHistogram(rgba: Uint8Array, width: number, height: number): { counts: number[]; total: number } {
+  const counts = new Array<number>(32).fill(0);
+  let total = 0;
+  for (let y = 0; y < height; y += SAMPLE_STRIDE) {
+    for (let x = 0; x < width; x += SAMPLE_STRIDE) {
+      const i = (y * width + x) * 4;
+      const r = rgba[i]!;
+      const g = rgba[i + 1]!;
+      const b = rgba[i + 2]!;
+      const lum = luma(r, g, b);
+      const bucket = Math.min(31, Math.floor((lum / 256) * 32));
+      counts[bucket] += 1;
+      total += 1;
+    }
+  }
+  return { counts, total };
+}
+
+function localEntropyFromHistogram(counts: number[], total: number): number {
+  let entropy = 0;
+  for (const count of counts) {
+    if (count <= 0) continue;
+    const p = count / total;
+    entropy -= p * Math.log2(p);
+  }
+  return entropy;
+}
+
+function edgeDensity(rgba: Uint8Array, width: number, height: number): number {
+  let edges = 0;
+  let samples = 0;
+  for (let y = 0; y < height - SAMPLE_STRIDE; y += SAMPLE_STRIDE) {
+    for (let x = 0; x < width - SAMPLE_STRIDE; x += SAMPLE_STRIDE) {
+      const i = (y * width + x) * 4;
+      const iRight = (y * width + x + SAMPLE_STRIDE) * 4;
+      const iDown = ((y + SAMPLE_STRIDE) * width + x) * 4;
+      const L = luma(rgba[i]!, rgba[i + 1]!, rgba[i + 2]!);
+      const LRight = luma(rgba[iRight]!, rgba[iRight + 1]!, rgba[iRight + 2]!);
+      const LDown = luma(rgba[iDown]!, rgba[iDown + 1]!, rgba[iDown + 2]!);
+      const delta = Math.abs(LRight - L) + Math.abs(LDown - L);
+      if (delta > 8) edges += 1;
+      samples += 1;
+    }
+  }
+  return samples > 0 ? edges / samples : 0;
+}
+
+function uniformRegionRatio(rgba: Uint8Array, width: number, height: number): number {
+  const cellsX = Math.max(1, Math.floor(width / 16));
+  const cellsY = Math.max(1, Math.floor(height / 16));
+  let uniform = 0;
+  let total = 0;
+  for (let cy = 0; cy < cellsY; cy++) {
+    for (let cx = 0; cx < cellsX; cx++) {
+      let min = 255;
+      let max = 0;
+      for (let y = cy * 16; y < Math.min(height, (cy + 1) * 16); y += 4) {
+        for (let x = cx * 16; x < Math.min(width, (cx + 1) * 16); x += 4) {
+          const i = (y * width + x) * 4;
+          const lum = luma(rgba[i]!, rgba[i + 1]!, rgba[i + 2]!);
+          if (lum < min) min = lum;
+          if (lum > max) max = lum;
+        }
+      }
+      total += 1;
+      if (max - min <= 12) uniform += 1;
+    }
+  }
+  return total > 0 ? uniform / total : 0;
+}
+
 /**
  * Deterministic full-scene QA for a gameplay screenshot (HUD + world), independent of a VLM.
  * Blank frames are reported as `blank: true` so callers can SKIP rather than fail CI.
@@ -110,6 +181,10 @@ export function critiqueGameplayScreenshot(png: Buffer): GameplayScreenshotCriti
   const uniqueColors = colors.size;
   const cellMeans = cellMeansFromGrid(grid, gridCount);
   const lumaStdDev = lumaStdFromMeans(cellMeans);
+  const hist = brightnessHistogram(rgba, width, height);
+  const localEntropy = localEntropyFromHistogram(hist.counts, hist.total);
+  const edginess = edgeDensity(rgba, width, height);
+  const uniformRatio = uniformRegionRatio(rgba, width, height);
   const hudOccupancy = hudSamples > 0 ? hudVisible / hudSamples : 0;
 
   if (occupancy < 0.004) {
@@ -133,9 +208,16 @@ export function critiqueGameplayScreenshot(png: Buffer): GameplayScreenshotCriti
   if (lumaStdDev < 4) {
     issues.push('Gameplay screenshot lacks spatial structure (looks flat)');
   }
-  if (occupancy > 0.94 && lumaStdDev < 10) {
+  const wallpaperEvidence =
+    occupancy > 0.94 &&
+    lumaStdDev < 8 &&
+    edginess < 0.035 &&
+    localEntropy < 2.3 &&
+    uniformRatio > 0.75 &&
+    uniqueColors < 18;
+  if (wallpaperEvidence) {
     issues.push(
-      `Gameplay composition looks wallpapered or occupancy≈1 with low contrast (occupancy ${(occupancy * 100).toFixed(1)}%, lumaStdDev ${lumaStdDev.toFixed(1)})`,
+      `Gameplay composition looks wallpapered: dense low-structure coverage with weak edge detail (occupancy ${(occupancy * 100).toFixed(1)}%, lumaStdDev ${lumaStdDev.toFixed(1)}, edgeDensity ${edginess.toFixed(3)}, entropy ${localEntropy.toFixed(2)})`,
     );
   }
   if (hudOccupancy < 0.01 && occupancy > 0.05 && hudColors.size < 3) {
@@ -155,7 +237,9 @@ export function critiqueGameplayScreenshot(png: Buffer): GameplayScreenshotCriti
   score -= issues.length * 18;
   if (uniqueColors >= 8) score += 5;
   if (lumaStdDev >= 12) score += 5;
-  if (occupancy > 0.94 && lumaStdDev < 10) score = Math.min(score, 40);
+  if (edginess > 0.05) score += 5;
+  if (localEntropy > 2.5) score += 5;
+  if (wallpaperEvidence) score = Math.min(score, 40);
   score = Math.max(0, Math.min(100, score));
 
   const passed = issues.length === 0;

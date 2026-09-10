@@ -11,10 +11,59 @@ import {
   prepareRoomAssemblyContext,
   auditRoomArchetypeFidelity,
   pickRoomPickupItem,
+  buildRoomConnections,
 } from '../src/room-assembler.js';
+import { foundryBackdropCoverScale } from '../src/foundry-visual-pack.js';
 import { generateWorldTopology } from '@metroforge/procedural';
 import { generateGameContent } from '@metroforge/procedural';
 import { GameDNASchema } from '@metroforge/schemas';
+
+describe('buildRoomConnections (seventeenth-session regression)', () => {
+  // Two connections in the same room sharing a `direction` are placed only ~48px apart along
+  // the *same* walk line (see generateRoomScene's directionSlot spacing) — reaching the farther
+  // door means physically walking through the nearer one's sensor first, which fires the wrong
+  // transition. This was the real, confirmed cause of the disclosed `door_did_not_fire` failures
+  // whose reported "current" room was neither the transition's `from` nor its intended `to`.
+  // Swept 60 seeds x 7 room counts x 4 biome counts (62,160 rooms total) directly against this
+  // function's own output — reverted the fix locally to confirm this fails without it (16
+  // collisions surfaced at roomCount>=50 before the shortcut-touch cap; the far larger,
+  // dominant class — 7-9 per 42-room world on every seed — before either fix).
+  it('never assigns two connections in the same room the same direction', () => {
+    const seeds = [1, 42, 137, 777, 999, 20260908, 20260909, 20260910, 20260911];
+    const roomCounts = [12, 15, 30, 42, 60, 80];
+    const biomeCounts = [1, 2, 3, 4];
+    const violations: string[] = [];
+    for (const seed of seeds) {
+      for (const roomCount of roomCounts) {
+        for (const biomeCount of biomeCounts) {
+          const { worldGraph, roomIds } = generateWorldTopology({
+            seed,
+            roomCount,
+            biomeCount,
+            abilities: ['dash', 'ground_slam', 'grapple'],
+            bossCount: 1,
+            profile: 'SMALL',
+          });
+          const connections = buildRoomConnections(roomIds, worldGraph.edges);
+          for (const [roomId, conns] of connections) {
+            const byDirection = new Map<string, number>();
+            for (const c of conns) {
+              byDirection.set(c.direction, (byDirection.get(c.direction) ?? 0) + 1);
+            }
+            for (const [direction, count] of byDirection) {
+              if (count > 1) {
+                violations.push(
+                  `seed=${seed} roomCount=${roomCount} biomeCount=${biomeCount} room=${roomId} direction=${direction} count=${count}`,
+                );
+              }
+            }
+          }
+        }
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+});
 
 describe('resolvePublishedArchetype', () => {
   it('preserves world graph traversal archetype when no special features', () => {
@@ -332,6 +381,31 @@ describe('generateRoomScene weak floors', () => {
     expect(scene).toContain('FloorRight');
     expect(scene).toContain('position = Vector2(400, 536)');
   });
+
+  it('uses valid resource references without fake uid:// names', () => {
+    const scene = generateRoomScene('room_001', 1, {
+      hasEnemy: false,
+      enemyIndex: 0,
+      hasAbilityPickup: false,
+      abilityPickups: [],
+      isBossRoom: false,
+      bossId: '',
+      hasSavePoint: false,
+      width: 800,
+      height: 600,
+      biomeIndex: 0,
+      connections: [],
+      hasTileset: false,
+      tileSize: 16,
+      npcs: [],
+      hasItemPickup: false,
+      itemId: '',
+      itemAmount: 0,
+    });
+
+    expect(scene).toContain('[ext_resource type="PackedScene" path="res://scenes/world/RoomTransition.tscn" id="5_transition"]');
+    expect(scene).not.toContain('uid="uid://');
+  });
 });
 
 describe('generateRoomScene combat sprites', () => {
@@ -415,7 +489,7 @@ describe('generateRoomScene combat sprites', () => {
     });
     expect(scene).toContain('[node name="FarSky" type="Sprite2D"');
     expect(scene).not.toContain('type="CanvasLayer"');
-    const farScale = Math.min(800 / 640, 600 / 360) * 2.1;
+    const farScale = Math.min(800 / 640, 600 / 360) * 1.08;
     expect(scene).toContain(`scale = Vector2(${farScale.toFixed(4)}, ${farScale.toFixed(4)})`);
     expect(scene).toContain('assets/backgrounds/biome_0/far.png');
     expect(scene).not.toContain('[node name="ParallaxBg"');
@@ -489,5 +563,38 @@ describe('generateRoomScene combat sprites', () => {
       [0, 16, 0, 0],
       [6, 13, 3, 0],
     ]);
+    expect(scene).toContain('script = ExtResource("6_tilemap")');
+    expect(scene).toContain('painted_cells_json');
+  });
+
+  it('uses the Foundry corridor plate instead of VGF mid/near wallpaper', () => {
+    const scene = generateRoomScene('room_000', 0, {
+      ...baseOptions,
+      width: 960,
+      height: 540,
+      hasEnemy: false,
+      enemyIndex: 0,
+      isBossRoom: false,
+      bossId: '',
+      hasTileset: true,
+      tileSize: 32,
+      visualKit: 'foundry',
+      biomeTexturePath: 'assets/tilesets/biome_0/source.png',
+      backgroundLayers: {
+        far: 'assets/backgrounds/biome_0/far.png',
+        mid: 'assets/backgrounds/biome_0/mid.png',
+        near: 'assets/backgrounds/biome_0/near.png',
+      },
+    });
+    const farScale = foundryBackdropCoverScale(960, 540);
+    expect(scene).toContain('visual_kit = "foundry"');
+    expect(scene).toContain('[node name="FarSky" type="Sprite2D"');
+    expect(scene).toContain('z_index = -90');
+    expect(scene).toContain(`scale = Vector2(${farScale.toFixed(4)}, ${farScale.toFixed(4)})`);
+    expect(scene).toContain('color = Color(0.075, 0.118, 0.173, 1)');
+    expect(scene).not.toContain('[node name="ParallaxMid"');
+    expect(scene).not.toContain('[node name="ParallaxNear"');
+    expect(scene).not.toContain('assets/backgrounds/biome_0/mid.png');
+    expect(scene).not.toContain('assets/backgrounds/biome_0/near.png');
   });
 });

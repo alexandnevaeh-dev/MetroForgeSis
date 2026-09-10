@@ -8,7 +8,7 @@
   },
   "main": "./dist/index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "node ../../scripts/cli-build.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "dev": "tsx src/index.ts"
   },
@@ -18,6 +18,7 @@
     "@metroforge/schemas": "workspace:*",
     "@metroforge/shared": "workspace:*",
     "@metroforge/ai": "workspace:*",
+    "@metroforge/assets": "workspace:*",
     "@metroforge/tools": "workspace:*",
     "@metroforge/qa": "workspace:*",
     "commander": "^12.1.0"

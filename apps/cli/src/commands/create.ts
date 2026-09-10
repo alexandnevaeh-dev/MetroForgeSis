@@ -1,6 +1,9 @@
 import type { Command } from 'commander';
 import { GenerationPipeline } from '@metroforge/generation';
+import type { GenerateOptions } from '@metroforge/generation';
 import type { GenerationMode, GenerationProfile, GameArchetype } from '@metroforge/shared';
+
+type ExternalVisualPackId = NonNullable<GenerateOptions['externalVisualPack']>;
 import {
   loadConfig,
   resolveGeneratedGamesPath,
@@ -30,6 +33,18 @@ function resolveHardwareProfile(value?: string): string {
   }
 }
 
+export const VISUAL_MODES = ['procedural-only', 'nvidia-enhanced', 'auto'] as const;
+export type VisualMode = (typeof VISUAL_MODES)[number];
+
+/** Validates --visual-mode. Pure/exported so it's testable without spinning up Commander. */
+export function resolveVisualMode(value: string | undefined): { visualMode: VisualMode } | { error: string } {
+  const candidate = value ?? 'procedural-only';
+  if (!(VISUAL_MODES as readonly string[]).includes(candidate)) {
+    return { error: `Unknown --visual-mode "${candidate}". Expected: ${VISUAL_MODES.join(', ')}` };
+  }
+  return { visualMode: candidate as VisualMode };
+}
+
 export function registerCreateCommand(program: Command): void {
   program
     .command('create')
@@ -37,27 +52,55 @@ export function registerCreateCommand(program: Command): void {
     .requiredOption('--prompt <text>', 'Natural language game description')
     .option('--profile <profile>', 'Generation profile (TINY_TEST, VISUAL_VERTICAL_SLICE, SMALL, MEDIUM, LARGE, RELEASE_CANDIDATE)', 'TINY_TEST')
     .option('--mode <mode>', 'Generation mode', 'LOCAL_ONLY')
+    .option(
+      '--visual-mode <mode>',
+      'procedural-only (default): guaranteed procedural baseline, never calls NVIDIA NIM. ' +
+        'nvidia-enhanced: always attempts NIM enhancement for the P0 visual-asset slice after the ' +
+        'procedural baseline, falling back per-asset on failure. auto: attempts only when NIM ' +
+        'health-checks as reachable first.',
+      'procedural-only',
+    )
     .option('--seed <number>', 'Random seed', '42')
     .option('--slug <slug>', 'Project directory slug')
     .option('--hardware-profile <profile>', 'LOW_RESOURCE, BALANCED, or HIGH_QUALITY')
+    .option('--external-visual-pack <id>', 'Optional test pack: industrial-transit or metroforge-foundry-v3. Side-view VISUAL_VERTICAL_SLICE defaults to metroforge-foundry-v3.')
     .option('--archetype <archetype>', 'Game archetype: SIDE_VIEW_METROIDVANIA or TOP_DOWN_ACTION_ADVENTURE')
     .option('--no-generate', 'Only create project metadata without generating')
     .option('--resume', 'Resume from an existing Game DNA checkpoint if the project already exists')
     .option('--skip-runtime-validation', 'Skip Godot runtime smoke test (static/import validation still runs)')
     .option('--skip-export', 'Skip staging a packaged copy under Exports/<slug>/ after generation')
+    .option(
+      '--asset-generation-backend <backend>',
+      'legacy (default): unchanged single-provider-per-run resolver. foundry: routes the player ' +
+        'key-art category through AssetFoundry (capability routing/scoring/retry/circuit-breaker/' +
+        'license/provenance) — failures surface honestly, no silent fallback. ' +
+        'foundry-with-legacy-fallback: Foundry first, legacy only on a fallback-eligible failure.',
+      'legacy',
+    )
+    .option('--enable-pollinations', 'Register the free, keyless Pollinations provider as a routing candidate')
+    .option(
+      '--visual-reference-library',
+      'Use the fourteenth-session visual reference/template library (docs/asset-pipeline/reference-library/) ' +
+        'for template-driven enemy prompts/palettes, in place of the generic biome-index rotation',
+    )
     .action(
       async (opts: {
         prompt: string;
         profile: string;
         mode: string;
+        visualMode: string;
         seed: string;
         slug?: string;
         hardwareProfile?: string;
+        externalVisualPack?: string;
         archetype?: string;
         generate: boolean;
         resume?: boolean;
         skipRuntimeValidation?: boolean;
         skipExport?: boolean;
+        assetGenerationBackend?: string;
+        enablePollinations?: boolean;
+        visualReferenceLibrary?: boolean;
       }) => {
         let profile: GenerationProfile;
         try {
@@ -68,6 +111,13 @@ export function registerCreateCommand(program: Command): void {
           return;
         }
         const mode = opts.mode as GenerationMode;
+        const visualModeResult = resolveVisualMode(opts.visualMode);
+        if ('error' in visualModeResult) {
+          console.log(`✗ ${visualModeResult.error}`);
+          process.exitCode = 1;
+          return;
+        }
+        const { visualMode } = visualModeResult;
         const seed = parseInt(opts.seed, 10);
         const hardwareProfile = resolveHardwareProfile(opts.hardwareProfile);
 
@@ -78,6 +128,7 @@ export function registerCreateCommand(program: Command): void {
 
         console.log(`Generating ${profile} game...`);
         console.log(`Mode: ${mode}`);
+        if (visualMode !== 'procedural-only') console.log(`Visual mode: ${visualMode}`);
         console.log(`Prompt: ${opts.prompt.slice(0, 80)}...`);
         console.log('');
 
@@ -86,6 +137,8 @@ export function registerCreateCommand(program: Command): void {
           prompt: opts.prompt,
           profile,
           mode,
+          visualMode,
+          externalVisualPack: opts.externalVisualPack as ExternalVisualPackId | undefined,
           seed,
           slug: opts.slug,
           archetype: opts.archetype as GameArchetype | undefined,
@@ -93,6 +146,13 @@ export function registerCreateCommand(program: Command): void {
           skipRuntimeValidation: opts.skipRuntimeValidation,
           skipExport: opts.skipExport,
           hardwareProfile,
+          assetGenerationBackend: opts.assetGenerationBackend as
+            | 'legacy'
+            | 'foundry'
+            | 'foundry-with-legacy-fallback'
+            | undefined,
+          enablePollinations: opts.enablePollinations,
+          useVisualReferenceLibrary: opts.visualReferenceLibrary,
         });
 
         console.log('');
@@ -142,19 +202,37 @@ export function registerCreateCommand(program: Command): void {
     );
 }
 
+/** `--fresh` always wins: it exists precisely to force a clean regen even though `--resume`
+ * defaults to true on this command, so it must override rather than merely toggle. */
+export function resolveResumeFlag(opts: { resume?: boolean; fresh?: boolean }): boolean | undefined {
+  return opts.fresh ? false : opts.resume;
+}
+
 export function registerGenerateCommand(program: Command): void {
   program
     .command('generate <slug>')
     .description('Generate or regenerate a game by project slug')
     .option('--profile <profile>', 'Generation profile')
     .option('--mode <mode>', 'Generation mode')
+    .option(
+      '--visual-mode <mode>',
+      'procedural-only (default): guaranteed procedural baseline, never calls NVIDIA NIM. ' +
+        'nvidia-enhanced: always attempts NIM enhancement for the P0 visual-asset slice after the ' +
+        'procedural baseline, falling back per-asset on failure. auto: attempts only when NIM ' +
+        'health-checks as reachable first.',
+    )
     .option('--seed <number>', 'Random seed')
     .option('--archetype <archetype>', 'Game archetype')
     .option('--hardware-profile <profile>', 'LOW_RESOURCE, BALANCED, or HIGH_QUALITY')
+    .option('--external-visual-pack <id>', 'Optional test pack: industrial-transit or metroforge-foundry-v3. Side-view VISUAL_VERTICAL_SLICE defaults to metroforge-foundry-v3.')
     .option('--resume', 'Resume from an existing Game DNA checkpoint if present', true)
+    .option(
+      '--fresh',
+      'Ignore any existing Game DNA checkpoint and generated asset/scene checkpoints — regenerate everything from zero (overrides --resume)',
+    )
     .option('--skip-runtime-validation', 'Skip Godot runtime smoke test')
     .option('--skip-export', 'Skip staging a packaged copy under Exports/<slug>/ after generation')
-    .action(async (slug: string, opts: { profile?: string; mode?: string; seed?: string; resume?: boolean; skipRuntimeValidation?: boolean; skipExport?: boolean; hardwareProfile?: string }) => {
+    .action(async (slug: string, opts: { profile?: string; mode?: string; visualMode?: string; seed?: string; resume?: boolean; fresh?: boolean; skipRuntimeValidation?: boolean; skipExport?: boolean; hardwareProfile?: string; externalVisualPack?: string }) => {
       const config = loadConfig();
       let projectPath: string;
       try {
@@ -200,18 +278,57 @@ export function registerGenerateCommand(program: Command): void {
         process.exitCode = 1;
         return;
       }
+      if (opts.fresh) {
+        console.log('--fresh: ignoring existing checkpoints — regenerating from zero');
+      }
+      const visualModeResult = resolveVisualMode(opts.visualMode);
+      if ('error' in visualModeResult) {
+        console.log(`✗ ${visualModeResult.error}`);
+        process.exitCode = 1;
+        return;
+      }
       const result = await pipeline.run({
         prompt,
         profile,
         mode: (opts.mode as GenerationMode) ?? savedMode ?? 'LOCAL_ONLY',
+        visualMode: visualModeResult.visualMode,
+        externalVisualPack: opts.externalVisualPack as ExternalVisualPackId | undefined,
         seed: opts.seed ? parseInt(opts.seed, 10) : (savedSeed ?? 42),
         slug,
-        resume: opts.resume,
+        resume: resolveResumeFlag(opts),
         skipRuntimeValidation: opts.skipRuntimeValidation,
         skipExport: opts.skipExport,
         hardwareProfile: resolveHardwareProfile(opts.hardwareProfile),
       });
 
+      console.log('');
+      console.log('--- Generation Phases ---');
+      for (const phase of result.phases) {
+        const icon =
+          phase.status === 'PASSED'
+            ? '✓'
+            : phase.status === 'FAILED'
+              ? '✗'
+              : phase.status === 'SKIPPED'
+                ? '-'
+                : phase.status === 'WARN'
+                  ? '!'
+                  : '·';
+        const msg = phase.message ? ` (${phase.message})` : '';
+        console.log(`  [${icon}] ${phase.phase}: ${phase.status}${msg}`);
+      }
+
+      if (result.warnings.length > 0) {
+        console.log('\nWarnings:');
+        for (const w of result.warnings) console.log(`  ! ${w}`);
+      }
+
+      if (result.errors.length > 0) {
+        console.log('\nErrors:');
+        for (const e of result.errors) console.log(`  ✗ ${e}`);
+      }
+
+      console.log('');
       if (!result.success) {
         console.log('✗ Generation failed');
         process.exitCode = 1;

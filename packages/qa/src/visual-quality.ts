@@ -109,9 +109,16 @@ export function scoreVisualQuality(input: VisualQaInputs): VisualQaResult {
     playerSpriteHeightPx: input.playerSpriteHeightPx,
     viewportHeightPx: input.viewportHeightPx,
   });
+  // occupancy alone is not a wallpaper signal — a dark-but-structured room (opaque night sky,
+  // real architecture) can legitimately sample as >92% non-blank pixels. critiqueGameplayScreenshot
+  // already knows this and only calls a capture "wallpapered" when occupancy is high AND lumaStdDev
+  // is low (see the wallpaper issue pushed above); this redundant proxy used to ignore lumaStdDev
+  // entirely, so a real Candidate 05 boss room with zero actual tile repetition (analyzeRepetition:
+  // longestRun 2, dominantAtlasShare ~0.15 on every room) still tripped TILE_REPETITION_HIGH purely
+  // because its background is dark. Require the same low-variance signal the critic itself uses.
   const tileRepetition = presentation.violations.includes('EXCESSIVE_TILE_REPETITION')
     ? clamp(presentation.score)
-    : clamp(occupancy > 0.92 ? 35 : Math.min(82, presentation.score || 82));
+    : clamp(occupancy > 0.92 && lumaStd < 10 ? 35 : Math.min(82, presentation.score || 82));
 
   const defects: VisualDefect[] = [];
   if (input.playerVisible === false) defects.push('PLAYER_TOO_SMALL');

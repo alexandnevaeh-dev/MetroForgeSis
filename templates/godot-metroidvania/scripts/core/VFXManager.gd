@@ -126,13 +126,16 @@ func _make_material(effect_id: String) -> ParticleProcessMaterial:
 			mat.gravity = Vector3(0, 40, 0)
 			mat.initial_velocity_min = 20.0
 			mat.initial_velocity_max = 60.0
+			mat.color = Color(0.72, 0.86, 1.0, 1.0)
 		"death_puff":
 			mat.spread = 180.0
 			mat.initial_velocity_max = 140.0
+			mat.color = Color(0.82, 0.72, 0.68, 1.0)
 		"slam_shock":
 			mat.direction = Vector3(0, -1, 0)
 			mat.spread = 50.0
 			mat.initial_velocity_max = 160.0
+			mat.color = Color(1.0, 0.58, 0.26, 1.0)
 		"landing_dust":
 			mat.direction = Vector3(0, -1, 0)
 			mat.spread = 55.0
@@ -141,6 +144,21 @@ func _make_material(effect_id: String) -> ParticleProcessMaterial:
 			mat.initial_velocity_max = 36.0
 			mat.scale_min = 0.2
 			mat.scale_max = 0.45
+			mat.color = Color(0.87, 0.82, 0.72, 1.0)
 		"pickup_spark":
 			mat.gravity = Vector3(0, -40, 0)
+			mat.color = Color(0.88, 0.82, 1.0, 1.0)
+		"ability_unlock":
+			mat.gravity = Vector3(0, -40, 0)
+			mat.color = Color(0.82, 1.0, 0.80, 1.0)
+		"boss_phase_shift":
+			mat.spread = 140.0
+			mat.initial_velocity_max = 170.0
+			mat.color = Color(1.0, 0.45, 0.36, 1.0)
+		"hit_spark":
+			mat.color = Color(1.0, 0.78, 0.4, 1.0)
+		"area_burst":
+			mat.color = Color(0.96, 0.62, 0.36, 1.0)
+		_:
+			mat.color = Color(0.88, 0.9, 0.96, 1.0)
 	return mat

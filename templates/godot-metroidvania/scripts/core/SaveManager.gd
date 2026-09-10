@@ -52,6 +52,25 @@ func set_checkpoint(room_id: String, health: float, max_health: float) -> void:
 	_save_data["player"]["health"] = health
 	_save_data["player"]["max_health"] = max_health
 
+## Read-only getters for the real checkpoint state (identity/health), so verification code and
+## future UI (a "last saved at" indicator) can inspect what was actually recorded without
+## reaching into _save_data directly or relying on incidental signals to infer it.
+func get_checkpoint_room_id() -> String:
+	return String(_save_data.get("checkpoint_room_id", ""))
+
+func get_checkpoint_health() -> float:
+	return float(_save_data.get("player", {}).get("health", -1.0))
+
+func get_checkpoint_max_health() -> float:
+	return float(_save_data.get("player", {}).get("max_health", -1.0))
+
+## Peeks whether the *next* Player instance's _ready() will consume a save/checkpoint-restored
+## health value, without consuming it — WorldManager checks this before add_child() (which is
+## what actually triggers PlayerController._ready() -> consume_pending_player_health()) so it
+## knows whether an ordinary-transition health carryover should defer to a real restore instead.
+func has_pending_health_restore() -> bool:
+	return _health_restore_pending
+
 func save_game() -> bool:
 	_save_data["abilities"] = GameManager.player_abilities.duplicate()
 	_save_data["defeated_bosses"] = ProgressionManager.get_defeated_bosses()

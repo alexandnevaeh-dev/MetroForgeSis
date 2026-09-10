@@ -25,6 +25,12 @@ var _was_on_floor: bool = true
 var _land_timer: float = 0.0
 var _land_vfx_armed: bool = false
 
+## Minimal 3-hit combo: attack_2/attack_3 are real generated clips (player animation production
+## pass), not dead assets sitting unused next to "attack" — pressing attack again while
+## _combo_window_timer is still open advances the combo instead of restarting attack_1.
+var _combo_step: int = 0
+var _combo_window_timer: float = 0.0
+
 
 
 func _ready() -> void:
@@ -79,6 +85,8 @@ func _physics_process(delta: float) -> void:
 
 	_attack_cooldown = max(0, _attack_cooldown - delta)
 
+	_combo_window_timer = max(0.0, _combo_window_timer - delta)
+
 	ability_controller.update_passive_abilities(delta)
 
 	_update_phase_collision_mask()
@@ -108,6 +116,9 @@ func _physics_process(delta: float) -> void:
 		ability_controller.apply_gravity(delta)
 
 	else:
+		# Ground jumps consume coyote_timer before gravity runs; refresh it while grounded
+		# so the existing buffered-jump path can initiate a normal takeoff.
+		ability_controller.coyote_timer = ability_controller.config.coyote_time
 
 		if _land_vfx_armed and not _was_on_floor:
 
@@ -135,7 +146,8 @@ func _physics_process(delta: float) -> void:
 
 	var cfg := ability_controller.config
 
-	var speed := cfg.run_speed if Input.is_action_pressed("move_down") and is_on_floor() else cfg.walk_speed
+	var is_running := Input.is_action_pressed("move_down") and is_on_floor()
+	var speed := cfg.run_speed if is_running else cfg.walk_speed
 
 	ability_controller.apply_horizontal_movement(input_dir, speed, delta)
 
@@ -149,7 +161,7 @@ func _physics_process(delta: float) -> void:
 
 
 
-	_update_locomotion_animation(input_dir)
+	_update_locomotion_animation(input_dir, is_running)
 
 
 
@@ -191,11 +203,11 @@ func _physics_process(delta: float) -> void:
 
 
 
-func _update_locomotion_animation(input_dir: float) -> void:
+func _update_locomotion_animation(input_dir: float, is_running: bool = false) -> void:
 
 	var animation_locked := sprite.sprite_frames \
 
-		and (sprite.animation == "attack" or sprite.animation == "hurt" or sprite.animation == "death") \
+		and (sprite.animation == "attack" or sprite.animation == "attack_2" or sprite.animation == "attack_3" or sprite.animation == "hurt" or sprite.animation == "death") \
 
 		and sprite.is_playing()
 
@@ -207,6 +219,10 @@ func _update_locomotion_animation(input_dir: float) -> void:
 
 		return
 
+	if ability_controller.swim_mode and sprite.sprite_frames.has_animation("swim"):
+		sprite.play("swim")
+		return
+
 	if ability_controller.is_wall_sliding and sprite.sprite_frames.has_animation("wall_slide"):
 		sprite.play("wall_slide")
 		return
@@ -215,6 +231,10 @@ func _update_locomotion_animation(input_dir: float) -> void:
 
 		sprite.play("dash")
 
+		return
+
+	if ability_controller.wall_jump_timer > 0.0 and sprite.sprite_frames.has_animation("wall_jump"):
+		sprite.play("wall_jump")
 		return
 
 	if not is_on_floor():
@@ -237,7 +257,15 @@ func _update_locomotion_animation(input_dir: float) -> void:
 
 	if input_dir != 0:
 
-		if sprite.sprite_frames.has_animation("run"):
+		if is_running and sprite.sprite_frames.has_animation("run"):
+
+			sprite.play("run")
+
+		elif not is_running and sprite.sprite_frames.has_animation("walk"):
+
+			sprite.play("walk")
+
+		elif sprite.sprite_frames.has_animation("run"):
 
 			sprite.play("run")
 
@@ -253,7 +281,37 @@ func _update_locomotion_animation(input_dir: float) -> void:
 
 func _perform_attack() -> void:
 
-	_attack_cooldown = 0.4
+	if _combo_window_timer > 0.0 and _combo_step > 0 and _combo_step < 3:
+		_combo_step += 1
+	else:
+		_combo_step = 1
+
+	var anim_name := "attack"
+	if _combo_step == 2 and sprite.sprite_frames and sprite.sprite_frames.has_animation("attack_2"):
+		anim_name = "attack_2"
+	elif _combo_step == 3 and sprite.sprite_frames and sprite.sprite_frames.has_animation("attack_3"):
+		anim_name = "attack_3"
+	elif _combo_step > 1:
+		# This combo step has no generated sheet (older project, no attack_2/attack_3) — fall
+		# back to attack_1 and reset the combo instead of getting stuck on a missing animation.
+		_combo_step = 1
+
+	# Cooldown/combo-window now tracks the real clip length instead of a fixed 0.4s guess — a
+	# real per-clip duration only exists now that attacks carry actual FPS/frame-count metadata.
+	var clip_duration := 0.4
+	if sprite.sprite_frames and sprite.sprite_frames.has_animation(anim_name):
+		var fps := sprite.sprite_frames.get_animation_speed(anim_name)
+		var clip_frame_count := sprite.sprite_frames.get_frame_count(anim_name)
+		if fps > 0.0 and clip_frame_count > 0:
+			clip_duration = max(0.25, clip_frame_count / fps)
+
+	# Cooldown opens sooner than the clip finishes (a cancel-into-next-hit window, matching the
+	# combo-cancel-open-frame concept from PLAYER_ANIMATION_SPEC's combat sync metadata) so
+	# chaining feels responsive; the combo window itself stays open a bit past the full clip so
+	# there's a real grace period to press attack again before it lapses back to attack_1.
+	_attack_cooldown = clip_duration * 0.75
+
+	_combo_window_timer = clip_duration * 1.4
 
 	attack_hitbox.position.x = 30 * facing
 
@@ -261,9 +319,9 @@ func _perform_attack() -> void:
 
 	attack_timer.start(0.15)
 
-	if sprite.sprite_frames and sprite.sprite_frames.has_animation("attack"):
+	if sprite.sprite_frames and sprite.sprite_frames.has_animation(anim_name):
 
-		sprite.play("attack")
+		sprite.play(anim_name)
 
 
 
@@ -321,10 +379,21 @@ func _on_died() -> void:
 
 		sprite.play("death")
 
-		await sprite.animation_finished
+	# Health-continuity-milestone fix: this previously awaited `sprite.animation_finished` before
+	# ever emitting EventBus.player_died, which GameManager's entire respawn flow depends on.
+	# Directly reproduced and isolated (HealthContinuityMicroTest.gd, a real death triggered by a
+	# direct take_damage() call): neither `await sprite.animation_finished`,
+	# `await get_tree().create_timer(...).timeout`, nor a `.timeout.connect(...)` on the same timer
+	# ever fired in that real test run — only `call_deferred()` with no wait at all reliably ran.
+	# Rather than leave the single most consequential signal in the entire respawn chain dependent
+	# on a wait mechanism with a real, reproduced failure mode, this emits via a deferred call
+	# instead (end of the current frame, not delayed further) — GameManager's own real 1-second
+	# GAME_OVER window, which runs before it actually respawns the player, already gives the death
+	# animation real time to play out on screen regardless of this change.
+	call_deferred("_finish_death_sequence")
 
+func _finish_death_sequence() -> void:
 	visible = false
-
 	EventBus.player_died.emit()
 
 

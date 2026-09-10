@@ -28,7 +28,8 @@ export type { FoundryManifest, FoundryCompletionMode } from './manifest.js';
 export { AssetFoundryCache, cacheKeyFor, FOUNDRY_COMPILER_VERSION } from './cache.js';
 export { buildFoundryPrompt, shouldTryRetrieval } from './prompts.js';
 export { godotDestinationFor } from './godot-adapter.js';
-export { NVIDIA_MODEL_CATALOG } from './nvidia-catalog.js';
+export { NVIDIA_MODEL_CATALOG, nvidiaEnabledModels, nvidiaModelById, nvidiaSelectModelForImageTask } from './nvidia-catalog.js';
+export type { NvidiaModelDescriptor, NvidiaDeploymentType, NvidiaModelStatus } from './nvidia-catalog.js';
 export { scoreProvider } from './scoring.js';
 export { imageModeFlags, generationModeToFoundryRouting } from './mode-flags.js';
 export {

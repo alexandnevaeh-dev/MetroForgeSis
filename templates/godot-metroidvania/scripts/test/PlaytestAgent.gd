@@ -17,6 +17,32 @@ var _started_at_ms: int = 0
 var _transition_timings_ms: Array[int] = []
 var _fail_stage: String = ""
 var _visited_rooms: Array[String] = []
+var _abilities_acquired: Array[String] = []
+var _gates_passed: Array[String] = []
+var _checkpoint_activated: bool = false
+var _ability_gate_attempts: Array[String] = []
+var _player_deaths: int = 0
+var _damage_taken: float = 0.0
+## Checkpoint/telemetry-reconciliation fix: identity of the real checkpoint (room, saved health,
+## saved spawn position at time of activation) — recorded from the actual SavePoint signal
+## (EventBus.object_activated with a "save_<room_id>" id, the exact id SavePoint.gd emits), not
+## inferred from incidental pickup collection.
+var _checkpoint_room_id: String = ""
+var _checkpoint_health: float = -1.0
+var _checkpoint_max_health: float = -1.0
+var _checkpoint_spawn_position: Vector2 = Vector2.ZERO
+## Per-event damage/death log so the aggregate counters below can be reconciled against a
+## detailed timeline, the same way GameplayVerificationAgent's action_log already lets its own
+## captures be checked against real events.
+var _damage_events: Array = []
+var _death_events: Array = []
+var _respawn_destination_room_id: String = ""
+var _restored_health_on_respawn: float = -1.0
+## The HealthComponent this agent is currently subscribed to for damage tracking — every room
+## transition destroys the old Player (and its HealthComponent) and creates a new one (see
+## WorldManager._load_room), so the subscription must move with it. Tracked here so re-wiring
+## never connects twice to the same still-alive instance.
+var _tracked_health: HealthComponent = null
 
 func run(world: Node, host: Node) -> Dictionary:
 	_started_at_ms = Time.get_ticks_msec()
@@ -26,6 +52,34 @@ func run(world: Node, host: Node) -> Dictionary:
 
 	_apply_persona(route.get("persona", {}))
 	_visited_rooms = [String(route.get("startRoomId", GameManager.current_room_id))]
+	EventBus.player_died.connect(func() -> void:
+		_player_deaths += 1
+		_death_events.append({"room_id": GameManager.current_room_id, "t_ms": Time.get_ticks_msec()})
+	)
+	EventBus.player_respawned.connect(func() -> void:
+		_respawn_destination_room_id = GameManager.current_room_id
+		var respawned_player := host.get_tree().get_first_node_in_group("player")
+		var respawned_health := respawned_player.get_node_or_null("HealthComponent") as HealthComponent if respawned_player else null
+		_restored_health_on_respawn = respawned_health.current_health if respawned_health else -1.0
+	)
+	# Checkpoint identity/activation — the real signal a SavePoint touch emits, not incidental
+	# pickup collection (see SavePoint.gd's own _on_body_entered: set_checkpoint() + this exact
+	# "save_<room_id>" id are always emitted together, unlike EventBus.save_triggered, which also
+	# fires for unrelated ability/boss-defeat autosaves and can't identify *which* SavePoint).
+	EventBus.object_activated.connect(func(object_id: String) -> void:
+		if not object_id.begins_with("save_"):
+			return
+		_checkpoint_activated = true
+		_checkpoint_room_id = object_id.trim_prefix("save_")
+		_checkpoint_health = SaveManager.get_checkpoint_health()
+		_checkpoint_max_health = SaveManager.get_checkpoint_max_health()
+		var checkpointed_player := host.get_tree().get_first_node_in_group("player")
+		if checkpointed_player:
+			_checkpoint_spawn_position = (checkpointed_player as Node2D).global_position
+	)
+	_rewire_damage_tracking(host)
+	# Re-wire on every room load, not just the first — see _tracked_health's doc comment.
+	EventBus.room_entered.connect(func(_room_id: String) -> void: _rewire_damage_tracking(host))
 
 	if not route.get("reachable", false):
 		_fail_stage = "route_unreachable"
@@ -35,8 +89,9 @@ func run(world: Node, host: Node) -> Dictionary:
 	for step in transitions:
 		var from_room: String = step.get("fromRoomId", "")
 		var to_room: String = step.get("toRoomId", "")
+		var requirements: Array = step.get("requirements", [])
 		var step_start := Time.get_ticks_msec()
-		if not await _execute_transition(world, host, from_room, to_room):
+		if not await _execute_transition(world, host, from_room, to_room, requirements):
 			return _outcome(false, route, "transition_failed", {"from": from_room, "to": to_room, "failStage": _fail_stage})
 		_transition_timings_ms.append(Time.get_ticks_msec() - step_start)
 		steps_completed += 1
@@ -61,6 +116,39 @@ func _outcome(ok: bool, route: Dictionary, reason: String, extra: Dictionary = {
 	for key in extra.keys():
 		result[key] = extra[key]
 	return result
+
+## Connects _damage_taken tracking to whichever Player instance is actually live right now.
+## Every room transition destroys the old Player (and its HealthComponent) and instantiates a
+## fresh one (WorldManager._load_room) — a one-time connection made at run() start only ever
+## tracked damage in the very first room, which is exactly why the old aggregate `damageTaken`
+## telemetry field silently stuck at 0.0 after that (confirmed against a real run: three logged
+## `player_took_real_damage` events, `damageTaken: 0.0`). Guards against reconnecting to the
+## *same* still-alive HealthComponent twice (no duplicate subscriptions); the old HealthComponent
+## needs no explicit disconnect — it's freed with its room, which severs its signals automatically.
+func _rewire_damage_tracking(host: Node) -> void:
+	var player := host.get_tree().get_first_node_in_group("player")
+	if player == null:
+		return
+	var health := player.get_node_or_null("HealthComponent") as HealthComponent
+	if health == null:
+		return
+	# is_instance_valid guard: a freed HealthComponent's Object reference must never be treated as
+	# "still the same, already-tracked instance" — found via a real run whose damageEvents log
+	# only captured the final boss fight's damage, not three earlier real combat encounters, which
+	# is consistent with (though not conclusively proven to be caused by) a stale `_tracked_health`
+	# comparison surviving a room's teardown.
+	if is_instance_valid(_tracked_health) and health == _tracked_health:
+		return
+	_tracked_health = health
+	health.damaged.connect(func(amount: float) -> void:
+		_damage_taken += amount
+		_damage_events.append({
+			"room_id": GameManager.current_room_id,
+			"amount": amount,
+			"health_after": health.current_health,
+			"t_ms": Time.get_ticks_msec(),
+		})
+	)
 
 func _apply_persona(persona: Variant) -> void:
 	if typeof(persona) != TYPE_DICTIONARY:
@@ -94,6 +182,20 @@ func _build_telemetry(route: Dictionary, boss_fight_ms: int) -> Dictionary:
 		"transitionsPlanned": transitions.size(),
 		"transitionsCompleted": steps_completed,
 		"pickupsCollected": pickups_collected,
+		"abilitiesAcquired": _abilities_acquired,
+		"abilityGateAttempts": _ability_gate_attempts,
+		"gatesPassed": _gates_passed,
+		"checkpointActivated": _checkpoint_activated,
+		"checkpointRoomId": _checkpoint_room_id,
+		"checkpointHealth": _checkpoint_health,
+		"checkpointMaxHealth": _checkpoint_max_health,
+		"checkpointSpawnPosition": {"x": _checkpoint_spawn_position.x, "y": _checkpoint_spawn_position.y},
+		"playerDeaths": _player_deaths,
+		"deathEvents": _death_events,
+		"respawnDestinationRoomId": _respawn_destination_room_id,
+		"restoredHealthOnRespawn": _restored_health_on_respawn,
+		"damageTaken": _damage_taken,
+		"damageEvents": _damage_events,
 		"attacksPerformed": attacks_performed,
 		"abilitiesAfterRun": _ability_ids(),
 		"roomsVisited": _visited_list(),
@@ -130,7 +232,7 @@ func _load_route() -> Dictionary:
 		return {}
 	return json.data if typeof(json.data) == TYPE_DICTIONARY else {}
 
-func _execute_transition(world: Node, host: Node, from_room: String, to_room: String) -> bool:
+func _execute_transition(_world: Node, host: Node, from_room: String, to_room: String, requirements: Array) -> bool:
 	if GameManager.current_room_id != from_room:
 		_fail_stage = "wrong_room current=%s expected=%s" % [GameManager.current_room_id, from_room]
 		return false
@@ -167,6 +269,16 @@ func _execute_transition(world: Node, host: Node, from_room: String, to_room: St
 	if transition == null:
 		_fail_stage = "no_transition"
 		return false
+	if requirements.has("ground_slam") and String(transition.get("transition_direction")) == "down":
+		_ability_gate_attempts.append("%s->%s:%s" % [from_room, to_room, ",".join(requirements)])
+		if not await _perform_ground_slam_gate(host, player, transition):
+			_fail_stage = "ground_slam_gate_failed"
+			return false
+	if requirements.has("phase"):
+		_ability_gate_attempts.append("%s->%s:%s" % [from_room, to_room, ",".join(requirements)])
+		if not await _perform_phase_gate(host, player, transition):
+			_fail_stage = "phase_gate_failed"
+			return false
 
 	if not await _wait_transition_open(host, transition, 3.0):
 		_fail_stage = "exit_still_locked"
@@ -191,6 +303,8 @@ func _execute_transition(world: Node, host: Node, from_room: String, to_room: St
 			str(not bool(transition.get("monitoring"))) if is_instance_valid(transition) else "freed",
 		]
 		return false
+	if not requirements.is_empty():
+		_gates_passed.append("%s->%s:%s" % [from_room, to_room, ",".join(requirements)])
 	return true
 
 func _wait_transition_open(host: Node, transition: Node, timeout_sec: float) -> bool:
@@ -219,7 +333,7 @@ func _transition_entry_point(transition: Node) -> Vector2:
 	# RoomTransition.tscn CollisionShape2D is offset (12, 40) from the node origin.
 	# Walking to the origin with a 12px arrive threshold stops short of a right-hand
 	# door (node at x=776, sensor starts at 776, arrive at 764). Walk into the sensor.
-	return (transition as Node2D).global_position + Vector2(12.0, 0.0)
+	return (transition as Node2D).global_position + Vector2(12.0, 40.0)
 
 func _door_nudge(transition: Node) -> Vector2:
 	match String(transition.get("transition_direction")):
@@ -265,9 +379,88 @@ func _collect_room_pickups(host: Node, player: Node, stay_room: String = "") -> 
 			return
 		if stay_room != "" and GameManager.current_room_id != stay_room:
 			return
+		var ability_id := String(pickup.get("ability_id"))
 		await _walk_player_to(host, player, (pickup as Node2D).global_position)
 		pickups_collected += 1
 		await host.get_tree().physics_frame
+		if not ability_id.is_empty() and GameManager.has_ability(ability_id) and not _abilities_acquired.has(ability_id):
+			_abilities_acquired.append(ability_id)
+		# Checkpoint activation is now tracked from the real EventBus.object_activated("save_...")
+		# signal SavePoint.gd emits on an actual touch (see run()'s connection above) — no longer
+		# incidentally inferred from "collected a pickup in a room that also has a SavePoint",
+		# which could never detect activation in a save room with no pickup in it (room_008 in the
+		# sixteenth/seventeenth session's compact level, for instance).
+
+func _perform_ground_slam_gate(host: Node, player: Node, transition: Node) -> bool:
+	if not GameManager.has_ability("ground_slam") or not is_instance_valid(player):
+		return false
+	var weak_floor := _current_room(host).get_node_or_null("WeakFloor_%s" % String(transition.get("target_room_id")))
+	if weak_floor == null:
+		return false
+	if not await _walk_player_to(host, player, (weak_floor as Node2D).global_position + Vector2(0, -40), 3.0):
+		return false
+	Input.action_press("jump")
+	var airborne := false
+	for _tick in range(45):
+		if not is_instance_valid(player):
+			Input.action_release("jump")
+			return false
+		if not (player as CharacterBody2D).is_on_floor() and (player as CharacterBody2D).velocity.y < -10.0:
+			airborne = true
+			break
+		await host.get_tree().physics_frame
+	Input.action_release("jump")
+	if not airborne:
+		return false
+	Input.action_press("move_down")
+	await host.get_tree().physics_frame
+	# The test coroutine resumes before the player child processes this tick.
+	# Observe the real just-pressed edge after the following physics tick.
+	await host.get_tree().physics_frame
+	var ability_controller := player.get_node_or_null("AbilityController") as AbilityController
+	if ability_controller == null or not ability_controller.is_slamming:
+		Input.action_release("move_down")
+		return false
+	for _tick in range(90):
+		if not is_instance_valid(weak_floor):
+			Input.action_release("move_down")
+			return true
+		await host.get_tree().physics_frame
+	Input.action_release("move_down")
+	return not is_instance_valid(weak_floor)
+
+func _perform_phase_gate(host: Node, player: Node, transition: Node) -> bool:
+	if not GameManager.has_ability("phase") or not is_instance_valid(player):
+		return false
+	var barrier := _current_room(host).get_node_or_null("PhaseBarrier_%s" % String(transition.get("target_room_id")))
+	if barrier == null:
+		return false
+	var direction := 1.0 if (barrier as Node2D).global_position.x >= (player as Node2D).global_position.x else -1.0
+	var approach := (barrier as Node2D).global_position - Vector2(direction * 42.0, 0.0)
+	if not await _walk_player_to(host, player, approach, 3.0):
+		return false
+	Input.action_release("dash")
+	await host.get_tree().physics_frame
+	if direction > 0.0:
+		Input.action_press("move_right")
+		Input.action_release("move_left")
+	else:
+		Input.action_press("move_left")
+		Input.action_release("move_right")
+	Input.action_press("dash")
+	await host.get_tree().physics_frame
+	await host.get_tree().physics_frame
+	Input.action_release("dash")
+	for _tick in range(30):
+		if not is_instance_valid(player):
+			return true
+		var crossed := ((player as Node2D).global_position.x - (barrier as Node2D).global_position.x) * direction > 20.0
+		if crossed:
+			_release_horizontal_input()
+			return true
+		await host.get_tree().physics_frame
+	_release_horizontal_input()
+	return false
 
 ## The boss room's own RoomTransition triggers are locked while its boss is alive (see
 ## WorldManager._lock_room_exits), so this no longer needs to defend against a wandering walk
@@ -398,6 +591,26 @@ func _walk_player_to(host: Node, player: Node, target: Vector2, timeout_sec: flo
 	if not is_instance_valid(body):
 		return false
 	var elapsed := 0.0
+	# Seventeenth-session fix: the jump trigger below was purely height-based (only presses jump
+	# when the target sits well above the current position) — it never fires for a *horizontal*
+	# gap or a low step between two platforms at roughly the same height. Real traversal-challenge
+	# rooms place exactly that shape of crossing (stepping platforms bridging two floor segments —
+	# see room_012's FloorLeft/Platform_0/Platform_1/FloorRight, docs/audit/
+	# MODERN_COHESION_TEST_PROJECT.md's seventeenth session): walking from FloorLeft straight
+	# toward a target on FloorRight never stalls *while grounded* — dx shrinks steadily right up
+	# until the player walks off FloorLeft's own ledge into the gap, at which point `is_on_floor()`
+	# goes false and a purely grounded-stall check never fires again; the player just falls short
+	# and the walk times out. The fix that actually matters is a coyote-time jump the instant the
+	# player leaves the ground *without having jumped* — PlayerController/AbilityController (see
+	# those scripts) already implement real coyote time (config.coyote_time, default 0.12s), so a
+	# jump pressed within that window after walking off a ledge still executes, exactly like a
+	# real player instinctively hopping as they feel the platform end. A grounded-stall counter is
+	# kept too, as a fallback for a low step or wall the player is pressed against without ever
+	# leaving the ground.
+	var stall_frames := 0
+	var last_dx_abs := INF
+	var was_grounded := body.has_method("is_on_floor") and body.is_on_floor()
+	var ledge_jump_frames := 0
 	while elapsed < timeout_sec:
 		if not is_instance_valid(body):
 			_release_horizontal_input()
@@ -406,7 +619,8 @@ func _walk_player_to(host: Node, player: Node, target: Vector2, timeout_sec: flo
 		var delta := host.get_physics_process_delta_time()
 		elapsed += delta
 		var dx := target.x - body.global_position.x
-		if absf(dx) < 12.0:
+		var dy := target.y - body.global_position.y
+		if absf(dx) < 12.0 and absf(dy) < 48.0:
 			_release_horizontal_input()
 			return true
 		used_input_simulation = true
@@ -416,12 +630,30 @@ func _walk_player_to(host: Node, player: Node, target: Vector2, timeout_sec: flo
 		else:
 			Input.action_press("move_left")
 			Input.action_release("move_right")
-		if target.y > body.global_position.y + 24.0:
+		if GameManager.has_ability("phase") and absf(dx) > 48.0:
+			Input.action_press("dash")
+		else:
+			Input.action_release("dash")
+		var dx_abs := absf(dx)
+		var grounded := body.has_method("is_on_floor") and body.is_on_floor()
+		if was_grounded and not grounded:
+			# Just walked off a ledge (or started a real jump) — either way, holding jump for a
+			# few frames here either lands harmlessly (already airborne on a real jump arc) or
+			# catches coyote time to turn "walked off the edge" into a real hop across it.
+			ledge_jump_frames = 8
+		was_grounded = grounded
+		if dx_abs > last_dx_abs - 1.0 and grounded:
+			stall_frames += 1
+		else:
+			stall_frames = 0
+		last_dx_abs = dx_abs
+		if target.y > body.global_position.y + 24.0 and stall_frames < 6 and ledge_jump_frames <= 0:
 			Input.action_press("move_down")
 			Input.action_release("jump")
-		elif target.y < body.global_position.y - 48.0:
+		elif target.y < body.global_position.y - 48.0 or stall_frames >= 6 or ledge_jump_frames > 0:
 			Input.action_press("jump")
 			Input.action_release("move_down")
+			ledge_jump_frames -= 1
 		else:
 			Input.action_release("jump")
 			Input.action_release("move_down")
@@ -437,6 +669,7 @@ func _release_horizontal_input() -> void:
 	Input.action_release("move_right")
 	Input.action_release("move_down")
 	Input.action_release("jump")
+	Input.action_release("dash")
 
 func _current_room(host: Node) -> Node:
 	var world_manager := host.get_tree().get_first_node_in_group("world_manager")

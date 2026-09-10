@@ -4,8 +4,12 @@ extends Node
 
 var _results: Array[Dictionary] = []
 var _telemetry: Dictionary = {}
+var _run_id: String = ""
 
 func _ready() -> void:
+	_run_id = OS.get_environment("METROFORGE_RUN_ID")
+	if _run_id.is_empty():
+		_run_id = "playtest_%d" % Time.get_ticks_msec()
 	await get_tree().process_frame
 	await get_tree().process_frame
 
@@ -60,6 +64,7 @@ func _release_input() -> void:
 	Input.action_release("attack")
 	Input.action_release("move_down")
 	Input.action_release("jump")
+	Input.action_release("dash")
 
 func _check(name: String, condition: bool) -> void:
 	_results.append({"name": name, "passed": condition, "soft": false})
@@ -79,13 +84,19 @@ func _finish() -> void:
 func _emit_telemetry() -> void:
 	if _telemetry.is_empty():
 		return
+	_telemetry["run_id"] = _run_id
+	_telemetry["route_started"] = true
+	_telemetry["endpoint_reached"] = bool(_telemetry.get("gameComplete", false))
 	print("PLAYTEST_TELEMETRY_BEGIN")
 	print(JSON.stringify(_telemetry))
 	print("PLAYTEST_TELEMETRY_END")
 	var json := JSON.stringify(_telemetry, "\t")
-	var file := FileAccess.open("res://playtest_telemetry.json", FileAccess.WRITE)
+	var telemetry_path := "user://multi_ability_progression_telemetry.json"
+	print("PLAYTEST_TELEMETRY_PATH: %s" % ProjectSettings.globalize_path(telemetry_path))
+	var file := FileAccess.open(telemetry_path, FileAccess.WRITE)
 	if file:
 		file.store_string(json)
+		file.flush()
 		file.close()
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://playtest"))
 	var existing := ""

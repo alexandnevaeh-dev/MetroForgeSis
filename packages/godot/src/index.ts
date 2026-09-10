@@ -35,3 +35,13 @@ export type { RoomLayoutMetrics } from './room-variety.js';
 export { composeEnvironment, biomeCompositionRule } from './environment-composition.js';
 export type { EnvironmentCompositionSpec, CompositionLayer } from './environment-composition.js';
 export { compileGodotTerrainSet } from './terrain-set.js';
+export { EXTERNAL_VISUAL_PACKS, loadExternalVisualPack } from './external-visual-pack.js';
+export type { ExternalVisualPackId, ExternalVisualPackManifest, ExternalVisualPackAsset } from './external-visual-pack.js';
+export {
+  expandFoundryTextureAliases,
+  remapTileCellsForFoundry,
+  foundryBackdropCoverScale,
+  FOUNDRY_BACKDROP_NATIVE,
+  FOUNDRY_LETTERBOX_PAD,
+  projectUsesFoundryVisualKit,
+} from './foundry-visual-pack.js';

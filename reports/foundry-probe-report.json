@@ -1,0 +1,111 @@
+{
+  "success": true,
+  "durationMs": 18894,
+  "registeredProviders": [
+    {
+      "id": "comfyui",
+      "local": true,
+      "costClass": "local",
+      "capabilities": [
+        "image-generation"
+      ],
+      "commercialUse": "unknown"
+    },
+    {
+      "id": "nvidia-image",
+      "local": false,
+      "costClass": "credit",
+      "capabilities": [
+        "image-generation",
+        "IMAGE_GENERATION",
+        "CHARACTER_CONCEPT",
+        "ENVIRONMENT_CONCEPT"
+      ],
+      "commercialUse": "allowed"
+    },
+    {
+      "id": "diffusers",
+      "local": true,
+      "costClass": "local",
+      "capabilities": [
+        "image-generation",
+        "image-editing",
+        "image-consistency"
+      ],
+      "commercialUse": "unknown"
+    },
+    {
+      "id": "pollinations-image",
+      "local": false,
+      "costClass": "free",
+      "capabilities": [
+        "image-generation"
+      ],
+      "commercialUse": "unknown"
+    },
+    {
+      "id": "qwen-image-edit",
+      "local": true,
+      "costClass": "local",
+      "capabilities": [
+        "image-generation",
+        "image-editing",
+        "image-consistency"
+      ],
+      "commercialUse": "unknown"
+    },
+    {
+      "id": "dreamo",
+      "local": true,
+      "costClass": "local",
+      "capabilities": [
+        "image-generation",
+        "image-editing",
+        "image-consistency"
+      ],
+      "commercialUse": "unknown"
+    },
+    {
+      "id": "pulid",
+      "local": true,
+      "costClass": "local",
+      "capabilities": [
+        "image-generation",
+        "image-editing",
+        "image-consistency"
+      ],
+      "commercialUse": "unknown"
+    }
+  ],
+  "skippedProviders": [],
+  "selectedProvider": "nvidia-image",
+  "selectedModel": "black-forest-labs/flux.1-dev",
+  "sourceType": "generated",
+  "fallbackDepth": 0,
+  "qaScore": 1,
+  "placeholder": false,
+  "cacheHit": false,
+  "godotPath": "assets/props/probe_prop_1788035614139.png",
+  "provenance": {
+    "assetId": "probe_prop_1788035614139",
+    "sourceType": "generated",
+    "provider": "nvidia-image",
+    "model": "black-forest-labs/flux.1-dev",
+    "generationTimestamp": "2026-08-29T20:33:53.029Z",
+    "promptHash": "98f84591baf97253776ef1c5585781a803ba9c2f6e41999293c846af66fa6cb1",
+    "license": "commercial-safe (NVIDIA API Terms / FLUX.1-dev model card)",
+    "commercialUse": true,
+    "licenseStatus": "approved",
+    "modified": true,
+    "transformations": [
+      "alpha-cleanup",
+      "studio-knockout",
+      "subject-crop",
+      "nearest-neighbor",
+      "pixel-grid-normalize"
+    ],
+    "qaScore": 1,
+    "cacheHit": false
+  },
+  "imageBytes": 8038
+}

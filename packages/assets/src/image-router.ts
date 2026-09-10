@@ -31,6 +31,16 @@ export interface ImageProviderRegistration {
   reliabilityScore?: number;
   license?: string;
   commercialUse?: 'allowed' | 'restricted' | 'unknown';
+  executionTargets?: Array<'LOCAL_CPU' | 'LOCAL_CUDA' | 'LOCAL_DIRECTML' | 'LOCAL_OTHER_GPU' | 'LOCAL_SERVICE' | 'REMOTE_API' | 'REMOTE_COMFYUI' | 'REMOTE_WORKER'>;
+  endpoint?: string;
+  hardwareOwner?: string;
+  /** Whether a `requireRealProvider` request should route this local provider through
+   *  `production-capacity.ts`'s locked OpenVINO/FP32 12 GB admission gate. Defaults to `true`
+   *  (unchanged behavior for every existing local registration). Set `false` for a local provider
+   *  with its own backend-appropriate admission logic (e.g. evidence-based, measured against that
+   *  backend's actual observed memory use) — that gate's fixed 12 GB FP32 floor does not describe
+   *  every local backend and must not be silently applied to one it was never measured against. */
+  useProductionCapacityGate?: boolean;
 }
 
 export interface ImageRoutingContext {

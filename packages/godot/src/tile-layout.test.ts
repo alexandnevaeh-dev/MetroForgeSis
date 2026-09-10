@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { DEFAULT_MOVEMENT_STATS } from '@metroforge/procedural';
+import { analyzeRepetition } from './composition/repetition.js';
 import { buildRoomTileCells, floorTopPx } from '../src/tile-layout.js';
 
 const BASE = { width: 800, height: 600, tileSize: 16 };
@@ -47,6 +48,37 @@ describe('buildRoomTileCells — seeded variation', () => {
     expect(cellsKey(a.cells)).toBe(cellsKey(b.cells));
     expect(a.platforms).toEqual(b.platforms);
     expect(a.pits).toEqual(b.pits);
+  });
+
+  it('uses deterministic material patches without changing platform collision geometry', () => {
+    const input = { ...BASE, archetype: 'combat' as const, seed: 184729 };
+    const first = buildRoomTileCells(input);
+    const second = buildRoomTileCells(input);
+    const floorRow = Math.floor((BASE.height - BASE.tileSize * 2) / BASE.tileSize);
+    const floorAtlas = first.cells
+      .filter((tile) => tile.y === floorRow)
+      .map((tile) => `${tile.col},${tile.row}`);
+
+    expect(first.cells).toEqual(second.cells);
+    expect(first.platforms).toEqual(second.platforms);
+    expect(new Set(floorAtlas).size).toBeGreaterThan(1);
+    expect(floorAtlas.some((atlas) => atlas === '0,3' || atlas === '4,3' || atlas === '0,4' || atlas === '4,4')).toBe(true);
+  });
+
+  it('keeps the current live seed under the repetition budget for a real room output', () => {
+    const layout = buildRoomTileCells({
+      width: 960,
+      height: 720,
+      tileSize: 32,
+      archetype: 'combat',
+      seed: 184729,
+      availableAbilities: ['dash'],
+    });
+
+    const analysis = analyzeRepetition(layout.cells);
+    expect(analysis.violations).not.toContain('EXCESSIVE_TILE_REPETITION');
+    expect(analysis.longestRun).toBeLessThanOrEqual(2);
+    expect(analysis.dominantAtlasShare).toBeLessThan(0.72);
   });
 
   it('varies room width/height archetypes still diverge across many seeds (not archetype-uniform)', () => {

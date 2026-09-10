@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { SettingsRepository } from './repositories/settings.js';
 import { runMigrations } from './migrations.js';
 import { openSqliteDatabase } from './sqlite.js';
+import { openNodeSqliteDatabase } from './node-sqlite.js';
 
 describe('SettingsRepository', () => {
   let dir: string;
@@ -45,5 +46,29 @@ describe('SettingsRepository', () => {
     repo.setMany({ 'app.a': '1', 'app.b': '2', 'other.c': '3' });
     expect(repo.list('app.').map((r: { key: string }) => r.key)).toEqual(['app.a', 'app.b']);
     db.close();
+  });
+
+  it('allows a short write retry after a transient lock is released', async () => {
+    try {
+      await import('node:sqlite');
+    } catch {
+      return;
+    }
+
+    const primaryDb = await openNodeSqliteDatabase(dbPath);
+    const secondaryDb = await openNodeSqliteDatabase(dbPath);
+    primaryDb.exec('CREATE TABLE IF NOT EXISTS lock_test (id TEXT PRIMARY KEY, value TEXT)');
+
+    primaryDb.exec('BEGIN IMMEDIATE');
+    setTimeout(() => {
+      primaryDb.exec('COMMIT');
+    }, 25);
+
+    const insert = secondaryDb.prepare('INSERT INTO lock_test (id, value) VALUES (?, ?)');
+    const result = insert.run('transient-lock-test', 'ok');
+    expect(result.changes).toBe(1);
+
+    secondaryDb.close();
+    primaryDb.close();
   });
 });

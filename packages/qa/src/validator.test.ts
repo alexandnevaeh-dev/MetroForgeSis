@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { generateWorldTopology } from '@metroforge/procedural';
 import { encodePng } from '@metroforge/assets';
-import { QAValidator, RepairEngineer } from './validator.js';
+import { QAValidator, RepairEngineer, validateWorldSceneArchetypeIntegrity } from './validator.js';
 
 describe('RepairEngineer', () => {
   it('recreates a missing generation_manifest.json', () => {
@@ -410,6 +410,94 @@ describe('QAValidator gameplay screenshot gate', () => {
     expect(gate.state).toBe('PASS');
     expect(existsSync(join(outputDir, 'qa', 'screenshot_critique.json'))).toBe(true);
 
+    rmSync(outputDir, { recursive: true, force: true });
+  });
+});
+
+describe('validateWorldSceneArchetypeIntegrity', () => {
+  function writeWorldScene(outputDir: string, scriptFile: string): void {
+    mkdirSync(join(outputDir, 'scenes', 'world'), { recursive: true });
+    writeFileSync(
+      join(outputDir, 'scenes', 'world', 'World.tscn'),
+      [
+        `[gd_scene load_steps=2 format=3 uid="uid://world_scene"]`,
+        ``,
+        `[ext_resource type="Script" path="res://scripts/world/${scriptFile}" id="1_world"]`,
+        ``,
+        `[node name="World" type="Node2D"]`,
+        `script = ExtResource("1_world")`,
+        ``,
+      ].join('\n'),
+    );
+  }
+
+  it('passes a genuine top-down World.tscn (OverworldManager.gd)', () => {
+    const outputDir = join(tmpdir(), `metroforge-worldscene-topdown-ok-${Date.now()}`);
+    writeWorldScene(outputDir, 'OverworldManager.gd');
+    const gate = validateWorldSceneArchetypeIntegrity(outputDir, true);
+    expect(gate.passed).toBe(true);
+    rmSync(outputDir, { recursive: true, force: true });
+  });
+
+  it('passes a genuine side-view World.tscn (WorldManager.gd)', () => {
+    const outputDir = join(tmpdir(), `metroforge-worldscene-sideview-ok-${Date.now()}`);
+    writeWorldScene(outputDir, 'WorldManager.gd');
+    const gate = validateWorldSceneArchetypeIntegrity(outputDir, false);
+    expect(gate.passed).toBe(true);
+    rmSync(outputDir, { recursive: true, force: true });
+  });
+
+  // Regression for the exact failure this session found and fixed: a genre-blind post-processing
+  // pass overwrote a top-down project's World.tscn to reference the side-view WorldManager.gd
+  // instead of OverworldManager.gd, after every other QA gate had already validated the real one.
+  it('fails a top-down project whose World.tscn was overwritten with the side-view WorldManager.gd', () => {
+    const outputDir = join(tmpdir(), `metroforge-worldscene-corrupted-${Date.now()}`);
+    writeWorldScene(outputDir, 'WorldManager.gd');
+    const gate = validateWorldSceneArchetypeIntegrity(outputDir, true);
+    expect(gate.passed).toBe(false);
+    expect(gate.message).toContain('WorldManager.gd');
+    expect(gate.message).toContain('OverworldManager.gd');
+    rmSync(outputDir, { recursive: true, force: true });
+  });
+
+  it('fails a side-view project whose World.tscn was overwritten with the top-down OverworldManager.gd', () => {
+    const outputDir = join(tmpdir(), `metroforge-worldscene-corrupted-reverse-${Date.now()}`);
+    writeWorldScene(outputDir, 'OverworldManager.gd');
+    const gate = validateWorldSceneArchetypeIntegrity(outputDir, false);
+    expect(gate.passed).toBe(false);
+    rmSync(outputDir, { recursive: true, force: true });
+  });
+
+  it('fails cleanly (not a thrown exception) when World.tscn is missing entirely', () => {
+    const outputDir = join(tmpdir(), `metroforge-worldscene-missing-${Date.now()}`);
+    mkdirSync(outputDir, { recursive: true });
+    const gate = validateWorldSceneArchetypeIntegrity(outputDir, true);
+    expect(gate.passed).toBe(false);
+    rmSync(outputDir, { recursive: true, force: true });
+  });
+
+  it('passes when the wrong script is merely declared but unused, checking the actual root-node reference precisely', () => {
+    // A node "OverworldManagerHelper.gd" or similar containing the wrong script's name as a
+    // substring of an unrelated resource must not accidentally satisfy the wrong-script check
+    // for the *correct* configuration, and a real corrupted file must still be caught precisely
+    // by which id the World node's own script= line actually resolves to.
+    const outputDir = join(tmpdir(), `metroforge-worldscene-precise-${Date.now()}`);
+    mkdirSync(join(outputDir, 'scenes', 'world'), { recursive: true });
+    writeFileSync(
+      join(outputDir, 'scenes', 'world', 'World.tscn'),
+      [
+        `[gd_scene load_steps=3 format=3 uid="uid://world_scene"]`,
+        ``,
+        `[ext_resource type="Script" path="res://scripts/world/OverworldManager.gd" id="1_world"]`,
+        `[ext_resource type="Script" path="res://scripts/world/WorldManager.gd" id="2_unused"]`,
+        ``,
+        `[node name="World" type="Node2D"]`,
+        `script = ExtResource("1_world")`,
+        ``,
+      ].join('\n'),
+    );
+    const gate = validateWorldSceneArchetypeIntegrity(outputDir, true);
+    expect(gate.passed).toBe(true);
     rmSync(outputDir, { recursive: true, force: true });
   });
 });

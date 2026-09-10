@@ -18,3 +18,26 @@ models/
 .turbo/
 release/
 apps/desktop/dist-electron/
+Exports/
+**/.godot/
+
+# --- integration consolidation: exclude local envs, caches, scratch, worktrees ---
+.venv/
+.venv-*/
+__pycache__/
+*.pyc
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.vscode/
+.worktrees/
+artifacts/
+test-artifacts/
+tmp-*/
+tmp_*/
+__*_probe*__*
+__*_import*__*
+__terrain_probe_output__.txt
+kernel.errors.txt
+*.zip

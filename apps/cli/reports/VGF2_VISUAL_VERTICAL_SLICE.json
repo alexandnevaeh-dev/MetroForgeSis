@@ -1,0 +1,128 @@
+{
+  "projectPath": "C:\\Users\\alexa\\OneDrive\\Documents\\Metroidvania\\Forged\\GeneratedGames\\vgf1-tideglass-sanctum",
+  "slug": "vgf1-tideglass-sanctum",
+  "seed": 20260817,
+  "profile": "VISUAL_VERTICAL_SLICE",
+  "archetype": "SIDE_VIEW_METROIDVANIA",
+  "providerSummary": {
+    "nvidiaImage": "black-forest-labs/flux.1-dev",
+    "selectedImage": "nvidia-image"
+  },
+  "visualDNA": {
+    "styleFingerprint": "8df6a21539e7262c",
+    "artStyle": {
+      "id": "gothic-ruin",
+      "label": "readable gothic pixel ruin",
+      "renderingFamily": "gothic",
+      "edgeTreatment": "1px dark outline on gameplay sprites, softer on far architecture",
+      "shadingSteps": 3,
+      "textureDensity": "medium"
+    },
+    "renderingStyle": "HD pixel art",
+    "palette": {
+      "global": [
+        "#284878",
+        "#3ca064",
+        "#dcb432",
+        "#e87850"
+      ],
+      "shadows": [
+        "#122036",
+        "#1b482d",
+        "#635117",
+        "#683624"
+      ],
+      "highlights": [
+        "#325a96",
+        "#4bc87d",
+        "#ffe13f",
+        "#ff9664"
+      ],
+      "accents": [
+        "#dcb432",
+        "#e87850"
+      ],
+      "ui": [
+        "#284878",
+        "#e87850",
+        "#4bc87d"
+      ]
+    },
+    "lighting": {
+      "key": "cold cyan",
+      "fill": "deep navy shadow",
+      "ambient": "submerged dusk",
+      "accent": "desaturated gold",
+      "direction": "upper-left shafts",
+      "contrast": "medium-high, readable silhouettes",
+      "sources": [
+        "ceiling shafts",
+        "submerged lanterns",
+        "broken clerestory"
+      ],
+      "fogColor": "#122036",
+      "fogAlpha": 0.12
+    }
+  },
+  "biomeName": "Glass Citadel",
+  "maturity": {
+    "production": 0,
+    "placeholder": 42,
+    "rejected": 9,
+    "unknownLicense": 0
+  },
+  "scores": {
+    "characterReadability": 100,
+    "enemyReadability": 82,
+    "silhouetteQuality": 100,
+    "paletteHarmony": 85.17246416472197,
+    "paletteSeparation": 90.34492832944395,
+    "materialConsistency": 94.99537037037037,
+    "architectureConsistency": 94.99537037037037,
+    "backgroundDepth": 86,
+    "parallaxReadability": 86,
+    "lightingQuality": 82,
+    "environmentCoherence": 94.99537037037037,
+    "propDensity": 90,
+    "tileRepetition": 35,
+    "composition": 92,
+    "focalHierarchy": 100,
+    "hudReadability": 88,
+    "vfxReadability": 78,
+    "assetStyleConsistency": 86,
+    "functionalQuality": 40,
+    "assetIntegrity": 100,
+    "visualCohesion": 88.04195863377309,
+    "roomComposition": 92,
+    "gameplayReadability": 90,
+    "presentationQuality": 92,
+    "overallConfidence": 40,
+    "overall": 85.5732415776222
+  },
+  "defects": [
+    "TILE_REPETITION_HIGH",
+    "EXCESSIVE_TILE_REPETITION"
+  ],
+  "repairs": [],
+  "verdict": "AUTOMATED_VISUAL_PASS_HUMAN_REVIEW_REQUIRED",
+  "screenshots": [
+    "reports/01-start.png",
+    "reports/02-traversal.png",
+    "reports/03-combat.png",
+    "reports/04-vertical-room.png",
+    "reports/05-ability-room.png",
+    "reports/06-secret.png",
+    "reports/07-checkpoint.png",
+    "reports/08-boss-room.png",
+    "reports/09-boss-combat.png",
+    "reports/hud.png",
+    "reports/player-animation-sheet.png",
+    "reports/enemy-animation-sheet.png",
+    "reports/boss-animation-sheet.png",
+    "reports/tileset-test.png",
+    "reports/qa-gameplay.png",
+    "reports/visual-slice-contact-sheet.png"
+  ],
+  "hardFailReasons": [],
+  "humanApproval": "Only a human can set HUMAN_APPROVED or HUMAN_REJECTED."
+}

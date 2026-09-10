@@ -1,0 +1,90 @@
+[
+  {
+    "rgba": [
+      71,
+      25,
+      27,
+      255
+    ],
+    "hex": "#47191bff",
+    "frequency": 2536,
+    "category": "outline"
+  },
+  {
+    "rgba": [
+      232,
+      200,
+      179,
+      255
+    ],
+    "hex": "#e8c8b3ff",
+    "frequency": 1783,
+    "category": "skin/highlight"
+  },
+  {
+    "rgba": [
+      176,
+      49,
+      20,
+      255
+    ],
+    "hex": "#b03114ff",
+    "frequency": 1146,
+    "category": "clothing shadow"
+  },
+  {
+    "rgba": [
+      217,
+      103,
+      37,
+      255
+    ],
+    "hex": "#d96725ff",
+    "frequency": 858,
+    "category": "clothing"
+  },
+  {
+    "rgba": [
+      179,
+      126,
+      109,
+      255
+    ],
+    "hex": "#b37e6dff",
+    "frequency": 801,
+    "category": "skin shadow"
+  },
+  {
+    "rgba": [
+      72,
+      26,
+      28,
+      255
+    ],
+    "hex": "#481a1cff",
+    "frequency": 368,
+    "category": "outline"
+  },
+  {
+    "rgba": [
+      217,
+      137,
+      147,
+      255
+    ],
+    "hex": "#d98993ff",
+    "frequency": 120,
+    "category": "accent"
+  },
+  {
+    "rgba": [
+      176,
+      48,
+      19,
+      255
+    ],
+    "hex": "#b03013ff",
+    "frequency": 42,
+    "category": "minor accent"
+  }
+]

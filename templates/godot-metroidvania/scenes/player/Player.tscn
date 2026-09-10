@@ -24,12 +24,26 @@ script = ExtResource("1_player")
 
 [node name="Sprite" type="AnimatedSprite2D" parent="."]
 script = ExtResource("5_sprite")
-sheet_path = "assets/characters/player_walk.png"
+# V2 pack maps walk to its validated locomotion sheet; no player_walk.png is shipped.
+sheet_path = "assets/characters/player_run.png"
 frame_size = Vector2i(64, 64)
 frame_count = 4
 attack_sheet_path = "assets/characters/player_attack.png"
 hurt_sheet_path = "assets/characters/player_hurt.png"
 death_sheet_path = "assets/characters/player_death.png"
+run_sheet_path = "assets/characters/player_run.png"
+extra_animation_sheets = {
+"idle": "assets/characters/player_idle.png",
+"jump_start": "assets/characters/player_jump_start.png",
+"jump": "assets/characters/player_jump.png",
+"fall": "assets/characters/player_fall.png",
+"land": "assets/characters/player_land.png",
+"dash": "assets/characters/player_dash.png",
+"wall_slide": "assets/characters/player_wall_slide.png",
+"wall_jump": "assets/characters/player_wall_jump.png",
+"swim": "assets/characters/player_swim.png",
+"attack_2": "assets/characters/player_attack_2.png"
+}
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -24)

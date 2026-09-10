@@ -8,13 +8,13 @@
 [ext_resource type="Script" path="res://scripts/player/TopDownCamera.gd" id="6_cam"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
-size = Vector2(16, 16)
+size = Vector2(20, 20)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hurt"]
-size = Vector2(14, 14)
+size = Vector2(18, 18)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hit"]
-size = Vector2(22, 16)
+size = Vector2(24, 18)
 
 [node name="Player" type="CharacterBody2D" groups=["player"]]
 collision_layer = 2
@@ -29,6 +29,8 @@ frame_size = Vector2i(32, 32)
 frame_count = 4
 attack_sheet_path = "assets/characters/player_attack.png"
 hurt_sheet_path = "assets/characters/player_hurt.png"
+death_sheet_path = "assets/characters/player_death.png"
+reference_pose_path = "assets/characters/player.png"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_body")

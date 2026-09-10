@@ -149,18 +149,43 @@ function buildEdges(
   // Branching shortcuts for medium+ worlds
   if (branching) {
     const branchCount = Math.min(Math.floor(roomIds.length / 10), 8);
+    // Seventeenth-session fix: every room already carries up to 2 spine connections (prev/next)
+    // and can additionally be an ability-gate or vertical-shaft endpoint — a room becomes an
+    // endpoint of *this* many independently-random shortcuts too and it can need more distinct
+    // physical doors than the 4 cardinal directions a room scene supports, which is what forces
+    // two connections into the same direction (see buildRoomConnections' own same-direction
+    // collision-avoidance in packages/godot/src/room-assembler.ts — that fix handles a room
+    // needing up to 4 directions, not 5+). Found via a direct sweep of 420 seed/roomCount/
+    // biomeCount combinations: 16 residual collisions, all in roomCount>=50 worlds, all a room
+    // touched by 3+ shortcuts. Capping each room to at most one shortcut endpoint keeps every
+    // room's worst case (2 spine + 1 shortcut + 1 gate/shaft) at exactly 4, never 5.
+    const shortcutTouches = new Map<string, number>();
+    const MAX_SHORTCUT_TOUCHES_PER_ROOM = 1;
+    const touches = (id: string): number => shortcutTouches.get(id) ?? 0;
     for (let b = 0; b < branchCount; b++) {
-      const from = rng.int(1, roomIds.length - 3);
-      const to = rng.int(from + 2, Math.min(from + 8, roomIds.length - 1));
-      if (to !== from + 1) {
+      for (let attempt = 0; attempt < 6; attempt++) {
+        const from = rng.int(1, roomIds.length - 3);
+        const to = rng.int(from + 2, Math.min(from + 8, roomIds.length - 1));
+        if (to === from + 1) continue;
+        const fromId = roomIds[from]!;
+        const toId = roomIds[to]!;
+        if (
+          touches(fromId) >= MAX_SHORTCUT_TOUCHES_PER_ROOM ||
+          touches(toId) >= MAX_SHORTCUT_TOUCHES_PER_ROOM
+        ) {
+          continue;
+        }
         edges.push({
           id: generateId('edge'),
-          from: roomIds[from]!,
-          to: roomIds[to]!,
+          from: fromId,
+          to: toId,
           requirements: [],
           optional: true,
           bidirectional: true,
         });
+        shortcutTouches.set(fromId, touches(fromId) + 1);
+        shortcutTouches.set(toId, touches(toId) + 1);
+        break;
       }
     }
   }
@@ -172,10 +197,33 @@ function buildEdges(
       const lowerIdx = Math.min((b + 1) * roomsPerBiome - 1, roomIds.length - 2);
       const upperIdx = Math.min(lowerIdx + 1, roomIds.length - 1);
       if (upperIdx > lowerIdx) {
+        const lowerId = roomIds[lowerIdx]!;
+        const upperId = roomIds[upperIdx]!;
+        // Sixteenth-session fix: upperIdx is usually lowerIdx+1, a pair the main spine above
+        // (line ~138) already connects unconditionally as a plain (no `transition`, i.e.
+        // horizontal) edge. Without removing that duplicate the exact same room pair ends up
+        // with two edges to the same target — one horizontal, one `transition: 'up'` — and
+        // nothing downstream (PlaytestAgent.gd's _find_transition, the room assembler's door
+        // placement) disambiguates by direction, so whichever edge is found/placed first wins
+        // arbitrarily. When the 'up' edge wins, its door sits at the top of a tall room that a
+        // grounded walk-to can't reach, producing a real, reproduced `door_did_not_fire` failure
+        // (see docs/audit/MODERN_COHESION_TEST_PROJECT.md's sixteenth session — this is the exact
+        // shape of the reported room_012 -> room_013 failure). The ability-gate loop below this
+        // one already applies this same same-pair dedup for its own edges; the vertical-shaft
+        // loop never had it.
+        for (let i = edges.length - 1; i >= 0; i--) {
+          const existing = edges[i]!;
+          const sameUndirectedPair =
+            (existing.from === lowerId && existing.to === upperId) ||
+            (existing.bidirectional && existing.from === upperId && existing.to === lowerId);
+          if (sameUndirectedPair && existing.requirements.length === 0) {
+            edges.splice(i, 1);
+          }
+        }
         edges.push({
           id: generateId('edge'),
-          from: roomIds[lowerIdx]!,
-          to: roomIds[upperIdx]!,
+          from: lowerId,
+          to: upperId,
           requirements: [],
           optional: false,
           bidirectional: true,

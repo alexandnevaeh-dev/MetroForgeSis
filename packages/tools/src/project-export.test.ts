@@ -80,6 +80,14 @@ describe('exportProject', () => {
 
 
 
+  it('rejects an output directory inside the source project before creating staging files', () => {
+    const outputDir = join(projectPath, 'nested-export');
+    const result = exportProject({ projectPath, outputDir, zip: false });
+    expect(result.success).toBe(false);
+    expect(result.errors.join(' ')).toContain('outside the source project');
+    expect(existsSync(outputDir)).toBe(false);
+  });
+
   it('writes export_manifest in staged output', () => {
 
     const result = exportProject({ projectPath, zip: false });
@@ -93,6 +101,10 @@ describe('exportProject', () => {
     const manifest = JSON.parse(readFileSync(result.manifestPath!, 'utf-8'));
 
     expect(manifest.validationPassed).toBe(true);
+    expect(manifest.productionReady).toBe(false);
+    expect(manifest.packaging.status).toBe('STAGING_COMPLETE');
+    expect(manifest.readiness.runtimeReady).toBe(false);
+    expect(manifest.readiness.packageReady).toBe(false);
 
     expect(manifest.roomCount).toBe(1);
 
@@ -106,6 +118,43 @@ describe('exportProject', () => {
     expect(licenseReport.commercialSafe).toBe(true);
     expect(licenseReport.artifacts.length).toBe(1);
     expect(existsSync(join(result.manifestPath!.replace(/export_manifest\.json$/, 'license_report.json')))).toBe(true);
+  });
+
+  it('never sets releaseReady=true from humanVisualApprovalGranted alone — technical gates still gate it', () => {
+    // A staged-only export (no --windows) can never reach packageReady, so even an explicit
+    // humanVisualApprovalGranted:true must not flip releaseReady. Human approval is necessary,
+    // never sufficient — it must never substitute for a real technical gate.
+    const result = exportProject({ projectPath, zip: false, humanVisualApprovalGranted: true });
+    expect(result.success).toBe(true);
+    const manifest = JSON.parse(readFileSync(result.manifestPath!, 'utf-8'));
+    expect(manifest.readiness.packageReady).toBe(false);
+    expect(manifest.readiness.technicalReleaseReady).toBe(false);
+    expect(manifest.readiness.humanVisualApprovalGranted).toBe(true);
+    expect(manifest.readiness.releaseReady).toBe(false);
+  });
+
+  it('defaults humanVisualApprovalGranted to false and keeps releaseReady false without it', () => {
+    const result = exportProject({ projectPath, zip: false });
+    const manifest = JSON.parse(readFileSync(result.manifestPath!, 'utf-8'));
+    expect(manifest.readiness.humanVisualApprovalGranted).toBe(false);
+    expect(manifest.readiness.releaseReady).toBe(false);
+    // productionReady keeps its original, narrower meaning (technical gates only) and is
+    // unaffected by the human-approval field.
+    expect(manifest.productionReady).toBe(manifest.readiness.technicalReleaseReady);
+  });
+
+  it('reports Windows package blocked instead of claiming a staged project is package-ready', () => {
+    const result = exportProject({
+      projectPath,
+      zip: false,
+      packageWindows: true,
+      godotExecutable: join(projectPath, 'missing-godot.exe'),
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.manifest?.packaging.status).toBe('WINDOWS_PACKAGE_BLOCKED');
+    expect(result.manifest?.readiness.packageReady).toBe(false);
+    expect(result.manifest?.readiness.releaseReady).toBe(false);
   });
 
 

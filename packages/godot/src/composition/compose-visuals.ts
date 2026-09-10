@@ -6,6 +6,7 @@ import {
   type RoomBlueprint,
   type GeometryRect,
   type LandmarkPlan,
+  type RoomPlan,
   defaultLightingPlan,
   platformStrategyFor,
   traversalFromGeometry,
@@ -57,6 +58,44 @@ function mergeCells(base: VisualCell[], extra: VisualCell[]): VisualCell[] {
     map.set(`${cell.x},${cell.y}`, cell);
   }
   return [...map.values()].sort((a, b) => a.y - b.y || a.x - b.x);
+}
+
+function buildRoomPlan(input: ComposeVisualsInput): RoomPlan {
+  const floorTop = input.floorRow * input.tileSize;
+  const boss = input.archetype === 'boss' || input.archetype === 'miniboss';
+  const calm = input.archetype === 'save' || input.archetype === 'ability_shrine';
+  const vertical = input.archetype === 'traversal' || input.archetype === 'challenge';
+  const focusX = Math.round(input.width * (input.archetype === 'ability_shrine' ? 0.5 : 0.58));
+  const focusY = floorTop - (calm ? input.tileSize * 3 : input.tileSize * 2);
+  const connections = input.connections ?? [];
+  const entries = connections.filter((connection) => connection.direction === 'left' || connection.direction === 'down');
+  const exits = connections.filter((connection) => !entries.includes(connection));
+  const edgeAnchors = boss
+    ? [{ role: 'arena_frame' as const, x: input.width * 0.1, grounded: true }, { role: 'arena_frame' as const, x: input.width * 0.9, grounded: true }]
+    : calm
+      ? [{ role: 'focal_frame' as const, x: focusX, grounded: true }]
+      : [{ role: 'edge_pillar' as const, x: input.width * 0.12, grounded: true }, { role: 'edge_pillar' as const, x: input.width * 0.88, grounded: true }];
+  const combat = { x: Math.round(input.width * 0.24), y: floorTop - input.tileSize * 5, width: Math.round(input.width * 0.52), height: input.tileSize * 5 };
+  const quiet = { x: Math.round(input.width * 0.36), y: floorTop - input.tileSize * 6, width: Math.round(input.width * 0.28), height: input.tileSize * 6 };
+  return {
+    dominantAxis: vertical ? 'vertical' : boss || input.archetype === 'combat' || input.archetype === 'arena' ? 'balanced' : 'horizontal',
+    entryPoints: entries.map((connection) => ({ direction: connection.direction, x: connection.direction === 'left' ? 0 : input.width * 0.5, y: floorTop })),
+    exitPoints: exits.map((connection) => ({ direction: connection.direction, x: connection.direction === 'right' ? input.width : input.width * 0.5, y: floorTop })),
+    gameplayFloors: [{ x: 0, y: floorTop, width: input.width, height: input.tileSize * 2 }],
+    platformRegions: [...input.platforms],
+    wallRegions: [{ x: 0, y: 0, width: input.tileSize, height: floorTop }, { x: input.width - input.tileSize, y: 0, width: input.tileSize, height: floorTop }],
+    ceilingRegions: [{ x: 0, y: 0, width: input.width, height: input.tileSize }],
+    majorArchitecture: edgeAnchors,
+    focalPoint: { x: focusX, y: focusY, kind: calm ? 'reward_or_save' : boss ? 'boss' : 'traversal' },
+    safeZones: calm ? [{ ...quiet }] : [],
+    combatZones: boss || input.archetype === 'combat' || input.archetype === 'arena' ? [combat] : [],
+    decorationZones: [{ purpose: 'decoration', x: input.width * 0.05, y: floorTop - input.tileSize * 2, width: input.width * 0.18, height: input.tileSize * 2 }, { purpose: 'decoration', x: input.width * 0.77, y: floorTop - input.tileSize * 2, width: input.width * 0.18, height: input.tileSize * 2 }],
+    noDecorationZones: [{ purpose: 'no_decoration', ...quiet }],
+    foregroundExclusionZones: [{ purpose: 'foreground_exclusion', ...combat }],
+    visualTheme: 'industrial_transit',
+    landmarkType: calm ? 'sanctuary_frame' : boss ? 'arena_frame' : vertical ? 'shaft_frame' : 'edge_supports',
+    propBudget: { clusters: calm || boss ? 0 : 2, propsPerCluster: 1, majorStructures: edgeAnchors.length },
+  };
 }
 
 /**
@@ -159,6 +198,7 @@ export function composePlayableVisuals(input: ComposeVisualsInput): ComposeVisua
   const visualCells = suppressRepetition(resolved, seed);
 
   const floorTop = floorRow * tileSize;
+  const plan = buildRoomPlan(input);
   const blueprint: RoomBlueprint = {
     id: input.roomId ?? 'room',
     biomeId: input.biomeId ?? 'biome_0',
@@ -193,6 +233,7 @@ export function composePlayableVisuals(input: ComposeVisualsInput): ComposeVisua
       particles: archetype === 'boss' ? 'embers' : 'dust',
     },
     landmarks,
+    plan,
     visualIntent: {
       depthLayers: [
         'far_background',

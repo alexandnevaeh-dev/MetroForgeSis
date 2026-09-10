@@ -3,6 +3,9 @@ extends WorldMapPanel
 
 func _ready() -> void:
 	super._ready()
+	if OS.get_environment("METROFORGE_CAPTURE") == "1" or OS.get_environment("METROFORGE_HUD_MODE") in PackedStringArray(["PLAYER", "RELEASE", "QA_CAPTURE"]):
+		visible = false
+		return
 	if not EventBus.room_entered.is_connected(_on_room_entered):
 		EventBus.room_entered.connect(_on_room_entered)
 

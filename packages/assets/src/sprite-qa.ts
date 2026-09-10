@@ -137,12 +137,18 @@ export function critiqueAnimationIdentity(
   }
 
   // Fake walk bob: occupancy count nearly identical and y-centroid hops 1–2px only.
+  // Tolerance is on opaque-pixel-count *variance*, not raw pose difference: a layered/organic
+  // silhouette (curved head, tapered limbs) legitimately loses/gains more outline pixels than a
+  // blocky rectangle when clipped by an integer-pixel vertical shift, even though it's still
+  // *only* a shift — 0.01 was tuned against a rectangle silhouette and flagged real bob-fakes of
+  // rounder character art as "not fake". A real pose change (limbs actually moving, not the
+  // whole silhouette translating) produces swings far larger than this.
   const counts = centroids.map((c) => c.count);
   const mean = counts.reduce((a, b) => a + b, 0) / Math.max(1, counts.length);
   const variance =
     counts.reduce((a, b) => a + (b - mean) ** 2, 0) / Math.max(1, counts.length);
   const ySpread = Math.max(...centroids.map((c) => c.y)) - Math.min(...centroids.map((c) => c.y));
-  const fakeBob = frames >= 3 && unique <= 2 && ySpread > 0 && ySpread <= 3 && variance < mean * 0.01;
+  const fakeBob = frames >= 3 && unique <= 2 && ySpread > 0 && ySpread <= 3 && variance < mean * 0.15;
   checks.notFakeBobCycle = !fakeBob;
   if (fakeBob) {
     issues.push({

@@ -20,7 +20,7 @@ export function placeArchitecture(input: {
 }): { motifs: string[]; extras: VisualCell[] } {
   const extras: VisualCell[] = [];
   const motifs: string[] = [];
-  const { cols, rows: _rows } = input.grid;
+  const { cols } = input.grid;
   const floorRow = input.floorRow;
 
   // Door frames / corner piers — 2 tiles tall at walk height, not full-height walls.

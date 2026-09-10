@@ -10,6 +10,15 @@ extends TileMapLayer
 ## pits — the visual backfill below must not repaint these columns solid or the collision gap
 ## (a separate StaticBody2D floor split, see room-assembler.ts buildFloorSection) would look filled.
 @export var pit_columns_json: String = ""
+## foundry = consume the Foundry V3 industrial atlas/backdrop; skip gothic rear-wall wallpaper.
+@export var visual_kit: String = ""
+
+const GROUND_MASK_ATLAS := {
+	0: Vector2i(0, 0), 1: Vector2i(7, 0), 2: Vector2i(4, 0), 3: Vector2i(2, 1),
+	4: Vector2i(6, 0), 5: Vector2i(1, 0), 6: Vector2i(0, 1), 7: Vector2i(5, 1),
+	8: Vector2i(5, 0), 9: Vector2i(3, 1), 10: Vector2i(3, 0), 11: Vector2i(4, 1),
+	12: Vector2i(1, 1), 13: Vector2i(6, 1), 14: Vector2i(7, 1), 15: Vector2i(1, 0),
+}
 
 func _ready() -> void:
 	_build_tilemap()
@@ -48,14 +57,19 @@ func _build_tilemap() -> void:
 				if cell is Array and cell.size() >= 4:
 					var atlas_coords := Vector2i(int(cell[2]), int(cell[3]))
 					# Atlas decor/moss cells were bible gold/lime, not masonry. Skip the tufts.
-					if atlas_coords.y == 2 and atlas_coords.x >= 6:
-						continue
-					if atlas_coords.y == 4:
-						atlas_coords = Vector2i(atlas_coords.x, 3)
+					# Foundry's 8x4 industrial sheet already remapped those coords — do not drop them.
+					if visual_kit != "foundry":
+						if atlas_coords.y == 2 and atlas_coords.x >= 6:
+							continue
+						if atlas_coords.y == 4:
+							atlas_coords = Vector2i(atlas_coords.x, 3)
 					atlas_coords = _variant_coords(int(cell[0]), int(cell[1]), atlas_coords)
 					set_cell(Vector2i(int(cell[0]), int(cell[1])), 0, atlas_coords)
+			if visual_kit != "foundry":
+				_apply_ground_terrain(parsed)
 			_paint_visual_mass()
-			call_deferred("_paint_rear_wall")
+			if visual_kit != "foundry":
+				call_deferred("_paint_rear_wall")
 			return
 
 	var floor_row := int((room_height - 64) / tile_size)
@@ -68,7 +82,8 @@ func _build_tilemap() -> void:
 		set_cell(Vector2i(0, y), 0, wall_tile)
 		set_cell(Vector2i(int(room_width / tile_size) - 1, y), 0, wall_tile)
 	_paint_visual_mass()
-	call_deferred("_paint_rear_wall")
+	if visual_kit != "foundry":
+		call_deferred("_paint_rear_wall")
 
 
 func _configure_terrain_set(tile_set: TileSet, atlas: TileSetAtlasSource, cols: int, rows: int) -> void:
@@ -84,14 +99,48 @@ func _configure_terrain_set(tile_set: TileSet, atlas: TileSetAtlasSource, cols: 
 			if td == null:
 				continue
 			td.terrain_set = 0
-			td.terrain = 1 if (x == 3 and y == 0) or (x <= 1 and y == 2) else 0
-			td.set_terrain_peering_bit(TileSet.CELL_NEIGHBOR_RIGHT_SIDE, td.terrain)
-			td.set_terrain_peering_bit(TileSet.CELL_NEIGHBOR_LEFT_SIDE, td.terrain)
-			td.set_terrain_peering_bit(TileSet.CELL_NEIGHBOR_BOTTOM_SIDE, td.terrain)
-			td.set_terrain_peering_bit(TileSet.CELL_NEIGHBOR_TOP_SIDE, td.terrain)
+			if x == 3 and y == 0:
+				td.terrain = 1
+				_set_ground_peering_bits(td, false, true, false, true)
+			else:
+				td.terrain = 0
+				if Vector2i(x, y) in GROUND_MASK_ATLAS.values():
+					_set_ground_peering(td, _ground_mask_for_atlas(Vector2i(x, y)))
+
+
+func _set_ground_peering(td: TileData, mask: int) -> void:
+	_set_ground_peering_bits(td, (mask & 1) != 0, (mask & 2) != 0, (mask & 4) != 0, (mask & 8) != 0)
+
+func _set_ground_peering_bits(td: TileData, north: bool, east: bool, south: bool, west: bool) -> void:
+	td.set_terrain_peering_bit(TileSet.CELL_NEIGHBOR_TOP_SIDE, 0 if north else -1)
+	td.set_terrain_peering_bit(TileSet.CELL_NEIGHBOR_RIGHT_SIDE, 0 if east else -1)
+	td.set_terrain_peering_bit(TileSet.CELL_NEIGHBOR_BOTTOM_SIDE, 0 if south else -1)
+	td.set_terrain_peering_bit(TileSet.CELL_NEIGHBOR_LEFT_SIDE, 0 if west else -1)
+
+func _ground_mask_for_atlas(coords: Vector2i) -> int:
+	for mask in GROUND_MASK_ATLAS:
+		if GROUND_MASK_ATLAS[mask] == coords:
+			return mask
+	return 0
+
+func _apply_ground_terrain(cells: Array) -> void:
+	var ground_cells := {}
+	for cell in cells:
+		if cell is Array and cell.size() >= 4 and int(cell[2]) == 0 and int(cell[3]) == 0:
+			ground_cells["%d:%d" % [int(cell[0]), int(cell[1])]] = Vector2i(int(cell[0]), int(cell[1]))
+	for pos in ground_cells.values():
+		var mask := 0
+		if ground_cells.has("%d:%d" % [pos.x, pos.y - 1]): mask |= 1
+		if ground_cells.has("%d:%d" % [pos.x + 1, pos.y]): mask |= 2
+		if ground_cells.has("%d:%d" % [pos.x, pos.y + 1]): mask |= 4
+		if ground_cells.has("%d:%d" % [pos.x - 1, pos.y]): mask |= 8
+		set_cell(pos, 0, GROUND_MASK_ATLAS[mask])
 
 
 func _variant_coords(cell_x: int, cell_y: int, atlas_coords: Vector2i) -> Vector2i:
+	## Foundry V3's atlas is 8x4 industrial tiles, not the procedural wear/moss rows.
+	if visual_kit == "foundry":
+		return atlas_coords
 	## Seeded wear/moss/crack/rare variants live on atlas rows 3-4. Keep the canonical tile a
 	## majority of the time so rooms do not checkerboard, but rotate through the fuller variant
 	## palette instead of one wear stamp.

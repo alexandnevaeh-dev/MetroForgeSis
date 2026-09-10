@@ -19,10 +19,16 @@ export function conditioningPayload(conditioning: ImageConditioning): {
   conditioning_mode: ImageConditioningMode;
   init_image_base64: string;
   conditioning_strength: number;
+  reference_source_asset_id?: string;
+  reference_source_hash?: string;
+  reference_mechanism?: string;
 } {
   return {
     conditioning_mode: conditioning.mode,
     init_image_base64: conditioning.image.toString('base64'),
     conditioning_strength: resolveConditioningStrength(conditioning),
+    reference_source_asset_id: conditioning.sourceAssetId,
+    reference_source_hash: conditioning.sourceHash,
+    reference_mechanism: conditioning.referenceMechanism,
   };
 }

@@ -10,6 +10,15 @@ const EFFECT_IDS := [
 	"boss_phase_shift",
 	"area_burst",
 	"slam_shock",
+	# Real, generic ground danger-zone ring (e.g. metroforge-research-facility's
+	# assets/vfx/attack_warning.png) — a boss's telegraph was previously body-tint-only
+	# (BossController._set_telegraph_visual()'s red modulate); this gives a second, spatial
+	# "where" signal distinct from the "that" signal the tint already provided.
+	"attack_warning",
+	# Real ranged-projectile streak texture (Projectile.gd swaps its own placeholder for this
+	# directly by path already; registered here too so VFXManager.play("ranged_projectile", ...)
+	# also works for any caller that wants a one-shot muzzle-flash rather than the live projectile).
+	"ranged_projectile",
 ]
 
 var _textures: Dictionary = {}

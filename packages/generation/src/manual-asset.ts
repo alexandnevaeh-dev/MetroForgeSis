@@ -73,6 +73,17 @@ function inferAssetPath(assetType: ManualAssetType, assetId: string): string {
   }
 }
 
+/**
+ * Regenerating the canonical character still ('player') invalidates every pose/sheet compiled
+ * from it. Regenerating one specific derived pose/sheet (any other assetId) is not a character
+ * identity change and must never cascade — critically, descendantRelPaths(characterId) includes
+ * the asset just written whenever assetId names one of the tracked lineage poses, so cascading
+ * unconditionally would delete the very file this call just wrote.
+ */
+export function characterLineageRootFor(assetType: ManualAssetType, assetId: string): string {
+  return assetType === 'player_sprite' && assetId === 'player' ? 'player' : '';
+}
+
 function slugifyAssetId(description: string): string {
   const base = description
     .toLowerCase()
@@ -143,6 +154,10 @@ export async function generateManualAsset(request: ManualAssetRequest): Promise<
       stabilityApiKey: process.env.STABILITY_API_KEY,
       deepaiApiKey: process.env.DEEPAI_API_KEY,
       replicateApiToken: process.env.REPLICATE_API_TOKEN,
+      pollinationsBaseUrl: process.env.POLLINATIONS_BASE_URL,
+      pollinationsModel: process.env.POLLINATIONS_IMAGE_MODEL,
+      pollinationsApiKey: process.env.POLLINATIONS_API_KEY,
+      enablePollinations: process.env.POLLINATIONS_ENABLED === 'true',
       ollamaBaseUrl: config.ollamaBaseUrl,
       hardwareProfile: request.hardwareProfile,
     });
@@ -179,7 +194,7 @@ export async function generateManualAsset(request: ManualAssetRequest): Promise<
   }
   writeFileSync(targetFull, asset.buffer);
 
-  const characterId = request.assetType === 'player_sprite' ? 'player' : '';
+  const characterId = characterLineageRootFor(request.assetType, assetId);
   let dirtyReason = '';
   const dirtyIds = new Set<string>();
   if (characterId) {

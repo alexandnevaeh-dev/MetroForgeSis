@@ -1,0 +1,1301 @@
+{
+  "version": "0.2.0",
+  "updatedAt": "2026-08-13T11:34:23.352Z",
+  "models": [
+    {
+      "id": "qwen3-coder-next",
+      "name": "Qwen3 Coder Next",
+      "provider": "ollama",
+      "repository": "https://ollama.com/library/qwen3-coder-next",
+      "modality": "text",
+      "capabilities": [
+        "TEXT_GENERATION",
+        "CODE_GENERATION",
+        "GDSCRIPT",
+        "JSON_GENERATION",
+        "REASONING",
+        "QA_REASONING"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "Apache-2.0",
+      "commercialUse": "allowed",
+      "parameterCount": "30B",
+      "minRamMb": 16384,
+      "recommendedRamMb": 32768,
+      "contextWindow": 32768,
+      "supportsTools": false,
+      "supportsStructuredOutput": true,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "estimatedSpeed": "medium",
+      "estimatedQuality": "high",
+      "specializationScores": {
+        "CODE": 95,
+        "GDSCRIPT": 90,
+        "JSON": 92,
+        "REASONING": 88
+      },
+      "runtime": "ollama",
+      "ggufAvailable": false,
+      "installed": false,
+      "health": "unknown",
+      "priority": 50,
+      "tags": [
+        "coding",
+        "recommended",
+        "high-quality"
+      ]
+    },
+    {
+      "id": "qwen3-coder:30b",
+      "name": "Qwen3 Coder 30B",
+      "provider": "ollama",
+      "repository": "https://ollama.com/library/qwen3-coder",
+      "modality": "text",
+      "capabilities": [
+        "TEXT_GENERATION",
+        "CODE_GENERATION",
+        "GDSCRIPT",
+        "JSON_GENERATION"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "Apache-2.0",
+      "commercialUse": "allowed",
+      "parameterCount": "30B",
+      "minRamMb": 16384,
+      "recommendedRamMb": 24576,
+      "contextWindow": 32768,
+      "supportsTools": false,
+      "supportsStructuredOutput": true,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "specializationScores": {
+        "CODE": 93,
+        "GDSCRIPT": 88,
+        "JSON": 90
+      },
+      "runtime": "ollama",
+      "ggufAvailable": false,
+      "installed": false,
+      "health": "unknown",
+      "priority": 45,
+      "tags": [
+        "coding"
+      ]
+    },
+    {
+      "id": "qwen3:8b",
+      "name": "Qwen3 8B",
+      "provider": "ollama",
+      "modality": "text",
+      "capabilities": [
+        "TEXT_GENERATION",
+        "REASONING",
+        "NARRATIVE",
+        "JSON_GENERATION",
+        "WORLD_DESIGN"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "Apache-2.0",
+      "commercialUse": "allowed",
+      "parameterCount": "8B",
+      "minRamMb": 6144,
+      "recommendedRamMb": 8192,
+      "contextWindow": 8192,
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "specializationScores": {
+        "REASONING": 82,
+        "NARRATIVE": 80,
+        "JSON": 78
+      },
+      "runtime": "ollama",
+      "ggufAvailable": false,
+      "installed": false,
+      "health": "unknown",
+      "priority": 90,
+      "tags": [
+        "balanced",
+        "cpu-friendly"
+      ]
+    },
+    {
+      "id": "qwen2.5-coder:7b",
+      "name": "Qwen2.5 Coder 7B",
+      "provider": "ollama",
+      "modality": "text",
+      "capabilities": [
+        "CODE_GENERATION",
+        "GDSCRIPT",
+        "JSON_GENERATION"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "Apache-2.0",
+      "commercialUse": "allowed",
+      "parameterCount": "7B",
+      "minRamMb": 6144,
+      "recommendedRamMb": 8192,
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "specializationScores": {
+        "CODE": 85,
+        "GDSCRIPT": 82
+      },
+      "runtime": "ollama",
+      "ggufAvailable": false,
+      "installed": false,
+      "health": "unknown",
+      "priority": 70,
+      "tags": [
+        "coding",
+        "low-vram"
+      ]
+    },
+    {
+      "id": "deepseek-r1:8b",
+      "name": "DeepSeek R1 8B Distill",
+      "provider": "ollama",
+      "modality": "text",
+      "capabilities": [
+        "REASONING",
+        "QA_REASONING",
+        "WORLD_DESIGN",
+        "JSON_GENERATION"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "MIT",
+      "commercialUse": "unknown",
+      "parameterCount": "8B",
+      "recommendedRamMb": 8192,
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "specializationScores": {
+        "REASONING": 90,
+        "QA": 88,
+        "WORLD_DESIGN": 85
+      },
+      "runtime": "ollama",
+      "ggufAvailable": false,
+      "installed": false,
+      "health": "unknown",
+      "priority": 72,
+      "tags": [
+        "reasoning"
+      ]
+    },
+    {
+      "id": "llama3.2:3b",
+      "name": "Llama 3.2 3B",
+      "provider": "ollama",
+      "modality": "text",
+      "capabilities": [
+        "TEXT_GENERATION",
+        "CLASSIFICATION",
+        "TAGGING",
+        "METADATA",
+        "ROUTING"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "Llama 3.2 Community License",
+      "commercialUse": "allowed",
+      "parameterCount": "3B",
+      "minRamMb": 3072,
+      "recommendedRamMb": 4096,
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "specializationScores": {
+        "REASONING": 65
+      },
+      "runtime": "ollama",
+      "ggufAvailable": false,
+      "installed": false,
+      "health": "unknown",
+      "priority": 55,
+      "tags": [
+        "low-resource",
+        "cpu-friendly"
+      ]
+    },
+    {
+      "id": "gemma2:2b",
+      "name": "Gemma 2 2B",
+      "provider": "ollama",
+      "modality": "text",
+      "capabilities": [
+        "CLASSIFICATION",
+        "TAGGING",
+        "METADATA",
+        "NARRATIVE"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "Gemma Terms of Use",
+      "commercialUse": "restricted",
+      "parameterCount": "2B",
+      "minRamMb": 2048,
+      "recommendedRamMb": 4096,
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "specializationScores": {},
+      "runtime": "ollama",
+      "ggufAvailable": false,
+      "installed": false,
+      "health": "unknown",
+      "priority": 50,
+      "tags": [
+        "low-resource"
+      ]
+    },
+    {
+      "id": "phi3:mini",
+      "name": "Phi-3 Mini",
+      "provider": "ollama",
+      "modality": "text",
+      "capabilities": [
+        "CLASSIFICATION",
+        "JSON_GENERATION",
+        "TAGGING"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "MIT",
+      "commercialUse": "allowed",
+      "parameterCount": "3.8B",
+      "recommendedRamMb": 4096,
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "specializationScores": {},
+      "runtime": "ollama",
+      "ggufAvailable": false,
+      "installed": false,
+      "health": "unknown",
+      "priority": 53,
+      "tags": [
+        "low-resource"
+      ]
+    },
+    {
+      "id": "smollm:360m",
+      "name": "SmolLM 360M",
+      "provider": "ollama",
+      "modality": "text",
+      "capabilities": [
+        "CLASSIFICATION",
+        "TAGGING",
+        "ROUTING",
+        "METADATA"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "Apache-2.0",
+      "commercialUse": "allowed",
+      "parameterCount": "360M",
+      "minRamMb": 1024,
+      "recommendedRamMb": 2048,
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "specializationScores": {},
+      "runtime": "ollama",
+      "ggufAvailable": false,
+      "installed": false,
+      "health": "unknown",
+      "priority": 35,
+      "tags": [
+        "low-resource",
+        "cpu-friendly"
+      ]
+    },
+    {
+      "id": "starcoder2:7b",
+      "name": "StarCoder2 7B",
+      "provider": "ollama",
+      "modality": "text",
+      "capabilities": [
+        "CODE_GENERATION",
+        "GDSCRIPT",
+        "PYTHON",
+        "TYPESCRIPT"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "BigCode OpenRAIL-M",
+      "commercialUse": "restricted",
+      "parameterCount": "7B",
+      "recommendedRamMb": 8192,
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "specializationScores": {
+        "CODE": 88
+      },
+      "runtime": "ollama",
+      "ggufAvailable": false,
+      "installed": false,
+      "health": "unknown",
+      "priority": 65,
+      "tags": [
+        "coding"
+      ]
+    },
+    {
+      "id": "codellama:7b",
+      "name": "Code Llama 7B",
+      "provider": "ollama",
+      "modality": "text",
+      "capabilities": [
+        "CODE_GENERATION",
+        "GDSCRIPT"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "Llama 2 Community License",
+      "commercialUse": "allowed",
+      "parameterCount": "7B",
+      "recommendedRamMb": 8192,
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "specializationScores": {},
+      "runtime": "ollama",
+      "ggufAvailable": false,
+      "installed": false,
+      "health": "unknown",
+      "priority": 60,
+      "tags": [
+        "coding"
+      ]
+    },
+    {
+      "id": "qwen2.5-vl:7b",
+      "name": "Qwen2.5 VL 7B",
+      "provider": "ollama",
+      "modality": "vision",
+      "capabilities": [
+        "VISION_ANALYSIS",
+        "IMAGE_CRITIQUE",
+        "ASSET_TAGGING"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "Apache-2.0",
+      "commercialUse": "allowed",
+      "parameterCount": "7B",
+      "recommendedRamMb": 12288,
+      "recommendedVramMb": 8192,
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": true,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "specializationScores": {
+        "VISION": 88,
+        "QA": 80
+      },
+      "runtime": "ollama",
+      "ggufAvailable": false,
+      "installed": false,
+      "health": "unknown",
+      "priority": 55,
+      "tags": [
+        "vision",
+        "recommended"
+      ]
+    },
+    {
+      "id": "llava:7b",
+      "name": "LLaVA 7B",
+      "provider": "ollama",
+      "modality": "vision",
+      "capabilities": [
+        "VISION_ANALYSIS",
+        "IMAGE_CRITIQUE",
+        "ASSET_TAGGING"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "Apache-2.0",
+      "commercialUse": "unknown",
+      "parameterCount": "7B",
+      "recommendedRamMb": 12288,
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": true,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "specializationScores": {
+        "VISION": 75
+      },
+      "runtime": "ollama",
+      "ggufAvailable": false,
+      "installed": false,
+      "health": "unknown",
+      "priority": 40,
+      "tags": [
+        "vision"
+      ]
+    },
+    {
+      "id": "flux.1-schnell",
+      "name": "FLUX.1 Schnell",
+      "provider": "comfyui",
+      "repository": "https://huggingface.co/black-forest-labs/FLUX.1-schnell",
+      "modality": "image",
+      "capabilities": [
+        "IMAGE_GENERATION",
+        "CONCEPT_ART",
+        "CHARACTER_CONCEPT",
+        "ENVIRONMENT",
+        "BACKGROUND"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "Apache-2.0",
+      "commercialUse": "allowed",
+      "minVramMb": 8192,
+      "recommendedVramMb": 12288,
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": true,
+      "supportsAudio": false,
+      "specializationScores": {
+        "IMAGE": 92
+      },
+      "runtime": "comfyui",
+      "ggufAvailable": false,
+      "downloadSizeMb": 23000,
+      "installed": false,
+      "health": "unknown",
+      "priority": 60,
+      "tags": [
+        "image",
+        "recommended"
+      ]
+    },
+    {
+      "id": "sdxl-lightning",
+      "name": "SDXL Lightning",
+      "provider": "diffusers",
+      "repository": "https://huggingface.co/ByteDance/SDXL-Lightning",
+      "modality": "image",
+      "capabilities": [
+        "IMAGE_GENERATION",
+        "CONCEPT_ART",
+        "CHARACTER_CONCEPT",
+        "TILE_SOURCE"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "Model card required; verify SDXL Lightning terms",
+      "commercialUse": "unknown",
+      "minVramMb": 4096,
+      "recommendedVramMb": 8192,
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": true,
+      "supportsAudio": false,
+      "estimatedSpeed": "fast",
+      "estimatedQuality": "medium",
+      "specializationScores": {
+        "IMAGE": 90
+      },
+      "runtime": "diffusers",
+      "ggufAvailable": false,
+      "downloadSizeMb": 5000,
+      "installed": false,
+      "health": "unknown",
+      "priority": 60,
+      "tags": [
+        "image",
+        "recommended",
+        "fast"
+      ]
+    },
+    {
+      "id": "sdxl-turbo",
+      "name": "SDXL Turbo",
+      "provider": "diffusers",
+      "repository": "https://huggingface.co/stabilityai/sdxl-turbo",
+      "modality": "image",
+      "capabilities": [
+        "IMAGE_GENERATION",
+        "CONCEPT_ART",
+        "CHARACTER_CONCEPT",
+        "TILE_SOURCE"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "SAI NC Community License",
+      "commercialUse": "restricted",
+      "minVramMb": 4096,
+      "recommendedVramMb": 8192,
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": true,
+      "supportsAudio": false,
+      "specializationScores": {
+        "IMAGE": 88
+      },
+      "runtime": "diffusers",
+      "ggufAvailable": false,
+      "downloadSizeMb": 7000,
+      "installed": false,
+      "health": "unknown",
+      "priority": 55,
+      "tags": [
+        "image",
+        "recommended",
+        "low-vram"
+      ]
+    },
+    {
+      "id": "sdxl-base-1.0",
+      "name": "Stable Diffusion XL 1.0",
+      "provider": "diffusers",
+      "repository": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0",
+      "modality": "image",
+      "capabilities": [
+        "IMAGE_GENERATION",
+        "CONCEPT_ART",
+        "TILE_SOURCE",
+        "VFX_TEXTURE",
+        "UI_ART"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "OpenRAIL++-M",
+      "commercialUse": "restricted",
+      "recommendedVramMb": 8192,
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": true,
+      "supportsAudio": false,
+      "specializationScores": {
+        "IMAGE": 85,
+        "TEXTURE": 80
+      },
+      "runtime": "diffusers",
+      "ggufAvailable": false,
+      "downloadSizeMb": 6700,
+      "installed": false,
+      "health": "unknown",
+      "priority": 80,
+      "tags": [
+        "image"
+      ]
+    },
+    {
+      "id": "sd-1.5",
+      "name": "Stable Diffusion 1.5",
+      "provider": "diffusers",
+      "repository": "https://huggingface.co/runwayml/stable-diffusion-v1-5",
+      "modality": "image",
+      "capabilities": [
+        "IMAGE_GENERATION",
+        "ITEM_ICON",
+        "VFX_TEXTURE",
+        "UI_ART"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "CreativeML Open RAIL-M",
+      "commercialUse": "restricted",
+      "minVramMb": 2048,
+      "recommendedVramMb": 4096,
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": true,
+      "supportsAudio": false,
+      "estimatedSpeed": "medium",
+      "estimatedQuality": "medium",
+      "specializationScores": {
+        "IMAGE": 76,
+        "TEXTURE": 80
+      },
+      "runtime": "diffusers",
+      "ggufAvailable": false,
+      "downloadSizeMb": 4000,
+      "installed": false,
+      "health": "unknown",
+      "priority": 30,
+      "tags": [
+        "image",
+        "low-vram"
+      ]
+    },
+    {
+      "id": "stable-audio-open",
+      "name": "Stable Audio Open",
+      "provider": "diffusers",
+      "repository": "https://huggingface.co/stabilityai/stable-audio-open-1.0",
+      "modality": "audio",
+      "capabilities": [
+        "SFX_GENERATION",
+        "MUSIC_GENERATION"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "Stability AI Community License",
+      "commercialUse": "restricted",
+      "recommendedVramMb": 8192,
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": true,
+      "specializationScores": {
+        "AUDIO": 85,
+        "MUSIC": 80
+      },
+      "runtime": "diffusers",
+      "ggufAvailable": false,
+      "downloadSizeMb": 5000,
+      "installed": false,
+      "health": "unknown",
+      "priority": 75,
+      "tags": [
+        "audio"
+      ]
+    },
+    {
+      "id": "audiogen-medium",
+      "name": "AudioGen Medium",
+      "provider": "audiocraft",
+      "modality": "audio",
+      "capabilities": [
+        "SFX_GENERATION"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "MIT",
+      "commercialUse": "unknown",
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": true,
+      "specializationScores": {
+        "AUDIO": 78
+      },
+      "runtime": "transformers",
+      "ggufAvailable": false,
+      "installed": false,
+      "health": "unknown",
+      "priority": 65,
+      "tags": [
+        "audio",
+        "sfx"
+      ]
+    },
+    {
+      "id": "musicgen-small",
+      "name": "MusicGen Small",
+      "provider": "audiocraft",
+      "modality": "audio",
+      "capabilities": [
+        "MUSIC_GENERATION"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "MIT",
+      "commercialUse": "unknown",
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": true,
+      "specializationScores": {
+        "MUSIC": 82
+      },
+      "runtime": "transformers",
+      "ggufAvailable": false,
+      "installed": false,
+      "health": "unknown",
+      "priority": 70,
+      "tags": [
+        "music"
+      ]
+    },
+    {
+      "id": "procedural-sfx",
+      "name": "Procedural SFX Engine",
+      "provider": "metroforge",
+      "modality": "audio",
+      "capabilities": [
+        "PROCEDURAL_SFX",
+        "SFX_GENERATION"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "MIT",
+      "commercialUse": "allowed",
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": true,
+      "specializationScores": {
+        "AUDIO": 60
+      },
+      "runtime": "native",
+      "ggufAvailable": false,
+      "installed": true,
+      "health": "healthy",
+      "priority": 65,
+      "tags": [
+        "audio",
+        "fallback",
+        "cpu-friendly"
+      ],
+      "lastScoutedAt": "2026-08-13T11:34:23.351Z"
+    },
+    {
+      "id": "piper-en",
+      "name": "Piper TTS English",
+      "provider": "piper",
+      "modality": "speech",
+      "capabilities": [
+        "SPEECH_GENERATION"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "MIT",
+      "commercialUse": "allowed",
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "specializationScores": {},
+      "runtime": "piper",
+      "ggufAvailable": false,
+      "downloadSizeMb": 63,
+      "installed": false,
+      "health": "unknown",
+      "priority": 70,
+      "tags": [
+        "speech",
+        "optional"
+      ]
+    },
+    {
+      "id": "whisper-base",
+      "name": "Whisper Base",
+      "provider": "whisper.cpp",
+      "modality": "speech",
+      "capabilities": [
+        "SPEECH_RECOGNITION"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "MIT",
+      "commercialUse": "allowed",
+      "parameterCount": "74M",
+      "recommendedRamMb": 2048,
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "specializationScores": {},
+      "runtime": "whisper.cpp",
+      "ggufAvailable": false,
+      "downloadSizeMb": 148,
+      "installed": false,
+      "health": "unknown",
+      "priority": 65,
+      "tags": [
+        "speech"
+      ]
+    },
+    {
+      "id": "bge-small-en",
+      "name": "BGE Small EN",
+      "provider": "ollama",
+      "modality": "embedding",
+      "capabilities": [
+        "EMBEDDING"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "MIT",
+      "commercialUse": "allowed",
+      "parameterCount": "33M",
+      "recommendedRamMb": 2048,
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "specializationScores": {
+        "EMBEDDING": 85
+      },
+      "runtime": "ollama",
+      "ggufAvailable": false,
+      "installed": false,
+      "health": "unknown",
+      "priority": 80,
+      "tags": [
+        "embedding",
+        "recommended"
+      ]
+    },
+    {
+      "id": "nomic-embed-text",
+      "name": "Nomic Embed Text",
+      "provider": "ollama",
+      "modality": "embedding",
+      "capabilities": [
+        "EMBEDDING"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "Apache-2.0",
+      "commercialUse": "allowed",
+      "recommendedRamMb": 2048,
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "specializationScores": {},
+      "runtime": "ollama",
+      "ggufAvailable": false,
+      "installed": false,
+      "health": "unknown",
+      "priority": 75,
+      "tags": [
+        "embedding"
+      ]
+    },
+    {
+      "id": "rembg-u2net",
+      "name": "rembg U²-Net",
+      "provider": "rembg",
+      "modality": "segmentation",
+      "capabilities": [
+        "BACKGROUND_REMOVAL",
+        "SEGMENTATION"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "MIT",
+      "commercialUse": "allowed",
+      "recommendedRamMb": 4096,
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "specializationScores": {},
+      "runtime": "python",
+      "ggufAvailable": false,
+      "installed": false,
+      "health": "unknown",
+      "priority": 80,
+      "tags": [
+        "segmentation"
+      ]
+    },
+    {
+      "id": "real-esrgan-x4",
+      "name": "Real-ESRGAN x4",
+      "provider": "realesrgan",
+      "modality": "upscale",
+      "capabilities": [
+        "UPSCALING"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "BSD-3-Clause",
+      "commercialUse": "allowed",
+      "recommendedVramMb": 4096,
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "specializationScores": {},
+      "runtime": "python",
+      "ggufAvailable": false,
+      "installed": false,
+      "health": "unknown",
+      "priority": 70,
+      "tags": [
+        "upscale"
+      ]
+    },
+    {
+      "id": "depth-anything-v2",
+      "name": "Depth Anything V2",
+      "provider": "transformers",
+      "modality": "depth",
+      "capabilities": [
+        "DEPTH_ESTIMATION"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "Apache-2.0",
+      "commercialUse": "allowed",
+      "recommendedVramMb": 4096,
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "specializationScores": {},
+      "runtime": "transformers",
+      "ggufAvailable": false,
+      "installed": false,
+      "health": "unknown",
+      "priority": 65,
+      "tags": [
+        "depth",
+        "optional"
+      ]
+    },
+    {
+      "id": "gemini-2.0-flash",
+      "name": "Gemini 2.0 Flash",
+      "provider": "gemini",
+      "modality": "multimodal",
+      "capabilities": [
+        "TEXT_GENERATION",
+        "JSON_GENERATION",
+        "NARRATIVE",
+        "VISION_ANALYSIS"
+      ],
+      "local": false,
+      "enabled": false,
+      "costClass": "free",
+      "license": "Google Terms of Service",
+      "commercialUse": "unknown",
+      "contextWindow": 1000000,
+      "supportsTools": true,
+      "supportsStructuredOutput": true,
+      "supportsVision": true,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "specializationScores": {},
+      "ggufAvailable": false,
+      "installed": false,
+      "health": "unknown",
+      "priority": 80,
+      "tags": [
+        "hosted-free"
+      ]
+    },
+    {
+      "id": "groq-llama-3.3-70b",
+      "name": "Llama 3.3 70B (Groq)",
+      "provider": "groq",
+      "modality": "text",
+      "capabilities": [
+        "TEXT_GENERATION",
+        "REASONING",
+        "CODE_GENERATION",
+        "JSON_GENERATION"
+      ],
+      "local": false,
+      "enabled": false,
+      "costClass": "free",
+      "license": "Llama 3.3 Community License",
+      "commercialUse": "allowed",
+      "contextWindow": 128000,
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "specializationScores": {},
+      "ggufAvailable": false,
+      "installed": false,
+      "health": "unknown",
+      "priority": 75,
+      "tags": [
+        "image",
+        "low-vram"
+      ]
+    },
+    {
+      "id": "meta/llama-3.2-11b-vision-instruct",
+      "name": "Llama 3.2 11B Vision Instruct (NVIDIA NIM)",
+      "provider": "nvidia",
+      "modality": "vision",
+      "capabilities": [
+        "VISION_ANALYSIS",
+        "IMAGE_CRITIQUE",
+        "ASSET_TAGGING"
+      ],
+      "local": false,
+      "enabled": false,
+      "costClass": "free",
+      "usageClass": "development_prototyping",
+      "license": "Llama 3.2 Community License",
+      "commercialUse": "allowed",
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": true,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "specializationScores": {
+        "VISION": 85,
+        "QA": 78
+      },
+      "runtime": "nvidia-nim",
+      "ggufAvailable": false,
+      "installed": false,
+      "health": "unknown",
+      "priority": 80,
+      "tags": [
+        "hosted-free",
+        "nvidia-nim",
+        "vision",
+        "recommended"
+      ]
+    },
+    {
+      "id": "meta/llama-3.1-8b-instruct",
+      "name": "Llama 3.1 8B Instruct (NVIDIA NIM)",
+      "provider": "nvidia",
+      "modality": "text",
+      "capabilities": [
+        "TEXT_GENERATION",
+        "JSON_GENERATION",
+        "CLASSIFICATION",
+        "ROUTING"
+      ],
+      "local": false,
+      "enabled": false,
+      "costClass": "free",
+      "usageClass": "development_prototyping",
+      "license": "Llama 3.1 Community License",
+      "commercialUse": "allowed",
+      "contextWindow": 128000,
+      "supportsTools": false,
+      "supportsStructuredOutput": true,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "estimatedSpeed": "fast",
+      "specializationScores": {},
+      "ggufAvailable": false,
+      "installed": false,
+      "health": "unknown",
+      "priority": 65,
+      "tags": [
+        "hosted-free",
+        "nvidia-nim"
+      ]
+    },
+    {
+      "id": "nvidia/llama-3.1-nemotron-70b-instruct",
+      "name": "Llama 3.1 Nemotron 70B Instruct (NVIDIA NIM)",
+      "provider": "nvidia",
+      "modality": "text",
+      "capabilities": [
+        "TEXT_GENERATION",
+        "REASONING",
+        "JSON_GENERATION",
+        "WORLD_DESIGN",
+        "QA_REASONING",
+        "NARRATIVE"
+      ],
+      "local": false,
+      "enabled": false,
+      "costClass": "free",
+      "usageClass": "development_prototyping",
+      "license": "Llama 3.1 Community License",
+      "commercialUse": "allowed",
+      "contextWindow": 128000,
+      "supportsTools": false,
+      "supportsStructuredOutput": true,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "estimatedQuality": "high",
+      "specializationScores": {
+        "REASONING": 90,
+        "WORLD_DESIGN": 85,
+        "QA": 85
+      },
+      "ggufAvailable": false,
+      "installed": false,
+      "health": "unknown",
+      "priority": 78,
+      "tags": [
+        "hosted-free",
+        "nvidia-nim",
+        "recommended"
+      ]
+    },
+    {
+      "id": "deepseek-ai/deepseek-v4-flash-0731",
+      "name": "DeepSeek V4 Flash (NVIDIA NIM)",
+      "provider": "nvidia",
+      "modality": "text",
+      "capabilities": [
+        "TEXT_GENERATION",
+        "REASONING",
+        "JSON_GENERATION",
+        "WORLD_DESIGN",
+        "QA_REASONING"
+      ],
+      "local": false,
+      "enabled": false,
+      "costClass": "free",
+      "usageClass": "development_prototyping",
+      "license": "DeepSeek License",
+      "commercialUse": "unknown",
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "specializationScores": {
+        "REASONING": 88
+      },
+      "ggufAvailable": false,
+      "installed": false,
+      "health": "unknown",
+      "priority": 72,
+      "tags": [
+        "hosted-free",
+        "nvidia-nim"
+      ]
+    },
+    {
+      "id": "deepseek-ai/deepseek-coder-6.7b-instruct",
+      "name": "DeepSeek Coder 6.7B Instruct (NVIDIA NIM)",
+      "provider": "nvidia",
+      "modality": "text",
+      "capabilities": [
+        "CODE_GENERATION",
+        "GDSCRIPT",
+        "JSON_GENERATION"
+      ],
+      "local": false,
+      "enabled": false,
+      "costClass": "free",
+      "usageClass": "development_prototyping",
+      "license": "DeepSeek License",
+      "commercialUse": "unknown",
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "specializationScores": {
+        "CODE": 82,
+        "GDSCRIPT": 75
+      },
+      "ggufAvailable": false,
+      "installed": false,
+      "health": "unknown",
+      "priority": 60,
+      "tags": [
+        "hosted-free",
+        "nvidia-nim",
+        "coding"
+      ]
+    },
+    {
+      "id": "deterministic-fallback",
+      "name": "Deterministic Fallback",
+      "provider": "metroforge",
+      "modality": "text",
+      "capabilities": [
+        "TEXT_GENERATION",
+        "JSON_GENERATION",
+        "PROCEDURAL_SFX"
+      ],
+      "local": true,
+      "enabled": true,
+      "costClass": "free",
+      "license": "MIT",
+      "commercialUse": "allowed",
+      "supportsTools": false,
+      "supportsStructuredOutput": false,
+      "supportsVision": false,
+      "supportsImageGeneration": false,
+      "supportsAudio": false,
+      "specializationScores": {},
+      "runtime": "native",
+      "ggufAvailable": false,
+      "installed": true,
+      "health": "healthy",
+      "priority": 16,
+      "tags": [
+        "fallback",
+        "cpu-friendly"
+      ],
+      "lastScoutedAt": "2026-08-13T11:34:23.352Z"
+    }
+  ]
+}

@@ -37,7 +37,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     logLevel: (env.METROFORGE_LOG_LEVEL as AppConfig['logLevel']) ?? 'info',
     defaultMode: (env.METROFORGE_DEFAULT_MODE as GenerationMode) ?? 'LOCAL_ONLY',
     defaultProfile: (env.METROFORGE_DEFAULT_PROFILE as GenerationProfile) ?? 'TINY_TEST',
-    godotExecutable: env.GODOT_EXECUTABLE ?? null,
+    godotExecutable: env.GODOT_EXECUTABLE ?? env.GODOT4_PATH ?? env.GODOT_PATH ?? null,
     ollamaBaseUrl: env.OLLAMA_BASE_URL ?? 'http://localhost:11434',
   };
 }

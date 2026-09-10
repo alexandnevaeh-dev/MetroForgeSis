@@ -35,6 +35,14 @@ function createWindow(): void {
   } else {
     win.loadFile(join(__dirname, '../dist/index.html'));
   }
+
+  if (process.env.METROFORGE_OPEN_DEVTOOLS) win.webContents.openDevTools({ mode: 'detach' });
+  win.webContents.on('did-fail-load', (_event, code, description, validatedURL) => {
+    console.error('did-fail-load', { code, description, validatedURL });
+  });
+  win.webContents.on('console-message', (_event, _level, message, line, sourceId) => {
+    console.log('renderer-console', { message, line, sourceId });
+  });
 }
 
 app.whenReady().then(() => {

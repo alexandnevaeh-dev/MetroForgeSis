@@ -7,6 +7,8 @@ const ITEMS_PATH := "res://data/items/items.json"
 const BASE_MAX_HEALTH := 100.0
 const BASE_ATTACK := 10.0
 const EQUIP_SLOTS := ["weapon", "charm"]
+const HealthComponent = preload("res://scripts/combat/HealthComponent.gd")
+const HitboxComponent = preload("res://scripts/combat/HitboxComponent.gd")
 
 var _item_defs: Dictionary = {}
 var _collected_counts: Dictionary = {}

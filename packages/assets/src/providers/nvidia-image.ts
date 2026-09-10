@@ -2,6 +2,21 @@ import { spawnSync } from 'node:child_process';
 import type { ImageGenRequest, ImageGenResult, ImageGenerator, ImageProviderHealthReport } from '../types/image-gen.js';
 import { mergeAbortSignal } from '@metroforge/shared';
 import { decodePngRgba } from '../png.js';
+import {
+  classifyNvidiaHttpFailure,
+  hostedRequestBody,
+  parseNvidiaErrorBody,
+  requestHash,
+  type NvidiaImageEndpointFamily,
+  type NvidiaProviderDiagnostic,
+} from './nvidia-image-contract.js';
+import {
+  catalogSummary,
+  resolveNvidiaConfig,
+  type NvidiaDoctorReport,
+  type NvidiaDoctorReadiness,
+} from './nvidia-foundation.js';
+import { nvidiaModelById } from '../foundry/nvidia-catalog.js';
 
 export interface NvidiaImageConfig {
   apiKey?: string;
@@ -24,6 +39,8 @@ export interface NvidiaImageConfig {
   maxRetries?: number;
   /** Backoff between retries in ms (default [1000, 2000]). */
   retryBackoffMs?: number[];
+  /** OpenAI-compatible NIM root (…/v1). When set, IMAGE_EDIT prefers NIM over hosted preview. */
+  nimBaseUrl?: string;
 }
 
 interface GenaiImageResponse {
@@ -248,6 +265,9 @@ export class NvidiaImageProvider implements ImageGenerator {
   private readonly pythonPath: string;
   private readonly maxRetries: number;
   private readonly retryBackoffMs: number[];
+  readonly endpointFamily: NvidiaImageEndpointFamily = 'NVIDIA_HOSTED_BUILD_API';
+  private lastDiagnostic: NvidiaProviderDiagnostic | null = null;
+  private lastRequestId: string | undefined;
 
   constructor(config: NvidiaImageConfig = {}) {
     this.apiKey = config.apiKey ?? process.env.NVIDIA_API_KEY;
@@ -459,6 +479,88 @@ export class NvidiaImageProvider implements ImageGenerator {
     return details.status === 'HEALTHY' || details.status === 'DEGRADED';
   }
 
+  getLastDiagnostic(): NvidiaProviderDiagnostic | null {
+    return this.lastDiagnostic;
+  }
+
+  getLastRequestId(): string | undefined {
+    return this.lastRequestId;
+  }
+
+  /**
+   * Non-inferring health doctor for CLI / Providers UI. Never returns or logs the API key.
+   */
+  async doctor(): Promise<NvidiaDoctorReport> {
+    const cfg = resolveNvidiaConfig();
+    const summary = catalogSummary();
+    if (!this.enabled || !this.apiKey) {
+      return {
+        provider: 'nvidia',
+        configured: false,
+        authenticated: false,
+        apiReachable: false,
+        catalogReachable: false,
+        imageGenerationAvailable: false,
+        readiness: 'NOT_CONFIGURED',
+        baseUrl: this.baseUrl,
+        imageApiBaseUrl: this.imageApiBaseUrl,
+        deployment: cfg.deployment,
+        endpointFamily: this.endpointFamily,
+        configuredImageModel: this.modelId,
+        enabledModels: summary.verifiedModels,
+        disabledUnverifiedModels: summary.disabledUnverifiedModels,
+        latencyMs: null,
+        healthStatus: 'MISCONFIGURED',
+        reason: 'NVIDIA_API_KEY is not configured',
+        setupInstructions: [
+          'Set NVIDIA_API_KEY in the repo-root .env (never commit it).',
+          'Optional: NVIDIA_API_BASE_URL, NVIDIA_IMAGE_API_BASE_URL, NVIDIA_IMAGE_MODEL.',
+        ],
+        secretRedaction: 'SAFE',
+      };
+    }
+
+    const details = await this.getHealthDetails();
+    const authenticated = details.status !== 'AUTH_FAILED' && details.status !== 'MISCONFIGURED';
+    const apiReachable =
+      details.status === 'HEALTHY' ||
+      details.status === 'DEGRADED' ||
+      details.status === 'MODEL_UNAVAILABLE' ||
+      details.status === 'RATE_LIMITED';
+    const catalogReachable = apiReachable;
+    const imageGenerationAvailable =
+      details.status === 'HEALTHY' || details.status === 'DEGRADED';
+
+    let readiness: NvidiaDoctorReadiness;
+    if (details.status === 'AUTH_FAILED') readiness = 'AUTH_REQUIRED';
+    else if (details.status === 'NETWORK_ERROR' || details.status === 'UNAVAILABLE') readiness = 'UNREACHABLE';
+    else if (details.status === 'DEGRADED' || details.status === 'MODEL_UNAVAILABLE') readiness = 'DEGRADED';
+    else if (imageGenerationAvailable) readiness = 'IMAGE_GENERATION_READY';
+    else readiness = 'UNREACHABLE';
+
+    return {
+      provider: 'nvidia',
+      configured: true,
+      authenticated,
+      apiReachable,
+      catalogReachable,
+      imageGenerationAvailable,
+      readiness,
+      baseUrl: this.baseUrl,
+      imageApiBaseUrl: this.imageApiBaseUrl,
+      deployment: cfg.deployment,
+      endpointFamily: this.endpointFamily,
+      configuredImageModel: this.modelId,
+      enabledModels: summary.verifiedModels,
+      disabledUnverifiedModels: summary.disabledUnverifiedModels,
+      latencyMs: details.latencyMs,
+      healthStatus: details.status,
+      reason: details.reason,
+      setupInstructions: details.safeDiagnostic ? [details.safeDiagnostic] : undefined,
+      secretRedaction: 'SAFE',
+    };
+  }
+
   async generateImage(request: ImageGenRequest): Promise<ImageGenResult> {
     if (!this.apiKey) {
       throw new Error('NVIDIA_API_KEY is not configured');
@@ -472,7 +574,7 @@ export class NvidiaImageProvider implements ImageGenerator {
       try {
         // Slight seed jitter on retries — same prompt+seed often re-hits CONTENT_FILTERED.
         const attemptSeed = attempt === 1 ? seed : (seed + attempt * 9973) >>> 0;
-        return await this.generateImageOnce(request, attemptSeed);
+        return await this.generateImageOnce(request, attemptSeed, attempt);
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
         const retryable = isRetryableNvidiaImageError(lastError);
@@ -493,19 +595,27 @@ export class NvidiaImageProvider implements ImageGenerator {
     throw lastError ?? new Error('NVIDIA image generation failed');
   }
 
-  private async generateImageOnce(request: ImageGenRequest, seed: number): Promise<ImageGenResult> {
+  private async generateImageOnce(request: ImageGenRequest, seed: number, attempt: number): Promise<ImageGenResult> {
     const width = clampFluxDim(request.width);
     const height = clampFluxDim(request.height);
     const modelId = request.modelOverride ?? this.modelId;
     const url = `${this.imageApiBaseUrl}/${modelId}`;
 
-    const payload: Record<string, unknown> = {
-      prompt: request.prompt,
-      seed,
-      width,
-      height,
-    };
-    if (request.conditioning?.image) {
+    let payload: Record<string, unknown>;
+    try {
+      payload = hostedRequestBody({
+        prompt: request.prompt,
+        seed,
+        width,
+        height,
+        reference: nvidiaModelById(modelId)?.supportsReferenceImages
+          ? request.conditioning?.image
+          : undefined,
+      });
+    } catch (error) {
+      throw new Error(`NVIDIA request invalid: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    if (request.conditioning?.image && nvidiaModelById(modelId)?.supportsReferenceImages) {
       // Hosted Kontext infers a data URI. Raw base64 (or extra fields like `strength`)
       // 422s the preview schema. NIM docs: `data:image/png;base64,<bytes>`.
       const img = request.conditioning.image;
@@ -553,10 +663,27 @@ export class NvidiaImageProvider implements ImageGenerator {
     }
     if (!res.ok) {
       const msg = parseErrorMessage(body, res.status);
+      const parsed = parseNvidiaErrorBody(body);
+      this.lastDiagnostic = {
+        category: classifyNvidiaHttpFailure(res.status),
+        endpointFamily: this.endpointFamily,
+        status: res.status,
+        contentType: res.headers.get('content-type') ?? undefined,
+        errorType: parsed.errorType,
+        field: parsed.field,
+        location: parsed.location,
+        message: (parsed.message ?? msg).slice(0, 400),
+        requestId: res.headers.get('nvcf-request-id') ?? res.headers.get('x-request-id') ?? undefined,
+        attempt,
+        requestHash: requestHash(payload),
+      };
       if (res.status === 422 && /example_id/i.test(`${msg} ${rawText}`)) {
         throw new Error(
           'NVIDIA flux.1-kontext-dev hosted preview only accepts canned example_id images, not custom sprites (HTTP 422). Pose generation STOPPED.',
         );
+      }
+      if (res.status === 422) {
+        throw new Error(`NVIDIA image request invalid (HTTP 422): ${parsed.field ?? 'unknown field'} ${parsed.message ?? msg}`);
       }
       throw new Error(msg);
     }
@@ -609,7 +736,8 @@ export class NvidiaImageProvider implements ImageGenerator {
     const image = ensurePngBuffer(decoded, this.pythonPath);
     assertPngHasVisibleContent(image);
 
-    // After size/magic/visible checks, SUCCESS and CONTENT_FILTERED-with-valid-pixels both return.
+    this.lastRequestId =
+      res.headers.get('nvcf-request-id') ?? res.headers.get('x-request-id') ?? undefined;
 
     return {
       image,
@@ -622,6 +750,7 @@ export class NvidiaImageProvider implements ImageGenerator {
       selectedModel: modelId,
       requestedCapability: 'IMAGE_GENERATION',
       productionAllowed: true,
+      requestId: this.lastRequestId,
     };
   }
 }

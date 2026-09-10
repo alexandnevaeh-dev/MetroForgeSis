@@ -70,6 +70,14 @@ func _set_telegraph_visual(active: bool) -> void:
 	_telegraph_active = active
 	if sprite:
 		sprite.modulate = Color(1.45, 0.4, 0.4) if active else Color.WHITE
+	if active:
+		# A body-tint alone only reads once a player is already looking at the boss — a real
+		# ground-anchored warning ring gives a second, more spatial "an attack is coming" signal,
+		# visible even at a glance, and is exactly the ring VFXManager.play_ring() already knows
+		# how to draw. Timed to the same real _get_phase_telegraph() duration used to actually
+		# hold the boss still below, so the visible warning and the real windup window never drift
+		# apart — a player who reacts to the ring gets the same real evade time either way.
+		VFXManager.play_ring("attack_warning", global_position, 8, 40.0, 1.0)
 
 func _start_attack_loop() -> void:
 	# Opening beat before the first telegraph — uses phase-1 recovery so larger profiles feel
@@ -162,7 +170,11 @@ func _physics_process(delta: float) -> void:
 		elif _telegraph_active:
 			if sprite.sprite_frames.has_animation("idle"):
 				sprite.play("idle")
-		else:
+		elif sprite.animation != "walk":
+			# Genre-parity fix: this is a real, looping 4-frame walk-cycle (AnimatedAssetSprite.gd)
+			# — without this guard, play("walk") ran every physics frame (60/sec) whenever the
+			# boss was neither hurt, mid-attack, nor telegraphing, restarting the clip to frame 0
+			# each tick and visually freezing it on frame 0 forever instead of ever animating.
 			sprite.play("walk")
 
 func _perform_attack() -> void:
@@ -242,6 +254,28 @@ func _on_health_changed(current: float, max_h: float) -> void:
 		VFXManager.play_phase_shift(global_position)
 		AudioManager.play_sfx("boss_hit")
 
+## Real per-frame duration for a 3-frame clip at SpriteFrames' engine default of 5fps
+## (0.6s), plus a small buffer — AnimatedAssetSprite.gd never sets a custom animation speed
+## (that's a side-view-only feature, its own metadata-sidecar pass), so the default applies.
+## A fixed, disclosed constant rather than computing it from sprite_frames at runtime: the
+## death animation must still finish even when a project's boss has no real death sheet
+## (get_frame_count("death") would be 0, computing a bogus near-zero wait) or a fallback
+## single-frame placeholder (get_animation_speed()/get_frame_count() on an animation that
+## doesn't exist would error, not just return 0).
+const DEATH_ANIMATION_DURATION_SEC := 0.7
+
 func _on_died() -> void:
+	set_physics_process(false)
+	attack_hitbox.deactivate()
+	# Previously queue_free()'d immediately on death — even after death_sheet_path was wired in
+	# (see AnimatedAssetSprite.gd), nothing ever actually played that animation before the node
+	# was destroyed. Real wall-clock wait, not `await sprite.animation_finished`: that signal was
+	# already found unreliable for a death sequence in this exact codebase (see
+	# PlayerController.gd's own _on_died() history) and isn't trusted here either.
+	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("death"):
+		sprite.play("death")
+		await get_tree().create_timer(DEATH_ANIMATION_DURATION_SEC).timeout
+	# Victory (EventBus.boss_defeated -> GameManager.current_state = VICTORY) intentionally waits
+	# until after the death animation has actually played, not simultaneously with it.
 	EventBus.boss_defeated.emit(boss_id)
 	queue_free()

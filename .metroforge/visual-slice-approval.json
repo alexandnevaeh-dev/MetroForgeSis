@@ -1,0 +1,10 @@
+{
+  "visualSliceApproved": false,
+  "status": "VISUAL_SLICE_REJECTED",
+  "projectSlug": "foundry-visual-slice-20260909",
+  "rejectedAt": "2026-09-10T03:11:52.419Z",
+  "notes": "Human REJECT after reviewing the 12-shot packet against Foundry V3 gameplay.png. Courier/claw/furnace and 32px industrial kit now reach rooms, but composition still fails: camera letterboxing (navy band above the 1920x320 corridor plate), dense procedural tile stacks instead of MOTION LAB/SECURITY set dressing, placeholder yellow item/NPC/save-point stubs. Automated critic 34 (tileRepetition/composition/presentationQuality). Not approved for MASS/LARGE/RC.",
+  "evidenceHash": "42be4604672d5fde",
+  "reviewer": "Alexis",
+  "updatedAt": "2026-09-10T03:11:52.468Z"
+}

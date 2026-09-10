@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { decodePngRgba, encodePng } from '../src/png.js';
-import { generateParallaxStrip, punchParallaxAlpha, farPlateLooksLikeOutdoorLandscape } from '../src/parallax-strip.js';
+import { generateParallaxStrip, punchParallaxAlpha, farPlateLooksLikeOutdoorLandscape, partitionBackgroundFeatures, BACKGROUND_SUPPORTED_FEATURES } from '../src/parallax-strip.js';
 
 function countAlpha(png: Buffer, pred: (a: number, t: number) => boolean): number {
   const { rgba, width, height } = decodePngRgba(png);
@@ -124,10 +124,14 @@ describe('parallax strips', () => {
   });
 
   it('paints receding hall mass in the lower far plate instead of empty night', () => {
+    // The pier/wall/dado band (t≈0.55–0.72, before the lit floor) is the region this checks —
+    // that architecture now ramps toward the floor's glow by design (see the QA-critic crop-
+    // robustness comment on paintFarHallMass), so sampling all the way to the floor itself would
+    // measure the wrong thing. The dark-mass claim still holds where the ramp hasn't kicked in yet.
     const { rgba, width, height } = decodePngRgba(generateParallaxStrip('far', 7, 160, 90));
     let mass = 0;
     let sampled = 0;
-    for (let y = Math.floor(height * 0.55); y < height; y++) {
+    for (let y = Math.floor(height * 0.55); y < Math.floor(height * 0.72); y++) {
       for (let x = 0; x < width; x++) {
         const i = (y * width + x) * 4;
         const g = rgba[i + 1]!;
@@ -152,5 +156,63 @@ describe('parallax strips', () => {
       }
     }
     expect(bright / sampled).toBeLessThan(0.012);
+  });
+});
+
+describe('generateParallaxStrip biome material features (fifteenth session)', () => {
+  it('is byte-identical to the un-featured output when no features are passed, for every layer', () => {
+    for (const layer of ['far', 'mid', 'near'] as const) {
+      const a = generateParallaxStrip(layer, 7, 160, 90, undefined);
+      const b = generateParallaxStrip(layer, 7, 160, 90, undefined, undefined);
+      expect(a.equals(b)).toBe(true);
+    }
+  });
+
+  it('declares an unrecognized feature explicitly instead of silently ignoring it', () => {
+    const { supported, unsupported } = partitionBackgroundFeatures(['corrosion', 'panel_grates', 'lava_flow']);
+    expect(supported).toEqual(['corrosion']);
+    expect(unsupported).toEqual(['panel_grates', 'lava_flow']);
+    expect(BACKGROUND_SUPPORTED_FEATURES).not.toContain('panel_grates');
+  });
+
+  it('never applies material features to the far layer (protects the outdoor-landscape QA check)', () => {
+    const plain = generateParallaxStrip('far', 7, 160, 90, [[20, 60, 30], [40, 90, 50], [60, 120, 70]]);
+    const featured = generateParallaxStrip('far', 7, 160, 90, [[20, 60, 30], [40, 90, 50], [60, 120, 70]], [
+      'vegetation',
+      'corrosion',
+    ]);
+    expect(plain.equals(featured)).toBe(true);
+  });
+
+  it('applying a feature to the near layer changes pixels but only on already-opaque architecture, never introducing new opaque area', () => {
+    const palette: [number, number, number][] = [
+      [20, 30, 25],
+      [40, 60, 45],
+      [70, 100, 75],
+      [90, 130, 95],
+      [30, 120, 40],
+      [50, 140, 60],
+    ];
+    const base = decodePngRgba(generateParallaxStrip('near', 21, 320, 180, palette));
+    const featured = decodePngRgba(generateParallaxStrip('near', 21, 320, 180, palette, ['vegetation', 'corrosion']));
+    let changed = 0;
+    for (let i = 0; i < base.rgba.length; i += 4) {
+      // Alpha channel must be untouched by material dressing — only color, never transparency.
+      expect(featured.rgba[i + 3]).toBe(base.rgba[i + 3]);
+      if (base.rgba[i] !== featured.rgba[i] || base.rgba[i + 1] !== featured.rgba[i + 1] || base.rgba[i + 2] !== featured.rgba[i + 2]) {
+        changed++;
+        expect(base.rgba[i + 3]).toBeGreaterThanOrEqual(40); // only dressed where already opaque
+      }
+    }
+    expect(changed).toBeGreaterThan(0);
+  });
+
+  it('same seed + features reproduces identical output; a different seed varies it', () => {
+    const palette: [number, number, number][] = [[15, 30, 40], [40, 60, 70], [80, 110, 120], [100, 130, 140], [90, 60, 40], [60, 100, 60]];
+    const a = generateParallaxStrip('mid', 55, 320, 180, palette, ['corrosion', 'stains']);
+    const b = generateParallaxStrip('mid', 55, 320, 180, palette, ['corrosion', 'stains']);
+    const c = generateParallaxStrip('mid', 99, 320, 180, palette, ['corrosion', 'stains']);
+    expect(a.equals(b)).toBe(true);
+    expect(a.equals(c)).toBe(false);
   });
 });

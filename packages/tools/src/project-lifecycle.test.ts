@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync, readFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync, readFileSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import {
@@ -51,7 +51,7 @@ describe('project-lifecycle', () => {
     const path = stubProject(root, 'my-game');
     const resolved = resolveProjectBySlug(root, 'my-game');
     expect(resolved.success).toBe(true);
-    expect(resolved.projectPath).toBe(path);
+    expect(resolved.projectPath).toBe(realpathSync(path));
     expect(resolveProjectBySlug(root, '../escape').success).toBe(false);
   });
 

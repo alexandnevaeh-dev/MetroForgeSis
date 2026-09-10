@@ -100,4 +100,29 @@ describe('assignRoomArchetypes', () => {
     ]);
     expect(archetypes[abilityGateRoomIndex(0, 1, 10)]).toBe('ability_shrine');
   });
+
+  it('scales VISUAL_VERTICAL_SLICE past 10 rooms without any room falling back to undefined/combat', () => {
+    // Regression: PROFILE_DEFAULTS.VISUAL_VERTICAL_SLICE requests 12-15 rooms, but the archetype
+    // list used to be a fixed 10-entry array — rooms past index 9 got `archetype: undefined` in
+    // the world graph, which fell back to 'combat' for geometry while a separate isBossRoom check
+    // still published the true last room as 'boss', producing a boss room composed as a generic
+    // combat room (BOSS_ROOM_GENERIC). Every room must now get a real, defined archetype tag, and
+    // the true last room must always be the one tagged 'boss'.
+    for (const roomCount of [12, 13, 14, 15]) {
+      const archetypes = assignRoomArchetypes({
+        roomCount,
+        abilityCount: 1,
+        npcCount: 1,
+        biomeCount: 3,
+        seed: 184729,
+        profile: 'VISUAL_VERTICAL_SLICE',
+      });
+      expect(archetypes).toHaveLength(roomCount);
+      expect(archetypes.every((a) => typeof a === 'string' && a.length > 0)).toBe(true);
+      expect(archetypes[0]).toBe('tutorial');
+      expect(archetypes[roomCount - 1]).toBe('boss');
+      expect(archetypes.filter((a) => a === 'boss')).toHaveLength(1);
+      expect(archetypes[abilityGateRoomIndex(0, 1, roomCount)]).toBe('ability_shrine');
+    }
+  });
 });

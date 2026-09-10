@@ -26,13 +26,16 @@ def write_response(payload: dict[str, Any]) -> None:
 
 
 def health_check() -> dict[str, Any]:
-    try:
-        import torch  # noqa: F401
-        import diffusers  # noqa: F401
+    # Health probes run during broad project-generation tests. Importing torch here can start
+    # native runtime threads (or stall in driver discovery) and retain the Vitest worker after
+    # the probe timeout. Keep the probe side-effect free; the generate action still performs
+    # the real imports and reports any runtime failure.
+    import importlib.util
 
-        return {"ok": True, "provider": "stable-audio", "cuda": torch.cuda.is_available()}
-    except ImportError as exc:
-        return {"ok": False, "error": str(exc), "provider": "stable-audio"}
+    missing = [name for name in ("torch", "diffusers") if importlib.util.find_spec(name) is None]
+    if missing:
+        return {"ok": False, "error": f"missing modules: {', '.join(missing)}", "provider": "stable-audio"}
+    return {"ok": True, "provider": "stable-audio", "runtime_discovery": "module_specs_present"}
 
 
 _pipeline = None

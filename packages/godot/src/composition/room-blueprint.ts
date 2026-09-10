@@ -88,6 +88,33 @@ export interface LandmarkPlan {
   kind: string;
 }
 
+export type MajorArchitectureRole = 'edge_pillar' | 'wall_buttress' | 'focal_frame' | 'arena_frame';
+
+export interface RoomPlanZone extends GeometryRect {
+  purpose: 'safe' | 'combat' | 'decoration' | 'no_decoration' | 'foreground_exclusion';
+}
+
+/** Single composition contract consumed by geometry, scene assembly, and room QA. */
+export interface RoomPlan {
+  dominantAxis: 'horizontal' | 'vertical' | 'balanced';
+  entryPoints: Array<{ direction: string; x: number; y: number }>;
+  exitPoints: Array<{ direction: string; x: number; y: number }>;
+  gameplayFloors: GeometryRect[];
+  platformRegions: GeometryRect[];
+  wallRegions: GeometryRect[];
+  ceilingRegions: GeometryRect[];
+  majorArchitecture: Array<{ role: MajorArchitectureRole; x: number; grounded: boolean }>;
+  focalPoint: { x: number; y: number; kind: string };
+  safeZones: GeometryRect[];
+  combatZones: GeometryRect[];
+  decorationZones: RoomPlanZone[];
+  noDecorationZones: RoomPlanZone[];
+  foregroundExclusionZones: RoomPlanZone[];
+  visualTheme: string;
+  landmarkType: string;
+  propBudget: { clusters: number; propsPerCluster: number; majorStructures: number };
+}
+
 export interface RoomVisualIntent {
   depthLayers: string[];
   platformStrategy: PlatformVisualStrategy;
@@ -118,6 +145,7 @@ export interface RoomBlueprint {
   lighting: LightingPlan;
   atmosphere: AtmospherePlan;
   landmarks: LandmarkPlan[];
+  plan: RoomPlan;
   visualIntent: RoomVisualIntent;
 }
 

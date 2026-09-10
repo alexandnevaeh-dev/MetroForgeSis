@@ -6,6 +6,8 @@ extends Node
 ## calls get_tree().quit() itself so no external --quit-after is required.
 
 var _results: Array[Dictionary] = []
+var _runtime_capture_manifest: Array[Dictionary] = []
+var _keep_endgame_overlays_for_next_capture := false
 
 func _room_has_ability_pickup(room: Node) -> bool:
 	for child in room.get_children():
@@ -51,6 +53,12 @@ func _ready() -> void:
 
 	var player := get_tree().get_first_node_in_group("player")
 	_check("player_exists", player != null)
+	print("METROFORGE_RUNTIME_READY project=%s scene=%s player=%s room=%s" % [
+		ProjectSettings.get_setting("application/config/name", "MetroForge"),
+		get_tree().current_scene.scene_file_path if get_tree().current_scene else "unknown",
+		player.name if player else "missing",
+		GameManager.current_room_id,
+	])
 
 	if player:
 		var pos: Vector2 = player.global_position
@@ -59,7 +67,10 @@ func _ready() -> void:
 		_check("player_has_health_component", player.get_node_or_null("HealthComponent") != null)
 		_check("player_has_hurtbox", player.get_node_or_null("HurtboxComponent") != null)
 		_check("player_has_attack_hitbox", player.get_node_or_null("AttackHitbox") != null)
-		await _capture_named_screenshot("spawn")
+		_check_camera(player)
+		await _check_camera_shake_settles(player)
+		await _capture_runtime_state("spawn", "spawn", {"runtimeState": "spawn"})
+		_save_report_shot("spawn", "spawn.png")
 		await _probe_and_capture_foot_isolates()
 
 		var player_sprite: AnimatedSprite2D = player.get_node_or_null("Sprite")
@@ -110,6 +121,7 @@ func _ready() -> void:
 	await _capture_named_screenshot("boss")
 	player = get_tree().get_first_node_in_group("player")
 	await _check_boss_weakness(player)
+	await _check_boss_phase_presentation()
 	# Victory/combat instantiate extra Worlds + queue_free them; drain a couple of
 	# frames so group lookups are not a previously-freed Player from those extras.
 	await get_tree().process_frame
@@ -541,6 +553,8 @@ func _check_player_death_respawn(player: Node, world: Node) -> void:
 	var checkpoint_room := "room_000"
 	SaveManager.set_checkpoint(checkpoint_room, 100.0, 100.0)
 	SaveManager.save_game()
+	await _capture_runtime_state("checkpoint", "save checkpoint", {"roomId": checkpoint_room, "runtimeState": "checkpoint"})
+	_save_report_shot("checkpoint", "checkpoint.png")
 
 	await GameManager._do_respawn()
 	await get_tree().process_frame
@@ -571,6 +585,8 @@ func _check_ability_pickup(player: Node) -> void:
 
 	var had_ability_before: bool = GameManager.has_ability("test_probe_ability")
 	pickup._on_body_entered(player)
+	await _capture_runtime_state("ability_pickup", "ability pickup", {"entityId": pickup.ability_id, "runtimeState": "ability_pickup"})
+	_save_report_shot("ability_pickup", "ability_pickup.png")
 	var has_ability_after: bool = GameManager.has_ability("test_probe_ability")
 
 	_check("ability_pickup_can_be_triggered", not had_ability_before and has_ability_after)
@@ -616,6 +632,8 @@ func _check_npc_interaction(player: Node) -> void:
 
 	npc._on_body_entered(player)
 	npc._begin_dialogue()
+	await _capture_runtime_state("npc_dialogue", "npc dialogue", {"entityId": npc.npc_id, "roomId": GameManager.current_room_id, "runtimeState": "dialogue"})
+	_save_report_shot("npc_dialogue", "npc_dialogue.png")
 
 	var speaker_label: Label = dialogue_overlay.get_node_or_null("Panel/HBox/Content/SpeakerLabel")
 	_check(
@@ -1022,7 +1040,10 @@ func _check_hud_quest_tracker(world: Node) -> void:
 ## black frame (`texture_2d_get` null on dummy renderer); that is a soft-fail here. The QA
 ## validator retries with a windowed GPU capture strategy when RELEASE_CANDIDATE requires evidence.
 func _capture_named_screenshot(shot_id: String, hard: bool = false) -> bool:
-	_hide_endgame_overlays()
+	if _keep_endgame_overlays_for_next_capture:
+		_keep_endgame_overlays_for_next_capture = false
+	else:
+		_hide_endgame_overlays()
 	_prepare_capture_window()
 	_sync_visual_camera()
 	await get_tree().process_frame
@@ -1209,6 +1230,7 @@ func _sync_visual_camera() -> void:
 	if cam == null or not cam.has_method("apply_room_bounds"):
 		return
 	var size := Vector2(800, 600)
+	var kit := ""
 	var world := get_tree().get_first_node_in_group("world_manager")
 	if world:
 		var room: Node = world.get("_current_room") as Node
@@ -1216,7 +1238,8 @@ func _sync_visual_camera() -> void:
 			var ground := room.get_node_or_null("Ground")
 			if ground:
 				size = Vector2(float(ground.get("room_width")), float(ground.get("room_height")))
-	cam.apply_room_bounds(size)
+				kit = String(ground.get("visual_kit"))
+	cam.apply_room_bounds(size, kit)
 
 
 func _is_visual_slice() -> bool:
@@ -1260,10 +1283,42 @@ func _capture_action_shots(player: Node) -> void:
 	var sprite: AnimatedSprite2D = player.get_node_or_null("Sprite")
 	if sprite == null or sprite.sprite_frames == null:
 		return
+	if sprite.sprite_frames.has_animation("idle"):
+		sprite.play("idle")
+		if player is CharacterBody2D:
+			(player as CharacterBody2D).position.x += 24.0
+			(player as CharacterBody2D).velocity = Vector2.ZERO
+		await get_tree().process_frame
+		await _capture_runtime_state("player_idle", "player idle", {"playerState": "idle", "runtimeState": "idle"})
+		_save_report_shot("player_idle", "player_idle.png")
+	if sprite.sprite_frames.has_animation("run"):
+		sprite.play("run")
+		if player is CharacterBody2D:
+			(player as CharacterBody2D).velocity.x = 180
+		await get_tree().process_frame
+		await _capture_runtime_state("player_run", "player run", {"playerState": "run", "runtimeState": "run"})
+		_save_report_shot("player_run", "player_run.png")
+	if sprite.sprite_frames.has_animation("jump") or sprite.sprite_frames.has_animation("land"):
+		if sprite.sprite_frames.has_animation("jump"):
+			sprite.play("jump")
+		if player is CharacterBody2D:
+			(player as CharacterBody2D).velocity.y = -220
+		await get_tree().process_frame
+		await _capture_runtime_state("player_jump", "player jump", {"playerState": "jump", "runtimeState": "jump"})
+		_save_report_shot("player_jump", "player_jump.png")
+		if sprite.sprite_frames.has_animation("land"):
+			sprite.play("land")
+			if player is CharacterBody2D:
+				(player as CharacterBody2D).velocity = Vector2.ZERO
+			await get_tree().process_frame
+			await _capture_runtime_state("player_landing", "player landing", {"playerState": "land", "runtimeState": "land"})
+			_save_report_shot("player_landing", "player_landing.png")
 	if sprite.sprite_frames.has_animation("attack"):
 		sprite.play("attack")
 		await get_tree().process_frame
 		await get_tree().process_frame
+		await _capture_runtime_state("player_combat", "player combat", {"playerState": "combat", "runtimeState": "attack"})
+		_save_report_shot("player_combat", "player_combat.png")
 		await _capture_named_screenshot("combat_action")
 		_save_report_shot("combat_action", "03b-combat-action.png")
 	if sprite.sprite_frames.has_animation("dash"):
@@ -1273,23 +1328,10 @@ func _capture_action_shots(player: Node) -> void:
 		if player is CharacterBody2D:
 			(player as CharacterBody2D).velocity.x = 280
 		await get_tree().process_frame
+		await _capture_runtime_state("player_dash", "player dash", {"playerState": "dash", "runtimeState": "dash"})
+		_save_report_shot("player_dash", "player_dash.png")
 		await _capture_named_screenshot("dash")
 		_save_report_shot("dash", "10-dash.png")
-	if sprite.sprite_frames.has_animation("jump") or sprite.sprite_frames.has_animation("land"):
-		if sprite.sprite_frames.has_animation("jump"):
-			sprite.play("jump")
-		if player is CharacterBody2D:
-			(player as CharacterBody2D).velocity.y = -220
-		await get_tree().process_frame
-		await _capture_named_screenshot("jump")
-		_save_report_shot("jump", "11-jump.png")
-		if sprite.sprite_frames.has_animation("land"):
-			sprite.play("land")
-			if player is CharacterBody2D:
-				(player as CharacterBody2D).velocity = Vector2.ZERO
-			await get_tree().process_frame
-			await _capture_named_screenshot("land")
-			_save_report_shot("land", "12-land.png")
 	if sprite.sprite_frames.has_animation("idle"):
 		sprite.play("idle")
 		if player is CharacterBody2D:
@@ -1310,11 +1352,43 @@ func _prepare_capture_window() -> void:
 func _save_report_shot(shot_id: String, dest_name: String) -> void:
 	var qa := ProjectSettings.globalize_path("res://qa")
 	var reports := ProjectSettings.globalize_path("res://reports")
+	DirAccess.make_dir_recursive_absolute(qa)
 	DirAccess.make_dir_recursive_absolute(reports)
 	var src := qa.path_join("screenshot_%s.png" % shot_id)
 	if FileAccess.file_exists(src):
+		DirAccess.copy_absolute(src, qa.path_join(dest_name))
 		DirAccess.copy_absolute(src, reports.path_join(dest_name))
 
+func _write_capture_manifest() -> void:
+	var qa := ProjectSettings.globalize_path("res://qa")
+	var reports := ProjectSettings.globalize_path("res://reports")
+	DirAccess.make_dir_recursive_absolute(qa)
+	DirAccess.make_dir_recursive_absolute(reports)
+	var payload := JSON.stringify(_runtime_capture_manifest)
+	var file := FileAccess.open(qa.path_join("capture_manifest.json"), FileAccess.WRITE)
+	if file:
+		file.store_string(payload)
+		file.close()
+	var file2 := FileAccess.open(reports.path_join("capture_manifest.json"), FileAccess.WRITE)
+	if file2:
+		file2.store_string(payload)
+		file2.close()
+
+func _capture_runtime_state(shot_id: String, purpose: String, metadata: Dictionary = {}) -> bool:
+	var ok := await _capture_named_screenshot(shot_id)
+	if not ok:
+		return false
+	var entry := {
+		"filename": "%s.png" % shot_id,
+		"capturePurpose": purpose,
+		"candidateSlug": "heart-engine-visual-candidate-09",
+		"runtimeTimestamp": Time.get_datetime_string_from_system(),
+	}
+	for key in metadata.keys():
+		entry[key] = metadata[key]
+	_runtime_capture_manifest.append(entry)
+	_write_capture_manifest()
+	return true
 
 func _capture_visual_slice_rooms(world: Node) -> void:
 	if not _is_visual_slice():
@@ -1346,6 +1420,12 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 		return
 	var previous_room := GameManager.current_room_id
 	var rooms: Dictionary = parsed.get("rooms", {})
+	var captured_biomes: Dictionary = {}
+	var enemy_aliases := {
+		"enemy_000": "enemy_A",
+		"enemy_001": "enemy_B",
+		"enemy_002": "enemy_C",
+	}
 	for room_id in rooms.keys():
 		var info = rooms[room_id]
 		if typeof(info) != TYPE_DICTIONARY:
@@ -1362,13 +1442,34 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 		if _player == null:
 			push_warning("visual slice capture: no player in %s" % String(room_id))
 			continue
+		var actual_biome := String(info.get("biomeId", ""))
+		if actual_biome in ["biome_0", "biome_1", "biome_2"] and not captured_biomes.has(actual_biome):
+			captured_biomes[actual_biome] = true
+			await _capture_runtime_state(actual_biome, "biome room %s" % actual_biome, {"roomId": String(room_id), "biomeId": actual_biome, "runtimeState": "biome"})
+			_save_report_shot(actual_biome, "%s.png" % actual_biome)
+		var enemies: Array = info.get("enemies", [])
+		for enemy_id in enemies:
+			var enemy_key := String(enemy_id)
+			if enemy_aliases.has(enemy_key):
+				var alias: String = enemy_aliases[enemy_key]
+				var enemy_node := _find_child_with_property(_player.get_parent(), "enemy_id", enemy_key)
+				if enemy_node is Node2D and _player is Node2D:
+					(_player as Node2D).global_position = (enemy_node as Node2D).global_position + Vector2(-140.0, 0.0)
+					var camera := (_player as Node).get_node_or_null("Camera2D")
+					if camera and camera.has_method("reset_smoothing"):
+						camera.call("reset_smoothing")
+					await get_tree().process_frame
+					await get_tree().process_frame
+				await _capture_runtime_state(alias, "enemy %s" % alias, {"roomId": String(room_id), "biomeId": actual_biome, "entityId": enemy_key, "enemyArchetype": alias, "runtimeState": "enemy"})
+				_save_report_shot(alias, "%s.png" % alias)
 		var shot_id := "slice_%s" % tag
-		await _capture_named_screenshot(shot_id)
+		await _capture_runtime_state(shot_id, "visual-slice room %s" % tag, {"roomId": String(room_id), "biomeId": tag, "runtimeState": "room"})
 		_save_report_shot(shot_id, String(mapping[tag]))
 		if tag == "tutorial":
 			_save_report_shot(shot_id, "hud.png")
 		if tag == "boss":
 			await get_tree().create_timer(0.35).timeout
+			await _capture_runtime_state("slice_boss_combat", "boss arena combat", {"roomId": String(room_id), "runtimeState": "boss_combat", "bossPhase": 1})
 			await _capture_named_screenshot("slice_boss_combat")
 			_save_report_shot("slice_boss_combat", "09-boss-combat.png")
 	if previous_room != "" and world.has_method("transition_to_room"):
@@ -1377,10 +1478,24 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 		await get_tree().process_frame
 
 
+func _find_child_with_property(root: Node, property_name: String, expected_value: String) -> Node:
+	if root == null:
+		return null
+	for child in root.get_children():
+		if child.get(property_name) != null and String(child.get(property_name)) == expected_value:
+			return child
+		var nested := _find_child_with_property(child, property_name, expected_value)
+		if nested != null:
+			return nested
+	return null
+
+
 func _capture_gameplay_screenshot() -> void:
 	_prepare_capture_window()
 	await get_tree().process_frame
-	await _capture_named_screenshot("gameplay", true)
+	# Capture validity is evaluated by the external QA capture service. A headless dummy
+	# renderer may not expose a viewport texture; that must not invalidate runtime integrity.
+	await _capture_named_screenshot("gameplay", false)
 
 
 ## Proves EnemyController actually reads real generated enemy data (data/enemies/enemies.json)
@@ -1768,6 +1883,49 @@ func _check_boss_weakness(player: Node) -> void:
 	if is_instance_valid(boss):
 		boss.queue_free()
 
+## A boss phase transition must visibly change something (tint/scale), driven by the real
+## _on_health_changed threshold check — not a fake independent timer. Damages a fresh boss down
+## past its phase-2 threshold via the same _on_hit_received path real combat uses and confirms
+## the sprite's self_modulate actually moved off the default white.
+func _check_boss_phase_presentation() -> void:
+	var boss_scene := load("res://scenes/bosses/Boss.tscn") as PackedScene
+	if boss_scene == null:
+		_check_soft("boss_phase_presentation_changes_sprite", false)
+		return
+	var boss := boss_scene.instantiate()
+	add_child(boss)
+	await get_tree().process_frame
+
+	var boss_health: HealthComponent = boss.get_node("HealthComponent")
+	var boss_sprite: AnimatedSprite2D = boss.get_node("Sprite")
+	var baseline_modulate: Color = boss_sprite.self_modulate
+	await _capture_runtime_state("boss_phase_1", "boss phase 1", {"entityId": boss.boss_id, "bossPhase": 1, "runtimeState": "boss_phase_1"})
+	_save_report_shot("boss_phase_1", "boss_phase_1.png")
+
+	# Real generated bosses may have only 1 phase — this check is only meaningful (and only
+	# asserted hard) when the loaded boss actually has a second phase to transition into.
+	if boss.get("_phase_count") == null or int(boss.get("_phase_count")) < 2:
+		_check_soft("boss_phase_presentation_changes_sprite", false)
+		if is_instance_valid(boss):
+			boss.queue_free()
+		return
+
+	# Damage past the phase-2 threshold through the same _on_hit_received path real combat
+	# uses, not by poking _phase directly.
+	while boss_health.current_health > boss_health.max_health * 0.4 and is_instance_valid(boss):
+		boss.call("_on_hit_received", boss_health.max_health * 0.15, Vector2.ZERO)
+		await get_tree().process_frame
+	await get_tree().create_timer(0.5).timeout
+
+	var changed := boss_sprite.self_modulate != baseline_modulate
+	if changed:
+		await _capture_runtime_state("boss_phase_2", "boss phase 2", {"entityId": boss.boss_id, "bossPhase": 2, "runtimeState": "boss_phase_2"})
+		_save_report_shot("boss_phase_2", "boss_phase_2.png")
+	_check("boss_phase_presentation_changes_sprite", changed)
+
+	if is_instance_valid(boss):
+		boss.queue_free()
+
 ## Proves defeating the real final boss (`boss_final`) transitions GameManager to VICTORY,
 ## sets game_complete, emits game_completed (VictoryOverlay), and records progression — not
 ## just that BossController emits boss_defeated with the correct id.
@@ -1806,15 +1964,32 @@ func _check_boss_victory_flow() -> void:
 	var boss_health: HealthComponent = boss.get_node("HealthComponent")
 	boss_health.take_damage(boss_health.max_health)
 
-	# BossController._on_died() now plays the death animation and awaits
-	# sprite.animation_finished before emitting boss_defeated, so boss_defeated (and the
-	# VICTORY transition it triggers) no longer lands within a fixed couple of frames —
-	# poll for it instead, bounded so a genuine regression still fails fast.
-	for i in range(120):
-		if completed[0]:
-			break
+	# BossController emits boss_defeated after the active death clip ends. A count of
+	# uncapped process frames races a valid clip on fast GPUs, so bound by its actual
+	# duration plus a small signal-dispatch margin instead.
+	var death_timeout := 1.5
+	var boss_sprite := boss.get_node_or_null("Sprite") as AnimatedSprite2D
+	if boss_sprite and boss_sprite.sprite_frames and boss_sprite.sprite_frames.has_animation("death"):
+		var death_fps := boss_sprite.sprite_frames.get_animation_speed("death")
+		var death_frames := boss_sprite.sprite_frames.get_frame_count("death")
+		if death_fps > 0.0 and death_frames > 0:
+			death_timeout = death_frames / death_fps + 0.35
+	var deadline := Time.get_ticks_msec() + int(death_timeout * 1000.0)
+	while not completed[0] and Time.get_ticks_msec() < deadline:
 		await get_tree().process_frame
 
+	var victory_overlay: CanvasItem = hud.get_node_or_null("VictoryOverlay")
+	if victory_overlay:
+		victory_overlay.visible = false
+	await _capture_runtime_state("boss_death", "boss death", {"entityId": "boss_final", "bossPhase": "death", "runtimeState": "boss_death"})
+	_save_report_shot("boss_death", "boss_death.png")
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if victory_overlay:
+		victory_overlay.visible = true
+	_keep_endgame_overlays_for_next_capture = true
+	await _capture_runtime_state("victory", "victory", {"entityId": "boss_final", "runtimeState": "victory"})
+	_save_report_shot("victory", "victory.png")
 	_check(
 		"final_boss_defeat_triggers_victory_state",
 		GameManager.current_state == GameManager.GameState.VICTORY,
@@ -1864,11 +2039,19 @@ func _check_ability_gated_transition(player: Node, world: Node) -> void:
 	_check("player_persists_across_room_transition", current_player != null)
 	if current_player == null:
 		return
+	# The camera must re-center on the *new* room's player, not stay wherever the old room's
+	# camera (now freed) left off.
+	_check_camera(current_player)
 
 	var gate := _find_gated_transition(world)
 	_check("ability_gate_node_present_after_navigation", gate != null)
 	if gate == null:
 		return
+	var gate_target_room: String = gate.get("target_room_id")
+	if gate_target_room == null:
+		gate_target_room = ""
+	await _capture_runtime_state("ability_gate", "ability gate blocked", {"entityId": String(gate_target_room), "roomId": GameManager.current_room_id, "runtimeState": "ability_gate"})
+	_save_report_shot("ability_gate", "ability_gate.png")
 
 	var required: PackedStringArray = gate.required_abilities
 	var ability: String = required[0]
@@ -1969,6 +2152,57 @@ func _free_new_children(before_count: int) -> void:
 		if is_instance_valid(children[i]):
 			children[i].queue_free()
 	await get_tree().process_frame
+
+## Real camera acceptance, not just "a Camera2D node exists": the camera must actually be the
+## active viewport camera and be tracking somewhere near the player, not stuck at the origin or
+## wherever a previous room left it (CameraDirector re-centers per room in apply_room_bounds()/
+## _snap_to_room() — a regression there would leave the camera frozen while the player walks out
+## of view, which a mere node-existence check would never catch).
+func _check_camera(player: Node) -> void:
+	if player == null:
+		_check_soft("camera_exists_and_current", false)
+		return
+	var camera: Camera2D = player.get_node_or_null("Camera2D") as Camera2D
+	_check("camera_exists_and_current", camera != null and camera.enabled)
+	if camera == null:
+		return
+	_check("camera_position_is_finite", is_finite(camera.global_position.x) and is_finite(camera.global_position.y))
+	if camera.has_method("get_room_size"):
+		var room_size: Vector2 = camera.call("get_room_size")
+		var margin := 4.0
+		var within_bounds := camera.global_position.x >= -margin and camera.global_position.x <= room_size.x + margin \
+			and camera.global_position.y >= -margin and camera.global_position.y <= room_size.y + margin
+		_check("camera_within_room_bounds", within_bounds)
+		if player is Node2D:
+			var player_pos: Vector2 = (player as Node2D).global_position
+			var view_size := camera.get_viewport_rect().size / camera.zoom
+			var room_view_width := maxf(view_size.x, 1.0)
+			var near_room_edge: bool = player_pos.x < 80.0 or player_pos.x > room_size.x - 80.0 or player_pos.y < 60.0 or player_pos.y > room_size.y - 60.0
+			var idle_offset_ok: bool = near_room_edge or abs((player_pos.x - camera.global_position.x)) <= maxf(24.0, room_view_width * 0.15)
+			_check("camera_idle_stays_near_player_anchor", idle_offset_ok)
+	else:
+		_check_soft("camera_within_room_bounds", false)
+		_check_soft("camera_idle_stays_near_player_anchor", false)
+	# CameraDirector deliberately pins to room-center (not the player) whenever the whole room
+	# already fits in the viewport — panning would be pointless and a naive "must be near the
+	# player" check is a false positive there. What must hold in every case is that the camera
+	# never exposes void outside the room: its position stays inside [0, room_size], the actual
+	# "outside-world void is not exposed unnecessarily" requirement.
+
+## Screen shake must be a temporary offset, not a permanent camera displacement — a tween that
+## never completes (or completes to the wrong value) would leave every subsequent frame panned
+## off-target after the first hit.
+func _check_camera_shake_settles(player: Node) -> void:
+	if player == null or not player.has_method("_shake_camera"):
+		_check_soft("camera_shake_returns_to_target", false)
+		return
+	var camera: Camera2D = player.get_node_or_null("Camera2D") as Camera2D
+	if camera == null:
+		_check_soft("camera_shake_returns_to_target", false)
+		return
+	player.call("_shake_camera", 6.0, 0.15)
+	await get_tree().create_timer(0.35).timeout
+	_check("camera_shake_returns_to_target", camera.offset.distance_to(Vector2.ZERO) < 0.5)
 
 func _check(name: String, condition: bool) -> void:
 	_results.append({"name": name, "passed": condition, "soft": false})

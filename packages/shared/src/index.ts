@@ -2,6 +2,7 @@ export * from './constants.js';
 export * from './config.js';
 export * from './logger.js';
 export * from './paths.js';
+export * from './platform.js';
 export * from './registered-abilities.js';
 export * from './ability-remap.js';
 export * from './movement-tuning.js';

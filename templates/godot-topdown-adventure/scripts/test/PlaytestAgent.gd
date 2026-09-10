@@ -442,6 +442,17 @@ func _defeat_final_boss(host: Node, boss_id: String) -> bool:
 		_timeouts_exceeded += 1
 		print("PLAYTEST_TIMEOUT: boss_fight exceeded %dms budget" % timeout_ms)
 
+	# BossController._on_died() now plays a real death animation (DEATH_ANIMATION_DURATION_SEC,
+	# ~0.7s) before emitting EventBus.boss_defeated / GameManager.current_state actually becoming
+	# VICTORY — `boss_health.current_health <= 0.0` above (or the boss reference going away) is
+	# true well before that. Without waiting here, a caller checking victory state immediately
+	# after this returns would see it not-yet-true and misreport a real win as a failure — this
+	# genuinely changed how long "defeated" takes to become "victory," not just a test artifact.
+	if boss_defeated and GameManager.current_state != GameManager.GameState.VICTORY:
+		var victory_wait_start := Time.get_ticks_msec()
+		while GameManager.current_state != GameManager.GameState.VICTORY and Time.get_ticks_msec() - victory_wait_start < 2000:
+			await host.get_tree().physics_frame
+
 	return boss_defeated or GameManager.current_state == GameManager.GameState.VICTORY
 
 # --- Phase 14: distance-aware walk timeout -----------------------------------------------------

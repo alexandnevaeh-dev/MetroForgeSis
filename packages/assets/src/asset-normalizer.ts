@@ -1,3 +1,5 @@
+import { decodePngRgba } from './png.js';
+
 export interface SpriteSizeClass {
   id: 'player' | 'standard_enemy' | 'elite_enemy' | 'boss' | 'environment_module';
   minPx: number;
@@ -16,6 +18,43 @@ export const SPRITE_SIZE_CLASSES: SpriteSizeClass[] = [
 export interface NormalizationViolation {
   path: string;
   reason: string;
+}
+
+export interface TechnicalImageValidation {
+  valid: boolean;
+  width: number | null;
+  height: number | null;
+  hasAlpha: boolean;
+  visiblePixels: number;
+  issues: string[];
+}
+
+/** Fast deterministic gate used before VLM calls or provider retries. */
+export function validateTechnicalPng(
+  png: Buffer,
+  expected?: { width?: number; height?: number; requireAlpha?: boolean },
+): TechnicalImageValidation {
+  const issues: string[] = [];
+  let width: number | null = null;
+  let height: number | null = null;
+  let hasAlpha = false;
+  let visiblePixels = 0;
+  try {
+    const decoded = decodePngRgba(png);
+    width = decoded.width;
+    height = decoded.height;
+    for (let i = 3; i < decoded.rgba.length; i += 4) {
+      if (decoded.rgba[i]! > 8) visiblePixels++;
+      if (decoded.rgba[i]! < 250) hasAlpha = true;
+    }
+    if (expected?.width && width !== expected.width) issues.push(`width ${width} != ${expected.width}`);
+    if (expected?.height && height !== expected.height) issues.push(`height ${height} != ${expected.height}`);
+    if (expected?.requireAlpha && !hasAlpha) issues.push('required alpha channel is absent');
+    if (visiblePixels === 0) issues.push('blank or fully transparent image');
+  } catch (error) {
+    issues.push(error instanceof Error ? error.message : 'invalid PNG');
+  }
+  return { valid: issues.length === 0, width, height, hasAlpha, visiblePixels, issues };
 }
 
 export function classifySpriteKind(relPath: string): SpriteSizeClass['id'] | null {

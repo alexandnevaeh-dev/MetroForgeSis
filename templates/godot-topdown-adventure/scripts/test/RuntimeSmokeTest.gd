@@ -7,6 +7,9 @@ extends Node
 ## through the actual scenes/scripts (never a check that trivially passes regardless of whether
 ## the feature works), adapted to top-down's actual APIs rather than assumed to be identical.
 
+const TopDownPlayerController = preload("res://scripts/player/TopDownPlayerController.gd")
+const TopDownEnemyController = preload("res://scripts/AI/TopDownEnemyController.gd")
+
 var _results: Array[Dictionary] = []
 
 func _ready() -> void:
@@ -32,6 +35,15 @@ func _ready() -> void:
 		_finish()
 		return
 
+	# Regression for a restart-after-victory bug: start_new_game() used to leave current_room_id
+	# untouched, so restarting after winning deep in the dungeon resumed play directly in the boss
+	# room instead of back at the real start — OverworldManager._ready() only falls back to
+	# startAreaId when current_room_id is empty. Same fix already applied to the side-view
+	# template's GameManager.gd for the identical bug.
+	GameManager.current_room_id = "dungeon_000_r3"
+	GameManager.start_new_game()
+	_check("start_new_game_resets_current_room_id", GameManager.current_room_id == "")
+
 	var world: Node = world_scene.instantiate()
 	add_child(world)
 	await get_tree().process_frame
@@ -42,6 +54,21 @@ func _ready() -> void:
 
 	var player_node := get_tree().get_first_node_in_group("player")
 	_check("player_spawns", player_node != null)
+	# packages/qa/src/validator.ts's godot_runtime gate only trusts a PASS/FAIL tally that comes
+	# with this exact marker present in the process output (see validateGodotRuntime's
+	# `runtimeReady` check) — proof gameplay actually got far enough to spawn a player, not proof
+	# lifted from a script that merely didn't crash before hitting an early return. The side-view
+	# template's RuntimeSmokeTest.gd has always printed this; this template never did, so the gate
+	# reported state UNKNOWN unconditionally for every top-down project ever generated, regardless
+	# of how many of the real checks below actually passed (167/167 included) — and godot_playtest
+	# never ran as a result (see PLAYTEST_SKIPPED in docs/debug/TOPDOWN_PLAYTEST_REPAIR.md, which
+	# was never actually about the playtest agent itself failing).
+	print("METROFORGE_RUNTIME_READY project=%s scene=%s player=%s room=%s" % [
+		ProjectSettings.get_setting("application/config/name", "MetroForge"),
+		get_tree().current_scene.scene_file_path if get_tree().current_scene else "unknown",
+		player_node.name if player_node else "missing",
+		GameManager.current_room_id,
+	])
 	var player := player_node as CharacterBody2D
 	if player:
 		_check(
@@ -62,8 +89,22 @@ func _ready() -> void:
 		_check("player_moves_diagonally", player.global_position.distance_to(start) > 0.5)
 		if player.has_method("cardinal_facing"):
 			player.set("facing", Vector2.RIGHT)
-			player.call("_start_attack")
-			_check("player_attack_activates_hitbox", player.get("attack_hitbox").monitoring)
+			Input.action_press("attack")
+			await get_tree().physics_frame
+			Input.action_release("attack")
+			_check("player_attack_starts_with_hitbox_disabled", not player.get("attack_hitbox").monitoring)
+			# Wait until attack transitions to ACTIVE state, then verify hitbox is ON
+			var max_attempts := 10
+			var attack_activated := false
+			while max_attempts > 0:
+				await get_tree().physics_frame
+				if player.has_method("get_attack_state"):
+					var state = player.call("get_attack_state")
+					if state == TopDownPlayerController.AttackState.ACTIVE:
+						attack_activated = player.get("attack_hitbox").monitoring
+						break
+				max_attempts -= 1
+			_check("player_attack_activates_hitbox_after_startup", attack_activated)
 			player.call("_on_attack_finished")
 		_check("player_has_health_component", player.get_node_or_null("HealthComponent") != null)
 		_check("player_has_hurtbox", player.get_node_or_null("HurtboxComponent") != null)
@@ -817,7 +858,7 @@ func _check_hud_minimap(world: Node) -> void:
 ## state.
 func _check_hud_quest_tracker(world: Node) -> void:
 	var hud := world.get_node_or_null("GameHUD")
-	var tracker: Control = hud.get_node_or_null("HUD/QuestTrackerPanel/QuestTrackerView") if hud else null
+	var tracker: Control = hud.get_node_or_null("HUD/MarginContainer/VBox/QuestTrackerPanel/QuestTrackerView") if hud else null
 	_check("hud_quest_tracker_present", tracker != null)
 	if tracker == null:
 		return
@@ -879,7 +920,16 @@ func _check_enemy_combat(player: Node) -> void:
 	enemy.global_position = player.global_position + Vector2(10, 0)
 	enemy.call("_physics_process", 0.05)
 	var attack_hitbox: HitboxComponent = enemy.get_node("AttackHitbox")
-	_check("enemy_melee_attack_activates_hitbox_in_range", attack_hitbox.monitoring)
+	_check("enemy_melee_windup_keeps_hitbox_disabled", not attack_hitbox.monitoring)
+	enemy.call("_physics_process", 0.3)
+	# Verify the enemy is in ACTIVE state (not just guessing on hitbox monitor state)
+	var enemy_in_active := false
+	if enemy.has_method("get_combat_state"):
+		var state = enemy.call("get_combat_state")
+		enemy_in_active = (state == TopDownEnemyController.CombatState.ACTIVE) and attack_hitbox.monitoring
+	else:
+		enemy_in_active = attack_hitbox.monitoring
+	_check("enemy_melee_attack_activates_hitbox_after_windup", enemy_in_active)
 
 	player_health.invulnerable = false
 	var before := player_health.current_health
@@ -917,6 +967,13 @@ func _check_enemy_combat(player: Node) -> void:
 	)
 	var boss_variant_health: HealthComponent = boss_variant.get_node("HealthComponent")
 	boss_variant_health.take_damage(boss_variant_health.max_health)
+	# TopDownEnemyController._on_died() now waits DEATH_ANIMATION_DURATION_SEC (real death-sheet
+	# playback time, this session's boss-milestone fix ported to field enemies/boss-variant) before
+	# emitting boss_defeated/enemy_killed — bounded-wait instead of a same-frame synchronous check,
+	# the identical fix class PlaytestAgent._defeat_final_boss() already needed for BossController.
+	var boss_death_wait_start := Time.get_ticks_msec()
+	while not boss_completed[0] and Time.get_ticks_msec() - boss_death_wait_start < 1500:
+		await get_tree().physics_frame
 	_check(
 		"enemy_boss_variant_grants_wind_disc_on_death",
 		InventoryManager.get_owned_count("wind_disc") > wind_disc_before,
@@ -931,6 +988,9 @@ func _check_enemy_combat(player: Node) -> void:
 	EventBus.enemy_killed.connect(func(_id: String) -> void: enemy_killed_completed[0] = true, CONNECT_ONE_SHOT)
 	var enemy2_health: HealthComponent = enemy2.get_node("HealthComponent")
 	enemy2_health.take_damage(enemy2_health.max_health)
+	var enemy_killed_wait_start := Time.get_ticks_msec()
+	while not enemy_killed_completed[0] and Time.get_ticks_msec() - enemy_killed_wait_start < 1500:
+		await get_tree().physics_frame
 	_check("enemy_normal_death_emits_enemy_killed", enemy_killed_completed[0])
 
 ## Proves ShopManager.purchase()/ShopOverlay actually work — no side-view reference for this
@@ -955,10 +1015,12 @@ func _check_shop_purchase_flow() -> void:
 		return
 
 	var shop_item_id := ""
+	var shop_item_category := ""
 	for item in json.data.get("items", []):
 		var category := String(item.get("category", ""))
 		if category != "currency" and category != "quest" and category != "collectible":
 			shop_item_id = String(item.get("id", ""))
+			shop_item_category = category
 			break
 	if shop_item_id.is_empty():
 		_check_soft("shop_purchase_succeeds_with_sufficient_currency", false)
@@ -974,11 +1036,27 @@ func _check_shop_purchase_flow() -> void:
 	}
 
 	QuestManager.currency["scrap"] = 100
+	# A "consumable" purchase applies its effect immediately (InventoryManager.grant_item() routes
+	# it to _apply_consumable_effects(), never touching _collected_counts — see ItemPickup.gd's
+	# own item_pickup_consumable_can_be_triggered check for the same distinction) instead of
+	# adding to owned inventory, so "owned count went up" is the wrong success signal for it;
+	# check the health-vial-style heal effect actually landed instead.
+	var health_before := 0.0
+	var health_component: HealthComponent = null
+	if shop_item_category == "consumable":
+		var player := get_tree().get_first_node_in_group("player")
+		health_component = player.get_node_or_null("HealthComponent") if player else null
+		if health_component:
+			health_component.take_damage(1.0)
+			health_before = health_component.current_health
 	var owned_before := InventoryManager.get_owned_count(shop_item_id)
 	var result: Dictionary = ShopManager.purchase(shop_id, shop_item_id)
 	_check("shop_purchase_succeeds_with_sufficient_currency", bool(result.get("success", false)))
 	_check("shop_purchase_deducts_currency", int(QuestManager.currency.get("scrap", 0)) == 100 - price)
-	_check("shop_purchase_grants_item", InventoryManager.get_owned_count(shop_item_id) > owned_before)
+	if shop_item_category == "consumable":
+		_check("shop_purchase_grants_item", health_component != null and health_component.current_health > health_before)
+	else:
+		_check("shop_purchase_grants_item", InventoryManager.get_owned_count(shop_item_id) > owned_before)
 
 	QuestManager.currency["scrap"] = 0
 	var fail_result: Dictionary = ShopManager.purchase(shop_id, shop_item_id)

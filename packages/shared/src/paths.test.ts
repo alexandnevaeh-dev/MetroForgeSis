@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mkdirSync, rmSync, symlinkSync, existsSync } from 'node:fs';
+import { mkdirSync, rmSync, symlinkSync, existsSync, realpathSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { resolveProjectPathSafe, UnsafeProjectPathError, isPathWithinRoot } from './paths.js';
@@ -93,7 +93,7 @@ describe('resolveProjectPathSafe', () => {
     }
 
     const result = resolveProjectPathSafe(linkRoot, 'my-game');
-    expect(result).toBe(resolve(realRoot, 'my-game'));
+    expect(result).toBe(resolve(realpathSync(realRoot), 'my-game'));
 
     rmSync(base, { recursive: true, force: true });
   });

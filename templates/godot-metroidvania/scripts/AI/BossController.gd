@@ -226,6 +226,23 @@ func _on_health_changed(current: float, max_h: float) -> void:
 		_phase += 1
 		VFXManager.play_phase_shift(global_position)
 		AudioManager.play_sfx("boss_hit")
+		_apply_phase_presentation()
+
+## Visible presentation change driven by the *real* phase counter above, not a fake independent
+## timer — a harsher, hotter tint and a bigger silhouette as phases escalate, plus a bright flash
+## tween at the exact transition moment so "phase 2 looks different from phase 1" is something a
+## screenshot can actually show, not just internal state.
+func _apply_phase_presentation() -> void:
+	if sprite == null:
+		return
+	var progress := float(_phase - 1) / float(max(1, _phase_count - 1))
+	var target_tint := Color(1.0 + progress * 0.55, 1.0 - progress * 0.32, 1.0 - progress * 0.4)
+	var target_scale := Vector2.ONE * (1.0 + progress * 0.12)
+	var flash := create_tween()
+	flash.tween_property(sprite, "self_modulate", Color(2.2, 2.2, 2.2), 0.08)
+	flash.tween_property(sprite, "self_modulate", target_tint, 0.35)
+	var grow := create_tween()
+	grow.tween_property(self, "scale", target_scale, 0.4).set_trans(Tween.TRANS_BACK)
 
 func _on_died() -> void:
 	set_physics_process(false)

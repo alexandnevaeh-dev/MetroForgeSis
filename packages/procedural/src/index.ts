@@ -77,12 +77,19 @@ export {
   environmentKitScaleFor,
   biomeKitFromEnvironment,
   generateRoomStorytelling,
+  buildDeterministicBiomeLightingProfile,
   lightingDirectiveForRoom,
   computeStyleFingerprint,
   fingerprintFromVisualDNA,
   resolveVisualStyleTemplate,
 } from './visual/index.js';
-export type { CompileVisualPromptInput, RoomLightingDirective, VisualStyleTemplate, BiomeKit } from './visual/index.js';
+export type {
+  CompileVisualPromptInput,
+  RoomLightingDirective,
+  VisualStyleTemplate,
+  BiomeKit,
+  BiomeLightingProfile,
+} from './visual/index.js';
 export { buildProgressionProof } from './progression-proof.js';
 export type { ProgressionProof, ProgressionTraceStep } from './progression-proof.js';
 export { generateTopDownWorld, collisionRectsFromTiles, isWalkableTile } from './topdown/world.js';

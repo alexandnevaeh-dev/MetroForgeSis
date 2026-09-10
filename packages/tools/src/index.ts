@@ -12,6 +12,17 @@ export type { LaunchGodotResult, GodotResolveResult, GodotResolveSource, Resolve
 export { exportProject } from './project-export.js';
 export type { ExportManifest, ExportProjectOptions, ExportProjectResult } from './project-export.js';
 export {
+  exportGodotMacOSApp,
+  exportGodotWindowsBinary,
+  ensureMacOSExportPreset,
+  ensureWindowsExportPreset,
+} from './godot-export.js';
+export type {
+  GodotExportOptions,
+  GodotExportResult,
+  GodotMacOSExportOptions,
+} from './godot-export.js';
+export {
   deleteProject,
   duplicateProject,
   renameProject,
@@ -27,3 +38,19 @@ export type {
   TemplateRefreshResult,
   TemplateRefreshOptions,
 } from './project-lifecycle.js';
+export {
+  canonicalizePath,
+  classifyRuntimePlatform,
+  getPlatformInfo,
+  getTempDirectory,
+  isolatedUserDataEnvironment,
+  probeWorkspaceWritable,
+  terminateProcessTree,
+  userHomeDirectory,
+} from '@metroforge/shared';
+export type {
+  PlatformCapabilities,
+  PlatformInfo,
+  RuntimePlatformId,
+  WorkspaceWriteProbe,
+} from '@metroforge/shared';

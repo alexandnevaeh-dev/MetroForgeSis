@@ -5,6 +5,11 @@ import type { GameContent } from '@metroforge/procedural';
 import { buildMovementJson, movementFeasibilityStats } from '@metroforge/shared';
 import { buildRoomTileCells, floorTopPx, type PlatformRect, type PitGap } from './tile-layout.js';
 import type { RoomBlueprint } from './composition/index.js';
+import {
+  foundryBackdropCoverScale,
+  projectUsesFoundryVisualKit,
+  remapTileCellsForFoundry,
+} from './foundry-visual-pack.js';
 
 export interface RoomConnection {
   direction: 'left' | 'right' | 'up' | 'down';
@@ -49,8 +54,15 @@ export interface RoomAssemblyOptions {
   pits?: PitGap[];
   backgroundLayers?: { far?: string; mid?: string; near?: string; overlay?: string; foreground?: string };
   propSprites?: string[];
+  /** Larger macro-architecture silhouettes (arches, pillars, statues) placed wall-mounted at a
+   *  visibly bigger scale than floor props — see buildRoomScene's architectureSprites placement.
+   *  Distinct from propSprites (small, floor-level, tile-scale) on purpose: a room with only
+   *  32px floor props still reads as "tiled floor with tiny stickers", not "designed place". */
+  architectureSprites?: string[];
   uniquenessSalt?: number;
   blueprint?: RoomBlueprint;
+  /** When set to foundry, rooms consume the Foundry V3 atlas/backdrop instead of VGF wallpaper. */
+  visualKit?: 'foundry';
 }
 
 export interface TileCell {
@@ -73,6 +85,7 @@ export interface PublishedRoomRecord {
   enemies: string[];
   npcs: string[];
   collectibles: string[];
+  visualKit?: 'foundry';
   tileCells?: TileCell[];
   weakFloors?: { x: number; width: number; targetRoomId: string }[];
   platforms?: PlatformRect[];
@@ -178,6 +191,47 @@ function inferHorizontalDirection(fromIdx: number, toIdx: number): 'left' | 'rig
   return toIdx > fromIdx ? 'right' : 'left';
 }
 
+const ALL_ROOM_DIRECTIONS: RoomConnection['direction'][] = ['left', 'right', 'up', 'down'];
+
+/**
+ * Seventeenth-session fix: two connections in the same room sharing a `direction` get placed
+ * only ~48px apart along the *same* walk line (see generateRoomScene's `directionSlot` spacing
+ * a few hundred lines below) — reaching the farther door means physically walking straight
+ * through the nearer one's sensor first. Verified as the real, dominant cause of the disclosed
+ * `door_did_not_fire` failures whose reported "current" room was neither the transition's `from`
+ * nor its intended `to`: a standalone check against `buildRoomConnections`' own output (no engine
+ * involved) found 7-9 same-direction collisions per 42-room world on every one of 5 tested seeds,
+ * always a branching-shortcut edge landing on the same inferred `left`/`right` direction as the
+ * main spine's own edge in that room (both computed by `inferHorizontalDirection`, which only
+ * looks at room index order and has no way to know the spine already claimed that side).
+ *
+ * Scoped to *inferred* directions (branching shortcuts, the main spine) plus explicit-transition
+ * edges that carry no ability `requirements` (vertical biome shafts) — never an ability-gated
+ * edge (`requirements` non-empty). `deriveWeakFloors`/`deriveGrapplePoints`/`deriveWaterZones`/
+ * `derivePhaseBarriers` (below) all gate their placement on `conn.requirements.includes(ability)`
+ * first, so a requirements-empty edge's direction is never read by any of them — rerouting it
+ * changes nothing but which physical side of the room its door sits on. An ability-gated edge's
+ * direction, by contrast, is load-bearing (e.g. a ground_slam gate's weak floor is only placed
+ * for `direction === 'down'`) and is never rerouted here. This also fixes a second, deterministic
+ * collision found this way: a vertical shaft's bidirectional reverse (always `down`, requirements
+ * `[]`) landing in the same room as an unrelated ability gate's explicit `down` — both are
+ * `edge.transition`-carrying, but only the shaft side is safe to move.
+ */
+function resolveNonCollidingDirection(
+  connections: Map<string, RoomConnection[]>,
+  roomId: string,
+  preferred: RoomConnection['direction'],
+): RoomConnection['direction'] {
+  const used = new Set((connections.get(roomId) ?? []).map((c) => c.direction));
+  if (!used.has(preferred)) return preferred;
+  for (const alt of ALL_ROOM_DIRECTIONS) {
+    if (!used.has(alt)) return alt;
+  }
+  // Every direction already occupied in this room (all 4 taken by prior edges) — vanishingly
+  // rare; fall back to the collision rather than dropping the connection entirely.
+  return preferred;
+}
+
 export function buildRoomConnections(
   roomIds: string[],
   edges: WorldGraph['edges'],
@@ -186,15 +240,30 @@ export function buildRoomConnections(
   const connections = new Map<string, RoomConnection[]>();
   for (const roomId of roomIds) connections.set(roomId, []);
 
-  for (const edge of edges) {
+  // Ability-gated edges are processed in a first pass, entirely before every non-gated edge
+  // (spine, branching shortcuts, vertical shafts) — not just in `buildEdges`' own emission order.
+  // A gated edge's direction is fixed and must claim its room+direction slot before
+  // `resolveNonCollidingDirection` runs for anything else, or a non-gated edge processed earlier
+  // in the array (e.g. a vertical shaft, which is emitted before ability gates in `world.ts`) can
+  // grab the exact direction a *later* gate edge in the same room requires, recreating the
+  // collision this fix exists to prevent (found exactly this way: a shaft's `down` reverse and an
+  // unrelated ground_slam gate's `down` both landing on room_028 — the gate lost the race because
+  // it happens to be built after the shaft in `buildEdges`).
+  const gated = edges.filter((e) => (e.requirements?.length ?? 0) > 0);
+  const nonGated = edges.filter((e) => (e.requirements?.length ?? 0) === 0);
+
+  for (const edge of [...gated, ...nonGated]) {
     if (!connections.has(edge.from) || !connections.has(edge.to)) continue;
     const fromIdx = indexMap.get(edge.from);
     const toIdx = indexMap.get(edge.to);
-    const outDirection =
-      edge.transition ??
-      (fromIdx !== undefined && toIdx !== undefined
-        ? inferHorizontalDirection(fromIdx, toIdx)
-        : 'right');
+    const requirements = edge.requirements ?? [];
+    const isAbilityGated = requirements.length > 0;
+    const inferredOutDirection =
+      fromIdx !== undefined && toIdx !== undefined ? inferHorizontalDirection(fromIdx, toIdx) : 'right';
+    const preferredOutDirection = edge.transition ?? inferredOutDirection;
+    const outDirection = isAbilityGated
+      ? preferredOutDirection
+      : resolveNonCollidingDirection(connections, edge.from, preferredOutDirection);
 
     const fromList = connections.get(edge.from)!;
     if (!fromList.some((c) => c.targetRoomId === edge.to && c.direction === outDirection)) {
@@ -202,12 +271,15 @@ export function buildRoomConnections(
         direction: outDirection,
         targetRoomId: edge.to,
         optional: edge.optional,
-        requirements: edge.requirements ?? [],
+        requirements,
       });
     }
 
     if (edge.bidirectional) {
-      const inDirection = reverseDirection(outDirection);
+      const preferredInDirection = reverseDirection(outDirection);
+      const inDirection = isAbilityGated
+        ? preferredInDirection
+        : resolveNonCollidingDirection(connections, edge.to, preferredInDirection);
       const toList = connections.get(edge.to)!;
       if (!toList.some((c) => c.targetRoomId === edge.from && c.direction === inDirection)) {
         toList.push({
@@ -399,6 +471,10 @@ function defaultRoomWidth(worldGraphArchetype: string | undefined, override?: nu
   if (override !== undefined) return override;
   if (worldGraphArchetype === 'set_piece' || worldGraphArchetype === 'traversal') return 960;
   if (worldGraphArchetype === 'boss' || worldGraphArchetype === 'arena' || worldGraphArchetype === 'miniboss') return 960;
+  if (worldGraphArchetype === 'combat') return 880;
+  if (worldGraphArchetype === 'tutorial') return 720;
+  if (worldGraphArchetype === 'npc' || worldGraphArchetype === 'shop') return 720;
+  if (worldGraphArchetype === 'save') return 680;
   return 800;
 }
 
@@ -407,6 +483,10 @@ function defaultRoomHeight(worldGraphArchetype: string | undefined, override?: n
   if (worldGraphArchetype === 'challenge' || worldGraphArchetype === 'traversal') return 900;
   if (worldGraphArchetype === 'ability_gate' || worldGraphArchetype === 'ability_shrine') return 780;
   if (worldGraphArchetype === 'set_piece' || worldGraphArchetype === 'boss' || worldGraphArchetype === 'miniboss') return 720;
+  if (worldGraphArchetype === 'combat') return 640;
+  if (worldGraphArchetype === 'tutorial') return 520;
+  if (worldGraphArchetype === 'npc' || worldGraphArchetype === 'shop') return 560;
+  if (worldGraphArchetype === 'save') return 500;
   return 600;
 }
 
@@ -418,7 +498,9 @@ export function buildRoomAssemblyOptions(
   gameContent: GameContent | undefined,
   enemyCounter: { value: number },
   textureExists: (relPath: string) => boolean,
-  overrides?: Partial<Pick<RoomAssemblyOptions, 'hasEnemy' | 'width' | 'height' | 'uniquenessSalt'>>,
+  overrides?: Partial<
+    Pick<RoomAssemblyOptions, 'hasEnemy' | 'width' | 'height' | 'uniquenessSalt' | 'visualKit'>
+  >,
 ): RoomAssemblyOptions {
   const bossId = ctx.bossesByRoom.get(roomId);
   const isBossRoom = bossId !== undefined;
@@ -473,6 +555,9 @@ export function buildRoomAssemblyOptions(
     uniquenessSalt: overrides?.uniquenessSalt ?? 0,
   });
 
+  const foundryKit = overrides?.visualKit === 'foundry';
+  const tileCells = foundryKit ? remapTileCellsForFoundry(layout.cells) : layout.cells;
+
   return {
     hasEnemy,
     enemyIndex,
@@ -493,20 +578,27 @@ export function buildRoomAssemblyOptions(
     itemId: pickupItem?.id ?? '',
     itemAmount: pickupItem?.category === 'currency' ? 15 : 1,
     worldGraphArchetype,
-    tileCells: layout.cells,
+    tileCells,
     platforms: layout.platforms,
     pits: layout.pits,
     blueprint: layout.blueprint,
+    visualKit: overrides?.visualKit,
     backgroundLayers: {
       far: textureExists(far) ? far : undefined,
-      mid: textureExists(mid) ? mid : undefined,
-      near: textureExists(near) ? near : undefined,
-      overlay: textureExists(overlay) ? overlay : undefined,
-      foreground: textureExists(foreground) ? foreground : undefined,
+      mid: foundryKit ? undefined : textureExists(mid) ? mid : undefined,
+      near: foundryKit ? undefined : textureExists(near) ? near : undefined,
+      overlay: foundryKit ? undefined : textureExists(overlay) ? overlay : undefined,
+      foreground: foundryKit ? undefined : textureExists(foreground) ? foreground : undefined,
     },
     propSprites: Array.from({ length: 6 }, (_, i) => `assets/props/biome_${biomeIndex}/biome_${biomeIndex}_prop_${i}.png`).filter(
       (p) => textureExists(p),
     ),
+    architectureSprites: foundryKit
+      ? []
+      : Array.from(
+          { length: 4 },
+          (_, i) => `assets/architecture/biome_${biomeIndex}/biome_${biomeIndex}_arch_${i}.png`,
+        ).filter((p) => textureExists(p)),
   };
 }
 
@@ -541,6 +633,7 @@ export function buildPublishedRoomRecord(
     enemies: enemyId ? [enemyId] : opts.isBossRoom && opts.bossId ? [opts.bossId] : [],
     npcs: opts.npcs.map((n) => n.id),
     collectibles: opts.hasItemPickup && opts.itemId ? [opts.itemId] : [],
+    ...(opts.visualKit ? { visualKit: opts.visualKit } : {}),
     tileCells: opts.tileCells,
     weakFloors: deriveWeakFloors(opts.connections, opts.width).map((wf) => ({
       x: wf.x,
@@ -826,6 +919,7 @@ shape = SubResource("${shapeId}")
 }
 
 export function generateRoomScene(roomId: string, _index: number, options: RoomAssemblyOptions): string {
+  const foundryKit = options.visualKit === 'foundry';
   const tileSize = options.tileSize || 16;
   const floorThickness = options.hasTileset ? tileSize * 2 : 64;
   const floorTop = options.hasTileset
@@ -866,30 +960,32 @@ export function generateRoomScene(roomId: string, _index: number, options: RoomA
   if (options.hasItemPickup) loadSteps += 1;
   if (options.abilityPickups.length > 0) loadSteps += options.abilityPickups.length;
   if (farPath) loadSteps += 1;
-  if (layers.mid) loadSteps += 1;
-  if (layers.near) loadSteps += 1;
+  if (layers.mid && !foundryKit) loadSteps += 1;
+  if (layers.near && !foundryKit) loadSteps += 1;
   const propSprites = options.propSprites ?? [];
   if (propSprites.length > 0) loadSteps += propSprites.length;
+  const architectureSprites = options.architectureSprites ?? [];
+  if (architectureSprites.length > 0) loadSteps += architectureSprites.length;
 
   let scene = `[gd_scene load_steps=${loadSteps} format=3]
 
-[ext_resource type="PackedScene" uid="uid://player_scene" path="res://scenes/player/Player.tscn" id="1_player"]
-[ext_resource type="PackedScene" uid="uid://enemy_scene" path="res://scenes/enemies/Enemy.tscn" id="2_enemy"]
-[ext_resource type="PackedScene" uid="uid://boss_scene" path="res://scenes/bosses/Boss.tscn" id="3_boss"]
-[ext_resource type="PackedScene" uid="uid://ability_pickup" path="res://scenes/world/AbilityPickup.tscn" id="4_pickup"]
-[ext_resource type="PackedScene" uid="uid://room_transition" path="res://scenes/world/RoomTransition.tscn" id="5_transition"]
+[ext_resource type="PackedScene" path="res://scenes/player/Player.tscn" id="1_player"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/Enemy.tscn" id="2_enemy"]
+[ext_resource type="PackedScene" path="res://scenes/bosses/Boss.tscn" id="3_boss"]
+[ext_resource type="PackedScene" path="res://scenes/world/AbilityPickup.tscn" id="4_pickup"]
+[ext_resource type="PackedScene" path="res://scenes/world/RoomTransition.tscn" id="5_transition"]
 `;
 
   if (options.hasSavePoint) {
-    scene += `[ext_resource type="PackedScene" uid="uid://save_point" path="res://scenes/world/SavePoint.tscn" id="8_savepoint"]
+    scene += `[ext_resource type="PackedScene" path="res://scenes/world/SavePoint.tscn" id="8_savepoint"]
 `;
   }
   if (options.npcs.length > 0) {
-    scene += `[ext_resource type="PackedScene" uid="uid://npc_scene" path="res://scenes/world/NPC.tscn" id="9_npc"]
+    scene += `[ext_resource type="PackedScene" path="res://scenes/world/NPC.tscn" id="9_npc"]
 `;
   }
   if (options.hasItemPickup) {
-    scene += `[ext_resource type="PackedScene" uid="uid://item_pickup" path="res://scenes/world/ItemPickup.tscn" id="10_item"]
+    scene += `[ext_resource type="PackedScene" path="res://scenes/world/ItemPickup.tscn" id="10_item"]
 `;
   }
   if (options.hasTileset) {
@@ -897,35 +993,39 @@ export function generateRoomScene(roomId: string, _index: number, options: RoomA
 `;
   }
   if (weakFloors.length > 0) {
-    scene += `[ext_resource type="PackedScene" uid="uid://weak_floor" path="res://scenes/world/WeakFloor.tscn" id="11_weakfloor"]
+    scene += `[ext_resource type="PackedScene" path="res://scenes/world/WeakFloor.tscn" id="11_weakfloor"]
 `;
   }
   if (grapplePoints.length > 0) {
-    scene += `[ext_resource type="PackedScene" uid="uid://grapple_point" path="res://scenes/world/GrapplePoint.tscn" id="12_grapple"]
+    scene += `[ext_resource type="PackedScene" path="res://scenes/world/GrapplePoint.tscn" id="12_grapple"]
 `;
   }
   if (waterZones.length > 0) {
-    scene += `[ext_resource type="PackedScene" uid="uid://water_zone" path="res://scenes/world/WaterZone.tscn" id="13_water"]
+    scene += `[ext_resource type="PackedScene" path="res://scenes/world/WaterZone.tscn" id="13_water"]
 `;
   }
   if (phaseBarriers.length > 0) {
-    scene += `[ext_resource type="PackedScene" uid="uid://phase_barrier" path="res://scenes/world/PhaseBarrier.tscn" id="14_phase"]
+    scene += `[ext_resource type="PackedScene" path="res://scenes/world/PhaseBarrier.tscn" id="14_phase"]
 `;
   }
   if (farPath) {
     scene += `[ext_resource type="Texture2D" path="res://${farPath}" id="21_bg_far"]
 `;
   }
-  if (layers.mid) {
+  if (layers.mid && !foundryKit) {
     scene += `[ext_resource type="Texture2D" path="res://${layers.mid}" id="22_bg_mid"]
 `;
   }
-  if (layers.near) {
+  if (layers.near && !foundryKit) {
     scene += `[ext_resource type="Texture2D" path="res://${layers.near}" id="23_bg_near"]
 `;
   }
   propSprites.forEach((rel, i) => {
     scene += `[ext_resource type="Texture2D" path="res://${rel}" id="30_prop_${i}"]
+`;
+  });
+  architectureSprites.forEach((rel, i) => {
+    scene += `[ext_resource type="Texture2D" path="res://${rel}" id="31_arch_${i}"]
 `;
   });
 
@@ -945,7 +1045,7 @@ room_width = ${platformWidth}
 room_height = ${options.height}
 tile_size = ${options.tileSize}
 room_archetype = "${(options.worldGraphArchetype ?? 'combat').replace(/"/g, '')}"
-`;
+${options.visualKit === 'foundry' ? 'visual_kit = "foundry"\n' : ''}`;
     if (options.tileCells?.length) {
       const encoded = JSON.stringify(
         options.tileCells.map((c) => [c.x, c.y, c.col, c.row]),
@@ -969,21 +1069,24 @@ room_archetype = "${(options.worldGraphArchetype ?? 'combat').replace(/"/g, '')}
 
   const shadow = 0.08 + ((options.biomeIndex + _index) % 3) * 0.02;
   const steel = 0.12 + (options.biomeIndex % 2) * 0.03;
-  const hideSkyRect = Boolean(farPath);
+  const hideSkyRect = Boolean(farPath) && !foundryKit;
   scene += `[node name="Background" type="ColorRect" parent="."]
-z_index = -20
+z_index = ${foundryKit ? '-90' : '-20'}
+z_as_relative = false
 visible = ${hideSkyRect ? 'false' : 'true'}
 offset_left = -240.0
 offset_top = -180.0
 offset_right = ${options.width + 240}.0
 offset_bottom = ${options.height + 180}.0
 mouse_filter = 2
-color = Color(${shadow.toFixed(3)}, ${steel.toFixed(3)}, ${(0.16 + (options.biomeIndex % 4) * 0.02).toFixed(3)}, ${hideSkyRect ? '0' : '1'})
+color = Color(${foundryKit ? '0.075, 0.118, 0.173' : `${shadow.toFixed(3)}, ${steel.toFixed(3)}, ${(0.16 + (options.biomeIndex % 4) * 0.02).toFixed(3)}`}, ${hideSkyRect ? '0' : '1'})
 
 `;
 
   if (farPath) {
-    const farScale = Math.min(options.width / 640, options.height / 360) * 2.1;
+    const farScale = foundryKit
+      ? foundryBackdropCoverScale(options.width, options.height)
+      : Math.min(options.width / 640, options.height / 360) * 1.08;
     scene += `[node name="FarSky" type="Sprite2D" parent="."]
 z_index = -80
 z_as_relative = false
@@ -995,46 +1098,91 @@ scale = Vector2(${farScale.toFixed(4)}, ${farScale.toFixed(4)})
 
 `;
   }
-  if (layers.mid) {
+  // Sixteenth-session fix: FarSky already scales to cover the room (farScale above), but
+  // ParallaxMid/ParallaxNear previously had no scale at all — their Sprite2D rendered at native
+  // 1:1 pixel size (640x360) regardless of room dimensions. On any room bigger than that native
+  // size (the common case — see the camera-zoom fix in CameraDirector.gd for real measured room
+  // dimensions), the far layer's same-style bay/module art appeared visibly enlarged while mid/
+  // near's identical-style art stayed tiny and denser right next to it — the "background modules
+  // repeat simultaneously at very different scales, competing with the platforms" finding in the
+  // independent visual assessment (docs/audit/MODERN_COHESION_TEST_PROJECT.md's sixteenth
+  // session). All three depth layers now share one consistent cover-scale (matching FarSky's own
+  // formula); scroll_scale (already present) is what differentiates depth, not raw sprite size.
+  // repeat_size scales with it so horizontal tiling still seams cleanly at the new size.
+  // Foundry V3 uses a single authored 1920x320 corridor plate — duplicating it as mid/near
+  // wallpaper is what made pack-backed rooms still look like VGF landscape cubes.
+  const bgScale = Math.min(options.width / 640, options.height / 360) * 1.08;
+  if (layers.mid && !foundryKit) {
     scene += `[node name="ParallaxMid" type="Parallax2D" parent="."]
 z_index = -40
 z_as_relative = false
 scroll_scale = Vector2(0.3, 0.12)
-repeat_size = Vector2(640, 0)
+repeat_size = Vector2(${(640 * bgScale).toFixed(1)}, 0)
 repeat_times = 4
 
 [node name="Sprite" type="Sprite2D" parent="ParallaxMid"]
 texture_filter = 0
 texture = ExtResource("22_bg_mid")
 centered = true
+scale = Vector2(${bgScale.toFixed(4)}, ${bgScale.toFixed(4)})
 position = Vector2(${Math.round(options.width / 2)}, ${Math.round(options.height / 2)})
 
 `;
   }
-  if (layers.near) {
+  if (layers.near && !foundryKit) {
     scene += `[node name="ParallaxNear" type="Parallax2D" parent="."]
 z_index = -20
 z_as_relative = false
 scroll_scale = Vector2(0.65, 0.2)
-repeat_size = Vector2(640, 0)
+repeat_size = Vector2(${(640 * bgScale).toFixed(1)}, 0)
 repeat_times = 4
 
 [node name="Sprite" type="Sprite2D" parent="ParallaxNear"]
 texture_filter = 0
 texture = ExtResource("23_bg_near")
 centered = true
+scale = Vector2(${bgScale.toFixed(4)}, ${bgScale.toFixed(4)})
 position = Vector2(${Math.round(options.width / 2)}, ${Math.round(options.height / 2)})
 
 `;
   }
-  propSprites.forEach((rel, i) => {
-    const x = Math.round(options.width * (0.22 + (i % 4) * 0.18));
+  // Structural assets are placed only through the semantic RoomPlan. This avoids the old
+  // percentage-based scatter that created unrelated central pillars and props in fight space.
+  const roomPlan = options.blueprint?.plan;
+  const propZones = roomPlan?.decorationZones ?? [];
+  const propCount = Math.min(propSprites.length, roomPlan?.propBudget.clusters ?? 0);
+  const architectureAnchors = roomPlan?.majorArchitecture ?? [];
+
+  propSprites.slice(0, propCount).forEach((rel, i) => {
+    const zone = propZones[i]!;
+    const x = Math.round(zone.x + zone.width * 0.5);
     const y = floorTop - 8;
     scene += `[node name="EnvProp_${i}" type="Sprite2D" parent="."]
 z_index = 3
 texture_filter = 0
 position = Vector2(${x}, ${y})
 texture = ExtResource("30_prop_${i}")
+centered = true
+
+`;
+    void rel;
+  });
+  // Wall-mounted macro architecture (arches/pillars/statues) — visibly larger than the tile-scale
+  // floor props above, standing tall against the wall instead of sitting small on the floor.
+  // z_index 2 keeps them behind gameplay (player/enemies at 5+) and in front of the background
+  // (-20) and rear-wall silhouette layers, so they read as room architecture, not clutter.
+  architectureSprites.slice(0, architectureAnchors.length).forEach((rel, i) => {
+    const anchor = architectureAnchors[i]!;
+    const x = Math.round(anchor.x);
+    const nativeHeight = 112;
+    const architectureScale = anchor.role === 'focal_frame' ? 1.35 : 1.15;
+    const y = Math.round(floorTop - (nativeHeight * architectureScale) / 2 + 6);
+    scene += `[node name="Architecture_${i}" type="Sprite2D" parent="."]
+z_index = 2
+texture_filter = 0
+position = Vector2(${x}, ${y})
+scale = Vector2(${architectureScale}, ${architectureScale})
+texture = ExtResource("31_arch_${i}")
 centered = true
 
 `;
@@ -1178,7 +1326,7 @@ amount = ${options.itemAmount}
     switch (conn.direction) {
       case 'up':
         x = platformWidth / 2 - 12 + slot * 48;
-        y = 48;
+        y = floorY - 80;
         break;
       case 'down':
         x = platformWidth / 2 - 12 + slot * 48;
@@ -1217,9 +1365,10 @@ export interface RecompileRoomsInput {
   gameContent?: GameContent;
   roomIds?: string[];
   targetRoomIds: string[];
+  visualKit?: 'foundry';
   roomOverrides?: Record<
     string,
-    Partial<Pick<RoomAssemblyOptions, 'hasEnemy' | 'width' | 'height' | 'tileCells'>>
+    Partial<Pick<RoomAssemblyOptions, 'hasEnemy' | 'width' | 'height' | 'tileCells' | 'visualKit'>>
   >;
 }
 
@@ -1254,6 +1403,8 @@ export function recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult
   }
 
   const targets = new Set(input.targetRoomIds);
+  const visualKit =
+    input.visualKit ?? (projectUsesFoundryVisualKit(input.outputDir) ? 'foundry' : undefined);
   for (let i = 0; i < roomIds.length; i++) {
     const roomId = roomIds[i]!;
     if (!targets.has(roomId)) continue;
@@ -1269,7 +1420,7 @@ export function recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult
         input.gameContent,
         enemyCounter,
         textureExists,
-        override,
+        { ...override, visualKit: override?.visualKit ?? visualKit },
       );
       if (override?.tileCells?.length) {
         // Hand-edited cells (room editor) have no matching auto-generated collision geometry —

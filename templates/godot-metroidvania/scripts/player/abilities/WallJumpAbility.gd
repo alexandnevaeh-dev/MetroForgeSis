@@ -15,6 +15,7 @@ func try_jump(controller: AbilityController) -> bool:
 	controller.coyote_timer = 0.0
 	controller.jump_buffer_timer = 0.0
 	controller.is_wall_sliding = false
+	controller.wall_jump_timer = 0.18
 	if controller.has_ability("double_jump"):
 		controller.air_jumps_remaining = 1
 	AudioManager.play_sfx("jump")

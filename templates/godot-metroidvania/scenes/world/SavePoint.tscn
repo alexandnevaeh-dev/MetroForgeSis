@@ -17,6 +17,10 @@ offset_right = 16.0
 offset_bottom = 0.0
 color = Color(0.3, 0.75, 0.95, 1)
 
+[node name="GeneratedSprite" type="Sprite2D" parent="."]
+visible = false
+position = Vector2(0, -16)
+
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -16)
 shape = SubResource("RectangleShape2D_save")

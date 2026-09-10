@@ -11,14 +11,40 @@ extends Area2D
 @export var pierce: bool = false
 var owner_node: Node2D = null
 
+## Real generated projectile art (assets/vfx/ranged_projectile.png — genre-agnostic, the same path
+## VFXManager.play() would resolve for an effect_id of "ranged_projectile") existed but this scene
+## always rendered a flat magenta ColorRect regardless — the real streak asset is oriented to face
+## `direction` below so it doesn't just fly sideways for a vertically-fired shot.
+const REAL_TEXTURE_PATH := "res://assets/vfx/ranged_projectile.png"
+
 var _age: float = 0.0
 var _hit_targets: Array[Node] = []
 
 func _ready() -> void:
 	area_entered.connect(_on_area_entered)
+	_apply_real_sprite()
+
+func _apply_real_sprite() -> void:
+	if not ResourceLoader.exists(REAL_TEXTURE_PATH):
+		return
+	var placeholder := get_node_or_null("Sprite")
+	if placeholder:
+		placeholder.queue_free()
+	var sprite := Sprite2D.new()
+	sprite.name = "RealSprite"
+	sprite.texture = load(REAL_TEXTURE_PATH)
+	sprite.centered = true
+	add_child(sprite)
 
 func _physics_process(delta: float) -> void:
 	position += direction * speed * delta
+	# `direction` is set by the caller (BossController._spawn_projectile() /
+	# TopDownEnemyController) after add_child() runs, so _ready() can't trust its value yet —
+	# keeping rotation live here means the real streak sprite always faces true travel direction
+	# regardless of that ordering.
+	var real_sprite := get_node_or_null("RealSprite")
+	if real_sprite:
+		real_sprite.rotation = direction.angle()
 	_age += delta
 	if _age >= lifetime:
 		queue_free()

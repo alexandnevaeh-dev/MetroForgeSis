@@ -14,6 +14,31 @@ describe('inferAssetMaturity', () => {
     expect(isNonProductionMaturity(a.maturity)).toBe(true);
   });
 
+  it('requires explicit final-use intent and validation for procedural production', () => {
+    const production = inferAssetMaturity({
+      fallbackGenerated: true,
+      provider: 'procedural',
+      proceduralProduction: true,
+      critiquePassed: true,
+      critiqueScore: 82,
+    });
+    expect(production).toEqual({
+      maturity: 'PROCEDURAL_PRODUCTION',
+      productionReady: true,
+      sourceType: 'procedural',
+    });
+
+    const unvalidated = inferAssetMaturity({
+      fallbackGenerated: true,
+      provider: 'procedural',
+      proceduralProduction: true,
+      critiquePassed: false,
+      critiqueScore: 40,
+    });
+    expect(unvalidated.maturity).toBe('PLACEHOLDER');
+    expect(unvalidated.productionReady).toBe(false);
+  });
+
   it('marks successful AI generation as GENERATED_SOURCE', () => {
     const a = inferAssetMaturity({
       fallbackGenerated: false,

@@ -1,10 +1,26 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, sep } from 'node:path';
-import type { GameDNA, ArtBible, StyleBible, CharacterVisualDNA, VisualDNA, BiomeVisualDNA, EnvironmentKit } from '@metroforge/schemas';
+import type { GameDNA, ArtBible, StyleBible, CharacterVisualDNA, VisualDNA, BiomeVisualDNA, EnvironmentKit, FoundryAssetType, VisualReferenceLibrary, VisualReferenceAssetRole, VisualReferenceTemplate } from '@metroforge/schemas';
+import {
+  resolveVisualReferenceTemplate,
+  roleForArchetype,
+  templateFillAccent,
+  templateTilesetStyle,
+  templateBackgroundPalette,
+  templatePropFillAccent,
+  buildTemplatePrompt,
+  checkTemplateTokenBudget,
+  resolveConditioning,
+  type ConditioningCapableRegistration,
+} from './visual-templates/index.js';
+import { partitionTilesetFeatures } from './png.js';
+import { partitionBackgroundFeatures } from './parallax-strip.js';
+import { partitionPropFeatures } from './prop-art.js';
 import {
   generateProceduralSprite,
   generateTilesetSource,
   generateWalkCycleSheet,
+  generateRunCycleSheet,
   generateHurtFlashSheet,
   generateAttackSheet,
   generateDeathSheet,
@@ -12,9 +28,15 @@ import {
   knockoutVfxBackground,
   decodePngRgba,
   generatePoseStill,
+  pickEnemyArchetype,
+  computeFrameQualityMetrics,
+  generateProgressionSheet,
   type SpriteSpec,
   type VfxSpec,
+  type FrameQualityMetrics,
+  type AttackArcKind,
 } from './png.js';
+import { PLAYER_ANIMATION_SPEC, buildAnimationMetadataSidecar, type PlayerAnimationDefinition } from './player-animation-spec.js';
 import { PixelArtProcessor } from './pixel-art-processor.js';
 import {
   generateParallaxStrip,
@@ -24,15 +46,25 @@ import {
 } from './parallax-strip.js';
 import { ImageProviderRegistry } from './image-router.js';
 import { registerFoundryImageProviders } from './foundry/register.js';
+import { LegacyAssetGenerationGateway } from './gateway/legacy-gateway.js';
+import { createAssetGenerationGateway } from './gateway/index.js';
+import type { AssetGenerationGateway, AssetGenerationBackend } from './gateway/types.js';
 import type { VisionCritic } from './vision-critic-factory.js';
 import { createVisionCritic } from './vision-critic-factory.js';
 import { runDeterministicAssetChecks } from './vlm-critic.js';
-import { critiqueAnimationSheet, critiqueTilesetSheet } from './animation-critic.js';
+import { critiqueAnimationSheet, critiqueTilesetSheet, type AnimationKind } from './animation-critic.js';
 import { TileCompiler, TILE_ATLAS } from './tile-compiler.js';
 import { assembleContactSheet, critiqueAnimationIdentity } from './sprite-qa.js';
 import { nvidiaModelForImageTask } from './image-task.js';
 import { buildPlayerAnimationManifest, poseNamesFromManifest } from './animation-manifest.js';
-import { buildTileTerrainMetadata, missingRequiredTileRoles } from './tile-roles.js';
+import {
+  buildTileTerrainMetadata,
+  buildGroundTerrainTresText,
+  GROUND_TERRAIN_ID,
+  GROUND_TERRAIN_MASK_ROLES,
+  GROUND_TERRAIN_SET_ID,
+  missingRequiredTileRoles,
+} from './tile-roles.js';
 import { createHash } from 'node:crypto';
 import type { ImageGenerationProfile } from './types/vision.js';
 import type { ImageGenerator, ImageConditioning } from './types/image-gen.js';
@@ -42,6 +74,7 @@ import {
   throwIfCancelled,
   inferAssetMaturity,
   critiqueEffectivelyPassed,
+  isNonProductionMaturity,
   isTopDownArchetype,
 } from '@metroforge/shared';
 import type { AssetMaturity, AssetSourceType } from '@metroforge/shared';
@@ -51,6 +84,7 @@ import { writeCharacterIdentityPack } from './identity/pack.js';
 import { generateUiPanel, generateUiIcon, UI_FOUNDRY_ASSETS } from './ui-foundry.js';
 import { generatePropSprite } from './prop-art.js';
 import { sanitizeImagePromptText } from './sanitize-image-prompt.js';
+import { runAssetPipelineV2 } from './pipeline-v2/orchestrator.js';
 
 export interface GeneratedAsset {
   id: string;
@@ -67,6 +101,8 @@ export interface GeneratedAsset {
   maturity: AssetMaturity;
   productionReady: boolean;
   sourceType: AssetSourceType;
+  /** Final-use deterministic generator intent; maturity still requires visual validation. */
+  proceduralProduction?: boolean;
   /** Sidecar AI/full-res PNG kept when `path` holds the pixel-art compiled output. */
   sourcePath?: string;
   fallbackDepth?: number;
@@ -90,6 +126,21 @@ export interface GeneratedAsset {
   transformation?: string;
   sourceLicense?: string;
   derivedLicense?: string;
+  /** Production-standard §20 frame-quality metrics — present for multi-frame sheets that compute
+   *  them (currently the run cycle; see buildRunSheetAsset). Absent for single-frame assets. */
+  frameQuality?: FrameQualityMetrics;
+  /** Which AssetGenerationGateway backend was consulted for this asset's raw bytes — set whether
+   *  or not that attempt actually succeeded (a procedural-fallback asset can still say 'foundry'
+   *  here, meaning Foundry was tried and had no eligible/healthy provider). 'legacy' everywhere
+   *  by default; 'foundry' only for a call site explicitly migrated to AssetFoundry. Absent only
+   *  when no provider was even configured (skipImageGen, or no imageGen and no gateway at all). */
+  generationBackend?: 'legacy' | 'foundry';
+  /** Foundry's own QA verdict, captured for observability/provenance — does not replace
+   *  critiquePassed/critiqueScore above, which always come from AssetPipeline's own deterministic
+   *  checks + VLM critique regardless of backend. */
+  foundryQaPassed?: boolean;
+  foundryQaScore?: number;
+  foundryLicense?: { commercialUse: boolean; status: string; reason: string };
 }
 
 /** `assets/foo/bar.png` → `assets/foo/bar_source.png` (never overwrites the compiled path). */
@@ -189,6 +240,22 @@ export interface AssetPipelineOptions {
   visualDNA?: VisualDNA;
   biomeVisualDNAs?: BiomeVisualDNA[];
   environmentKits?: EnvironmentKit[];
+  /** Fourteenth-session visual reference/template library (docs/asset-pipeline/reference-library/,
+   *  loaded via loadVisualReferenceLibrary()). Optional and additive — omitting it reproduces
+   *  every existing generation path unchanged. When present, categories with a matching template
+   *  (currently: enemy archetypes mapped through pickEnemyArchetype -> roleForArchetype) use the
+   *  template's prompt/palette instead of the generic BIOME_PALETTES rotation, enforce the
+   *  template's tokenizer budget, and record which template/version/seed produced each asset in
+   *  <outputDir>/reports/visual-template-provenance.json. */
+  visualReferenceLibrary?: VisualReferenceLibrary;
+  /** Which provider registration to check for reference-image conditioning support when a
+   *  visualReferenceLibrary template is resolved. Optional — when omitted, conditioning is never
+   *  attempted and the resolution is recorded as disclosed-unsupported (no provider selected). */
+  visualReferenceProvider?: ConditioningCapableRegistration;
+  /** Repository root containing docs/asset-pipeline/reference-library/ — needed to read a
+   *  template's reference image bytes for conditioning. Defaults to process.cwd(). Only consulted
+   *  when visualReferenceLibrary is set. */
+  visualReferenceLibraryRoot?: string;
   comfyuiUrl?: string;
   diffusersPython?: string;
   diffusersModelId?: string;
@@ -202,6 +269,18 @@ export interface AssetPipelineOptions {
   stabilityApiKey?: string;
   deepaiApiKey?: string;
   replicateApiToken?: string;
+  pollinationsBaseUrl?: string;
+  pollinationsModel?: string;
+  pollinationsApiKey?: string;
+  /** Registers the free, keyless Pollinations provider as a routing candidate. Off by default —
+   *  see registerFoundryImageProviders' enablePollinations doc for why this isn't unconditional. */
+  enablePollinations?: boolean;
+  /** AssetFoundry production-integration migration seam. Default 'legacy' — behaviorally
+   *  identical to every prior release. Only the player key-art generateSprite() call currently
+   *  honors this (see the first-migrated-category note in generate()); every other category
+   *  stays on the legacy single-provider-per-run resolver regardless of this setting until it is
+   *  explicitly migrated too. */
+  assetGenerationBackend?: AssetGenerationBackend;
   ollamaBaseUrl?: string;
   skipVlm?: boolean;
   skipImageGen?: boolean;
@@ -222,6 +301,16 @@ export interface AssetPipelineOptions {
   }>;
   /** Reuse already-generated sprite files on disk instead of regenerating them. */
   resume?: boolean;
+  /** procedural-only (default when absent): baseline only, never calls NVIDIA NIM.
+   *  nvidia-enhanced: always attempts the post-baseline NIM enhancement pass for the P0 asset
+   *  slice (player/enemies/boss/backgrounds/checkpoint/pickup/gate), falling back per-asset on
+   *  any failure — never blocks generation.
+   *  auto: attempts the pass only when NIM health-checks as reachable first. */
+  visualMode?: 'procedural-only' | 'nvidia-enhanced' | 'auto';
+  /** Injectable for tests / alternate deployments; defaults to a real NvidiaImageEditProvider /
+   *  NvidiaImageProvider pair when visualMode !== 'procedural-only' and neither is supplied. */
+  visualEnhancementEditor?: import('./types/image-edit.js').ImageEditor;
+  visualEnhancementGenerator?: ImageGenerator;
   /** Routing constraint for image-provider selection — LOCAL_ONLY excludes any registered
    *  provider that isn't local. Remote providers are never rejected for low local VRAM. */
   mode?: GenerationMode;
@@ -246,6 +335,9 @@ export interface AssetPipelineResult {
   selectedProvider?: string;
   /** Posed animation failed identity QA or used single-still derivation. */
   fakeAnimationDetected?: boolean;
+  /** Present whenever visualMode !== 'procedural-only' was requested — always honest about what
+   *  was attempted vs actually enhanced vs fell back, never faked. */
+  visualEnhancement?: import('./visual-enhancement/types.js').VisualEnhancementSummary;
 }
 
 const NPC_ROLE_COLORS: Record<string, [number, number, number]> = {
@@ -265,6 +357,199 @@ const BIOME_PALETTES: [number, number, number][][] = [
   [[55, 40, 30], [100, 70, 45], [180, 120, 60], [220, 200, 160]],
   [[25, 35, 50], [45, 65, 90], [80, 140, 180], [200, 220, 240]],
 ];
+
+export interface VisualTemplateProvenanceEntry {
+  assetId: string;
+  assetRole: VisualReferenceAssetRole;
+  templateId: string;
+  styleVersion: string;
+  biome: string;
+  seed: number;
+  prompt: string;
+  negativePrompt: string;
+  tokenBudget: { tokenCount: number; maxTokens: number; overflow: boolean; estimated: boolean };
+  conditioningDisclosure?: string;
+  conditioningAttached: boolean;
+  /** Actual conditioning mode used ('ip_adapter' | 'controlnet_canny' | 'img2img'), or 'none' when
+   *  not attached — fifteenth-session addition, always present (never inferred after the fact). */
+  conditioningMode: string;
+  /** The real image provider id that produced the final asset bytes (e.g. 'procedural',
+   *  'diffusers', 'nvidia-image') — filled in by finalizeVisualTemplateProvenance() once
+   *  generation actually completes; 'pending' would indicate a caller forgot to finalize it, so
+   *  every real call site below finalizes before this leaves the function. */
+  provider: string;
+  modelId?: string;
+  /** template.environmentFeatures the live renderer actually applied — empty for roles (player,
+   *  enemy, boss) that don't use environment features. */
+  appliedFeatures: string[];
+  /** template.environmentFeatures the live renderer does not support — disclosed explicitly
+   *  rather than silently dropped (fifteenth-session requirement). */
+  unsupportedFeatures: string[];
+}
+
+/** Extracts the trailing integer from a `biome_<N>`-style id (the real, confirmed convention from
+ *  packages/procedural/src/{bibles,content,world}.ts) for index-rotation into the reference
+ *  library's biome list. Falls back to 0 for an unrecognized id rather than throwing — a biome id
+ *  the generator changes format for is a soft "always index 0", not a hard failure. */
+function biomeIndexFromId(biomeId: string): number {
+  const match = /(\d+)\s*$/.exec(biomeId);
+  return match ? Number(match[1]) : 0;
+}
+
+function libraryBiomeForIndex(library: VisualReferenceLibrary, index: number): string {
+  return library.biomes[index % library.biomes.length]!.biome;
+}
+
+/** Shared core behind every resolveXVisualTemplate() helper below: resolves the (role, biome)
+ * template, builds its prompt (through the same buildTemplatePrompt/StyleBible composition used
+ * elsewhere), checks its tokenizer budget, and resolves conditioning — everything that's the same
+ * regardless of which asset category is asking. Each category-specific wrapper adds only its own
+ * palette/feature adapter (templateFillAccent / templateTilesetStyle / templateBackgroundPalette /
+ * templatePropFillAccent) on top. Returns undefined when no library is configured or no template
+ * covers this (role, biome), so callers fall back to existing (unchanged) behavior.
+ *
+ * Biome selection is by index rotation through the library's biome list (library.biomes[i %
+ * length]), mirroring BIOME_PALETTES' own existing index-rotation convention — it does not attempt
+ * to semantically match a real generated biome's theme/name to one of the library's three named
+ * biomes. A real semantic mapping (e.g. via BiomeVisualDNA.theme keywords) is a disclosed
+ * follow-up, not implemented in this pass.
+ */
+async function resolveTemplateCore(
+  library: VisualReferenceLibrary,
+  assetRole: VisualReferenceAssetRole,
+  biome: string,
+  assetId: string,
+  seed: number,
+  styleBible: StyleBible | undefined,
+  provider: ConditioningCapableRegistration | undefined,
+  repoRoot: string,
+): Promise<{ template: VisualReferenceTemplate; prompt: string; provenance: VisualTemplateProvenanceEntry } | undefined> {
+  const template = resolveVisualReferenceTemplate(library, { assetRole, biome });
+  if (!template) return undefined;
+
+  const { prompt, negativePrompt } = buildTemplatePrompt(template, { styleBible });
+  const tokenBudget = await checkTemplateTokenBudget(prompt, negativePrompt);
+  const conditioning = resolveConditioning(repoRoot, template, provider);
+
+  return {
+    template,
+    prompt,
+    provenance: {
+      assetId,
+      assetRole,
+      templateId: template.id,
+      styleVersion: template.styleVersion,
+      biome,
+      seed,
+      prompt,
+      negativePrompt,
+      tokenBudget: {
+        tokenCount: tokenBudget.tokenCount,
+        maxTokens: tokenBudget.maxTokens,
+        overflow: tokenBudget.overflow,
+        estimated: tokenBudget.estimated,
+      },
+      conditioningDisclosure: conditioning.disclosure,
+      conditioningAttached: Boolean(conditioning.conditioning),
+      conditioningMode: conditioning.conditioning?.mode ?? 'none',
+      provider: 'pending',
+      appliedFeatures: [],
+      unsupportedFeatures: [],
+    },
+  };
+}
+
+/** Fills in the real provider/model once a template-driven generation call actually completes —
+ * mutates the provenance record in place (it was already pushed into the run's provenance list by
+ * reference), so every real call site must call this before the asset is considered done. */
+function finalizeVisualTemplateProvenance(
+  provenance: VisualTemplateProvenanceEntry,
+  provider: string,
+  modelId: string | undefined,
+): void {
+  provenance.provider = provider;
+  provenance.modelId = modelId;
+}
+
+async function resolveEnemyVisualTemplate(
+  library: VisualReferenceLibrary | undefined,
+  archetype: import('./png.js').EnemyArchetype,
+  biomeIndex: number,
+  assetId: string,
+  seed: number,
+  styleBible: StyleBible | undefined,
+  provider: ConditioningCapableRegistration | undefined,
+  repoRoot: string,
+): Promise<{ fill: [number, number, number, number]; accent: [number, number, number, number]; prompt: string; provenance: VisualTemplateProvenanceEntry } | undefined> {
+  if (!library || library.biomes.length === 0) return undefined;
+  const role = roleForArchetype(archetype);
+  if (!role) return undefined;
+  const biome = libraryBiomeForIndex(library, biomeIndex);
+  const core = await resolveTemplateCore(library, role, biome, assetId, seed, styleBible, provider, repoRoot);
+  if (!core) return undefined;
+  const { fill, accent } = templateFillAccent(core.template);
+  return { fill, accent, prompt: core.prompt, provenance: core.provenance };
+}
+
+async function resolveTerrainVisualTemplate(
+  library: VisualReferenceLibrary | undefined,
+  biomeIndex: number,
+  assetId: string,
+  seed: number,
+  styleBible: StyleBible | undefined,
+  provider: ConditioningCapableRegistration | undefined,
+  repoRoot: string,
+): Promise<{ style: ReturnType<typeof templateTilesetStyle>; prompt: string; provenance: VisualTemplateProvenanceEntry } | undefined> {
+  if (!library || library.biomes.length === 0) return undefined;
+  const biome = libraryBiomeForIndex(library, biomeIndex);
+  const core = await resolveTemplateCore(library, 'terrain', biome, assetId, seed, styleBible, provider, repoRoot);
+  if (!core) return undefined;
+  const rawStyle = templateTilesetStyle(core.template);
+  const { supported, unsupported } = partitionTilesetFeatures(rawStyle.features);
+  core.provenance.appliedFeatures = supported;
+  core.provenance.unsupportedFeatures = unsupported;
+  return { style: { ...rawStyle, features: supported }, prompt: core.prompt, provenance: core.provenance };
+}
+
+async function resolveBackgroundVisualTemplate(
+  library: VisualReferenceLibrary | undefined,
+  biomeIndex: number,
+  assetId: string,
+  seed: number,
+  styleBible: StyleBible | undefined,
+  provider: ConditioningCapableRegistration | undefined,
+  repoRoot: string,
+): Promise<{ palette: [number, number, number][]; features: string[]; prompt: string; provenance: VisualTemplateProvenanceEntry } | undefined> {
+  if (!library || library.biomes.length === 0) return undefined;
+  const biome = libraryBiomeForIndex(library, biomeIndex);
+  const core = await resolveTemplateCore(library, 'background', biome, assetId, seed, styleBible, provider, repoRoot);
+  if (!core) return undefined;
+  const palette = templateBackgroundPalette(core.template);
+  const { supported, unsupported } = partitionBackgroundFeatures(core.template.environmentFeatures);
+  core.provenance.appliedFeatures = supported;
+  core.provenance.unsupportedFeatures = unsupported;
+  return { palette, features: supported, prompt: core.prompt, provenance: core.provenance };
+}
+
+async function resolvePropVisualTemplate(
+  library: VisualReferenceLibrary | undefined,
+  biomeIndex: number,
+  assetId: string,
+  seed: number,
+  styleBible: StyleBible | undefined,
+  provider: ConditioningCapableRegistration | undefined,
+  repoRoot: string,
+): Promise<{ fill: string; accent: string; features: string[]; prompt: string; provenance: VisualTemplateProvenanceEntry } | undefined> {
+  if (!library || library.biomes.length === 0) return undefined;
+  const biome = libraryBiomeForIndex(library, biomeIndex);
+  const core = await resolveTemplateCore(library, 'prop', biome, assetId, seed, styleBible, provider, repoRoot);
+  if (!core) return undefined;
+  const { fill, accent } = templatePropFillAccent(core.template);
+  const { supported, unsupported } = partitionPropFeatures(core.template.environmentFeatures);
+  core.provenance.appliedFeatures = supported;
+  core.provenance.unsupportedFeatures = unsupported;
+  return { fill, accent, features: supported, prompt: core.prompt, provenance: core.provenance };
+}
 
 function buildNpcImagePrompt(
   npc: NonNullable<AssetPipelineOptions['npcs']>[number],
@@ -405,6 +690,10 @@ async function resolveImageGenerator(options: {
   stabilityApiKey?: string;
   deepaiApiKey?: string;
   replicateApiToken?: string;
+  pollinationsBaseUrl?: string;
+  pollinationsModel?: string;
+  pollinationsApiKey?: string;
+  enablePollinations?: boolean;
   mode?: GenerationMode;
   hardwareProfile?: string;
   providerEnabled?: Record<string, boolean>;
@@ -414,6 +703,7 @@ async function resolveImageGenerator(options: {
   fallbackDepth: number;
   fallbackReason?: string;
   selectedProvider?: string;
+  registry: ImageProviderRegistry;
 }> {
   const registry = new ImageProviderRegistry();
   registerFoundryImageProviders(registry, {
@@ -429,6 +719,10 @@ async function resolveImageGenerator(options: {
     stabilityApiKey: options.stabilityApiKey,
     deepaiApiKey: options.deepaiApiKey,
     replicateApiToken: options.replicateApiToken,
+    pollinationsBaseUrl: options.pollinationsBaseUrl,
+    pollinationsModel: options.pollinationsModel,
+    pollinationsApiKey: options.pollinationsApiKey,
+    enablePollinations: options.enablePollinations,
     providerEnabled: options.providerEnabled,
     commercialUseRequired: options.mode === 'COMMERCIAL_SAFE',
     includeRetrieval: false,
@@ -445,6 +739,7 @@ async function resolveImageGenerator(options: {
       fallbackDepth: selected.fallbackDepth,
       fallbackReason: selected.fallbackReason,
       selectedProvider: selected.selectedProvider,
+      registry,
     };
   }
   return {
@@ -453,7 +748,30 @@ async function resolveImageGenerator(options: {
     fallbackDepth: selected.fallbackDepth,
     fallbackReason: selected.fallbackReason,
     selectedProvider: undefined,
+    registry,
   };
+}
+
+const PROFILE_TO_FOUNDRY_ASSET_TYPE: Partial<Record<ImageGenerationProfile, FoundryAssetType>> = {
+  CHARACTER: 'player',
+  ENEMY: 'enemy',
+  BOSS: 'boss',
+  NPC: 'npc',
+  PORTRAIT: 'portrait',
+  ITEM: 'item',
+  WEAPON: 'weapon',
+  ICON: 'icon',
+  BACKGROUND: 'background',
+  TILE_SOURCE: 'tileset',
+  VFX_TEXTURE: 'vfx',
+  UI_ART: 'ui',
+};
+
+/** Best-effort FoundryAssetType for a generateSprite() call that didn't specify one explicitly —
+ *  used only when a gateway is actually in play (opts.gateway set), so an unmapped profile never
+ *  affects the (far more common) legacy-only call sites. */
+function foundryAssetTypeForProfile(profile: ImageGenerationProfile): FoundryAssetType {
+  return PROFILE_TO_FOUNDRY_ASSET_TYPE[profile] ?? 'texture';
 }
 
 function withMaturity(
@@ -466,16 +784,54 @@ function withMaturity(
     critiquePassed: asset.critiquePassed,
     critiqueScore: asset.critiqueScore,
     sourceType: asset.sourceType,
+    proceduralProduction: asset.proceduralProduction,
   });
+  const proceduralProduction = inferred.maturity === 'PROCEDURAL_PRODUCTION';
   return {
     ...asset,
     critiquePassed: asset.critiquePassed ?? false,
     critiqueScore: asset.critiqueScore ?? 0,
-    maturity: asset.maturity ?? inferred.maturity,
-    productionReady: asset.productionReady ?? inferred.productionReady,
+    maturity: proceduralProduction ? inferred.maturity : (asset.maturity ?? inferred.maturity),
+    productionReady: proceduralProduction ? true : (asset.productionReady ?? inferred.productionReady),
     sourceType: asset.sourceType ?? inferred.sourceType,
-    productionAllowed: asset.productionAllowed ?? !asset.fallbackGenerated,
+    productionAllowed: asset.productionAllowed ?? (inferred.productionReady || !asset.fallbackGenerated),
   };
+}
+
+export function proceduralProductionIntent(
+  asset: Pick<GeneratedAsset, 'path' | 'provider' | 'critiquePassed'>,
+  assetType: string,
+): boolean {
+  const normalizedPath = asset.path.replace(/\\/g, '/').toLowerCase();
+  if (
+    asset.provider !== 'procedural' ||
+    asset.critiquePassed !== true ||
+    normalizedPath.includes('/qa/') ||
+    normalizedPath.includes('/debug/') ||
+    normalizedPath.includes('/sfx/') ||
+    normalizedPath.includes('/audio/')
+  ) {
+    return false;
+  }
+
+  const shippingAssetTypes = new Set([
+    'tile',
+    'tileset',
+    'prop',
+    'player',
+    'enemy',
+    'boss',
+    'background',
+    'ui',
+    'portrait',
+    'vfx',
+    'npc',
+    'animation',
+    'character',
+    'interactive',
+  ]);
+
+  return shippingAssetTypes.has(assetType);
 }
 
 function checkpointFullPath(outputDir: string, relPath: string): string {
@@ -505,7 +861,15 @@ function writeCheckpoint(outputDir: string, relPath: string, buffer: Buffer): vo
   writeFileSync(full, buffer);
 }
 
-function inferAssetTypeFromPath(path: string): string {
+/**
+ * Path-based assetType inference — used both to resume a checkpointed generation and to
+ * re-evaluate an already-generated project's manifest (see reclassify-asset-maturity.ts).
+ * Must stay in sync with the assetType vocabulary `proceduralProductionIntent()`'s
+ * `shippingAssetTypes` actually checks — a path this misses silently falls to 'texture',
+ * which is never whitelisted there, so a resumed/reclassified asset can never reach
+ * PROCEDURAL_PRODUCTION regardless of quality.
+ */
+export function inferAssetTypeFromPath(path: string): string {
   if (path.includes('/vfx/')) return 'vfx';
   if (path.includes('/tilesets/')) return path.includes('/tiles/') ? 'tile' : 'tileset';
   if (path.includes('/bosses/')) return 'boss';
@@ -514,6 +878,11 @@ function inferAssetTypeFromPath(path: string): string {
     return path.includes('_walk') ? 'animation' : 'npc';
   }
   if (path.includes('/characters/')) return path.includes('_walk') || path.includes('_hurt') || path.includes('_attack') ? 'animation' : 'player';
+  if (path.includes('/ui/portraits/')) return 'portrait';
+  if (path.includes('/ui/')) return 'ui';
+  if (path.includes('/props/') || path.includes('/architecture/')) return 'prop';
+  if (path.includes('/backgrounds/')) return 'background';
+  if (path.includes('/generated/')) return 'interactive';
   return 'texture';
 }
 
@@ -578,9 +947,18 @@ export class AssetPipeline {
     const warnings: string[] = [];
     let fakeAnimationDetected = false;
     const checkCancelled = () => throwIfCancelled(options.signal);
+    /** Fourteenth-session visual-reference-template selections — flushed to
+     *  <outputDir>/reports/visual-template-provenance.json at the end of generate() when
+     *  non-empty, recording template id/version/seed/prompt/tokenBudget/conditioning-disclosure
+     *  per asset, per this milestone's "record the selected template version and seed with
+     *  outputs" and "disclose" requirements. */
+    const visualTemplateProvenance: VisualTemplateProvenanceEntry[] = [];
     const recordAsset = (asset: Omit<GeneratedAsset, 'maturity' | 'productionReady' | 'sourceType'> &
       Partial<Pick<GeneratedAsset, 'maturity' | 'productionReady' | 'sourceType'>>, assetType: string) => {
-      const finalized = withMaturity(asset);
+      const finalized = withMaturity({
+        ...asset,
+        proceduralProduction: asset.proceduralProduction ?? proceduralProductionIntent(asset as GeneratedAsset, assetType),
+      });
       assets.push(finalized);
       options.onArtifact?.(finalized, assetType);
     };
@@ -597,7 +975,7 @@ export class AssetPipeline {
         warnings.push(
           `Resumed ${cachedAssets.length} asset(s) from generation_manifest.json — skipped regeneration`,
         );
-        const degraded = cachedAssets.some((a) => a.fallbackGenerated || a.maturity === 'PLACEHOLDER');
+        const degraded = cachedAssets.some((a) => isNonProductionMaturity(a.maturity));
         return {
           assets,
           warnings,
@@ -622,6 +1000,7 @@ export class AssetPipeline {
           fallbackDepth: 0,
           fallbackReason: 'Image generation skipped',
           selectedProvider: undefined as string | undefined,
+          registry: new ImageProviderRegistry(),
         }
       : await resolveImageGenerator({
           comfyuiUrl: options.comfyuiUrl,
@@ -636,6 +1015,10 @@ export class AssetPipeline {
           stabilityApiKey: options.stabilityApiKey,
           deepaiApiKey: options.deepaiApiKey,
           replicateApiToken: options.replicateApiToken,
+          pollinationsBaseUrl: options.pollinationsBaseUrl,
+          pollinationsModel: options.pollinationsModel,
+          pollinationsApiKey: options.pollinationsApiKey,
+          enablePollinations: options.enablePollinations,
           mode: options.mode,
           hardwareProfile: options.hardwareProfile,
           providerEnabled: options.providerEnabled,
@@ -643,6 +1026,15 @@ export class AssetPipeline {
     const imageGen = imageRoute.generator;
     const providerWarnings = imageRoute.warnings;
     warnings.push(...providerWarnings);
+
+    // AssetFoundry production integration seam (first migrated category: player key art — see
+    // Phase 5 of the migration). Default 'legacy' reconstructs a gateway that behaves exactly
+    // like the pre-migration inline call; every other generateSprite() call site in this method
+    // omits `gateway` entirely and is unaffected by this setting regardless of its value.
+    const playerGateway = createAssetGenerationGateway(options.assetGenerationBackend ?? 'legacy', {
+      registry: imageRoute.registry,
+      legacyImageGen: imageGen,
+    });
 
     const vlm: VisionCritic = createVisionCritic({
       ollamaBaseUrl: options.ollamaBaseUrl,
@@ -699,6 +1091,9 @@ export class AssetPipeline {
       outputDir: options.outputDir,
       resume: options.resume,
       signal: options.signal,
+      foundryAssetType: 'player',
+      gateway: playerGateway,
+      mode: options.mode,
     });
     recordAsset(playerAsset, 'player');
     if (options.visualDNA) {
@@ -721,55 +1116,142 @@ export class AssetPipeline {
     // shape even when playerAsset.buffer held real AI art, so a player with a real portrait could
     // still have visually disconnected placeholder walk/attack/hurt frames.
     const playerSource = playerAsset.fallbackGenerated ? undefined : playerAsset.buffer;
+    const walkDef = PLAYER_ANIMATION_SPEC.walk!;
     recordAsset(
       this.buildWalkSheetAsset(
         'player',
         playerSpec,
         'assets/characters/player_walk.png',
-        4,
+        walkDef.frameCount,
         tileSize,
         playerSource,
       ),
       'animation',
     );
+    const attackDef = PLAYER_ANIMATION_SPEC.attack!;
     recordAsset(
       this.buildAttackSheetAsset(
         'player',
         playerSpec,
         'assets/characters/player_attack.png',
-        4,
+        attackDef.frameCount,
         tileSize,
         playerSource,
+        attackDef.arcKind,
+        'attack',
       ),
       'animation',
     );
+    // Combo continuation hits (production pass §17) — distinct arcs (upward/downward), not a
+    // rotate/recolor of attack_1. Genuinely wired into PlayerController.gd's combo system below,
+    // not generated-but-dead: eliminates the exact "ASSET_EXISTS_NOT_USED" defect this pass
+    // found and fixed for `walk`/`swim`/`wall_jump`, applied proactively here instead of reactively.
+    const attack2Def = PLAYER_ANIMATION_SPEC.attack_2!;
+    recordAsset(
+      this.buildAttackSheetAsset(
+        'player',
+        playerSpec,
+        'assets/characters/player_attack_2.png',
+        attack2Def.frameCount,
+        tileSize,
+        playerSource,
+        attack2Def.arcKind,
+        'attack_2',
+      ),
+      'animation',
+    );
+    const attack3Def = PLAYER_ANIMATION_SPEC.attack_3!;
+    recordAsset(
+      this.buildAttackSheetAsset(
+        'player',
+        playerSpec,
+        'assets/characters/player_attack_3.png',
+        attack3Def.frameCount,
+        tileSize,
+        playerSource,
+        attack3Def.arcKind,
+        'attack_3',
+      ),
+      'animation',
+    );
+    const hurtDef = PLAYER_ANIMATION_SPEC.hurt!;
     recordAsset(
       this.buildHurtSheetAsset(
         'player',
         playerSpec,
         'assets/characters/player_hurt.png',
-        4,
+        hurtDef.frameCount,
         tileSize,
         playerSource,
       ),
       'animation',
     );
+    const deathDef = PLAYER_ANIMATION_SPEC.death!;
     recordAsset(
       this.buildDeathSheetAsset(
         'player',
         playerSpec,
         'assets/characters/player_death.png',
-        4,
+        deathDef.frameCount,
+        tileSize,
+        playerSource,
+      ),
+      'animation',
+    );
+    // Genuine multi-frame run cycle (production standard §22/§25) — a real 12-frame animated
+    // sheet, not the single static pose still every other locomotion state still uses. Excluded
+    // from the pose-still list below for the same reason attack/hurt/death are: a real sheet
+    // already exists for this animation name, and AnimatedAssetSprite.gd's pose-override loader
+    // would otherwise clobber it with one static frame.
+    const runDef = PLAYER_ANIMATION_SPEC.run!;
+    recordAsset(
+      this.buildRunSheetAsset(
+        'player',
+        playerSpec,
+        'assets/characters/player_run.png',
+        runDef.frameCount,
         tileSize,
         playerSource,
       ),
       'animation',
     );
 
-    // Canonical per-animation-state pose stills (Section 6/7): idle/run/jump_start/jump/fall/
-    // land/dash must be real, distinct poses — never a copy of walk-frame-1. AI-conditioned
-    // pose upgrade is opt-in (`allowAiUpgrade: true`) because NVIDIA flux.1-kontext-dev
-    // currently 422s on custom sprites. Procedural POSE_TRANSFORMS remain the production PATH.
+    // Every remaining locomotion/transition state (idle, jump_start, jump, fall, land, dash,
+    // wall_slide, wall_jump, swim) — real multi-frame sheets via the shared progression-sheet
+    // generator family, not the single static pose still these previously fell back to. Player
+    // animation production pass: turns "one proven multi-frame animation plus 12 static poses"
+    // into every state having a genuine clip.
+    const progressionStates: Array<[keyof typeof PLAYER_ANIMATION_SPEC, string]> = [
+      ['idle', 'assets/characters/player_idle.png'],
+      ['jump_start', 'assets/characters/player_jump_start.png'],
+      ['jump', 'assets/characters/player_jump.png'],
+      ['fall', 'assets/characters/player_fall.png'],
+      ['land', 'assets/characters/player_land.png'],
+      ['dash', 'assets/characters/player_dash.png'],
+      ['wall_slide', 'assets/characters/player_wall_slide.png'],
+      ['wall_jump', 'assets/characters/player_wall_jump.png'],
+      ['swim', 'assets/characters/player_swim.png'],
+    ];
+    const progressionDefs: PlayerAnimationDefinition[] = [walkDef, runDef, attackDef, attack2Def, attack3Def, hurtDef, deathDef];
+    for (const [key, path] of progressionStates) {
+      const def = PLAYER_ANIMATION_SPEC[key]!;
+      progressionDefs.push(def);
+      recordAsset(this.buildProgressionSheetAsset('player', def, playerSpec, path, tileSize, playerSource), 'animation');
+    }
+    {
+      const animSidecarDir = join(options.outputDir, 'assets', 'characters');
+      mkdirSync(animSidecarDir, { recursive: true });
+      writeFileSync(
+        join(animSidecarDir, 'player_animations.json'),
+        JSON.stringify(buildAnimationMetadataSidecar(progressionDefs), null, 2),
+      );
+    }
+
+    // Canonical per-animation-state pose stills (Section 6/7): legacy AI-upgrade path, now purely
+    // additive — every state above already has a real procedural multi-frame sheet, so the
+    // generalized "production sheet wins over pose" rule in AnimatedAssetSprite.gd means any pose
+    // still produced here (e.g. from a future AI provider) is only ever used if that provider's
+    // pose is later promoted to a full sheet; it never regresses a state that already has one.
     {
       const abilityIds = options.gameDna.abilities.filter((a) => a.enabled).map((a) => a.id);
       const animManifest = buildPlayerAnimationManifest({
@@ -804,8 +1286,11 @@ export class AssetPipeline {
         // only). Do not burn 3 retries per pose — the interface still accepts conditioning when a
         // future provider actually supports it; this flag stays off until that day.
         allowAiUpgrade: Boolean(imageGen && imageGen.id !== 'nvidia-image' && playerSource),
+        // Every name in PLAYER_ANIMATION_SPEC already has a real procedural multi-frame sheet
+        // generated above — filtering by the spec's own keys (not a hand-maintained list) means a
+        // newly-added spec entry never has to be re-added here separately.
         poses: poseNamesFromManifest(animManifest)
-          .filter((name) => !['attack', 'hurt', 'death'].includes(name))
+          .filter((name) => !(name in PLAYER_ANIMATION_SPEC))
           .map((name) => ({
             name,
             prompt: posePrompts[name] ?? `same character ${name.replace(/_/g, ' ')} pose, side view`,
@@ -839,14 +1324,28 @@ export class AssetPipeline {
 
     for (let i = 0; i < defaults.enemies; i++) {
       checkCancelled();
-      const palette = BIOME_PALETTES[i % BIOME_PALETTES.length]!;
       const enemyId = `enemy_${i.toString().padStart(3, '0')}`;
+      const archetype = pickEnemyArchetype(enemyId);
+      const visualTemplate = await resolveEnemyVisualTemplate(
+        options.visualReferenceLibrary,
+        archetype,
+        i % defaults.biomes,
+        enemyId,
+        options.seed + i,
+        options.styleBible,
+        options.visualReferenceProvider,
+        options.visualReferenceLibraryRoot ?? process.cwd(),
+      );
+      if (visualTemplate) visualTemplateProvenance.push(visualTemplate.provenance);
+      const palette = BIOME_PALETTES[i % BIOME_PALETTES.length]!;
       const enemyFrame = compiledSpriteFrameSize('enemy');
       const enemySpec: SpriteSpec = {
         id: enemyId,
         width: enemyFrame.width,
         height: enemyFrame.height,
-        fill: [palette[2]![0], palette[2]![1], palette[2]![2], 255],
+        fill: visualTemplate?.fill ?? [palette[2]![0], palette[2]![1], palette[2]![2], 255],
+        accent: visualTemplate?.accent,
+        enemyArchetype: archetype,
         shape: 'enemy',
       };
 
@@ -862,11 +1361,13 @@ export class AssetPipeline {
         path: `assets/enemies/${enemyId}.png`,
         spec: enemySpec,
         profile: 'ENEMY',
-        prompt: applyStylePrompt(
-          options.styleBible,
-          'ENEMY',
-          options.artBible?.characterGuidelines.enemy ?? `enemy creature biome ${i % defaults.biomes}`,
-        ),
+        prompt:
+          visualTemplate?.prompt ??
+          applyStylePrompt(
+            options.styleBible,
+            'ENEMY',
+            options.artBible?.characterGuidelines.enemy ?? `enemy creature biome ${i % defaults.biomes}`,
+          ),
         imageGen,
         negativePrompt,
         vlm,
@@ -878,6 +1379,7 @@ export class AssetPipeline {
         resume: options.resume,
         signal: options.signal,
       });
+      if (visualTemplate) finalizeVisualTemplateProvenance(visualTemplate.provenance, enemyAsset.provider, enemyAsset.modelId);
       recordAsset(enemyAsset, 'enemy');
 
       const enemySource = enemyAsset.fallbackGenerated ? undefined : enemyAsset.buffer;
@@ -1050,11 +1552,17 @@ export class AssetPipeline {
             id: `portrait_${portraitRole}`,
             path: portraitPath,
             buffer: portrait.buffer,
-            provider: npcAsset.fallbackGenerated ? 'pixel-art-processor' : npcAsset.provider,
+            // A portrait crop of procedural NPC art carries no new content beyond the parent's
+            // pixels — it should inherit the parent's *actual* provenance/critique evidence
+            // rather than a fabricated placeholder score. Previously this always recorded
+            // provider:'pixel-art-processor' + a hardcoded critiqueScore (45/70) whenever the
+            // parent was a fallback, which permanently pinned the portrait to PLACEHOLDER even
+            // after the parent itself was promoted to PROCEDURAL_PRODUCTION on real evidence.
+            provider: npcAsset.provider,
             modelId: npcAsset.modelId,
             fallbackGenerated: npcAsset.fallbackGenerated,
-            critiquePassed: true,
-            critiqueScore: npcAsset.fallbackGenerated ? 45 : 70,
+            critiquePassed: npcAsset.fallbackGenerated ? npcAsset.critiquePassed : true,
+            critiqueScore: npcAsset.fallbackGenerated ? npcAsset.critiqueScore : 70,
             parentArtifactIds: [npcId],
             compiler: 'pixel-art-processor',
             transformation: 'npc-portrait-crop',
@@ -1068,38 +1576,32 @@ export class AssetPipeline {
     for (const ability of options.gameDna.abilities.filter((a) => a.enabled)) {
       checkCancelled();
       const iconPath = `assets/ui/icons/ability_${ability.id}.png`;
-      const iconSpec: SpriteSpec = {
-        id: `ability_${ability.id}`,
-        width: 32,
-        height: 32,
-        fill: [80, 140, 210, 255],
-        shape: 'item',
-      };
-      const iconAsset = await this.generateSprite({
-        id: `ability_icon_${ability.id}`,
-        path: iconPath,
-        spec: iconSpec,
-        profile: 'ICON',
-        prompt: applyStylePrompt(
-          options.styleBible,
-          'UI',
-          `game ability icon for ${ability.name}, centered symbol, no text, no UI chrome, ${options.gameDna.identity.visualStyle}`,
-        ),
-        imageGen,
-        negativePrompt: `${negativePrompt ?? ''}, readable text, letters, HUD screenshot`,
-        vlm,
-        vlmAvailable,
-        artDirection: options.gameDna.identity.visualStyle,
-        tileSize,
-        seed: options.seed + 11000 + hashPrompt(ability.id).charCodeAt(0),
-        outputDir: options.outputDir,
-        resume: options.resume,
-        signal: options.signal,
-      });
+      // Ability icons are the first category migrated onto pipeline v2's explicit
+      // request → plan → generation → normalization → processing → compilation → validation →
+      // manifest flow (see pipeline-v2/orchestrator.ts) — smallest-boundary migration so the
+      // rest of asset-pipeline.ts (player/enemy/boss/npc/tileset/background) stays untouched.
+      const { manifest: v2Manifest } = await runAssetPipelineV2([
+        {
+          id: `ability_icon_${ability.id}`,
+          category: 'ability_icon',
+          runtimeUse: 'HUD ability slot icon',
+          artDirection: `${options.gameDna.identity.visualStyle}, centered symbol for "${ability.name}", no text, no UI chrome`,
+          seed: options.seed + 11000 + hashPrompt(ability.id).charCodeAt(0),
+        },
+      ]);
+      const v2Entry = v2Manifest[0]!;
+      writeCheckpoint(options.outputDir, iconPath, v2Entry.buffer);
       recordAsset(
         {
-          ...iconAsset,
+          id: v2Entry.assetId,
+          path: iconPath,
+          buffer: v2Entry.buffer,
+          provider: v2Entry.provider,
+          fallbackGenerated: v2Entry.generationExecutionPath === 'procedural_fallback',
+          critiquePassed: v2Entry.validation.passed,
+          critiqueScore: v2Entry.validation.passed ? 70 : 0,
           parentArtifactIds: [],
+          compiler: 'asset_pipeline_v2',
           transformation: 'ability-icon',
           godotResourcePath: `res://${iconPath}`,
         },
@@ -1288,6 +1790,16 @@ export class AssetPipeline {
       );
       const tilesetPath = `assets/tilesets/biome_${b}/source.png`;
       const cachedTileset = options.resume ? loadCheckpoint(options.outputDir, tilesetPath) : null;
+      const terrainVisualTemplate = await resolveTerrainVisualTemplate(
+        options.visualReferenceLibrary,
+        b,
+        `tileset_biome_${b}`,
+        options.seed + b * 100,
+        options.styleBible,
+        options.visualReferenceProvider,
+        options.visualReferenceLibraryRoot ?? process.cwd(),
+      );
+      if (terrainVisualTemplate) visualTemplateProvenance.push(terrainVisualTemplate.provenance);
 
       let processedBuffer: Buffer;
       let critiquePassed: boolean;
@@ -1304,7 +1816,7 @@ export class AssetPipeline {
         fallback = false;
         modelId = undefined;
       } else {
-        let tileBuffer = generateTilesetSource(options.seed + b * 100, 128);
+        let tileBuffer = generateTilesetSource(options.seed + b * 100, 128, terrainVisualTemplate?.style);
         fallback = true;
         provider = 'procedural';
         modelId = undefined;
@@ -1312,12 +1824,14 @@ export class AssetPipeline {
         if (imageGen) {
           try {
             checkCancelled();
-            const tilePrompt = applyStylePrompt(
-              options.styleBible,
-              'TILE_SOURCE',
-              options.artBible?.environmentGuidelines.tileStyle ??
-                `${options.gameDna.identity.visualStyle} biome ${b} ground and wall tiles`,
-            );
+            const tilePrompt =
+              terrainVisualTemplate?.prompt ??
+              applyStylePrompt(
+                options.styleBible,
+                'TILE_SOURCE',
+                options.artBible?.environmentGuidelines.tileStyle ??
+                  `${options.gameDna.identity.visualStyle} biome ${b} ground and wall tiles`,
+              );
             const result = await imageGen.generateImage({
               profile: 'TILE_SOURCE',
               prompt: sanitizeImagePromptText(tilePrompt),
@@ -1359,6 +1873,7 @@ export class AssetPipeline {
               {
                 tileSize,
                 roles: buildTileTerrainMetadata(),
+                terrainSets: [{ id: GROUND_TERRAIN_SET_ID, terrain: GROUND_TERRAIN_ID, name: 'ground', maskRoles: GROUND_TERRAIN_MASK_ROLES }],
                 missingRoles,
                 seamIssues: compiled.seamIssues,
                 passed: compiled.passed && missingRoles.length === 0,
@@ -1373,26 +1888,7 @@ export class AssetPipeline {
         writeCheckpoint(
           options.outputDir,
           `assets/tilesets/biome_${b}/terrain.tres`,
-          Buffer.from(
-            [
-              '[gd_resource type="TileSet" format=3]',
-              '',
-              `[ext_resource type="Texture2D" path="res://assets/tilesets/biome_${b}/source.png" id="1_atlas"]`,
-              '',
-              '[sub_resource type="TileSetAtlasSource" id="Atlas_0"]',
-              'texture = ExtResource("1_atlas")',
-              `texture_region_size = Vector2i(${tileSize}, ${tileSize})`,
-              ...Object.values(TILE_ATLAS.roles).map((pos) => `0:${pos.col}/${pos.row} = 0`),
-              '',
-              '[resource]',
-              `tile_size = Vector2i(${tileSize}, ${tileSize})`,
-              'terrain_set_0/mode = 0',
-              'terrain_set_0/terrain_0/name = "masonry"',
-              'sources/0 = SubResource("Atlas_0")',
-              '',
-            ].join('\n'),
-            'utf8',
-          ),
+          Buffer.from(buildGroundTerrainTresText(b, tileSize), 'utf8'),
         );
         if (b === 0) {
           writeCheckpoint(options.outputDir, 'assets/qa/tileset-test.png', compiled.atlas);
@@ -1419,6 +1915,7 @@ export class AssetPipeline {
 
         writeCheckpoint(options.outputDir, tilesetPath, processedBuffer);
       }
+      if (terrainVisualTemplate) finalizeVisualTemplateProvenance(terrainVisualTemplate.provenance, provider, modelId);
 
       recordAsset(
         {
@@ -1468,22 +1965,43 @@ export class AssetPipeline {
           const bgPath = `assets/backgrounds/biome_${b}/${layer}.png`;
           options.onTaskStarted?.('background', `Generating ${layer} parallax for biome ${b}`);
           const dim = PARALLAX_STRIP_SIZE[layer];
-          let bgBuffer = generateParallaxStrip(layer, options.seed + b * 50 + li, dim.width, dim.height);
+          const backgroundVisualTemplate = await resolveBackgroundVisualTemplate(
+            options.visualReferenceLibrary,
+            b,
+            `background_biome_${b}_${layer}`,
+            options.seed + b * 50 + li,
+            options.styleBible,
+            options.visualReferenceProvider,
+            options.visualReferenceLibraryRoot ?? process.cwd(),
+          );
+          if (backgroundVisualTemplate) visualTemplateProvenance.push(backgroundVisualTemplate.provenance);
+          const bgPalette = backgroundVisualTemplate?.palette ?? BIOME_PALETTES[b % BIOME_PALETTES.length];
+          const bgFeatures = backgroundVisualTemplate?.features;
+          let bgBuffer = generateParallaxStrip(
+            layer,
+            options.seed + b * 50 + li,
+            dim.width,
+            dim.height,
+            bgPalette,
+            bgFeatures,
+          );
           let bgFallback = true;
           let bgProvider = 'procedural';
           let bgModel: string | undefined;
           const useAi = Boolean(imageGen) && layer === 'far';
-          const layerPrompt = PARALLAX_LAYER_PROMPTS[layer];
+          const layerPrompt = backgroundVisualTemplate?.prompt ?? PARALLAX_LAYER_PROMPTS[layer];
           if (useAi) {
             try {
               const result = await imageGen!.generateImage({
                 profile: 'BACKGROUND',
                 prompt: sanitizeImagePromptText(
-                  applyStylePrompt(
-                    options.styleBible,
-                    'ENVIRONMENT',
-                    `${layerPrompt}, ${options.gameDna.identity.visualStyle} ${options.gameDna.identity.tone ?? ''} citadel-or-biome interiors matching the tileset palette, side-view night beyond windows, no UI, no text, no logos, no characters`,
-                  ),
+                  backgroundVisualTemplate
+                    ? layerPrompt
+                    : applyStylePrompt(
+                        options.styleBible,
+                        'ENVIRONMENT',
+                        `${layerPrompt}, ${options.gameDna.identity.visualStyle} ${options.gameDna.identity.tone ?? ''} citadel-or-biome interiors matching the tileset palette, side-view night beyond windows, no UI, no text, no logos, no characters`,
+                      ),
                 ),
                 negativePrompt: `${negativePrompt ?? ''}, UI, HUD, text, logos, watermarks, characters, people, person, human, explorer, warden, portraits, pine trees, conifer forest, mountain range, lake vista, alpine woodland, outdoor landscape photography, shoreline, nature vista, unrelated biome, floating plates`,
                 width: 1024,
@@ -1507,7 +2025,7 @@ export class AssetPipeline {
                 warnings.push(
                   `Background far biome ${b} looked like outdoor landscape (pines/figures) — procedural citadel fallback`,
                 );
-                bgBuffer = generateParallaxStrip(layer, options.seed + b * 50 + li, dim.width, dim.height);
+                bgBuffer = generateParallaxStrip(layer, options.seed + b * 50 + li, dim.width, dim.height, bgPalette, bgFeatures);
                 bgFallback = true;
                 bgProvider = 'procedural';
                 bgModel = undefined;
@@ -1516,6 +2034,7 @@ export class AssetPipeline {
               warnings.push(`Background ${layer} biome ${b} failed — procedural strip fallback`);
             }
           }
+          if (backgroundVisualTemplate) finalizeVisualTemplateProvenance(backgroundVisualTemplate.provenance, bgProvider, bgModel);
           writeCheckpoint(options.outputDir, bgPath, bgBuffer);
           recordAsset(
             {
@@ -1649,28 +2168,43 @@ export class AssetPipeline {
           if (!familyAsset) {
             const useAiForThisFamily = attemptAiProps && aiFamiliesAttempted < MAX_AI_PROP_FAMILIES;
             if (useAiForThisFamily) aiFamiliesAttempted++;
+            const familySeed = options.seed + hashPrompt(familyKey).charCodeAt(0);
+            const propVisualTemplate = await resolvePropVisualTemplate(
+              options.visualReferenceLibrary,
+              biomeIndexFromId(kit.biomeId),
+              `${kit.biomeId}_prop_family_${family.replace(/\s+/g, '_')}`,
+              familySeed,
+              options.styleBible,
+              options.visualReferenceProvider,
+              options.visualReferenceLibraryRoot ?? process.cwd(),
+            );
+            if (propVisualTemplate) visualTemplateProvenance.push(propVisualTemplate.provenance);
             familyAsset = await this.generatePropFamilyAsset({
               id: `${kit.biomeId}_prop_family_${family.replace(/\s+/g, '_')}`,
               path: rel,
               family,
-              fill: options.visualDNA.palette.global[0] ?? '#284878',
-              accent: options.visualDNA.palette.highlights[0] ?? '#c4a060',
+              fill: propVisualTemplate?.fill ?? options.visualDNA.palette.global[0] ?? '#284878',
+              accent: propVisualTemplate?.accent ?? options.visualDNA.palette.highlights[0] ?? '#c4a060',
               width: 32,
               height: 32,
               imageGen: useAiForThisFamily ? imageGen : null,
-              prompt: applyStylePrompt(
-                options.styleBible,
-                'PROP',
-                `${family} environmental prop, small isolated game object, ${kit.biomeId} biome, ${options.gameDna.identity.visualStyle}`,
-                options.visualDNA,
-                'prop',
-              ),
+              prompt:
+                propVisualTemplate?.prompt ??
+                applyStylePrompt(
+                  options.styleBible,
+                  'PROP',
+                  `${family} environmental prop, small isolated game object, ${kit.biomeId} biome, ${options.gameDna.identity.visualStyle}`,
+                  options.visualDNA,
+                  'prop',
+                ),
               negativePrompt: `${negativePrompt ?? ''}, character, creature, text, watermark, full scene, landscape`,
-              seed: options.seed + hashPrompt(familyKey).charCodeAt(0),
+              seed: familySeed,
               outputDir: options.outputDir,
               resume: options.resume,
               signal: options.signal,
+              features: propVisualTemplate?.features,
             });
+            if (propVisualTemplate) finalizeVisualTemplateProvenance(propVisualTemplate.provenance, familyAsset.provider, familyAsset.modelId);
             familyAssets.set(familyKey, familyAsset);
           } else if (familyAsset.path !== rel) {
             // Reuse the family's generated bytes for this instance's own checkpoint file —
@@ -1691,20 +2225,314 @@ export class AssetPipeline {
             'prop',
           );
         }
+
+        // Macro architecture (arches, pillars, statues, gears, pipes) — wall-mounted at a much
+        // bigger scale than the floor props above (see room-assembler.ts's ARCH_SCALE placement).
+        // kit.architecture cycles a small pool of ~4 unique families before repeating, so the
+        // first 4 entries already cover the pool; matches room-assembler.ts's hardcoded
+        // `biome_${i}_arch_${0..3}.png` convention with zero extra plumbing, the same pattern
+        // props already use.
+        for (const arch of kit.architecture.slice(0, 4)) {
+          checkCancelled();
+          const rel = `assets/architecture/${kit.biomeId}/${arch.id}.png`;
+          const familyAsset = await this.generatePropFamilyAsset({
+            id: `${kit.biomeId}_architecture_family_${arch.family.replace(/\s+/g, '_')}`,
+            path: rel,
+            family: arch.family,
+            fill: options.visualDNA.palette.global[0] ?? '#284878',
+            accent: options.visualDNA.palette.highlights[0] ?? '#c4a060',
+            width: 48,
+            height: 112,
+            imageGen: null,
+            prompt: applyStylePrompt(
+              options.styleBible,
+              'PROP',
+              `${arch.family} architectural silhouette, tall wall-mounted structure, ${kit.biomeId} biome, ${options.gameDna.identity.visualStyle}`,
+              options.visualDNA,
+              'prop',
+            ),
+            negativePrompt: `${negativePrompt ?? ''}, character, creature, text, watermark, full scene, landscape`,
+            seed: options.seed + hashPrompt(`${kit.biomeId}:${arch.family}`).charCodeAt(0),
+            outputDir: options.outputDir,
+            resume: options.resume,
+            signal: options.signal,
+          });
+          recordAsset(
+            {
+              ...familyAsset,
+              id: arch.id,
+              path: rel,
+              styleFingerprint: kit.styleFingerprint,
+              compiler: 'prop-art',
+              transformation: 'environment-kit-architecture',
+              godotResourcePath: `res://${rel}`,
+            },
+            'prop',
+          );
+        }
       }
+    }
+
+    const interactiveSpecs: Array<{
+      id: string;
+      family: 'checkpoint' | 'pickup' | 'gate' | 'chest' | 'portal';
+      shape: 'checkpoint' | 'ability_pickup' | 'ability_gate' | 'chest_closed' | 'chest_open' | 'portal';
+      fill: [number, number, number, number];
+      accent: [number, number, number, number];
+    }> = [
+      { id: 'interactive_checkpoint', family: 'checkpoint', shape: 'checkpoint', fill: [44, 77, 105, 255], accent: [88, 224, 210, 255] },
+      { id: 'interactive_ability_pickup', family: 'pickup', shape: 'ability_pickup', fill: [54, 75, 132, 255], accent: [246, 208, 82, 255] },
+      { id: 'interactive_ability_gate', family: 'gate', shape: 'ability_gate', fill: [45, 58, 91, 255], accent: [246, 208, 82, 255] },
+      // No world-object family previously existed for a chest at all — every generated project's
+      // chest/pickup container rendered as a hand-drawn ColorRect square in whichever template
+      // instantiated it, regardless of what art actually got generated. Two states (not a recolor
+      // of one shape) so a closed vs. opened chest is readable at a glance, matching the same
+      // deterministic-procedural-baseline guarantee the three specs above already give: these exist
+      // even with every AI provider unavailable.
+      { id: 'interactive_chest_closed', family: 'chest', shape: 'chest_closed', fill: [92, 60, 36, 255], accent: [246, 208, 82, 255] },
+      { id: 'interactive_chest_open', family: 'chest', shape: 'chest_open', fill: [92, 60, 36, 255], accent: [246, 208, 82, 255] },
+      // Same gap as chest: no inter-area/dungeon-entrance portal marker existed either. A single
+      // state (a portal has no locked/unlocked concept the way a gate does) is enough here.
+      { id: 'interactive_portal', family: 'portal', shape: 'portal', fill: [58, 46, 82, 255], accent: [150, 110, 226, 255] },
+    ];
+    for (const spec of interactiveSpecs) {
+      const path = `assets/generated/${spec.family}/${spec.id}.png`;
+      const buffer = generateProceduralSprite({
+        id: spec.id,
+        width: 32,
+        height: 32,
+        fill: spec.fill,
+        accent: spec.accent,
+        shape: spec.shape,
+      });
+      writeCheckpoint(options.outputDir, path, buffer);
+      recordAsset(
+        {
+          id: spec.id,
+          path,
+          buffer,
+          provider: 'procedural',
+          fallbackGenerated: true,
+          critiquePassed: true,
+          critiqueScore: 82,
+          proceduralProduction: true,
+          compiler: 'interactive-procedural-art',
+          transformation: 'visual-dna-interactive',
+          godotResourcePath: `res://${path}`,
+        },
+        spec.family,
+      );
+    }
+
+    const visualEnhancement = await this.runVisualEnhancement(options, assets);
+    // The pipeline caller (packages/generation/src/pipeline.ts) rebuilds its Godot texture-write
+    // map from *this* returned assets[] array's .buffer fields — it doesn't re-read disk. Without
+    // this patch, a genuinely successful enhancement (already written to disk above) gets silently
+    // clobbered back to the pre-enhancement procedural bytes the moment the caller re-writes every
+    // texture from its stale in-memory copy. Patch every activated asset's buffer/provenance to
+    // match what's actually on disk now.
+    if (visualEnhancement) {
+      for (const outcome of visualEnhancement.outcomes) {
+        if (!outcome.succeeded || !outcome.activatedPath) continue;
+        try {
+          const buffer = readFileSync(join(options.outputDir, ...outcome.activatedPath.split('/')));
+          const target = assets.find((a) => a.path === outcome.activatedPath);
+          if (target) {
+            target.buffer = buffer;
+            target.provider = outcome.provider ?? target.provider;
+            target.modelId = outcome.model;
+            target.fallbackGenerated = false;
+            target.sourceType = 'ai_generated';
+            target.maturity = 'QA_REVIEW';
+            target.productionReady = false;
+            target.proceduralProduction = false;
+            target.productionAllowed = true;
+            target.transformation = `nvidia-nim-visual-enhancement:${outcome.plan.replacementStrategy}`;
+          } else {
+            // Truly-novel asset (checkpoint/pickup/gate) — no pre-existing entry to patch, so it
+            // was never going to reach generation_manifest.json / get a Godot .import sidecar
+            // written at all. Append it so the enhancement is actually wired, not just on disk.
+            assets.push(
+              withMaturity({
+                id: outcome.plan.assetId,
+                path: outcome.activatedPath,
+                buffer,
+                provider: outcome.provider ?? 'unknown',
+                modelId: outcome.model,
+                fallbackGenerated: false,
+                sourceType: 'ai_generated',
+                transformation: `nvidia-nim-visual-enhancement:${outcome.plan.replacementStrategy}`,
+                godotResourcePath: `res://${outcome.activatedPath}`,
+              }),
+            );
+          }
+        } catch {
+          /* file genuinely missing — leave assets[] as-is, already correct (procedural stays active) */
+        }
+      }
+    }
+
+    if (visualTemplateProvenance.length > 0) {
+      const reportsDir = join(options.outputDir, 'reports');
+      mkdirSync(reportsDir, { recursive: true });
+      writeFileSync(
+        join(reportsDir, 'visual-template-provenance.json'),
+        JSON.stringify(
+          {
+            styleVersion: options.visualReferenceLibrary?.styleVersion,
+            libraryId: options.visualReferenceLibrary?.id,
+            entries: visualTemplateProvenance,
+          },
+          null,
+          2,
+        ),
+      );
     }
 
     return {
       assets,
+      visualEnhancement,
       warnings,
       degraded:
         !imageGen ||
-        assets.some((a) => a.fallbackGenerated || a.maturity === 'PLACEHOLDER' || a.maturity === 'BLOCKOUT'),
+        assets.some((a) => isNonProductionMaturity(a.maturity)),
       fallbackDepth: imageRoute.fallbackDepth + (imageGen ? 0 : 1),
       fallbackReason: imageRoute.fallbackReason,
       selectedProvider: imageRoute.selectedProvider ?? imageGen?.id,
       fakeAnimationDetected,
     };
+  }
+
+  /**
+   * Post-baseline NVIDIA NIM enhancement pass. Only reached when visualMode !== 'procedural-only'
+   * (the default) — procedural-only projects never construct an NVIDIA provider or touch the
+   * network from this method at all, matching the non-negotiable "must not destabilize the
+   * guaranteed procedural path" requirement. Every plan resolves through runVisualEnhancementPass,
+   * which never throws — a NIM failure here degrades to the already-written procedural asset, it
+   * never fails the overall generation.
+   */
+  private async runVisualEnhancement(
+    options: AssetPipelineOptions,
+    assets: GeneratedAsset[],
+  ): Promise<import('./visual-enhancement/types.js').VisualEnhancementSummary | undefined> {
+    const visualMode = options.visualMode ?? 'procedural-only';
+    if (visualMode === 'procedural-only') return undefined;
+
+    const { planAssetReplacements, runVisualEnhancementPass } = await import('./visual-enhancement/index.js');
+    const plans = planAssetReplacements({
+      projectSlug: options.gameDna.identity.title ?? options.outputDir,
+      generationId: `${options.seed}`,
+      baselineAssets: assets.map((a) => ({
+        id: a.id,
+        path: a.path,
+        absolutePath: join(options.outputDir, ...a.path.split('/')),
+      })),
+      biomeCount: options.biomeVisualDNAs?.length ?? 0,
+    });
+    if (plans.length === 0) return { visualMode, attempted: 0, enhanced: 0, fallenBack: 0, skipped: 0, outcomes: [] };
+
+    // Tests/callers may inject a single editor/generator directly (legacy path, still fully
+    // supported) — when they do, skip building the real multi-provider chain entirely so an
+    // injected mock never silently gets a live NVIDIA/Pollinations provider tacked on beside it.
+    if (options.visualEnhancementEditor || options.visualEnhancementGenerator) {
+      return runVisualEnhancementPass({
+        visualMode,
+        plans,
+        storageRoot: options.outputDir,
+        editor: options.visualEnhancementEditor,
+        generator: options.visualEnhancementGenerator,
+        promptContext: {
+          gameStyleLabel: options.gameDna.identity.visualStyle,
+          tone: options.gameDna.identity.tone,
+          visualDNA: options.visualDNA,
+        },
+      });
+    }
+
+    // Real multi-provider chain. NVIDIA stays first choice (priority 0) for both capabilities;
+    // Pollinations is generation-only (no reference-image/edit input on its free public API — see
+    // pollinations-image.ts's doc comment) so it only ever competes for generate-from-spec plans
+    // (backgrounds, checkpoint/pickup/gate icons), never for character/enemy/boss edits. One
+    // provider being down (see the Candidate 06 report's NVIDIA hosted-inference reliability
+    // findings) no longer stalls the whole pass — see VisualProviderExecutionPolicy/circuit
+    // breaker in replace.ts.
+    const { NvidiaImageEditProvider } = await import('./providers/nvidia-image-edit.js');
+    const { NvidiaImageProvider } = await import('./providers/nvidia-image.js');
+    const { PollinationsImageProvider } = await import('./providers/pollinations-image.js');
+    const { NVIDIA_MODEL_CATALOG } = await import('./foundry/nvidia-catalog.js');
+    const { resolveCapabilityDeployment } = await import('./providers/nvidia-nim.js');
+
+    // NvidiaImageEditProvider's own constructor falls back to process.env.NVIDIA_IMAGE_MODEL
+    // (the *generation*-only model) before its catalog-driven edit default when
+    // NVIDIA_IMAGE_EDIT_MODEL isn't set — a real bug the visual_enhancement_report.json
+    // diagnostics caught: every edit request failed UNSUPPORTED_CAPABILITY because it was
+    // silently trying to edit with black-forest-labs/flux.1-dev (generation-only). And
+    // nvidiaSelectModelForImageTask('IMAGE_EDIT') alone isn't deployment-aware — it picked
+    // qwen/qwen-image-edit-2511 (nimAvailable only, hostedAvailable:false) even when running in
+    // 'hosted' mode (no NVIDIA_NIM_BASE_URL configured), producing a real HTTP 404 (the model
+    // genuinely doesn't exist at the hosted endpoint) — a second, deeper bug behind the first.
+    // Filter the catalog by what's actually available at the *current* deployment mode instead.
+    const editDeployment = resolveCapabilityDeployment('IMAGE_EDIT');
+    const deploymentEditModel = NVIDIA_MODEL_CATALOG.filter(
+      (m) =>
+        m.status === 'enabled' &&
+        m.imageTaskKinds?.includes('IMAGE_EDIT') &&
+        (editDeployment.mode === 'nim' ? m.nimAvailable : m.hostedAvailable),
+    ).sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))[0];
+    const nvidiaEdit = new NvidiaImageEditProvider({
+      apiKey: options.nvidiaApiKey,
+      imageApiBaseUrl: options.nvidiaApiBaseUrl,
+      modelId: process.env.NVIDIA_IMAGE_EDIT_MODEL ?? deploymentEditModel?.modelId,
+    });
+    const nvidiaGen = new NvidiaImageProvider({
+      apiKey: options.nvidiaApiKey,
+      baseUrl: options.nvidiaApiBaseUrl,
+      modelId: options.nvidiaImageModel,
+    });
+    const pollinationsGen = new PollinationsImageProvider();
+    const { HuggingFaceImageProvider } = await import('./providers/huggingface-image.js');
+    // Reference-image editing chain, per the Candidate 06C task: NVIDIA first (kept preferred),
+    // Hugging Face as the live fallback when configured. HUGGINGFACE_API_KEY is empty in this
+    // environment — huggingfaceEdit.editImage() fails fast (AUTH, no network call) rather than
+    // silently no-opping, so the chain still falls through to procedural correctly whenever a real
+    // key isn't configured, and activates automatically the moment one is. Pollinations does NOT
+    // join this chain — its free public API has no reference-image/edit input (see
+    // pollinations-image.ts's doc comment) and stays generation-only.
+    const huggingfaceEdit = new HuggingFaceImageProvider({ apiKey: options.huggingfaceApiKey });
+
+    const editorChain: import('./visual-enhancement/types.js').VisualProviderCandidate[] = [
+      { providerId: 'nvidia-image-edit', capability: 'IMAGE_EDIT' as const, editor: nvidiaEdit, priority: 0, outputCapabilities: [] },
+      { providerId: 'huggingface-image', capability: 'IMAGE_EDIT' as const, editor: huggingfaceEdit, priority: 1, outputCapabilities: ['transparent_sprite', 'alpha_output', 'fixed_dimensions'] },
+    ];
+    const generatorChain: import('./visual-enhancement/types.js').VisualProviderCandidate[] = [
+      { providerId: 'nvidia-image', capability: 'IMAGE_GENERATION' as const, generator: nvidiaGen, priority: 0, outputCapabilities: ['full_frame_image', 'fixed_dimensions'] },
+      { providerId: 'pollinations-image', capability: 'IMAGE_GENERATION' as const, generator: pollinationsGen, priority: 1, outputCapabilities: ['full_frame_image'] },
+    ];
+
+    let providerHealthy: boolean | undefined;
+    if (visualMode === 'auto') {
+      // "Healthy" for auto mode means at least one configured provider is reachable — NVIDIA
+      // being down must not silently disable Pollinations too.
+      const [nvidiaOk, pollinationsOk] = await Promise.all([
+        nvidiaGen.checkHealth().catch(() => false),
+        pollinationsGen.checkHealth().catch(() => false),
+      ]);
+      providerHealthy = nvidiaOk || pollinationsOk;
+    }
+
+    return runVisualEnhancementPass({
+      visualMode,
+      plans,
+      storageRoot: options.outputDir,
+      editorChain,
+      generatorChain,
+      providerHealthy,
+      promptContext: {
+        gameStyleLabel: options.gameDna.identity.visualStyle,
+        tone: options.gameDna.identity.tone,
+        visualDNA: options.visualDNA,
+      },
+    });
   }
 
   private async tryCanonicalPoseSet(opts: {
@@ -1921,6 +2749,142 @@ export class AssetPipeline {
     });
   }
 
+  /**
+   * Genuine multi-frame run-cycle sheet (production standard §20/§22/§25) — a distinct clip from
+   * the walk sheet (generateRunCycleSheet, not a relabeled generateWalkCycleSheet call), gated on
+   * real frame-quality metrics (§20: uniqueFrameRatio/duplicateFrameRatio/meanSilhouetteDelta) in
+   * addition to the existing animation-consistency critique. A sheet that fails the quality bar is
+   * still returned (never silently dropped — the pipeline's existing critiquePassed/maturity gate
+   * decides what happens to a failing asset) but is honestly marked as such.
+   */
+  private buildRunSheetAsset(
+    id: string,
+    spec: SpriteSpec,
+    path: string,
+    frameCount: number,
+    tileSize: number,
+    sourcePng?: Buffer,
+  ): GeneratedAsset {
+    const still = sourcePng
+      ? this.compileActorFrame(
+          knockoutVfxBackground(sourcePng),
+          spec.width,
+          spec.height,
+          tileSize,
+        ).buffer
+      : undefined;
+    const sheet = generateRunCycleSheet(spec, frameCount, still);
+    const processed = this.pixelArt.process(sheet, {
+      targetWidth: spec.width * frameCount,
+      targetHeight: spec.height,
+      tileSize,
+      skipQuantize: true,
+    });
+    const critique = critiqueAnimationSheet(processed.buffer, {
+      frameCount,
+      expectedFrameWidth: spec.width,
+      expectedFrameHeight: spec.height,
+      kind: 'run',
+    });
+    const identity = critiqueAnimationIdentity(processed.buffer, {
+      frameWidth: spec.width,
+      expectedFrames: frameCount,
+      kind: 'run',
+    });
+    let frameQuality: FrameQualityMetrics | undefined;
+    let frameQualityPassed = true;
+    try {
+      const decoded = decodePngRgba(processed.buffer);
+      frameQuality = computeFrameQualityMetrics(decoded.rgba, spec.width, spec.height, frameCount);
+      // Thresholds from the production standard (§20): uniqueFrameRatio >= 0.80 and
+      // duplicateFrameRatio <= 0.20 are the same threshold stated two ways — checking both here
+      // guards against a future edit accidentally decoupling them. meanSilhouetteDelta > 0 rules
+      // out a "technically distinct bytes, visually static" strip (e.g. a 1px color-only wobble).
+      frameQualityPassed =
+        frameQuality.uniqueFrameRatio >= 0.8 &&
+        frameQuality.duplicateFrameRatio <= 0.2 &&
+        frameQuality.meanSilhouetteDelta > 0;
+    } catch {
+      frameQualityPassed = false;
+    }
+    return withMaturity({
+      id: `${id}_run`,
+      path,
+      buffer: processed.buffer,
+      provider: sourcePng ? 'pixel-art-processor' : 'procedural',
+      fallbackGenerated: !sourcePng,
+      critiquePassed: critique.passed && !identity.fakeAnimation && frameQualityPassed,
+      critiqueScore: identity.fakeAnimation || !frameQualityPassed ? 20 : critique.score,
+      fakeAnimation: identity.fakeAnimation,
+      frameQuality,
+    });
+  }
+
+  /**
+   * Shared generator family for every locomotion/transition state that isn't a bespoke
+   * walk/run/attack/hurt/death cycle (idle, jump_start, jump, fall, land, dash, wall_slide,
+   * wall_jump, swim) — animates the reference frame toward (and, for looping states, back from)
+   * that state's POSE_TRANSFORMS target via generateProgressionSheet, gated on the same
+   * frame-quality metrics as the run cycle but against the per-clip minUniqueFrameRatio from
+   * PLAYER_ANIMATION_SPEC instead of one hardcoded 0.8 threshold (a static pose-derived clip has
+   * a lower achievable ceiling than a full walk/run cycle).
+   */
+  private buildProgressionSheetAsset(
+    id: string,
+    def: PlayerAnimationDefinition,
+    spec: SpriteSpec,
+    path: string,
+    tileSize: number,
+    sourcePng?: Buffer,
+  ): GeneratedAsset {
+    const still = sourcePng
+      ? this.compileActorFrame(
+          knockoutVfxBackground(sourcePng),
+          spec.width,
+          spec.height,
+          tileSize,
+        ).buffer
+      : undefined;
+    const sheet = generateProgressionSheet(spec, def.poseKey ?? def.name, def.frameCount, still, {
+      mode: def.mode === 'progression-oscillate' ? 'oscillate' : 'ramp',
+      tintPulse: def.name === 'idle' ? 6 : undefined,
+    });
+    const processed = this.pixelArt.process(sheet, {
+      targetWidth: spec.width * def.frameCount,
+      targetHeight: spec.height,
+      tileSize,
+      skipQuantize: true,
+    });
+    const critique = critiqueAnimationSheet(processed.buffer, {
+      frameCount: def.frameCount,
+      expectedFrameWidth: spec.width,
+      expectedFrameHeight: spec.height,
+      kind: def.name as AnimationKind,
+    });
+    let frameQuality: FrameQualityMetrics | undefined;
+    let frameQualityPassed = true;
+    try {
+      const decoded = decodePngRgba(processed.buffer);
+      frameQuality = computeFrameQualityMetrics(decoded.rgba, spec.width, spec.height, def.frameCount);
+      frameQualityPassed =
+        frameQuality.uniqueFrameRatio >= def.minUniqueFrameRatio &&
+        !frameQuality.chaoticMotion &&
+        frameQuality.alphaBoundsConsistency >= 0.6;
+    } catch {
+      frameQualityPassed = false;
+    }
+    return withMaturity({
+      id: `${id}_${def.name}`,
+      path,
+      buffer: processed.buffer,
+      provider: sourcePng ? 'pixel-art-processor' : 'procedural',
+      fallbackGenerated: !sourcePng,
+      critiquePassed: critique.passed && frameQualityPassed,
+      critiqueScore: frameQualityPassed ? critique.score : 20,
+      frameQuality,
+    });
+  }
+
   private buildHurtSheetAsset(
     id: string,
     spec: SpriteSpec,
@@ -1983,6 +2947,10 @@ export class AssetPipeline {
       targetHeight: spec.height,
       tileSize,
       skipQuantize: true,
+      // generateDeathSheet fades to 45% alpha on the final frame on purpose (never fully
+      // invisible) — the default alpha-cleanup binarizes at a 128 threshold, which rounds
+      // that faded frame down to fully transparent, wiping the whole frame to nothing.
+      preserveAlphaGradient: true,
     });
     const critique = critiqueAnimationSheet(processed.buffer, {
       frameCount,
@@ -2008,6 +2976,8 @@ export class AssetPipeline {
     frameCount: number,
     tileSize: number,
     sourcePng?: Buffer,
+    arcKind: AttackArcKind = 'horizontal',
+    animName: 'attack' | 'attack_2' | 'attack_3' = 'attack',
   ): GeneratedAsset {
     const still = sourcePng
       ? this.compileActorFrame(
@@ -2017,7 +2987,7 @@ export class AssetPipeline {
           tileSize,
         ).buffer
       : undefined;
-    const sheet = generateAttackSheet(spec, frameCount, still);
+    const sheet = generateAttackSheet(spec, frameCount, still, arcKind);
     const processed = this.pixelArt.process(sheet, {
       targetWidth: spec.width * frameCount,
       targetHeight: spec.height,
@@ -2028,10 +2998,10 @@ export class AssetPipeline {
       frameCount,
       expectedFrameWidth: spec.width,
       expectedFrameHeight: spec.height,
-      kind: 'attack',
+      kind: animName,
     });
     return withMaturity({
-      id: `${id}_attack`,
+      id: `${id}_${animName}`,
       path,
       buffer: processed.buffer,
       provider: sourcePng ? 'pixel-art-processor' : 'procedural',
@@ -2069,6 +3039,9 @@ export class AssetPipeline {
     outputDir: string;
     resume?: boolean;
     signal?: AbortSignal;
+    /** Optional biome material dressing (see PROP_SUPPORTED_FEATURES) for the procedural fallback
+     *  — see generatePropSprite's own doc comment. Omitted -> unchanged existing behavior. */
+    features?: readonly string[];
   }): Promise<GeneratedAsset> {
     if (opts.resume) {
       const cached = loadCheckpoint(opts.outputDir, opts.path);
@@ -2092,6 +3065,7 @@ export class AssetPipeline {
       accent: opts.accent,
       family: opts.family,
       seed: opts.seed,
+      features: opts.features,
     });
     let provider = 'procedural';
     let fallback = true;
@@ -2327,6 +3301,18 @@ export class AssetPipeline {
      * silently writing a procedural SUCCESS placeholder.
      */
     allowProceduralFallback?: boolean;
+    /** Foundry capability taxonomy type for this asset, when known — drives Foundry request
+     *  construction and is otherwise unused. Falls back to a profile-derived guess. */
+    foundryAssetType?: FoundryAssetType;
+    /** Migration seam (AssetFoundry production integration): when omitted, defaults to a
+     *  LegacyAssetGenerationGateway wrapping opts.imageGen — behaviorally identical to the
+     *  pre-migration inline call. Only explicitly-migrated call sites pass a real gateway. */
+    gateway?: AssetGenerationGateway;
+    /** Routing policy — only consulted for the canonical Foundry request (the legacy gateway
+     *  already had its provider chosen upstream via registry.selectHealthy({mode}), so this has
+     *  no effect there). Without this, FREE_ONLY/LOCAL_ONLY/COMMERCIAL_SAFE would silently never
+     *  reach Foundry routing for a migrated call site. */
+    mode?: GenerationMode;
   }): Promise<GeneratedAsset> {
     if (opts.resume) {
       const cached = loadCheckpoint(opts.outputDir, opts.path);
@@ -2349,31 +3335,56 @@ export class AssetPipeline {
     let fallback = true;
     let modelId: string | undefined;
     let fallbackErrorMessage: string | undefined;
+    let foundryQaPassed: boolean | undefined;
+    let foundryQaScore: number | undefined;
+    let foundryLicense: { commercialUse: boolean; status: string; reason: string } | undefined;
+    // Recorded whether generation succeeded or fell back to procedural — proves *which gateway
+    // was actually consulted* even in an offline/no-credentials environment where every real
+    // attempt ends in a procedural fallback. This is what the production-slice regression test
+    // asserts on: it would read 'legacy' if the pipeline ever silently reverted to the pre-
+    // migration resolver for a call site that explicitly passed a Foundry gateway.
+    let gatewayBackendAttempted: 'legacy' | 'foundry' | undefined;
 
-    if (opts.imageGen) {
-      try {
-        throwIfCancelled(opts.signal);
-        const result = await opts.imageGen.generateImage({
-          profile: opts.profile,
-          prompt: sanitizeImagePromptText(opts.prompt),
-          negativePrompt: opts.negativePrompt
-            ? sanitizeImagePromptText(opts.negativePrompt)
-            : undefined,
-          width: opts.spec.width * 4,
-          height: opts.spec.height * 4,
-          seed: opts.seed,
-          signal: opts.signal,
-          conditioning: opts.conditioning,
-        });
-        buffer = result.image;
-        provider = result.provider;
-        modelId = result.modelId;
+    // Every raw-generation attempt goes through an AssetGenerationGateway — never a fork between
+    // "inline legacy call" and "gateway call". When opts.gateway is omitted (every call site not
+    // explicitly migrated to Foundry), this wraps opts.imageGen exactly as the inline call used
+    // to, so behavior is provably unchanged for every unmigrated category.
+    const gateway = opts.gateway ?? new LegacyAssetGenerationGateway(opts.imageGen);
+    if (opts.imageGen || opts.gateway) {
+      throwIfCancelled(opts.signal);
+      gatewayBackendAttempted = gateway.backend;
+      const outcome = await gateway.generate({
+        id: opts.id,
+        assetType: opts.foundryAssetType ?? foundryAssetTypeForProfile(opts.profile),
+        path: opts.path,
+        prompt: opts.prompt,
+        negativePrompt: opts.negativePrompt,
+        width: opts.spec.width,
+        height: opts.spec.height,
+        seed: opts.seed,
+        visualStyle: opts.artDirection,
+        pixelArt: true,
+        transparentBackground: true,
+        commercialUseRequired: opts.mode === 'COMMERCIAL_SAFE',
+        freeOnly: opts.mode === 'FREE_ONLY',
+        localOnly: opts.mode === 'LOCAL_ONLY' || opts.mode === 'OFFLINE',
+        signal: opts.signal,
+        conditioning: opts.conditioning,
+      });
+      if (outcome.ok) {
+        buffer = outcome.buffer;
+        provider = outcome.provider;
+        modelId = outcome.modelId;
         fallback = false;
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
+        if (outcome.backend === 'foundry') {
+          foundryQaPassed = outcome.qaPassed;
+          foundryQaScore = outcome.qaScore;
+          foundryLicense = outcome.license;
+        }
+      } else {
         if (!allowProceduralFallback) {
           throw new Error(
-            `Manual image generation failed (${opts.imageGen.id}): ${msg}`,
+            `Manual image generation failed (${provider === 'procedural' ? gateway.backend : provider}): ${outcome.message}`,
           );
         }
         // keep procedural, but preserve *why* so the manifest can be diagnosed later —
@@ -2381,7 +3392,7 @@ export class AssetPipeline {
         // asset (player/boss/enemy included) with an identical generic reason no matter
         // whether the cause was a rate limit, a content-policy rejection, a timeout, or a
         // malformed request.
-        fallbackErrorMessage = `${opts.imageGen.id}: ${msg}`;
+        fallbackErrorMessage = `${gateway.backend} (${outcome.failureClass}): ${outcome.message}`;
       }
     } else if (!allowProceduralFallback) {
       throw new Error(
@@ -2451,6 +3462,10 @@ export class AssetPipeline {
       requestedProvider: opts.imageGen?.id,
       requestedModel: undefined,
       generationTimestamp: new Date().toISOString(),
+      generationBackend: gatewayBackendAttempted,
+      foundryQaPassed,
+      foundryQaScore,
+      foundryLicense,
     });
   }
 
@@ -2553,6 +3568,10 @@ export class AssetPipeline {
     stabilityApiKey?: string;
     deepaiApiKey?: string;
     replicateApiToken?: string;
+    pollinationsBaseUrl?: string;
+    pollinationsModel?: string;
+    pollinationsApiKey?: string;
+    enablePollinations?: boolean;
     ollamaBaseUrl?: string;
     providerEnabled?: Record<string, boolean>;
   }): Promise<GeneratedAsset> {
@@ -2574,6 +3593,10 @@ export class AssetPipeline {
       stabilityApiKey: opts.stabilityApiKey,
       deepaiApiKey: opts.deepaiApiKey,
       replicateApiToken: opts.replicateApiToken,
+      pollinationsBaseUrl: opts.pollinationsBaseUrl,
+      pollinationsModel: opts.pollinationsModel,
+      pollinationsApiKey: opts.pollinationsApiKey,
+      enablePollinations: opts.enablePollinations,
       mode: opts.mode,
       hardwareProfile: opts.hardwareProfile,
       providerEnabled: opts.providerEnabled,

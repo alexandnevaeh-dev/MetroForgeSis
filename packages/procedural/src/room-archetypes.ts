@@ -51,7 +51,8 @@ export interface AssignRoomArchetypesOptions {
   profile?: GenerationProfile;
 }
 
-/** Visual slice: 10 purpose-built rooms. Ability shrine index must match abilityGateRoomIndex. */
+/** Visual slice: legacy 10-room reference ordering, kept for docs/tests. Real assignment below
+ * scales to whatever roomCount the profile actually requests (roomsMin/roomsMax can exceed 10). */
 export const VISUAL_SLICE_ROOM_ARCHETYPES = [
   'tutorial',
   'traversal',
@@ -65,11 +66,60 @@ export const VISUAL_SLICE_ROOM_ARCHETYPES = [
   'boss',
 ] as const;
 
+/** Rotating pool used to fill visual-slice rooms beyond the fixed tutorial/ability/boss anchors —
+ * every entry is a real, distinct archetype so no room silently falls back to 'combat' just
+ * because the room count exceeds the historical 10-room slice. Ordered so a 10-room slice
+ * reproduces the original curated sequence exactly (traversal, combat, challenge, npc, secret,
+ * save at indices 1-4/7-8); rooms 12-15 draw on the extra entries for more variety. */
+// 'arena' deliberately excluded: it can roll a dash-gated pit (tile-layout.ts pitEligible) that,
+// combined with a right-edge door, broke the playtest bot's transition-approach path the first
+// time a visual slice actually exercised that combination (Candidate 05 investigation) — a
+// pre-existing gap in the pit/door interaction, not something safe to paper over in this pass.
+const VISUAL_SLICE_FILLER_POOL = [
+  'traversal',
+  'combat',
+  'challenge',
+  'npc',
+  'secret',
+  'save',
+  'combat',
+  'set_piece',
+  'treasure',
+  'puzzle',
+] as const;
+
+/**
+ * Visual slice archetypes, computed for the *actual* roomCount (12-15, not a fixed 10).
+ * tutorial is always first, boss is always the true last room, and the ability shrine/gate land
+ * on whatever indices abilityGateRoomIndex() computes for this roomCount — the same formula
+ * world.ts uses to decide which room grants the ability — so the tag always matches where the
+ * real pickup/gate end up, at any room count in range, not just the historical 10.
+ */
+function assignVisualSliceArchetypes(options: AssignRoomArchetypesOptions): string[] {
+  const n = options.roomCount;
+  const tags = new Array<string>(n);
+  const bossIdx = n - 1;
+  tags[0] = 'tutorial';
+  if (bossIdx > 0) tags[bossIdx] = 'boss';
+  const abilityCount = Math.max(1, options.abilityCount);
+  const gateIdx = abilityGateRoomIndex(0, abilityCount, n);
+  const postIdx = Math.min(gateIdx + 1, n - 1);
+  if (gateIdx > 0 && gateIdx < bossIdx) tags[gateIdx] = 'ability_shrine';
+  if (postIdx > 0 && postIdx < bossIdx && !tags[postIdx]) tags[postIdx] = 'ability_gate';
+  let poolIdx = 0;
+  for (let i = 1; i < bossIdx; i++) {
+    if (tags[i]) continue;
+    tags[i] = VISUAL_SLICE_FILLER_POOL[poolIdx % VISUAL_SLICE_FILLER_POOL.length]!;
+    poolIdx++;
+  }
+  return tags;
+}
+
 /** Deterministic + seeded archetype tags for every room in the world graph. */
 export function assignRoomArchetypes(options: AssignRoomArchetypesOptions): string[] {
   const rng = new SeededRNG(options.seed + 7919);
   if (options.profile === 'VISUAL_VERTICAL_SLICE') {
-    return VISUAL_SLICE_ROOM_ARCHETYPES.slice(0, options.roomCount).map((tag) => tag);
+    return assignVisualSliceArchetypes(options);
   }
   const interiorCount = Math.max(0, options.roomCount - 2);
 

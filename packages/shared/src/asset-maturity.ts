@@ -11,6 +11,7 @@ export const ASSET_MATURITY_LEVELS = [
   'PROCESSED',
   'COMPILED',
   'QA_REVIEW',
+  'PROCEDURAL_PRODUCTION',
   'PRODUCTION_READY',
   'REJECTED',
 ] as const;
@@ -71,8 +72,9 @@ export function critiqueEffectivelyPassed(
 }
 
 /**
- * Infer maturity from how an asset was produced. Procedural / test / fallback art is always
- * PLACEHOLDER (never PRODUCTION_READY). Real image-provider output starts as GENERATED_SOURCE
+ * Infer maturity from how an asset was produced. Procedural / test / fallback art remains
+ * PLACEHOLDER unless its generator explicitly declares final-use intent and validation passed.
+ * Real image-provider output starts as GENERATED_SOURCE
  * and promotes to QA_REVIEW when critique passes or soft-passes on score.
  * PRODUCTION_READY is never inferred — callers must set it explicitly after promotion.
  */
@@ -82,6 +84,7 @@ export function inferAssetMaturity(input: {
   critiquePassed?: boolean;
   critiqueScore?: number;
   sourceType?: AssetSourceType;
+  proceduralProduction?: boolean;
 }): AssetMaturityFields {
   const provider = (input.provider ?? '').toLowerCase();
   const fallback = input.fallbackGenerated === true || provider === 'procedural';
@@ -97,6 +100,14 @@ export function inferAssetMaturity(input: {
           : provider
             ? 'ai_generated'
             : 'unknown');
+
+  if (
+    sourceType === 'procedural' &&
+    input.proceduralProduction === true &&
+    critiqueEffectivelyPassed(input.critiquePassed, input.critiqueScore)
+  ) {
+    return { maturity: 'PROCEDURAL_PRODUCTION', productionReady: true, sourceType: 'procedural' };
+  }
 
   if (fallback || sourceType === 'procedural') {
     return { maturity: 'PLACEHOLDER', productionReady: false, sourceType: 'procedural' };

@@ -6,10 +6,9 @@
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -p tsconfig.electron.json && vite build",
+    "build": "node ../../scripts/desktop-build.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.electron.json --noEmit",
-    "preview": "vite preview",
-    "postinstall": "node ./node_modules/electron/install.js"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@metroforge/core": "workspace:*",

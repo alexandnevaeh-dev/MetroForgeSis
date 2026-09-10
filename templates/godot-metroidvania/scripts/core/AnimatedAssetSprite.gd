@@ -13,6 +13,18 @@ extends AnimatedSprite2D
 @export var attack_sheet_path: String = ""
 @export var hurt_sheet_path: String = ""
 @export var death_sheet_path: String = ""
+## Genuine multi-frame run cycle (production standard). Same treatment as the sheets above —
+## loaded as a real animation, not looked up via _load_pose_overrides()'s single-frame
+## <id>_run_pose.png convention (the asset pipeline no longer generates that file for the
+## player; see asset-pipeline.ts's buildRunSheetAsset).
+@export var run_sheet_path: String = ""
+
+## Generalized way to add a new multi-frame animation without adding another named @export like
+## the ones above — maps animation name -> sheet path (e.g.
+## {"idle": "assets/characters/player_idle.png", "jump_start": "assets/characters/player_jump_start.png"}).
+## Player animation production pass: idle/jump_start/jump/fall/land/dash/wall_slide/wall_jump/
+## swim/attack_2/attack_3 all arrive this way instead of nine more named exports.
+@export var extra_animation_sheets: Dictionary = {}
 
 static var _clean_cache: Dictionary = {}
 
@@ -82,6 +94,10 @@ func _build_frames() -> void:
 
 	_load_animation_frames(frames, "walk", sheet_path, false)
 
+	if not run_sheet_path.is_empty():
+		frames.add_animation("run")
+		_load_animation_frames(frames, "run", run_sheet_path, false)
+
 	if not attack_sheet_path.is_empty():
 		frames.add_animation("attack")
 		frames.set_animation_loop("attack", false)
@@ -97,33 +113,91 @@ func _build_frames() -> void:
 		frames.set_animation_loop("death", false)
 		_load_animation_frames(frames, "death", death_sheet_path, false)
 
+	for anim_name in extra_animation_sheets:
+		var extra_path: String = extra_animation_sheets[anim_name]
+		if extra_path.is_empty():
+			continue
+		if not frames.has_animation(anim_name):
+			frames.add_animation(anim_name)
+		else:
+			# "idle" (and potentially "walk") already exist from the hardcoded primary-sheet
+			# animations above — a real multi-frame idle sheet replaces that placeholder
+			# single-frame "idle" entry rather than crashing on a duplicate add_animation().
+			frames.clear(anim_name)
+		_load_animation_frames(frames, anim_name, extra_path, false)
+
 	sprite_frames = frames
 	texture_filter = TEXTURE_FILTER_NEAREST
 	centered = true
 	# Bottom-center on the CharacterBody origin (feet).
 	offset = Vector2(0, -frame_size.y / 2.0)
 	_load_pose_overrides(frames)
+	# Real per-clip FPS/loop from the asset pipeline's metadata sidecar, applied last so it wins
+	# regardless of whether the animation came from a named sheet export, extra_animation_sheets,
+	# or a pose override — replaces the single global playback speed and the hardcoded
+	# loop-exclusion list for any character that ships a sidecar (player, this pass).
+	_load_animation_metadata(frames)
 	if frames.get_frame_count("idle") == 0 and frames.get_frame_count("walk") > 0:
 		frames.add_frame("idle", frames.get_frame_texture("walk", 0), 1.0)
 	speed_scale = 1.0
 
 
-## Loads canonical posed stills (player_idle_pose.png etc.) when generated.
-## Pose files are single frames on the same canvas as frame_size — they replace
-## the derived sheet for that animation name. Missing files are ignored.
-func _load_pose_overrides(frames: SpriteFrames) -> void:
+## Shared basename both _load_pose_overrides() and _load_animation_metadata() derive their
+## per-character file paths from (`<prefix>_<anim>_pose.png`, `<prefix>_animations.json`).
+func _sheet_prefix() -> String:
 	var prefix := sheet_path.get_basename()
 	if prefix.ends_with("_walk"):
 		prefix = prefix.substr(0, prefix.length() - 5)
-	var pose_anims := ["idle", "run", "jump_start", "jump", "fall", "land", "attack", "hurt", "death", "dash", "wall_slide", "wall_jump"]
+	return prefix
+
+## Applies real per-animation FPS/loop from a JSON sidecar the asset pipeline writes next to a
+## character's sheets (`<prefix>_animations.json`, e.g. player_animations.json) — canonical
+## per-clip metadata (production pass §24) instead of one global playback speed and a hardcoded
+## loop-exclusion list. A character without a sidecar (enemies/bosses, this pass) is unaffected;
+## an animation name the sidecar doesn't mention keeps whatever loop/speed it already has.
+func _load_animation_metadata(frames: SpriteFrames) -> void:
+	var meta_path := "%s_animations.json" % _sheet_prefix()
+	var res_path := meta_path if meta_path.begins_with("res://") else "res://" + meta_path
+	if not FileAccess.file_exists(res_path):
+		return
+	var file := FileAccess.open(res_path, FileAccess.READ)
+	if file == null:
+		return
+	var parsed = JSON.parse_string(file.get_as_text())
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return
+	for anim_name in parsed:
+		if not frames.has_animation(anim_name):
+			continue
+		var entry = parsed[anim_name]
+		if typeof(entry) != TYPE_DICTIONARY:
+			continue
+		if entry.has("fps"):
+			frames.set_animation_speed(anim_name, float(entry["fps"]))
+		if entry.has("loop"):
+			frames.set_animation_loop(anim_name, bool(entry["loop"]))
+
+## Loads canonical posed stills (player_idle_pose.png etc.) when generated — but ONLY for an
+## animation that doesn't already have a real multi-frame production sheet. This is a general
+## rule, not a per-name exclusion list: "production sheet wins over still pose" is decided by
+## actually checking how many frames are already loaded (frames.get_frame_count(anim) > 1),
+## never by hardcoding which animation names happen to have sheets today. The run-cycle fix
+## solved this once for "run" specifically; this generalizes it so the next new multi-frame
+## sheet (walk upgrade, jump_start, swim, attack_2, ...) never needs the same fix repeated.
+## Pose files are single frames on the same canvas as frame_size. Missing files are ignored.
+func _load_pose_overrides(frames: SpriteFrames) -> void:
+	var prefix := _sheet_prefix()
+	var pose_anims := ["idle", "run", "jump_start", "jump", "fall", "land", "attack", "hurt", "death", "dash", "wall_slide", "wall_jump", "swim"]
 	for anim in pose_anims:
+		if frames.has_animation(anim) and frames.get_frame_count(anim) > 1:
+			continue  # a real multi-frame production sheet already won this animation name
 		var pose_path := "%s_%s_pose.png" % [prefix, anim]
 		var res_path := pose_path if pose_path.begins_with("res://") else "res://" + pose_path
 		if not ResourceLoader.exists(res_path) and not FileAccess.file_exists(res_path):
 			continue
 		if not frames.has_animation(anim):
 			frames.add_animation(anim)
-			if anim in ["attack", "hurt", "death", "jump_start", "jump", "land", "dash"]:
+			if anim in ["attack", "hurt", "death", "jump_start", "jump", "land", "dash", "wall_jump"]:
 				frames.set_animation_loop(anim, false)
 		frames.clear(anim)
 		var tex: Texture2D = _clean_contact_texture(load(res_path))
@@ -143,7 +217,17 @@ func _load_animation_frames(frames: SpriteFrames, anim: String, path: String, co
 	var res_path := path if path.begins_with("res://") else "res://" + path
 	if ResourceLoader.exists(res_path):
 		var tex: Texture2D = _clean_contact_texture(load(res_path))
-		for i in range(frame_count):
+		# Derive the real frame count from the sheet's actual width instead of trusting the single
+		# shared `frame_count` export — different animations (e.g. a 12-frame run cycle vs a
+		# 4-frame walk/attack/hurt/death sheet) legitimately have different lengths. Falls back to
+		# frame_count when the width isn't a clean multiple of frame_size.x (unexpected sheet).
+		var sheet_frame_count := frame_count
+		if frame_size.x > 0:
+			var tex_width := tex.get_width()
+			if tex_width > 0 and tex_width % frame_size.x == 0:
+				@warning_ignore("integer_division")  # exact multiple guaranteed by the modulo check above
+				sheet_frame_count = tex_width / frame_size.x
+		for i in range(sheet_frame_count):
 			var atlas := AtlasTexture.new()
 			atlas.atlas = tex
 			atlas.region = Rect2(i * frame_size.x, 0, frame_size.x, frame_size.y)

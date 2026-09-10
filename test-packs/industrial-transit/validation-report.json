@@ -1,0 +1,761 @@
+{
+  "pack": "industrial-transit",
+  "passed": true,
+  "checkedAt": "2026-09-01T16:43:22.147Z",
+  "assets": [
+    {
+      "id": "player_idle",
+      "source": "characters/player/player_idle.png",
+      "passed": true,
+      "issues": [],
+      "frames": 6,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "player_run",
+      "source": "characters/player/player_run.png",
+      "passed": true,
+      "issues": [],
+      "frames": 8,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0.23255813953488372
+    },
+    {
+      "id": "player_jump_start",
+      "source": "characters/player/player_jump_start.png",
+      "passed": true,
+      "issues": [],
+      "frames": 3,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "player_jump",
+      "source": "characters/player/player_jump.png",
+      "passed": true,
+      "issues": [],
+      "frames": 3,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "player_fall",
+      "source": "characters/player/player_fall.png",
+      "passed": true,
+      "issues": [],
+      "frames": 3,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "player_land",
+      "source": "characters/player/player_land.png",
+      "passed": true,
+      "issues": [],
+      "frames": 3,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "player_attack",
+      "source": "characters/player/player_attack.png",
+      "passed": true,
+      "issues": [],
+      "frames": 6,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "player_attack_2",
+      "source": "characters/player/player_attack_2.png",
+      "passed": true,
+      "issues": [],
+      "frames": 6,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "player_dash",
+      "source": "characters/player/player_dash.png",
+      "passed": true,
+      "issues": [],
+      "frames": 5,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "player_wall_slide",
+      "source": "characters/player/player_wall_slide.png",
+      "passed": true,
+      "issues": [],
+      "frames": 4,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "player_wall_jump",
+      "source": "characters/player/player_wall_jump.png",
+      "passed": true,
+      "issues": [],
+      "frames": 4,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "player_swim",
+      "source": "characters/player/player_swim.png",
+      "passed": true,
+      "issues": [],
+      "frames": 6,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "player_hurt",
+      "source": "characters/player/player_hurt.png",
+      "passed": true,
+      "issues": [],
+      "frames": 3,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "player_death",
+      "source": "characters/player/player_death.png",
+      "passed": true,
+      "issues": [],
+      "frames": 10,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "player_air_dash",
+      "source": "characters/player/player_air_dash.png",
+      "passed": true,
+      "issues": [],
+      "frames": 5,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "player_double_jump",
+      "source": "characters/player/player_double_jump.png",
+      "passed": true,
+      "issues": [],
+      "frames": 4,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "player_ground_slam_start",
+      "source": "characters/player/player_ground_slam_start.png",
+      "passed": true,
+      "issues": [],
+      "frames": 3,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "player_ground_slam_fall",
+      "source": "characters/player/player_ground_slam_fall.png",
+      "passed": true,
+      "issues": [],
+      "frames": 3,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "player_ground_slam_impact",
+      "source": "characters/player/player_ground_slam_impact.png",
+      "passed": true,
+      "issues": [],
+      "frames": 5,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "player_swim_idle",
+      "source": "characters/player/player_swim_idle.png",
+      "passed": true,
+      "issues": [],
+      "frames": 5,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "player_grapple",
+      "source": "characters/player/player_grapple.png",
+      "passed": true,
+      "issues": [],
+      "frames": 5,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "player_phase",
+      "source": "characters/player/player_phase.png",
+      "passed": true,
+      "issues": [],
+      "frames": 5,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "player_respawn",
+      "source": "characters/player/player_respawn.png",
+      "passed": true,
+      "issues": [],
+      "frames": 8,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "player_interact",
+      "source": "characters/player/player_interact.png",
+      "passed": true,
+      "issues": [],
+      "frames": 4,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "player_ability_acquire",
+      "source": "characters/player/player_ability_acquire.png",
+      "passed": true,
+      "issues": [],
+      "frames": 8,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "player_walk",
+      "source": "characters/player/player_run.png",
+      "passed": true,
+      "issues": [],
+      "frames": 8,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0.23255813953488372
+    },
+    {
+      "id": "enemy_000_walk",
+      "source": "characters/enemies/enemy_000_walk.png",
+      "passed": true,
+      "issues": [],
+      "frames": 6,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0.06060606060606061
+    },
+    {
+      "id": "enemy_000_attack",
+      "source": "characters/enemies/enemy_000_attack.png",
+      "passed": true,
+      "issues": [],
+      "frames": 6,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "enemy_000_hurt",
+      "source": "characters/enemies/enemy_000_hurt.png",
+      "passed": true,
+      "issues": [],
+      "frames": 3,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0.06060606060606061
+    },
+    {
+      "id": "enemy_000_death",
+      "source": "characters/enemies/enemy_000_death.png",
+      "passed": true,
+      "issues": [],
+      "frames": 6,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0.06060606060606061
+    },
+    {
+      "id": "enemy_001_walk",
+      "source": "characters/enemies/enemy_001_walk.png",
+      "passed": true,
+      "issues": [],
+      "frames": 6,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 4,
+      "scaleVariance": 0
+    },
+    {
+      "id": "enemy_001_attack",
+      "source": "characters/enemies/enemy_001_attack.png",
+      "passed": true,
+      "issues": [],
+      "frames": 6,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "enemy_001_hurt",
+      "source": "characters/enemies/enemy_001_hurt.png",
+      "passed": true,
+      "issues": [],
+      "frames": 3,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 4,
+      "scaleVariance": 0
+    },
+    {
+      "id": "enemy_001_death",
+      "source": "characters/enemies/enemy_001_death.png",
+      "passed": true,
+      "issues": [],
+      "frames": 6,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 4,
+      "scaleVariance": 0
+    },
+    {
+      "id": "enemy_002_walk",
+      "source": "characters/enemies/enemy_002_walk.png",
+      "passed": true,
+      "issues": [],
+      "frames": 6,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "enemy_002_attack",
+      "source": "characters/enemies/enemy_002_attack.png",
+      "passed": true,
+      "issues": [],
+      "frames": 6,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "enemy_002_hurt",
+      "source": "characters/enemies/enemy_002_hurt.png",
+      "passed": true,
+      "issues": [],
+      "frames": 3,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "enemy_002_death",
+      "source": "characters/enemies/enemy_002_death.png",
+      "passed": true,
+      "issues": [],
+      "frames": 6,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "enemy_003_walk",
+      "source": "characters/enemies/enemy_003_walk.png",
+      "passed": true,
+      "issues": [],
+      "frames": 6,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "enemy_003_attack",
+      "source": "characters/enemies/enemy_003_attack.png",
+      "passed": true,
+      "issues": [],
+      "frames": 6,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "enemy_003_hurt",
+      "source": "characters/enemies/enemy_003_hurt.png",
+      "passed": true,
+      "issues": [],
+      "frames": 3,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "enemy_003_death",
+      "source": "characters/enemies/enemy_003_death.png",
+      "passed": true,
+      "issues": [],
+      "frames": 6,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "boss_final_walk",
+      "source": "characters/boss/boss_final_walk.png",
+      "passed": true,
+      "issues": [],
+      "frames": 6,
+      "frameSize": [
+        128,
+        128
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "boss_final_attack",
+      "source": "characters/boss/boss_final_attack.png",
+      "passed": true,
+      "issues": [],
+      "frames": 10,
+      "frameSize": [
+        128,
+        128
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0.0390625
+    },
+    {
+      "id": "boss_final_hurt",
+      "source": "characters/boss/boss_final_hurt.png",
+      "passed": true,
+      "issues": [],
+      "frames": 4,
+      "frameSize": [
+        128,
+        128
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "boss_final_death",
+      "source": "characters/boss/boss_final_death.png",
+      "passed": true,
+      "issues": [],
+      "frames": 14,
+      "frameSize": [
+        128,
+        128
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "npc_000_idle",
+      "source": "characters/npcs/npc_000_idle.png",
+      "passed": true,
+      "issues": [],
+      "frames": 6,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "npc_000_talk",
+      "source": "characters/npcs/npc_000_talk.png",
+      "passed": true,
+      "issues": [],
+      "frames": 6,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "npc_000_gesture",
+      "source": "characters/npcs/npc_000_gesture.png",
+      "passed": true,
+      "issues": [],
+      "frames": 4,
+      "frameSize": [
+        64,
+        64
+      ],
+      "baselineVariance": 0,
+      "scaleVariance": 0
+    },
+    {
+      "id": "transit_tileset",
+      "source": "tiles/transit_tileset.png",
+      "passed": true,
+      "issues": []
+    },
+    {
+      "id": "bg_far",
+      "source": "backgrounds/far/biome_0_far.png",
+      "passed": true,
+      "issues": []
+    },
+    {
+      "id": "bg_mid",
+      "source": "backgrounds/mid/biome_0_mid.png",
+      "passed": true,
+      "issues": []
+    },
+    {
+      "id": "bg_near",
+      "source": "backgrounds/near/biome_0_near.png",
+      "passed": true,
+      "issues": []
+    },
+    {
+      "id": "pillar_small",
+      "source": "architecture/pillar_small.png",
+      "passed": true,
+      "issues": []
+    },
+    {
+      "id": "arch_narrow",
+      "source": "architecture/arch_narrow.png",
+      "passed": true,
+      "issues": []
+    },
+    {
+      "id": "pipe_cluster",
+      "source": "props/pipe_cluster.png",
+      "passed": true,
+      "issues": []
+    },
+    {
+      "id": "utility_lamp",
+      "source": "props/utility_lamp.png",
+      "passed": true,
+      "issues": []
+    },
+    {
+      "id": "maintenance_crate",
+      "source": "props/maintenance_crate.png",
+      "passed": true,
+      "issues": []
+    },
+    {
+      "id": "junction_box",
+      "source": "props/junction_box.png",
+      "passed": true,
+      "issues": []
+    },
+    {
+      "id": "save_point",
+      "source": "interactives/save_point.png",
+      "passed": true,
+      "issues": []
+    },
+    {
+      "id": "ability_pedestal",
+      "source": "interactives/ability_pedestal.png",
+      "passed": true,
+      "issues": []
+    },
+    {
+      "id": "locked_gate",
+      "source": "interactives/locked_gate.png",
+      "passed": true,
+      "issues": []
+    },
+    {
+      "id": "attack_slash",
+      "source": "vfx/attack_slash.png",
+      "passed": true,
+      "issues": []
+    },
+    {
+      "id": "dash_burst",
+      "source": "vfx/dash_burst.png",
+      "passed": true,
+      "issues": []
+    },
+    {
+      "id": "landing_dust",
+      "source": "vfx/landing_dust.png",
+      "passed": true,
+      "issues": []
+    },
+    {
+      "id": "phase_effect",
+      "source": "vfx/phase_effect.png",
+      "passed": true,
+      "issues": []
+    },
+    {
+      "id": "ability_acquire",
+      "source": "vfx/ability_acquire.png",
+      "passed": true,
+      "issues": []
+    },
+    {
+      "id": "boss_death",
+      "source": "vfx/boss_death.png",
+      "passed": true,
+      "issues": []
+    }
+  ],
+  "issues": [],
+  "playerAnimationStateCount": 26,
+  "requiredStatesPresent": true
+}

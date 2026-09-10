@@ -95,11 +95,14 @@ export function loadPublishedRooms(projectPath: string): PresentationRoomInput[]
 }
 
 export function detectDebugHud(projectPath: string, criticIssues: string[] = []): boolean {
-  if (criticIssues.some((i) => /HUD band is so filled/i.test(i))) return true;
+  void criticIssues;
   const hud = join(projectPath, 'scripts', 'UI', 'GameHUD.gd');
   if (!existsSync(hud)) return false;
   const src = readFileSync(hud, 'utf-8');
-  const hidesCapture = src.includes('METROFORGE_CAPTURE') && src.includes('_is_presentation_hud');
+  const hidesCapture =
+    src.includes('METROFORGE_CAPTURE') &&
+    src.includes('_is_presentation_hud') &&
+    (src.includes('PRESENTATION_CAPTURE') || src.includes('QA_CAPTURE'));
   return !hidesCapture;
 }
 

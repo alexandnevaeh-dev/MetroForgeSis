@@ -8,15 +8,15 @@ func process_physics(controller: AbilityController, _delta: float) -> bool:
 	if not controller.is_slamming:
 		return false
 	controller.player.velocity = Vector2(0.0, controller.config.ground_slam_speed)
-	var was_airborne := not controller.player.is_on_floor()
 	controller.player.move_and_slide()
-	if controller.player.is_on_floor() and was_airborne:
+	if controller.player.is_on_floor():
+		# is_slamming was entered only from an airborne state. CharacterBody2D's
+		# floor flag can still describe the prior move at the start of this tick,
+		# so use the real slam collision below rather than a stale was_airborne gate.
 		_break_weak_floors_from_collision(controller)
 		VFXManager.play("slam_shock", controller.player.global_position + Vector2(0, 16), 1.4)
 		controller.is_slamming = false
 		AudioManager.play_sfx("hit")
-	elif controller.player.is_on_floor():
-		controller.is_slamming = false
 	return true
 
 func _break_weak_floors_from_collision(controller: AbilityController) -> void:

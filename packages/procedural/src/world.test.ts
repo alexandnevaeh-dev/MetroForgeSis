@@ -29,6 +29,39 @@ describe('generateWorldTopology', () => {
     expect(result.roomIds).toHaveLength(8);
     expect(result.worldGraph.nodes).toHaveLength(8);
   });
+
+  it('never emits two unconditional edges between the same room pair (sixteenth-session regression)', () => {
+    // Reproduces the real, reported failure: a "medium"-scale (roomCount>=30), multi-biome world
+    // used to let its vertical-biome-shaft edge (transition:'up') duplicate the main spine's
+    // plain edge between the exact same two rooms — e.g. a real generated project produced BOTH
+    // room_012->room_013 (plain) and room_012->room_013 (transition:'up') simultaneously. Nothing
+    // downstream disambiguates by direction (PlaytestAgent.gd's _find_transition matches by
+    // target room id only), so whichever edge won arbitrarily could route a normal ground
+    // traversal to an unreachable elevated door, producing a real door_did_not_fire failure. This
+    // asserts no (from,to) unordered pair — accounting for bidirectional edges — ever has more
+    // than one requirements-free edge, across every seed/biome-count combination likely to hit
+    // the branching path (roomCount>=30).
+    for (const seed of [1, 42, 20260907, 20260908, 777]) {
+      for (const biomeCount of [2, 3, 4]) {
+        const result = generateWorldTopology({
+          seed,
+          roomCount: 42,
+          biomeCount,
+          abilities: ['dash', 'double_jump', 'wall_slide'],
+          bossCount: 2,
+          profile: 'SMALL',
+        });
+        const seen = new Map<string, number>();
+        for (const edge of result.worldGraph.edges) {
+          if (edge.requirements.length > 0) continue; // gated edges are deliberately exclusive
+          const pairKey = [edge.from, edge.to].sort().join('<->');
+          seen.set(pairKey, (seen.get(pairKey) ?? 0) + 1);
+        }
+        const duplicates = [...seen.entries()].filter(([, count]) => count > 1);
+        expect(duplicates, `seed=${seed} biomeCount=${biomeCount} duplicate pairs: ${JSON.stringify(duplicates)}`).toEqual([]);
+      }
+    }
+  });
 });
 
 describe('validateReachability', () => {

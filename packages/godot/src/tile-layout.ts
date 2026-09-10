@@ -1,6 +1,6 @@
 import type { TileCell } from './room-assembler.js';
 import { SeededRNG, DEFAULT_MOVEMENT_STATS, type MovementStats } from '@metroforge/procedural';
-import { composePlayableVisuals, type RoomBlueprint } from './composition/index.js';
+import { composePlayableVisuals, suppressRepetition, type RoomBlueprint } from './composition/index.js';
 
 /** Must match packages/assets/src/tile-compiler.ts TILE_ATLAS.roles */
 const ROLES = {
@@ -26,6 +26,66 @@ const ROLES = {
 } as const;
 
 type TileRole = keyof typeof ROLES;
+
+type TerrainVariantRole = 'ground_wear' | 'ground_crack' | 'ground_moss' | 'ground_rare' | 'wall_wear' | 'wall_crack' | 'wall_moss' | 'wall_rare' | 'ceiling_wear' | 'ceiling_moss' | 'platform_wear' | 'platform_moss';
+
+const TERRAIN_VARIANTS: Partial<Record<TileRole, readonly TerrainVariantRole[]>> = {
+  ground: ['ground_wear', 'ground_crack', 'ground_moss', 'ground_rare'],
+  wall: ['wall_wear', 'wall_crack', 'wall_moss', 'wall_rare'],
+  ceiling: ['ceiling_wear', 'ceiling_moss'],
+  platform: ['platform_wear', 'platform_moss'],
+  top_edge: ['ground_wear', 'ground_moss'],
+  bottom_edge: ['ground_wear'],
+  left_edge: ['wall_wear'],
+  right_edge: ['wall_wear'],
+};
+
+const TERRAIN_VARIANT_ATLAS: Record<TerrainVariantRole, { col: number; row: number }> = {
+  ground_wear: { col: 0, row: 3 },
+  wall_wear: { col: 1, row: 3 },
+  ceiling_wear: { col: 2, row: 3 },
+  platform_wear: { col: 3, row: 3 },
+  ground_crack: { col: 4, row: 3 },
+  wall_crack: { col: 5, row: 3 },
+  ground_moss: { col: 0, row: 4 },
+  wall_moss: { col: 1, row: 4 },
+  ceiling_moss: { col: 2, row: 4 },
+  platform_moss: { col: 3, row: 4 },
+  ground_rare: { col: 4, row: 4 },
+  wall_rare: { col: 5, row: 4 },
+};
+
+const BASE_ROLE_BY_ATLAS = new Map<string, TileRole>(
+  Object.entries(ROLES).map(([role, atlas]) => [`${atlas.col},${atlas.row}`, role as TileRole]),
+);
+
+function tileHash(seed: number, x: number, y: number, salt: number): number {
+  let value = (seed ^ Math.imul(x, 374761393) ^ Math.imul(y, 668265263) ^ salt) >>> 0;
+  value = Math.imul(value ^ (value >>> 13), 1274126177);
+  return (value ^ (value >>> 16)) >>> 0;
+}
+
+/**
+ * Resolves visual-only material variants after structural composition. A patch is deliberately
+ * larger than one cell so wear reads as a local condition, not checkerboard noise.
+ */
+function applyTerrainVariants(cells: TileCell[], seed: number): TileCell[] {
+  return cells.map((current) => {
+    const role = BASE_ROLE_BY_ATLAS.get(`${current.col},${current.row}`);
+    const variants = role ? TERRAIN_VARIANTS[role] : undefined;
+    if (!role || !variants?.length) return current;
+
+    const patchX = Math.floor(current.x / 5);
+    const patchY = Math.floor(current.y / 3);
+    const patchRoll = tileHash(seed, patchX, patchY, role.length) % 100;
+    // Clean is common, but every material patch has a deterministic shared condition.
+    if (patchRoll < 52) return current;
+
+    const variantIndex = tileHash(seed, patchX, patchY, current.x + current.y + role.length) % variants.length;
+    const variant = TERRAIN_VARIANT_ATLAS[variants[variantIndex]!];
+    return { ...current, col: variant.col, row: variant.row };
+  });
+}
 
 function cell(x: number, y: number, role: TileRole): TileCell {
   const pos = ROLES[role];
@@ -275,13 +335,17 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
   cells.push(cell(cols - 1, floorRow, 'outside_br'));
 
   if (archetype === 'tutorial') {
+    // Three low steps (kept — tile-layout-archetypes.test.ts pins uniquePlatformHeights>1 and
+    // platformCount>=3 here to distinguish the tutorial staircase from combat's flat islands),
+    // but pulled tighter to the entrance and shorter than before so most of the room stays open
+    // negative space toward the exit instead of reading as a 3-tier challenge room.
     const climb = climbRows(platMaxRow, 3, jumpStep);
-    const lowCol = Math.max(2, Math.floor(cols * 0.14));
-    const midCol = Math.max(lowCol + 5, Math.floor(cols * 0.34));
-    const highCol = Math.max(midCol + 4, Math.floor(cols * 0.54));
-    placePlatform(cells, platforms, tileSize, lowCol, 4, climb[0] ?? platMaxRow);
-    placePlatform(cells, platforms, tileSize, midCol, 4, climb[1] ?? climb[0] ?? platMaxRow);
-    placePlatform(cells, platforms, tileSize, highCol, 4, climb[2] ?? climb[1] ?? platMaxRow);
+    const lowCol = Math.max(2, Math.floor(cols * 0.12));
+    const midCol = Math.max(lowCol + 4, Math.floor(cols * 0.24));
+    const highCol = Math.max(midCol + 3, Math.floor(cols * 0.36));
+    placePlatform(cells, platforms, tileSize, lowCol, 3, climb[0] ?? platMaxRow);
+    placePlatform(cells, platforms, tileSize, midCol, 3, climb[1] ?? climb[0] ?? platMaxRow);
+    placePlatform(cells, platforms, tileSize, highCol, 3, climb[2] ?? climb[1] ?? platMaxRow);
   }
 
   if (archetype === 'combat' || archetype === 'arena') {
@@ -401,26 +465,21 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
     // bot cannot dash — it times out / never fires the right-hand door.
   }
 
-  if (archetype === 'arena' || archetype === 'boss' || archetype === 'miniboss') {
-    const deco = rng.int(Math.max(2, Math.floor(cols * 0.12)), Math.max(3, Math.floor(cols * 0.28)));
-    cells.push(cell(deco, floorRow - 1, 'decor_a'));
-    cells.push(cell(cols - deco, floorRow - 1, 'decor_b'));
-  }
-
   if (archetype === 'save') {
-    const lx = rng.int(Math.max(2, Math.floor(cols * 0.3)), Math.max(3, Math.floor(cols * 0.6)));
-    cells.push(cell(lx, floorRow - 1, 'decor_a'));
-    const daisCol = Math.max(2, Math.floor(cols * 0.42));
-    const climb = climbRows(platMaxRow, 2, jumpStep);
+    // A small protected dais and nothing else — a single-tier chamber, not a two-step scaffold,
+    // so it reads as "small room around a checkpoint" rather than a generic platforming room.
+    const daisCol = Math.max(2, Math.floor(cols * 0.44));
+    const climb = climbRows(platMaxRow, 1, jumpStep);
     placePlatform(cells, platforms, tileSize, daisCol, 3, climb[0] ?? platMaxRow);
-    placePlatform(cells, platforms, tileSize, daisCol + 5, 2, climb[1] ?? platMaxRow);
   }
 
   if (archetype === 'npc' || archetype === 'shop') {
-    const benchCol = Math.max(3, Math.floor(cols * 0.36));
-    const climb = climbRows(platMaxRow, 2, jumpStep);
-    placePlatform(cells, platforms, tileSize, benchCol, 6, climb[0] ?? platMaxRow);
-    placePlatform(cells, platforms, tileSize, Math.max(2, benchCol - 6), 3, climb[1] ?? platMaxRow);
+    // One wide, low bench spanning most of the room's width — low platform density, a stable
+    // "room-within-a-room" floor rather than the multi-tier scaffolds combat/tutorial use.
+    const benchCol = Math.max(3, Math.floor(cols * 0.22));
+    const benchLen = Math.max(6, Math.floor(cols * 0.5));
+    const climb = climbRows(platMaxRow, 1, jumpStep);
+    placePlatform(cells, platforms, tileSize, benchCol, benchLen, climb[0] ?? platMaxRow);
   }
 
   if (archetype === 'puzzle') {
@@ -440,13 +499,9 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
   if (archetype === 'set_piece') {
     const monumentCol = rng.int(Math.floor(cols * 0.38), Math.floor(cols * 0.52));
     placePlatform(cells, platforms, tileSize, monumentCol, 5, platMinRow);
-    const monumentTop = platMinRow - 1 > 1 ? platMinRow - 1 : platMinRow;
-    cells.push(cell(monumentCol + 2, monumentTop, 'decor_a'));
   }
 
   if (archetype === 'transition') {
-    const split = Math.floor(cols * 0.5);
-    cells.push(cell(split, floorRow - 1, 'decor_a'));
     const leftPlat = rng.int(3, Math.max(4, Math.floor(cols * 0.22)));
     placePlatform(cells, platforms, tileSize, Math.floor(cols * 0.12), leftPlat, platMaxRow);
     placePlatform(cells, platforms, tileSize, Math.floor(cols * 0.62), 4, platMinRow);
@@ -459,9 +514,6 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
     placePlatform(cells, platforms, tileSize, step, 3, climb[0] ?? platMaxRow);
     placePlatform(cells, platforms, tileSize, Math.floor((step + alcove) / 2), 3, climb[1] ?? platMaxRow);
     placePlatform(cells, platforms, tileSize, alcove, 4, climb[2] ?? platMaxRow);
-    const topRow = climb[2] ?? platMaxRow;
-    const alcoveTop = topRow - 1 > 1 ? topRow - 1 : topRow;
-    cells.push(cell(alcove + 1, alcoveTop, 'decor_b'));
   }
 
   if (archetype === 'boss') {
@@ -473,7 +525,6 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
   if (archetype === 'miniboss') {
     const midCol = Math.max(3, Math.floor(cols * 0.38));
     placePlatform(cells, platforms, tileSize, midCol, 6, platMaxRow);
-    cells.push(cell(midCol + 2, platMaxRow - 1 > 1 ? platMaxRow - 1 : platMaxRow, 'decor_b'));
   }
 
   const composed = composePlayableVisuals({
@@ -491,7 +542,10 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
     connections,
   });
 
-  return { cells: composed.cells, platforms, pits, blueprint: composed.blueprint };
+  // Material patches intentionally run after semantic composition, so suppress once more after
+  // patching to ensure their shared condition cannot recreate long identical atlas runs.
+  const terrainCells = applyTerrainVariants(composed.cells, input.seed ?? 1);
+  return { cells: suppressRepetition(terrainCells, input.seed ?? 1), platforms, pits, blueprint: composed.blueprint };
 }
 
 /** Pixel Y of the walkable floor top (agrees with ground tile row). */

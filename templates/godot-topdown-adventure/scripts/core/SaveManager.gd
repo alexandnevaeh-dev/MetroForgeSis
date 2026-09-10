@@ -381,6 +381,15 @@ func consume_pending_player_health() -> Dictionary:
 	var max_health: float = player_data.get("max_health", -1.0)
 	return {"health": health, "max_health": max_health}
 
+## Read by OverworldManager._ensure_player() before it re-instantiates the Player on an ordinary
+## room transition — it carries the outgoing player's live health across as its own default (see
+## OverworldManager.gd's _carried_health), but must not clobber a real save/death-driven restore
+## that's about to apply via consume_pending_player_health() on the exact same spawn. Must be
+## checked *before* the new Player's own _ready() runs (that's what actually consumes the flag),
+## not after — by then this would already read false regardless of which case it was.
+func has_pending_health_restore() -> bool:
+	return _health_restore_pending
+
 func _on_save_triggered() -> void:
 	save_game()
 

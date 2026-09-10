@@ -1,0 +1,18 @@
+{
+  "workflowId": "ip-adapter-controlnet-pose",
+  "version": "1.0.0",
+  "capabilities": ["REFERENCE_IMAGE", "IDENTITY_CONDITIONING", "POSE_CONDITIONING", "CONTROL_IMAGE"],
+  "requiredModels": ["sdxl-base-1.0", "controlnet-openpose-sdxl"],
+  "requiredAdapters": ["ip-adapter-sdxl"],
+  "requiredCustomNodes": [],
+  "inputMappings": {
+    "referenceImage": "conditioning.image",
+    "poseControlImage": "conditioning.controlImage",
+    "prompt": "prompt",
+    "seed": "seed",
+    "referenceStrength": "conditioning.strength"
+  },
+  "outputMappings": { "image": "images[0]" },
+  "licenseRequirements": ["base model license", "IP-Adapter license", "ControlNet license"],
+  "vramProfile": "remote GPU recommended; local CPU not practical"
+}

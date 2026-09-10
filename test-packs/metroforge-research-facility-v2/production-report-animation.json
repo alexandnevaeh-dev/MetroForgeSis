@@ -1,0 +1,166 @@
+{
+  "generatedAt": "2026-09-10T03:55:51.753Z",
+  "method": "reprocessed v1 real NVIDIA stills through higher-frame-count pose builders; no new AI generation this pass",
+  "characters": [
+    {
+      "key": "player",
+      "frames": {
+        "walk": 12,
+        "attack": 8,
+        "hurt": 5,
+        "death": 8
+      },
+      "technique": {
+        "walk": "generateRunCycleSheet (stride+lean+bob shear, real per-frame difference, quality-gated)",
+        "attack": "generateAttackSheet(arc=horizontal)",
+        "hurt": "generateHurtFlashSheet",
+        "death": "generateDeathSheet"
+      },
+      "quality": {
+        "walk": {
+          "uniqueFrameRatio": 1,
+          "meanSilhouetteDelta": 0.10879794034090909,
+          "chaoticMotion": false,
+          "alphaBoundsConsistency": 0
+        },
+        "attack": {
+          "uniqueFrameRatio": 1,
+          "meanSilhouetteDelta": 0.17034040178571427,
+          "chaoticMotion": false
+        },
+        "death": {
+          "uniqueFrameRatio": 1,
+          "meanSilhouetteDelta": 0.07948521205357142
+        }
+      }
+    },
+    {
+      "key": "melee",
+      "frames": {
+        "walk": 12,
+        "attack": 8,
+        "hurt": 5,
+        "death": 8
+      },
+      "technique": {
+        "walk": "generateRunCycleSheet (stride+lean+bob shear, real per-frame difference, quality-gated)",
+        "attack": "generateAttackSheet(arc=horizontal)",
+        "hurt": "generateHurtFlashSheet",
+        "death": "generateDeathSheet"
+      },
+      "quality": {
+        "walk": {
+          "uniqueFrameRatio": 1,
+          "meanSilhouetteDelta": 0.1551846590909091,
+          "chaoticMotion": false,
+          "alphaBoundsConsistency": 0
+        },
+        "attack": {
+          "uniqueFrameRatio": 1,
+          "meanSilhouetteDelta": 0.21407645089285715,
+          "chaoticMotion": false
+        },
+        "death": {
+          "uniqueFrameRatio": 1,
+          "meanSilhouetteDelta": 0.11945452008928571
+        }
+      }
+    },
+    {
+      "key": "ranged",
+      "frames": {
+        "walk": 12,
+        "attack": 8,
+        "hurt": 5,
+        "death": 8
+      },
+      "technique": {
+        "walk": "generateRunCycleSheet (stride+lean+bob shear, real per-frame difference, quality-gated)",
+        "attack": "generateAttackSheet(arc=downward)",
+        "hurt": "generateHurtFlashSheet",
+        "death": "generateDeathSheet"
+      },
+      "quality": {
+        "walk": {
+          "uniqueFrameRatio": 1,
+          "meanSilhouetteDelta": 0.13884943181818182,
+          "chaoticMotion": false,
+          "alphaBoundsConsistency": 0
+        },
+        "attack": {
+          "uniqueFrameRatio": 1,
+          "meanSilhouetteDelta": 0.18202427455357142,
+          "chaoticMotion": false
+        },
+        "death": {
+          "uniqueFrameRatio": 1,
+          "meanSilhouetteDelta": 0.12897600446428573
+        }
+      }
+    },
+    {
+      "key": "heavy",
+      "frames": {
+        "walk": 12,
+        "attack": 8,
+        "hurt": 5,
+        "death": 8
+      },
+      "technique": {
+        "walk": "generateRunCycleSheet (stride+lean+bob shear, real per-frame difference, quality-gated)",
+        "attack": "generateAttackSheet(arc=downward)",
+        "hurt": "generateHurtFlashSheet",
+        "death": "generateDeathSheet"
+      },
+      "quality": {
+        "walk": {
+          "uniqueFrameRatio": 1,
+          "meanSilhouetteDelta": 0.1651278409090909,
+          "chaoticMotion": false,
+          "alphaBoundsConsistency": 0
+        },
+        "attack": {
+          "uniqueFrameRatio": 1,
+          "meanSilhouetteDelta": 0.23200334821428573,
+          "chaoticMotion": false
+        },
+        "death": {
+          "uniqueFrameRatio": 1,
+          "meanSilhouetteDelta": 0.125732421875
+        }
+      }
+    },
+    {
+      "key": "boss",
+      "frames": {
+        "walk": 12,
+        "attack": 8,
+        "hurt": 5,
+        "death": 10
+      },
+      "technique": {
+        "walk": "generateRunCycleSheet (stride+lean+bob shear, real per-frame difference, quality-gated)",
+        "attack": "generateAttackSheet(arc=downward)",
+        "hurt": "generateHurtFlashSheet",
+        "death": "generateDeathSheet"
+      },
+      "quality": {
+        "walk": {
+          "uniqueFrameRatio": 1,
+          "meanSilhouetteDelta": 0.09979248046875,
+          "chaoticMotion": false,
+          "alphaBoundsConsistency": 0
+        },
+        "attack": {
+          "uniqueFrameRatio": 1,
+          "meanSilhouetteDelta": 0.16495186941964285,
+          "chaoticMotion": false
+        },
+        "death": {
+          "uniqueFrameRatio": 1,
+          "meanSilhouetteDelta": 0.061089409722222224
+        }
+      }
+    }
+  ]
+}

@@ -8,7 +8,7 @@ export interface RepetitionBudget {
 }
 
 export const DEFAULT_REPETITION_BUDGET: RepetitionBudget = {
-  maxIdenticalAdjacentRun: 4,
+  maxIdenticalAdjacentRun: 2,
   maxRepeatedModuleCount: 6,
   minHeroPropDistance: 8,
   maxDuplicatePropPercent: 0.35,
@@ -158,7 +158,77 @@ export function suppressRepetition(
           const offset = Math.abs(Math.trunc(Number(seed))) || 0;
           for (let k = runStart; k < i; k++) {
             const cell = list[k]!;
-            const slot = (Math.floor((k - runStart) / budget.maxIdenticalAdjacentRun) + offset) % cycle.length;
+            const slot = (k - runStart + offset) % cycle.length;
+            const pick = cycle[slot];
+            if (!pick) continue;
+            const atlas = SURFACE_ROLES[pick];
+            if (!atlas) continue;
+            cell.col = atlas.col;
+            cell.row = atlas.row;
+          }
+        }
+      }
+      runStart = i;
+    }
+  }
+
+  const byColumn = new Map<number, VisualCell[]>();
+  for (const cell of next) {
+    const list = byColumn.get(cell.x) ?? [];
+    list.push(cell);
+    byColumn.set(cell.x, list);
+  }
+  for (const list of byColumn.values()) {
+    list.sort((a, b) => a.y - b.y);
+    let runStart = 0;
+    for (let i = 1; i <= list.length; i++) {
+      const stillRun =
+        i < list.length &&
+        list[i]!.y === list[i - 1]!.y + 1 &&
+        list[i]!.col === list[runStart]!.col &&
+        list[i]!.row === list[runStart]!.row;
+      if (stillRun) continue;
+      const runLen = i - runStart;
+      if (runLen > budget.maxIdenticalAdjacentRun) {
+        const cycle = cycleFor(list[runStart]!.col, list[runStart]!.row);
+        if (cycle && cycle.length > 0) {
+          const offset = Math.abs(Math.trunc(Number(seed))) || 0;
+          for (let k = runStart; k < i; k++) {
+            const cell = list[k]!;
+            const slot = (k - runStart + offset) % cycle.length;
+            const pick = cycle[slot];
+            if (!pick) continue;
+            const atlas = SURFACE_ROLES[pick];
+            if (!atlas) continue;
+            cell.col = atlas.col;
+            cell.row = atlas.row;
+          }
+        }
+      }
+      runStart = i;
+    }
+  }
+
+  // Vertical substitutions can land on a horizontal neighbor's atlas coordinate. Re-scan rows
+  // once so the final serialized cells satisfy the same two-axis repetition budget we analyze.
+  for (const list of byRow.values()) {
+    list.sort((a, b) => a.x - b.x);
+    let runStart = 0;
+    for (let i = 1; i <= list.length; i++) {
+      const stillRun =
+        i < list.length &&
+        list[i]!.x === list[i - 1]!.x + 1 &&
+        list[i]!.col === list[runStart]!.col &&
+        list[i]!.row === list[runStart]!.row;
+      if (stillRun) continue;
+      const runLen = i - runStart;
+      if (runLen > budget.maxIdenticalAdjacentRun) {
+        const cycle = cycleFor(list[runStart]!.col, list[runStart]!.row);
+        if (cycle && cycle.length > 0) {
+          const offset = Math.abs(Math.trunc(Number(seed))) || 0;
+          for (let k = runStart; k < i; k++) {
+            const cell = list[k]!;
+            const slot = (k - runStart + offset) % cycle.length;
             const pick = cycle[slot];
             if (!pick) continue;
             const atlas = SURFACE_ROLES[pick];

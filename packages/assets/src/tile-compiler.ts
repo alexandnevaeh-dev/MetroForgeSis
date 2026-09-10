@@ -116,9 +116,9 @@ function ensureLuma(rgb: [number, number, number], minL: number, maxL: number): 
 }
 
 function asMasonry(rgb: [number, number, number]): [number, number, number] {
-  // Drowned-citadel wet glass-stone. Keep G/B ahead of R so screenshots do not read as greybox.
-  const wet: [number, number, number] = [36, 148, 158];
-  return ensureLuma(mixRgb(rgb, wet, 0.88), 78, 128);
+  // Wet glass-stone: keep G/B ahead of R without washing NVIDIA source into one teal cell.
+  const wet: [number, number, number] = [58, 96, 108];
+  return ensureLuma(mixRgb(rgb, wet, 0.4), 62, 118);
 }
 
 function pickRoleFills(extracted: [number, number, number][], hex: [number, number, number][]): RoleFills {
@@ -139,17 +139,17 @@ function pickRoleFills(extracted: [number, number, number][], hex: [number, numb
     hazard: ensureLuma(mixRgb(wall, [88, 58, 52], 0.2), 58, 96),
     door: clampTerrainFill(extracted.find((c) => c[2] > c[0]) ?? hex[2] ?? [90, 140, 220]),
     accent: clampTerrainFill(extracted[2] ?? hex[2] ?? [90, 140, 220]),
-    mortar: shade(wall, 0.32),
+    mortar: shade(wall, 0.52),
   };
 }
 
 function fillForRole(kind: TileRole, fills: RoleFills): [number, number, number] {
   if (kind === 'hazard') return fills.hazard;
   if (kind === 'door') return fills.door;
-  if (kind.startsWith('decor')) return fills.accent;
+  if (kind.startsWith('decor')) return mixRgb(fills.wall, fills.mortar, 0.35);
   if (kind === 'breakable') return shade(fills.wall, 0.88);
   if (kind.includes('platform') || kind === 'one_way') return fills.platform;
-  if (kind.includes('moss')) return mixRgb(fillForRole(kind.replace('_moss', '') as TileRole, fills), [72, 110, 86], 0.28);
+  if (kind.includes('moss')) return mixRgb(fillForRole(kind.replace('_moss', '') as TileRole, fills), [46, 72, 70], 0.16);
   if (kind.includes('wear') || kind.includes('crack') || kind.includes('rare')) {
     const base = fillForRole(kind.replace(/_wear|_crack|_rare/g, '') as TileRole, fills);
     return kind.includes('crack') ? shade(base, 0.82) : mixRgb(base, fills.mortar, 0.18);
@@ -276,20 +276,24 @@ function roleStructureOffset(kind: TileRole, x: number, y: number, tileSize: num
   const isPlatform = kind.includes('platform');
   const isCeiling = kind === 'ceiling' || kind === 'top_edge';
   if (isPlatform && y <= 2) return -1;
-  let courseHeight = Math.max(3, Math.floor(tileSize / 8));
-  let jointWidth = Math.max(3, Math.floor(tileSize / 4));
+  // Coprime to 32 so joints do not land on autotile cell tops.
+  let courseHeight = 13;
+  let jointWidth = Math.max(14, Math.floor(tileSize * 0.7));
   if (isWall) {
-    courseHeight = Math.max(6, Math.floor(tileSize / 4));
-    jointWidth = Math.max(6, Math.floor(tileSize / 3));
+    courseHeight = 11;
+    jointWidth = Math.max(10, Math.floor(tileSize / 2));
   } else if (isPlatform) {
-    courseHeight = Math.max(5, Math.floor(tileSize / 5));
-    jointWidth = Math.max(8, Math.floor(tileSize / 2));
+    courseHeight = 9;
+    jointWidth = Math.max(12, Math.floor(tileSize * 0.6));
   } else if (isCeiling) {
-    courseHeight = Math.max(3, Math.floor(tileSize / 10));
-    jointWidth = Math.max(5, Math.floor(tileSize / 3));
+    courseHeight = 7;
+    jointWidth = Math.max(8, Math.floor(tileSize / 2));
   }
   const rowInCourse = y % courseHeight;
-  if (rowInCourse === 0) return 2;
+  // Cell borders stay un-jointed. Course height is coprime to tileSize so mortar
+  // rows do not land on every autotile top and stamp a 32px LEGO grid.
+  if (y === 0 || y === tileSize - 1 || x === 0 || x === tileSize - 1) return 0;
+  if (rowInCourse === 0) return 1;
   const course = Math.floor(y / courseHeight);
   const stagger = course % 2 === 0 ? 0 : Math.floor(jointWidth / 2);
   if ((x + stagger) % jointWidth === 0) return 1;
@@ -349,8 +353,8 @@ function paintTile(
   patch: TexturePatch | null = null,
   mortar?: [number, number, number],
 ): void {
+  const outline: [number, number, number] = mixRgb(fill, mortar ?? shade(fill, 0.55), 0.35);
   const ramp = buildRamp(fill);
-  const outline: [number, number, number] = mortar ?? shade(fill, 0.28);
   const roleSeed = hashString(kind);
   for (let y = 0; y < tileSize; y++) {
     for (let x = 0; x < tileSize; x++) {
@@ -359,9 +363,7 @@ function paintTile(
       // autotile roles (ground|wall) do not invent a hard seam (measureSeams() below asserts this).
       const interior = x > 0 && x < tileSize - 1 && y > 0 && y < tileSize - 1;
       if (interior) {
-        let tier = 2; // base fill tone
-        if (x + y < tileSize * 0.35) tier = 0;
-        else if (x > tileSize * 0.75 || y > tileSize * 0.8) tier = 4;
+        let tier = 2; // base fill tone — do not bake a unique 32px highlight on every cell
         tier += roleStructureOffset(kind, x, y, tileSize);
         if (patch) {
           const lum = patch.data[y * tileSize + x]!;
@@ -376,6 +378,9 @@ function paintTile(
         tier += ditherOffset(x, y);
         tier = Math.max(0, Math.min(ramp.length - 1, tier));
         c = ramp[tier]!;
+        if (hash01(roleSeed, x * 19, y * 23) > 0.96) {
+          c = mixRgb(c, [196, 168, 96], 0.22);
+        }
       }
       if (kind === 'hazard' && (x + y) % 8 === 0) c = mixRgb(fill, [48, 96, 118], 0.45);
       if (kind === 'one_way' && y > tileSize / 3) {
@@ -389,17 +394,15 @@ function paintTile(
       setPixel(rgba, atlasW, originX + x, originY + y, c);
     }
   }
-  const masonry =
-    !kind.startsWith('decor') && kind !== 'hazard' && kind !== 'one_way' && kind !== 'door';
   const edge = (kind.includes('left') || kind === 'outside_tl' || kind === 'outside_bl' || kind === 'inside_tl' || kind === 'inside_bl');
   const right = kind.includes('right') || kind === 'outside_tr' || kind === 'outside_br' || kind === 'inside_tr' || kind === 'inside_br';
   const top = kind.includes('top') || kind.startsWith('outside_t') || kind.startsWith('inside_t') || kind === 'ceiling' || kind === 'platform' || kind === 'one_way';
   const bottom = kind.includes('bottom') || kind.startsWith('outside_b') || kind.startsWith('inside_b') || kind === 'ground';
   for (let i = 0; i < tileSize; i++) {
-    if (masonry || top) setPixel(rgba, atlasW, originX + i, originY, outline);
-    if (masonry || bottom) setPixel(rgba, atlasW, originX + i, originY + tileSize - 1, outline);
-    if (masonry || edge) setPixel(rgba, atlasW, originX, originY + i, outline);
-    if (masonry || right) setPixel(rgba, atlasW, originX + tileSize - 1, originY + i, outline);
+    if (top) setPixel(rgba, atlasW, originX + i, originY, outline);
+    if (bottom) setPixel(rgba, atlasW, originX + i, originY + tileSize - 1, outline);
+    if (edge) setPixel(rgba, atlasW, originX, originY + i, outline);
+    if (right) setPixel(rgba, atlasW, originX + tileSize - 1, originY + i, outline);
   }
 }
 
@@ -519,7 +522,7 @@ export class TileCompiler {
       width,
       height,
       tiles,
-      transformations: ['autotile-compile', 'nearest-neighbor', 'upper-left-lighting', 'shared-edges'],
+      transformations: ['autotile-compile', 'nearest-neighbor', 'runtime-lit', 'shared-edges'],
       seamIssues,
       passed: dimOk && seamIssues.length === 0,
     };
@@ -528,4 +531,70 @@ export class TileCompiler {
 
 export function tileRoleAt(role: TileRole): { col: number; row: number } {
   return TILE_ATLAS.roles[role];
+}
+
+/** Blend cell borders and break through-tile mortar rows so a compiled atlas
+ *  does not read as a 32px grid. Does not re-run TileCompiler (which would wash palettes). */
+export function softenCompiledAtlasSeams(png: Buffer, tileSize: number, mix = 0.78): Buffer {
+  const { rgba, width, height } = decodePngRgba(png);
+  const cols = Math.floor(width / tileSize);
+  const rows = Math.floor(height / tileSize);
+  const out = new Uint8Array(rgba);
+  const luma = (i: number) => 0.299 * out[i]! + 0.587 * out[i + 1]! + 0.114 * out[i + 2]!;
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const ox = col * tileSize;
+      const oy = row * tileSize;
+      let sr = 0;
+      let sg = 0;
+      let sb = 0;
+      let n = 0;
+      for (let y = 3; y < tileSize - 3; y++) {
+        for (let x = 3; x < tileSize - 3; x++) {
+          const i = ((oy + y) * width + (ox + x)) * 4;
+          sr += out[i]!;
+          sg += out[i + 1]!;
+          sb += out[i + 2]!;
+          n++;
+        }
+      }
+      if (n === 0) continue;
+      const ir = sr / n;
+      const ig = sg / n;
+      const ib = sb / n;
+      const meanL = 0.299 * ir + 0.587 * ig + 0.114 * ib;
+      const blend = (i: number, t: number) => {
+        out[i] = Math.round(out[i]! * (1 - t) + ir * t);
+        out[i + 1] = Math.round(out[i + 1]! * (1 - t) + ig * t);
+        out[i + 2] = Math.round(out[i + 2]! * (1 - t) + ib * t);
+      };
+      for (let y = 0; y < tileSize; y++) {
+        for (let x = 0; x < tileSize; x++) {
+          const edge = x <= 1 || x >= tileSize - 2 || y <= 1 || y >= tileSize - 2;
+          if (edge) blend(((oy + y) * width + (ox + x)) * 4, mix);
+        }
+      }
+      for (let y = 2; y < tileSize - 2; y++) {
+        let dark = 0;
+        for (let x = 2; x < tileSize - 2; x++) {
+          if (luma(((oy + y) * width + (ox + x)) * 4) < meanL - 8) dark += 1;
+        }
+        if (dark < (tileSize - 4) * 0.58) continue;
+        for (let x = 2; x < tileSize - 2; x++) {
+          if ((x + col * 2 + row) % 3 !== 0) blend(((oy + y) * width + (ox + x)) * 4, 0.62);
+        }
+      }
+      for (let x = 2; x < tileSize - 2; x++) {
+        let dark = 0;
+        for (let y = 2; y < tileSize - 2; y++) {
+          if (luma(((oy + y) * width + (ox + x)) * 4) < meanL - 8) dark += 1;
+        }
+        if (dark < (tileSize - 4) * 0.58) continue;
+        for (let y = 2; y < tileSize - 2; y++) {
+          if ((y + row * 2 + col) % 3 !== 0) blend(((oy + y) * width + (ox + x)) * 4, 0.62);
+        }
+      }
+    }
+  }
+  return encodePng(width, height, out);
 }

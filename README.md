@@ -1,3 +1,10 @@
+# Canonical Repository
+
+`Forged` is the canonical MetroForge development repository and Git worktree.
+Run all install, build, test, typecheck, doctor, generation, and validation
+commands from this directory. `Forged-cursor-desktop` is a preserved parallel
+copy for comparison only; do not use it as the development source of truth.
+
 # MetroForge AI
 
 AI-powered Metroidvania game generation platform. Describe a game in natural language and receive a complete, playable Godot 4.x project.

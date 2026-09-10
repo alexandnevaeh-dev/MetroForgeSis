@@ -1021,7 +1021,7 @@ export function registerIpcHandlers(cwd: string): void {
     if (!existsSync(base)) return [];
 
     return readdirSync(base, { withFileTypes: true })
-      .filter((d) => d.isDirectory())
+      .filter((d) => d.isDirectory() && existsSync(join(base, d.name, 'project.godot')))
       .map((d) => {
         const projectPath = join(base, d.name);
         const meta: Record<string, unknown> = { slug: d.name, path: projectPath };

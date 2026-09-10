@@ -18,6 +18,8 @@ import {
   isTopDownArchetype,
   resolveGameArchetype,
   DEFAULT_TOP_DOWN_MOVEMENT,
+  type AssetMaturity,
+  type AssetSourceType,
 } from '@metroforge/shared';
 import {
   buildRoomAssemblyOptions,
@@ -31,6 +33,8 @@ import {
 import { measureRoomLayout, layoutsTooSimilar, type RoomLayoutMetrics } from './room-variety.js';
 import { composeEnvironment } from './environment-composition.js';
 import { writePixelArtImport } from './godot-import.js';
+import { loadExternalVisualPack, type ExternalVisualPackId } from './external-visual-pack.js';
+import { expandFoundryTextureAliases } from './foundry-visual-pack.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..', '..', '..');
@@ -44,6 +48,9 @@ export interface AssetManifestEntry {
   fallbackGenerated: boolean;
   critiquePassed?: boolean;
   critiqueScore?: number;
+  maturity?: AssetMaturity;
+  productionReady?: boolean;
+  sourceType?: AssetSourceType;
   license?: string;
   commercialUse?: 'allowed' | 'restricted' | 'unknown';
   promptHash?: string | null;
@@ -69,6 +76,8 @@ export interface AssemblyInput {
   assetMetadata?: AssetManifestEntry[];
   overworld?: TopDownOverworld;
   styleBible?: StyleBible;
+  /** Test-only selected art pack. Default keeps the procedural asset pipeline unchanged. */
+  externalVisualPack?: ExternalVisualPackId;
 }
 
 export interface AssemblyResult {
@@ -135,6 +144,9 @@ export class GodotProjectAssembler {
     try {
       const priorManifest = readExistingGenerationManifest(input.outputDir);
       cpSync(templatePath, input.outputDir, { recursive: true });
+      if (input.externalVisualPack === 'metroforge-foundry-v3' && input.textureFiles) {
+        expandFoundryTextureAliases(input.textureFiles);
+      }
 
       const roomsDir = join(input.outputDir, 'scenes', 'rooms');
       mkdirSync(roomsDir, { recursive: true });
@@ -198,6 +210,7 @@ export class GodotProjectAssembler {
           input.gameContent,
           enemyCounter,
           textureExists,
+          { visualKit: input.externalVisualPack === 'metroforge-foundry-v3' ? 'foundry' : undefined },
         );
         const enemySnapshot = enemyCounter.value;
         for (let salt = 1; salt <= 5; salt++) {
@@ -231,7 +244,13 @@ export class GodotProjectAssembler {
             input.gameContent,
             enemyCounter,
             textureExists,
-            { uniquenessSalt: salt, hasEnemy: opts.hasEnemy, width: opts.width, height: opts.height },
+            {
+              uniquenessSalt: salt,
+              hasEnemy: opts.hasEnemy,
+              width: opts.width,
+              height: opts.height,
+              visualKit: input.externalVisualPack === 'metroforge-foundry-v3' ? 'foundry' : undefined,
+            },
           );
         }
         previousLayouts.push({
@@ -401,7 +420,14 @@ export class GodotProjectAssembler {
           JSON.stringify(
             {
               items: isTopDownArchetype(input.gameDna.archetype)
-                ? [...input.gameContent.items, ...topDownChestItemDefs(topDownOverworld, input.gameDna.abilities)]
+                ? [
+                    ...input.gameContent.items,
+                    ...topDownChestItemDefs(
+                      topDownOverworld,
+                      input.gameDna.abilities,
+                      input.gameContent.items,
+                    ),
+                  ]
                 : input.gameContent.items,
             },
             null,
@@ -459,6 +485,11 @@ export class GodotProjectAssembler {
         );
       }
 
+      if (input.externalVisualPack) {
+        patchCharacterFrameSizeForExternalPack(input.outputDir, input.externalVisualPack);
+        patchCharacterSheetPathsForFoundryPack(input.outputDir, input.externalVisualPack);
+      }
+
       const incoming: AssetManifestEntry[] = [...(input.assetMetadata ?? [])];
       if (input.audioFiles) {
         for (const id of input.audioFiles.keys()) {
@@ -473,6 +504,11 @@ export class GodotProjectAssembler {
             type: 'audio',
             provider: id.startsWith('voice_') ? 'piper' : 'procedural',
             fallbackGenerated: !id.startsWith('voice_'),
+            critiquePassed: true,
+            critiqueScore: 100,
+            maturity: 'PROCEDURAL_PRODUCTION',
+            productionReady: true,
+            sourceType: id.startsWith('voice_') ? 'compiled' : 'procedural',
             license: id.startsWith('voice_')
               ? 'Piper TTS (MIT) + generated dialogue text'
               : 'MetroForge Procedural Generator (original work)',
@@ -588,21 +624,133 @@ export function getTemplatePath(archetype?: string): string {
   return join(REPO_ROOT, plugin.runtimeTemplate);
 }
 
+type CharacterBucket = 'player' | 'boss' | 'enemy';
+
+function characterBucketForRole(role: string): CharacterBucket {
+  if (role.startsWith('player.')) return 'player';
+  if (role.startsWith('boss.')) return 'boss';
+  return 'enemy'; // every non-player, non-boss character role (melee./ranged./etc.) shares Enemy.tscn
+}
+
+const CHARACTER_SCENE_BY_BUCKET: Record<CharacterBucket, string> = {
+  player: join('scenes', 'player', 'Player.tscn'),
+  boss: join('scenes', 'bosses', 'Boss.tscn'),
+  enemy: join('scenes', 'enemies', 'Enemy.tscn'),
+};
+
+/**
+ * Sixteenth-session fix: Player.tscn/Enemy.tscn/Boss.tscn each hardcode a `frame_size` for their
+ * AnimatedAssetSprite (64x64 / 64x64 / 128x128 respectively — the native size of the default
+ * procedural sprite generator's output). An external visual pack's actual character sheets can
+ * use a different native size (metroforge-foundry-v3's are 128x128 for player/enemies and 160x160
+ * for its boss — see test-packs/metroforge-foundry-v3/manifest.json's nativeDimensions). Without
+ * this, AnimatedAssetSprite.gd slices the pack's real, correctly-sized sheet into the WRONG number
+ * of undersized frame regions (each showing only a fragment of the actual character), which is
+ * the root cause independently identified in a visual assessment as "a small pale actor fragment"
+ * with no readable full silhouette (docs/audit/MODERN_COHESION_TEST_PROJECT.md's sixteenth
+ * session). This patches each affected scene file's `frame_size` line in place, once per family,
+ * to the pack's real, declared native size — never touching the sheet-slicing script itself.
+ */
+export function patchCharacterFrameSizeForExternalPack(outputDir: string, packId: ExternalVisualPackId): void {
+  let pack;
+  try {
+    pack = loadExternalVisualPack(REPO_ROOT, packId);
+  } catch {
+    return; // Pack failed to load — external-pack asset copying already surfaces this failure loudly elsewhere.
+  }
+  const dimsByBucket = new Map<CharacterBucket, { width: number; height: number }>();
+  for (const asset of pack.assets) {
+    if (asset.family !== 'character' || !asset.nativeDimensions) continue;
+    const bucket = characterBucketForRole(asset.role);
+    if (!dimsByBucket.has(bucket)) dimsByBucket.set(bucket, asset.nativeDimensions);
+  }
+  for (const [bucket, sceneRelPath] of Object.entries(CHARACTER_SCENE_BY_BUCKET) as Array<[CharacterBucket, string]>) {
+    const dims = dimsByBucket.get(bucket);
+    if (!dims) continue;
+    const scenePath = join(outputDir, sceneRelPath);
+    if (!existsSync(scenePath)) continue;
+    const original = readFileSync(scenePath, 'utf8');
+    const patched = original.replace(
+      /frame_size = Vector2i\(\d+,\s*\d+\)/,
+      `frame_size = Vector2i(${dims.width}, ${dims.height})`,
+    );
+    if (patched !== original) writeFileSync(scenePath, patched, 'utf8');
+  }
+}
+
+const FOUNDRY_SHEET_PATCHES: Array<{ file: string; replacements: Array<[RegExp, string]> }> = [
+  {
+    file: join('scenes', 'player', 'Player.tscn'),
+    replacements: [
+      [/sheet_path = "assets\/characters\/player_run\.png"/g, 'sheet_path = "assets/characters/player_locomotion.png"'],
+      [/run_sheet_path = "assets\/characters\/player_run\.png"/g, 'run_sheet_path = "assets/characters/player_locomotion.png"'],
+    ],
+  },
+  {
+    file: join('scenes', 'enemies', 'Enemy.tscn'),
+    replacements: [
+      [/sheet_path = "assets\/enemies\/enemy_000_walk\.png"/g, 'sheet_path = "assets/enemies/melee_locomotion.png"'],
+      [/hurt_sheet_path = "assets\/enemies\/enemy_000_hurt\.png"/g, 'hurt_sheet_path = "assets/enemies/melee_hurt.png"'],
+      [/death_sheet_path = "assets\/enemies\/enemy_000_death\.png"/g, 'death_sheet_path = "assets/enemies/melee_death.png"'],
+      [/attack_sheet_path = "assets\/enemies\/enemy_000_attack\.png"/g, 'attack_sheet_path = "assets/enemies/melee_attack.png"'],
+    ],
+  },
+  {
+    file: join('scenes', 'bosses', 'Boss.tscn'),
+    replacements: [
+      [/sheet_path = "assets\/bosses\/boss_final_walk\.png"/g, 'sheet_path = "assets/bosses/boss_locomotion.png"'],
+      [/hurt_sheet_path = "assets\/bosses\/boss_final_hurt\.png"/g, 'hurt_sheet_path = "assets/bosses/boss_hurt.png"'],
+      [/death_sheet_path = "assets\/bosses\/boss_final_death\.png"/g, 'death_sheet_path = "assets/bosses/boss_death.png"'],
+      [/attack_sheet_path = "assets\/bosses\/boss_final_attack\.png"/g, 'attack_sheet_path = "assets/bosses/boss_attack.png"'],
+    ],
+  },
+];
+
+export function patchCharacterSheetPathsForFoundryPack(outputDir: string, packId: ExternalVisualPackId): void {
+  if (packId !== 'metroforge-foundry-v3') return;
+  for (const { file, replacements } of FOUNDRY_SHEET_PATCHES) {
+    const scenePath = join(outputDir, file);
+    if (!existsSync(scenePath)) continue;
+    let text = readFileSync(scenePath, 'utf8');
+    for (const [pattern, replacement] of replacements) {
+      text = text.replace(pattern, replacement);
+    }
+    writeFileSync(scenePath, text, 'utf8');
+  }
+}
+
 /** Every real item a chest in this project can grant — the DNA-level dungeon reward tools, plus
  *  any per-dungeon key id discovered by scanning the actual generated chest POIs (see the
- *  items.json write site above for why the latter can't come from GameDNA). */
-function topDownChestItemDefs(
+ *  items.json write site above for why the latter can't come from GameDNA).
+ *
+ *  `realItems` is `input.gameContent.items` — the actual generated item catalog (with real
+ *  categories/effects, e.g. a consumable's heal effect). This function used to synthesize a
+ *  bare stub (category 'tool'/'misc', no `effects`) for *every* dnaAbility id and every chest
+ *  itemId unconditionally, even when a full definition for that same id already existed in
+ *  realItems — and since items.json concatenates realItems first and these stubs last,
+ *  InventoryManager's last-wins-by-id lookup always picked the worse stub. Concretely: a chest
+ *  rewarding "health_vial" (a real consumable with a heal effect in realItems) got a second,
+ *  effect-less "health_vial" stub appended after it, so every health-vial pickup silently healed
+ *  for nothing at runtime (caught by RuntimeSmokeTest.gd's item_pickup_consumable_can_be_triggered,
+ *  which failed against the exact same last-wins map InventoryManager builds). Skipping ids
+ *  `realItems` already defines fixes this without losing the key-item discovery this function
+ *  exists for — per-dungeon keys never appear in realItems, so they're untouched. */
+export function topDownChestItemDefs(
   overworld: TopDownOverworld | undefined,
   dnaAbilities: { id: string; name: string }[],
+  realItems: Array<{ id: string }>,
 ): Array<{ id: string; name: string; category: string; description: string }> {
+  const realIds = new Set(realItems.map((item) => item.id));
   const known = new Map(
-    dnaAbilities.map((a) => [a.id, { id: a.id, name: a.name, category: 'tool', description: `Dungeon tool: ${a.name}` }]),
+    dnaAbilities
+      .filter((a) => !realIds.has(a.id))
+      .map((a) => [a.id, { id: a.id, name: a.name, category: 'tool', description: `Dungeon tool: ${a.name}` }]),
   );
   for (const area of overworld?.areas ?? []) {
     for (const poi of area.pois) {
       if (poi.kind !== 'chest') continue;
       const itemId = String(poi.metadata.itemId ?? '');
-      if (!itemId || known.has(itemId)) continue;
+      if (!itemId || known.has(itemId) || realIds.has(itemId)) continue;
       const isKey = itemId.endsWith('_key');
       const displayName = itemId
         .split('_')

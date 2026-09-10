@@ -70,6 +70,14 @@ func start_new_game() -> void:
 	player_abilities.clear()
 	game_complete = false
 	current_state = GameState.PLAYING
+	# Sixteenth-session fix: current_room_id previously survived a "New Game" call untouched.
+	# WorldManager._ready() resumes at GameManager.current_room_id whenever it's non-empty (see
+	# its own comment there), falling back to the real start room only when it's "" — so a player
+	# who finishes a playthrough (current_room_id left on the boss room) and starts a fresh game
+	# without restarting the whole process was dropped back into the boss room instead of
+	# room_000. Verified via a real, input-driven playthrough + restart
+	# (docs/audit/MODERN_COHESION_TEST_PROJECT.md's sixteenth session).
+	current_room_id = ""
 	ProgressionManager.reset()
 	SaveManager.reset_save()
 	MapManager.reset_for_new_game()

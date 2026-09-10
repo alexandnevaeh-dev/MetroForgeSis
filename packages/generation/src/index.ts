@@ -90,6 +90,20 @@ export type { LlmCommandSource, LlmCommandContext } from './ai-commands-llm.js';
 export { writeVisualSliceReviewRequired, applyVisualReviewDecision, visualReviewPath } from './visual-review.js';
 export { writeVisualSliceReports, collectVisualSliceEvidence } from './visual-slice-report.js';
 export { writeVgf2VisualSliceReport } from './vgf2-report.js';
+export { rescoreVisualSlice } from './rescan.js';
+export type { RescoreVisualSliceResult } from './rescan.js';
+export { reclassifyProjectAssetMaturity, RECLASSIFY_PREDICATE_VERSION } from './reclassify-asset-maturity.js';
+export type {
+  ReclassifyOptions,
+  ReclassifyProjectAssetMaturityResult,
+  ReclassifiedArtifactChange,
+} from './reclassify-asset-maturity.js';
+export {
+  computeVisualEvidenceHash,
+  buildCandidateVisualReviewPack,
+  writeCandidateVisualReviewPack,
+} from './candidate-review-pack.js';
+export type { CandidateReviewPack } from './candidate-review-pack.js';
 export {
   buildProjectMemoryIndex,
   loadProjectMemoryIndex,
@@ -104,3 +118,5 @@ export {
   voiceResPath,
 } from './dialogue-voice.js';
 export type { DialogueVoiceResult, SynthesizeDialogueVoicesOptions } from './dialogue-voice.js';
+export * from './asset-qa.js';
+export * from './asset-qa-command.js';

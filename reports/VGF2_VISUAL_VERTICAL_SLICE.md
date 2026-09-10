@@ -1,127 +1,84 @@
 # VGF-2 Visual Vertical Slice
 
-**Project:** vgf2-tideglass-nave  
-**Seed:** 20260817  
-**Profile:** VISUAL_VERTICAL_SLICE  
-**Archetype:** SIDE_VIEW_METROIDVANIA  
-**Automated verdict:** AUTOMATED_VISUAL_PASS_HUMAN_REVIEW_REQUIRED  
-**Human verdict:** HUMAN_REJECTED
+**Project:** topdown-sprite-fix-check
+**Seed:** 20260918
+**Profile:** VISUAL_VERTICAL_SLICE
+**Archetype:** TOP_DOWN_ACTION_ADVENTURE
+**Automated verdict:** AUTOMATED_VISUAL_FAIL
 
-Human rejection recorded 2026-08-16 (America/Chicago) after review of the VGF-2 stills. LARGE / RELEASE_CANDIDATE mass art stays blocked.
+Human approval is not assigned automatically.
 
 ## Provider / model
 
-- mode: NVIDIA_ONLY
 - nvidiaImage: black-forest-labs/flux.1-dev
-- selectedImage: nvidia-image
-- identity / Kontext custom-reference: unavailable (hosted preview does not accept custom sprites; pose AI upgrade disabled)
+- selectedImage: local-sprite-worker
 
 ## VisualDNA
 
-- fingerprint: `c837cdafdc1603d6`
-- art style: readable gothic pixel ruin (`gothic-ruin`)
-- rendering: Readble Modern Indie Pixel Art
-- biome: Glass Citadel (`biome_0`)
-- lighting language: cold cyan key, submerged dusk ambient, desaturated gold accents
+- fingerprint: `8df6a21539e7262c`
+- art style: readable gothic pixel ruin
+- rendering: HD pixel art
+- biome: Drowned Masonry
 
-## Asset maturity (generation-time)
+## Asset maturity
 
-- production-ready: 0
-- placeholder: 90
-- rejected: 9
+- production-ready: 22
+- placeholder: 6
+- rejected: 10
 - unknown license: 0
-- generated assets: 189 (180 critique pass)
 
-Placeholder count is honest: UI/prop foundry and deterministic poses are procedural fallbacks, not NVIDIA stills.
+## Visual QA scores
 
-## Godot validation (post RoomTileMap + parallax patch)
-
-| Gate | Result |
-|---|---|
-| godot_imports | PASS (Godot 4.7.1 headless OK) |
-| godot_runtime | PASS / SOFT_FAIL 183–184 / 208 (headless dummy renderer cannot `texture_2d_get`; gameplay checks otherwise pass) |
-| gameplay_screenshot_qa | PASS score **100** after windowed_gpu recapture (`d3d12`) |
-| godot_playtest | PASS 8/8 — persona `victory_rusher`, 38008ms, `gameComplete: true`, rooms 000–009 |
-
-CLI `metroforge validate` does not re-run playtest; playtest evidence is from the original generation run of this project.
-
-## Visual QA scores (pipeline Visual Quality Director V2)
-
-Scores below were computed at generation time from occupancy/luma heuristics plus parallax fingerprints. They are **not** a substitute for looking at the recaptured stills.
-
-- characterReadability: 92
+- characterReadability: 78
 - enemyReadability: 82
-- silhouetteQuality: 92
-- paletteHarmony: 90
-- paletteSeparation: 100
-- materialConsistency: 95
-- architectureConsistency: 95
-- backgroundDepth: 86
-- parallaxReadability: 86
+- silhouetteQuality: 78
+- paletteHarmony: 78
+- paletteSeparation: 76
+- materialConsistency: 80
+- architectureConsistency: 80
+- backgroundDepth: 48
+- parallaxReadability: 48
 - lightingQuality: 82
-- environmentCoherence: 95
+- environmentCoherence: 80
 - propDensity: 90
-- tileRepetition: 35
-- composition: 55 (pre-recapture critic); windowed recapture critic score is **100**
-- focalHierarchy: 92
+- tileRepetition: 38
+- composition: 38
+- focalHierarchy: 78
 - hudReadability: 88
 - vfxReadability: 78
 - assetStyleConsistency: 86
-- overall: 81
+- functionalQuality: 90
+- assetIntegrity: 100
+- visualCohesion: 73
+- roomComposition: 38
+- gameplayReadability: 83
+- presentationQuality: 35
+- overallConfidence: 35
+- overall: 35
 
 ## Defects
 
-- TILE_REPETITION_HIGH (occupancy heuristic; recaptured rooms still show repetitive masonry blocks)
-- First-run captures showed opaque mid/near silhouette **slabs** across the playable frame. Those layers were regenerated as sparse colonnade / chain occluders and recaptured. That defect is **source-fixed**; it is not auto-marked repaired in the generation-time repair log.
+- TILE_REPETITION_HIGH
+- EXCESSIVE_TILE_REPETITION
+- BACKGROUND_TOO_FLAT
+- PARALLAX_LAYERS_TOO_SIMILAR
+- BOSS_ROOM_GENERIC
+- MISSING_ARCHITECTURAL_TREATMENT
+- DEBUG_HUD_VISIBLE
 
 ## Hard-fail reasons
 
-- none after recapture
-- Headless wallpaper/HUD-obstruction (score 55) was a dummy-renderer + stale-capture artifact, not the windowed_gpu still
+- identical or missing parallax layers
+- generic boss room
+- debug HUD visible in presentation capture
 
 ## Repairs
 
-- none applied by the bounded lighting-only repair loop during generation
-- Manual acceptance patch after generation: RoomTileMap typed hashing (`c49055f`); mid/near parallax regenerated as sparse architecture; FloorVisual hide walks all floor segments
+- none applied
 
 ## Screenshots
 
-Project-local captures (windowed GPU, after parallax patch):
-
-- `GeneratedGames/vgf2-tideglass-nave/reports/01-start.png`
-- `GeneratedGames/vgf2-tideglass-nave/reports/02-traversal.png`
-- `GeneratedGames/vgf2-tideglass-nave/reports/03-combat.png`
-- `GeneratedGames/vgf2-tideglass-nave/reports/04-vertical-room.png`
-- `GeneratedGames/vgf2-tideglass-nave/reports/05-ability-room.png`
-- `GeneratedGames/vgf2-tideglass-nave/reports/07-checkpoint.png`
-- `GeneratedGames/vgf2-tideglass-nave/reports/08-boss-room.png`
-- `GeneratedGames/vgf2-tideglass-nave/reports/hud.png`
-- `GeneratedGames/vgf2-tideglass-nave/reports/visual-slice-contact-sheet.png`
-- `GeneratedGames/vgf2-tideglass-nave/qa/screenshot_gameplay.png`
-
-Repo copies (this folder):
-
-- `reports/vgf2/01-start.png`
-- `reports/vgf2/03-combat.png`
-- `reports/vgf2/08-boss-room.png`
-- `reports/vgf2/visual-slice-contact-sheet.png`
-- `reports/vgf2/qa-gameplay.png`
-
-## Capture notes
-
-- Godot `--headless` uses the dummy renderer; `texture_2d_get` is null. Evidence stills require `windowed_gpu` / `--rendering-driver d3d12`.
-- Slice luma-grid diversity was 7.5. Identical-copy detection remains (`< 6`). Cohesive single-biome rooms are allowed to look like one art direction.
-
-## Human review
-
-**HUMAN_REJECTED** by the project owner after inspecting the recaptured stills.
-
-Reasons preserved:
-
-- `TILE_REPETITION_HIGH` — masonry platforms/walls still read as repeating grey cubes, not art-directed terrain.
-- Character identity is insufficient in gameplay: player/enemies are small or placeholder-like versus the far plate; identity packs did not produce a readable in-world silhouette.
-- Props remain neon/blockout blobs.
-- HUD is raw text and a red bar, not production UI.
-- 0 production-ready assets / 90 placeholders — slice is not commercially believable art direction.
-
-`visual_review.json` status: `VISUAL_SLICE_REJECTED`. Global gate: `.metroforge/visual-slice-approval.json` (`visualSliceApproved: false`).
+- reports/enemy-animation-sheet.png
+- reports/boss-animation-sheet.png
+- reports/tileset-test.png
+- reports/visual-slice-contact-sheet.png

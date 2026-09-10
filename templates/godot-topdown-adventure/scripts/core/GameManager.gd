@@ -70,6 +70,12 @@ func start_new_game() -> void:
 	player_abilities.clear()
 	game_complete = false
 	current_state = GameState.PLAYING
+	# Same regression class already found and fixed in the side-view template's GameManager.gd:
+	# without this, a restart after a real victory resumed directly in the boss's room —
+	# OverworldManager._ready() reads current_room_id (falling back to startAreaId only when it's
+	# empty) to decide where to resume, and nothing else here ever cleared the value victory left
+	# behind in the room the player was actually standing in when they won.
+	current_room_id = ""
 	ProgressionManager.reset()
 	SaveManager.reset_save()
 	MapManager.reset_for_new_game()

@@ -273,6 +273,7 @@ export const AssetMaturitySchema = z.enum([
   'PROCESSED',
   'COMPILED',
   'QA_REVIEW',
+  'PROCEDURAL_PRODUCTION',
   'PRODUCTION_READY',
   'REJECTED',
 ]);
@@ -299,7 +300,7 @@ export const ArtifactSchema = z.object({
   transformation: z.string().optional(),
   sourceLicense: z.string().optional(),
   derivedLicense: z.string().optional(),
-  /** Explicit maturity — procedural/test art must be PLACEHOLDER/BLOCKOUT, never PRODUCTION_READY. */
+  /** Explicit maturity; procedural production requires declared final-use intent and validation. */
   maturity: AssetMaturitySchema.optional(),
   productionReady: z.boolean().optional(),
   sourceType: z

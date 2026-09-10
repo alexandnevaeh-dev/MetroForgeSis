@@ -18,14 +18,16 @@ import {
   assertMassVisualGenerationAllowed,
   isMassVisualProfile,
   isProductionQualityProfile,
+  applyVisualSliceIdentityDefaults,
   GenerationCancelledError,
   throwIfCancelled,
+  isNonProductionMaturity,
 } from '@metroforge/shared';
 import { remapGameDnaAbilities } from './remap-project-abilities.js';
 import { createDatabase, type MetroForgeDatabase } from '@metroforge/database';
 import { bootstrapProviders, licenseFieldsForArtifact, OllamaEmbeddingProvider, HardwareProfiler } from '@metroforge/ai';
 import { generateGameDNA, type GameDNATextSource } from '@metroforge/ai';
-import { GameDNASchema, ProjectMetadataSchema, type GenerationJob } from '@metroforge/schemas';
+import { GameDNASchema, ProjectMetadataSchema, VisualConstitutionSchema, type GenerationJob } from '@metroforge/schemas';
 import {
   generateWorldTopology,
   validateReachability,
@@ -46,10 +48,11 @@ import {
   generateTopDownWorld,
   buildProgressionProof,
 } from '@metroforge/procedural';
-import { AssetPipeline } from '@metroforge/assets';
-import { GodotProjectAssembler } from '@metroforge/godot';
+import { AssetPipeline, loadVisualReferenceLibrary } from '@metroforge/assets';
+import { GodotProjectAssembler, loadExternalVisualPack } from '@metroforge/godot';
+import type { ExternalVisualPackId } from '@metroforge/godot';
 import { ToolRegistry, exportProject, resolveGodotExecutableCanonical, readProjectGodotOverride } from '@metroforge/tools';
-import { QAValidator, RepairEngineer, deriveValidationLevel, runQualityPass, scoreVisualQuality, fingerprintFile, planVisualRepairs, applyVisualRepairs, VISUAL_REPAIR_BUDGET, type QAReport, type QAGateResult } from '@metroforge/qa';
+import { QAValidator, RepairEngineer, deriveValidationLevel, runQualityPass, scoreVisualQuality, fingerprintFile, planVisualRepairs, applyVisualRepairs, VISUAL_REPAIR_BUDGET, certifyVisualAssets, writeAssetFoundryReport, classifyAssetTier, buildAssetProvenanceReport, writeAssetProvenanceReport, buildProductionAssetFamilies, productionSliceReady, gateState, validateWorldSceneArchetypeIntegrity, type QAReport, type QAGateResult } from '@metroforge/qa';
 import { createProjectCheckpoint } from './project-checkpoint.js';
 import { assertPhaseArtifacts, phaseCompleteStatus } from './phase-contract.js';
 import { withCategory, type GenerationEvent } from './events.js';
@@ -73,6 +76,13 @@ export interface GenerateOptions {
   prompt: string;
   profile: GenerationProfile;
   mode: GenerationMode;
+  /** procedural-only (default when absent): guaranteed procedural baseline, never calls NVIDIA
+   *  NIM. nvidia-enhanced: always attempts the post-baseline NIM enhancement pass for the P0
+   *  visual-asset slice. auto: attempts only when NIM health-checks as reachable first. See
+   *  packages/assets/src/visual-enhancement/. */
+  visualMode?: 'procedural-only' | 'nvidia-enhanced' | 'auto';
+  /** Select an isolated, manifest-driven test pack; omitted preserves procedural visuals. */
+  externalVisualPack?: ExternalVisualPackId;
   seed: number;
   slug?: string;
   cwd?: string;
@@ -98,6 +108,21 @@ export interface GenerateOptions {
   nvidiaImageModel?: string;
   /** When LOW_RESOURCE, prefer remote image providers over local VRAM runtimes. */
   hardwareProfile?: string;
+  /** AssetFoundry production-integration migration seam — default 'legacy' (unchanged behavior).
+   *  Only the player key-art category currently honors 'foundry'/'foundry-with-legacy-fallback';
+   *  see AssetPipeline.generateSprite's gateway parameter. */
+  assetGenerationBackend?: import('@metroforge/assets').AssetGenerationBackend;
+  /** Registers the free, keyless Pollinations provider as a routing candidate for this run. */
+  enablePollinations?: boolean;
+  /** Fourteenth-session visual reference/template library
+   *  (docs/asset-pipeline/reference-library/templates/library.json). Off by default — unchanged
+   *  behavior for every existing caller. When true, categories with a matching template (see
+   *  packages/assets/src/visual-templates/) use the library's prompt/palette instead of the
+   *  generic index-rotation fallback, and a provenance report is written under
+   *  <outputDir>/reports/visual-template-provenance.json. Loading failure (missing/invalid
+   *  manifest) throws rather than silently disabling the feature, matching externalVisualPack's
+   *  "no manufactured fallback" convention. */
+  useVisualReferenceLibrary?: boolean;
 }
 
 export interface GenerateResult {
@@ -136,6 +161,7 @@ export class GenerationPipeline {
   private readonly repair = new RepairEngineer();
 
   async run(options: GenerateOptions): Promise<GenerateResult> {
+    options = applyVisualSliceIdentityDefaults(options);
     const cwd = options.cwd ?? process.cwd();
     const config = loadConfig();
     const phases: GenerateResult['phases'] = [];
@@ -301,7 +327,18 @@ export class GenerationPipeline {
     let gameDna;
     let dnaSource = 'deterministic';
 
+    let checkpointMatchesRequestedProfile = false;
     if (options.resume && existsSync(gameDnaCheckpointPath)) {
+      const checkpoint = GameDNASchema.parse(JSON.parse(readFileSync(gameDnaCheckpointPath, 'utf-8')));
+      checkpointMatchesRequestedProfile = checkpoint.profile === options.profile;
+      if (!checkpointMatchesRequestedProfile) {
+        warnings.push(
+          `Ignored game_dna.json checkpoint profile "${checkpoint.profile}" because requested profile is "${options.profile}"`,
+        );
+      }
+    }
+
+    if (options.resume && existsSync(gameDnaCheckpointPath) && checkpointMatchesRequestedProfile) {
       report('game_dna', 'RUNNING');
       gameDna = GameDNASchema.parse(JSON.parse(readFileSync(gameDnaCheckpointPath, 'utf-8')));
       dnaSource = 'checkpoint';
@@ -698,7 +735,7 @@ export class GenerationPipeline {
     report('environment_assets', 'RUNNING');
     if (isMassVisualProfile(options.profile)) {
       try {
-        assertMassVisualGenerationAllowed(options.profile);
+        assertMassVisualGenerationAllowed(options.profile, slug);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         errors.push(msg);
@@ -718,6 +755,9 @@ export class GenerationPipeline {
         };
       }
     }
+    const visualReferenceLibrary = options.useVisualReferenceLibrary
+      ? loadVisualReferenceLibrary(cwd)
+      : undefined;
     const assetPipeline = new AssetPipeline();
     const assetResult = await assetPipeline.generate({
       gameDna,
@@ -756,12 +796,20 @@ export class GenerationPipeline {
       stabilityApiKey: process.env.STABILITY_API_KEY,
       deepaiApiKey: process.env.DEEPAI_API_KEY,
       replicateApiToken: process.env.REPLICATE_API_TOKEN,
+      pollinationsBaseUrl: process.env.POLLINATIONS_BASE_URL,
+      pollinationsModel: process.env.POLLINATIONS_IMAGE_MODEL,
+      pollinationsApiKey: process.env.POLLINATIONS_API_KEY,
+      enablePollinations: options.enablePollinations ?? process.env.POLLINATIONS_ENABLED === 'true',
+      visualReferenceLibrary,
+      visualReferenceLibraryRoot: cwd,
       ollamaBaseUrl: config.ollamaBaseUrl,
       resume: options.resume,
       mode: options.mode,
+      visualMode: options.visualMode,
       hardwareProfile,
       signal: options.signal,
       providerEnabled: options.providerEnabled,
+      assetGenerationBackend: options.assetGenerationBackend,
       onTaskStarted: (task, message) => {
         emit({ type: 'TaskStarted', phase: 'environment_assets', task, message });
       },
@@ -835,6 +883,32 @@ export class GenerationPipeline {
         'ANIMATION GENERATION did not produce production-ready posed frames. Derived bob/slide sheets must not be treated as ready.',
       );
     }
+    // Previously computed and discarded — nothing wrote this out, so a nvidia-enhanced/auto run's
+    // per-asset provider attempts/failures/activations were invisible outside the process. This is
+    // the "actual enhancement manifest" the visual-production-loop report format requires: which
+    // provider/model won or failed each asset, and why.
+    if (assetResult.visualEnhancement) {
+      const ve = assetResult.visualEnhancement;
+      writeFileSync(
+        join(outputPath, 'visual_enhancement_report.json'),
+        JSON.stringify(ve, null, 2),
+      );
+      warnings.push(
+        `VISUAL ENHANCEMENT (${ve.visualMode}): ${ve.enhanced}/${ve.attempted + ve.skipped} assets enhanced, ` +
+          `${ve.fallenBack} fell back to procedural, ${ve.skipped} skipped — see visual_enhancement_report.json`,
+      );
+      for (const outcome of ve.outcomes) {
+        if (outcome.succeeded) {
+          warnings.push(
+            `  + ${outcome.plan.assetId} (${outcome.plan.family}): ${outcome.provider}/${outcome.model} -> ACTIVE`,
+          );
+        } else if (outcome.attempted) {
+          warnings.push(
+            `  - ${outcome.plan.assetId} (${outcome.plan.family}): fell back to procedural (${outcome.reason ?? 'unknown reason'})`,
+          );
+        }
+      }
+    }
     const textureFiles = new Map(assetResult.assets.map((a) => [a.path, a.buffer]));
     const assetMetadata = assetResult.assets.map((a) => ({
       id: a.id,
@@ -863,8 +937,59 @@ export class GenerationPipeline {
       transformation: a.transformation,
       sourceLicense: a.sourceLicense,
       derivedLicense: a.derivedLicense,
+      styleFingerprint: a.styleFingerprint,
       commercialUse: undefined as 'allowed' | 'restricted' | 'unknown' | undefined,
+      // AssetFoundry production-integration observability (production standard §11) — which
+      // gateway backend was consulted, and Foundry's own QA/license verdict when it was. Absent
+      // for every asset produced through the (still-default) legacy path.
+      generationBackend: a.generationBackend,
+      foundryQaPassed: a.foundryQaPassed,
+      foundryQaScore: a.foundryQaScore,
+      foundryLicense: a.foundryLicense,
     }));
+    if (options.externalVisualPack) {
+      const pack = loadExternalVisualPack(cwd, options.externalVisualPack);
+      for (const asset of pack.assets) {
+        const sourcePath = join(cwd, 'test-packs', pack.id, asset.source);
+        const buffer = readFileSync(sourcePath);
+        textureFiles.set(asset.destination, buffer);
+        const prior = assetMetadata.findIndex((entry) => entry.path === asset.destination);
+        const metadataTemplate = prior >= 0 ? assetMetadata[prior]! : assetMetadata[0];
+        if (!metadataTemplate) throw new Error(`External visual pack cannot establish metadata for: ${asset.destination}`);
+        const replacement = {
+          ...metadataTemplate,
+          id: `external_pack_${asset.id}`,
+          path: asset.destination,
+          provider: `external-test-pack:${pack.id}`,
+          fallbackGenerated: false,
+          critiquePassed: true,
+          critiqueScore: 100,
+          maturity: 'QA_REVIEW' as const,
+          productionReady: false,
+          sourceType: 'compiled' as const,
+          sourcePath,
+          sourceLicense: pack.sourceLicense,
+          derivedLicense: pack.sourceLicense,
+          transformation: 'external-visual-pack-copy',
+          commercialUse: 'unknown' as const,
+        };
+        if (prior >= 0) assetMetadata[prior] = replacement;
+        else assetMetadata.push(replacement);
+      }
+
+      const playerAnimationMetadata = join(cwd, 'test-packs', pack.id, 'characters', 'player', 'player_animations.json');
+      if (existsSync(playerAnimationMetadata)) {
+        textureFiles.set('assets/characters/player_animations.json', readFileSync(playerAnimationMetadata));
+      }
+      for (const asset of pack.assets.filter((asset) => asset.family === 'character')) {
+        const sourceDir = asset.source.substring(0, asset.source.lastIndexOf('/'));
+        const sourceStem = asset.source.substring(asset.source.lastIndexOf('/') + 1).replace(/_(walk|attack|hurt|death|idle|talk|gesture)\.png$/, '');
+        const destinationDir = asset.destination.substring(0, asset.destination.lastIndexOf('/'));
+        const sidecar = join(cwd, 'test-packs', pack.id, sourceDir, `${sourceStem}_animations.json`);
+        if (existsSync(sidecar)) textureFiles.set(`${destinationDir}/${sourceStem}_animations.json`, readFileSync(sidecar));
+      }
+      warnings.push(`EXTERNAL_VISUAL_PACK_ACTIVE: ${pack.id} (${pack.assets.length} authored assets)`);
+    }
     for (const meta of assetMetadata) {
       Object.assign(meta, licenseFieldsForArtifact(meta, assetMetadata));
       const parentId = meta.parentArtifactIds?.[0];
@@ -882,10 +1007,99 @@ export class GenerationPipeline {
       meta.commercialUse = inherited.commercialUse;
       meta.transformation = inherited.transformation;
     }
-    const assetPassCount = assetResult.assets.filter((a) => a.critiquePassed).length;
-    const placeholderCount = assetResult.assets.filter(
-      (a) => a.fallbackGenerated || a.maturity === 'PLACEHOLDER' || a.maturity === 'BLOCKOUT',
+    const visualConstitution = VisualConstitutionSchema.parse({
+      id: `constitution_${options.seed}`,
+      version: `1.${visualDNA.version}`,
+      artDirection: visualDNA.artStyle.label,
+      renderingStyle: visualDNA.renderingStyle,
+      perspective: 'side-view gameplay camera',
+      targetResolution: {
+        width: visualDNA.resolution.referenceWidth,
+        height: visualDNA.resolution.referenceHeight,
+      },
+      baseSpriteScale: visualDNA.resolution.spriteScale,
+      tileSize: visualDNA.resolution.tileSize,
+      palette: visualDNA.palette,
+      lighting: {
+        direction: visualDNA.lighting.direction,
+        contrast: visualDNA.lighting.contrast,
+        ambient: visualDNA.lighting.ambient,
+        emissive: visualDNA.lighting.accent,
+      },
+      language: {
+        characters: visualDNA.characters.silhouette,
+        environments: visualDNA.environments.terrainRead,
+        enemies: visualDNA.enemies.silhouette,
+        bosses: visualDNA.bosses.silhouette,
+        props: visualDNA.props.storytellingBias,
+        ui: visualDNA.ui.panelStyle,
+        vfx: visualDNA.vfx.hit,
+      },
+      silhouetteRules: [visualDNA.characters.readAtGameScale, visualDNA.enemies.readAtGameScale, visualDNA.bosses.readAtGameScale],
+      materialRules: visualDNA.materials.map((material) => `${material.family}: ${material.edgeTreatment}`),
+      animationRules: ['preserve character identity across frames', 'align feet and gameplay pivots', 'retain palette roles'],
+      forbiddenTraits: visualDNA.forbiddenPatterns,
+      consistencyConstraints: visualDNA.promptAnchors,
+      provenance: { source: 'generated_visual_dna', seed: options.seed, generatedAt: new Date().toISOString() },
+    });
+    writeFileSync(join(outputPath, 'visual_constitution.json'), JSON.stringify(visualConstitution, null, 2));
+    const foundryAssets = assetMetadata.map((asset) => ({
+      id: asset.id,
+      path: asset.path,
+      tier: classifyAssetTier({
+        placeholder: isNonProductionMaturity(asset.maturity),
+        maturity: asset.maturity,
+        productionReady: asset.productionReady,
+        qaPassed: asset.critiquePassed,
+      }),
+      maturity: asset.maturity,
+      placeholder: isNonProductionMaturity(asset.maturity),
+      productionReady: asset.productionReady === true,
+      constitutionVersion: visualConstitution.version,
+      provider: asset.selectedProvider ?? asset.provider,
+      model: asset.selectedModel ?? asset.modelId,
+      defects: asset.critiquePassed ? [] : ['visual critique failed'],
+    }));
+    const styleMatches = assetMetadata.filter(
+      (asset) => !asset.styleFingerprint || asset.styleFingerprint === visualDNA.styleFingerprint,
     ).length;
+    const foundryReport = certifyVisualAssets(
+      foundryAssets,
+      visualConstitution,
+      foundryAssets.length > 0 ? Math.round((styleMatches / foundryAssets.length) * 100) : 0,
+    );
+    writeAssetFoundryReport(outputPath, foundryReport);
+    const productionFamilies = buildProductionAssetFamilies(
+      visualConstitution,
+      assetMetadata.map((asset) => ({
+        id: asset.id,
+        path: asset.path,
+        fallbackGenerated: asset.fallbackGenerated,
+        maturity: asset.maturity,
+        productionReady: asset.productionReady,
+        critiquePassed: asset.critiquePassed,
+        provider: asset.selectedProvider ?? asset.provider,
+        modelId: asset.selectedModel ?? asset.modelId,
+        technicalValid: asset.critiquePassed,
+      })),
+      options.seed,
+    );
+    writeFileSync(
+      join(outputPath, 'production-asset-family-report.json'),
+      JSON.stringify({
+        generatedAt: new Date().toISOString(),
+        constitutionId: visualConstitution.id,
+        constitutionVersion: visualConstitution.version,
+        families: productionFamilies,
+        productionSlice: productionSliceReady(productionFamilies) ? 'PRODUCTION_READY' : 'REVIEW_REQUIRED',
+        projectVisualCertification: foundryReport.certification,
+      }, null, 2),
+    );
+    if (foundryReport.certification === 'VISUAL_DEGRADED') {
+      warnings.push(`visual certification DEGRADED: ${foundryReport.hardFailures.join('; ')}`);
+    }
+    const assetPassCount = assetResult.assets.filter((a) => a.critiquePassed).length;
+    const placeholderCount = assetResult.assets.filter((a) => isNonProductionMaturity(a.maturity)).length;
     const assetsDegraded = assetResult.degraded || placeholderCount > 0;
     if (assetsDegraded) {
       warnings.push(
@@ -921,6 +1135,7 @@ export class GenerationPipeline {
       assetMetadata,
       overworld: topDownWorld?.overworld,
       styleBible,
+      externalVisualPack: options.externalVisualPack,
     });
 
     if (!assemblyResult.success) {
@@ -932,6 +1147,10 @@ export class GenerationPipeline {
       return { success: false, projectSlug: slug, outputPath, jobId: job.id, errors, warnings, phases };
     }
     report('project_assembly', 'PASSED');
+    writeAssetProvenanceReport(
+      outputPath,
+      buildAssetProvenanceReport(assetMetadata, outputPath),
+    );
     for (const roomId of roomIds) {
       emit({ type: 'RoomGenerated', roomId });
     }
@@ -1219,11 +1438,42 @@ export class GenerationPipeline {
     // `qaReport.passed` treats SKIPPED Godot gates as non-blocking; `validationLevel` is the
     // authoritative product outcome — do not claim RUNTIME_VALIDATED / complete when Godot was
     // never available or runtime hard-failed.
-    const validationPassed =
+    let validationPassed =
       validationLevel === 'RUNTIME_VALIDATED' ||
       (validationLevel === 'IMPORT_VALIDATED' && Boolean(options.skipRuntimeValidation));
 
-    if (isProductionQualityProfile(gameDna.profile) && godotPath && validationPassed) {
+    // A top-down project reaching this point with godot_runtime genuinely PASSED but
+    // godot_playtest SKIPPED is not a legitimate outcome — every documented SKIPPED reason above
+    // (godot unavailable, --skip-runtime-validation, godot_imports/godot_runtime failing) already
+    // returns early without ever running godot_runtime successfully first. The one historical way
+    // this combination happened for real (RuntimeSmokeTest.gd never printing
+    // METROFORGE_RUNTIME_READY, so the gate scored UNKNOWN and playtest never ran even though
+    // every check had genuinely passed — docs/debug/TOPDOWN_GENRE_MILESTONE.md) is fixed, but this
+    // is the regression check for it: don't let that combination silently ship again.
+    if (isTopDownArchetype(gameDna.archetype) && runtimeGateResult?.passed) {
+      const playtestResult = qaReport.results.find((r) => r.gate === 'godot_playtest');
+      if (playtestResult && gateState(playtestResult) === 'SKIPPED') {
+        errors.push(
+          `UNEXPECTED_TOPDOWN_PLAYTEST_SKIPPED: godot_playtest was SKIPPED despite godot_runtime passing (${playtestResult.message}) — the top-down playtest gate must stay active`,
+        );
+        validationPassed = false;
+      }
+    }
+
+    // QualityDirector/QualityRepairEngine (packages/qa) are entirely side-view-specific — every
+    // repair action they can apply (APPLY_TRANSITION_FADE, the World.tscn HUD polish, etc.) reads
+    // from or writes files by a hardcoded `templates/godot-metroidvania` path and assumes
+    // WorldManager.gd's room-scene architecture, with no archetype check anywhere in either file.
+    // Running it against a top-down project actively corrupts it: APPLY_TRANSITION_FADE copies
+    // the side-view WorldManager.gd into the project and (via the HUD-polish action) can rewrite
+    // scenes/world/World.tscn to reference it instead of OverworldManager.gd — silently replacing
+    // the entire top-down runtime with an unbootable side-view scene *after* godot_runtime/
+    // godot_playtest already validated the real one, with no gate re-run afterward to catch it.
+    // Confirmed directly: a fresh top-down generation showed 168/168 runtime checks and 8/8
+    // playtest checks passing, then failed to spawn a player at all once this pass had run.
+    // Skipping it here (rather than genre-adapting the whole quality-pass subsystem, well beyond
+    // this fix's scope) is the safe fix until top-down gets its own equivalent pass.
+    if (isProductionQualityProfile(gameDna.profile) && godotPath && validationPassed && !isTopDownArchetype(gameDna.archetype)) {
       try {
         const qualityReport = runQualityPass({
           projectPath: outputPath,
@@ -1242,7 +1492,48 @@ export class GenerationPipeline {
       } catch (err) {
         warnings.push(`QualityDirector skipped: ${err instanceof Error ? err.message : String(err)}`);
       }
+
+      // The quality pass just ran and is exactly the kind of step that can rewrite scenes,
+      // scripts, or assets after every gate above already validated the pre-pass state (see the
+      // comment on the archetype guard just above) — re-run the one gate that would catch its
+      // worst failure mode (silently swapping World.tscn for the wrong genre's manager script)
+      // against what's actually on disk *now*, and let a regression here override an
+      // already-PASSED result rather than letting a stale, pre-pass qaReport ship unchecked.
+      const postPassIntegrity = validateWorldSceneArchetypeIntegrity(
+        outputPath,
+        isTopDownArchetype(gameDna.archetype),
+      );
+      const preExistingIndex = qaReport.results.findIndex(
+        (r) => r.gate === 'world_scene_archetype_integrity',
+      );
+      if (preExistingIndex >= 0) {
+        qaReport.results[preExistingIndex] = postPassIntegrity;
+      } else {
+        qaReport.results.push(postPassIntegrity);
+      }
+      if (!postPassIntegrity.passed) {
+        errors.push(`POST_QUALITY_PASS_INTEGRITY_FAILED: ${postPassIntegrity.message}`);
+        validationPassed = false;
+      }
     }
+
+    // Re-written after the quality-pass block (rather than only once, earlier) so a regression
+    // that block introduces is reflected in the file actually shipped alongside the project, not
+    // only in an in-memory qaReport nothing else re-reads.
+    writeFileSync(
+      join(outputPath, 'validation_report.json'),
+      JSON.stringify(
+        {
+          passed: qaReport.passed,
+          validationLevel,
+          results: qaReport.results,
+          repairAttempts,
+          timestamp: new Date().toISOString(),
+        },
+        null,
+        2,
+      ),
+    );
 
     report(
       'final_qa',
@@ -1280,11 +1571,14 @@ export class GenerationPipeline {
           zip: false,
           requireValidation: false,
           requireCommercialSafe: options.mode === 'COMMERCIAL_SAFE',
+          packageWindows: Boolean(godotPath) && process.platform === 'win32',
+          packageMacOS: Boolean(godotPath) && process.platform === 'darwin',
+          godotExecutable: godotPath ?? undefined,
         });
         warnings.push(...exportResult.warnings);
         if (!exportResult.success) {
           warnings.push(...exportResult.errors);
-          report('export', 'WARN', exportResult.errors[0] ?? 'Export failed');
+          report('export', 'WARN', exportResult.manifest?.packaging.message ?? exportResult.errors[0] ?? 'WINDOWS_PACKAGE_BLOCKED');
         } else {
           exportPath = exportResult.archivePath;
           report(
@@ -1331,7 +1625,7 @@ export class GenerationPipeline {
         },
         spriteQa: { fakeAnimationDetected: assetResult.fakeAnimationDetected === true },
         tilesetQa: { compiler: 'TileCompiler autotile' },
-        roomQa: { roomCount: gameDna.world.roomCount, biomeCount: 1 },
+        roomQa: { roomCount: gameDna.world.roomCount, biomeCount: gameDna.world.biomeCount },
         fakeAnimation: assetResult.fakeAnimationDetected === true,
         screenshots: evidence.length > 0 ? evidence : [
           'qa/screenshot_gameplay.png',
@@ -1353,7 +1647,7 @@ export class GenerationPipeline {
           propCount: assetResult.assets.filter((a) => a.path.includes('/props/')).length,
           placeholderRatio:
             assetResult.assets.length > 0
-              ? assetResult.assets.filter((a) => a.maturity === 'PLACEHOLDER' || a.fallbackGenerated).length /
+              ? assetResult.assets.filter((a) => isNonProductionMaturity(a.maturity)).length /
                 assetResult.assets.length
               : 1,
           wallpaperCapture: false,

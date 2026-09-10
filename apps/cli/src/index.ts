@@ -13,6 +13,10 @@ import { registerProjectCommand } from './commands/project.js';
 import { registerAcceptCommand } from './commands/accept.js';
 import { registerConfigCommand } from './commands/config.js';
 import { registerQualityCommand } from './commands/quality.js';
+import { registerImageDoctorCommand, registerProductionPlayerCommand } from './commands/image-production.js';
+import { registerReferenceProviderCommands } from './commands/reference-provider.js';
+import { registerAssetsCommand } from './commands/assets.js';
+import { registerCandidateCommand } from './commands/candidate.js';
 
 const program = new Command();
 
@@ -34,5 +38,10 @@ registerProjectCommand(program);
 registerAcceptCommand(program);
 registerConfigCommand(program);
 registerQualityCommand(program);
+registerImageDoctorCommand(program);
+registerProductionPlayerCommand(program);
+registerReferenceProviderCommands(program);
+registerAssetsCommand(program);
+registerCandidateCommand(program);
 
 program.parse();

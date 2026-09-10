@@ -1,21 +1,21 @@
-[gd_scene load_steps=3 format=3 uid="uid://room_transition"]
+[gd_scene format=3 uid="uid://brgh1ddoxbk4j"]
 
-[ext_resource type="Script" path="res://scripts/world/RoomTransition.gd" id="1_transition"]
+[ext_resource type="Script" uid="uid://c4qljc72w0bc2" path="res://scripts/world/RoomTransition.gd" id="1_transition"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_zone"]
 size = Vector2(24, 80)
 
-[node name="RoomTransition" type="Area2D"]
+[node name="RoomTransition" type="Area2D" unique_id=205132433]
 collision_layer = 0
 collision_mask = 2
 script = ExtResource("1_transition")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=576585500]
 position = Vector2(12, 40)
 shape = SubResource("RectangleShape2D_zone")
 
-[node name="Visual" type="ColorRect" parent="."]
+[node name="Visual" type="ColorRect" parent="." unique_id=93095930]
 visible = false
 offset_right = 24.0
 offset_bottom = 80.0
-color = Color(0.5, 0.8, 0.5, 0.0)
+color = Color(0.5, 0.8, 0.5, 0)

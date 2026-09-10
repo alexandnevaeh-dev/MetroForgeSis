@@ -129,11 +129,14 @@ export const PROFILE_DEFAULTS: Record<
     npcs: 1,
     quests: 1,
   },
-  /** One-biome visual quality reference — 10 connected rooms, not a content dump. */
+  /** Multi-biome visual quality reference — 12-15 connected rooms across 3 biomes, not a
+   *  content dump. 3 biomes proves biome-identity differentiation (architecture/materials/props/
+   *  lighting, not just a palette swap) before RELEASE_CANDIDATE's full 6-biome mass generation
+   *  is unlocked; 1 biome could never demonstrate that. */
   VISUAL_VERTICAL_SLICE: {
-    biomes: 1,
-    roomsMin: 10,
-    roomsMax: 10,
+    biomes: 3,
+    roomsMin: 12,
+    roomsMax: 15,
     abilities: 1,
     enemies: 4,
     bosses: 1,

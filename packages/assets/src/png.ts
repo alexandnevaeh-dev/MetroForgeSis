@@ -63,53 +63,431 @@ export interface SpriteSpec {
   height: number;
   fill: [number, number, number, number];
   accent?: [number, number, number, number];
-  shape?: 'humanoid' | 'enemy' | 'boss' | 'item' | 'tile';
+  enemyArchetype?: EnemyArchetype;
+  shape?:
+    | 'humanoid'
+    | 'enemy'
+    | 'boss'
+    | 'item'
+    | 'tile'
+    | 'checkpoint'
+    | 'ability_pickup'
+    | 'ability_gate'
+    | 'chest_closed'
+    | 'chest_open'
+    | 'portal';
+}
+
+/** Deterministic small integer hash — picks archetype/variation from spec.id, not Math.random(). */
+function hashString(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function inEllipseFrac(fx: number, fy: number, cx: number, cy: number, rx: number, ry: number): boolean {
+  const dx = (fx - cx) / rx;
+  const dy = (fy - cy) / ry;
+  return dx * dx + dy * dy <= 1;
+}
+
+function inRectFrac(fx: number, fy: number, x0: number, x1: number, y0: number, y1: number): boolean {
+  return fx >= x0 && fx <= x1 && fy >= y0 && fy <= y1;
+}
+
+/** A rect whose half-width linearly interpolates from `halfW0` (at y0) to `halfW1` (at y1),
+ *  centered on `cx` — the basic building block for tapered limbs/torsos/robes. */
+function inTaperedRectFrac(
+  fx: number,
+  fy: number,
+  y0: number,
+  y1: number,
+  halfW0: number,
+  halfW1: number,
+  cx = 0.5,
+): boolean {
+  if (fy < y0 || fy > y1) return false;
+  const t = y1 > y0 ? (fy - y0) / (y1 - y0) : 0;
+  const hw = halfW0 + (halfW1 - halfW0) * t;
+  return Math.abs(fx - cx) <= hw;
+}
+
+type BodyPart =
+  | 'head' | 'neck' | 'torso' | 'hip' | 'armL' | 'armR' | 'legL' | 'legR' | 'footL' | 'footR'
+  | 'wing' | 'beastHead' | 'tail' | 'leg' | 'crest' | 'plate' | 'staff' | 'orb' | 'core' | 'armor' | 'weapon' | 'glow'
+  | 'helmet' | 'pauldron' | 'cape' | 'belt' | 'gauntlet' | 'horn'
+  | null;
+
+/** Real layered anatomy — head/neck/torso/hips/arms/legs/feet — instead of two overlapping
+ *  rectangles. Used for the player, NPCs, and the 'humanoid' enemy archetype. `robe` widens the
+ *  torso taper toward the hips (caster silhouette) instead of narrowing it (regular clothing). */
+function humanoidPart(fx: number, fy: number, robe = false): BodyPart {
+  if (inTaperedRectFrac(fx, fy, 0.055, 0.14, 0.11, 0.16)) return 'helmet';
+  if (inEllipseFrac(fx, fy, 0.5, 0.17, 0.135, 0.12)) return 'head';
+  if (inRectFrac(fx, fy, 0.58, 0.64, 0.15, 0.19)) return 'helmet';
+  if (inRectFrac(fx, fy, 0.44, 0.56, 0.24, 0.3)) return 'neck';
+  if (inEllipseFrac(fx, fy, 0.29, 0.34, 0.12, 0.09)) return 'pauldron';
+  if (inEllipseFrac(fx, fy, 0.71, 0.34, 0.12, 0.09)) return 'pauldron';
+  if (robe ? inTaperedRectFrac(fx, fy, 0.29, 0.86, 0.19, 0.34) : inTaperedRectFrac(fx, fy, 0.29, 0.57, 0.2, 0.145))
+    return 'torso';
+  if (!robe && inRectFrac(fx, fy, 0.34, 0.66, 0.51, 0.57)) return 'belt';
+  if (!robe && inTaperedRectFrac(fx, fy, 0.55, 0.66, 0.15, 0.17)) return 'hip';
+  if (inTaperedRectFrac(fx, fy, 0.3, 0.6, 0.075, 0.055, 0.72)) return 'armR';
+  if (inTaperedRectFrac(fx, fy, 0.3, 0.6, 0.075, 0.055, 0.28)) return 'armL';
+  if (!robe) {
+    if (inTaperedRectFrac(fx, fy, 0.64, 0.87, 0.07, 0.06, 0.595)) return 'legR';
+    if (inTaperedRectFrac(fx, fy, 0.64, 0.87, 0.07, 0.06, 0.405)) return 'legL';
+    if (inRectFrac(fx, fy, 0.51, 0.69, 0.87, 0.965)) return 'footR';
+    if (inRectFrac(fx, fy, 0.31, 0.49, 0.87, 0.965)) return 'footL';
+  } else if (fy > 0.86 && fy <= 0.97 && Math.abs(fx - 0.5) <= 0.2) {
+    return 'footL';
+  }
+  return null;
+}
+
+/** Player-only silhouette layers: a rear cloak adds a stable asymmetric mass while the forward
+ * blade remains visible at gameplay scale. These are evaluated before the generic anatomy so the
+ * equipment reads as deliberate construction rather than a color variation on a humanoid. */
+function playerPart(fx: number, fy: number): BodyPart {
+  if (inTaperedRectFrac(fx, fy, 0.37, 0.79, 0.045, 0.1, 0.23)) return 'cape';
+  if (inTaperedRectFrac(fx, fy, 0.34, 0.72, 0.03, 0.025, 0.81)) return 'weapon';
+  if (inTaperedRectFrac(fx, fy, 0.12, 0.18, 0.05, 0.08, 0.54)) return 'glow';
+  return humanoidPart(fx, fy);
+}
+
+/** Low wide quadruped-ish silhouette: body mass, forward head, stubby legs, a tail — reads as
+ *  "beast" rather than "person" or "blob" at a glance. */
+function beastPart(fx: number, fy: number): BodyPart {
+  if (inEllipseFrac(fx, fy, 0.78, 0.46, 0.15, 0.13)) return 'beastHead';
+  if (inEllipseFrac(fx, fy, 0.48, 0.6, 0.34, 0.22)) return 'torso';
+  if (inRectFrac(fx, fy, 0.06, 0.22, 0.4, 0.5)) return 'tail';
+  if (inRectFrac(fx, fy, 0.26, 0.37, 0.76, 0.94)) return 'legL';
+  if (inRectFrac(fx, fy, 0.61, 0.72, 0.76, 0.94)) return 'legR';
+  return null;
+}
+
+/** Central body plus two broad wing masses, positioned high in the frame (hovering). */
+function flyingPart(fx: number, fy: number): BodyPart {
+  if (inEllipseFrac(fx, fy, 0.5, 0.32, 0.09, 0.08)) return 'beastHead';
+  if (inEllipseFrac(fx, fy, 0.5, 0.55, 0.14, 0.17)) return 'torso';
+  if (inEllipseFrac(fx, fy, 0.21, 0.42, 0.24, 0.15)) return 'wing';
+  if (inEllipseFrac(fx, fy, 0.79, 0.42, 0.24, 0.15)) return 'wing';
+  return null;
+}
+
+/** Very low, flat, wide body hugging the ground with small leg nubs — a bug/spider read. */
+function crawlerPart(fx: number, fy: number): BodyPart {
+  if (inEllipseFrac(fx, fy, 0.82, 0.7, 0.1, 0.09)) return 'beastHead';
+  if (inEllipseFrac(fx, fy, 0.48, 0.74, 0.4, 0.16)) return 'torso';
+  for (const cx of [0.16, 0.34, 0.5, 0.66, 0.82]) {
+    if (inRectFrac(fx, fy, cx - 0.035, cx + 0.035, 0.86, 0.97)) return 'leg';
+  }
+  return null;
+}
+
+/** Broad-shouldered humanoid with a chest plate — the "armored" archetype. */
+function armoredPart(fx: number, fy: number): BodyPart {
+  if (inTaperedRectFrac(fx, fy, 0.035, 0.15, 0.08, 0.17)) return 'helmet';
+  if (inEllipseFrac(fx, fy, 0.5, 0.17, 0.14, 0.12)) return 'head';
+  if (inRectFrac(fx, fy, 0.44, 0.56, 0.24, 0.29)) return 'neck';
+  if (inTaperedRectFrac(fx, fy, 0.28, 0.6, 0.26, 0.19)) return 'torso';
+  if (inRectFrac(fx, fy, 0.38, 0.62, 0.34, 0.5)) return 'plate';
+  if (inTaperedRectFrac(fx, fy, 0.58, 0.68, 0.19, 0.21)) return 'hip';
+  if (inTaperedRectFrac(fx, fy, 0.3, 0.58, 0.1, 0.07, 0.76)) return 'armR';
+  if (inTaperedRectFrac(fx, fy, 0.3, 0.58, 0.1, 0.07, 0.24)) return 'armL';
+  if (inRectFrac(fx, fy, 0.35, 0.48, 0.66, 0.92)) return 'legL';
+  if (inRectFrac(fx, fy, 0.52, 0.65, 0.66, 0.92)) return 'legR';
+  return null;
+}
+
+/** Robed humanoid with a staff — the "caster" archetype. Silhouette alone (robe, staff, orb)
+ *  distinguishes it from a melee enemy even before color is considered. */
+function casterPart(fx: number, fy: number): BodyPart {
+  if (inRectFrac(fx, fy, 0.84, 0.9, 0.08, 0.82)) return 'staff';
+  if (inEllipseFrac(fx, fy, 0.87, 0.09, 0.055, 0.055)) return 'orb';
+  const body = humanoidPart(fx, fy, true);
+  if (body) return body;
+  return null;
+}
+
+const ENEMY_ARCHETYPES = ['beast', 'flying', 'crawler', 'armored', 'caster', 'humanoid'] as const;
+export type EnemyArchetype = (typeof ENEMY_ARCHETYPES)[number];
+
+const ENEMY_PRODUCTION_ORDER: EnemyArchetype[] = ['beast', 'flying', 'armored', 'caster', 'crawler', 'humanoid'];
+
+/** The production vertical-slice masters intentionally lock the first 3 enemy slots to distinct,
+ *  readable silhouette families instead of letting the hash drift across repeated same-family IDs.
+ *  The full enemy pool still uses the same archetype library for later generated enemies. */
+export function pickEnemyArchetype(id: string): EnemyArchetype {
+  const match = /^enemy_(\d+)$/i.exec(id.trim());
+  if (match) {
+    const index = Number(match[1]);
+    if (Number.isInteger(index)) return ENEMY_PRODUCTION_ORDER[index % ENEMY_PRODUCTION_ORDER.length] ?? 'humanoid';
+  }
+  return ENEMY_ARCHETYPES[hashString(id) % ENEMY_ARCHETYPES.length]!;
+}
+
+function enemyPart(fx: number, fy: number, archetype: EnemyArchetype): BodyPart {
+  switch (archetype) {
+    case 'beast':
+      return beastPart(fx, fy);
+    case 'flying':
+      return flyingPart(fx, fy);
+    case 'crawler':
+      return crawlerPart(fx, fy);
+    case 'armored':
+      return armoredPart(fx, fy);
+    case 'caster':
+      return casterPart(fx, fy);
+    case 'humanoid':
+      return humanoidPart(fx, fy);
+  }
+}
+
+/** Large core mass, a crest/head above it, shoulder armor blocks, a side weapon silhouette, and
+ *  a chest glow accent — reads as "important and dangerous" rather than a scaled-up enemy. */
+function bossPart(fx: number, fy: number): BodyPart {
+  if (inTaperedRectFrac(fx, fy, 0.08, 0.24, 0.06, 0.16, 0.42)) return 'horn';
+  if (inTaperedRectFrac(fx, fy, 0.08, 0.24, 0.06, 0.16, 0.58)) return 'horn';
+  if (inTaperedRectFrac(fx, fy, 0.18, 0.42, 0.16, 0.28)) return 'crest';
+  if (inTaperedRectFrac(fx, fy, 0.34, 0.84, 0.29, 0.24)) return 'core';
+  if (inTaperedRectFrac(fx, fy, 0.34, 0.72, 0.16, 0.12, 0.18)) return 'armor';
+  if (inTaperedRectFrac(fx, fy, 0.34, 0.72, 0.16, 0.12, 0.82)) return 'armor';
+  if (inTaperedRectFrac(fx, fy, 0.68, 0.96, 0.14, 0.1, 0.32)) return 'legL';
+  if (inTaperedRectFrac(fx, fy, 0.68, 0.96, 0.14, 0.1, 0.68)) return 'legR';
+  if (inRectFrac(fx, fy, 0.84, 0.92, 0.2, 0.94)) return 'weapon';
+  if (inTaperedRectFrac(fx, fy, 0.08, 0.24, 0.02, 0.1, 0.89)) return 'weapon';
+  if (inEllipseFrac(fx, fy, 0.5, 0.5, 0.13, 0.13)) return 'glow';
+  if (inRectFrac(fx, fy, 0.38, 0.62, 0.32, 0.48)) return 'plate';
+  return null;
+}
+
+function interactivePart(
+  fx: number,
+  fy: number,
+  shape: 'checkpoint' | 'ability_pickup' | 'ability_gate' | 'chest_closed' | 'chest_open' | 'portal',
+): BodyPart {
+  // A stone frame (two side pillars + a lintel) around an open energy field — reads as "a doorway
+  // you can walk through" rather than a solid barrier, the opposite silhouette intent from
+  // 'ability_gate' below (which fills its whole frame to read as blocked/solid).
+  if (shape === 'portal') {
+    if (inRectFrac(fx, fy, 0.14, 0.86, 0.04, 0.14)) return 'plate';
+    if (inRectFrac(fx, fy, 0.14, 0.26, 0.08, 0.92) || inRectFrac(fx, fy, 0.74, 0.86, 0.08, 0.92)) return 'armor';
+    if (inRectFrac(fx, fy, 0.28, 0.72, 0.16, 0.9)) return 'glow';
+    return null;
+  }
+  if (shape === 'checkpoint') {
+    if (inTaperedRectFrac(fx, fy, 0.22, 0.7, 0.2, 0.25)) return 'core';
+    if (inTaperedRectFrac(fx, fy, 0.64, 0.92, 0.26, 0.38)) return 'armor';
+    if (inEllipseFrac(fx, fy, 0.5, 0.4, 0.14, 0.18)) return 'glow';
+    if (inRectFrac(fx, fy, 0.14, 0.86, 0.9, 0.97)) return 'plate';
+    return null;
+  }
+  if (shape === 'ability_pickup') {
+    const diamond = Math.abs(fx - 0.5) / 0.33 + Math.abs(fy - 0.5) / 0.4;
+    if (diamond <= 1) return diamond < 0.48 ? 'glow' : 'core';
+    if (inEllipseFrac(fx, fy, 0.5, 0.5, 0.47, 0.47) && !inEllipseFrac(fx, fy, 0.5, 0.5, 0.36, 0.36)) return 'orb';
+    if (inEllipseFrac(fx, fy, 0.5, 0.5, 0.15, 0.15)) return 'plate';
+    return null;
+  }
+  // A ground-anchored container, not a portrait/pillar like the shapes above — the body sits low
+  // (fy 0.42-0.86) with the lid drawn either sealed against it (closed) or lifted clear above it
+  // (open, plus a bright 'glow' sliver in the gap standing in for visible contents), so the two
+  // states silhouette differently at a glance rather than only differing by a recolor.
+  if (shape === 'chest_closed' || shape === 'chest_open') {
+    if (shape === 'chest_closed') {
+      if (inRectFrac(fx, fy, 0.16, 0.84, 0.32, 0.44)) return 'plate';
+      if (inRectFrac(fx, fy, 0.44, 0.56, 0.38, 0.48)) return 'core';
+    } else {
+      if (inRectFrac(fx, fy, 0.22, 0.78, 0.14, 0.28)) return 'plate';
+      if (inRectFrac(fx, fy, 0.26, 0.74, 0.32, 0.44)) return 'glow';
+    }
+    if (inRectFrac(fx, fy, 0.18, 0.82, 0.44, 0.86)) return 'armor';
+    return null;
+  }
+  if (inRectFrac(fx, fy, 0.08, 0.22, 0.08, 0.94) || inRectFrac(fx, fy, 0.78, 0.92, 0.08, 0.94)) return 'armor';
+  if (inRectFrac(fx, fy, 0.2, 0.8, 0.14, 0.24) || inRectFrac(fx, fy, 0.2, 0.8, 0.78, 0.88)) return 'plate';
+  if (inRectFrac(fx, fy, 0.34, 0.66, 0.3, 0.7)) return 'core';
+  const diagonal = Math.abs((fx - 0.5) + (fy - 0.5) * 0.65);
+  if (diagonal < 0.085 && fy > 0.24 && fy < 0.78) return 'glow';
+  return null;
+}
+
+const OUTLINE: [number, number, number, number] = [20, 27, 42, 255];
+/** Warm mid-tone that reads as "skin" against most fill/accent palettes without hardcoding one
+ *  specific ethnicity's tone — kept desaturated enough to sit under a helmet/hood/fur recolor. */
+const SKIN_TONE: [number, number, number, number] = [214, 172, 138, 255];
+
+function shade(color: [number, number, number, number], amount: number): [number, number, number, number] {
+  return [
+    Math.max(0, Math.min(255, color[0] + amount)),
+    Math.max(0, Math.min(255, color[1] + amount)),
+    Math.max(0, Math.min(255, color[2] + amount)),
+    color[3],
+  ];
+}
+
+function mix(
+  a: [number, number, number, number],
+  b: [number, number, number, number],
+  t: number,
+): [number, number, number, number] {
+  return [
+    Math.round(a[0] + (b[0] - a[0]) * t),
+    Math.round(a[1] + (b[1] - a[1]) * t),
+    Math.round(a[2] + (b[2] - a[2]) * t),
+    255,
+  ];
+}
+
+/** Body-part → color for the humanoid/enemy/boss constructions. Centralized so every archetype
+ *  shares one readable, consistent shading language (skin, clothing, shadowed lower body, a
+ *  bright accent for "this part matters" — head crest, weapon, glow). */
+function colorForPart(part: BodyPart, fill: [number, number, number, number], accent: [number, number, number, number]): [number, number, number, number] {
+  switch (part) {
+    case 'head':
+    case 'beastHead':
+      return SKIN_TONE;
+    case 'neck':
+      return shade(SKIN_TONE, -20);
+    case 'torso':
+    case 'wing':
+      return fill;
+    case 'hip':
+    case 'belt':
+    case 'plate':
+    case 'armor':
+      return shade(fill, -22);
+    case 'helmet':
+    case 'pauldron':
+    case 'gauntlet':
+      return mix(fill, accent, 0.42);
+    case 'cape':
+      return shade(fill, -42);
+    case 'armL':
+    case 'armR':
+      return shade(fill, -10);
+    case 'legL':
+    case 'legR':
+    case 'leg':
+    case 'tail':
+      return shade(fill, -34);
+    case 'footL':
+    case 'footR':
+      return shade(fill, -50);
+    case 'crest':
+    case 'horn':
+    case 'orb':
+    case 'glow':
+      return accent;
+    case 'staff':
+    case 'weapon':
+      return shade(fill, -55);
+    case 'core':
+      return fill;
+    default:
+      return fill;
+  }
 }
 
 export function generateProceduralSprite(spec: SpriteSpec): Buffer {
   const { width, height, fill, accent = fill } = spec;
   const rgba = new Uint8Array(width * height * 4);
+  const archetype = spec.shape === 'enemy' ? (spec.enemyArchetype ?? pickEnemyArchetype(spec.id)) : undefined;
+
+  const partAt = (x: number, y: number): BodyPart => {
+    const fx = (x + 0.5) / width;
+    const fy = (y + 0.5) / height;
+    switch (spec.shape ?? 'humanoid') {
+      case 'humanoid':
+        return spec.id === 'player' ? playerPart(fx, fy) : humanoidPart(fx, fy);
+      case 'enemy':
+        return enemyPart(fx, fy, archetype!);
+      case 'boss':
+        return bossPart(fx, fy);
+      case 'item':
+        return inRectFrac(fx, fy, 0.3, 0.7, 0.3, 0.7) ? 'core' : null;
+      case 'tile':
+        return fy >= 0.6 ? 'core' : null;
+      case 'checkpoint':
+      case 'ability_pickup':
+      case 'ability_gate':
+      case 'chest_closed':
+      case 'chest_open':
+      case 'portal':
+        return interactivePart(
+          fx,
+          fy,
+          spec.shape as 'checkpoint' | 'ability_pickup' | 'ability_gate' | 'chest_closed' | 'chest_open' | 'portal',
+        );
+    }
+  };
+  const isInside = (x: number, y: number): boolean => partAt(x, y) !== null;
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const i = (y * width + x) * 4;
-      let inside = false;
+      const part = partAt(x, y);
 
-      switch (spec.shape ?? 'humanoid') {
-        case 'humanoid':
-          inside =
-            (x >= width * 0.35 && x <= width * 0.65 && y >= height * 0.1 && y <= height * 0.45) ||
-            (x >= width * 0.25 && x <= width * 0.75 && y >= height * 0.45 && y <= height * 0.85);
-          break;
-        case 'enemy':
-          inside = Math.hypot(x - width / 2, y - height / 2) < Math.min(width, height) * 0.4;
-          break;
-        case 'boss':
-          inside =
-            Math.hypot(x - width / 2, y - height * 0.55) < Math.min(width, height) * 0.45 ||
-            (x >= width * 0.2 && x <= width * 0.8 && y >= height * 0.15 && y <= height * 0.35);
-          break;
-        case 'item':
-          inside = x >= width * 0.3 && x <= width * 0.7 && y >= height * 0.3 && y <= height * 0.7;
-          break;
-        case 'tile':
-          inside = y >= height * 0.6;
-          break;
-      }
-
-      if (!inside) {
+      if (part === null) {
+        const outlined = spec.shape !== 'tile' && [
+          isInside(x - 1, y), isInside(x + 1, y), isInside(x, y - 1), isInside(x, y + 1),
+        ].some(Boolean);
+        if (outlined) {
+          rgba[i] = OUTLINE[0];
+          rgba[i + 1] = OUTLINE[1];
+          rgba[i + 2] = OUTLINE[2];
+          rgba[i + 3] = OUTLINE[3];
+          continue;
+        }
         rgba[i] = 0;
         rgba[i + 1] = 0;
         rgba[i + 2] = 0;
         rgba[i + 3] = 0;
       } else {
-        const useAccent = spec.shape === 'humanoid' && y < height * 0.25;
-        const c = useAccent ? accent : fill;
+        let c: [number, number, number, number];
+        if (spec.shape === 'item' || spec.shape === 'tile') {
+          c = fill;
+        } else {
+          c = colorForPart(part, fill, accent);
+        }
+        // Directional highlight (top edge of each region) and a lower-edge shadow line — cheap,
+        // consistent "form" cue that keeps flat archetypes from reading as solid stickers.
+        const topEdge = !isInside(x, y - 1) || partAt(x, y - 1) !== part;
+        const bottomEdge = !isInside(x, y + 1) || partAt(x, y + 1) !== part;
+        if (part !== 'head' && part !== 'beastHead' && topEdge) {
+          c = mix(c, [255, 255, 255, 255], 0.16);
+        } else if (bottomEdge) {
+          c = mix(c, [0, 0, 0, 255], 0.22);
+        }
+        const fx = (x + 0.5) / width;
+        const fy = (y + 0.5) / height;
+        if (part === 'torso' && fy > 0.34 && fy < 0.55 && Math.abs(fx - 0.5) < 0.025) {
+          c = accent;
+        }
+        if (part === 'core' && spec.shape === 'boss' && Math.abs(fx - 0.5) > 0.19) {
+          c = shade(fill, -30);
+        }
         rgba[i] = c[0]!;
         rgba[i + 1] = c[1]!;
         rgba[i + 2] = c[2]!;
         rgba[i + 3] = c[3]!;
       }
+    }
+  }
+
+  if ((spec.shape === 'humanoid' || spec.shape === 'boss' || (spec.shape === 'enemy' && archetype !== 'crawler')) && width >= 16 && height >= 16) {
+    const eyeY = Math.max(1, Math.floor(height * (spec.shape === 'boss' ? 0.27 : 0.15)));
+    const eyeSpan = spec.shape === 'boss' ? 0.09 : 0.045;
+    for (const eyeX of [Math.floor(width * (0.5 - eyeSpan)), Math.floor(width * (0.5 + eyeSpan))]) {
+      const i = (eyeY * width + eyeX) * 4;
+      rgba[i] = 40;
+      rgba[i + 1] = 44;
+      rgba[i + 2] = 54;
+      rgba[i + 3] = 255;
     }
   }
 
@@ -557,20 +935,259 @@ function yPlant(phase: number): number {
   return Math.round((1 - Math.cos(phase)) * 0.5);
 }
 
-/** Damage-flash animation: alternates the sprite's real colors with a bright red-white
- *  tint on every other frame — the classic "took damage" visual cue. Distinct from the
- *  walk cycle's bob, not a relabeled copy of it. */
+/**
+ * Horizontal run-cycle spritesheet (frameCount frames) — a distinct, more athletic gait than
+ * generateWalkCycleSheet: longer stride, sharper vertical bob, and a constant forward torso lean
+ * (shear that increases toward the head) that walk does not have. Same technique family as the
+ * walk cycle (never a relabeled copy of it) — the production standard requires run (12-16 frames)
+ * to read as genuinely faster/different locomotion than walk (10-14 frames), not the same clip
+ * renamed. Arms/shoulders counter-swing opposite the legs, same as the walk cycle's upper-body
+ * quarter-shift, but layered under the constant lean.
+ */
+export function generateRunCycleSheet(spec: SpriteSpec, frameCount = 12, sourcePng?: Buffer): Buffer {
+  const { rgba, width, height } = sourcePng
+    ? decodePngRgba(sourcePng)
+    : decodePngRgba(generateProceduralSprite(spec));
+  const sheet = new Uint8Array(width * frameCount * height * 4);
+  const hip = Math.floor(height * 0.5);
+  const stride = Math.max(4, Math.round(width * 0.22));
+  const leanPx = Math.max(1, Math.round(width * 0.06));
+
+  for (let f = 0; f < frameCount; f++) {
+    const phase = frameCount > 1 ? (2 * Math.PI * f) / frameCount : 0;
+    const legShift = Math.round(Math.sin(phase) * stride);
+    const plant = Math.round(yPlant(phase) * 1.6);
+    for (let y = 0; y < height; y++) {
+      const isUpper = y < hip;
+      const leanFrac = isUpper ? 1 - y / Math.max(1, hip) : 0;
+      const lean = Math.round(leanPx * leanFrac);
+      const srcY = isUpper ? y : y - plant;
+      if (srcY < 0 || srcY >= height) continue;
+      const shift = isUpper ? Math.round(legShift * 0.2) - lean : legShift;
+      for (let x = 0; x < width; x++) {
+        const srcX = x - shift;
+        const di = (y * width * frameCount + f * width + x) * 4;
+        if (srcX < 0 || srcX >= width) {
+          sheet[di + 3] = 0;
+          continue;
+        }
+        const si = (srcY * width + srcX) * 4;
+        sheet[di] = rgba[si]!;
+        sheet[di + 1] = rgba[si + 1]!;
+        sheet[di + 2] = rgba[si + 2]!;
+        sheet[di + 3] = rgba[si + 3]!;
+      }
+    }
+  }
+
+  return encodePng(width * frameCount, height, sheet);
+}
+
+/**
+ * Frame-quality metrics for a horizontal frame-strip spritesheet (production standard §20).
+ * Operates on decoded RGBA, not the encoded PNG, so callers can reuse a single decode.
+ * - uniqueFrameRatio: fraction of frames that are not byte-identical to an earlier frame.
+ * - duplicateFrameRatio: 1 - uniqueFrameRatio.
+ * - meanSilhouetteDelta: average fraction of alpha-coverage pixels that differ (opaque vs
+ *   transparent) between consecutive frames — near-zero means frames aren't actually moving.
+ * - contentBoundsDrift: max deviation, across frames, of the opaque bounding-box center from the
+ *   sheet-wide average center, normalized by frame width — a cheap proxy for pivot/anchor drift
+ *   when no explicit pivot metadata exists (this codebase doesn't author one per frame).
+ */
+export interface FrameQualityMetrics {
+  frameCount: number;
+  uniqueFrameRatio: number;
+  duplicateFrameRatio: number;
+  meanSilhouetteDelta: number;
+  contentBoundsDrift: number;
+  /** Mean fraction of RGB channel bytes (opaque pixels only) that differ by more than a small
+   *  threshold between consecutive frames — near-zero means the animation isn't visibly moving,
+   *  very high means adjacent frames barely resemble each other (chaotic/exploding motion). */
+  meanPixelDelta: number;
+  /** 1 - (stddev of each frame's opaque bounding-box area / mean area), clamped to [0,1].
+   *  Low values mean the silhouette's on-screen size balloons or collapses between frames
+   *  instead of the character staying a consistent size throughout the clip. */
+  frameDimensionConsistency: number;
+  /** 1 - (fraction of frames whose opaque content touches a canvas edge). A crop/shear/scale
+   *  transform pushed too far clips the silhouette against the frame boundary; this catches it. */
+  alphaBoundsConsistency: number;
+  /** Variance (0..1 range, not clamped) of each frame's opaque-pixel coverage as a fraction of
+   *  frame area — flags frames whose apparent size swings unrealistically frame to frame. */
+  contentScaleVariance: number;
+  /** True when meanPixelDelta and contentScaleVariance both exceed a "this doesn't read as a
+   *  coherent character animation anymore" threshold — an upper-bound sanity check against
+   *  chaotic/exploding motion, not just the lower-bound "did anything move at all" checks above. */
+  chaoticMotion: boolean;
+}
+
+export function computeFrameQualityMetrics(sheetRgba: Uint8Array, frameWidth: number, frameHeight: number, frameCount: number): FrameQualityMetrics {
+  if (frameCount <= 0) {
+    return {
+      frameCount: 0, uniqueFrameRatio: 0, duplicateFrameRatio: 1, meanSilhouetteDelta: 0, contentBoundsDrift: 0,
+      meanPixelDelta: 0, frameDimensionConsistency: 1, alphaBoundsConsistency: 1, contentScaleVariance: 0, chaoticMotion: false,
+    };
+  }
+  const frameBytes = frameWidth * frameHeight * 4;
+  const frames: Uint8Array[] = [];
+  for (let f = 0; f < frameCount; f++) {
+    const frame = new Uint8Array(frameBytes);
+    for (let y = 0; y < frameHeight; y++) {
+      const srcRowStart = (y * frameWidth * frameCount + f * frameWidth) * 4;
+      const dstRowStart = y * frameWidth * 4;
+      frame.set(sheetRgba.subarray(srcRowStart, srcRowStart + frameWidth * 4), dstRowStart);
+    }
+    frames.push(frame);
+  }
+
+  const seen: Uint8Array[] = [];
+  let duplicates = 0;
+  for (const frame of frames) {
+    if (seen.some((s) => buffersEqual(s, frame))) duplicates += 1;
+    else seen.push(frame);
+  }
+  const duplicateFrameRatio = duplicates / frameCount;
+  const uniqueFrameRatio = 1 - duplicateFrameRatio;
+
+  let silhouetteDeltaSum = 0;
+  for (let f = 1; f < frames.length; f++) {
+    silhouetteDeltaSum += silhouetteDelta(frames[f - 1]!, frames[f]!, frameBytes);
+  }
+  const meanSilhouetteDelta = frames.length > 1 ? silhouetteDeltaSum / (frames.length - 1) : 0;
+
+  const centers = frames.map((f) => opaqueCenterX(f, frameWidth, frameHeight));
+  const validCenters = centers.filter((c): c is number => c !== null);
+  let contentBoundsDrift = 0;
+  if (validCenters.length > 0) {
+    const avg = validCenters.reduce((a, b) => a + b, 0) / validCenters.length;
+    const maxDelta = Math.max(...validCenters.map((c) => Math.abs(c - avg)));
+    contentBoundsDrift = frameWidth > 0 ? maxDelta / frameWidth : 0;
+  }
+
+  let pixelDeltaSum = 0;
+  for (let f = 1; f < frames.length; f++) {
+    pixelDeltaSum += meanPixelDeltaBetween(frames[f - 1]!, frames[f]!, frameBytes);
+  }
+  const meanPixelDelta = frames.length > 1 ? pixelDeltaSum / (frames.length - 1) : 0;
+
+  const bboxes = frames.map((f) => opaqueBoundingBox(f, frameWidth, frameHeight));
+  const areas = bboxes.map((b) => (b ? b.w * b.h : 0));
+  const meanArea = areas.reduce((a, b) => a + b, 0) / areas.length;
+  const areaStddev = Math.sqrt(areas.reduce((sum, a) => sum + (a - meanArea) ** 2, 0) / areas.length);
+  const frameDimensionConsistency = meanArea > 0 ? Math.max(0, Math.min(1, 1 - areaStddev / meanArea)) : 1;
+
+  const edgeTouchCount = bboxes.filter((b) => b && (b.x0 <= 0 || b.y0 <= 0 || b.x1 >= frameWidth - 1 || b.y1 >= frameHeight - 1)).length;
+  const alphaBoundsConsistency = 1 - edgeTouchCount / frames.length;
+
+  const coverageFractions = frames.map((f) => opaqueCoverage(f, frameBytes));
+  const meanCoverage = coverageFractions.reduce((a, b) => a + b, 0) / coverageFractions.length;
+  const contentScaleVariance = coverageFractions.reduce((sum, c) => sum + (c - meanCoverage) ** 2, 0) / coverageFractions.length;
+
+  const chaoticMotion = meanPixelDelta > 0.55 && contentScaleVariance > 0.02;
+
+  return {
+    frameCount, uniqueFrameRatio, duplicateFrameRatio, meanSilhouetteDelta, contentBoundsDrift,
+    meanPixelDelta, frameDimensionConsistency, alphaBoundsConsistency, contentScaleVariance, chaoticMotion,
+  };
+}
+
+function meanPixelDeltaBetween(a: Uint8Array, b: Uint8Array, byteLength: number): number {
+  let diffSum = 0;
+  let opaqueCount = 0;
+  for (let i = 0; i < byteLength; i += 4) {
+    const aOpaque = a[i + 3]! > 16;
+    const bOpaque = b[i + 3]! > 16;
+    if (!aOpaque && !bOpaque) continue;
+    opaqueCount += 1;
+    const dr = Math.abs(a[i]! - b[i]!);
+    const dg = Math.abs(a[i + 1]! - b[i + 1]!);
+    const db = Math.abs(a[i + 2]! - b[i + 2]!);
+    diffSum += (dr + dg + db) / (3 * 255);
+  }
+  return opaqueCount > 0 ? diffSum / opaqueCount : 0;
+}
+
+interface BoundingBox { x0: number; y0: number; x1: number; y1: number; w: number; h: number }
+
+function opaqueBoundingBox(frame: Uint8Array, width: number, height: number): BoundingBox | null {
+  let x0 = width, y0 = height, x1 = -1, y1 = -1;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (frame[(y * width + x) * 4 + 3]! > 16) {
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
+      }
+    }
+  }
+  if (x1 < 0) return null;
+  return { x0, y0, x1, y1, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+}
+
+function opaqueCoverage(frame: Uint8Array, byteLength: number): number {
+  let count = 0;
+  let total = 0;
+  for (let i = 3; i < byteLength; i += 4) {
+    if (frame[i]! > 16) count += 1;
+    total += 1;
+  }
+  return total > 0 ? count / total : 0;
+}
+
+function buffersEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
+
+function silhouetteDelta(a: Uint8Array, b: Uint8Array, byteLength: number): number {
+  let diff = 0;
+  let total = 0;
+  for (let i = 3; i < byteLength; i += 4) {
+    const aOpaque = a[i]! > 16;
+    const bOpaque = b[i]! > 16;
+    if (aOpaque !== bOpaque) diff += 1;
+    total += 1;
+  }
+  return total > 0 ? diff / total : 0;
+}
+
+function opaqueCenterX(frame: Uint8Array, width: number, height: number): number | null {
+  let sumX = 0;
+  let count = 0;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const alpha = frame[(y * width + x) * 4 + 3]!;
+      if (alpha > 16) {
+        sumX += x;
+        count += 1;
+      }
+    }
+  }
+  return count > 0 ? sumX / count : null;
+}
+
+/** Hurt-reaction animation: a real directional knockback recoil (a backward horizontal shove
+ *  that peaks early and eases back to neutral) layered under the alternating red-white damage
+ *  flash on odd frames — the classic "took damage" color cue, plus genuine silhouette motion so
+ *  a multi-frame hurt reads as an actual flinch, not a color filter over a static pose. */
 export function generateHurtFlashSheet(spec: SpriteSpec, frameCount = 4, sourcePng?: Buffer): Buffer {
   const { rgba, width, height } = sourcePng
     ? decodePngRgba(sourcePng)
     : decodePngRgba(generateProceduralSprite(spec));
   const sheet = new Uint8Array(width * frameCount * height * 4);
+  const maxKnockback = Math.max(2, Math.round(width * 0.08));
 
   for (let f = 0; f < frameCount; f++) {
     const flashed = f % 2 === 1;
+    const raw = frameCount > 1 ? f / (frameCount - 1) : 1;
+    // fast recoil out, slow ease back — peaks around the first third, not the last frame
+    const recoilT = Math.sin(Math.min(1, raw * 1.6) * Math.PI * (raw < 0.5 ? 1 : 0.6)) * (1 - raw * 0.4);
+    const shiftX = Math.round(maxKnockback * recoilT);
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
-        const si = (y * width + x) * 4;
+        const srcX = Math.min(width - 1, Math.max(0, x - shiftX));
+        const si = (y * width + srcX) * 4;
         const di = (y * width * frameCount + f * width + x) * 4;
         const alpha = rgba[si + 3]!;
         if (alpha === 0) {
@@ -594,26 +1211,48 @@ export function generateHurtFlashSheet(spec: SpriteSpec, frameCount = 4, sourceP
   return encodePng(width * frameCount, height, sheet);
 }
 
-/** Attack-swing animation: the sprite leans progressively further forward across frames,
- *  with a brightness pulse on the final "impact" frame — real visual feedback for the
- *  attack hitbox activating, not a relabeled walk cycle. */
-export function generateAttackSheet(spec: SpriteSpec, frameCount = 4, sourcePng?: Buffer): Buffer {
+export type AttackArcKind = 'horizontal' | 'upward' | 'downward';
+
+/** Attack-swing animation: the sprite leans progressively further into the swing across a
+ *  windup→strike→impact→recover arc, with a brightness pulse on the impact frame — real visual
+ *  feedback for the attack hitbox activating. `arcKind` distinguishes attack_1 (horizontal slash)
+ *  from attack_2 (upward arc) and attack_3 (downward slam finisher) — each combo hit gets a
+ *  genuinely different silhouette path, not a rotate/recolor of the same swing. The impact frame
+ *  is placed at ~65% through the sheet (not the last frame) so there's a real recovery tail for
+ *  the combo-cancel window to land on. */
+export function generateAttackSheet(spec: SpriteSpec, frameCount = 4, sourcePng?: Buffer, arcKind: AttackArcKind = 'horizontal'): Buffer {
   const { rgba, width, height } = sourcePng
     ? decodePngRgba(sourcePng)
     : decodePngRgba(generateProceduralSprite(spec));
   const sheet = new Uint8Array(width * frameCount * height * 4);
-  const maxShift = Math.floor(width * 0.15);
+  // Amplitude/windup/recovery tuned so a 12-20 frame combo hit at any reasonable actor canvas
+  // size (32px-64px) produces enough distinct integer pixel-shift values to clear the
+  // uniqueFrameRatio production bar (PLAYER_ANIMATION_SPEC's minUniqueFrameRatio: 0.7) — a
+  // shallower windup/recovery curve collides (multiple frames rounding to the same shift) at
+  // small canvas sizes with 12+ frames.
+  const maxShift = Math.max(4, Math.floor(width * (arcKind === 'downward' ? 0.28 : 0.3)));
+  const maxVertical = Math.floor(height * (arcKind === 'horizontal' ? 0 : 0.14));
+  const impactFrame = Math.max(1, Math.round(frameCount * 0.65));
 
   for (let f = 0; f < frameCount; f++) {
-    const shift = Math.floor((maxShift * (f + 1)) / frameCount);
-    const isImpactFrame = f === frameCount - 1;
+    // windup (deep negative pull-back) -> strike (fast overshoot at impactFrame) -> recover (deep
+    // follow-through ease, not just back to zero) — real swings don't snap-return to neutral.
+    const swingT = f <= impactFrame
+      ? -0.3 * (1 - f / impactFrame) + (f / impactFrame)
+      : 1 - 0.85 * ((f - impactFrame) / Math.max(1, frameCount - 1 - impactFrame));
+    const shiftX = Math.round(maxShift * swingT);
+    const vertSign = arcKind === 'upward' ? -1 : arcKind === 'downward' ? 1 : 0;
+    const shiftY = Math.round(maxVertical * swingT * vertSign);
+    const isImpactFrame = f === impactFrame;
     for (let y = 0; y < height; y++) {
+      const srcYUnclamped = y - shiftY;
+      const srcY = Math.min(height - 1, Math.max(0, srcYUnclamped));
       for (let x = 0; x < width; x++) {
-        const srcX = Math.min(width - 1, Math.max(0, x - shift));
-        const si = (y * width + srcX) * 4;
+        const srcX = Math.min(width - 1, Math.max(0, x - shiftX));
+        const si = (srcY * width + srcX) * 4;
         const di = (y * width * frameCount + f * width + x) * 4;
         const alpha = rgba[si + 3]!;
-        if (alpha === 0) {
+        if (alpha === 0 || srcYUnclamped < 0 || srcYUnclamped >= height) {
           sheet[di + 3] = 0;
           continue;
         }
@@ -767,6 +1406,94 @@ export function generatePoseStill(spec: SpriteSpec, poseName: string, sourcePng?
   return encodePng(width, height, out);
 }
 
+export interface ProgressionSheetOptions {
+  /** 'ramp': frame 0 is neutral, intensity rises (eased) to the full POSE_TRANSFORMS pose by the
+   *  last frame — for one-shot transitions that hold on their final pose (jump_start, land,
+   *  wall_jump, dash). 'oscillate': intensity rises from neutral to the full pose at the cycle's
+   *  midpoint and eases back to neutral by the last frame — for animations that loop while a
+   *  state persists (jump-hang, fall, wall_slide, swim, idle). */
+  mode: 'ramp' | 'oscillate';
+  /** Extra per-frame brightness pulse riding on top of the state's base tint, for idle's subtle
+   *  breathing cue. */
+  tintPulse?: number;
+}
+
+/**
+ * Generalized multi-frame progression sheet: animates a single reference frame from neutral
+ * toward (and, in 'oscillate' mode, back from) a named state's POSE_TRANSFORMS target across
+ * `frameCount` frames, by interpolating the same crop/shear/scale/tint parameters
+ * `generatePoseStill` already applies as a single still. This is the shared generator family for
+ * every locomotion/transition state that isn't a bespoke walk/run/attack/hurt/death cycle
+ * (jump_start, jump, fall, land, dash, wall_slide, wall_jump, swim, idle) — one function reused
+ * with per-state config instead of a bespoke generator per animation name, so a new state only
+ * needs a POSE_TRANSFORMS entry, never new pixel-pushing code.
+ */
+export function generateProgressionSheet(
+  spec: SpriteSpec,
+  poseName: string,
+  frameCount: number,
+  sourcePng?: Buffer,
+  options: ProgressionSheetOptions = { mode: 'ramp' },
+): Buffer {
+  const { rgba, width, height } = sourcePng
+    ? decodePngRgba(sourcePng)
+    : decodePngRgba(generateProceduralSprite(spec));
+  const t = POSE_TRANSFORMS[poseName] ?? {};
+  const [cropTopTarget, cropBottomTarget] = t.cropY ?? [0, 1];
+  const [shearTopTarget, shearBottomTarget] = t.shearX ?? [0, 0];
+  const scaleXTarget = t.scaleX ?? 1;
+  const tintTarget = t.tint ?? 0;
+  const cx = width / 2;
+  const sheet = new Uint8Array(width * frameCount * height * 4);
+
+  // Oscillate mode's low point never touches pure progress-0 (the untransformed source frame) —
+  // at progress 0 every animation's frame is byte-identical to every other animation's neutral
+  // frame (walk frame 0, run frame 0, ...), which is exactly the "idle looks like walk-frame-1"
+  // defect this pipeline was built to eliminate. A resting/looping state should always carry at
+  // least a little of its own pose, even at the bottom of its cycle.
+  const OSCILLATE_FLOOR = 0.2;
+
+  for (let f = 0; f < frameCount; f++) {
+    const raw = frameCount > 1 ? f / (frameCount - 1) : 1;
+    const eased = raw * raw * (3 - 2 * raw); // smoothstep — avoids a linear/robotic ramp
+    const progress = options.mode === 'ramp' ? eased : OSCILLATE_FLOOR + (1 - OSCILLATE_FLOOR) * Math.sin(raw * Math.PI);
+    const cropTop = 0 + (cropTopTarget - 0) * progress;
+    const cropBottom = 1 + (cropBottomTarget - 1) * progress;
+    const shearTop = shearTopTarget * progress;
+    const shearBottom = shearBottomTarget * progress;
+    const scaleX = 1 + (scaleXTarget - 1) * progress;
+    const tint = Math.round(tintTarget * progress + (options.tintPulse ? Math.sin(raw * 2 * Math.PI) * options.tintPulse : 0));
+
+    for (let y = 0; y < height; y++) {
+      const frac = height > 1 ? y / (height - 1) : 0;
+      const srcYf = (cropTop + frac * (cropBottom - cropTop)) * (height - 1);
+      const srcY = Math.max(0, Math.min(height - 1, Math.round(srcYf)));
+      const shear = shearTop + (shearBottom - shearTop) * frac;
+      for (let x = 0; x < width; x++) {
+        const srcXf = (x - cx) / scaleX + cx - shear;
+        const srcX = Math.round(srcXf);
+        const di = (y * width * frameCount + f * width + x) * 4;
+        if (srcX < 0 || srcX >= width) {
+          sheet[di + 3] = 0;
+          continue;
+        }
+        const si = (srcY * width + srcX) * 4;
+        const alpha = rgba[si + 3]!;
+        if (alpha === 0) {
+          sheet[di + 3] = 0;
+          continue;
+        }
+        sheet[di] = Math.max(0, Math.min(255, rgba[si]! + tint));
+        sheet[di + 1] = Math.max(0, Math.min(255, rgba[si + 1]! + tint));
+        sheet[di + 2] = Math.max(0, Math.min(255, rgba[si + 2]! + tint));
+        sheet[di + 3] = alpha;
+      }
+    }
+  }
+
+  return encodePng(width * frameCount, height, sheet);
+}
+
 function paethPredictor(a: number, b: number, c: number): number {
   const p = a + b - c;
   const pa = Math.abs(p - a);
@@ -881,9 +1608,83 @@ export function decodePngRgba(png: Buffer): { rgba: Uint8Array; width: number; h
   return { rgba, width, height };
 }
 
-export function generateTilesetSource(seed: number, size = 128): Buffer {
+/** Overlay features `generateTilesetSource` actually knows how to render. Anything a caller
+ *  requests outside this set must be reported (via `partitionTilesetFeatures`) as unsupported
+ *  rather than silently dropped — fifteenth-session requirement to "declare unsupported template
+ *  features explicitly". */
+export const TILESET_SUPPORTED_FEATURES = [
+  'panel_grates',
+  'corrosion',
+  'stains',
+  'damaged_modules',
+  'vegetation',
+] as const;
+export type TilesetFeature = (typeof TILESET_SUPPORTED_FEATURES)[number];
+
+export function partitionTilesetFeatures(requested: readonly string[] | undefined): {
+  supported: TilesetFeature[];
+  unsupported: string[];
+} {
+  const supported: TilesetFeature[] = [];
+  const unsupported: string[] = [];
+  for (const f of requested ?? []) {
+    if ((TILESET_SUPPORTED_FEATURES as readonly string[]).includes(f)) supported.push(f as TilesetFeature);
+    else unsupported.push(f);
+  }
+  return { supported, unsupported };
+}
+
+export interface TilesetBiomeStyle {
+  /** [r,g,b] overrides for the three fixed structural bands (ground / upper wall / shadow wall).
+   *  Omitted channels keep the original fixed base color — fully backward compatible with every
+   *  existing caller that passes no style at all. */
+  groundColor?: [number, number, number];
+  wallColor?: [number, number, number];
+  shadowColor?: [number, number, number];
+  /** Material accent colors used by feature overlays below (corrosion/stains/vegetation/damaged
+   *  modules). Deliberately separate from groundColor/wallColor/shadowColor and never a
+   *  gameplay-meaning color (player/enemy/boss accents are reserved — see
+   *  docs/asset-pipeline/VISUAL_STYLE_GUIDE.md §3); callers should pass a biome's own material
+   *  palette here, not an actor accent. */
+  accentColor?: [number, number, number];
+  accentColor2?: [number, number, number];
+  /** Requested overlay features. Use partitionTilesetFeatures() first if you need to disclose
+   *  which of these were actually renderable. */
+  features?: readonly string[];
+}
+
+function tileHash(seed: number, a: number, b: number, salt: number): number {
+  let h = (seed * 9301 + 49297 + a * 7919 + b * 104729 + salt * 1299709) >>> 0;
+  h ^= h << 13;
+  h ^= h >>> 17;
+  h ^= h << 5;
+  return (h >>> 0) / 4294967296;
+}
+
+function blendTowards(base: [number, number, number], target: [number, number, number], amount: number): [number, number, number] {
+  return [
+    Math.round(base[0] + (target[0] - base[0]) * amount),
+    Math.round(base[1] + (target[1] - base[1]) * amount),
+    Math.round(base[2] + (target[2] - base[2]) * amount),
+  ];
+}
+
+/**
+ * Same 16px-tile / ground-vs-wall-band structure as always (tile boundaries and the ground/wall
+ * split are never moved by a style or feature — only the fixed-identity colors and an additive
+ * overlay pass change), now with an optional per-biome material style. With no `style` argument
+ * this reproduces the exact original output byte-for-byte (verified by
+ * `png.test.ts`'s backward-compatibility case).
+ */
+export function generateTilesetSource(seed: number, size = 128, style?: TilesetBiomeStyle): Buffer {
   const rng = (n: number) => ((seed * 9301 + 49297 + n) % 233280) / 233280;
   const rgba = new Uint8Array(size * size * 4);
+  const groundBase = style?.groundColor ?? [60, 62, 70];
+  const wallBase = style?.wallColor ?? [45, 48, 55];
+  const shadowBase = style?.shadowColor ?? [20, 22, 30];
+  const groundRange: [number, number, number] = [40, 35, 30];
+  const wallRange: [number, number, number] = [25, 20, 20];
+  const shadowRange: [number, number, number] = [15, 15, 20];
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
@@ -894,21 +1695,91 @@ export function generateTilesetSource(seed: number, size = 128): Buffer {
       const isWall = x < 16 || x >= size - 16;
       const n = rng(tileX + tileY * 8);
 
+      let r: number, g: number, b: number;
       if (isGround) {
-        rgba[i] = Math.floor(60 + n * 40);
-        rgba[i + 1] = Math.floor(62 + n * 35);
-        rgba[i + 2] = Math.floor(70 + n * 30);
-        rgba[i + 3] = 255;
+        r = groundBase[0] + n * groundRange[0];
+        g = groundBase[1] + n * groundRange[1];
+        b = groundBase[2] + n * groundRange[2];
       } else if (isWall && tileY < 4) {
-        rgba[i] = Math.floor(45 + n * 25);
-        rgba[i + 1] = Math.floor(48 + n * 20);
-        rgba[i + 2] = Math.floor(55 + n * 20);
-        rgba[i + 3] = 255;
+        r = wallBase[0] + n * wallRange[0];
+        g = wallBase[1] + n * wallRange[1];
+        b = wallBase[2] + n * wallRange[2];
       } else {
-        rgba[i] = Math.floor(20 + n * 15);
-        rgba[i + 1] = Math.floor(22 + n * 15);
-        rgba[i + 2] = Math.floor(30 + n * 20);
-        rgba[i + 3] = 255;
+        r = shadowBase[0] + n * shadowRange[0];
+        g = shadowBase[1] + n * shadowRange[1];
+        b = shadowBase[2] + n * shadowRange[2];
+      }
+      rgba[i] = Math.min(255, Math.max(0, Math.floor(r)));
+      rgba[i + 1] = Math.min(255, Math.max(0, Math.floor(g)));
+      rgba[i + 2] = Math.min(255, Math.max(0, Math.floor(b)));
+      rgba[i + 3] = 255;
+    }
+  }
+
+  const { supported } = partitionTilesetFeatures(style?.features);
+  if (supported.length > 0) {
+    const accent = style?.accentColor ?? [140, 90, 60];
+    const accent2 = style?.accentColor2 ?? [90, 100, 70];
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const i = (y * size + x) * 4;
+        const tileX = Math.floor(x / 16);
+        const tileY = Math.floor(y / 16);
+        const localX = x % 16;
+        const localY = y % 16;
+        const isGround = y >= size * 0.5;
+        const isWall = x < 16 || x >= size - 16;
+        const isStructure = isGround || (isWall && tileY < 4);
+        if (!isStructure) continue;
+        const base: [number, number, number] = [rgba[i]!, rgba[i + 1]!, rgba[i + 2]!];
+        let out = base;
+
+        // panel_grates: a regular dark cross-hatch every 4px within wall panels — reads as a
+        // riveted/grated structural panel without moving the tile's own boundary.
+        if (supported.includes('panel_grates') && isWall && tileY < 4) {
+          if (localX % 4 === 0 || localY % 4 === 0) out = blendTowards(out, shadowBase, 0.35);
+        }
+
+        // corrosion: irregular rust-toned blotches, deterministic per source pixel (same seed ->
+        // identical speckle pattern every time).
+        if (supported.includes('corrosion')) {
+          const speck = tileHash(seed, x, y, 11);
+          if (speck > 0.86) out = blendTowards(out, accent, 0.55 + (speck - 0.86) * 3);
+        }
+
+        // stains: a handful of deterministic vertical streaks per tile column, darker/desaturated.
+        if (supported.includes('stains')) {
+          const streakSeed = tileHash(seed, tileX, 0, 23);
+          const streakX = Math.floor(streakSeed * 16);
+          if (Math.abs(localX - streakX) <= 1 && tileHash(seed, tileX, tileY, 29) > 0.4) {
+            out = blendTowards(out, accent2, 0.3 + (localY / 16) * 0.3);
+          }
+        }
+
+        // damaged_modules: a whole wall tile, chosen deterministically (~1 in 5), recolored as an
+        // exposed/broken panel — the tile grid cell itself is untouched, only its fill differs.
+        if (supported.includes('damaged_modules') && isWall && tileY < 4) {
+          const damaged = tileHash(seed, tileX, tileY, 37) > 0.8;
+          if (damaged) {
+            const edge = localX < 2 || localX > 13 || localY < 2 || localY > 13;
+            out = edge ? blendTowards(out, shadowBase, 0.6) : blendTowards(out, accent, 0.4);
+          }
+        }
+
+        // vegetation: small deterministic speckle clusters + thin vine-like vertical hints on
+        // wall panels, using the biome's own accent (never a gameplay-meaning color).
+        if (supported.includes('vegetation') && isWall && tileY < 4) {
+          const clusterSeed = tileHash(seed, tileX, tileY, 41);
+          if (clusterSeed > 0.7) {
+            const vineX = Math.floor(tileHash(seed, tileX, tileY, 43) * 16);
+            const near = Math.abs(localX - vineX) <= (localY % 3 === 0 ? 1 : 0);
+            if (near || tileHash(seed, x, y, 47) > 0.9) out = blendTowards(out, accent2, 0.5);
+          }
+        }
+
+        rgba[i] = out[0];
+        rgba[i + 1] = out[1];
+        rgba[i + 2] = out[2];
       }
     }
   }

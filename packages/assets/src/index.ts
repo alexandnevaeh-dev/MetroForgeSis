@@ -1,4 +1,27 @@
-export { encodePng, decodePngRgba, generateProceduralSprite, generateTilesetSource, generateWalkCycleSheet, generateHurtFlashSheet, generateAttackSheet, generateVfxTexture, knockoutVfxBackground } from './png.js';
+export { encodePng, decodePngRgba, generateProceduralSprite, generateTilesetSource, generateWalkCycleSheet, generateRunCycleSheet, generateHurtFlashSheet, generateAttackSheet, generateVfxTexture, knockoutVfxBackground, computeFrameQualityMetrics, generateProgressionSheet, generateDeathSheet, generatePoseStill, POSE_TRANSFORMS } from './png.js';
+export type { ProgressionSheetOptions, AttackArcKind, PoseTransformSpec } from './png.js';
+export { PLAYER_ANIMATION_SPEC, PLAYER_ANIMATION_NAMES, buildAnimationMetadataSidecar } from './player-animation-spec.js';
+export type { PlayerAnimationDefinition, PlayerAnimationGenerationMode, AttackSyncMetadata, AnimationMetadataSidecar } from './player-animation-spec.js';
+export {
+  createAssetGenerationGateway,
+  classifyFailure,
+  isFallbackEligible,
+  LegacyAssetGenerationGateway,
+  FoundryAssetGenerationGateway,
+  CompositeAssetGenerationGateway,
+} from './gateway/index.js';
+export type {
+  AssetGenerationBackend,
+  AssetGenerationBackendId,
+  AssetGenerationRequest,
+  AssetGenerationOutcome,
+  AssetGenerationSuccess,
+  AssetGenerationFailure,
+  AssetGenerationFailureClass,
+  AssetGenerationLicense,
+  AssetGenerationDiagnostics,
+  AssetGenerationGateway,
+} from './gateway/index.js';
 export {
   generateParallaxStrip,
   punchParallaxAlpha,
@@ -7,16 +30,42 @@ export {
   PARALLAX_STRIP_SIZE,
 } from './parallax-strip.js';
 export type { ParallaxLayerName } from './parallax-strip.js';
-export type { SpriteSpec, VfxSpec } from './png.js';
-export { PixelArtProcessor } from './pixel-art-processor.js';
-export type { PixelArtOptions, PixelArtResult } from './pixel-art-processor.js';
+export type { SpriteSpec, VfxSpec, FrameQualityMetrics } from './png.js';
+export {
+  PixelArtProcessor,
+  fitOpaqueIntoFrame,
+  opaquePixelBounds,
+  pickActorSubjectBounds,
+  addSilhouetteOutline,
+  SILHOUETTE_ACCENT_CYAN,
+} from './pixel-art-processor.js';
+export type { PixelArtOptions, PixelArtResult, OpaqueBounds } from './pixel-art-processor.js';
 export { ComfyUIProvider } from './providers/comfyui.js';
 export type { ComfyUIConfig } from './providers/comfyui.js';
+export { validateComfyUIWorkflowContract } from './providers/comfyui-workflow-contract.js';
+export type { ComfyUIWorkflowContract, ComfyUIWorkflowValidation } from './providers/comfyui-workflow-contract.js';
 export { DiffusersProvider } from './providers/diffusers.js';
-export type { DiffusersConfig } from './providers/diffusers.js';
+export type { DiffusersConfig, PromptBudgetResult, PromptSideBudget, SegmentForegroundResult } from './providers/diffusers.js';
+export { APPLE_NATIVE_MPS_PROFILE, createAppleNativeMpsProvider, appleNativeMpsRegistration } from './providers/apple-native-mps-profile.js';
+export {
+  APPLE_NATIVE_MPS_PROFILE_V2, CURATED_STYLE_V2, CURATED_NEGATIVE_PROMPT_V2, CURATED_NEGATIVE_PROMPT_V2_NO_SCENERY,
+  CURATED_NEGATIVE_PROMPT_V2_NO_DUPLICATE, APPLE_NATIVE_MPS_V2_SUBJECTS, createAppleNativeMpsProviderV2,
+  curatedArtDirectionV2, createForegroundIsolationProvider,
+} from './providers/apple-native-mps-profile.js';
+export { DreamOProvider, LocalVisualFleetProvider, PulidProvider, QwenImageEditProvider } from './providers/local-visual-fleet.js';
+export type { LocalVisualFleetConfig } from './providers/local-visual-fleet.js';
 export { NvidiaImageProvider } from './providers/nvidia-image.js';
+export { LocalSpriteWorkerProvider } from './providers/local-sprite-worker.js';
+export { LocalSpriteWorkerImageAdapter } from './providers/local-sprite-worker-adapter.js';
+export type { LocalAssetEngineCapabilities, LocalCharacterSheetRequest, LocalCharacterSheetResult, LocalAssetEngineError } from './providers/local-sprite-worker.js';
+export { buildLocalCharacterSheetManifest, ManifestValidationError } from './local-asset-manifest.js';
+export type { LocalAssetManifest } from './local-asset-manifest.js';
+export { NvidiaImageEditProvider } from './providers/nvidia-image-edit.js';
 export { Automatic1111Provider } from './providers/automatic1111.js';
 export { HuggingFaceImageProvider } from './providers/huggingface-image.js';
+export { PollinationsImageProvider } from './providers/pollinations-image.js';
+export type { PollinationsImageConfig } from './providers/pollinations-image.js';
+export { ensurePngBuffer, isPngBuffer, isJpegBuffer } from './image-format.js';
 export { KenneyProvider, KENNEY_CATALOG } from './providers/kenney.js';
 export { OpenGameArtProvider } from './providers/opengameart.js';
 export { StabilityProvider } from './providers/stability.js';
@@ -64,6 +113,15 @@ export type {
   ImageProviderHealthReport,
 } from './types/image-gen.js';
 export { healthReportIsSelectable, resolveImageProviderHealth } from './types/image-gen.js';
+export type {
+  ImageEditRequest,
+  ImageEditResult,
+  ImageEditPurpose,
+  AssetReference,
+  GeneratedImage,
+  EditGenerationProvenance,
+  ImageEditor,
+} from './types/image-edit.js';
 export {
   defaultConditioningStrength,
   resolveConditioningStrength,
@@ -78,16 +136,123 @@ export type {
 } from './image-router.js';
 export { VLMCritic, runDeterministicAssetChecks } from './vlm-critic.js';
 export type { AssetCritiqueRequest, VLMCriticConfig, DeterministicAssetChecks } from './vlm-critic.js';
+export { HttpRemoteVisualWorkerClient } from './execution/http-worker-client.js';
+export { sha256Bytes, sourceImageFromPath, RemoteWorkerError, ProviderGpuOomError, DEFAULT_REMOTE_WORKER_TIMEOUTS } from './execution/remote-worker.js';
+export type { ExecutionTarget, ExecutionTargetType, RemoteSourceImage, RemoteVisualRequest, RemoteVisualResult, RemoteVisualWorkerClient, RemoteModelState, RemoteWorkerTimeouts, GpuOomDetail, CostTier } from './execution/remote-worker.js';
+export { RunPodExecutionBackend } from './execution/runpod.js';
+export type { RunPodConfig, RunPodDoctorReport, RunPodReadiness, RunPodDeploymentMode } from './execution/runpod.js';
+export {
+  HuggingFaceSpaceExecutionBackend,
+  DEFAULT_HF_SPACE_TIMEOUTS,
+  HF_QWEN_DETERMINISTIC_INFER,
+  serializeHfGalleryInput,
+  buildHfInferPayload,
+  createHfSessionHash,
+  promptSha256,
+  wrapHfTransportError,
+  HfTransportError,
+  HfStageError,
+} from './execution/huggingface-space.js';
+export type { HuggingFaceSpaceConfig, HuggingFaceSpaceDoctorReport, HfSpaceApiSchema, HfSpaceProviderState, HfSpaceReadiness, HfSpaceErrorCode, HfSpaceTimeouts, HfGradioFileData, HfGalleryImageEntry, HfSpaceApiInput, HfNetworkStage } from './execution/huggingface-space.js';
+export { LightningExecutionBackend } from './execution/lightning.js';
+export type { LightningConfig, LightningDoctorReport, LightningReadiness } from './execution/lightning.js';
+export { kaggleNotebookDoctor, colabNotebookDoctor } from './execution/dev-profiles.js';
+export type { KaggleNotebookConfig, KaggleNotebookReport, ColabNotebookConfig, ColabNotebookReport } from './execution/dev-profiles.js';
+export { selectFreeExecutionRoute } from './execution/free-routing.js';
+export type { FreeRoutableBackend, FreeRoutingDecision } from './execution/free-routing.js';
 export { createVisionCritic } from './vision-critic-factory.js';
+export { referenceStatusForRegistration } from './identity/reference-capabilities.js';
+export type { ReferenceReadiness, ReferenceProviderStatus } from './identity/reference-capabilities.js';
 export type { VisionCritic, VisionCriticFactoryConfig } from './vision-critic-factory.js';
 export { NvidiaVisionCritic } from './providers/nvidia-vision-critic.js';
+export { validateHostedImageRequest, hostedRequestBody, hostedEditRequestBody, encodeNvidiaReferenceImage, buildNimImageEditMultipart, extractNimEditImageBytes, parseNvidiaErrorBody, classifyNvidiaHttpFailure } from './providers/nvidia-image-contract.js';
+export type { NvidiaImageEndpointFamily, NvidiaImageErrorCategory, NvidiaProviderDiagnostic, NormalizedNvidiaImageRequest, NormalizedNvidiaEditRequest } from './providers/nvidia-image-contract.js';
+export {
+  resolveNvidiaDeploymentConfig,
+  resolveCapabilityDeployment,
+  probeNvidiaNimHealth,
+  remoteNimRequirements,
+  classifyNimErrorFromMessage,
+  resolveNimApiKey,
+  evaluateNimEditPreflightGate,
+  normalizeNimBaseUrl,
+  buildNimEndpoint,
+} from './providers/nvidia-nim.js';
+export type {
+  NvidiaDeploymentConfig,
+  NvidiaCapabilityDeployment,
+  NvidiaNimHealthReport,
+  NvidiaNimLifecycleState,
+  NvidiaCombinedDoctorReport,
+  NvidiaNimEditPreflightGate,
+} from './providers/nvidia-nim.js';
+export {
+  resolveNvidiaConfig,
+  buildNvidiaProvenance,
+  toNvidiaPersistedAssetRecord,
+  hashNvidiaPrompt,
+  catalogSummary,
+  nvidiaModelsForCapability,
+  assertNoSecretLeak,
+} from './providers/nvidia-foundation.js';
+export type {
+  NvidiaResolvedConfig,
+  NvidiaDoctorReport,
+  NvidiaDoctorReadiness,
+  NvidiaAssetProvenance,
+  NvidiaPersistedAssetRecord,
+  NvidiaCapabilityId,
+  TextGenerationCapabilityRequest,
+  VisionAnalyzeRequest,
+  VideoGenerationRequest,
+  ThreeDGenerationRequest,
+} from './providers/nvidia-foundation.js';
+export { NvidiaHttpClient } from './providers/nvidia-http.js';
+export type { NvidiaHttpClientOptions, NvidiaHttpRequestOptions, NvidiaHttpResponse, NvidiaMultipartFilePart } from './providers/nvidia-http.js';
+export {
+  NvidiaCapabilityAdapter,
+  NvidiaProvider,
+  NvidiaStructuredError,
+  classifyNvidiaErrorCode,
+  nvidiaErrorFromHttpStatus,
+} from './providers/nvidia-provider.js';
+export type { NvidiaFoundationErrorCode, NvidiaStructuredErrorInfo } from './providers/nvidia-provider.js';
+export {
+  nvidiaEnabledModels,
+  nvidiaModelById,
+  nvidiaSelectModelForImageTask,
+} from './foundry/nvidia-catalog.js';
+export type {
+  NvidiaModelDescriptor,
+  NvidiaDeploymentType,
+  NvidiaModelStatus,
+} from './foundry/nvidia-catalog.js';
+export { nvidiaSupportsReference, nvidiaSupportsEditing } from './image-task.js';
+export {
+  registerInitialAssetVersion,
+  createEditAssetVersion,
+  getAssetHistory,
+  acceptAssetVersion,
+  rejectAssetVersion,
+  revertToAssetVersion,
+  preserveSourceAsset,
+  loadAssetVersionIndex,
+  hashInstruction,
+} from './asset-versioning.js';
+export type {
+  AssetVersionRecord,
+  EditOperationRecord,
+  AssetVersionIndex,
+  AssetVersionStatus,
+  AssetOperationType,
+} from './asset-versioning.js';
 export { critiqueAnimationSheet, critiqueTilesetSheet } from './animation-critic.js';
 export type { AnimationKind, AnimationCritiqueOptions } from './animation-critic.js';
 export { critiqueGameplayScreenshot, critiqueScreenshotDiversity } from './scene-critic.js';
 export type { GameplayScreenshotCritique } from './scene-critic.js';
-export { evaluateSpriteDimensions, classifySpriteKind, SPRITE_SIZE_CLASSES, expectedGridSize } from './asset-normalizer.js';
-export type { SpriteSizeClass, NormalizationViolation } from './asset-normalizer.js';
-export { TileCompiler, TILE_ATLAS, tileRoleAt } from './tile-compiler.js';
+export { evaluateSpriteDimensions, classifySpriteKind, SPRITE_SIZE_CLASSES, expectedGridSize, validateTechnicalPng } from './asset-normalizer.js';
+export type { SpriteSizeClass, NormalizationViolation, TechnicalImageValidation } from './asset-normalizer.js';
+export { TileCompiler, TILE_ATLAS, tileRoleAt, softenCompiledAtlasSeams } from './tile-compiler.js';
 export type { CompiledTileset, TileRole } from './tile-compiler.js';
 export { pickTerrainVariant, variantAtlasForCell, TERRAIN_VARIANT_ROLES } from './tile-variants.js';
 export { generateUiPanel, generateUiIcon, UI_FOUNDRY_ASSETS } from './ui-foundry.js';
@@ -106,6 +271,71 @@ export { buildPlayerAnimationManifest, poseNamesFromManifest } from './animation
 export type { AnimationManifest, AnimationStateSpec } from './animation-manifest.js';
 export { critiqueAnimationIdentity, assembleContactSheet } from './sprite-qa.js';
 export { nvidiaModelForImageTask, NVIDIA_FLUX_KONTEXT, NVIDIA_FLUX_DEV } from './image-task.js';
-export { AssetPipeline, derivedSourceRelPath, compiledSpriteFrameSize, VFX_TEXTURES } from './asset-pipeline.js';
+export {
+  AssetPipeline,
+  derivedSourceRelPath,
+  compiledSpriteFrameSize,
+  VFX_TEXTURES,
+  proceduralProductionIntent,
+  inferAssetTypeFromPath,
+} from './asset-pipeline.js';
 export type { AssetPipelineOptions, AssetPipelineResult, GeneratedAsset, CompiledSpriteKind } from './asset-pipeline.js';
+export * from './pipeline-v2/index.js';
 export { sanitizeImagePromptText } from './sanitize-image-prompt.js';
+export {
+  planAssetReplacements,
+  buildReplacementPrompt,
+  runVisualEnhancementPass,
+  VisualProviderCircuitBreaker,
+  classifyVisualFailure,
+  isRetryableWithinProvider,
+  isTerminalForProvider,
+  DEFAULT_VISUAL_PROVIDER_EXECUTION_POLICY,
+  DEFAULT_CIRCUIT_BREAKER_CONFIG,
+} from './visual-enhancement/index.js';
+export type {
+  VisualAssetFamily,
+  ReplacementStrategy,
+  ReplacementPriority,
+  AssetReplacementPlan,
+  AssetOrigin,
+  AssetReplacementOutcome,
+  AssetValidationResult,
+  VisualEnhancementSummary,
+  PlannerBaselineAsset,
+  PlanReplacementsInput,
+  PromptBuilderContext,
+  RunVisualEnhancementInput,
+  VisualFailureCategory,
+  VisualProviderExecutionPolicy,
+  CircuitState,
+  CircuitBreakerConfig,
+  VisualProviderCandidate,
+  ProviderAttemptRecord,
+  ProviderRunReport,
+} from './visual-enhancement/index.js';
+export {
+  REFERENCE_LIBRARY_DIR,
+  VisualReferenceLibraryError,
+  loadVisualReferenceLibrary,
+  resolveVisualReferenceTemplate,
+  templatesForRole,
+  resolveSubjectTemplate,
+  buildTemplatePrompt,
+  checkTemplateTokenBudget,
+  resolveConditioning,
+  hexToRgb,
+  archetypeForTemplate,
+  roleForArchetype,
+  templateFillAccent,
+  templateTilesetStyle,
+  templateBackgroundPalette,
+  templatePropFillAccent,
+} from './visual-templates/index.js';
+export type {
+  TemplateSelector,
+  TokenBudgetResult,
+  PromptBudgetChecker,
+  ConditioningCapableRegistration,
+  ConditioningResolution,
+} from './visual-templates/index.js';

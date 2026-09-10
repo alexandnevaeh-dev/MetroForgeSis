@@ -4,7 +4,8 @@
     "outDir": "./dist-electron",
     "rootDir": "./electron",
     "module": "ESNext",
-    "moduleResolution": "bundler"
+    "moduleResolution": "bundler",
+    "paths": {}
   },
   "include": ["electron/**/*"]
 }

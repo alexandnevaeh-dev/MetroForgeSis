@@ -13,6 +13,7 @@ var dash_kind: String = ""
 var dash_timer: float = 0.0
 var is_slamming: bool = false
 var is_wall_sliding: bool = false
+var wall_jump_timer: float = 0.0
 var is_grappling: bool = false
 var grapple_target: Vector2 = Vector2.ZERO
 var in_water: bool = false
@@ -148,6 +149,7 @@ func apply_gravity(delta: float) -> void:
 func tick_timers(delta: float) -> void:
 	jump_buffer_timer = max(0.0, jump_buffer_timer - delta)
 	dash_cooldown_timer = max(0.0, dash_cooldown_timer - delta)
+	wall_jump_timer = max(0.0, wall_jump_timer - delta)
 
 func buffer_jump() -> void:
 	jump_buffer_timer = config.jump_buffer_time

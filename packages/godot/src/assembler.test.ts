@@ -2,8 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { mkdirSync, rmSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { GodotProjectAssembler } from '../src/assembler.js';
+import { GodotProjectAssembler, topDownChestItemDefs } from '../src/assembler.js';
 import type { GameDNA, ProgressionGraph, WorldGraph } from '@metroforge/schemas';
+import type { TopDownOverworld } from '@metroforge/procedural';
 
 const minimalDna: GameDNA = {
   version: '0.1.0',
@@ -199,5 +200,52 @@ describe('GodotProjectAssembler', () => {
     expect(projectGodot).toContain('window/size/viewport_height=720');
     expect(projectGodot).not.toContain('window/stretch/aspect="integer"');
     rmSync(outputDir, { recursive: true, force: true });
+  });
+
+  it('topDownChestItemDefs does not shadow a real item definition with a bare stub', () => {
+    // Regression for the bug RuntimeSmokeTest.gd's item_pickup_consumable_can_be_triggered
+    // caught: a chest rewarding "health_vial" (already a real consumable with a heal effect in
+    // realItems) used to always get a second, effect-less stub appended after it in items.json,
+    // and InventoryManager's last-wins-by-id lookup picked that stub — so the pickup ran but
+    // healed nothing. Same shape for a dnaAbility id ("wind_disc") that's also a real item.
+    const overworld: TopDownOverworld = {
+      version: '0.1.0',
+      seed: 1,
+      worldStyle: 'continuous',
+      startAreaId: 'overworld',
+      victoryAreaId: 'dungeon_000_r0',
+      chunkCols: 1,
+      chunkRows: 1,
+      chunkWidthTiles: 8,
+      chunkHeightTiles: 8,
+      regions: [{ id: 'region_0', name: 'R0', theme: 'marsh' }],
+      dungeonItemId: 'wind_disc',
+      dungeonItemsById: {},
+      areas: [
+        {
+          id: 'overworld',
+          name: 'Overworld',
+          kind: 'overworld',
+          widthTiles: 8,
+          heightTiles: 8,
+          tileSize: 32,
+          tiles: [],
+          collisionRects: [],
+          pois: [
+            { id: 'chest_0', areaId: 'overworld', kind: 'chest', x: 0, y: 0, metadata: { itemId: 'health_vial' } },
+            { id: 'chest_1', areaId: 'overworld', kind: 'chest', x: 0, y: 0, metadata: { itemId: 'dungeon_000_key' } },
+          ],
+        },
+      ],
+    };
+    const realItems = [
+      { id: 'health_vial', category: 'consumable', effects: [{ type: 'heal', value: 30 }] },
+      { id: 'wind_disc', category: 'relic', effects: [] },
+    ];
+    const defs = topDownChestItemDefs(overworld, [{ id: 'wind_disc', name: 'Wind Disc' }], realItems);
+    const ids = defs.map((d) => d.id);
+    expect(ids).not.toContain('health_vial');
+    expect(ids).not.toContain('wind_disc');
+    expect(ids).toContain('dungeon_000_key');
   });
 });

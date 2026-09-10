@@ -42,6 +42,85 @@ function composedGameplayPng(): Buffer {
   return encodePng(width, height, rgba);
 }
 
+function smoothAtmosphericGameplayPng(): Buffer {
+  const width = 160;
+  const height = 90;
+  const rgba = new Uint8Array(width * height * 4);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      const withinFrame = x >= 16 && x <= width - 16 && y >= 12 && y <= height - 10;
+      if (!withinFrame) {
+        rgba[i + 3] = 0;
+        continue;
+      }
+
+      const horizon = 48 + Math.sin(x * 0.11) * 8;
+      const skyGlow = 20 + Math.cos((x + y) * 0.18) * 10;
+      const mist = 28 + Math.sin((x - y) * 0.12) * 8;
+      const terrain = 20 + Math.cos(x * 0.16) * 8 + Math.sin(y * 0.5) * 4;
+
+      let r = 0;
+      let g = 0;
+      let b = 0;
+      if (y < horizon) {
+        r = Math.min(255, Math.max(0, skyGlow + 18));
+        g = Math.min(255, Math.max(0, skyGlow + 32));
+        b = Math.min(255, Math.max(0, mist + 46));
+      } else {
+        r = Math.min(255, Math.max(0, terrain + 14));
+        g = Math.min(255, Math.max(0, terrain + 8));
+        b = Math.min(255, Math.max(0, terrain + 6));
+      }
+
+      const cloudBand = Math.max(0, 1 - Math.abs(y - (horizon - 6)) / 18);
+      r = Math.min(255, r + cloudBand * 16);
+      g = Math.min(255, g + cloudBand * 18);
+      b = Math.min(255, b + cloudBand * 25);
+
+      rgba[i] = r;
+      rgba[i + 1] = g;
+      rgba[i + 2] = b;
+      rgba[i + 3] = 255;
+    }
+  }
+
+  fillRect(rgba, width, 18, 50, 38, 58, [132, 98, 80, 255]);
+  fillRect(rgba, width, 50, 44, 70, 56, [164, 142, 110, 255]);
+  fillRect(rgba, width, 92, 40, 118, 52, [136, 120, 106, 255]);
+  fillRect(rgba, width, 56, 60, 78, 68, [112, 82, 66, 255]);
+  fillRect(rgba, width, 102, 58, 128, 68, [120, 92, 74, 255]);
+  fillRect(rgba, width, 12, 8, width - 12, 12, [48, 58, 62, 255]);
+  fillRect(rgba, width, 12, 8, 28, 12, [72, 154, 88, 255]);
+  fillRect(rgba, width, 34, 8, 52, 12, [180, 120, 72, 255]);
+  fillRect(rgba, width, 60, 8, 80, 12, [100, 150, 196, 255]);
+  fillRect(rgba, width, 12, 71, width - 12, height, [34, 30, 28, 255]);
+  return encodePng(width, height, rgba);
+}
+
+function wallpaperPatternPng(): Buffer {
+  const width = 160;
+  const height = 90;
+  const rgba = new Uint8Array(width * height * 4);
+  const tile = 32;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      const tileX = Math.floor(x / tile);
+      const tileY = Math.floor(y / tile);
+      const alt = ((tileX + tileY) % 2 === 0) ? 0 : 1;
+      const c = alt ? 46 : 42;
+      const subtle = ((x % 8) + (y % 8)) % 2 === 0 ? 0 : 1;
+      const v = c + subtle;
+      rgba[i] = v;
+      rgba[i + 1] = v + 5;
+      rgba[i + 2] = v + 10;
+      rgba[i + 3] = 255;
+    }
+  }
+  return encodePng(width, height, rgba);
+}
+
 describe('critiqueGameplayScreenshot', () => {
   it('passes a structured HUD + world frame', () => {
     const result = critiqueGameplayScreenshot(composedGameplayPng());
@@ -106,6 +185,19 @@ describe('critiqueGameplayScreenshot', () => {
     expect(result.issues.some((issue) => issue.includes('wallpapered') || issue.includes('occupancy'))).toBe(
       true,
     );
+  });
+
+  it('passes a smooth atmospheric background when it still has edges and structure', () => {
+    const result = critiqueGameplayScreenshot(smoothAtmosphericGameplayPng());
+    expect(result.passed).toBe(true);
+    expect(result.issues.some((issue) => issue.toLowerCase().includes('wallpaper'))).toBe(false);
+    expect(result.issues.some((issue) => issue.toLowerCase().includes('hud'))).toBe(false);
+  });
+
+  it('fails a true wallpaper pattern instead of accepting it as atmospheric gameplay', () => {
+    const result = critiqueGameplayScreenshot(wallpaperPatternPng());
+    expect(result.passed).toBe(false);
+    expect(result.issues.some((issue) => issue.toLowerCase().includes('wallpaper'))).toBe(true);
   });
 
   it('fails a dimmed victory overlay capture', () => {

@@ -1,4 +1,4 @@
-export { QAValidator, RepairEngineer, gateState } from './validator.js';
+export { QAValidator, RepairEngineer, gateState, validateWorldSceneArchetypeIntegrity } from './validator.js';
 export type { QAGateResult, QAReport, QAGateState } from './validator.js';
 export { deriveValidationLevel } from './validation-level.js';
 export type { ValidationLevel } from './validation-level.js';
@@ -22,6 +22,12 @@ export { QualityDirector } from './quality-director.js';
 export { scoreVisualQuality, fingerprintFile, mapDefectToRepair, VISUAL_QUALITY_GATES, VISUAL_REPAIR_BUDGET } from './visual-quality.js';
 export type { VisualQaInputs, VisualQaResult } from './visual-quality.js';
 export { planVisualRepairs, applyVisualRepairs } from './visual-repair.js';
+export { classifyAssetTier, certifyVisualAssets, writeAssetFoundryReport, readAssetFoundryReport, DEFAULT_VISUAL_CERTIFICATION_POLICY } from './asset-foundry-quality.js';
+export type { AssetQualityRecord, AssetFoundryQualityReport, VisualCertificationPolicy } from './asset-foundry-quality.js';
+export { buildAssetProvenanceReport, classifyAssetProvenance, writeAssetProvenanceReport } from './asset-provenance-report.js';
+export type { AssetProvenanceCategory, AssetProvenanceInput, AssetProvenanceRecord, AssetProvenanceReport } from './asset-provenance-report.js';
+export { buildProductionAssetFamilies, productionSliceReady } from './production-family.js';
+export type { FamilyAssetInput } from './production-family.js';
 export type { VisualRepairRecord } from './visual-repair.js';
 export { evaluateTerrainProject, evaluateParallaxProject } from './visual-gates.js';
 export {

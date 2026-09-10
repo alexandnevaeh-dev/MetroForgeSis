@@ -12,6 +12,7 @@
     { "path": "../../packages/generation" },
     { "path": "../../packages/tools" },
     { "path": "../../packages/ai" },
-    { "path": "../../packages/qa" }
+    { "path": "../../packages/qa" },
+    { "path": "../../packages/assets" }
   ]
 }

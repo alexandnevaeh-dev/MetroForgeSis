@@ -19,10 +19,11 @@ import { _electron as electron } from 'playwright';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(__dirname, '..');
 const DESKTOP = join(REPO, 'apps', 'desktop');
-const OUT = join(REPO, 'docs', 'ui-audit', 'screenshots');
-const INDEX_MD = join(REPO, 'docs', 'ui-audit', 'SCREENSHOT_INDEX.md');
-const INDEX_JSON = join(REPO, 'docs', 'ui-audit', 'SCREENSHOT_INDEX.json');
-const CONTACT = join(REPO, 'docs', 'ui-audit', 'metroforge-contact-sheet.png');
+const AUDIT_ROOT = resolve(process.env.METROFORGE_SCREENSHOT_OUTPUT_DIR ?? join(REPO, 'docs', 'ui-audit'));
+const OUT = join(AUDIT_ROOT, 'screenshots');
+const INDEX_MD = join(AUDIT_ROOT, 'SCREENSHOT_INDEX.md');
+const INDEX_JSON = join(AUDIT_ROOT, 'SCREENSHOT_INDEX.json');
+const CONTACT = join(AUDIT_ROOT, 'metroforge-contact-sheet.png');
 
 const require = createRequire(join(DESKTOP, 'package.json'));
 const electronPath = require('electron');
@@ -76,11 +77,6 @@ const EXTRA_RESOLUTIONS = (process.env.METROFORGE_SCREENSHOT_RESOLUTIONS ?? '192
 
 const records = [];
 const missing = [];
-
-function parseSize(label) {
-  const [w, h] = label.split('x').map(Number);
-  return { w, h };
-}
 
 async function sleep(ms) {
   await new Promise((r) => setTimeout(r, ms));
@@ -279,7 +275,6 @@ async function main() {
   for (const item of NAV) {
     console.log(`Screen: ${item.label}`);
     await goNav(page, item.label);
-    const base = `${item.file}-${primary.label}`;
     // Also write canonical short name for primary resolution
     await shot(page, item.file, {
       screen: item.id,

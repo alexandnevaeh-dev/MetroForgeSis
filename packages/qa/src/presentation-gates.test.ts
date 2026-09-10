@@ -4,8 +4,18 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { scoreVisualQuality } from '../src/visual-quality.js';
 import { applyVisualRepairs, planVisualRepairs } from '../src/visual-repair.js';
-import { aggregateIndependentGates, evaluateCharacterScale } from '../src/presentation-gates.js';
+import { aggregateIndependentGates, detectDebugHud, evaluateCharacterScale } from '../src/presentation-gates.js';
 import { combineQualityScores } from '../src/quality-scoring.js';
+
+it('distinguishes presentation HUD mode from screenshot obstruction evidence', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'presentation-hud-'));
+  mkdirSync(join(dir, 'scripts', 'UI'), { recursive: true });
+  writeFileSync(
+    join(dir, 'scripts', 'UI', 'GameHUD.gd'),
+    'METROFORGE_CAPTURE\nfunc _is_presentation_hud():\n return mode == "PRESENTATION_CAPTURE"',
+  );
+  expect(detectDebugHud(dir, ['HUD band is so filled it likely obstructs gameplay'])).toBe(false);
+});
 
 describe('independent visual gates', () => {
   it('caps overall by commercial presentation', () => {
