@@ -157,6 +157,11 @@ func _clear_injected(room: Node) -> void:
 				sprite.modulate = Color.WHITE
 		elif n.begins_with("NPC"):
 			(child as CanvasItem).modulate = Color.WHITE
+			(child as CanvasItem).light_mask = 1
+			var npc_sprite := child.get_node_or_null("Sprite") as CanvasItem
+			if npc_sprite:
+				npc_sprite.material = null
+				npc_sprite.light_mask = 1
 
 func _replace_stretched_background(room: Node, size: Vector2, biome: String) -> void:
 	var bg := room.get_node_or_null("Background")
@@ -406,7 +411,7 @@ func _enable_terrain_lighting(room: Node, archetype: String = "") -> void:
 			if archetype == "ability_shrine":
 				# Walkable floor/platforms pick up the localized furnace light.
 				# RearWall uses a different mask so the glow does not flatten the hearth.
-				layer.modulate = Color(1.02, 0.94, 0.84, 1)
+				layer.modulate = Color(0.96, 0.90, 0.84, 1)
 			else:
 				layer.modulate = Color(0.86, 0.94, 0.98, 1)
 		elif node_name == "RearWall" and archetype == "ability_shrine":
@@ -528,45 +533,139 @@ func _ability_shrine_mouth_rect(size: Vector2) -> Rect2:
 	return Rect2(x, y, w, h)
 
 
-func _ember_gradient_texture() -> GradientTexture2D:
-	var g := Gradient.new()
-	g.offsets = PackedFloat32Array([0.0, 0.5, 0.82, 1.0])
-	g.colors = PackedColorArray([
-		Color(0.05, 0.01, 0.01, 1),
-		Color(0.28, 0.06, 0.02, 1),
-		Color(0.72, 0.18, 0.04, 1),
-		Color(0.95, 0.36, 0.06, 1),
-	])
-	var tex := GradientTexture2D.new()
-	tex.gradient = g
-	tex.width = 128
-	tex.height = 256
-	tex.fill = GradientTexture2D.FILL_LINEAR
-	tex.fill_from = Vector2(0.5, 0.0)
-	tex.fill_to = Vector2(0.5, 1.0)
-	return tex
+func _mute_shrine_npc(npc: Node2D) -> void:
+	if npc == null:
+		return
+	# Source NPC sheet is a saturated mustard cube. Multiplicative modulate
+	# cannot desaturate it, and hearth PointLights re-yellow anything on mask 1.
+	npc.modulate = Color.WHITE
+	npc.light_mask = 0
+	var sprite := npc.get_node_or_null("Sprite") as CanvasItem
+	if sprite == null:
+		return
+	sprite.light_mask = 0
+	var shader := Shader.new()
+	shader.code = """shader_type canvas_item;
+void fragment() {
+	vec4 tex = texture(TEXTURE, UV);
+	float luma = dot(tex.rgb, vec3(0.299, 0.587, 0.114));
+	vec3 soot = vec3(0.22, 0.23, 0.24);
+	vec3 body = soot + vec3(luma * 0.22);
+	body *= vec3(0.88, 0.94, 1.05);
+	COLOR = vec4(body, tex.a);
+}
+"""
+	var material := ShaderMaterial.new()
+	material.shader = shader
+	sprite.material = material
+
+
+func _furnace_hash(x: int, y: int) -> int:
+	var n := x * 374761393 + y * 668265263
+	n = (n ^ (n >> 13)) * 1274126177
+	return n & 0x7fffffff
+
+
+func _furnace_interior_texture(width: int, height: int) -> ImageTexture:
+	var img := Image.create(maxi(width, 8), maxi(height, 8), false, Image.FORMAT_RGBA8)
+	_paint_furnace_interior(img)
+	return ImageTexture.create_from_image(img)
+
+
+func _paint_furnace_interior(img: Image) -> void:
+	var w := img.get_width()
+	var h := img.get_height()
+	var pickup_keepout := 56
+	var cavity := Color(0.028, 0.014, 0.012, 1.0)
+	var cavity_low := Color(0.046, 0.018, 0.012, 1.0)
+	var coal := Color(0.11, 0.05, 0.03, 1.0)
+	var coal_hot := Color(0.68, 0.24, 0.05, 1.0)
+	var coal_core := Color(0.88, 0.42, 0.07, 1.0)
+	var ash := Color(0.06, 0.032, 0.024, 1.0)
+	var grate := Color(0.10, 0.085, 0.082, 1.0)
+	var rim := Color(0.16, 0.13, 0.12, 1.0)
+	var rim_top := Color(0.22, 0.17, 0.14, 1.0)
+	for y in range(h):
+		var t := float(y) / float(maxi(h - 1, 1))
+		var lift := clampf((t - 0.78) / 0.22, 0.0, 1.0)
+		var row := cavity.lerp(cavity_low, lift)
+		for x in range(w):
+			var edge := maxf(
+				clampf(1.0 - float(x) / 18.0, 0.0, 1.0),
+				clampf(1.0 - float(w - 1 - x) / 18.0, 0.0, 1.0),
+			)
+			edge = maxf(edge, clampf(1.0 - float(y) / 22.0, 0.0, 1.0))
+			var pix := row.lerp(cavity.darkened(0.35), edge * 0.55)
+			if (_furnace_hash(x, y) % 1000) < 14:
+				pix = pix.lightened(0.012)
+			img.set_pixel(x, y, pix)
+	for i in 16:
+		var lx := pickup_keepout + 8 + (_furnace_hash(i, 11) % maxi(w - pickup_keepout - 24, 8))
+		var ly := h - 5 - (_furnace_hash(i, 3) % 7)
+		var rw := 4 + (_furnace_hash(i, 1) % 5)
+		var rh := 3 + (_furnace_hash(i, 2) % 4)
+		var hot := (_furnace_hash(i, 7) % 10) >= 7
+		for y in range(ly - rh, ly + 1):
+			for x in range(lx - rw, lx + rw):
+				if x < pickup_keepout or x >= w - 3 or y < 3 or y >= h - 3:
+					continue
+				var dx := absi(x - lx)
+				var dy := absi(y - ly)
+				if dx * rh + dy * rw > rw * rh + 2:
+					continue
+				var n := float(_furnace_hash(x, y) % 1000) / 1000.0
+				var col := coal
+				if n > 0.55:
+					col = ash
+				if hot and dx <= 1 and dy <= 1:
+					col = coal_core if n > 0.72 else coal_hot
+				elif hot and n > 0.82:
+					col = coal_hot
+				img.set_pixel(x, y, col)
+	var bar_x := 40
+	var bar_top := int(h * 0.48)
+	while bar_x < w - 10:
+		for y in range(bar_top, h - 3):
+			for dx in range(3):
+				var px := bar_x + dx
+				if px >= 0 and px < w:
+					img.set_pixel(px, y, grate)
+		bar_x += 28
+	var gy := h - 16
+	for x in range(3, w - 3):
+		for dy in range(3):
+			var py := gy + dy
+			if py >= 0 and py < h:
+				img.set_pixel(x, py, grate)
+	for i in range(3):
+		for x in range(w):
+			img.set_pixel(x, i, rim_top)
+			img.set_pixel(x, h - 1 - i, rim)
+		for y in range(h):
+			img.set_pixel(i, y, rim)
+			img.set_pixel(w - 1 - i, y, rim)
 
 
 func _inject_shrine_hearth_lights(room: Node, size: Vector2, host: Node, tex: Texture2D) -> void:
 	var mouth := _ability_shrine_mouth_rect(size)
 	var hearth := PointLight2D.new()
 	hearth.name = "ShrineHearthLight"
-	hearth.position = Vector2(mouth.position.x + mouth.size.x * 0.5, mouth.position.y + mouth.size.y * 0.72)
+	hearth.position = Vector2(mouth.position.x + mouth.size.x * 0.62, mouth.position.y + mouth.size.y - 16.0)
 	hearth.texture = tex
-	hearth.color = Color(1.0, 0.46, 0.14, 1)
-	hearth.energy = 0.72
-	hearth.texture_scale = 0.48
+	hearth.color = Color(1.0, 0.42, 0.12, 1)
+	hearth.energy = 0.32
+	hearth.texture_scale = 0.26
 	hearth.range_item_cull_mask = 1
 	hearth.z_index = 5
 	hearth.shadow_enabled = false
 	host.add_child(hearth)
 	var sill := PointLight2D.new()
 	sill.name = "ShrineSillLight"
-	sill.position = Vector2(mouth.position.x + mouth.size.x * 0.5, mouth.end.y - 8.0)
+	sill.position = Vector2(mouth.position.x + mouth.size.x * 0.58, mouth.end.y + 6.0)
 	sill.texture = tex
-	sill.color = Color(1.0, 0.58, 0.18, 1)
-	sill.energy = 0.42
-	sill.texture_scale = 0.28
+	sill.color = Color(1.0, 0.38, 0.10, 1)
+	sill.energy = 0.22
+	sill.texture_scale = 0.16
 	sill.range_item_cull_mask = 1
 	sill.z_index = 5
 	sill.shadow_enabled = false
@@ -578,8 +677,8 @@ func _inject_shrine_hearth_lights(room: Node, size: Vector2, host: Node, tex: Te
 		halo.position = pickup.position + Vector2(0, -14.0)
 		halo.texture = tex
 		halo.color = Color(0.95, 0.92, 0.72, 1)
-		halo.energy = 0.85
-		halo.texture_scale = 0.26
+		halo.energy = 0.70
+		halo.texture_scale = 0.20
 		halo.range_item_cull_mask = 1
 		halo.z_index = 8
 		halo.shadow_enabled = false
@@ -589,56 +688,40 @@ func _inject_shrine_hearth_lights(room: Node, size: Vector2, host: Node, tex: Te
 func _inject_shrine_mouth_embers(room: Node, size: Vector2) -> void:
 	var host := _host(room)
 	var mouth := _ability_shrine_mouth_rect(size)
-	var emitter := GPUParticles2D.new()
-	emitter.name = "ShrineMouthEmbers"
-	emitter.position = Vector2(mouth.position.x + mouth.size.x * 0.5, mouth.end.y - 12.0)
-	emitter.amount = 10
-	emitter.lifetime = 1.6
-	emitter.preprocess = 0.6
-	emitter.explosiveness = 0.0
-	emitter.z_index = -3
-	emitter.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	var mat := ParticleProcessMaterial.new()
-	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
-	mat.emission_box_extents = Vector3(mouth.size.x * 0.28, 8.0, 1)
-	mat.direction = Vector3(0, -1, 0)
-	mat.spread = 12.0
-	mat.initial_velocity_min = 10.0
-	mat.initial_velocity_max = 28.0
-	mat.gravity = Vector3(0, -18.0, 0)
-	mat.scale_min = 0.08
-	mat.scale_max = 0.16
-	mat.color = Color(1.0, 0.48, 0.12, 0.7)
-	emitter.process_material = mat
-	host.add_child(emitter)
+	var keepout := 56.0
+	var span := maxf(mouth.size.x - keepout - 24.0, 8.0)
+	for i in 4:
+		var spark := ColorRect.new()
+		spark.name = "ShrineMouthEmber_%d" % i
+		spark.size = Vector2(2, 2)
+		spark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		spark.color = Color(1.0, 0.45, 0.10, 0.55) if i % 2 == 0 else Color(0.85, 0.22, 0.05, 0.40)
+		spark.position = Vector2(
+			mouth.position.x + keepout + 12.0 + float((i * 71) % int(span)),
+			mouth.position.y + mouth.size.y - 10.0 - float(i % 3)
+		)
+		spark.z_index = -4
+		spark.z_as_relative = false
+		spark.light_mask = 0
+		host.add_child(spark)
 
 
 func _dress_ability_shrine(room: Node, size: Vector2) -> void:
-	## Shrine-only readability: hot firebox, pickup halo/outline, muted NPC block.
+	## Shrine-only readability: recessed furnace interior, pickup halo/outline, muted NPC.
 	## Does not change collision, camera, or HUD.
 	var host := _host(room)
 	var mouth := _ability_shrine_mouth_rect(size)
-	var ember := Sprite2D.new()
-	ember.name = "ShrineHearthEmber"
-	ember.texture = _ember_gradient_texture()
-	ember.centered = true
-	ember.position = mouth.position + mouth.size * 0.5
-	ember.scale = Vector2(mouth.size.x / 128.0, mouth.size.y / 256.0)
-	ember.z_index = -5
-	ember.z_as_relative = false
-	ember.light_mask = 0
-	ember.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	host.add_child(ember)
-	var coals := ColorRect.new()
-	coals.name = "ShrineHearthCoals"
-	coals.position = Vector2(mouth.position.x + 12.0, mouth.end.y - 14.0)
-	coals.size = Vector2(mouth.size.x - 24.0, 12.0)
-	coals.color = Color(0.92, 0.28, 0.04, 0.78)
-	coals.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	coals.z_index = -5
-	coals.z_as_relative = false
-	coals.light_mask = 0
-	host.add_child(coals)
+	var furnace := Sprite2D.new()
+	furnace.name = "ShrineFurnaceInterior"
+	furnace.centered = false
+	furnace.texture = _furnace_interior_texture(int(mouth.size.x), int(mouth.size.y))
+	furnace.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	furnace.position = mouth.position
+	furnace.scale = Vector2.ONE
+	furnace.z_index = -5
+	furnace.z_as_relative = false
+	furnace.light_mask = 0
+	host.add_child(furnace)
 	var pickup := _find_named_prefix(room, "AbilityPickup")
 	if pickup:
 		pickup.z_index = 8
@@ -653,10 +736,7 @@ func _dress_ability_shrine(room: Node, size: Vector2) -> void:
 					mat.set_shader_parameter("outline_color", Color(0.98, 0.94, 0.72, 0.95))
 					mat.set_shader_parameter("outline_width", 1.0)
 					sprite.material = mat
-	var npc := _find_named_prefix(room, "NPC")
-	if npc:
-		# Keep the block readable as an actor; pull the saturated yellow down.
-		(npc as CanvasItem).modulate = Color(0.34, 0.36, 0.38, 1)
+	_mute_shrine_npc(_find_named_prefix(room, "NPC"))
 
 
 func _find_named_prefix(room: Node, prefix: String) -> Node2D:
