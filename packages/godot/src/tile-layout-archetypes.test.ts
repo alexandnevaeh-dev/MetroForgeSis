@@ -65,6 +65,17 @@ describe('archetype geometry is distinct', () => {
     expect(cM.platformCount).toBeGreaterThanOrEqual(2);
     expect(vM.uniquePlatformHeights).toBeGreaterThanOrEqual(2);
     expect(sM.uniquePlatformHeights).toBeGreaterThanOrEqual(2);
+    const shrine780 = buildRoomTileCells({
+      width: 800,
+      height: 780,
+      tileSize: 32,
+      seed: 20260909,
+      archetype: 'ability_shrine',
+    });
+    const shrineTop = Math.min(...shrine780.platforms.map((p) => p.y));
+    expect(shrine780.platforms.length).toBeGreaterThanOrEqual(2);
+    // Reachable geometry stays in the lower band; camera frames that band.
+    expect(shrineTop).toBeGreaterThan(780 * 0.4);
     const gate = buildRoomTileCells({
       ...input,
       height: 780,

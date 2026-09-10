@@ -7,7 +7,7 @@ import type {
   MaterialLanguage,
 } from '@metroforge/schemas';
 import { VISUAL_DNA_VERSION } from '@metroforge/schemas';
-import { resolveVisualStyleTemplate } from './style-registry.js';
+import { resolveVisualStyleTemplate, styleCueText } from './style-registry.js';
 import { fingerprintFromVisualDNA } from './fingerprint.js';
 
 function shadeHex(hex: string, amount: number): string {
@@ -45,7 +45,9 @@ export function generateVisualDNA(input: {
   styleBible: StyleBible;
 }): VisualDNA {
   const { gameDna, artBible, styleBible } = input;
-  const template = resolveVisualStyleTemplate(gameDna.identity.visualStyle || artBible.visualStyle);
+  const template = resolveVisualStyleTemplate(
+    styleCueText(gameDna) || gameDna.identity.visualStyle || artBible.visualStyle,
+  );
   const hexes = artBible.palette.map((p) => p.hex);
   const global = hexes.length > 0 ? hexes : ['#141820', '#3c4454', '#5a8cdc', '#c84848'];
   const shadows = global.map((h) => shadeHex(h, 0.45));

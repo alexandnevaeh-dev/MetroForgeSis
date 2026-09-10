@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "score": 100,
+  "issues": [],
+  "tags": [
+    "gameplay-screenshot",
+    "scene-consistency"
+  ],
+  "description": "Gameplay screenshot looks structured (106 colors, lumaStdDev 15.5)",
+  "blank": false,
+  "occupancy": 0.4004783950617284,
+  "uniqueColors": 106,
+  "lumaStdDev": 15.479945720759188
+}

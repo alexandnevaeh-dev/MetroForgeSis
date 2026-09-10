@@ -2,6 +2,27 @@ import { decodePngRgba, encodePng } from './png.js';
 
 export type ParallaxLayerName = 'far' | 'mid' | 'near' | 'overlay' | 'foreground';
 
+/** Hex-string palette shape kept for API compatibility with callers that pass a bible
+ *  palette object. generateParallaxStrip's own tone derivation uses the RGB-tuple
+ *  `biomePalette` param; convert with parallaxPaletteToRgb() when only this shape is held. */
+export interface ParallaxStripPalette {
+  global?: string[];
+  shadows?: string[];
+  highlights?: string[];
+  accents?: string[];
+}
+
+export function parallaxPaletteToRgb(p?: ParallaxStripPalette): [number, number, number][] | undefined {
+  const hexes = [...(p?.global ?? []), ...(p?.shadows ?? []), ...(p?.highlights ?? [])];
+  if (hexes.length === 0) return undefined;
+  return hexes.map((hex) => {
+    const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+    if (!m) return [30, 34, 42] as [number, number, number];
+    const n = Number.parseInt(m[1]!, 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255] as [number, number, number];
+  });
+}
+
 export const PARALLAX_STRIP_SIZE: Record<ParallaxLayerName, { width: number; height: number }> = {
   far: { width: 640, height: 360 },
   mid: { width: 640, height: 360 },

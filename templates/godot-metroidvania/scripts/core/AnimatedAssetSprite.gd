@@ -215,26 +215,31 @@ func _load_pose_overrides(frames: SpriteFrames) -> void:
 ## of crashing the scene.
 func _load_animation_frames(frames: SpriteFrames, anim: String, path: String, copy_to_idle: bool) -> void:
 	var res_path := path if path.begins_with("res://") else "res://" + path
-	if ResourceLoader.exists(res_path):
+	# Freshly generated PNGs may exist on disk before Godot's import cache registers them, and
+	# load() can briefly return null for a real, present file right after a large --import pass.
+	# Check both FileAccess and ResourceLoader, and guard the null so the player falls back to the
+	# placeholder frame instead of crashing.
+	if ResourceLoader.exists(res_path) or FileAccess.file_exists(res_path):
 		var tex: Texture2D = _clean_contact_texture(load(res_path))
-		# Derive the real frame count from the sheet's actual width instead of trusting the single
-		# shared `frame_count` export — different animations (e.g. a 12-frame run cycle vs a
-		# 4-frame walk/attack/hurt/death sheet) legitimately have different lengths. Falls back to
-		# frame_count when the width isn't a clean multiple of frame_size.x (unexpected sheet).
-		var sheet_frame_count := frame_count
-		if frame_size.x > 0:
-			var tex_width := tex.get_width()
-			if tex_width > 0 and tex_width % frame_size.x == 0:
-				@warning_ignore("integer_division")  # exact multiple guaranteed by the modulo check above
-				sheet_frame_count = tex_width / frame_size.x
-		for i in range(sheet_frame_count):
-			var atlas := AtlasTexture.new()
-			atlas.atlas = tex
-			atlas.region = Rect2(i * frame_size.x, 0, frame_size.x, frame_size.y)
-			frames.add_frame(anim, atlas, 1.0)
-			if i == 0 and copy_to_idle:
-				frames.add_frame("idle", atlas, 1.0)
-		return
+		if tex != null:
+			# Derive the real frame count from the sheet's actual width instead of trusting the
+			# single shared `frame_count` export — different animations (e.g. a 12-frame run cycle
+			# vs a 4-frame walk/attack/hurt/death sheet) legitimately have different lengths. Falls
+			# back to frame_count when the width isn't a clean multiple of frame_size.x.
+			var sheet_frame_count := frame_count
+			if frame_size.x > 0:
+				var tex_width := tex.get_width()
+				if tex_width > 0 and tex_width % frame_size.x == 0:
+					@warning_ignore("integer_division")  # exact multiple guaranteed by the modulo check above
+					sheet_frame_count = tex_width / frame_size.x
+			for i in range(sheet_frame_count):
+				var atlas := AtlasTexture.new()
+				atlas.atlas = tex
+				atlas.region = Rect2(i * frame_size.x, 0, frame_size.x, frame_size.y)
+				frames.add_frame(anim, atlas, 1.0)
+				if i == 0 and copy_to_idle:
+					frames.add_frame("idle", atlas, 1.0)
+			return
 
 	push_warning("AnimatedAssetSprite: sheet not found for '%s': %s" % [anim, res_path])
 	var img := Image.create(frame_size.x, frame_size.y, false, Image.FORMAT_RGBA8)

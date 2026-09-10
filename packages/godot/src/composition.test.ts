@@ -81,6 +81,14 @@ describe('repetition', () => {
     expect(next.map((c) => `${c.x},${c.y}`)).toEqual(cells.map((c) => `${c.x},${c.y}`));
     expect(analyzeRepetition(next).longestRun).toBeLessThanOrEqual(4);
   });
+
+  it('substitutes vertical identical-tile runs without moving cells', () => {
+    const cells = Array.from({ length: 20 }, (_, y) => ({ x: 3, y, col: 1, row: 0 }));
+    const next = suppressRepetition(cells, 7);
+    expect(next).toHaveLength(20);
+    expect(next.map((c) => `${c.x},${c.y}`)).toEqual(cells.map((c) => `${c.x},${c.y}`));
+    expect(analyzeRepetition(next).longestRun).toBeLessThanOrEqual(4);
+  });
 });
 
 describe('composePlayableVisuals', () => {

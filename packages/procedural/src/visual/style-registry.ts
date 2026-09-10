@@ -175,6 +175,22 @@ export const VISUAL_STYLE_TEMPLATES: VisualStyleTemplate[] = [
   },
 ];
 
+/** Concatenate identity + premise so LOCAL_ONLY DNA (`visualStyle: "HD pixel art"`) still
+ *  matches style keywords from the user prompt (foundry, gothic, grove, …). */
+export function styleCueText(input: {
+  identity?: { visualStyle?: string; title?: string; tagline?: string };
+  narrative?: { premise?: string };
+}): string {
+  return [
+    input.identity?.visualStyle,
+    input.identity?.title,
+    input.identity?.tagline,
+    input.narrative?.premise,
+  ]
+    .filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
+    .join(' ');
+}
+
 export function resolveVisualStyleTemplate(visualStyle: string): VisualStyleTemplate {
   const lower = visualStyle.toLowerCase();
   let best = VISUAL_STYLE_TEMPLATES[0]!;

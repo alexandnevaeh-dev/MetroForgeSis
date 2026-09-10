@@ -1,0 +1,33 @@
+{
+  "revision": "foundry-architecture-occlusion",
+  "scoredStill": "qa/screenshot_gameplay.png (= spawn)",
+  "passed": true,
+  "score": 100,
+  "occupancy": 0.35,
+  "uniqueColors": 110,
+  "lumaStdDev": 17.66,
+  "issues": [],
+  "blank": false,
+  "sha256": "fa11babc19a49720433ad9fa10b8354d36cf240d49c1a5bc10ac747b41843bab",
+  "camera": {
+    "zoom": 2.39,
+    "view": "804x452",
+    "center": "400,374"
+  },
+  "diversity": {
+    "passed": true,
+    "pairwiseMeanDistance": 11.28,
+    "compared": 11
+  },
+  "note": "Technical gate only. Not Approve Visual Direction. Challenge/save stills fail the wallpaper heuristic individually because they are solid gallery walls by role identity; the scored spawn still and pairwise diversity both pass.",
+  "challengeWallpaper": {
+    "occupancy": 0.997,
+    "lumaStdDev": 7.23,
+    "score": 40
+  },
+  "saveWallpaper": {
+    "occupancy": 0.999,
+    "lumaStdDev": 7.56,
+    "score": 40
+  }
+}

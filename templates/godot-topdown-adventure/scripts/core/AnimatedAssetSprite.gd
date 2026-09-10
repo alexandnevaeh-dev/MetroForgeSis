@@ -130,9 +130,10 @@ func _load_animation_frames(frames: SpriteFrames, anim: String, path: String, co
 	# load() can actually return the compiled texture — observed directly running RuntimeSmokeTest
 	# immediately after a large fresh --import pass under heavy concurrent machine load, where
 	# load() returned null for a real, present, correctly-imported file and crashed the very next
-	# .get_width() call. Falls through to the same missing-file placeholder path below instead of
-	# crashing the whole script (and, transitively, every check downstream of it).
-	if ResourceLoader.exists(res_path) and load(res_path) != null:
+	# .get_width() call. A freshly generated PNG may also exist on disk before the import cache
+	# registers it at all, so check FileAccess too. Either way, fall through to the placeholder
+	# path below on a null load() instead of crashing the whole script.
+	if (ResourceLoader.exists(res_path) or FileAccess.file_exists(res_path)) and load(res_path) != null:
 		var tex: Texture2D = load(res_path)
 		# Derive the real frame count from the sheet's actual width instead of trusting the single
 		# shared `frame_count` export — a sheet whose actual layout doesn't match `frame_count`

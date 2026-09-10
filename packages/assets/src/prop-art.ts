@@ -20,7 +20,9 @@ function classifyFamily(family: string): PropShape {
   if (f.includes('gear') || f.includes('cog') || f.includes('clock') || f.includes('pendulum')) return 'gear';
   if (f.includes('pipe') || f.includes('exhaust') || f.includes('stack') || f.includes('catwalk')) return 'pipe';
   if (f.includes('lantern') || f.includes('light') || f.includes('lamp') || f.includes('worklamp')) return 'lantern';
-  if (f.includes('shrine') || f.includes('statue') || f.includes('lectern')) return 'statue';
+  if (f.includes('shrine') || f.includes('statue') || f.includes('lectern') || f.includes('save')) return 'statue';
+  if (f.includes('ability') || f.includes('crystal') || f.includes('altar')) return 'lantern';
+  if (f.includes('pickup') || f.includes('scrap') || f.includes('gem') || f.includes('item')) return 'gear';
   if (f.includes('chain') || f.includes('vine') || f.includes('root') || f.includes('moss')) return 'chain';
   return 'debris';
 }
@@ -250,3 +252,64 @@ function isSameShapePixel(shape: PropShape, nx: number, ny: number, seed: number
       return insideDebris(nx, ny, seed);
   }
 }
+
+
+/** Readable fill/accent for world pickups. Never use palette.global[0] (void/sky) —
+ *  Foundry rooms paint that swatch into the background, so interactables vanish. */
+export function interactablePalette(palette?: {
+  global?: string[];
+  accents?: string[];
+  highlights?: string[];
+}): { fill: string; accent: string } {
+  const global = palette?.global ?? [];
+  const accents = palette?.accents ?? [];
+  const highlights = palette?.highlights ?? [];
+  const fill = global[1] ?? accents[0] ?? '#8a6840';
+  const accent = highlights[2] ?? accents[1] ?? global[2] ?? '#48b8c8';
+  return { fill, accent };
+}
+
+/** Actor fill/accent for procedural player/NPC placeholders. Same void skip as
+ *  interactables — palette.global[0] is the Foundry sky. Returns RGBA tuples for SpriteSpec. */
+export function actorPalette(palette?: {
+  global?: string[];
+  accents?: string[];
+  highlights?: string[];
+}): { fill: [number, number, number, number]; accent: [number, number, number, number] } {
+  const { fill, accent } = interactablePalette(palette);
+  const f = hexRgb(fill);
+  const a = hexRgb(accent);
+  return { fill: [f[0], f[1], f[2], 255], accent: [a[0], a[1], a[2], 255] };
+}
+
+const NPC_ROLE_ACCENT: Record<string, [number, number, number]> = {
+  quest_giver: [186, 132, 58],
+  merchant: [70, 150, 110],
+  lore: [140, 110, 180],
+  companion: [90, 150, 190],
+  neutral: [160, 120, 90],
+};
+
+/** NPC placeholders share the courier silhouette. Fill is soot-iron derived from the actor
+ *  brass; role color is a small helmet/pack accent only, not a full-body flood. */
+export function npcActorPalette(
+  role: string,
+  palette?: { global?: string[]; accents?: string[]; highlights?: string[] },
+): { fill: [number, number, number, number]; accent: [number, number, number, number] } {
+  const actor = actorPalette(palette);
+  const fill: [number, number, number, number] = [
+    Math.max(0, actor.fill[0] - 40),
+    Math.max(0, actor.fill[1] - 28),
+    Math.max(0, actor.fill[2] - 16),
+    255,
+  ];
+  const rgb = NPC_ROLE_ACCENT[role] ?? NPC_ROLE_ACCENT.neutral!;
+  return { fill, accent: [rgb[0], rgb[1], rgb[2], 255] };
+}
+
+/** Palette-matched world interactables that replace ColorRect stubs in pickup/save/ability scenes. */
+export const WORLD_INTERACTABLE_ASSETS = [
+  { id: 'world_pickup', path: 'assets/props/interact/pickup.png', family: 'pickup', width: 32, height: 32 },
+  { id: 'world_save_shrine', path: 'assets/props/interact/save_shrine.png', family: 'save_shrine', width: 32, height: 48 },
+  { id: 'world_ability', path: 'assets/props/interact/ability.png', family: 'ability', width: 32, height: 32 },
+] as const;

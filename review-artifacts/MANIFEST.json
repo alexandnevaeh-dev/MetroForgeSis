@@ -1,0 +1,209 @@
+{
+  "codeCommit": "5b0225e",
+  "generation": {
+    "slug": "foundry-visual-slice-div1",
+    "prompt": "Ashen Foundry: a lone courier delves a ruined mechanical forge of brass and sooted iron, side-view metroidvania",
+    "profile": "VISUAL_VERTICAL_SLICE",
+    "mode": "LOCAL_ONLY",
+    "archetype": "SIDE_VIEW_METROIDVANIA",
+    "seed": 20260909,
+    "godot": "4.7.1.stable.official.a13da4feb",
+    "viewport": "1920x1080",
+    "windowedDriver": "opengl3",
+    "visualSliceApproved": false,
+    "visualReviewStatus": "VISUAL_SLICE_REVIEW_REQUIRED"
+  },
+  "files": [
+    {
+      "path": "after/02_traversal.png",
+      "bytes": 339023,
+      "sha256": "0c86b598d78c131a4b6c1198879c4659dfcaa4249130c54da36e88a6cd1cd1f8"
+    },
+    {
+      "path": "after/04_vertical.png",
+      "bytes": 511542,
+      "sha256": "8be6cbc76477c170bf1c11f1039bd81227f881fdb30ddcd2c52a203401f6bc66"
+    },
+    {
+      "path": "after/05_ability.png",
+      "bytes": 125902,
+      "sha256": "2478d44ff449965ae54253d617e7c71c1348c67b44777eacede6ad4fd1cbdbff"
+    },
+    {
+      "path": "after/06_secret.png",
+      "bytes": 373038,
+      "sha256": "e5730fd3f6d64271bcdc7fe9bd36641982ff746b10d238e85c99c2acf20b0106"
+    },
+    {
+      "path": "after/07_checkpoint.png",
+      "bytes": 514840,
+      "sha256": "402fab024d2537395d8c8e7887f7d19fb30f30a60987a2e62dbac75b55c082d5"
+    },
+    {
+      "path": "before/02_traversal.png",
+      "bytes": 337268,
+      "sha256": "69669d192c5bbdad20c38d5766c6e294a57cd89f94cbb4c9a9aaf8aceae12650"
+    },
+    {
+      "path": "before/04_vertical.png",
+      "bytes": 368800,
+      "sha256": "4e3a824bbb62c77df70529efce76fa5674030d012dac803a3f9220d267889523"
+    },
+    {
+      "path": "before/05_ability.png",
+      "bytes": 357413,
+      "sha256": "f3a558459b42bd97397517a383009a894c5e5768bf321ea601f5a727c524f9d9"
+    },
+    {
+      "path": "before/06_secret.png",
+      "bytes": 318137,
+      "sha256": "fcd2766758a58343690dcf02a7b49b884273e310d755fe75fdd5becea3797263"
+    },
+    {
+      "path": "before/07_checkpoint.png",
+      "bytes": 307512,
+      "sha256": "3d1713e8a1ce2e21aeba3b20aeea1197e098c7a1ec957b01582f7a1e6ff7ece5"
+    },
+    {
+      "path": "critic/capture_telemetry.json",
+      "bytes": 1172,
+      "sha256": "3d94d05d911c6367a7502eb516fd19377b22b40cbe6e0f4b38cb2c8b64b1cd0b"
+    },
+    {
+      "path": "critic/screenshot_critique.json",
+      "bytes": 319,
+      "sha256": "2151f7cbee4db50d95c42432994948c2a696842dfd1aa82e240550f9060a0950"
+    },
+    {
+      "path": "critic/screenshot_gameplay.png",
+      "bytes": 355910,
+      "sha256": "2eddef154f46303cf6f1c9bd79b93141e4af786d4dcaf0c6746b8b18f3836cd8"
+    },
+    {
+      "path": "foundry_slice_review_contact_sheet.png",
+      "bytes": 4275938,
+      "sha256": "e606fe4603d73f1c7028b6ec7c15b30943b4a8105a8ca5047471cd669650ec24"
+    },
+    {
+      "path": "player/player_after_64px.png",
+      "bytes": 707,
+      "sha256": "8677d1ed49ee5af0897a119eb80cbec3ba37d3e5715b0969727443ee4a72430f"
+    },
+    {
+      "path": "player/player_after_8x.png",
+      "bytes": 3744,
+      "sha256": "cde68ee2d31f73a502044541f9d101b78961a049da1e1af253ffc283939252a7"
+    },
+    {
+      "path": "player/player_before_64px.png",
+      "bytes": 175,
+      "sha256": "94570ad9b8b7e2c894d6f9f40ae0339157d4e0df88575a1542c60d1eb58873a4"
+    },
+    {
+      "path": "player/player_before_8x.png",
+      "bytes": 3742,
+      "sha256": "8c2981b168ebb82a6f350e1a18bcdaaec9517a75fd28db87d27052dce0be0718"
+    },
+    {
+      "path": "player/player_before_after_8x.png",
+      "bytes": 13020,
+      "sha256": "7e0a9a6f711f38ce120d79c592621e54d29d5badf2d69806324c60df5a8fd263"
+    },
+    {
+      "path": "collision/02_traversal_collision.png",
+      "bytes": 136281,
+      "sha256": "d041b2d6be9f4fa6659a74c11f8545202820a4f5c6c18980294a075bbb781907"
+    },
+    {
+      "path": "collision/04_vertical_collision.png",
+      "bytes": 129954,
+      "sha256": "dff9b7697e807c05be0a7dee49f5117845f3375d1bce10535cb1ddff564d7ee8"
+    },
+    {
+      "path": "collision/05_ability_collision.png",
+      "bytes": 106473,
+      "sha256": "7023f7dc0563331c48846b5f8bb1ddb9a366ce9d3d22a8a4f073a9ae27fa329e"
+    },
+    {
+      "path": "collision/07_checkpoint_collision.png",
+      "bytes": 140871,
+      "sha256": "4cc1b4932589dc991040e9815bd7a48d36d4ff8b96c138ade17d74f63ff4ad4b"
+    },
+    {
+      "path": "spawn_before_after.png",
+      "bytes": 501709,
+      "sha256": "a36d8ad7f62ea92baee2324f5c084a6a3866b0222042f3d77a67e0e3494e23a0"
+    },
+    {
+      "path": "camera-visibility/audit.json",
+      "bytes": 27819,
+      "sha256": "349c9f9b50609fa400f7e40de5c1b886de405a87f4e4662b37c4ff6827db3935"
+    },
+    {
+      "path": "camera-visibility/AUDIT.md",
+      "bytes": 4850,
+      "sha256": "358e77e221ad4f4c84a876709bc4ce0c0ffde40478ccc23153dae42bae133701"
+    },
+    {
+      "path": "camera-visibility/triptych_room000_platform1_approach_apex_landing.png",
+      "bytes": 188514,
+      "sha256": "9e00422419a197e852ffa213267836ac96fa50e273bc625ae392b76b0a270f64"
+    },
+    {
+      "path": "camera-visibility/room_001__Platform_0__approach.png",
+      "bytes": 132931,
+      "sha256": "5546f50be6a64a3421d67827979b62ef1bdea10ad364d6a3cb762a8e12b00330"
+    },
+    {
+      "path": "camera-visibility/room_002__Transition_right_room_003__approach.png",
+      "bytes": 132579,
+      "sha256": "b1e8d89253d3d158e4fb9cabf6283b03782f4002ca9c903d3bc1e8e66e80d22f"
+    },
+    {
+      "path": "camera-visibility/DIVERSITY.md",
+      "bytes": 934,
+      "sha256": "290ed6b88d5055c88696353fc1012226f01620684d5fdcfdc0c4884fd10ee850"
+    },
+    {
+      "path": "camera-visibility/continuous/continuous_findings.json",
+      "bytes": 146840,
+      "sha256": "6a3a42f732c4240046473bb615e90fff15a6f3dcd2ded0e5446a9b0683955329"
+    },
+    {
+      "path": "camera-visibility/continuous/traversal_room_000.mp4",
+      "bytes": 91039,
+      "sha256": "8e888f672b3888e03b858ff08fd938f3ccc37832748489bfdb6e9a37e8eee384"
+    },
+    {
+      "path": "camera-visibility/continuous/traversal_room_001.mp4",
+      "bytes": 83248,
+      "sha256": "8cd12e3a5141772906aacecd5e8e40ff8dd6bb05dce5867af367d27f58763898"
+    },
+    {
+      "path": "camera-visibility/continuous/traversal_room_002.mp4",
+      "bytes": 138849,
+      "sha256": "6f5aa486c618bc0499fa8316228a91861b49a81c6c3fc49bc356653d61c8ca85"
+    },
+    {
+      "path": "camera-visibility/continuous/traversal_room_003.mp4",
+      "bytes": 238214,
+      "sha256": "0d4038cf08035a2da12d8ffbd5efcf19b5f0d18450928c91320c50bdd31b1434"
+    },
+    {
+      "path": "camera-visibility/continuous/traversal_room_008.mp4",
+      "bytes": 160323,
+      "sha256": "6aa3939efef30ba70d597a42bc607c475f0040ec962581036cc69826ab7bb830"
+    },
+    {
+      "path": "camera-visibility/continuous/traversal_room_009.mp4",
+      "bytes": 88343,
+      "sha256": "a2c1e9e53f088ffba012af5431fe3ef4115cc035b191a1165e1b4b9074d231a5"
+    },
+    {
+      "path": "camera-visibility/continuous_traversal_recorder.gd",
+      "bytes": 4986,
+      "sha256": "58ec2422495b801c2a4319165ecb8bc4280d72e8c69b4a58ca543cf3cdcbf3a0"
+    }
+  ],
+  "codeCommitShort": "5b0225e"
+}

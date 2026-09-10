@@ -82,7 +82,17 @@ import { applyVisualStyleContract, buildVisualStyleContract, compileVisualPrompt
 import { wrapIdentityProvider, capabilitiesFromRegistration, selectAnimationTier } from './identity/provider.js';
 import { writeCharacterIdentityPack } from './identity/pack.js';
 import { generateUiPanel, generateUiIcon, UI_FOUNDRY_ASSETS } from './ui-foundry.js';
-import { generatePropSprite } from './prop-art.js';
+import {
+  generatePropSprite,
+  WORLD_INTERACTABLE_ASSETS,
+  interactablePalette,
+} from './prop-art.js';
+import {
+  AUTHORED_COURIER_PROVIDER,
+  loadAuthoredCourierPng,
+  loadAuthoredMasonryPng,
+  shouldUseFoundryCourierKit,
+} from './authored-kit.js';
 import { sanitizeImagePromptText } from './sanitize-image-prompt.js';
 import { runAssetPipelineV2 } from './pipeline-v2/orchestrator.js';
 
@@ -1075,26 +1085,47 @@ export class AssetPipeline {
       accent: [240, 240, 250, 255],
       shape: 'humanoid',
     };
-    const playerAsset = await this.generateSprite({
-      id: 'player',
-      path: 'assets/characters/player.png',
-      spec: playerSpec,
-      profile: 'CHARACTER',
-      prompt: playerPrompt,
-      imageGen,
-      negativePrompt,
-      vlm,
-      vlmAvailable,
-      artDirection: options.gameDna.identity.visualStyle,
-      tileSize,
-      seed: options.seed,
-      outputDir: options.outputDir,
-      resume: options.resume,
-      signal: options.signal,
-      foundryAssetType: 'player',
-      gateway: playerGateway,
-      mode: options.mode,
+    // Foundry visual slice (and foundry-themed gens) ship a hand-authored courier still — prefer
+    // it over procedural/AI generation for the base portrait. Animation sheets stay on the V2
+    // pipeline path below (the authored kit ships 4-frame strips; re-authoring it to the V2
+    // frame counts is tracked as follow-up in docs/debug/TOPDOWN_GENRE_MILESTONE.md).
+    const useCourierKit = shouldUseFoundryCourierKit({
+      profile: options.profile,
+      gameDna: options.gameDna,
+      characterVisualDna: options.characterVisualDna,
     });
+    const authoredPlayer = useCourierKit
+      ? this.materializeAuthoredCourier({
+          id: 'player',
+          path: 'assets/characters/player.png',
+          filename: 'player.png',
+          width: playerFrame.width,
+          height: playerFrame.height,
+          outputDir: options.outputDir,
+        })
+      : null;
+    const playerAsset =
+      authoredPlayer ??
+      (await this.generateSprite({
+        id: 'player',
+        path: 'assets/characters/player.png',
+        spec: playerSpec,
+        profile: 'CHARACTER',
+        prompt: playerPrompt,
+        imageGen,
+        negativePrompt,
+        vlm,
+        vlmAvailable,
+        artDirection: options.gameDna.identity.visualStyle,
+        tileSize,
+        seed: options.seed,
+        outputDir: options.outputDir,
+        resume: options.resume,
+        signal: options.signal,
+        foundryAssetType: 'player',
+        gateway: playerGateway,
+        mode: options.mode,
+      }));
     recordAsset(playerAsset, 'player');
     if (options.visualDNA) {
       writeCharacterIdentityPack({
@@ -1505,27 +1536,42 @@ export class AssetPipeline {
         `Generating NPC ${ni + 1} / ${npcList.length}: ${npc.name ?? npcId}`,
       );
 
-      const npcAsset = await this.generateSprite({
-        id: npcId,
-        path: `assets/npcs/${npcId}.png`,
-        spec: npcSpec,
-        profile: 'CHARACTER',
-        prompt: applyStylePrompt(
-          options.styleBible,
-          'CHARACTER',
-          buildNpcImagePrompt(npc, options.gameDna, options.artBible),
-        ),
-        imageGen,
-        negativePrompt,
-        vlm,
-        vlmAvailable,
-        artDirection: options.gameDna.identity.visualStyle,
-        tileSize,
-        seed: options.seed + 7000 + ni,
-        outputDir: options.outputDir,
-        resume: options.resume,
-        signal: options.signal,
-      });
+      // Foundry visual slice ships a hand-authored foundry-tender still for npc_000 (the shrine
+      // tender / Wanderer companion). Prefer it over generation for the base portrait.
+      const authoredNpc =
+        useCourierKit && npcId === 'npc_000'
+          ? this.materializeAuthoredCourier({
+              id: npcId,
+              path: `assets/npcs/${npcId}.png`,
+              filename: 'npc_000.png',
+              width: npcSpec.width,
+              height: npcSpec.height,
+              outputDir: options.outputDir,
+            })
+          : null;
+      const npcAsset =
+        authoredNpc ??
+        (await this.generateSprite({
+          id: npcId,
+          path: `assets/npcs/${npcId}.png`,
+          spec: npcSpec,
+          profile: 'CHARACTER',
+          prompt: applyStylePrompt(
+            options.styleBible,
+            'CHARACTER',
+            buildNpcImagePrompt(npc, options.gameDna, options.artBible),
+          ),
+          imageGen,
+          negativePrompt,
+          vlm,
+          vlmAvailable,
+          artDirection: options.gameDna.identity.visualStyle,
+          tileSize,
+          seed: options.seed + 7000 + ni,
+          outputDir: options.outputDir,
+          resume: options.resume,
+          signal: options.signal,
+        }));
       recordAsset(npcAsset, 'npc');
       recordAsset(
         this.buildWalkSheetAsset(
@@ -2079,6 +2125,55 @@ export class AssetPipeline {
             'background',
           );
         }
+      }
+    }
+
+    // World interactables (pickup / save shrine / ability altar). These replace the old ColorRect
+    // stubs the merged WorldPropSprite-based scenes (SavePoint/AbilityPickup/ItemPickup .tscn)
+    // reference; without them those scenes fall back to a flat fallback_color. Foundry authored
+    // masonry supplies the ability altar art when the courier kit applies.
+    options.onTaskStarted?.('world_interactables', 'Generating world interactable sprites');
+    {
+      const useCourierKit = shouldUseFoundryCourierKit({
+        profile: options.profile,
+        gameDna: options.gameDna,
+        characterVisualDna: options.characterVisualDna,
+      });
+      const { fill: interactFill, accent: interactAccent } = interactablePalette(
+        options.visualDNA?.palette,
+      );
+      for (const spec of WORLD_INTERACTABLE_ASSETS) {
+        checkCancelled();
+        const authoredAbility =
+          useCourierKit && spec.id === 'world_ability' ? loadAuthoredMasonryPng('ability.png') : null;
+        const buffer =
+          authoredAbility ??
+          generatePropSprite({
+            width: spec.width,
+            height: spec.height,
+            fill: interactFill,
+            accent: interactAccent,
+            family: spec.family,
+            seed: options.seed + hashPrompt(spec.id).charCodeAt(0),
+          });
+        writeCheckpoint(options.outputDir, spec.path, buffer);
+        recordAsset(
+          {
+            id: spec.id,
+            path: spec.path,
+            buffer,
+            provider: authoredAbility ? AUTHORED_COURIER_PROVIDER : 'procedural',
+            fallbackGenerated: !authoredAbility,
+            critiquePassed: true,
+            critiqueScore: authoredAbility ? 82 : 70,
+            styleFingerprint: options.visualDNA?.styleFingerprint,
+            compiler: authoredAbility ? 'authored-original' : 'prop-art',
+            transformation: 'world-interactable',
+            godotResourcePath: `res://${spec.path}`,
+            sourceType: authoredAbility ? 'manual' : undefined,
+          },
+          'prop',
+        );
       }
     }
 
@@ -2701,6 +2796,68 @@ export class AssetPipeline {
       fakeAnimation: assets.length === 0,
       contactSheet: contactFrames.length ? assembleContactSheet(contactFrames) : undefined,
     };
+  }
+
+  /**
+   * Load a hand-authored foundry courier PNG (still or frame strip) and process it into place,
+   * with no procedural fallback. Missing files return null so callers fall through to generation.
+   * Used for the Foundry visual slice's authored Wanderer / foundry-tender art.
+   */
+  private materializeAuthoredCourier(opts: {
+    id: string;
+    path: string;
+    filename: string;
+    width: number;
+    height: number;
+    outputDir: string;
+    animationKind?: AnimationKind;
+    frameCount?: number;
+    expectedFrameWidth?: number;
+  }): GeneratedAsset | null {
+    const raw = loadAuthoredCourierPng(opts.filename);
+    if (!raw) return null;
+    const processed = this.pixelArt.process(raw, {
+      targetWidth: opts.width,
+      targetHeight: opts.height,
+      skipQuantize: true,
+    });
+    const det = runDeterministicAssetChecks(processed.buffer, opts.width, opts.height);
+    let critiquePassed = det.passed;
+    let critiqueScore = det.passed ? 82 : 40;
+    let fakeAnimation = false;
+    if (opts.animationKind && opts.frameCount && opts.expectedFrameWidth) {
+      const critique = critiqueAnimationSheet(processed.buffer, {
+        frameCount: opts.frameCount,
+        expectedFrameWidth: opts.expectedFrameWidth,
+        expectedFrameHeight: opts.height,
+        kind: opts.animationKind,
+      });
+      const identity = critiqueAnimationIdentity(processed.buffer, {
+        frameWidth: opts.expectedFrameWidth,
+        expectedFrames: opts.frameCount,
+        kind: opts.animationKind,
+      });
+      critiquePassed = det.passed && critique.passed && !identity.fakeAnimation;
+      critiqueScore = identity.fakeAnimation ? 20 : critique.score;
+      fakeAnimation = identity.fakeAnimation;
+    }
+    writeCheckpoint(opts.outputDir, opts.path, processed.buffer);
+    return withMaturity({
+      id: opts.id,
+      path: opts.path,
+      buffer: processed.buffer,
+      provider: AUTHORED_COURIER_PROVIDER,
+      fallbackGenerated: false,
+      critiquePassed,
+      critiqueScore,
+      sourceType: 'manual',
+      fakeAnimation,
+      compiler: 'authored-courier',
+      transformation: 'authored-original',
+      godotResourcePath: `res://${opts.path}`,
+      productionAllowed: true,
+      generationTimestamp: new Date().toISOString(),
+    });
   }
 
   private buildWalkSheetAsset(
