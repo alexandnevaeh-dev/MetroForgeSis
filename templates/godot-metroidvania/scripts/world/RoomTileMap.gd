@@ -6,6 +6,11 @@ extends TileMapLayer
 @export var tile_size: int = 16
 @export var painted_cells_json: String = ""
 @export var room_archetype: String = "combat"
+## Set to "foundry" by the room-assembler for the Foundry visual slice. Consumed by
+## CameraDirector.apply_room_bounds() (cinematic-plate cover-zoom) and QualityPresentation.
+## Must be declared here so the assembler's `visual_kit = "foundry"` scene line applies and
+## `ground.get("visual_kit")` returns a String instead of null.
+@export var visual_kit: String = ""
 ## JSON array of [start_col, end_col) pairs (end exclusive) the room-assembler carved out as real
 ## pits — the visual backfill below must not repaint these columns solid or the collision gap
 ## (a separate StaticBody2D floor split, see room-assembler.ts buildFloorSection) would look filled.

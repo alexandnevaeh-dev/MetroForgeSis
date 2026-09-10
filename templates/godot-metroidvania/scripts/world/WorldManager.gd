@@ -216,6 +216,10 @@ func _move_camera_to_room(player: Node2D) -> void:
 		var room_height := float(_current_room.get_node_or_null("Ground").get("room_height")) if _current_room and _current_room.get_node_or_null("Ground") else 600.0
 		if camera.has_method("apply_room_bounds"):
 			var ground := _current_room.get_node_or_null("Ground") if _current_room else null
-			var kit := String(ground.get("visual_kit")) if ground else ""
+			var kit := ""
+			if ground:
+				var kit_value = ground.get("visual_kit")
+				if typeof(kit_value) == TYPE_STRING:
+					kit = kit_value
 			camera.apply_room_bounds(Vector2(room_width, room_height), kit)
 		camera.make_current()
