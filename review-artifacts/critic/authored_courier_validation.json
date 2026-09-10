@@ -1,0 +1,61 @@
+{
+  "revision": "authored-foundry-courier",
+  "visualSliceApproved": false,
+  "massBlocked": true,
+  "capture": {
+    "strategy": "windowed_gpu",
+    "driver": "opengl3",
+    "viewport": "1920x1080",
+    "godot": "4.7.1.stable",
+    "spawn": {
+      "shot": "spawn",
+      "zoom": 2.39,
+      "view": "804x452",
+      "center": "400,374",
+      "gameplay_screenshot_qa": {
+        "passed": true,
+        "score": 100,
+        "occupancy": 0.3619,
+        "lumaStdDev": 12.646,
+        "uniqueColors": 40
+      }
+    },
+    "ability_shrine": {
+      "shot": "slice_ability_shrine",
+      "zoom": 2.4,
+      "view": "800x450",
+      "center": "400,555",
+      "informationalCritic": {
+        "passed": true,
+        "score": 100,
+        "occupancy": 0.355,
+        "lumaStdDev": 7.378,
+        "uniqueColors": 59
+      }
+    }
+  },
+  "playtest": {
+    "passed": "8/8",
+    "personaId": "victory_rusher",
+    "elapsedMs": 37997,
+    "roomsVisited": ["room_000", "room_001", "room_002", "room_003", "room_004", "room_005", "room_006", "room_007", "room_008", "room_009"],
+    "gameComplete": true,
+    "inputSimulationUsed": true
+  },
+  "preserved": [
+    "recessed Room 05 furnace",
+    "shrine camera 2.40 / 800x450 / 400,555",
+    "tutorial playable-band framing",
+    "compact HUD",
+    "pickup cream outline",
+    "collision shapes",
+    "screenshot QA thresholds"
+  ],
+  "remainingPlaceholders": [
+    "enemies",
+    "boss",
+    "tiles / masonry kit",
+    "VFX",
+    "HUD chrome"
+  ]
+}
