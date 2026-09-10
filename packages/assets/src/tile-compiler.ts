@@ -116,9 +116,15 @@ function ensureLuma(rgb: [number, number, number], minL: number, maxL: number): 
 }
 
 function asMasonry(rgb: [number, number, number]): [number, number, number] {
-  // Drowned-citadel wet glass-stone. Keep G/B ahead of R so screenshots do not read as greybox.
-  const wet: [number, number, number] = [36, 148, 158];
-  return ensureLuma(mixRgb(rgb, wet, 0.88), 78, 128);
+  // Masonry is derived from the biome palette, not slammed to a fixed hue. Desaturate toward the
+  // tone's own grey so foundry iron reads gunmetal (not a saturated teal that ignored the
+  // mechanical-forge palette), then add only a faint cool slate bias so it keeps G/B just ahead
+  // of R and never collapses to a flat greybox.
+  const L = luma(rgb);
+  const grey: [number, number, number] = [L, L, L];
+  const desat = mixRgb(rgb, grey, 0.6);
+  const slate = mixRgb(desat, [70, 84, 100], 0.3);
+  return ensureLuma(slate, 78, 128);
 }
 
 function pickRoleFills(extracted: [number, number, number][], hex: [number, number, number][]): RoleFills {
