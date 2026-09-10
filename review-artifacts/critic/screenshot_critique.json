@@ -2,16 +2,15 @@
   "passed": false,
   "score": 40,
   "issues": [
-    "Gameplay composition looks wallpapered or occupancy≈1 with low contrast (occupancy 100.0%, lumaStdDev 5.1)",
-    "HUD band is so filled it likely obstructs gameplay"
+    "Gameplay composition looks wallpapered or occupancy≈1 with low contrast (occupancy 98.3%, lumaStdDev 6.4)"
   ],
   "tags": [
     "gameplay-screenshot",
     "scene-consistency"
   ],
-  "description": "Gameplay composition looks wallpapered or occupancy≈1 with low contrast (occupancy 100.0%, lumaStdDev 5.1); HUD band is so filled it likely obstructs gameplay",
+  "description": "Gameplay composition looks wallpapered or occupancy≈1 with low contrast (occupancy 98.3%, lumaStdDev 6.4)",
   "blank": false,
-  "occupancy": 1,
-  "uniqueColors": 79,
-  "lumaStdDev": 5.101122706713186
+  "occupancy": 0.9834182098765432,
+  "uniqueColors": 51,
+  "lumaStdDev": 6.391760521140243
 }

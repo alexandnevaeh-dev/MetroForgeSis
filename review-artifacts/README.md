@@ -10,25 +10,41 @@ Visual approval: **pending**. MASS / LARGE / RC stay **blocked**. Do not merge.
 
 | Field | Value |
 |---|---|
-| Code commit (after stills) | `ddbb8037f6d885c4030163006ebafed5b29b4587` (`ddbb803`) |
-| Message | `fix(godot): composition pass for Foundry rear walls and contain-view sky` |
-| Before stills | Pre-composition recapture of the same prompt/seed, generated from `a04ce27` |
-| Slug | `foundry-visual-slice-pr2` |
-| Prompt | A courier in a furnace foundry, orange claw enemy, 32px industrial kit, side-view metroidvania |
+| Code commit (after stills) | `ddb7163ea5f33d40f7f68467bae822b9f0c7efb6` (`ddb7163`) |
+| Message | `fix(godot): composition pass` (`ddbb803`) + palette color pass: `derive masonry from palette instead of teal` (`e5e6389`) + `warm the far/parallax backdrop from palette` (`ddb7163`) |
+| Before stills | Pre-pass recapture of the same prompt/seed, generated from `a04ce27` |
+| Slug | `foundry-visual-slice-after` (before: `foundry-visual-slice-pr2`) |
+| Prompt | Ashen Foundry: a lone courier delves a ruined mechanical forge of brass and sooted iron, side-view metroidvania |
 | Profile | `VISUAL_VERTICAL_SLICE` |
 | Mode | `LOCAL_ONLY` |
 | Archetype | `SIDE_VIEW_METROIDVANIA` |
 | Seed | `20260909` |
-| Export | `--skip-export` |
 | Godot | `4.7.1.stable.official.a13da4feb` |
 | Viewport | 1920×1080 |
 | Windowed driver | `opengl3` (Linux) |
-| Created | `2026-09-10T04:38:39.442Z` |
-| Job id | `job_mtv1essy_qn84ud` |
+| Created | `2026-09-10T05:06:34Z` |
+| Job id | `job_mtv2c003_5lfxl7` |
 | `visualSliceApproved` | `false` |
 | `visualReviewStatus` | `VISUAL_SLICE_REVIEW_REQUIRED` |
 
-After PNGs are byte-identical to `GeneratedGames/foundry-visual-slice-pr2/reports/{02,04,05,06,07}*.png` from that run.
+After PNGs are byte-identical to `GeneratedGames/foundry-visual-slice-after/reports/{02,04,05,06,07}*.png` from that run.
+
+## What the after pass changed (on top of `ddbb803`)
+
+Two palette-driven color fixes were added so the mechanical-forge identity actually reaches the
+pixels, without touching traversal, collision, or the camera crop:
+
+- **Dense teal tile stacks → gunmetal iron.** `asMasonry()` (`tile-compiler.ts`) no longer mixes
+  every masonry tile 88% toward a hardcoded drowned-citadel teal; it desaturates toward the tone's
+  own grey with a faint cool slate bias. Foundry walls/floors/climb tiles now read as sooted iron.
+- **Navy camera margins → warm soot atmosphere.** The far/parallax backdrop
+  (`parallax-strip.ts`) no longer uses a hardcoded navy night-sky gradient; it derives a warm
+  soot/ember gradient from the biome palette. The camera still uses contain-zoom, so the side
+  margins on taller-than-16:9 rooms read as foundry haze instead of dead navy — **climb geometry
+  is never cropped**.
+- **Courier placeholder.** In `LOCAL_ONLY` there is no image provider, so the player ships the
+  procedural humanoid. It is palette-tinted via `actorPalette()` (`ddbb803`) instead of the old
+  hardcoded blue capsule. Real courier art still requires an image provider (unavailable here).
 
 ## Download map
 
@@ -62,7 +78,7 @@ The FAIL in `validation_report.json` is **not** computed from rooms 02 / 04 / 05
 
 | Source | File | Role |
 |---|---|---|
-| Gate | `qa/screenshot_gameplay.png` | **Scored.** SHA-256 prefix `bb54ae94175497cb`. 1920×1080. |
+| Gate | `qa/screenshot_gameplay.png` | **Scored.** SHA-256 prefix `acb127411c9598a0`. 1920×1080. |
 | Room stills | `qa/screenshot_slice_traversal.png` etc. = `reports/02-traversal.png` … | Same **windowed** RuntimeSmokeTest session; **different PNGs** (different hashes). |
 
 Capture path:
@@ -70,8 +86,8 @@ Capture path:
 1. Headless Godot smoke still hits `texture_2d_get` null (dummy renderer). Those runtime screenshot checks stay SOFT_FAIL. That is **not** the gate input.
 2. `captureGameplayScreenshots` then ran **windowed** Godot (`--rendering-driver opengl3`, `METROFORGE_CAPTURE=1`). Telemetry `strategy` is `windowed_gpu`. The scored frame is **not** blank (occupancy 100%, ~80 quantized colors).
 
-Reported gate numbers (`screenshot_critique.json` / `validation_report`): occupancy **1.0**, uniqueColors **79**, lumaStdDev **5.10112**, score **40**, issues wallpaper + HUD band.
+Reported gate numbers (`screenshot_critique.json` / `validation_report`) for this after run: occupancy **0.983**, uniqueColors **51**, lumaStdDev **6.39**, score **40**, issue wallpaper/low-contrast. The windowed (`windowed_gpu`, `opengl3`) frame is not blank.
 
-Re-running the same function on the PNG now in `critic/screenshot_gameplay.png`: occupancy **1.0**, uniqueColors **80**, lumaStdDev **5.10092**, score **40**, **same two issues**. `capture_telemetry.json` records the windowed retry at 80 colors. That 79 vs 80 gap is 4-bit quantization on the same path after the windowed overwrite; it is **not** a black headless frame and is **not** evidence that the fail is an environment artifact.
+The warm-soot/gunmetal color pass slightly changes the numbers (the old navy run reported occupancy 1.0 / lumaStdDev 5.10 / 80 colors) but the deterministic `gameplay_screenshot_qa` gate **still fails** at score 40: a single spawn still frame is intentionally low-contrast for this heuristic. That is exactly why **visual approval stays pending** — automated QA is not a substitute for human review.
 
-Rooms 02–07, if scored independently with the same function, also fail wallpaper/low-contrast (and some fail lumaStdDev < 4). That is extra context only. The recorded `gameplay_screenshot_qa` FAIL is from `screenshot_gameplay.png`.
+Rooms 02–07, if scored independently with the same function, also trip wallpaper/low-contrast. That is extra context only. The recorded `gameplay_screenshot_qa` FAIL is from `screenshot_gameplay.png`.

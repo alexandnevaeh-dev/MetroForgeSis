@@ -1,47 +1,46 @@
 {
-  "codeCommit": "ddbb8037f6d885c4030163006ebafed5b29b4587",
-  "codeCommitShort": "ddbb803",
+  "codeCommit": "ddb7163ea5f33d40f7f68467bae822b9f0c7efb6",
+  "codeCommitShort": "ddb7163",
   "generation": {
-    "slug": "foundry-visual-slice-pr2",
-    "prompt": "A courier in a furnace foundry, orange claw enemy, 32px industrial kit, side-view metroidvania",
+    "slug": "foundry-visual-slice-after",
+    "prompt": "Ashen Foundry: a lone courier delves a ruined mechanical forge of brass and sooted iron, side-view metroidvania",
     "profile": "VISUAL_VERTICAL_SLICE",
     "mode": "LOCAL_ONLY",
     "archetype": "SIDE_VIEW_METROIDVANIA",
     "seed": 20260909,
-    "skipExport": true,
     "godot": "4.7.1.stable.official.a13da4feb",
     "viewport": "1920x1080",
     "windowedDriver": "opengl3",
-    "createdAt": "2026-09-10T04:38:39.442Z",
-    "jobId": "job_mtv1essy_qn84ud",
+    "createdAt": "2026-09-10T05:06:34Z",
+    "jobId": "job_mtv2c003_5lfxl7",
     "visualSliceApproved": false,
     "visualReviewStatus": "VISUAL_SLICE_REVIEW_REQUIRED"
   },
   "files": [
     {
       "path": "after/02_traversal.png",
-      "bytes": 329111,
-      "sha256": "c86ab2a20196bccb0349505b5c697cbbdfad8d79c0fd0f7a2df9b7a0351aa08a"
+      "bytes": 301118,
+      "sha256": "5d6e3164fde4e6384dcee9346bdd6e52d129593f1317eb179bd0950a75aee01a"
     },
     {
       "path": "after/04_vertical.png",
-      "bytes": 325254,
-      "sha256": "167f607336c24c2c9d5d5e88ab779a473d19de267bd8660c65feb901e33c5735"
+      "bytes": 297421,
+      "sha256": "ffbd30fc4eee79ae0fde530120222b28320606ce92d6168049f102516c88494f"
     },
     {
       "path": "after/05_ability.png",
-      "bytes": 350494,
-      "sha256": "1d5f0e0b9d6c8618ba69ef4a280f96d9ddc85bce2fec68fd5483b132c731f4c0"
+      "bytes": 317624,
+      "sha256": "4dc759a590c6af6d2261d104b8aaf6090c6450f81661a8af85c7d9f13ecd19eb"
     },
     {
       "path": "after/06_secret.png",
-      "bytes": 374638,
-      "sha256": "3d09badd7aeaaa95f3a0da515eab62349af97031ff556971b33033531a04d757"
+      "bytes": 335004,
+      "sha256": "1727352608724312b183da74d116a314ebd63a2eab56b901541fbf9b84a5be36"
     },
     {
       "path": "after/07_checkpoint.png",
-      "bytes": 337148,
-      "sha256": "0d4644efe9847eac5d90de4dd525cfadfbccfeee319e9c2a31753d76a67e6a87"
+      "bytes": 296510,
+      "sha256": "5567e617d2abf28fa6fc9def1376ad9282741c8487166dcc30490f532f722ad6"
     },
     {
       "path": "before/02_traversal.png",
@@ -70,23 +69,23 @@
     },
     {
       "path": "critic/capture_telemetry.json",
-      "bytes": 1167,
-      "sha256": "6742bceae9382e91badb98c846200563d7d80192964d68b3eb3adaa14684b220"
+      "bytes": 1168,
+      "sha256": "1588eb76dea8b0368ae1da3e8d8e33a973f4f85a52e8b89b7992f1c9e72a7477"
     },
     {
       "path": "critic/screenshot_critique.json",
-      "bytes": 570,
-      "sha256": "afbe07d312227d915829e162e8e47f1fd6ff0a810a0e810a6c78a8fe28d6344d"
+      "bytes": 475,
+      "sha256": "35a4f6678319a105bec1487646911a5c1964289e67ca9b824b1d5698d712bc9a"
     },
     {
       "path": "critic/screenshot_gameplay.png",
-      "bytes": 346498,
-      "sha256": "bb54ae94175497cb1cf0ea24e21d33d71b474599fc3fca37bc2f26b82c701adf"
+      "bytes": 306695,
+      "sha256": "acb127411c9598a0a494ac144dd246c928237126a13fdf55a73cbc72b6af7397"
     },
     {
       "path": "foundry_slice_review_contact_sheet.png",
-      "bytes": 977796,
-      "sha256": "7c12fe29fcf803c9606208347ac8affa63b613be44a75cec4a4f5b7a4a77dc7a"
+      "bytes": 2722077,
+      "sha256": "05a38e6f0b962c1b3cb7a8410f5427ef222c7de864e1b076bd2c8a9816291651"
     },
     {
       "path": "player/player_after_64px.png",
