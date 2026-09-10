@@ -2,7 +2,7 @@
   "codeCommit": "b293f22b744f42c132e710009742d41bdc8f8e39",
   "codeCommitShort": "b293f22",
   "generation": {
-    "slug": "foundry-visual-slice-final",
+    "slug": "foundry-visual-slice-v3",
     "prompt": "Ashen Foundry: a lone courier delves a ruined mechanical forge of brass and sooted iron, side-view metroidvania",
     "profile": "VISUAL_VERTICAL_SLICE",
     "mode": "LOCAL_ONLY",
@@ -17,28 +17,28 @@
   "files": [
     {
       "path": "after/02_traversal.png",
-      "bytes": 302612,
-      "sha256": "6eb944825cfef54b526cac96552075e00502bab67787d06532a266dc125d34e8"
+      "bytes": 198581,
+      "sha256": "b5c3f479fadc10ef4734ebe523d2ddca1eb943642cb80ad46b531118e1ec1263"
     },
     {
       "path": "after/04_vertical.png",
-      "bytes": 298300,
-      "sha256": "f96caec1b9953502c3cefa8e09312ef6a7d91c5640cad87b73fdd6559cb1986b"
+      "bytes": 227795,
+      "sha256": "948a6f950fa313692c02ad3957098786468c93df066c603ef3307d62967eec3e"
     },
     {
       "path": "after/05_ability.png",
-      "bytes": 274232,
-      "sha256": "7d4e51768a32b955d15484899be64552f5bd2ceebffaf0b153f57d65f5784963"
+      "bytes": 127825,
+      "sha256": "b5e4fca1e5edde55c5fc4bb38c613e35c4af023adda7cafb1104b9672565659c"
     },
     {
       "path": "after/06_secret.png",
-      "bytes": 335385,
-      "sha256": "26e765f3e17f614e77946936a76fa1ec1064b7bb75da5fd466a52ab3fd91de04"
+      "bytes": 263214,
+      "sha256": "9b06034f5b385de68fc927673d1b6f5edd07097c051f44dda6677d7a5b069459"
     },
     {
       "path": "after/07_checkpoint.png",
-      "bytes": 297638,
-      "sha256": "8059fc2063d8371d3266b9694ee42cfb917b3bf2f67676589edc299259c4669a"
+      "bytes": 267885,
+      "sha256": "e034fa01dbe2916c9dd8d1d2d55727e7941a003b42418713cce307a889beb4b1"
     },
     {
       "path": "before/02_traversal.png",
@@ -67,23 +67,23 @@
     },
     {
       "path": "critic/capture_telemetry.json",
-      "bytes": 1170,
-      "sha256": "16bdd97b29187d80d308e7ed615ef2e818ac938946b76d7e6ee535a4fa7da701"
+      "bytes": 1168,
+      "sha256": "9b5bc9ba12a9c74df412568fe411eba66247d3c6c37189b9367b697bdfbca3bd"
     },
     {
       "path": "critic/screenshot_critique.json",
-      "bytes": 476,
-      "sha256": "828d626aaf082e9094dc45fc373cf5bb16d6876cd09c5fac4e57564a1eead950"
+      "bytes": 460,
+      "sha256": "b598bac30ca29a123037236f83ab66af98275fcf1b07bcee91ca9ed45c57ae6f"
     },
     {
       "path": "critic/screenshot_gameplay.png",
-      "bytes": 306880,
-      "sha256": "8c90bbb7583df60aa160d559d8c0526593c0c54bfcdc4cd73295fd9eaf673a3e"
+      "bytes": 277741,
+      "sha256": "705f6cb5fdedb45090247a27296f38fefb68e7b6fd58b822c30e50c84a64da17"
     },
     {
       "path": "foundry_slice_review_contact_sheet.png",
-      "bytes": 2542686,
-      "sha256": "dd592b778a32a46b038b6e199f1341517c9c00e1747a161a975cb7560201bedd"
+      "bytes": 2673753,
+      "sha256": "1cc7707adb8c2a30094756da18b473dc12c00ff50b91da803da8fc5858ad3c8c"
     },
     {
       "path": "player/player_after_64px.png",
@@ -112,23 +112,23 @@
     },
     {
       "path": "collision/02_traversal_collision.png",
-      "bytes": 125305,
-      "sha256": "cec6a2a8af3699473a32821ef6454f89329585c653e59f83a464b8ec6b8dd35b"
+      "bytes": 126665,
+      "sha256": "1c2ca61838584277c5d1e6b6a910616ff463bf742628d827333a1fc44bebcbba"
     },
     {
       "path": "collision/04_vertical_collision.png",
-      "bytes": 126890,
-      "sha256": "5ef35d19eb8b54130ee44e26f2f9d90cd2ee2a55889e780db1f6c672aa35633c"
+      "bytes": 128027,
+      "sha256": "7717c227aad2e477270c73acca8f02ea9ba288b7d10612481e0cd5e95da65596"
     },
     {
       "path": "collision/05_ability_collision.png",
-      "bytes": 106526,
-      "sha256": "0a5eef436bcf4736fc02cc6f78d06c6cb1025fd144e0aa4c08a0a005a118577b"
+      "bytes": 106473,
+      "sha256": "7023f7dc0563331c48846b5f8bb1ddb9a366ce9d3d22a8a4f073a9ae27fa329e"
     },
     {
       "path": "collision/07_checkpoint_collision.png",
-      "bytes": 136019,
-      "sha256": "55e056cfec09cb9276497b5de21e08348020b8897fa3b52a91bceb9f9cccb230"
+      "bytes": 137262,
+      "sha256": "a6651f38c3e0bfbc0e4cf83483c022d4101f05c4c2ea01be2ec42707b313d5a5"
     }
   ]
 }

@@ -15,7 +15,7 @@ Actors are now procedural courier silhouettes (not mustard cubes). Spawn `gamepl
 | Code commit (after stills) | `b293f22b744f42c132e710009742d41bdc8f8e39` (`b293f22`) |
 | Message | composition + ability-shrine camera pass + palette color pass + readability pass (brighter ledges, courier silhouette, shrine focal core) |
 | Before stills | Pre-pass recapture of the same prompt/seed, generated from `a04ce27` |
-| Slug | `foundry-visual-slice-final` (before: `foundry-visual-slice-pr2`) |
+| Slug | `foundry-visual-slice-v3` (before: `foundry-visual-slice-pr2`) |
 | Prompt | Ashen Foundry: a lone courier delves a ruined mechanical forge of brass and sooted iron, side-view metroidvania |
 | Profile | `VISUAL_VERTICAL_SLICE` |
 | Mode | `LOCAL_ONLY` |
@@ -27,16 +27,18 @@ Actors are now procedural courier silhouettes (not mustard cubes). Spawn `gamepl
 | `visualSliceApproved` | `false` |
 | `visualReviewStatus` | `VISUAL_SLICE_REVIEW_REQUIRED` |
 
-After PNGs are byte-identical to `GeneratedGames/foundry-visual-slice-final/reports/{02,04,05,06,07}*.png` from that run.
+After PNGs are byte-identical to `GeneratedGames/foundry-visual-slice-v3/reports/{02,04,05,06,07}*.png` from that run.
 
 ## Traversal continuity — verified (not inferred from stills)
 
 The vanished tall columns were decorative runtime `RearWall` ribs (`collision_enabled = false`),
 not climb geometry. Evidence:
 
-- **Collidable geometry is byte-identical before vs after.** Every room's `StaticBody2D` +
-  `CollisionShape2D` count and every `RectangleShape2D` size match between `foundry-visual-slice-pr2`
-  (before) and `foundry-visual-slice-final` (after).
+- **Collidable geometry is identical before vs after — positions and transforms included.** For
+  every room a fingerprint of each `CollisionShape2D` (its parent, its `RectangleShape2D` size, and
+  the full parent-chain of `position`/`rotation`/`scale`/`transform`) hashes identically between
+  before (`foundry-visual-slice-pr2`) and after. Counts and sizes alone would not prove this; the
+  fingerprint covers placement too.
 - **Collision overlays** in [`collision/`](collision/) render each room's real collidable
   surfaces (floor + platforms, green) over the art for rooms 02/04/05/07.
 - **Runtime gates pass:** `world_connectivity`, `world_reachability` (all rooms reachable via
@@ -50,10 +52,16 @@ not climb geometry. Evidence:
 - **Courier silhouette:** head + torso + two legs + carrying pack, with the accent limited to a
   small warm helmet band and the pack instead of a full cyan cap.
 - **Focal points:** shrine/save/ability props get a bright luminous core so a checkpoint reads as a
-  focal point. The ability-shrine room (05) is also camera-pinned to the playable band with a
-  furnace hearth (concurrent godot pass).
-- **Still open (follow-ups):** non-shrine rooms (02/04) still frame a tall room with action along
-  the bottom, and the blue vertical beacon elements are unchanged (source not conclusively traced).
+  focal point.
+- **Framing:** the playable-band camera (floor + platforms + jump apex) is now applied to **every**
+  side-view room, not just the shrine, so rooms 02/04 frame the action instead of a tall empty
+  background. Required routes are preserved — full room width is always kept, rooms that exit
+  upward keep full height, and the top crop is capped at 45%. Collision geometry is unchanged
+  (verified above).
+- **Blue beacons — traced and fixed:** the cold-blue vertical lines were the far-plate vault ribs
+  in `paintFarVaultAndLanterns`, hardcoded to `(34,52,108)` (with gold `(168,148,78)` lanterns),
+  scaled up on the far plate. They are now derived from the palette (warm structural rib + warm
+  amber lantern), and the near-parallax chains are warmed too.
 
 ## What the after pass changed (on top of `ddbb803`)
 
@@ -104,7 +112,7 @@ The FAIL in `validation_report.json` is **not** computed from rooms 02 / 04 / 05
 
 | Source | File | Role |
 |---|---|---|
-| Gate | `qa/screenshot_gameplay.png` | **Scored.** SHA-256 prefix `8c90bbb7583df60a`. 1920×1080. |
+| Gate | `qa/screenshot_gameplay.png` | **Scored.** SHA-256 prefix `705f6cb5fdedb450`. 1920×1080. |
 | Room stills | `qa/screenshot_slice_traversal.png` etc. = `reports/02-traversal.png` … | Same **windowed** RuntimeSmokeTest session; **different PNGs** (different hashes). |
 
 Capture path:
@@ -112,8 +120,8 @@ Capture path:
 1. Headless Godot smoke still hits `texture_2d_get` null (dummy renderer). Those runtime screenshot checks stay SOFT_FAIL. That is **not** the gate input.
 2. `captureGameplayScreenshots` then ran **windowed** Godot (`--rendering-driver opengl3`, `METROFORGE_CAPTURE=1`). Telemetry `strategy` is `windowed_gpu`. The scored frame is **not** blank (occupancy 100%, ~80 quantized colors).
 
-Reported gate numbers (`screenshot_critique.json` / `validation_report`) for this after run: occupancy **0.983**, uniqueColors **51**, lumaStdDev **6.63**, score **40**, issue wallpaper/low-contrast. The windowed (`windowed_gpu`, `opengl3`) frame is not blank.
+Reported gate numbers (`screenshot_critique.json` / `validation_report`) for this after run: occupancy **1.0**, uniqueColors **56**, lumaStdDev **7.35**, score **40**, issue wallpaper/low-contrast. The windowed (`windowed_gpu`, `opengl3`) frame is not blank.
 
-The warm-soot/gunmetal color pass slightly changes the numbers (the old navy run reported occupancy 1.0 / lumaStdDev 5.10 / 80 colors) but the deterministic `gameplay_screenshot_qa` gate **still fails** at score 40: a single spawn still frame is intentionally low-contrast for this heuristic. That is exactly why **visual approval stays pending** — automated QA is not a substitute for human review.
+The `gameplay_screenshot_qa` gate is an **unresolved failure** — 17/18 is **partial** validation, not a pass. The scored frame is the start room at spawn; it trips the rule because `occupancy > 0.94` (almost no pure-black void — the warm soot backdrop counts as painted) **and** `lumaStdDev < 10` (low spatial contrast: a large uniform soot field above uniform gunmetal tiles). The band-framing pass raised occupancy (a tighter frame is fuller), so the heuristic still fails at 40. This is the same weak composition a human reviewer sees; moving the gate needs more spatial contrast / focal variation in the spawn frame, which is not yet done. Visual approval stays **pending**.
 
 Rooms 02–07, if scored independently with the same function, also trip wallpaper/low-contrast. That is extra context only. The recorded `gameplay_screenshot_qa` FAIL is from `screenshot_gameplay.png`.

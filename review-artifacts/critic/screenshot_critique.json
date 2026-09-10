@@ -2,15 +2,15 @@
   "passed": false,
   "score": 40,
   "issues": [
-    "Gameplay composition looks wallpapered or occupancy≈1 with low contrast (occupancy 98.3%, lumaStdDev 6.6)"
+    "Gameplay composition looks wallpapered or occupancy≈1 with low contrast (occupancy 100.0%, lumaStdDev 7.4)"
   ],
   "tags": [
     "gameplay-screenshot",
     "scene-consistency"
   ],
-  "description": "Gameplay composition looks wallpapered or occupancy≈1 with low contrast (occupancy 98.3%, lumaStdDev 6.6)",
+  "description": "Gameplay composition looks wallpapered or occupancy≈1 with low contrast (occupancy 100.0%, lumaStdDev 7.4)",
   "blank": false,
-  "occupancy": 0.9834104938271605,
-  "uniqueColors": 51,
-  "lumaStdDev": 6.6324759075176525
+  "occupancy": 1,
+  "uniqueColors": 56,
+  "lumaStdDev": 7.354268084386059
 }

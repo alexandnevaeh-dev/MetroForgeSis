@@ -3,28 +3,28 @@
   "attempts": [
     {
       "strategy": "headless",
-      "startedAt": "2026-09-10T05:39:15.055Z",
+      "startedAt": "2026-09-10T06:14:20.181Z",
       "elapsedMs": 0,
       "exitCode": 0,
       "textureNull": true,
       "screenshotWritten": true,
       "decodeOk": true,
       "blank": false,
-      "uniqueColors": 51,
-      "lumaStdDev": 6.6324759075176525,
+      "uniqueColors": 56,
+      "lumaStdDev": 7.354268084386059,
       "killed": false
     },
     {
       "strategy": "windowed_gpu",
-      "startedAt": "2026-09-10T05:39:25.513Z",
-      "elapsedMs": 10387,
+      "startedAt": "2026-09-10T06:14:30.300Z",
+      "elapsedMs": 10057,
       "exitCode": 0,
       "textureNull": false,
       "screenshotWritten": true,
       "decodeOk": true,
       "blank": false,
-      "uniqueColors": 51,
-      "lumaStdDev": 6.6324759075176525,
+      "uniqueColors": 56,
+      "lumaStdDev": 7.354268084386059,
       "killed": false
     }
   ],
