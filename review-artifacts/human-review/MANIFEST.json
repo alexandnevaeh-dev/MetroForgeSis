@@ -1,0 +1,111 @@
+{
+  "package": "foundry-visual-direction-human-review",
+  "visualSliceApproved": false,
+  "actorMaturity": "QA_REVIEW",
+  "branchHeadAtPackaging": "eb12ea9",
+  "spawnCodeCommit": "89824e7",
+  "spawnStillSha256": "9f1452c70da65891e364ee3148d98d4bb37b942fb29b740f22b1911c7e50eb18",
+  "room05StillSha256": "2478d44ff449965ae54253d617e7c71c1348c67b44777eacede6ad4fd1cbdbff",
+  "files": [
+    {
+      "path": "room05_current.png",
+      "bytes": 125902,
+      "sha256": "2478d44ff449965ae54253d617e7c71c1348c67b44777eacede6ad4fd1cbdbff"
+    },
+    {
+      "path": "room05_furnace_cavity.png",
+      "bytes": 49927,
+      "sha256": "8d09cc3944bb196ef90bd7a8b27342c0998798195398dfce7df588ac85ad927e"
+    },
+    {
+      "path": "room05_pickup_native_and_4x.png",
+      "bytes": 13092,
+      "sha256": "402300138133ce1f43439d5ec7b9cd114ed9afe3c5794cb5141f2de1f260fa5c"
+    },
+    {
+      "path": "room05_silhouette_vs_authored.png",
+      "bytes": 234989,
+      "sha256": "4da8c16fcaf01659eb2016c191c9fe3f7306b359501f3378319e8b1ccdd00f3c"
+    },
+    {
+      "path": "room05_tender_scene_crop_4x.png",
+      "bytes": 19070,
+      "sha256": "7341faa10d5d7cd6a1042b192277c6f8d0bcec3c55f1e60c397a04300faf295a"
+    },
+    {
+      "path": "room05_tender_scene_native_and_4x.png",
+      "bytes": 28759,
+      "sha256": "b6de9c1c94d77f985f38a28e8cf95f82781a0939bad4ee03fb5d566a90f8da07"
+    },
+    {
+      "path": "room05_wanderer_scene_crop_4x.png",
+      "bytes": 18508,
+      "sha256": "a4a5bed44fe5385da049b86147f7f9b8f047de22d247db7099f3cfcba52b6220"
+    },
+    {
+      "path": "room05_wanderer_scene_native_and_4x.png",
+      "bytes": 27128,
+      "sha256": "0e907994e8d08c7d3a5bb184016288a4dc0208d9309332190f8860f6e6f89301"
+    },
+    {
+      "path": "spawn_current.png",
+      "bytes": 355874,
+      "sha256": "9f1452c70da65891e364ee3148d98d4bb37b942fb29b740f22b1911c7e50eb18"
+    },
+    {
+      "path": "spawn_frame_before_after.png",
+      "bytes": 502788,
+      "sha256": "66cb20cfc64845336292367e89afc3198f6bbd0e21f9817e180e72511620f68b"
+    },
+    {
+      "path": "spawn_hud_native_and_4x.png",
+      "bytes": 10719,
+      "sha256": "2d814f399ca690a26614e4c088369d967a2b1adf15b6673d85c6140375e23673"
+    },
+    {
+      "path": "spawn_wanderer_scene_crop_4x.png",
+      "bytes": 38259,
+      "sha256": "58b879b72ea30954ee1f55f2350ab18db75b0275935f8cf167edda76e132e32a"
+    },
+    {
+      "path": "spawn_wanderer_scene_native_and_4x.png",
+      "bytes": 65507,
+      "sha256": "847c40fadc75fa78e46113ca5c6eb4082735e218b13cd2a5d1248b72593c8840"
+    },
+    {
+      "path": "tender_native_and_8x.png",
+      "bytes": 17258,
+      "sha256": "4975b32d80d460af84ebe6bef0441500a68af5769d5b50eb8f9d3b6865fae23c"
+    },
+    {
+      "path": "tender_placeholder_vs_authored_8x.png",
+      "bytes": 12084,
+      "sha256": "1b439fc279308f16847f72ca78b51fc977a1999c309be5caed4b59b02ea72152"
+    },
+    {
+      "path": "tender_walk_6x.png",
+      "bytes": 14592,
+      "sha256": "9eff9e4e8022f10b2fe323adfd32549cfb6fa24109dee4671b0b19342744ca64"
+    },
+    {
+      "path": "wanderer_native_and_8x.png",
+      "bytes": 16874,
+      "sha256": "137f637be5bf2aa18d654e2c93360093c1f6144f6dd70967e642a6b801ec9057"
+    },
+    {
+      "path": "wanderer_placeholder_vs_authored_8x.png",
+      "bytes": 12143,
+      "sha256": "da5b3c7267310e5716c4bc98dc4a7c3249676b042833ca74bdeea2cf3bbc6009"
+    },
+    {
+      "path": "wanderer_vs_tender_8x.png",
+      "bytes": 12504,
+      "sha256": "5933e099bf03b852b90aa24dd562c670734ce13cd79ac3f4b5c9dc214dadac45"
+    },
+    {
+      "path": "wanderer_walk_6x.png",
+      "bytes": 15767,
+      "sha256": "d7fc1904727fd83e753009d87c2548bb63f944e269be9c90ee90f787d603da3a"
+    }
+  ]
+}
