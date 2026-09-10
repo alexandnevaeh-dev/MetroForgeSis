@@ -40,7 +40,7 @@ Player is the Wanderer (visor, pack, sheathed blade). `npc_000` is a foundry ten
 |---|---|
 | Playtest | **8/8 PASS** (persona `victory_rusher`, 37997ms, rooms 000–009, `gameComplete: true`) |
 | Runtime smoke (windowed) | shrine still **visible** PASS; shrine telemetry `zoom=2.40 view=800x450 center=400,555` |
-| `gameplay_screenshot_qa` spawn | **PASS score 100** (occupancy ~0.36, lumaStdDev ~12.6) |
+| `gameplay_screenshot_qa` spawn | **PASS score 100** (occupancy ~0.36, lumaStdDev ~15.6, 72 colors) |
 | Shrine still through the same critic | score **100** informational (occupancy ~0.36, lumaStdDev ~7.4) |
 | `visualSliceApproved` | **false** — human Approve Visual Direction still required |
 

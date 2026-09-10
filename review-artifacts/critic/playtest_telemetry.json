@@ -3,10 +3,10 @@
 		"dash"
 	],
 	"attacksPerformed": 20,
-	"avgTransitionMs": 3633.77777777778,
+	"avgTransitionMs": 3634.88888888889,
 	"balanceHints": [],
-	"bossFightMs": 5293,
-	"elapsedMs": 37997,
+	"bossFightMs": 5320,
+	"elapsedMs": 38034,
 	"failStage": "",
 	"gameComplete": true,
 	"inputSimulationUsed": true,

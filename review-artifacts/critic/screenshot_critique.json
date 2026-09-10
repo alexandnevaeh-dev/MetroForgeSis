@@ -6,9 +6,9 @@
     "gameplay-screenshot",
     "scene-consistency"
   ],
-  "description": "Gameplay screenshot looks structured (40 colors, lumaStdDev 12.6)",
+  "description": "Gameplay screenshot looks structured (72 colors, lumaStdDev 15.6)",
   "blank": false,
-  "occupancy": 0.36192129629629627,
-  "uniqueColors": 40,
-  "lumaStdDev": 12.646212514990406
+  "occupancy": 0.3619598765432099,
+  "uniqueColors": 72,
+  "lumaStdDev": 15.567576571524302
 }
