@@ -59,18 +59,25 @@ describe('authored foundry courier kit', () => {
     expect(shouldUseFoundryCourierKit({ profile: 'TINY_TEST', gameDna: testDna })).toBe(false);
   });
 
-  it('selects the kit for VISUAL_VERTICAL_SLICE and foundry copy', () => {
-    expect(shouldUseFoundryCourierKit({ profile: 'VISUAL_VERTICAL_SLICE', gameDna: testDna })).toBe(true);
+  it('selects the kit for a side-view foundry/courier theme, never for top-down or a generic slice', () => {
+    // Generic side-view slice (machine civ / forged knight) — the kit's courier design does not
+    // belong here, so profile alone is not enough.
+    expect(shouldUseFoundryCourierKit({ profile: 'VISUAL_VERTICAL_SLICE', gameDna: testDna })).toBe(false);
+    // Side-view + explicit foundry/courier/wanderer copy — selects, at any profile.
+    const foundryDna: GameDNA = {
+      ...testDna,
+      identity: { ...testDna.identity, title: 'Ashen Foundry' },
+      narrative: { ...testDna.narrative, protagonist: 'The Wanderer' },
+    };
+    expect(shouldUseFoundryCourierKit({ profile: 'SMALL', gameDna: foundryDna })).toBe(true);
+    expect(shouldUseFoundryCourierKit({ profile: 'VISUAL_VERTICAL_SLICE', gameDna: foundryDna })).toBe(true);
+    // Top-down archetype — never, even with foundry copy and the slice profile.
     expect(
       shouldUseFoundryCourierKit({
-        profile: 'SMALL',
-        gameDna: {
-          ...testDna,
-          identity: { ...testDna.identity, title: 'Ashen Foundry' },
-          narrative: { ...testDna.narrative, protagonist: 'The Wanderer' },
-        },
+        profile: 'VISUAL_VERTICAL_SLICE',
+        gameDna: { ...foundryDna, archetype: 'TOP_DOWN_ACTION_ADVENTURE' },
       }),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it('ships 64×64 stills with feet anchors, palette depth, and distinct roles', () => {
