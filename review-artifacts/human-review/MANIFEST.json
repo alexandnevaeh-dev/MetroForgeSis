@@ -2,41 +2,66 @@
   "package": "foundry-visual-direction-human-review",
   "visualSliceApproved": false,
   "actorMaturity": "QA_REVIEW",
-  "branchHeadAtPackaging": "91d16e1",
+  "masonryMaturity": "QA_REVIEW",
+  "architectureCommit": "fb7c08e",
   "roomIdentityCommit": "f5af11b",
-  "spawnStillSha256": "2eddef154f46303cf6f1c9bd79b93141e4af786d4dcaf0c6746b8b18f3836cd8",
-  "room05StillSha256": "2478d44ff449965ae54253d617e7c71c1348c67b44777eacede6ad4fd1cbdbff",
-  "slug": "foundry-visual-slice-div1",
+  "slug": "foundry-visual-slice-pr2",
+  "spawnStillSha256": "88a5f37af7d5d97488b20b3a7d1fa341f3d042ef4d9beada59a100c7ced0509b",
+  "room05StillSha256": "92e8e59229251d08385019a3a85fcf233abb60dd21d438869573b1be29c02796",
+  "scoredGameplayQa": {
+    "passed": true,
+    "score": 100,
+    "occupancy": 0.35,
+    "uniqueColors": 110,
+    "lumaStdDev": 17.66,
+    "note": "technical gate only"
+  },
+  "diversity": {
+    "passed": true,
+    "pairwiseMeanDistance": 11.28,
+    "compared": 11
+  },
+  "playtest": "8/8 PASS",
   "files": [
     {
       "path": "HUMAN_REVIEW.md",
-      "bytes": 14103,
-      "sha256": "5eaee6f5904d220a78c93ac3779c595bc09e89020734d43c8fe2e4e902239300"
+      "bytes": 13065,
+      "sha256": "e30fcca07cc3e6ba3eaa8e21907c8c89530ee9ac229e776b4e7a9b81b8e200f0"
+    },
+    {
+      "path": "playtest_telemetry.json",
+      "bytes": 564,
+      "sha256": "9634e243b21e07133469786d2d3a8e113b19a2cc11d6d30b8ea448ff638459de"
     },
     {
       "path": "room02_traversal_current.png",
-      "bytes": 339023,
-      "sha256": "0c86b598d78c131a4b6c1198879c4659dfcaa4249130c54da36e88a6cd1cd1f8"
+      "bytes": 276826,
+      "sha256": "4587d3a025321d491bc150277080a7178bfd284c3b9bd53aa6cd995106b30d4c"
     },
     {
       "path": "room04_vertical_current.png",
-      "bytes": 511542,
-      "sha256": "8be6cbc76477c170bf1c11f1039bd81227f881fdb30ddcd2c52a203401f6bc66"
+      "bytes": 236653,
+      "sha256": "45a6ed4cccee842441b067ea5358c71a97c56f727f01b59fedc504ead9b2ce97"
+    },
+    {
+      "path": "room05_before_after.png",
+      "bytes": 126195,
+      "sha256": "59593dac5ff76ae256a93f2de7d5884dd1f597edef4838aa3f9fce1b6e33827b"
     },
     {
       "path": "room05_current.png",
-      "bytes": 125902,
-      "sha256": "2478d44ff449965ae54253d617e7c71c1348c67b44777eacede6ad4fd1cbdbff"
+      "bytes": 81794,
+      "sha256": "92e8e59229251d08385019a3a85fcf233abb60dd21d438869573b1be29c02796"
     },
     {
       "path": "room05_furnace_cavity.png",
-      "bytes": 49927,
-      "sha256": "8d09cc3944bb196ef90bd7a8b27342c0998798195398dfce7df588ac85ad927e"
+      "bytes": 15981,
+      "sha256": "ec1631e4341277d6b33570a4791b190ef05ea43c51ed9f5ece8669abe473cceb"
     },
     {
       "path": "room05_pickup_native_and_4x.png",
-      "bytes": 13092,
-      "sha256": "402300138133ce1f43439d5ec7b9cd114ed9afe3c5794cb5141f2de1f260fa5c"
+      "bytes": 23335,
+      "sha256": "d96c57a576c05e8496135eca7cabb10da2aa7e1396abe36c523e6ff84404e018"
     },
     {
       "path": "room05_silhouette_vs_authored.png",
@@ -45,38 +70,48 @@
     },
     {
       "path": "room05_tender_scene_crop_4x.png",
-      "bytes": 19070,
-      "sha256": "7341faa10d5d7cd6a1042b192277c6f8d0bcec3c55f1e60c397a04300faf295a"
+      "bytes": 16983,
+      "sha256": "aa1e13661e0064a0321f02a060a7ae7bd22c8d815298bc8a7369c9a9e1642042"
     },
     {
       "path": "room05_tender_scene_native_and_4x.png",
-      "bytes": 28759,
-      "sha256": "b6de9c1c94d77f985f38a28e8cf95f82781a0939bad4ee03fb5d566a90f8da07"
+      "bytes": 29442,
+      "sha256": "5f056affcce5cfbe444b70a551fe2838efe0efde2a7d325a002ecf2538c2da05"
     },
     {
       "path": "room05_wanderer_scene_crop_4x.png",
-      "bytes": 18508,
-      "sha256": "a4a5bed44fe5385da049b86147f7f9b8f047de22d247db7099f3cfcba52b6220"
+      "bytes": 12579,
+      "sha256": "c566d68ae49f3625e19e0bbac2f985307603136612ef938ec9fc24ea4004edbe"
     },
     {
       "path": "room05_wanderer_scene_native_and_4x.png",
-      "bytes": 27128,
-      "sha256": "0e907994e8d08c7d3a5bb184016288a4dc0208d9309332190f8860f6e6f89301"
+      "bytes": 23506,
+      "sha256": "772bc835204e7bd490e25e9e1764d9aae008e9be163cbbd28103a83c002f296f"
     },
     {
       "path": "room07_checkpoint_current.png",
-      "bytes": 514840,
-      "sha256": "402fab024d2537395d8c8e7887f7d19fb30f30a60987a2e62dbac75b55c082d5"
+      "bytes": 250173,
+      "sha256": "17ce71c87efc25f3b9dfb1b2469b8c373f9d4a935cef3fe2324d37e4222e0ee8"
+    },
+    {
+      "path": "screenshot_critique.json",
+      "bytes": 928,
+      "sha256": "a846323aa03f331234565fc82b3f82e1a5305b4b2da89c694c233db9babe8305"
+    },
+    {
+      "path": "screenshot_gameplay.png",
+      "bytes": 207257,
+      "sha256": "fa11babc19a49720433ad9fa10b8354d36cf240d49c1a5bc10ac747b41843bab"
     },
     {
       "path": "spawn_current.png",
-      "bytes": 355910,
-      "sha256": "2eddef154f46303cf6f1c9bd79b93141e4af786d4dcaf0c6746b8b18f3836cd8"
+      "bytes": 208178,
+      "sha256": "88a5f37af7d5d97488b20b3a7d1fa341f3d042ef4d9beada59a100c7ced0509b"
     },
     {
       "path": "spawn_frame_before_after.png",
-      "bytes": 501709,
-      "sha256": "a36d8ad7f62ea92baee2324f5c084a6a3866b0222042f3d77a67e0e3494e23a0"
+      "bytes": 331488,
+      "sha256": "278c200d3c2e11accab2ed403cf7272fd3b822d757773dde1cdaafa088769f05"
     },
     {
       "path": "spawn_hud_native_and_4x.png",
@@ -84,14 +119,19 @@
       "sha256": "2d814f399ca690a26614e4c088369d967a2b1adf15b6673d85c6140375e23673"
     },
     {
+      "path": "spawn_walk.webm",
+      "bytes": 335553,
+      "sha256": "1eaa412ee824c72ba0543aa1deb8c94cabb65a5a6d85f00807180b8c5a61e2ea"
+    },
+    {
       "path": "spawn_wanderer_scene_crop_4x.png",
-      "bytes": 38259,
-      "sha256": "58b879b72ea30954ee1f55f2350ab18db75b0275935f8cf167edda76e132e32a"
+      "bytes": 41259,
+      "sha256": "17ed6ef107ff4602395a5d474ccbc5d24d4adeeb1ec133037188d2302b11a674"
     },
     {
       "path": "spawn_wanderer_scene_native_and_4x.png",
-      "bytes": 65507,
-      "sha256": "847c40fadc75fa78e46113ca5c6eb4082735e218b13cd2a5d1248b72593c8840"
+      "bytes": 73806,
+      "sha256": "2a2be25d91849d514264091d874f56ed6c38e6637659182842872a418168a812"
     },
     {
       "path": "tender_native_and_8x.png",

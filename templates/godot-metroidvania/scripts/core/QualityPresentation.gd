@@ -338,17 +338,22 @@ func _inject_atmosphere_layers(room: Node, size: Vector2, biome: String, archety
 	var host := _host(room)
 	var mid_node := room.get_node_or_null("ParallaxMid")
 	if mid_node:
-		(mid_node as CanvasItem).visible = true
-		var mid_sprite := mid_node.get_node_or_null("Sprite") as Sprite2D
-		if mid_sprite:
-			_layout_parallax_strip(mid_sprite, size, "mid")
+		if archetype == "tutorial":
+			# Spawn: hanging mid-plate rectangles fought the gantry. Keep far soot + RearWall.
+			(mid_node as CanvasItem).visible = false
+		else:
+			(mid_node as CanvasItem).visible = true
+			var mid_sprite := mid_node.get_node_or_null("Sprite") as Sprite2D
+			if mid_sprite:
+				_layout_parallax_strip(mid_sprite, size, "mid")
 	else:
-		var mid_path := "res://assets/backgrounds/%s/mid.png" % biome
-		if ResourceLoader.exists(mid_path) and host.get_node_or_null("QualityMidSprite") == null:
-			_inject_parallax_sprite(host, "QualityMidSprite", mid_path, size * 0.5, -40)
-			var created := host.get_node_or_null("QualityMidSprite") as Sprite2D
-			if created:
-				_layout_parallax_strip(created, size, "mid")
+		if archetype != "tutorial":
+			var mid_path := "res://assets/backgrounds/%s/mid.png" % biome
+			if ResourceLoader.exists(mid_path) and host.get_node_or_null("QualityMidSprite") == null:
+				_inject_parallax_sprite(host, "QualityMidSprite", mid_path, size * 0.5, -40)
+				var created := host.get_node_or_null("QualityMidSprite") as Sprite2D
+				if created:
+					_layout_parallax_strip(created, size, "mid")
 	var near_node := room.get_node_or_null("ParallaxNear")
 	if near_node:
 		# Ability shrine: hanging-chain near plate fights foreground tiles. Hide it
@@ -713,8 +718,8 @@ func _inject_shrine_hearth_lights(room: Node, size: Vector2, host: Node, tex: Te
 		tender.position = npc.position + Vector2(0, -28.0)
 		tender.texture = tex
 		tender.color = Color(1.0, 0.72, 0.42, 1)
-		tender.energy = 0.22
-		tender.texture_scale = 0.18
+		tender.energy = 0.32
+		tender.texture_scale = 0.24
 		tender.range_item_cull_mask = 1
 		tender.z_index = 6
 		tender.shadow_enabled = false
