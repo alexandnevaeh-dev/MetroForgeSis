@@ -75,12 +75,20 @@ export function generateProceduralSprite(spec: SpriteSpec): Buffer {
       const i = (y * width + x) * 4;
       let inside = false;
 
+      const nx = x / width;
+      const ny = y / height;
       switch (spec.shape ?? 'humanoid') {
-        case 'humanoid':
-          inside =
-            (x >= width * 0.35 && x <= width * 0.65 && y >= height * 0.1 && y <= height * 0.45) ||
-            (x >= width * 0.25 && x <= width * 0.75 && y >= height * 0.45 && y <= height * 0.85);
+        case 'humanoid': {
+          // Recognizable courier silhouette: head, shoulders/torso, two legs with a gap, and a
+          // carrying pack on the back — so the actor reads as a character, not a capsule blob.
+          const head = nx >= 0.4 && nx <= 0.6 && ny >= 0.08 && ny <= 0.28;
+          const torso = nx >= 0.34 && nx <= 0.66 && ny >= 0.28 && ny <= 0.62;
+          const legs =
+            ny > 0.62 && ny <= 0.92 && ((nx >= 0.36 && nx <= 0.48) || (nx >= 0.52 && nx <= 0.64));
+          const pack = nx >= 0.63 && nx <= 0.8 && ny >= 0.34 && ny <= 0.6;
+          inside = head || torso || legs || pack;
           break;
+        }
         case 'enemy':
           inside = Math.hypot(x - width / 2, y - height / 2) < Math.min(width, height) * 0.4;
           break;
@@ -103,7 +111,11 @@ export function generateProceduralSprite(spec: SpriteSpec): Buffer {
         rgba[i + 2] = 0;
         rgba[i + 3] = 0;
       } else {
-        const useAccent = spec.shape === 'humanoid' && y < height * 0.25;
+        // Accent only the helmet/visor band and the carrying pack — a small identity cue rather
+        // than flooding the whole head, which read as a conspicuous cap.
+        const helmet = ny >= 0.08 && ny <= 0.16 && nx >= 0.4 && nx <= 0.6;
+        const pack = nx >= 0.63 && nx <= 0.8 && ny >= 0.34 && ny <= 0.6;
+        const useAccent = spec.shape === 'humanoid' && (helmet || pack);
         const c = useAccent ? accent : fill;
         rgba[i] = c[0]!;
         rgba[i + 1] = c[1]!;

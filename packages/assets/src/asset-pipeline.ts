@@ -684,12 +684,20 @@ export class AssetPipeline {
     const actor = actorPalette(
       options.visualDNA?.palette ?? { global: options.characterVisualDna?.palette },
     );
+    // Helmet/pack accent is a warm highlight off the brass body, not the cyan interactable accent,
+    // so the courier's identity cue does not read as a conspicuous cyan cap.
+    const courierAccent: [number, number, number, number] = [
+      Math.min(255, actor.fill[0] + 74),
+      Math.min(255, actor.fill[1] + 58),
+      Math.min(255, actor.fill[2] + 34),
+      255,
+    ];
     const playerSpec: SpriteSpec = {
       id: 'player',
       width: playerFrame.width,
       height: playerFrame.height,
       fill: actor.fill,
-      accent: actor.accent,
+      accent: courierAccent,
       shape: 'humanoid',
     };
     const playerAsset = await this.generateSprite({
