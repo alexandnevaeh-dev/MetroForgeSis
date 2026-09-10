@@ -530,11 +530,12 @@ func _ability_shrine_mouth_rect(size: Vector2) -> Rect2:
 
 func _ember_gradient_texture() -> GradientTexture2D:
 	var g := Gradient.new()
-	g.offsets = PackedFloat32Array([0.0, 0.42, 1.0])
+	g.offsets = PackedFloat32Array([0.0, 0.5, 0.82, 1.0])
 	g.colors = PackedColorArray([
-		Color(0.10, 0.02, 0.01, 1),
-		Color(0.62, 0.14, 0.03, 1),
-		Color(1.0, 0.48, 0.08, 1),
+		Color(0.05, 0.01, 0.01, 1),
+		Color(0.28, 0.06, 0.02, 1),
+		Color(0.72, 0.18, 0.04, 1),
+		Color(0.95, 0.36, 0.06, 1),
 	])
 	var tex := GradientTexture2D.new()
 	tex.gradient = g
@@ -553,8 +554,8 @@ func _inject_shrine_hearth_lights(room: Node, size: Vector2, host: Node, tex: Te
 	hearth.position = Vector2(mouth.position.x + mouth.size.x * 0.5, mouth.position.y + mouth.size.y * 0.72)
 	hearth.texture = tex
 	hearth.color = Color(1.0, 0.46, 0.14, 1)
-	hearth.energy = 1.05
-	hearth.texture_scale = 0.72
+	hearth.energy = 0.72
+	hearth.texture_scale = 0.48
 	hearth.range_item_cull_mask = 1
 	hearth.z_index = 5
 	hearth.shadow_enabled = false
@@ -564,8 +565,8 @@ func _inject_shrine_hearth_lights(room: Node, size: Vector2, host: Node, tex: Te
 	sill.position = Vector2(mouth.position.x + mouth.size.x * 0.5, mouth.end.y - 8.0)
 	sill.texture = tex
 	sill.color = Color(1.0, 0.58, 0.18, 1)
-	sill.energy = 0.55
-	sill.texture_scale = 0.38
+	sill.energy = 0.42
+	sill.texture_scale = 0.28
 	sill.range_item_cull_mask = 1
 	sill.z_index = 5
 	sill.shadow_enabled = false
@@ -577,8 +578,8 @@ func _inject_shrine_hearth_lights(room: Node, size: Vector2, host: Node, tex: Te
 		halo.position = pickup.position + Vector2(0, -14.0)
 		halo.texture = tex
 		halo.color = Color(0.95, 0.92, 0.72, 1)
-		halo.energy = 0.7
-		halo.texture_scale = 0.22
+		halo.energy = 0.85
+		halo.texture_scale = 0.26
 		halo.range_item_cull_mask = 1
 		halo.z_index = 8
 		halo.shadow_enabled = false
@@ -625,16 +626,18 @@ func _dress_ability_shrine(room: Node, size: Vector2) -> void:
 	ember.scale = Vector2(mouth.size.x / 128.0, mouth.size.y / 256.0)
 	ember.z_index = -5
 	ember.z_as_relative = false
+	ember.light_mask = 0
 	ember.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	host.add_child(ember)
 	var coals := ColorRect.new()
 	coals.name = "ShrineHearthCoals"
-	coals.position = Vector2(mouth.position.x + 8.0, mouth.end.y - 22.0)
-	coals.size = Vector2(mouth.size.x - 16.0, 18.0)
-	coals.color = Color(1.0, 0.38, 0.06, 0.92)
+	coals.position = Vector2(mouth.position.x + 12.0, mouth.end.y - 14.0)
+	coals.size = Vector2(mouth.size.x - 24.0, 12.0)
+	coals.color = Color(0.92, 0.28, 0.04, 0.78)
 	coals.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	coals.z_index = -5
 	coals.z_as_relative = false
+	coals.light_mask = 0
 	host.add_child(coals)
 	var pickup := _find_named_prefix(room, "AbilityPickup")
 	if pickup:
@@ -653,7 +656,7 @@ func _dress_ability_shrine(room: Node, size: Vector2) -> void:
 	var npc := _find_named_prefix(room, "NPC")
 	if npc:
 		# Keep the block readable as an actor; pull the saturated yellow down.
-		(npc as CanvasItem).modulate = Color(0.42, 0.40, 0.38, 1)
+		(npc as CanvasItem).modulate = Color(0.34, 0.36, 0.38, 1)
 
 
 func _find_named_prefix(room: Node, prefix: String) -> Node2D:
