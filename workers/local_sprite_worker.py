@@ -90,22 +90,61 @@ def _clamp(value: int, lo: int, hi: int) -> int:
 def _draw_humanoid(draw: "ImageDraw.ImageDraw", cx: int, top: int, w: int, h: int, fill: tuple, accent: tuple, leg_shift: int, arm_shift: int) -> None:
     """One real, articulated pose -- distinct head/torso/arm/leg primitives, not a single blob,
     so a real per-limb offset (leg_shift/arm_shift) actually reads as a pose change rather than
-    a whole-sprite translation."""
-    head_r = max(2, w // 5)
-    head_cy = top + head_r
-    draw.ellipse([cx - head_r, head_cy - head_r, cx + head_r, head_cy + head_r], fill=fill, outline=accent)
+    a whole-sprite translation.
 
-    torso_w = int(w * 0.5)
-    torso_top = head_cy + head_r - 1
-    torso_h = int(h * 0.32)
+    Every primitive stays inside [0, w) x [0, h): the figure's vertical budget (head + torso +
+    legs) is fit to the drawable height with the feet anchored one pixel above the bottom edge
+    (a stable foot anchor -- it never drifts per frame), and the per-frame limb offsets are
+    clamped so a swung arm/leg cannot cross the frame border. Nothing is scaled down beyond
+    what the height budget requires, so the character is never squashed.
+    """
+    margin = 1
+    inner_bottom = h - 1 - margin
+    inner_top = max(margin, top)
+
+    # Vertical budget: split the usable height into head / torso / legs. These fractions sum to
+    # 1.0; when 0.08*h of head-room plus this budget would overflow, `top` is what gives — the
+    # feet stay pinned to inner_bottom.
+    usable = max(6, inner_bottom - inner_top)
+    head_d = max(3, int(usable * 0.26))
+    head_d -= head_d % 1
+    torso_h = max(3, int(usable * 0.40))
+    leg_len = max(3, usable - head_d - torso_h)
+    # If rounding overshot, trim the legs (feet anchor is fixed; the head slides down instead).
+    total = head_d + torso_h + leg_len
+    if total > usable:
+        leg_len = max(3, leg_len - (total - usable))
+
+    head_r = max(2, head_d // 2)
+    # Anchor from the bottom up so the feet never clip and never drift.
+    leg_bottom = inner_bottom
+    leg_top = leg_bottom - leg_len
+    torso_bottom = leg_top + 1
+    torso_top = torso_bottom - torso_h
+    head_cy = torso_top - head_r + 1
+    head_cy = max(inner_top + head_r, head_cy)
+
+    torso_w = max(4, int(w * 0.5))
+    arm_w = max(2, w // 8)
+    leg_w = max(2, w // 6)
+
+    # Clamp the swing so the outermost painted pixel of any limb stays inside the frame.
+    # Arm outer edge  = cx + torso_w//2 + arm_w + |shift|; leg outer edge = cx + leg_w + 1 + |shift|.
+    max_arm_swing = max(0, (w - 1 - margin) - (w // 2) - (torso_w // 2) - arm_w)
+    max_leg_swing = max(0, (w - 1 - margin) - (w // 2) - leg_w - 1)
+    arm_shift = _clamp(arm_shift, -max_arm_swing, max_arm_swing)
+    leg_shift = _clamp(leg_shift, -max_leg_swing, max_leg_swing)
+
+    draw.ellipse(
+        [cx - head_r, head_cy - head_r, cx + head_r, head_cy + head_r], fill=fill, outline=accent
+    )
     draw.rounded_rectangle(
-        [cx - torso_w // 2, torso_top, cx + torso_w // 2, torso_top + torso_h],
+        [cx - torso_w // 2, torso_top, cx + torso_w // 2, torso_bottom],
         radius=max(1, torso_w // 6), fill=fill, outline=accent,
     )
 
-    arm_w = max(2, w // 8)
-    arm_len = int(h * 0.26)
-    arm_y = torso_top + int(torso_h * 0.15)
+    arm_len = max(3, int(torso_h * 0.8))
+    arm_y = torso_top + max(1, int(torso_h * 0.15))
     draw.rounded_rectangle(
         [cx - torso_w // 2 - arm_w + arm_shift, arm_y, cx - torso_w // 2 + arm_shift, arm_y + arm_len],
         radius=max(1, arm_w // 2), fill=accent,
@@ -115,15 +154,12 @@ def _draw_humanoid(draw: "ImageDraw.ImageDraw", cx: int, top: int, w: int, h: in
         radius=max(1, arm_w // 2), fill=accent,
     )
 
-    leg_w = max(2, w // 6)
-    leg_top = torso_top + torso_h - 1
-    leg_len = int(h * 0.3)
     draw.rounded_rectangle(
-        [cx - leg_w - 1 + leg_shift, leg_top, cx - 1 + leg_shift, leg_top + leg_len],
+        [cx - leg_w - 1 + leg_shift, leg_top, cx - 1 + leg_shift, leg_bottom],
         radius=max(1, leg_w // 3), fill=fill, outline=accent,
     )
     draw.rounded_rectangle(
-        [cx + 1 - leg_shift, leg_top, cx + leg_w + 1 - leg_shift, leg_top + leg_len],
+        [cx + 1 - leg_shift, leg_top, cx + leg_w + 1 - leg_shift, leg_bottom],
         radius=max(1, leg_w // 3), fill=fill, outline=accent,
     )
 
