@@ -1243,16 +1243,28 @@ func _sync_visual_camera() -> void:
 	if not info.is_empty():
 		archetype = String(info.get("archetype", archetype))
 		size = Vector2(float(info.get("width", size.x)), float(info.get("height", size.y)))
-		if archetype == "ability_shrine" or archetype == "tutorial":
-			var floor_y := size.y - 48.0
-			var top := floor_y
-			var platforms = info.get("platforms", [])
-			if platforms is Array:
-				for p in platforms:
-					if typeof(p) == TYPE_DICTIONARY:
-						top = minf(top, float(p.get("y", floor_y)))
-			playable_top = maxf(0.0, top - 96.0)
-			playable_bottom = size.y
+		# Frame the playable band (floor + platforms + jump apex) for every side-view room so the
+		# slice captures show the action, not a tall empty background. Routes are preserved: full
+		# width is kept by CameraDirector, rooms that exit upward keep full height, and the top crop
+		# is capped at 45%. Foundry plates are excluded inside CameraDirector.
+		var floor_y := size.y - 48.0
+		var top := floor_y
+		var platforms = info.get("platforms", [])
+		if platforms is Array:
+			for p in platforms:
+				if typeof(p) == TYPE_DICTIONARY:
+					top = minf(top, float(p.get("y", floor_y)))
+		var has_up := false
+		var conns = info.get("connections", [])
+		if conns is Array:
+			for c in conns:
+				if typeof(c) == TYPE_DICTIONARY and String(c.get("direction", "")) == "up":
+					has_up = true
+		if has_up:
+			playable_top = 0.0
+		else:
+			playable_top = minf(maxf(0.0, top - 140.0), size.y * 0.45)
+		playable_bottom = size.y
 	cam.apply_room_bounds(size, visual_kit, archetype, playable_top, playable_bottom)
 
 
