@@ -2,7 +2,7 @@
 
 The Foundry slice is **rejected as a finished visual product**. MASS / LARGE / RC stay **blocked**. Do not merge.
 
-Actors are procedural courier silhouettes (not mustard cubes). They are still `PLACEHOLDER` maturity, not production courier art.
+Player and shrine NPC now use **original authored courier art** (`authored-original` / `QA_REVIEW`), not a recolor of the 4-color placeholder. Human **Approve Visual Direction** is still required. Enemies, tiles, VFX, HUD chrome, and boss remain PLACEHOLDER.
 
 ## Generation
 

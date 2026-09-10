@@ -1,12 +1,14 @@
 # Foundry visual-slice review pack
 
-These files are **review evidence only**. They are not a new art pass and do not change the generated game.
-
 PR: https://github.com/alexandnevaeh-dev/MetroForgeSis/pull/4 (draft)  
 Branch: `cursor/foundry-visual-recapture-acbb`  
 Visual approval: **rejected as a finished slice**. MASS / LARGE / RC stay **blocked**. Do not merge.
 
-Actors are now procedural courier silhouettes (not mustard cubes). Spawn `gameplay_screenshot_qa` newly scores **100** (was 40). See [room05/](room05/) and [assets/PROVENANCE.md](assets/PROVENANCE.md).
+**Current actor pass:** original authored courier art (`packages/assets/authored/foundry-courier/`) replaces the 4-color procedural silhouettes. See [VISUAL_ACCEPTANCE.md](VISUAL_ACCEPTANCE.md), [assets/PROVENANCE.md](assets/PROVENANCE.md), and 8× comparisons in [assets/](assets/). Spawn QA and playtest must still be re-run on this revision; passing them is **not** Approve Visual Direction.
+
+Actors were previously procedural courier silhouettes (not mustard cubes). Spawn `gameplay_screenshot_qa` scored **100** (was 40) after the playable-band framing pass. See [room05/](room05/).
+
+## Exact commit and generation
 
 ## Exact commit and generation
 

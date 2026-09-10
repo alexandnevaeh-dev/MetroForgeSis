@@ -192,6 +192,50 @@ describe('AssetPipeline procedural path', () => {
     rmSync(outputDir, { recursive: true, force: true });
   });
 
+  it('loads authored foundry courier actors for VISUAL_VERTICAL_SLICE', async () => {
+    const outputDir = join(tmpdir(), `metroforge-assets-authored-${Date.now()}`);
+    mkdirSync(outputDir, { recursive: true });
+
+    const pipeline = new AssetPipeline();
+    const result = await pipeline.generate({
+      gameDna: { ...minimalDna, profile: 'VISUAL_VERTICAL_SLICE' },
+      profile: 'VISUAL_VERTICAL_SLICE',
+      seed: 42,
+      outputDir,
+      skipVlm: true,
+      skipImageGen: true,
+    });
+
+    const player = result.assets.find((a) => a.path === 'assets/characters/player.png')!;
+    const npc = result.assets.find((a) => a.path === 'assets/npcs/npc_000.png')!;
+    const idle = result.assets.find((a) => a.path === 'assets/characters/player_idle_pose.png')!;
+    const walk = result.assets.find((a) => a.path === 'assets/characters/player_walk.png')!;
+    expect(player.provider).toBe('authored-original');
+    expect(player.fallbackGenerated).toBe(false);
+    expect(player.maturity).toBe('QA_REVIEW');
+    expect(player.sourceType).toBe('manual');
+    expect(player.fakeAnimation).toBeFalsy();
+    expect(npc.provider).toBe('authored-original');
+    expect(npc.fallbackGenerated).toBe(false);
+    expect(npc.maturity).toBe('QA_REVIEW');
+    expect(idle.provider).toBe('authored-original');
+    expect(idle.fallbackGenerated).toBe(false);
+    expect(walk.fallbackGenerated).toBe(false);
+    expect(walk.fakeAnimation).toBe(false);
+    expect(player.buffer.equals(npc.buffer)).toBe(false);
+
+    const playerPx = decodePngRgba(player.buffer);
+    expect(playerPx.width).toBe(64);
+    expect(playerPx.height).toBe(64);
+    let feet = 0;
+    for (let x = 0; x < playerPx.width; x++) {
+      if ((playerPx.rgba[((playerPx.height - 1) * playerPx.width + x) * 4 + 3] ?? 0) > 128) feet += 1;
+    }
+    expect(feet).toBeGreaterThan(0);
+
+    rmSync(outputDir, { recursive: true, force: true });
+  });
+
   it('generates distinct assets for each boss in multi-boss profiles', async () => {
     const outputDir = join(tmpdir(), `metroforge-assets-bosses-${Date.now()}`);
     mkdirSync(outputDir, { recursive: true });
