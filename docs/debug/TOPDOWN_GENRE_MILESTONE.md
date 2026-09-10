@@ -1629,3 +1629,174 @@ Fix the NPC/enemy limb-shift clipping artifact disclosed in §5 (clamp `arm_shif
 2. `node apps/cli/dist/index.js create --prompt "a lone scout explores a sunken crystal dungeon guarded by ancient sentinels" --profile VISUAL_VERTICAL_SLICE --mode LOCAL_ONLY --visual-mode procedural-only --archetype TOP_DOWN_ACTION_ADVENTURE --seed 20260918 --slug <slug>` — inspect `generation_manifest.json` for any `"provider": "local-sprite-worker"` artifact, then open the corresponding PNG directly and confirm it shows one character filling the frame, not several tiny ones.
 3. To see the pre-fix defect directly: `python3 -c "import json,subprocess; print(subprocess.run(['python3','workers/local_sprite_worker.py'], input=json.dumps({'action':'generate','kind':'character_sheet','width':64,'height':64,'frameCount':4,'seed':1,'fill':[176,172,158],'accent':[92,214,224]}), capture_output=True, text=True).stdout[:200])"` — decode the `imageBase64` field and view it; it's a real 4-frame strip, confirming the worker itself is correct and the adapter's old `frameCount:4` request was the actual bug.
 4. `npx vitest run packages/assets` and `node scripts/typecheck.mjs` from the repo root.
+
+---
+
+## Consolidation milestone — one unified integration branch (2026-09-10, continued)
+
+**Explicit instruction this phase**: become the sole agent, consolidate the relevant development
+branches into `integration/metroforge-unified`, finish the known unfinished work (local sprite
+provider, Foundry visual slice / PR #4, remaining milestone items), validate the unified branch,
+and commit clean logical commits. Keep `visualSliceApproved = false`, PR #4 draft, MASS/LARGE/RC
+gates. Do not merge into the default branch; do not delete source branches or discard work.
+
+### 1. Git state as found (verified against commits, not reports)
+
+- `origin/main` is a lone unrelated `b747befa "Initial commit"` — **not** the trunk. Every real
+  branch roots at `0ac681f7 "Initial commit: MetroForge AI monorepo"`.
+- `feature/claude-generation-runtime` @ `aae921d0` carried a **~1,650-file uncommitted working
+  tree** — the accumulated, never-committed product of many prior sessions (top-down + side-view
+  + asset-pipeline). Plus **24,108 gitignored `Exports/` files force-staged** in the index.
+- Worktrees: two stale prunable Windows-path registrations (pruned; branches kept), plus a fresh
+  `.worktrees/foundry-visual-recapture` for inspection.
+
+### 2. Branch disposition
+
+| Branch | Relationship | Disposition |
+|---|---|---|
+| `feature/claude-generation-runtime` @ aae921d0 + 1,650-file WT | trunk + milestone WIP | **base** — preserved as commit `310dd9d0` |
+| `claude/vigorous-hopper-b22084` @ 5917bf95 | fully contained in trunk (41 behind) | **already integrated** — nothing unique |
+| `feature/cursor-desktop-studio` / `master` @ a40914c2 | trunk ancestor (52 behind) | **already integrated** |
+| `cursor/foundry-visual-identity-acbb` @ 45f84d8f | fully contained in `foundry-visual-recapture` | **subsumed** — use recapture |
+| `cursor/foundry-visual-recapture-acbb` @ ed4adacc | trunk + 44 linear commits (PR #4) | **merged** into integration |
+| `cursor/local-asset-worker-acbb` @ 97a3af0c | trunk + 1 commit (ComfyUI `workers/asset_gen.py`) | **excluded** — a superseded ComfyUI-server approach; the milestone deliberately chose the pure-Pillow `workers/local_sprite_worker.py` (documented earlier in this file); the commit also collides with the merged `index.ts` surface. Branch retained for later cherry-pick if wanted. |
+| `cursor/setup-dev-environment-a6d9` | trunk-adjacent + 6 unique commits | **excluded** — Cursor-cloud env provisioning (`.cursor/*`, package-manager pin), test-hermeticity tweaks, and a `MODERN_METROIDVANIA_GATE` largely subsumed by the milestone's own `presentation-gates.ts` + validator evolution; one commit deletes a top-down `PhaseBarrier.tscn` the milestone work re-implemented properly. Branch retained. |
+| `origin/main` @ b747befa | unrelated history | **excluded** — not the trunk; never merged into. |
+
+### 3. Preservation (before any branch switch)
+
+- `backup/claude-gen-runtime-20260910` branch pinned at `aae921d0`.
+- `310dd9d0 chore(wip): preserve accumulated milestone working tree` — the full ~1,650 real
+  source/doc/config files committed as-is on `feature/claude-generation-runtime`. Gitignored
+  generated output (`Exports/`, `GeneratedGames/`, `.venv-*`, caches) unstaged; `.gitignore`
+  extended to cover local envs / caches / scratch / worktrees.
+
+### 4. Integration branch
+
+`integration/metroforge-unified` = `feature/claude-generation-runtime` (@ `310dd9d0`) with
+`cursor/foundry-visual-recapture-acbb` merged in (`0a393b56`). 27 files conflicted; every one
+resolved to preserve both sides' intent (see the merge commit body for the file-by-file record).
+Principle applied: the milestone `packages/` pipeline is the more-evolved base and generally wins
+for shared code; `templates/godot-metroidvania/` visual-slice files take the Foundry side (the
+authoritative reviewed side-view work), with the milestone's own additions unioned in where they
+were additive (zoom floor, RuntimeSmokeTest's +261-line check expansion, AnimatedAssetSprite
+frame-count derivation).
+
+Post-merge follow-up commits:
+- `7efac567` — `generateParallaxStrip` accepts both the RGB-tuple `biomePalette` and Foundry's
+  hex-string `ParallaxStripPalette`.
+- `7d2f1fc6` — ported Foundry's warm-clamp for soot/ember palettes onto HEAD's tone derivation
+  (restores the 3 Foundry parallax-warmth tests).
+- `de88d3f2` — completed the Foundry authored-courier-kit integration into the V2 pipeline:
+  authored 4-frame courier strips (walk/attack/hurt/death) + authored pose stills
+  (run/jump/fall/land/dash) + authored `npc_000`/`npc_000_walk` + authored 32px masonry atlas;
+  NPC fill switched from the mustard `NPC_ROLE_COLORS` flood to `npcActorPalette`. `idle` stays a
+  V2 progression sheet (the authored kit ships a `_pose` still that V2 has no slot for); the
+  authored-courier asset-pipeline test was updated to the integrated structure.
+
+### 5. Known unfinished work — completed this phase
+
+1. **Local sprite provider**
+   - `local-sprite-worker-adapter.ts` `generateImage()` requests `frameCount: 1` — **preserved
+     through the merge** (verified: the earlier-session fix + its `local-sprite-worker-adapter.test.ts`
+     regression coverage both survive on the integration branch, tests green).
+   - **NPC/humanoid walk-pose clipping** in `workers/local_sprite_worker.py` — **fixed** (`6a137ae4`).
+     `_draw_humanoid()` now fits the head+torso+legs vertical budget to the drawable height with
+     the feet anchored one pixel above the bottom (stable, no per-frame drift) and clamps the
+     arm/leg swing so no limb's outermost pixel crosses the frame border. No downscaling beyond
+     the height budget — the character is not squashed. Verified clean at 16/24/32/48/64px frames.
+   - **Prop-texture import race** — **investigated + mitigated** (`bc6d2455`). The console
+     `_pending.ctex` errors are Godot-engine-internal `push_error` from `ResourceLoader::_load`,
+     not template code; `_place_prop()` already guarded the null without crashing (prop silently
+     absent). Added one cache-ignoring `ResourceLoader.load(CACHE_MODE_IGNORE)` retry so the prop
+     still appears when the first `load()` returns (and caches) a transient null right after
+     `--import`. Root cause is import/runtime sequencing under concurrent load, not a code defect.
+
+2. **Foundry visual slice / PR #4**
+   - Authored Wanderer + foundry tender, recessed furnace, compact HUD, collision, pickup
+     outline, accepted camera behavior — **preserved** (Foundry `QualityPresentation.gd` /
+     `CameraDirector.gd` / `RoomTileMap.gd` taken whole; authored kit now actually reaches the
+     game via §4's pipeline integration).
+   - **Spawn tiles obscuring the player's head/upper body** — **addressed by the merge**: Foundry's
+     `RoomTileMap.gd` (Ground `z_index = 1`, `z_as_relative = false`) + `Player.tscn`/`Enemy.tscn`
+     `z_index = 10` are all on the integration branch. Verified in the fresh side-view generation
+     below.
+   - **Distinct room identities (Rooms 02/04/07)** — **preserved**: Foundry's per-role rear-wall
+     system (`_paint_colonnade` / `_paint_gallery_wall` / `_paint_furnace_hearth` /
+     `_paint_tutorial_gantry` / `_paint_ruin_mass`) is intact.
+   - Room 05 "convincing reference room" and pickup interior art — see §7 (partially addressed;
+     the pickup now generates a real interactable sprite via `WORLD_INTERACTABLE_ASSETS` +
+     `prop-art.ts` family mappings, and Room 05 uses the authored `_paint_furnace_hearth`; a
+     dedicated art-quality pass is noted as remaining human-review-gated work).
+
+3. **Remaining milestone work** — the milestone's own stated "next item" was the NPC clip fix
+   (done, above). The bot-navigation harness flakiness stays unreopened (no new evidence of a
+   player-facing progression problem).
+
+### 6. Validation of the unified branch
+
+- `node scripts/typecheck.mjs`: **clean across all 14 package/app tsconfigs.**
+- `npx vitest run` (full repo): **173 test files passed, 7 skipped; 1,145 tests passed, 9
+  skipped, 0 failures** — including the real-model evidence suites (U2NET, real CLIP tokenizer)
+  and `generation-e2e.test.ts` (real side-view TINY_TEST generation).
+- `pnpm --filter @metroforge/{godot,assets,qa,generation,cli} build`: clean.
+
+**§8 — fresh generations, gates, real-input playthroughs, screenshots.**
+
+Several integration bugs were found *by* these fresh runs and fixed (each its own commit), then
+re-verified by re-generating:
+
+| # | Bug found by a fresh run | Fix |
+|---|---|---|
+| a | Top-down `SavePoint.gd` crashed at `@implicit_ready` — the Foundry merge auto-applied its `WorldPropSprite` ColorRect→Sprite2D scene change to the *top-down* SavePoint/ItemPickup/NPC `.tscn`, but top-down has its own `$GeneratedSprite` icon system | `0dec99f2` — reverted those 3 top-down scenes to the milestone form |
+| b | Side-view world-object node-not-found errors + double sprite — merge kept the milestone `GENERATED_TEXTURE_PATH` scripts but Foundry's `WorldPropSprite` scenes | `38f4471f` — took Foundry's matching `.gd` for side-view SavePoint/AbilityPickup/ItemPickup |
+| c | Top-down "sunken crystal dungeon" got the side-view foundry courier as its player — `shouldUseFoundryCourierKit` fired for *any* `VISUAL_VERTICAL_SLICE` | `70326541` — gated to side-view + explicit foundry/courier/wanderer theme; never top-down |
+| d | Top-down NPC rendered as a top-left quarter-crop — `NPC.tscn frame_size=32` vs 64px compiled sheets, no `reference_pose_path` to self-correct | `7cf51541` — `frame_size=64` on Player/Enemy/NPC + `reference_pose_path` on NPC |
+| e | Side-view crashed on every room load — `String(ground.get("visual_kit"))` → `String(null)` because Foundry's `RoomTileMap.gd` never declared `visual_kit` | `c5cee124` — `@export var visual_kit` on RoomTileMap + `typeof` guard in WorldManager |
+| f | Side-view `godot_runtime` camera sub-checks soft-failed / false-positived against Foundry's accepted camera | `7023d6cd` — `CameraDirector.get_room_size()`; `camera_idle_stays_near_player_anchor` rewritten to "player is inside the view" (tolerant of edge-clamp + playable-band pinning) |
+
+**Top-down** (`create ... --archetype TOP_DOWN_ACTION_ADVENTURE --seed 20260918`, integration
+branch, after fixes a/c/d): `RUNTIME_VALIDATED: 19/19 gates passed`, **0 script errors**,
+`godot_runtime: PASS 168/168`, `godot_playtest: PASS 8/8`, `gameplay_screenshot_qa: SKIPPED` (no
+GPU on the pipeline invocation — the standing project-wide limitation). `player.png` provider is
+`local-sprite-worker` (the procedural humanoid, *not* the foundry courier — fix c). Real-input
+`TestScenarios.gd` harness: 18 screenshots before the pre-existing, already-isolated
+`overworld → dungeon_000_r0` bot-nav flakiness (the CLI's own `godot_playtest` completed the full
+loop on the same project — not reopened per instruction). Player/enemy/NPC render as full,
+un-clipped single characters with feet anchored (fixes b/d).
+
+**Side-view Foundry slice** (`create ... --archetype SIDE_VIEW_METROIDVANIA --seed 20260909
+--prompt "Ashen Foundry: a lone courier..."`, after fixes b/e/f): `RUNTIME_VALIDATED: 19/19
+gates passed`, **0 script errors**, `godot_playtest: PASS 8/8`, `gameplay_screenshot_qa: PASS
+score 100`. `godot_runtime: SOFT_FAIL 194/238` **headless** — the 44 not-passed checks are all
+`gameplay_screenshot_*`, which HEAD's expanded metroidvania `RuntimeSmokeTest.gd` can only
+satisfy with a windowed GPU capture; run windowed (`METROFORGE_CAPTURE=1`, real Metal renderer)
+the same smoke test is **280/280, 0 failures**. This is a pre-existing characteristic of HEAD's
+smoke-test expansion under a headless gate, not a consolidation regression, and it is a soft
+(non-blocking) gate — no QA threshold was weakened. `authored-original` provider on 152 assets
+(the authored courier/tender + derived strips reach the game). The `metroforge-foundry-v3`
+external pack also auto-activates for a foundry-themed side-view slice (pre-existing behavior,
+30 assets, supplies the tileset) — a separate visual layer from PR #4's authored-masonry work.
+Windowed spawn screenshot: player reads clearly in front of the masonry (the z-order fix),
+platforms have legible hazard-striped tops, rooms have distinct silhouettes.
+
+- Fixed the integration-caused failures above; kept QA thresholds intact; automated validation
+  is kept distinct from the human visual-approval decision (below).
+
+### 7. What remains / human decisions needed
+
+- **`visualSliceApproved` stays `false`** — `.metroforge/visual-slice-approval.json` carries the
+  newer `foundry-visual-slice-pr2` rejection note; only an authorized human via Generation Studio
+  can approve visual direction. PR #4 stays draft. MASS / LARGE / RELEASE_CANDIDATE stay blocked.
+  The reviewable work is done; the decision needed is the human "Approve Visual Direction" call
+  on the updated Foundry slice.
+- Room 05 art-quality polish and the pickup's interior read are improved (real interactable
+  sprites + authored hearth) but a dedicated art pass is still a candidate — human-review-gated.
+- The authored courier kit ships 4-frame strips; the V2 pipeline elsewhere uses 10–16. The merge
+  makes 4-frame authored strips win for the slice (they animate correctly — frame count is
+  derived from real sheet width at runtime). Re-authoring the kit to V2 frame counts, or adding a
+  slice-specific pipeline path, is optional future work.
+- `cursor/local-asset-worker-acbb` and `cursor/setup-dev-environment-a6d9` are excluded but
+  retained as branches; `backup/claude-gen-runtime-20260910` preserves the pre-consolidation
+  committed state.
+- Still an AI-delegated implementation/verification pass, not personal human approval.
