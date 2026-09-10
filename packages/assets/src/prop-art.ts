@@ -93,7 +93,19 @@ export function generatePropSprite(opts: {
       const gold = fill[0] > 140 && fill[1] > 100 && fill[2] < 90;
       const masonry: [number, number, number] = grass || gold ? [58, 72, 78] : fill;
       const trim: [number, number, number] = grass || gold ? [168, 142, 88] : accent;
-      const rgb = useAccent ? trim : masonry;
+      let rgb = useAccent ? trim : masonry;
+      // Interactive shrines/saves/ability altars get a bright luminous core so a checkpoint reads
+      // as a focal point instead of blending into the patterned masonry behind it.
+      const focal =
+        family.includes('shrine') ||
+        family.includes('save') ||
+        family.includes('statue') ||
+        family.includes('ability') ||
+        family.includes('crystal') ||
+        family.includes('lantern');
+      if (focal && Math.abs(nx - 0.5) < 0.13) {
+        rgb = [Math.min(255, trim[0] + 72), Math.min(255, trim[1] + 62), Math.min(255, trim[2] + 48)];
+      }
       rgba[i] = rgb[0];
       rgba[i + 1] = rgb[1];
       rgba[i + 2] = rgb[2];
