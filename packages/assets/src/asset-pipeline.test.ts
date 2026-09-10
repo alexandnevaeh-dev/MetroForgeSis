@@ -198,7 +198,11 @@ describe('AssetPipeline procedural path', () => {
 
     const pipeline = new AssetPipeline();
     const result = await pipeline.generate({
-      gameDna: { ...minimalDna, profile: 'VISUAL_VERTICAL_SLICE' },
+      gameDna: {
+        ...minimalDna,
+        profile: 'VISUAL_VERTICAL_SLICE',
+        technical: { ...minimalDna.technical, tileSize: 32 },
+      },
       profile: 'VISUAL_VERTICAL_SLICE',
       seed: 42,
       outputDir,
@@ -224,6 +228,17 @@ describe('AssetPipeline procedural path', () => {
     expect(walk.fakeAnimation).toBe(false);
     expect(player.buffer.equals(npc.buffer)).toBe(false);
 
+    const tileset = result.assets.find((a) => a.path === 'assets/tilesets/biome_0/source.png')!;
+    expect(tileset.provider).toBe('authored-original');
+    expect(tileset.fallbackGenerated).toBe(false);
+    const ability = result.assets.find((a) => a.path === 'assets/props/interact/ability.png')!;
+    expect(ability.provider).toBe('authored-original');
+    expect(ability.fallbackGenerated).toBe(false);
+    expect(decodePngRgba(tileset.buffer).width).toBe(256);
+    expect(decodePngRgba(tileset.buffer).height).toBe(192);
+    expect(tileset.sourceType).toBe('manual');
+    expect(tileset.maturity).toBe('QA_REVIEW');
+    expect(ability.sourceType).toBe('manual');
     const playerPx = decodePngRgba(player.buffer);
     expect(playerPx.width).toBe(64);
     expect(playerPx.height).toBe(64);

@@ -56,6 +56,7 @@ import {
   AUTHORED_COURIER_LICENSE,
   AUTHORED_COURIER_PROVIDER,
   loadAuthoredCourierPng,
+  loadAuthoredMasonryPng,
   shouldUseFoundryCourierKit,
 } from './authored-kit.js';
 
@@ -1409,6 +1410,9 @@ export class AssetPipeline {
       let fallback: boolean;
       let modelId: string | undefined;
 
+      const authoredMasonry =
+        useCourierKit && tileSize === 32 ? loadAuthoredMasonryPng('source.png') : null;
+
       if (cachedTileset) {
         processedBuffer = cachedTileset;
         critiquePassed = true;
@@ -1416,6 +1420,61 @@ export class AssetPipeline {
         provider = 'checkpoint';
         fallback = false;
         modelId = undefined;
+      } else if (authoredMasonry) {
+        processedBuffer = authoredMasonry;
+        critiquePassed = true;
+        critiqueScore = 82;
+        provider = AUTHORED_COURIER_PROVIDER;
+        fallback = false;
+        modelId = undefined;
+        writeCheckpoint(
+          options.outputDir,
+          `assets/tilesets/biome_${b}/terrain.json`,
+          Buffer.from(
+            JSON.stringify(
+              {
+                tileSize,
+                roles: buildTileTerrainMetadata(),
+                missingRoles: [],
+                seamIssues: [],
+                passed: true,
+                styleFingerprint: options.visualDNA?.styleFingerprint,
+                provider: AUTHORED_COURIER_PROVIDER,
+              },
+              null,
+              2,
+            ),
+            'utf8',
+          ),
+        );
+        writeCheckpoint(
+          options.outputDir,
+          `assets/tilesets/biome_${b}/terrain.tres`,
+          Buffer.from(
+            [
+              '[gd_resource type="TileSet" format=3]',
+              '',
+              `[ext_resource type="Texture2D" path="res://assets/tilesets/biome_${b}/source.png" id="1_atlas"]`,
+              '',
+              '[sub_resource type="TileSetAtlasSource" id="Atlas_0"]',
+              'texture = ExtResource("1_atlas")',
+              `texture_region_size = Vector2i(${tileSize}, ${tileSize})`,
+              ...Object.values(TILE_ATLAS.roles).map((pos) => `0:${pos.col}/${pos.row} = 0`),
+              '',
+              '[resource]',
+              `tile_size = Vector2i(${tileSize}, ${tileSize})`,
+              'terrain_set_0/mode = 0',
+              'terrain_set_0/terrain_0/name = "masonry"',
+              'sources/0 = SubResource("Atlas_0")',
+              '',
+            ].join('\n'),
+            'utf8',
+          ),
+        );
+        if (b === 0) {
+          writeCheckpoint(options.outputDir, 'assets/qa/tileset-test.png', processedBuffer);
+        }
+        writeCheckpoint(options.outputDir, tilesetPath, processedBuffer);
       } else {
         let tileBuffer = generateTilesetSource(options.seed + b * 100, 128);
         fallback = true;
@@ -1543,6 +1602,8 @@ export class AssetPipeline {
           fallbackGenerated: fallback,
           critiquePassed,
           critiqueScore,
+          sourceType: authoredMasonry ? 'manual' : undefined,
+          compiler: authoredMasonry ? 'authored-original' : undefined,
         },
         'tileset',
       );
@@ -1561,10 +1622,11 @@ export class AssetPipeline {
             id: `biome_${b}_${tileId}`,
             path: `assets/tilesets/biome_${b}/tiles/${tileId}.png`,
             buffer: tileBuf,
-            provider: fallback ? 'procedural' : 'pixel-art-processor',
+            provider: fallback ? 'procedural' : provider,
             fallbackGenerated: fallback,
             critiquePassed: true,
             critiqueScore: 100,
+            sourceType: authoredMasonry ? 'manual' : undefined,
           },
           'tile',
         );
@@ -1692,28 +1754,33 @@ export class AssetPipeline {
     const { fill: interactFill, accent: interactAccent } = interactablePalette(options.visualDNA?.palette);
     for (const spec of WORLD_INTERACTABLE_ASSETS) {
       checkCancelled();
-      const buffer = generatePropSprite({
-        width: spec.width,
-        height: spec.height,
-        fill: interactFill,
-        accent: interactAccent,
-        family: spec.family,
-        seed: options.seed + hashPrompt(spec.id).charCodeAt(0),
-      });
+      const authoredAbility =
+        useCourierKit && spec.id === 'world_ability' ? loadAuthoredMasonryPng('ability.png') : null;
+      const buffer =
+        authoredAbility ??
+        generatePropSprite({
+          width: spec.width,
+          height: spec.height,
+          fill: interactFill,
+          accent: interactAccent,
+          family: spec.family,
+          seed: options.seed + hashPrompt(spec.id).charCodeAt(0),
+        });
       writeCheckpoint(options.outputDir, spec.path, buffer);
       recordAsset(
         {
           id: spec.id,
           path: spec.path,
           buffer,
-          provider: 'procedural',
-          fallbackGenerated: true,
+          provider: authoredAbility ? AUTHORED_COURIER_PROVIDER : 'procedural',
+          fallbackGenerated: !authoredAbility,
           critiquePassed: true,
-          critiqueScore: 70,
+          critiqueScore: authoredAbility ? 82 : 70,
           styleFingerprint: options.visualDNA?.styleFingerprint,
-          compiler: 'prop-art',
+          compiler: authoredAbility ? 'authored-original' : 'prop-art',
           transformation: 'world-interactable',
           godotResourcePath: `res://${spec.path}`,
+          sourceType: authoredAbility ? 'manual' : undefined,
         },
         'prop',
       );

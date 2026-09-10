@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { decodePngRgba } from '../src/png.js';
 import {
   loadAuthoredCourierPng,
+  loadAuthoredMasonryPng,
   shouldUseFoundryCourierKit,
   AUTHORED_COURIER_PROVIDER,
 } from '../src/authored-kit.js';
@@ -89,6 +90,21 @@ describe('authored foundry courier kit', () => {
     expect(feetOpaque(npc!)).toBe(true);
     expect(player!.equals(npc!)).toBe(false);
     expect(AUTHORED_COURIER_PROVIDER).toBe('authored-original');
+  });
+
+  it('ships a 256×192 masonry atlas and a 32×32 ability-core with interior pixels', () => {
+    const atlas = loadAuthoredMasonryPng('source.png');
+    const ability = loadAuthoredMasonryPng('ability.png');
+    expect(atlas).toBeTruthy();
+    expect(ability).toBeTruthy();
+    const a = decodePngRgba(atlas!);
+    const p = decodePngRgba(ability!);
+    expect(a.width).toBe(256);
+    expect(a.height).toBe(192);
+    expect(p.width).toBe(32);
+    expect(p.height).toBe(32);
+    expect(uniqueOpaque(atlas!)).toBeGreaterThan(8);
+    expect(uniqueOpaque(ability!)).toBeGreaterThan(4);
   });
 
   it('ships 256×64 walk sheets with four unique posed frames', () => {

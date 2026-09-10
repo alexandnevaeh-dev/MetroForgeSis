@@ -9,6 +9,7 @@ size = Vector2(24, 24)
 [node name="AbilityPickup" type="Area2D"]
 collision_layer = 32
 collision_mask = 2
+z_index = 8
 script = ExtResource("1_pickup")
 
 [node name="Sprite" type="Sprite2D" parent="."]

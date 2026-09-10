@@ -191,7 +191,12 @@ function paintFarVaultAndLanterns(
   const bay = Math.max(28, Math.round(width / 6));
   const cell = Math.floor(x / bay);
   const cx = Math.round(cell * bay + bay * 0.5);
-  if (Math.abs(x - cx) <= 1 && y > height * 0.16 && y < height * 0.48) {
+  const rib = Math.abs(x - cx) <= 1 && y > height * 0.16 && y < height * 0.48;
+  const trussY = Math.floor(height * 0.40);
+  const onTruss = y >= trussY && y <= trussY + 2 && Math.abs(x - cx) < bay * 0.42;
+  const bracket =
+    Math.abs(x - cx) <= 3 && y >= trussY && y < trussY + 8 && hash01(seed, cell + 2) > 0.25;
+  if (rib || onTruss || bracket) {
     setPx(rgba, width, x, y, vault[0], vault[1], vault[2], 255);
   }
   const ly = Math.floor(height * 0.47);

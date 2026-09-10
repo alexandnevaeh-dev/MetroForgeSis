@@ -678,7 +678,7 @@ func _inject_shrine_hearth_lights(room: Node, size: Vector2, host: Node, tex: Te
 	hearth.position = Vector2(mouth.position.x + mouth.size.x * 0.62, mouth.position.y + mouth.size.y - 16.0)
 	hearth.texture = tex
 	hearth.color = Color(1.0, 0.42, 0.12, 1)
-	hearth.energy = 0.32
+	hearth.energy = 0.34
 	hearth.texture_scale = 0.26
 	hearth.range_item_cull_mask = 1
 	hearth.z_index = 5
@@ -689,12 +689,36 @@ func _inject_shrine_hearth_lights(room: Node, size: Vector2, host: Node, tex: Te
 	sill.position = Vector2(mouth.position.x + mouth.size.x * 0.58, mouth.end.y + 6.0)
 	sill.texture = tex
 	sill.color = Color(1.0, 0.38, 0.10, 1)
-	sill.energy = 0.22
+	sill.energy = 0.24
 	sill.texture_scale = 0.16
 	sill.range_item_cull_mask = 1
 	sill.z_index = 5
 	sill.shadow_enabled = false
 	host.add_child(sill)
+	var bounce := PointLight2D.new()
+	bounce.name = "ShrineGrateBounce"
+	bounce.position = Vector2(mouth.position.x + mouth.size.x * 0.55, mouth.end.y + 18.0)
+	bounce.texture = tex
+	bounce.color = Color(1.0, 0.48, 0.16, 1)
+	bounce.energy = 0.20
+	bounce.texture_scale = 0.18
+	bounce.range_item_cull_mask = 1
+	bounce.z_index = 5
+	bounce.shadow_enabled = false
+	host.add_child(bounce)
+	var npc := _find_named_prefix(room, "NPC")
+	if npc:
+		var tender := PointLight2D.new()
+		tender.name = "ShrineTenderLight"
+		tender.position = npc.position + Vector2(0, -28.0)
+		tender.texture = tex
+		tender.color = Color(1.0, 0.72, 0.42, 1)
+		tender.energy = 0.22
+		tender.texture_scale = 0.18
+		tender.range_item_cull_mask = 1
+		tender.z_index = 6
+		tender.shadow_enabled = false
+		host.add_child(tender)
 	var pickup := _find_named_prefix(room, "AbilityPickup")
 	if pickup:
 		var halo := PointLight2D.new()
@@ -702,8 +726,8 @@ func _inject_shrine_hearth_lights(room: Node, size: Vector2, host: Node, tex: Te
 		halo.position = pickup.position + Vector2(0, -14.0)
 		halo.texture = tex
 		halo.color = Color(0.95, 0.92, 0.72, 1)
-		halo.energy = 0.70
-		halo.texture_scale = 0.20
+		halo.energy = 0.22
+		halo.texture_scale = 0.12
 		halo.range_item_cull_mask = 1
 		halo.z_index = 8
 		halo.shadow_enabled = false
@@ -752,7 +776,7 @@ func _dress_ability_shrine(room: Node, size: Vector2) -> void:
 		pickup.z_index = 8
 		var sprite := pickup.get_node_or_null("Sprite") as CanvasItem
 		if sprite:
-			sprite.modulate = Color(1.18, 1.12, 1.05, 1)
+			sprite.modulate = Color(1.0, 0.98, 0.94, 1)
 			if ResourceLoader.exists("res://scripts/shaders/sprite_outline.gdshader"):
 				var shader: Shader = load("res://scripts/shaders/sprite_outline.gdshader")
 				if shader:
