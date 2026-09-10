@@ -1,0 +1,1534 @@
+{
+  "room_000": [
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Platform_0",
+      "target_rect": [
+        96.0,
+        416.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        -1.77780151367188,
+        148.0,
+        803.555603027344,
+        452.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "apex",
+      "target": "Platform_0",
+      "target_rect": [
+        96.0,
+        416.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        -1.77780151367188,
+        148.0,
+        803.555603027344,
+        452.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "landing",
+      "target": "Platform_0",
+      "target_rect": [
+        96.0,
+        416.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        -1.77780151367188,
+        148.0,
+        803.555603027344,
+        452.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Platform_1",
+      "target_rect": [
+        256.0,
+        352.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        -1.77780151367188,
+        148.0,
+        803.555603027344,
+        452.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "apex",
+      "target": "Platform_1",
+      "target_rect": [
+        256.0,
+        352.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        -1.77780151367188,
+        148.0,
+        803.555603027344,
+        452.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "landing",
+      "target": "Platform_1",
+      "target_rect": [
+        256.0,
+        352.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        -1.77780151367188,
+        148.0,
+        803.555603027344,
+        452.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Platform_2",
+      "target_rect": [
+        416.0,
+        288.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        -1.77780151367188,
+        148.0,
+        803.555603027344,
+        452.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "apex",
+      "target": "Platform_2",
+      "target_rect": [
+        416.0,
+        288.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        -1.77780151367188,
+        148.0,
+        803.555603027344,
+        452.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "landing",
+      "target": "Platform_2",
+      "target_rect": [
+        416.0,
+        288.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        -1.77780151367188,
+        148.0,
+        803.555603027344,
+        452.0
+      ]
+    },
+    {
+      "fully_in_view": false,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Transition_right_room_001",
+      "target_rect": [
+        748.0,
+        394.0,
+        56.0,
+        120.0
+      ],
+      "view_rect": [
+        -1.77780151367188,
+        148.0,
+        803.555603027344,
+        452.0
+      ]
+    }
+  ],
+  "room_001": [
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Platform_0",
+      "target_rect": [
+        224.0,
+        736.0,
+        192.0,
+        32.0
+      ],
+      "view_rect": [
+        0.0,
+        360.0,
+        960.0,
+        540.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "apex",
+      "target": "Platform_0",
+      "target_rect": [
+        224.0,
+        736.0,
+        192.0,
+        32.0
+      ],
+      "view_rect": [
+        0.0,
+        360.0,
+        960.0,
+        540.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "landing",
+      "target": "Platform_0",
+      "target_rect": [
+        224.0,
+        736.0,
+        192.0,
+        32.0
+      ],
+      "view_rect": [
+        0.0,
+        360.0,
+        960.0,
+        540.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Platform_1",
+      "target_rect": [
+        160.0,
+        736.0,
+        96.0,
+        32.0
+      ],
+      "view_rect": [
+        0.0,
+        360.0,
+        960.0,
+        540.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "apex",
+      "target": "Platform_1",
+      "target_rect": [
+        160.0,
+        736.0,
+        96.0,
+        32.0
+      ],
+      "view_rect": [
+        0.0,
+        360.0,
+        960.0,
+        540.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "landing",
+      "target": "Platform_1",
+      "target_rect": [
+        160.0,
+        736.0,
+        96.0,
+        32.0
+      ],
+      "view_rect": [
+        0.0,
+        360.0,
+        960.0,
+        540.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Platform_2",
+      "target_rect": [
+        256.0,
+        672.0,
+        96.0,
+        32.0
+      ],
+      "view_rect": [
+        0.0,
+        360.0,
+        960.0,
+        540.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "apex",
+      "target": "Platform_2",
+      "target_rect": [
+        256.0,
+        672.0,
+        96.0,
+        32.0
+      ],
+      "view_rect": [
+        0.0,
+        360.0,
+        960.0,
+        540.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "landing",
+      "target": "Platform_2",
+      "target_rect": [
+        256.0,
+        672.0,
+        96.0,
+        32.0
+      ],
+      "view_rect": [
+        0.0,
+        360.0,
+        960.0,
+        540.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Platform_3",
+      "target_rect": [
+        160.0,
+        608.0,
+        96.0,
+        32.0
+      ],
+      "view_rect": [
+        0.0,
+        360.0,
+        960.0,
+        540.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "apex",
+      "target": "Platform_3",
+      "target_rect": [
+        160.0,
+        608.0,
+        96.0,
+        32.0
+      ],
+      "view_rect": [
+        0.0,
+        360.0,
+        960.0,
+        540.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "landing",
+      "target": "Platform_3",
+      "target_rect": [
+        160.0,
+        608.0,
+        96.0,
+        32.0
+      ],
+      "view_rect": [
+        0.0,
+        360.0,
+        960.0,
+        540.0
+      ]
+    },
+    {
+      "fully_in_view": false,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Transition_left_room_000",
+      "target_rect": [
+        -28.0,
+        714.0,
+        56.0,
+        120.0
+      ],
+      "view_rect": [
+        0.0,
+        360.0,
+        960.0,
+        540.0
+      ]
+    },
+    {
+      "fully_in_view": false,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Transition_right_room_002",
+      "target_rect": [
+        908.0,
+        714.0,
+        56.0,
+        120.0
+      ],
+      "view_rect": [
+        0.0,
+        360.0,
+        960.0,
+        540.0
+      ]
+    }
+  ],
+  "room_002": [
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Platform_0",
+      "target_rect": [
+        96.0,
+        416.0,
+        96.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "apex",
+      "target": "Platform_0",
+      "target_rect": [
+        96.0,
+        416.0,
+        96.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "landing",
+      "target": "Platform_0",
+      "target_rect": [
+        96.0,
+        416.0,
+        96.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Platform_1",
+      "target_rect": [
+        576.0,
+        416.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "apex",
+      "target": "Platform_1",
+      "target_rect": [
+        576.0,
+        416.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "landing",
+      "target": "Platform_1",
+      "target_rect": [
+        576.0,
+        416.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": false,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Transition_left_room_001",
+      "target_rect": [
+        -28.0,
+        394.0,
+        56.0,
+        120.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": false,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Transition_right_room_003",
+      "target_rect": [
+        748.0,
+        394.0,
+        56.0,
+        120.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    }
+  ],
+  "room_003": [
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Platform_0",
+      "target_rect": [
+        160.0,
+        736.0,
+        192.0,
+        32.0
+      ],
+      "view_rect": [
+        -40.0,
+        405.5,
+        880.0,
+        495.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "apex",
+      "target": "Platform_0",
+      "target_rect": [
+        160.0,
+        736.0,
+        192.0,
+        32.0
+      ],
+      "view_rect": [
+        -40.0,
+        405.5,
+        880.0,
+        495.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "landing",
+      "target": "Platform_0",
+      "target_rect": [
+        160.0,
+        736.0,
+        192.0,
+        32.0
+      ],
+      "view_rect": [
+        -40.0,
+        405.5,
+        880.0,
+        495.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Platform_1",
+      "target_rect": [
+        576.0,
+        672.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        -40.0,
+        405.5,
+        880.0,
+        495.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "apex",
+      "target": "Platform_1",
+      "target_rect": [
+        576.0,
+        672.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        -40.0,
+        405.5,
+        880.0,
+        495.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "landing",
+      "target": "Platform_1",
+      "target_rect": [
+        576.0,
+        672.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        -40.0,
+        405.5,
+        880.0,
+        495.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Transition_left_room_002",
+      "target_rect": [
+        -28.0,
+        714.0,
+        56.0,
+        120.0
+      ],
+      "view_rect": [
+        -40.0,
+        405.5,
+        880.0,
+        495.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Transition_right_room_004",
+      "target_rect": [
+        748.0,
+        714.0,
+        56.0,
+        120.0
+      ],
+      "view_rect": [
+        -40.0,
+        405.5,
+        880.0,
+        495.0
+      ]
+    }
+  ],
+  "room_004": [
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Platform_0",
+      "target_rect": [
+        288.0,
+        416.0,
+        192.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "apex",
+      "target": "Platform_0",
+      "target_rect": [
+        288.0,
+        416.0,
+        192.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "landing",
+      "target": "Platform_0",
+      "target_rect": [
+        288.0,
+        416.0,
+        192.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Platform_1",
+      "target_rect": [
+        96.0,
+        352.0,
+        96.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "apex",
+      "target": "Platform_1",
+      "target_rect": [
+        96.0,
+        352.0,
+        96.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "landing",
+      "target": "Platform_1",
+      "target_rect": [
+        96.0,
+        352.0,
+        96.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": false,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Transition_left_room_003",
+      "target_rect": [
+        -28.0,
+        394.0,
+        56.0,
+        120.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": false,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Transition_right_room_005",
+      "target_rect": [
+        748.0,
+        394.0,
+        56.0,
+        120.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    }
+  ],
+  "room_005": [
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Platform_0",
+      "target_rect": [
+        128.0,
+        608.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        330.0,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "apex",
+      "target": "Platform_0",
+      "target_rect": [
+        128.0,
+        608.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        330.0,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "landing",
+      "target": "Platform_0",
+      "target_rect": [
+        128.0,
+        608.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        330.0,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Platform_1",
+      "target_rect": [
+        416.0,
+        544.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        330.0,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "apex",
+      "target": "Platform_1",
+      "target_rect": [
+        416.0,
+        544.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        330.0,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "landing",
+      "target": "Platform_1",
+      "target_rect": [
+        416.0,
+        544.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        330.0,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": false,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Transition_left_room_004",
+      "target_rect": [
+        -28.0,
+        586.0,
+        56.0,
+        120.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        330.0,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": false,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Transition_right_room_006",
+      "target_rect": [
+        748.0,
+        586.0,
+        56.0,
+        120.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        330.0,
+        799.999938964844,
+        449.999969482422
+      ]
+    }
+  ],
+  "room_006": [
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Platform_0",
+      "target_rect": [
+        128.0,
+        608.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        330.0,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "apex",
+      "target": "Platform_0",
+      "target_rect": [
+        128.0,
+        608.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        330.0,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "landing",
+      "target": "Platform_0",
+      "target_rect": [
+        128.0,
+        608.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        330.0,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Platform_1",
+      "target_rect": [
+        416.0,
+        544.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        330.0,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "apex",
+      "target": "Platform_1",
+      "target_rect": [
+        416.0,
+        544.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        330.0,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "landing",
+      "target": "Platform_1",
+      "target_rect": [
+        416.0,
+        544.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        330.0,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": false,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Transition_right_room_007",
+      "target_rect": [
+        748.0,
+        586.0,
+        56.0,
+        120.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        330.0,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": false,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Transition_left_room_005",
+      "target_rect": [
+        -28.0,
+        586.0,
+        56.0,
+        120.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        330.0,
+        799.999938964844,
+        449.999969482422
+      ]
+    }
+  ],
+  "room_007": [
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Platform_0",
+      "target_rect": [
+        96.0,
+        416.0,
+        96.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "apex",
+      "target": "Platform_0",
+      "target_rect": [
+        96.0,
+        416.0,
+        96.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "landing",
+      "target": "Platform_0",
+      "target_rect": [
+        96.0,
+        416.0,
+        96.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": false,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Transition_left_room_006",
+      "target_rect": [
+        -28.0,
+        394.0,
+        56.0,
+        120.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": false,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Transition_right_room_008",
+      "target_rect": [
+        748.0,
+        394.0,
+        56.0,
+        120.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    }
+  ],
+  "room_008": [
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Platform_0",
+      "target_rect": [
+        320.0,
+        416.0,
+        96.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "apex",
+      "target": "Platform_0",
+      "target_rect": [
+        320.0,
+        416.0,
+        96.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "landing",
+      "target": "Platform_0",
+      "target_rect": [
+        320.0,
+        416.0,
+        96.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Platform_1",
+      "target_rect": [
+        480.0,
+        352.0,
+        64.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "apex",
+      "target": "Platform_1",
+      "target_rect": [
+        480.0,
+        352.0,
+        64.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "landing",
+      "target": "Platform_1",
+      "target_rect": [
+        480.0,
+        352.0,
+        64.0,
+        32.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": false,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Transition_left_room_007",
+      "target_rect": [
+        -28.0,
+        394.0,
+        56.0,
+        120.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    },
+    {
+      "fully_in_view": false,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Transition_right_room_009",
+      "target_rect": [
+        748.0,
+        394.0,
+        56.0,
+        120.0
+      ],
+      "view_rect": [
+        0.000030517578125,
+        150.000015258789,
+        799.999938964844,
+        449.999969482422
+      ]
+    }
+  ],
+  "room_009": [
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Platform_0",
+      "target_rect": [
+        96.0,
+        544.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        0.0,
+        180.0,
+        960.0,
+        540.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "apex",
+      "target": "Platform_0",
+      "target_rect": [
+        96.0,
+        544.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        0.0,
+        180.0,
+        960.0,
+        540.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "landing",
+      "target": "Platform_0",
+      "target_rect": [
+        96.0,
+        544.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        0.0,
+        180.0,
+        960.0,
+        540.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Platform_1",
+      "target_rect": [
+        704.0,
+        480.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        0.0,
+        180.0,
+        960.0,
+        540.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "apex",
+      "target": "Platform_1",
+      "target_rect": [
+        704.0,
+        480.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        0.0,
+        180.0,
+        960.0,
+        540.0
+      ]
+    },
+    {
+      "fully_in_view": true,
+      "intersects": true,
+      "phase": "landing",
+      "target": "Platform_1",
+      "target_rect": [
+        704.0,
+        480.0,
+        128.0,
+        32.0
+      ],
+      "view_rect": [
+        0.0,
+        180.0,
+        960.0,
+        540.0
+      ]
+    },
+    {
+      "fully_in_view": false,
+      "intersects": true,
+      "phase": "approach",
+      "target": "Transition_left_room_008",
+      "target_rect": [
+        -28.0,
+        522.0,
+        56.0,
+        120.0
+      ],
+      "view_rect": [
+        0.0,
+        180.0,
+        960.0,
+        540.0
+      ]
+    }
+  ]
+}

@@ -10,14 +10,12 @@ Actors were previously procedural courier silhouettes (not mustard cubes). Spawn
 
 ## Exact commit and generation
 
-## Exact commit and generation
-
 | Field | Value |
 |---|---|
 | Code commit (after stills) | `30d350a` (warm beacons) on the playable-band framing pass |
 | Message | composition + ability-shrine camera pass + palette color pass + readability pass (brighter ledges, courier silhouette, shrine focal core) |
 | Before stills | Pre-pass recapture of the same prompt/seed, generated from `a04ce27` |
-| Slug | `foundry-visual-slice-v3` (before: `foundry-visual-slice-pr2`) |
+| Slug | `foundry-visual-slice-spawn2` (before: `foundry-visual-slice-pr2`) |
 | Prompt | Ashen Foundry: a lone courier delves a ruined mechanical forge of brass and sooted iron, side-view metroidvania |
 | Profile | `VISUAL_VERTICAL_SLICE` |
 | Mode | `LOCAL_ONLY` |
@@ -29,7 +27,7 @@ Actors were previously procedural courier silhouettes (not mustard cubes). Spawn
 | `visualSliceApproved` | `false` |
 | `visualReviewStatus` | `VISUAL_SLICE_REVIEW_REQUIRED` |
 
-After PNGs are byte-identical to `GeneratedGames/foundry-visual-slice-v3/reports/{02,04,05,06,07}*.png` from that run.
+After PNGs are byte-identical to `GeneratedGames/foundry-visual-slice-spawn2/reports/{02,04,05,06,07}*.png` from that run.
 
 ## Traversal continuity — verified (not inferred from stills)
 
@@ -46,6 +44,22 @@ not climb geometry. Evidence:
 - **Runtime gates pass:** `world_connectivity`, `world_reachability` (all rooms reachable via
   progressive ability pickup), `movement_feasibility` (ability gates align with jump/dash reach),
   and `godot_playtest` **8/8** (persona `victory_rusher`, ~38s, rooms 000–009) on Godot 4.7.1.
+
+### Camera visibility during play (not just collision)
+
+Unchanged collision proves geometry preservation; separately, `tools/camera_visibility_audit.gd`
+places the player at the **approach / jump apex / landing** of every required target and reads the
+**real gameplay camera** (the player's `CameraDirector`, the same path both capture systems use).
+See [`camera-visibility/`](camera-visibility/) (`AUDIT.md`, `audit.json`, and the
+approach→apex→landing triptych).
+
+- **84 checks across all 10 rooms; 0 not-visible.** 68 fully-in-view; the 16 partials are all
+  room-exit doors at the frame edge (the exit is on-screen). Every elevated **platform landing** is
+  fully visible at approach, apex, and landing — the player sees the destination before committing.
+- **Both capture paths reflect the gameplay camera.** `QualityPresentation._playable_band` and
+  `RuntimeSmokeTest._sync_visual_camera` compute the band with identical constants (floor→highest
+  platform − 140 apex, full height when a room exits upward, top crop capped at 45%), and the audit
+  harness drives the actual `CameraDirector`.
 
 ## Readability pass in these stills
 
@@ -114,7 +128,7 @@ The FAIL in `validation_report.json` is **not** computed from rooms 02 / 04 / 05
 
 | Source | File | Role |
 |---|---|---|
-| Gate | `qa/screenshot_gameplay.png` | **Scored.** SHA-256 prefix `705f6cb5fdedb450`. 1920×1080. |
+| Gate | `qa/screenshot_gameplay.png` | **Scored.** SHA-256 prefix `9f1452c70da65891`. 1920×1080. |
 | Room stills | `qa/screenshot_slice_traversal.png` etc. = `reports/02-traversal.png` … | Same **windowed** RuntimeSmokeTest session; **different PNGs** (different hashes). |
 
 Capture path:
@@ -124,7 +138,7 @@ Capture path:
 
 The scene-critic gate has **two** dimensions: the single scored spawn frame (`critiqueGameplayScreenshot`) and cross-room diversity (`critiqueScreenshotDiversity`).
 
-- **Spawn frame — resolved.** A spawn focal light + receded backdrop took the scored start frame from score **40** (occupancy 1.0 / lumaStdDev 7.35, wallpaper/low-contrast) to score **100** (occupancy 0.40 / lumaStdDev 15.87): a warm focal pool on the courier, lit walkable surfaces separating from a receded dark backdrop, and real light→dark falloff — not black/noise added for the metric. See `spawn_before_after` in the artifacts. Because a heuristic score is not proof of human quality, please eyeball the frame directly.
+- **Spawn frame — resolved (single-frame dimension).** A spawn focal light + receded backdrop + a tight warm **character key on the authored courier** + a broader fill took the scored start frame from score **40** (occupancy 1.0 / lumaStdDev 7.4, wallpaper/low-contrast) to score **100** (occupancy 0.40 / lumaStdDev 15.5, uniqueColors 106): a clear focal courier separated from a receded dark backdrop, readable mid/far walkable platforms, and real light→dark falloff — not black/noise added for the metric, and no threshold or capture-timing change. See `spawn_before_after.png` (same capture point and 1920×1080 resolution). Because a heuristic score is not proof of human quality, please eyeball the frame directly.
 - **Cross-room diversity — still unresolved.** `critiqueScreenshotDiversity` still fails: more than half of the room pairs share a near-identical luma-grid signature (mean pairwise distance ~8.3; the pass rule needs <55% of pairs below distance 6). The rooms are still the same gunmetal-grid platformer look. This is the remaining reason the gate fails.
 
 **Net: `gameplay_screenshot_qa` is still an unresolved failure and 17/18 is partial validation.** The failing dimension is now room variety, not the spawn frame. Visual approval stays **pending**; MASS / LARGE / RC blocked.
