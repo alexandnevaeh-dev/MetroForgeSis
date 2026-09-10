@@ -353,7 +353,7 @@ export function generateParallaxStrip(
   seed: number,
   width = 640,
   height = 360,
-  biomePalette?: [number, number, number][],
+  biomePalette?: [number, number, number][] | ParallaxStripPalette,
   /** Optional material dressing (see BACKGROUND_SUPPORTED_FEATURES) applied on top of already-
    *  opaque architecture pixels on mid/near/foreground layers — never on 'far' (see
    *  applyBackgroundMaterialFeatures' doc comment). Omitted -> byte-identical to every existing
@@ -361,15 +361,18 @@ export function generateParallaxStrip(
   features?: readonly string[],
 ): Buffer {
   const rgba = new Uint8Array(width * height * 4);
+  const palette: [number, number, number][] | undefined = Array.isArray(biomePalette)
+    ? biomePalette
+    : parallaxPaletteToRgb(biomePalette);
   // Drowned-citadel night sky (#284878 family) is the default when no biome palette is supplied.
   // Wide top-to-bottom luma spread (near-void top -> warm lantern glow near the floor) so the
   // depth axis has real contrast instead of a narrow 25-unit navy band — a flat gradient here
   // reads as "wallpaper" to the deterministic screenshot QA critic (occupancy~1, lumaStdDev<10)
   // regardless of how much geometric detail is painted on top of it.
   const jitter = (n: number, span: number) => Math.floor(hash01(seed, n) * span);
-  const paletteDark = biomePalette?.[0];
-  const paletteMid = biomePalette?.[1];
-  const paletteBright = biomePalette?.[2] ?? biomePalette?.[3];
+  const paletteDark = palette?.[0];
+  const paletteMid = palette?.[1];
+  const paletteBright = palette?.[2] ?? palette?.[3];
   const skyTop: [number, number, number] = paletteDark
     ? scaleColor(paletteDark, 0.22 + hash01(seed, 1) * 0.1)
     : [4 + jitter(1, 6), 26 + jitter(2, 8), 36 + jitter(3, 14)];
@@ -421,8 +424,8 @@ export function generateParallaxStrip(
   if (layer !== 'far') {
     const { supported } = partitionBackgroundFeatures(features);
     if (supported.length > 0) {
-      const accent = biomePalette?.[4] ?? masonry;
-      const accent2 = biomePalette?.[5] ?? dark;
+      const accent = palette?.[4] ?? masonry;
+      const accent2 = palette?.[5] ?? dark;
       applyBackgroundMaterialFeatures(rgba, width, height, seed, supported, accent, accent2);
     }
   }
