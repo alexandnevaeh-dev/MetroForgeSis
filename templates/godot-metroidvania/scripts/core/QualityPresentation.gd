@@ -866,19 +866,19 @@ func _apply_camera(room: Node, size: Vector2, info: Dictionary = {}) -> void:
 		if typeof(kit) == TYPE_STRING:
 			visual_kit = kit
 	var archetype := String(info.get("archetype", ""))
-	var playable_top := -1.0
-	var playable_bottom := -1.0
-	if archetype == "ability_shrine" or archetype == "tutorial":
-		var band := _playable_band(size, info)
-		playable_top = band.x
-		playable_bottom = band.y
+	var band := _playable_band(size, info)
+	var playable_top := band.x
+	var playable_bottom := band.y
 	if camera and camera.has_method("apply_room_bounds"):
 		camera.apply_room_bounds(size, visual_kit, archetype, playable_top, playable_bottom)
 
 
 func _playable_band(size: Vector2, info: Dictionary) -> Vector2:
-	## World Y range that contains floor + climb platforms + jump apex. Camera
-	## contain-zooms this band (full room width) so empty sky is not the subject.
+	## World Y range that contains floor + climb platforms + jump apex, for ALL side-view rooms
+	## (not just the shrine) so the camera frames the action instead of a tall empty background.
+	## Required routes are preserved: full room width is always kept (see CameraDirector), the band
+	## spans down to the floor and up past the highest platform, rooms that exit upward keep full
+	## height, and the top crop is capped so framing stays gentle.
 	var floor_y := size.y - 48.0
 	var top := floor_y
 	var platforms = info.get("platforms", [])
@@ -887,7 +887,13 @@ func _playable_band(size: Vector2, info: Dictionary) -> Vector2:
 			if typeof(p) != TYPE_DICTIONARY:
 				continue
 			top = minf(top, float(p.get("y", floor_y)))
-	top = maxf(0.0, top - 96.0)
+	var conns = info.get("connections", [])
+	if conns is Array:
+		for c in conns:
+			if typeof(c) == TYPE_DICTIONARY and String(c.get("direction", "")) == "up":
+				return Vector2(0.0, size.y)
+	top = maxf(0.0, top - 140.0)
+	top = minf(top, size.y * 0.45)
 	return Vector2(top, size.y)
 
 func _host(room: Node) -> Node2D:

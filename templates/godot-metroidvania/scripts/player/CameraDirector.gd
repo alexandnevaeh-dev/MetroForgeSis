@@ -50,7 +50,10 @@ func apply_room_bounds(
 	playable_bottom: float = -1.0,
 ) -> void:
 	_room_size = room_size
-	_frame_playable = (archetype == "ability_shrine" or archetype == "tutorial") and playable_top >= 0.0 and playable_bottom > playable_top
+	# Frame the playable band for every side-view room (not just the shrine) so tall empty sky is
+	# not the subject. Foundry cinematic plates keep their dedicated cover-zoom branch below.
+	var is_foundry_plate := visual_kit == "foundry" or room_size.x >= room_size.y * 2.5
+	_frame_playable = not is_foundry_plate and playable_top >= 0.0 and playable_bottom > playable_top
 	_frame_top = playable_top
 	_frame_bottom = playable_bottom
 	top_level = true
