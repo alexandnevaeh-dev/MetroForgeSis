@@ -1,0 +1,117 @@
+{
+  "codeCommit": "ddbb8037f6d885c4030163006ebafed5b29b4587",
+  "codeCommitShort": "ddbb803",
+  "generation": {
+    "slug": "foundry-visual-slice-pr2",
+    "prompt": "A courier in a furnace foundry, orange claw enemy, 32px industrial kit, side-view metroidvania",
+    "profile": "VISUAL_VERTICAL_SLICE",
+    "mode": "LOCAL_ONLY",
+    "archetype": "SIDE_VIEW_METROIDVANIA",
+    "seed": 20260909,
+    "skipExport": true,
+    "godot": "4.7.1.stable.official.a13da4feb",
+    "viewport": "1920x1080",
+    "windowedDriver": "opengl3",
+    "createdAt": "2026-09-10T04:38:39.442Z",
+    "jobId": "job_mtv1essy_qn84ud",
+    "visualSliceApproved": false,
+    "visualReviewStatus": "VISUAL_SLICE_REVIEW_REQUIRED"
+  },
+  "files": [
+    {
+      "path": "after/02_traversal.png",
+      "bytes": 329111,
+      "sha256": "c86ab2a20196bccb0349505b5c697cbbdfad8d79c0fd0f7a2df9b7a0351aa08a"
+    },
+    {
+      "path": "after/04_vertical.png",
+      "bytes": 325254,
+      "sha256": "167f607336c24c2c9d5d5e88ab779a473d19de267bd8660c65feb901e33c5735"
+    },
+    {
+      "path": "after/05_ability.png",
+      "bytes": 350494,
+      "sha256": "1d5f0e0b9d6c8618ba69ef4a280f96d9ddc85bce2fec68fd5483b132c731f4c0"
+    },
+    {
+      "path": "after/06_secret.png",
+      "bytes": 374638,
+      "sha256": "3d09badd7aeaaa95f3a0da515eab62349af97031ff556971b33033531a04d757"
+    },
+    {
+      "path": "after/07_checkpoint.png",
+      "bytes": 337148,
+      "sha256": "0d4644efe9847eac5d90de4dd525cfadfbccfeee319e9c2a31753d76a67e6a87"
+    },
+    {
+      "path": "before/02_traversal.png",
+      "bytes": 337268,
+      "sha256": "69669d192c5bbdad20c38d5766c6e294a57cd89f94cbb4c9a9aaf8aceae12650"
+    },
+    {
+      "path": "before/04_vertical.png",
+      "bytes": 368800,
+      "sha256": "4e3a824bbb62c77df70529efce76fa5674030d012dac803a3f9220d267889523"
+    },
+    {
+      "path": "before/05_ability.png",
+      "bytes": 357413,
+      "sha256": "f3a558459b42bd97397517a383009a894c5e5768bf321ea601f5a727c524f9d9"
+    },
+    {
+      "path": "before/06_secret.png",
+      "bytes": 318137,
+      "sha256": "fcd2766758a58343690dcf02a7b49b884273e310d755fe75fdd5becea3797263"
+    },
+    {
+      "path": "before/07_checkpoint.png",
+      "bytes": 307512,
+      "sha256": "3d1713e8a1ce2e21aeba3b20aeea1197e098c7a1ec957b01582f7a1e6ff7ece5"
+    },
+    {
+      "path": "critic/capture_telemetry.json",
+      "bytes": 1167,
+      "sha256": "6742bceae9382e91badb98c846200563d7d80192964d68b3eb3adaa14684b220"
+    },
+    {
+      "path": "critic/screenshot_critique.json",
+      "bytes": 570,
+      "sha256": "afbe07d312227d915829e162e8e47f1fd6ff0a810a0e810a6c78a8fe28d6344d"
+    },
+    {
+      "path": "critic/screenshot_gameplay.png",
+      "bytes": 346498,
+      "sha256": "bb54ae94175497cb1cf0ea24e21d33d71b474599fc3fca37bc2f26b82c701adf"
+    },
+    {
+      "path": "foundry_slice_review_contact_sheet.png",
+      "bytes": 977796,
+      "sha256": "7c12fe29fcf803c9606208347ac8affa63b613be44a75cec4a4f5b7a4a77dc7a"
+    },
+    {
+      "path": "player/player_after_64px.png",
+      "bytes": 177,
+      "sha256": "c101418bb15ea53fc89b5a2f4c143ae428bed64eec257bcf9c8d751f06fbdee4"
+    },
+    {
+      "path": "player/player_after_8x.png",
+      "bytes": 3744,
+      "sha256": "cde68ee2d31f73a502044541f9d101b78961a049da1e1af253ffc283939252a7"
+    },
+    {
+      "path": "player/player_before_64px.png",
+      "bytes": 175,
+      "sha256": "94570ad9b8b7e2c894d6f9f40ae0339157d4e0df88575a1542c60d1eb58873a4"
+    },
+    {
+      "path": "player/player_before_8x.png",
+      "bytes": 3742,
+      "sha256": "8c2981b168ebb82a6f350e1a18bcdaaec9517a75fd28db87d27052dce0be0718"
+    },
+    {
+      "path": "player/player_before_after_8x.png",
+      "bytes": 13020,
+      "sha256": "7e0a9a6f711f38ce120d79c592621e54d29d5badf2d69806324c60df5a8fd263"
+    }
+  ]
+}
