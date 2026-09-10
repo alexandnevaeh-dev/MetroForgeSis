@@ -317,17 +317,19 @@ function paintFarVaultAndLanterns(
   x: number,
   y: number,
   seed: number,
+  vault: [number, number, number] = [34, 52, 108],
+  lantern: [number, number, number] = [168, 148, 78],
 ): void {
   const bay = Math.max(28, Math.round(width / 6));
   const cell = Math.floor(x / bay);
   const cx = Math.round(cell * bay + bay * 0.5);
   if (Math.abs(x - cx) <= 1 && y > height * 0.16 && y < height * 0.48) {
-    setPx(rgba, width, x, y, 34, 52, 108, 255);
+    setPx(rgba, width, x, y, vault[0], vault[1], vault[2], 255);
   }
   const ly = Math.floor(height * 0.47);
   const d = (x - cx) * (x - cx) + (y - ly) * (y - ly);
   if (d <= 4 && hash01(seed, cell + 4) > 0.35) {
-    setPx(rgba, width, x, y, 168, 148, 78, 255);
+    setPx(rgba, width, x, y, lantern[0], lantern[1], lantern[2], 255);
   }
 }
 
@@ -372,22 +374,50 @@ export function generateParallaxStrip(
   const jitter = (n: number, span: number) => Math.floor(hash01(seed, n) * span);
   const paletteDark = palette?.[0];
   const paletteMid = palette?.[1];
-  const paletteBright = palette?.[2] ?? palette?.[3];
-  const skyTop: [number, number, number] = paletteDark
-    ? scaleColor(paletteDark, 0.22 + hash01(seed, 1) * 0.1)
-    : [4 + jitter(1, 6), 26 + jitter(2, 8), 36 + jitter(3, 14)];
-  const skyBot: [number, number, number] = paletteBright
-    ? scaleColor(paletteBright, 0.85 + hash01(seed, 4) * 0.25)
-    : [34 + jitter(4, 16), 108 + jitter(5, 20), 185 + jitter(6, 20)];
-  const masonry: [number, number, number] = paletteMid
-    ? scaleColor(paletteMid, 0.55 + hash01(seed, 7) * 0.15)
-    : [32 + jitter(7, 10), 42 + jitter(8, 8), 62 + jitter(9, 10)];
+  // Prefer the warmest palette swatch (highest R-B) for the lower-sky glow so a mechanical-forge
+  // palette's cyan energy accent does not turn the whole plate blue. Falls back to [2]/[3].
+  const warmest = palette
+    ? [...palette].sort((a, b) => (b[0] - b[2]) - (a[0] - a[2]))[0]
+    : undefined;
+  const paletteBright = warmest ?? palette?.[2] ?? palette?.[3];
+  // Keep blue <= green on the derived structural tones so soot/ember palettes never paint the
+  // architecture as disconnected cold-blue "beacons" (Foundry warm-clamp parity).
+  const warmClamp = (c: [number, number, number]): [number, number, number] =>
+    palette ? [c[0], c[1], Math.min(c[2], c[1])] : c;
+  const skyTop: [number, number, number] = warmClamp(
+    paletteDark
+      ? scaleColor(paletteDark, 0.22 + hash01(seed, 1) * 0.1)
+      : [4 + jitter(1, 6), 26 + jitter(2, 8), 36 + jitter(3, 14)],
+  );
+  const skyBot: [number, number, number] = warmClamp(
+    paletteBright
+      ? scaleColor(paletteBright, 0.85 + hash01(seed, 4) * 0.25)
+      : [34 + jitter(4, 16), 108 + jitter(5, 20), 185 + jitter(6, 20)],
+  );
+  const masonry: [number, number, number] = warmClamp(
+    paletteMid
+      ? scaleColor(paletteMid, 0.55 + hash01(seed, 7) * 0.15)
+      : [32 + jitter(7, 10), 42 + jitter(8, 8), 62 + jitter(9, 10)],
+  );
   // Near-black silhouette base for the hall mass/piers/occluders — deliberately below the QA
   // critic's visibility luma threshold so architecture reads as true silhouette against the glow
   // instead of a mid-tone blend barely distinguishable from the sky at the same height.
-  const dark: [number, number, number] = paletteDark
-    ? scaleColor(paletteDark, 0.08 + hash01(seed, 10) * 0.05)
-    : [3 + jitter(10, 4), 5 + jitter(11, 4), 9 + jitter(12, 6)];
+  const dark: [number, number, number] = warmClamp(
+    paletteDark
+      ? scaleColor(paletteDark, 0.08 + hash01(seed, 10) * 0.05)
+      : [3 + jitter(10, 4), 5 + jitter(11, 4), 9 + jitter(12, 6)],
+  );
+  // Warm structural accents for the far-plate vault ribs and lanterns.
+  const vaultTone: [number, number, number] = palette
+    ? warmClamp(scaleColor(paletteMid ?? masonry, 0.9))
+    : [34, 52, 108];
+  const lanternTone: [number, number, number] = paletteBright
+    ? [
+        Math.min(255, Math.round(paletteBright[0] * 0.5 + 128)),
+        Math.min(255, Math.round(paletteBright[1] * 0.5 + 96)),
+        Math.min(255, Math.round(Math.min(paletteBright[2], paletteBright[1]) * 0.5 + 60)),
+      ]
+    : [168, 148, 78];
 
   for (let y = 0; y < height; y++) {
     const t = y / Math.max(1, height - 1);
@@ -403,7 +433,7 @@ export function generateParallaxStrip(
         const b = Math.round(skyTop[2] + (skyBot[2] - skyTop[2]) * tEased);
         setPx(rgba, width, x, y, r, g, b, 255);
         paintFarHallMass(rgba, width, height, x, y, seed, masonry, dark, skyBot);
-        paintFarVaultAndLanterns(rgba, width, height, x, y, seed);
+        paintFarVaultAndLanterns(rgba, width, height, x, y, seed, vaultTone, lanternTone);
         continue;
       }
 
