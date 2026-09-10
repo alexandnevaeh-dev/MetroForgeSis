@@ -287,8 +287,8 @@ describe('AssetPipeline procedural path', () => {
 
     const player = result.assets.find((a) => a.path === 'assets/characters/player.png')!;
     const npc = result.assets.find((a) => a.path === 'assets/npcs/npc_000.png')!;
-    const idle = result.assets.find((a) => a.path === 'assets/characters/player_idle_pose.png')!;
     const walk = result.assets.find((a) => a.path === 'assets/characters/player_walk.png')!;
+    const npcWalk = result.assets.find((a) => a.path === 'assets/npcs/npc_000_walk.png')!;
     expect(player.provider).toBe('authored-original');
     expect(player.fallbackGenerated).toBe(false);
     expect(player.maturity).toBe('QA_REVIEW');
@@ -297,10 +297,20 @@ describe('AssetPipeline procedural path', () => {
     expect(npc.provider).toBe('authored-original');
     expect(npc.fallbackGenerated).toBe(false);
     expect(npc.maturity).toBe('QA_REVIEW');
-    expect(idle.provider).toBe('authored-original');
-    expect(idle.fallbackGenerated).toBe(false);
+    // Authored 4-frame courier strips reach the game for the visible combat states. (idle is a
+    // full V2 progression sheet, not a pose still, after the integration merge — see
+    // docs/debug/TOPDOWN_GENRE_MILESTONE.md; the authored kit's other _pose stills still slot in
+    // for the states V2 leaves as pose transforms: run/jump/fall/land/dash.)
+    expect(walk.provider).toBe('authored-original');
     expect(walk.fallbackGenerated).toBe(false);
     expect(walk.fakeAnimation).toBe(false);
+    expect(npcWalk.provider).toBe('authored-original');
+    expect(npcWalk.fallbackGenerated).toBe(false);
+    for (const state of ['attack', 'hurt', 'death']) {
+      const sheet = result.assets.find((a) => a.path === `assets/characters/player_${state}.png`)!;
+      expect(sheet.provider).toBe('authored-original');
+      expect(sheet.fallbackGenerated).toBe(false);
+    }
     expect(player.buffer.equals(npc.buffer)).toBe(false);
 
     const tileset = result.assets.find((a) => a.path === 'assets/tilesets/biome_0/source.png')!;

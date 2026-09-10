@@ -86,6 +86,7 @@ import {
   generatePropSprite,
   WORLD_INTERACTABLE_ASSETS,
   interactablePalette,
+  npcActorPalette,
 } from './prop-art.js';
 import {
   AUTHORED_COURIER_PROVIDER,
@@ -349,14 +350,6 @@ export interface AssetPipelineResult {
    *  was attempted vs actually enhanced vs fell back, never faked. */
   visualEnhancement?: import('./visual-enhancement/types.js').VisualEnhancementSummary;
 }
-
-const NPC_ROLE_COLORS: Record<string, [number, number, number]> = {
-  quest_giver: [220, 180, 70],
-  merchant: [70, 170, 120],
-  lore: [150, 90, 200],
-  companion: [90, 160, 220],
-  neutral: [180, 140, 100],
-};
 
 const NPC_ROLES = ['quest_giver', 'merchant', 'lore', 'neutral'] as const;
 
@@ -1147,30 +1140,53 @@ export class AssetPipeline {
     // shape even when playerAsset.buffer held real AI art, so a player with a real portrait could
     // still have visually disconnected placeholder walk/attack/hurt frames.
     const playerSource = playerAsset.fallbackGenerated ? undefined : playerAsset.buffer;
+    // Authored courier 4-frame strips win over the V2 generated sheets for the Foundry slice.
+    // AnimatedAssetSprite.gd derives frame count from real sheet width, so a 4-frame authored
+    // strip animates correctly even though PLAYER_ANIMATION_SPEC declares more.
+    const authoredSheet = (
+      filename: string,
+      path: string,
+      kind: AnimationKind,
+    ): GeneratedAsset | null =>
+      useCourierKit
+        ? this.materializeAuthoredCourier({
+            id: path.split('/').pop()!.replace('.png', ''),
+            path,
+            filename,
+            width: playerFrame.width * 4,
+            height: playerFrame.height,
+            outputDir: options.outputDir,
+            animationKind: kind,
+            frameCount: 4,
+            expectedFrameWidth: playerFrame.width,
+          })
+        : null;
     const walkDef = PLAYER_ANIMATION_SPEC.walk!;
     recordAsset(
-      this.buildWalkSheetAsset(
-        'player',
-        playerSpec,
-        'assets/characters/player_walk.png',
-        walkDef.frameCount,
-        tileSize,
-        playerSource,
-      ),
+      authoredSheet('player_walk.png', 'assets/characters/player_walk.png', 'walk') ??
+        this.buildWalkSheetAsset(
+          'player',
+          playerSpec,
+          'assets/characters/player_walk.png',
+          walkDef.frameCount,
+          tileSize,
+          playerSource,
+        ),
       'animation',
     );
     const attackDef = PLAYER_ANIMATION_SPEC.attack!;
     recordAsset(
-      this.buildAttackSheetAsset(
-        'player',
-        playerSpec,
-        'assets/characters/player_attack.png',
-        attackDef.frameCount,
-        tileSize,
-        playerSource,
-        attackDef.arcKind,
-        'attack',
-      ),
+      authoredSheet('player_attack.png', 'assets/characters/player_attack.png', 'attack') ??
+        this.buildAttackSheetAsset(
+          'player',
+          playerSpec,
+          'assets/characters/player_attack.png',
+          attackDef.frameCount,
+          tileSize,
+          playerSource,
+          attackDef.arcKind,
+          'attack',
+        ),
       'animation',
     );
     // Combo continuation hits (production pass §17) — distinct arcs (upward/downward), not a
@@ -1207,26 +1223,28 @@ export class AssetPipeline {
     );
     const hurtDef = PLAYER_ANIMATION_SPEC.hurt!;
     recordAsset(
-      this.buildHurtSheetAsset(
-        'player',
-        playerSpec,
-        'assets/characters/player_hurt.png',
-        hurtDef.frameCount,
-        tileSize,
-        playerSource,
-      ),
+      authoredSheet('player_hurt.png', 'assets/characters/player_hurt.png', 'hurt') ??
+        this.buildHurtSheetAsset(
+          'player',
+          playerSpec,
+          'assets/characters/player_hurt.png',
+          hurtDef.frameCount,
+          tileSize,
+          playerSource,
+        ),
       'animation',
     );
     const deathDef = PLAYER_ANIMATION_SPEC.death!;
     recordAsset(
-      this.buildDeathSheetAsset(
-        'player',
-        playerSpec,
-        'assets/characters/player_death.png',
-        deathDef.frameCount,
-        tileSize,
-        playerSource,
-      ),
+      authoredSheet('player_death.png', 'assets/characters/player_death.png', 'death') ??
+        this.buildDeathSheetAsset(
+          'player',
+          playerSpec,
+          'assets/characters/player_death.png',
+          deathDef.frameCount,
+          tileSize,
+          playerSource,
+        ),
       'animation',
     );
     // Genuine multi-frame run cycle (production standard §22/§25) — a real 12-frame animated
@@ -1304,6 +1322,7 @@ export class AssetPipeline {
         id: 'player',
         destDir: 'assets/characters',
         source: playerSource,
+        useAuthoredCourier: useCourierKit,
         imageGen,
         styleBible: options.styleBible,
         prompt: playerPrompt,
@@ -1519,13 +1538,19 @@ export class AssetPipeline {
       const npc = npcList[ni]!;
       const npcId = npc.id;
       const role = npc.role ?? NPC_ROLES[ni % NPC_ROLES.length]!;
-      const color = NPC_ROLE_COLORS[role] ?? NPC_ROLE_COLORS.neutral!;
       const npcFrame = compiledSpriteFrameSize('npc');
+      // Soot-iron courier-family silhouette with a small role accent — not a full-body role
+      // flood (quest_giver used to paint the whole NPC mustard, which read as a pickup).
+      const npcColors = npcActorPalette(
+        role,
+        options.visualDNA?.palette ?? { global: options.characterVisualDna?.palette },
+      );
       const npcSpec: SpriteSpec = {
         id: npcId,
         width: npcFrame.width,
         height: npcFrame.height,
-        fill: [color[0], color[1], color[2], 255],
+        fill: npcColors.fill,
+        accent: npcColors.accent,
         shape: 'humanoid',
       };
 
@@ -1574,14 +1599,27 @@ export class AssetPipeline {
         }));
       recordAsset(npcAsset, 'npc');
       recordAsset(
-        this.buildWalkSheetAsset(
-          npcId,
-          npcSpec,
-          `assets/npcs/${npcId}_walk.png`,
-          4,
-          tileSize,
-          npcAsset.fallbackGenerated ? undefined : npcAsset.buffer,
-        ),
+        (useCourierKit && npcId === 'npc_000'
+          ? this.materializeAuthoredCourier({
+              id: `${npcId}_walk`,
+              path: `assets/npcs/${npcId}_walk.png`,
+              filename: 'npc_000_walk.png',
+              width: npcSpec.width * 4,
+              height: npcSpec.height,
+              outputDir: options.outputDir,
+              animationKind: 'walk',
+              frameCount: 4,
+              expectedFrameWidth: npcSpec.width,
+            })
+          : null) ??
+          this.buildWalkSheetAsset(
+            npcId,
+            npcSpec,
+            `assets/npcs/${npcId}_walk.png`,
+            4,
+            tileSize,
+            npcAsset.fallbackGenerated ? undefined : npcAsset.buffer,
+          ),
         'animation',
       );
       const portraitRole = role.replace(/[^a-z0-9_]/gi, '_').toLowerCase();
@@ -1854,6 +1892,17 @@ export class AssetPipeline {
       let fallback: boolean;
       let modelId: string | undefined;
 
+      const authoredMasonry =
+        !cachedTileset &&
+        shouldUseFoundryCourierKit({
+          profile: options.profile,
+          gameDna: options.gameDna,
+          characterVisualDna: options.characterVisualDna,
+        }) &&
+        tileSize === 32
+          ? loadAuthoredMasonryPng('source.png')
+          : null;
+
       if (cachedTileset) {
         processedBuffer = cachedTileset;
         critiquePassed = true;
@@ -1861,6 +1910,37 @@ export class AssetPipeline {
         provider = 'checkpoint';
         fallback = false;
         modelId = undefined;
+      } else if (authoredMasonry) {
+        // Hand-authored 32px foundry masonry atlas (256×192) — the Foundry visual slice's
+        // deliberate modular kit, in place of the procedural compiler output.
+        processedBuffer = authoredMasonry;
+        critiquePassed = true;
+        critiqueScore = 82;
+        provider = AUTHORED_COURIER_PROVIDER;
+        fallback = false;
+        modelId = undefined;
+        writeCheckpoint(
+          options.outputDir,
+          `assets/tilesets/biome_${b}/terrain.json`,
+          Buffer.from(
+            JSON.stringify(
+              {
+                tileSize,
+                roles: buildTileTerrainMetadata(),
+                missingRoles: [],
+                seamIssues: [],
+                passed: true,
+                styleFingerprint: options.visualDNA?.styleFingerprint,
+                provider: AUTHORED_COURIER_PROVIDER,
+              },
+              null,
+              2,
+            ),
+            'utf8',
+          ),
+        );
+        if (b === 0) writeCheckpoint(options.outputDir, 'assets/qa/tileset-test.png', processedBuffer);
+        writeCheckpoint(options.outputDir, tilesetPath, processedBuffer);
       } else {
         let tileBuffer = generateTilesetSource(options.seed + b * 100, 128, terrainVisualTemplate?.style);
         fallback = true;
@@ -1973,6 +2053,8 @@ export class AssetPipeline {
           fallbackGenerated: fallback,
           critiquePassed,
           critiqueScore,
+          sourceType: authoredMasonry ? 'manual' : undefined,
+          compiler: authoredMasonry ? 'authored-original' : undefined,
         },
         'tileset',
       );
@@ -1991,10 +2073,11 @@ export class AssetPipeline {
             id: `biome_${b}_${tileId}`,
             path: `assets/tilesets/biome_${b}/tiles/${tileId}.png`,
             buffer: tileBuf,
-            provider: fallback ? 'procedural' : 'pixel-art-processor',
+            provider: fallback ? 'procedural' : authoredMasonry ? provider : 'pixel-art-processor',
             fallbackGenerated: fallback,
             critiquePassed: true,
             critiqueScore: 100,
+            sourceType: authoredMasonry ? 'manual' : undefined,
           },
           'tile',
         );
@@ -2634,6 +2717,9 @@ export class AssetPipeline {
     id: string;
     destDir: string;
     source?: Buffer;
+    /** Prefer hand-authored `<id>_<pose>_pose.png` from the foundry courier kit over the
+     *  deterministic procedural transform, when the file exists. */
+    useAuthoredCourier?: boolean;
     imageGen: ImageGenerator | null;
     styleBible?: StyleBible;
     prompt: string;
@@ -2753,6 +2839,38 @@ export class AssetPipeline {
             `Pose "${pose.name}" AI-conditioned generation failed for "${opts.id}" — using deterministic procedural transform instead: ${err instanceof Error ? err.message : String(err)}.`,
           );
         }
+        }
+      }
+
+      if (!usedAi && opts.useAuthoredCourier) {
+        const authoredRaw = loadAuthoredCourierPng(`${opts.id}_${pose.name}_pose.png`);
+        if (authoredRaw) {
+          const compiled = this.pixelArt.process(authoredRaw, {
+            targetWidth: opts.spec.width,
+            targetHeight: opts.spec.height,
+            skipQuantize: true,
+          });
+          writeCheckpoint(opts.outputDir, rel, compiled.buffer);
+          assets.push(
+            withMaturity({
+              id: `${opts.id}_${pose.name}_pose`,
+              path: rel,
+              buffer: compiled.buffer,
+              provider: AUTHORED_COURIER_PROVIDER,
+              fallbackGenerated: false,
+              critiquePassed: true,
+              critiqueScore: 82,
+              sourceType: 'manual',
+              fakeAnimation: false,
+              parentArtifactIds: [opts.id],
+              compiler: 'authored-courier',
+              transformation: 'authored-original',
+              godotResourcePath: `res://${rel}`,
+              productionAllowed: true,
+            }),
+          );
+          contactFrames.push({ label: pose.name, png: compiled.buffer });
+          usedAi = true;
         }
       }
 
