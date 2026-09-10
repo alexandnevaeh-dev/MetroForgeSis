@@ -13,6 +13,9 @@ const FOUNDRY_VIEW_HEIGHT := 360.0
 var _room_size := Vector2(800, 600)
 var _look_ahead := 28.0
 var _profile_zoom := 1.85
+var _frame_top := 0.0
+var _frame_bottom := 600.0
+var _frame_playable := false
 
 func _ready() -> void:
 	_load_profile()
@@ -36,8 +39,20 @@ func _load_profile() -> void:
 	_look_ahead = float(parsed.get("lookAheadPx", 28.0))
 	_profile_zoom = float(parsed.get("zoom", 1.85))
 
-func apply_room_bounds(room_size: Vector2, visual_kit: String = "") -> void:
+## `playable_top`/`playable_bottom` are world Y of the reachable band. Used only for
+## ability_shrine (room 05) so the camera frames floor+platforms instead of empty sky.
+## Other archetypes keep full-room contain-zoom. Does not change collision geometry.
+func apply_room_bounds(
+	room_size: Vector2,
+	visual_kit: String = "",
+	archetype: String = "",
+	playable_top: float = -1.0,
+	playable_bottom: float = -1.0,
+) -> void:
 	_room_size = room_size
+	_frame_playable = archetype == "ability_shrine" and playable_top >= 0.0 and playable_bottom > playable_top
+	_frame_top = playable_top
+	_frame_bottom = playable_bottom
 	top_level = true
 	enabled = true
 	position = Vector2.ZERO
@@ -61,6 +76,12 @@ func apply_room_bounds(room_size: Vector2, visual_kit: String = "") -> void:
 		var floor_zoom := maxf(MIN_GAMEPLAY_ZOOM, _profile_zoom)
 		fit = maxf(cover, vp.y / FOUNDRY_VIEW_HEIGHT)
 		fit = clampf(fit, floor_zoom, MAX_GAMEPLAY_ZOOM)
+	elif _frame_playable:
+		# Contain the playable rect (full room width × reachable band). Not background
+		# cover-zoom and not a crop of platforms — empty sky above the climb is dropped.
+		var band_h := maxf(240.0, playable_bottom - playable_top)
+		fit = minf(vp.x / maxf(room_size.x, 1.0), vp.y / band_h)
+		fit = clampf(fit, contain, MAX_GAMEPLAY_ZOOM)
 	zoom = Vector2(fit, fit)
 	position_smoothing_enabled = false
 	drag_horizontal_enabled = false
@@ -80,21 +101,25 @@ func _snap_to_room() -> void:
 	var half := view * 0.5
 	# Drop the extra earth row RoomTileMap paints below the walkable floor.
 	var visual_bottom := maxf(half.y * 2.0, _room_size.y - 48.0)
-	var target := Vector2(_room_size.x * 0.5, visual_bottom * 0.5)
+	var visual_top := 0.0
+	if _frame_playable:
+		visual_top = _frame_top
+		visual_bottom = _frame_bottom
+	var target := Vector2(_room_size.x * 0.5, visual_top + (visual_bottom - visual_top) * 0.5)
 	var parent := get_parent() as Node2D
 	if parent:
 		if view.x < _room_size.x - 2.0:
 			var facing := int(parent.get("facing")) if parent.get("facing") != null else 1
 			target.x = parent.global_position.x + float(facing) * _look_ahead
-		if view.y < visual_bottom - 2.0:
-			var look_up := minf(96.0, (visual_bottom - view.y) * 0.25)
+		if view.y < (visual_bottom - visual_top) - 2.0:
+			var look_up := minf(96.0, (visual_bottom - visual_top - view.y) * 0.25)
 			target.y = parent.global_position.y - look_up
 	if view.x < _room_size.x - 2.0:
 		target.x = clampf(target.x, half.x, maxf(half.x, _room_size.x - half.x))
 	else:
 		target.x = _room_size.x * 0.5
-	if view.y < visual_bottom - 2.0:
-		target.y = clampf(target.y, half.y, maxf(half.y, visual_bottom - half.y))
+	if view.y < (visual_bottom - visual_top) - 2.0:
+		target.y = clampf(target.y, visual_top + half.y, maxf(visual_top + half.y, visual_bottom - half.y))
 	else:
-		target.y = visual_bottom * 0.5
+		target.y = visual_top + (visual_bottom - visual_top) * 0.5
 	global_position = target.round()

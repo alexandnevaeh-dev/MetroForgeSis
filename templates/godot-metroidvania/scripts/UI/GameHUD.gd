@@ -142,6 +142,30 @@ func _apply_hud_mode() -> void:
 	var mini := get_node_or_null("HUD/MinimapPanel")
 	if mini:
 		mini.visible = false
+	# Presentation stills hide scrap/echo/ability text. Size the backing panel
+	# to the health bar only — the 276×136 frame was filling the HUD critic band.
+	if ability_label:
+		ability_label.visible = false
+		ability_label.text = ""
+	if currency_label:
+		currency_label.visible = false
+		currency_label.text = ""
+	if collectible_label:
+		collectible_label.visible = false
+		collectible_label.text = ""
+	if health_bar:
+		health_bar.custom_minimum_size = Vector2(148, 12)
+	var margin := get_node_or_null("HUD/MarginContainer") as Control
+	if margin:
+		margin.offset_left = 16.0
+		margin.offset_top = 16.0
+		margin.offset_right = 176.0
+		margin.offset_bottom = 36.0
+	if hud_frame_panel:
+		hud_frame_panel.offset_left = 10.0
+		hud_frame_panel.offset_top = 10.0
+		hud_frame_panel.offset_right = 178.0
+		hud_frame_panel.offset_bottom = 40.0
 
 func _update_currency() -> void:
 	if currency_label == null:

@@ -200,7 +200,9 @@ func _paint_rear_wall() -> void:
 			_paint_ruin_mass(rear, cols, floor_row, crop_rows, wall, ceiling, rng)
 		"npc", "shop", "save":
 			_paint_night_apse(rear, cols, floor_row, crop_rows, wall, ceiling)
-		"ability_shrine", "ability_gate":
+		"ability_shrine":
+			_paint_furnace_hearth(rear, cols, floor_row, crop_rows, wall, ceiling)
+		"ability_gate":
 			_paint_night_apse(rear, cols, floor_row, crop_rows, wall, ceiling)
 		"secret", "treasure":
 			_paint_ruin_mass(rear, cols, floor_row, crop_rows, wall, ceiling, rng)
@@ -267,6 +269,38 @@ func _paint_night_apse(
 		for y in range(floor_row - pier_h, floor_row):
 			_rear_cell(rear, rib, y, wall)
 		_rear_cell(rear, rib, floor_row - pier_h, ceiling)
+
+
+func _paint_furnace_hearth(
+	rear: TileMapLayer,
+	cols: int,
+	floor_row: int,
+	crop_rows: int,
+	wall: Vector2i,
+	ceiling: Vector2i,
+) -> void:
+	## Ability shrine only. A furnace mouth behind the altar — darker rear masonry
+	## with an empty firebox so the pickup reads against the opening. No collision.
+	rear.modulate = Color(0.52, 0.36, 0.30, 1)
+	var lintel := maxi(1, crop_rows)
+	for x in range(2, cols - 2):
+		_rear_cell(rear, x, floor_row - 1, wall)
+	var mouth_x0 := maxi(4, int(cols * 0.40))
+	var mouth_x1 := mini(cols - 3, int(cols * 0.78))
+	var mouth_top := maxi(lintel + 3, floor_row - 8)
+	var mouth_sill := floor_row - 1
+	for x in range(mouth_x0 - 2, mouth_x1 + 2):
+		for y in range(mouth_top, floor_row):
+			var in_mouth := x >= mouth_x0 and x < mouth_x1 and y > mouth_top and y < mouth_sill
+			if in_mouth:
+				continue
+			_rear_cell(rear, x, y, ceiling if y == mouth_top else wall)
+	for x in range(mouth_x0, mouth_x1):
+		_rear_cell(rear, x, mouth_top, ceiling)
+		_rear_cell(rear, x, mouth_sill, ceiling)
+	for y in range(mouth_top, mouth_sill + 1):
+		_rear_cell(rear, mouth_x0, y, wall)
+		_rear_cell(rear, mouth_x1, y, wall)
 
 
 func _paint_gallery_wall(

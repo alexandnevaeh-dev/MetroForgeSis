@@ -34,21 +34,24 @@ func apply_room(room: Node2D, room_id: String) -> void:
 	var archetype := String(info.get("archetype", "connector"))
 	_replace_stretched_background(room, size, biome)
 	_hide_collision_slabs(room)
-	_tune_parallax(room, size)
+	_tune_parallax(room, size, archetype)
 	_inject_depth_layers(room, size, biome)
-	_inject_atmosphere_layers(room, size, biome)
+	_inject_atmosphere_layers(room, size, biome, archetype)
 	_inject_lights(room, size, biome, archetype)
 	_inject_ambient(room, size, biome, room_id)
 	_inject_decor(room, size, biome, archetype, info)
 	_apply_outline(room)
-	_apply_camera(room, size)
+	_apply_camera(room, size, info)
 	var modulate := get_tree().get_first_node_in_group("world_manager")
 	if modulate:
 		var cm := modulate.get_node_or_null("WorldCanvasModulate") as CanvasModulate
 		if cm:
 			# Tiled citadel interiors are already dark teal; extra dimming turns masonry into mud.
 			if room.get_node_or_null("Ground") != null:
-				cm.color = Color(0.86, 0.90, 0.96, 1)
+				if archetype == "ability_shrine":
+					cm.color = Color(1.0, 0.88, 0.74, 1)
+				else:
+					cm.color = Color(0.86, 0.90, 0.96, 1)
 			else:
 				cm.color = _modulate_for_biome(biome)
 
@@ -205,7 +208,7 @@ func _layout_parallax_strip(sprite: Sprite2D, size: Vector2, kind: String) -> vo
 			(layer as Parallax2D).repeat_times = 3
 
 
-func _tune_parallax(room: Node, size: Vector2) -> void:
+func _tune_parallax(room: Node, size: Vector2, archetype: String = "") -> void:
 	var px := room.get_node_or_null("ParallaxBg")
 	if px is CanvasItem:
 		(px as CanvasItem).visible = false
@@ -215,6 +218,9 @@ func _tune_parallax(room: Node, size: Vector2) -> void:
 		far_sky.visible = false
 	elif far_sky is Sprite2D:
 		_layout_parallax_strip(far_sky as Sprite2D, size, "far")
+		if archetype == "ability_shrine":
+			# Darken the plate so masonry/actors/pickup separate. Do not rescale.
+			(far_sky as Sprite2D).modulate = Color(0.38, 0.30, 0.28, 1)
 		return
 	if px == null:
 		return
@@ -300,7 +306,7 @@ func _inject_depth_layers(room: Node, size: Vector2, biome: String) -> void:
 	floor_wash.mouse_filter = mouse
 	host.add_child(floor_wash)
 
-func _inject_atmosphere_layers(room: Node, size: Vector2, biome: String) -> void:
+func _inject_atmosphere_layers(room: Node, size: Vector2, biome: String, archetype: String = "") -> void:
 	var host := _host(room)
 	var mid_node := room.get_node_or_null("ParallaxMid")
 	if mid_node:
@@ -317,11 +323,16 @@ func _inject_atmosphere_layers(room: Node, size: Vector2, biome: String) -> void
 				_layout_parallax_strip(created, size, "mid")
 	var near_node := room.get_node_or_null("ParallaxNear")
 	if near_node:
-		(near_node as CanvasItem).visible = true
-		var near_sprite := near_node.get_node_or_null("Sprite") as Sprite2D
-		if near_sprite:
-			_layout_parallax_strip(near_sprite, size, "near_full")
-	else:
+		# Ability shrine: hanging-chain near plate fights foreground tiles. Hide it
+		# here only — other rooms keep the layer. Do not stretch it to fill the frame.
+		if archetype == "ability_shrine":
+			(near_node as CanvasItem).visible = false
+		else:
+			(near_node as CanvasItem).visible = true
+			var near_sprite := near_node.get_node_or_null("Sprite") as Sprite2D
+			if near_sprite:
+				_layout_parallax_strip(near_sprite, size, "near_full")
+	elif archetype != "ability_shrine":
 		var near_path := "res://assets/backgrounds/%s/near.png" % biome
 		if ResourceLoader.exists(near_path) and host.get_node_or_null("QualityNearSprite") == null:
 			_inject_parallax_sprite(host, "QualityNearSprite", near_path, size * 0.5, -18)
@@ -330,37 +341,38 @@ func _inject_atmosphere_layers(room: Node, size: Vector2, biome: String) -> void
 				_layout_parallax_strip(created_near, size, "near_full")
 
 
-func _inject_lights(room: Node, size: Vector2, _biome: String, _archetype: String) -> void:
+func _inject_lights(room: Node, size: Vector2, _biome: String, archetype: String) -> void:
 	var host := _host(room)
 	var tex := _light_texture()
 	var tiled := room.get_node_or_null("Ground") != null
+	var shrine := archetype == "ability_shrine"
 	var key := PointLight2D.new()
 	key.name = "QualityLightKey"
-	key.position = Vector2(size.x * 0.22, size.y * 0.26)
+	key.position = Vector2(size.x * 0.58, size.y * 0.62) if shrine else Vector2(size.x * 0.22, size.y * 0.26)
 	key.texture = tex
-	key.color = Color(0.72, 0.86, 1.0, 1)
-	key.energy = 0.72 if tiled else 0.4
-	key.texture_scale = 1.55 if tiled else 1.35
+	key.color = Color(1.0, 0.48, 0.18, 1) if shrine else Color(0.72, 0.86, 1.0, 1)
+	key.energy = 1.15 if shrine else (0.72 if tiled else 0.4)
+	key.texture_scale = 1.85 if shrine else (1.55 if tiled else 1.35)
 	key.z_index = 5
 	key.shadow_enabled = false
 	host.add_child(key)
 	var fill := PointLight2D.new()
 	fill.name = "QualityLightFill"
-	fill.position = Vector2(size.x * 0.62, size.y * 0.74)
+	fill.position = Vector2(size.x * 0.72, size.y * 0.78) if shrine else Vector2(size.x * 0.62, size.y * 0.74)
 	fill.texture = tex
-	fill.color = Color(1.0, 0.82, 0.62, 1)
-	fill.energy = 0.42 if tiled else 0.22
-	fill.texture_scale = 1.35 if tiled else 1.05
+	fill.color = Color(1.0, 0.62, 0.28, 1) if shrine else Color(1.0, 0.82, 0.62, 1)
+	fill.energy = 0.7 if shrine else (0.42 if tiled else 0.22)
+	fill.texture_scale = 1.2 if shrine else (1.35 if tiled else 1.05)
 	fill.z_index = 5
 	fill.shadow_enabled = false
 	host.add_child(fill)
 	# Tiled rooms already have PointLight2D fill. A DirectionalLight2D plus floor
 	# occluder stamped huge repeating shadows across every masonry cell.
 	_attach_actor_occluders(room)
-	_enable_terrain_lighting(room)
+	_enable_terrain_lighting(room, archetype)
 
 
-func _enable_terrain_lighting(room: Node) -> void:
+func _enable_terrain_lighting(room: Node, archetype: String = "") -> void:
 	## Tilemaps default to receiving lights, but an explicit mask plus a warm
 	## floor vs cool rear makes the key/fill read in screenshots.
 	for node_name in ["Ground", "RearWall"]:
@@ -369,7 +381,10 @@ func _enable_terrain_lighting(room: Node) -> void:
 			continue
 		layer.light_mask = 1
 		if node_name == "Ground":
-			layer.modulate = Color(0.86, 0.94, 0.98, 1)
+			if archetype == "ability_shrine":
+				layer.modulate = Color(1.0, 0.90, 0.78, 1)
+			else:
+				layer.modulate = Color(0.86, 0.94, 0.98, 1)
 
 
 func _attach_floor_occluder(room: Node, size: Vector2) -> void:
@@ -596,7 +611,7 @@ func _contain_view_pad(room_size: Vector2) -> Vector2:
 	)
 
 
-func _apply_camera(room: Node, size: Vector2) -> void:
+func _apply_camera(room: Node, size: Vector2, info: Dictionary = {}) -> void:
 	var player := room.get_node_or_null("Player")
 	if player == null:
 		return
@@ -607,8 +622,30 @@ func _apply_camera(room: Node, size: Vector2) -> void:
 		var kit = ground.get("visual_kit")
 		if typeof(kit) == TYPE_STRING:
 			visual_kit = kit
+	var archetype := String(info.get("archetype", ""))
+	var playable_top := -1.0
+	var playable_bottom := -1.0
+	if archetype == "ability_shrine":
+		var band := _ability_shrine_playable_band(size, info)
+		playable_top = band.x
+		playable_bottom = band.y
 	if camera and camera.has_method("apply_room_bounds"):
-		camera.apply_room_bounds(size, visual_kit)
+		camera.apply_room_bounds(size, visual_kit, archetype, playable_top, playable_bottom)
+
+
+func _ability_shrine_playable_band(size: Vector2, info: Dictionary) -> Vector2:
+	## World Y range that contains floor + climb platforms + jump apex. Camera
+	## contain-zooms this band (full room width) so empty sky is not the subject.
+	var floor_y := size.y - 48.0
+	var top := floor_y
+	var platforms = info.get("platforms", [])
+	if platforms is Array:
+		for p in platforms:
+			if typeof(p) != TYPE_DICTIONARY:
+				continue
+			top = minf(top, float(p.get("y", floor_y)))
+	top = maxf(0.0, top - 96.0)
+	return Vector2(top, size.y)
 
 func _host(room: Node) -> Node2D:
 	var existing := room.get_node_or_null("QualityInjected") as Node2D

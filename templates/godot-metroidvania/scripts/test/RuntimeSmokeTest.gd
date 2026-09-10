@@ -1225,6 +1225,9 @@ func _sync_visual_camera() -> void:
 		return
 	var size := Vector2(800, 600)
 	var visual_kit := ""
+	var archetype := ""
+	var playable_top := -1.0
+	var playable_bottom := -1.0
 	var world := get_tree().get_first_node_in_group("world_manager")
 	if world:
 		var room: Node = world.get("_current_room") as Node
@@ -1235,7 +1238,40 @@ func _sync_visual_camera() -> void:
 				var kit = ground.get("visual_kit")
 				if typeof(kit) == TYPE_STRING:
 					visual_kit = kit
-	cam.apply_room_bounds(size, visual_kit)
+				archetype = String(ground.get("room_archetype"))
+	var info := _current_room_info()
+	if not info.is_empty():
+		archetype = String(info.get("archetype", archetype))
+		size = Vector2(float(info.get("width", size.x)), float(info.get("height", size.y)))
+		if archetype == "ability_shrine":
+			var floor_y := size.y - 48.0
+			var top := floor_y
+			var platforms = info.get("platforms", [])
+			if platforms is Array:
+				for p in platforms:
+					if typeof(p) == TYPE_DICTIONARY:
+						top = minf(top, float(p.get("y", floor_y)))
+			playable_top = maxf(0.0, top - 96.0)
+			playable_bottom = size.y
+	cam.apply_room_bounds(size, visual_kit, archetype, playable_top, playable_bottom)
+
+
+func _current_room_info() -> Dictionary:
+	var rooms_path := "res://data/rooms/rooms.json"
+	if not FileAccess.file_exists(rooms_path):
+		return {}
+	var file := FileAccess.open(rooms_path, FileAccess.READ)
+	if file == null:
+		return {}
+	var parsed = JSON.parse_string(file.get_as_text())
+	file.close()
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return {}
+	var rooms: Dictionary = parsed.get("rooms", {})
+	var id := GameManager.current_room_id
+	if rooms.has(id) and typeof(rooms[id]) == TYPE_DICTIONARY:
+		return rooms[id]
+	return {}
 
 
 func _is_visual_slice() -> bool:

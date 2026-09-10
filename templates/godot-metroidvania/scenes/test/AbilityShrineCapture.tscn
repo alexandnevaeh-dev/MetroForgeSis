@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://ability_shrine_capture"]
+
+[ext_resource type="Script" path="res://scripts/test/AbilityShrineCapture.gd" id="1_cap"]
+
+[node name="AbilityShrineCapture" type="Node"]
+script = ExtResource("1_cap")
