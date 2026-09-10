@@ -1,7 +1,7 @@
 {
   "codeCommit": "30d350a",
   "generation": {
-    "slug": "foundry-visual-slice-v3",
+    "slug": "foundry-visual-slice-v5",
     "prompt": "Ashen Foundry: a lone courier delves a ruined mechanical forge of brass and sooted iron, side-view metroidvania",
     "profile": "VISUAL_VERTICAL_SLICE",
     "mode": "LOCAL_ONLY",
@@ -66,18 +66,18 @@
     },
     {
       "path": "critic/capture_telemetry.json",
-      "bytes": 1168,
-      "sha256": "9b5bc9ba12a9c74df412568fe411eba66247d3c6c37189b9367b697bdfbca3bd"
+      "bytes": 1170,
+      "sha256": "70905c111c28f4fdfede7d709fe0a73d8635167f91e1b70bf6996e437fe64afb"
     },
     {
       "path": "critic/screenshot_critique.json",
-      "bytes": 460,
-      "sha256": "b598bac30ca29a123037236f83ab66af98275fcf1b07bcee91ca9ed45c57ae6f"
+      "bytes": 318,
+      "sha256": "abddf38948fcbaf0bda158efa6fe342b83f6a28084fda0535773e7d2e40430e9"
     },
     {
       "path": "critic/screenshot_gameplay.png",
-      "bytes": 277741,
-      "sha256": "705f6cb5fdedb45090247a27296f38fefb68e7b6fd58b822c30e50c84a64da17"
+      "bytes": 317887,
+      "sha256": "6c163c1abc7388b945da54bb35ca9eb08c1a3a9cfaf05375c05fdb4768066541"
     },
     {
       "path": "foundry_slice_review_contact_sheet.png",
@@ -128,6 +128,11 @@
       "path": "collision/07_checkpoint_collision.png",
       "bytes": 137262,
       "sha256": "a6651f38c3e0bfbc0e4cf83483c022d4101f05c4c2ea01be2ec42707b313d5a5"
+    },
+    {
+      "path": "spawn_before_after.png",
+      "bytes": 383214,
+      "sha256": "d9162f9a317eafbaba2714e9fd23876182692e57e5251383e7f4c2ee3d899d59"
     }
   ],
   "codeCommitShort": "30d350a"
