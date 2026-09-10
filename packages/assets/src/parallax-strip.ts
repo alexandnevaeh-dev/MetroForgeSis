@@ -239,11 +239,16 @@ function foundryStripTones(
     Math.round(a[2] + (b[2] - a[2]) * t),
   ];
   const jit = (n: number) => Math.floor(hash01(seed, n) * 8);
+  // Warm the shadow tones and clamp their blue channel. The foundry palette's darkest swatches
+  // (#07070b void, #101018 navy) are blue-black, so a naive dark tone paints the near-parallax
+  // hanging chains/piers a cold blue that reads as disconnected blue beacons against the warm
+  // soot background. Keeping blue <= green makes them soot shadows that belong to the palette.
+  const warmClamp = (c: [number, number, number]): [number, number, number] => [c[0], c[1], Math.min(c[2], c[1])];
   return {
-    skyTop: mix(voidTone, warm, 0.1).map((v, i) => v + jit(i + 1)) as [number, number, number],
+    skyTop: warmClamp(mix(voidTone, warm, 0.1).map((v, i) => v + jit(i + 1)) as [number, number, number]),
     skyBot: mix(voidTone, warm, 0.3).map((v, i) => v + jit(i + 4)) as [number, number, number],
-    masonry: mix(voidTone, warm, 0.2).map((v, i) => v + jit(i + 7)) as [number, number, number],
-    dark: mix(voidTone, [0, 0, 0], 0.4).map((v, i) => v + jit(i + 10)) as [number, number, number],
+    masonry: warmClamp(mix(voidTone, warm, 0.2).map((v, i) => v + jit(i + 7)) as [number, number, number]),
+    dark: warmClamp(mix(voidTone, warm, 0.06).map((v, i) => v + jit(i + 10)) as [number, number, number]),
   };
 }
 

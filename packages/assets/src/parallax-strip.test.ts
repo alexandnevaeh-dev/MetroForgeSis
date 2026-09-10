@@ -161,6 +161,25 @@ describe('parallax strips', () => {
     expect(farPlateLooksLikeOutdoorLandscape(generateParallaxStrip('far', 7, 640, 360, palette))).toBe(false);
   });
 
+  it('paints near-parallax chains as warm soot shadows, not cold blue beacons, for a foundry palette', () => {
+    const palette = {
+      global: ['#101018', '#8a6840', '#48b8c8', '#a84830'],
+      shadows: ['#07070b', '#3e2f1d', '#20535a', '#4c2016'],
+      highlights: ['#14141e', '#ad8250', '#5ae6fa', '#d25a3c'],
+    };
+    const { rgba } = decodePngRgba(generateParallaxStrip('near', 31, 160, 90, palette));
+    let blueDominant = 0;
+    let opaque = 0;
+    for (let i = 0; i < rgba.length; i += 4) {
+      if (rgba[i + 3]! < 40) continue;
+      opaque += 1;
+      if (rgba[i + 2]! > rgba[i]! + 2) blueDominant += 1; // blue clearly ahead of red
+    }
+    expect(opaque).toBeGreaterThan(0);
+    // The old blue-black chains were blue-dominant; warm soot shadows keep blue <= red.
+    expect(blueDominant / opaque).toBeLessThan(0.02);
+  });
+
   it('does not paint a circular moon in the upper far plate', () => {
     const { rgba, width, height } = decodePngRgba(generateParallaxStrip('far', 7, 160, 90));
     let bright = 0;
