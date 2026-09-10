@@ -42,6 +42,11 @@ func _load_profile() -> void:
 ## `playable_top`/`playable_bottom` are world Y of the reachable band. Used for
 ## ability_shrine and tutorial so the camera frames floor+platforms instead of empty sky.
 ## Other archetypes keep full-room contain-zoom. Does not change collision geometry.
+## Current room extent, for acceptance checks that verify the camera never exposes void outside
+## the room (RuntimeSmokeTest._check_camera).
+func get_room_size() -> Vector2:
+	return _room_size
+
 func apply_room_bounds(
 	room_size: Vector2,
 	visual_kit: String = "",
