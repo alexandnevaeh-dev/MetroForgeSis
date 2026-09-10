@@ -133,10 +133,13 @@ function pickRoleFills(extracted: [number, number, number][], hex: [number, numb
     .filter((c) => luma(c) > 28 && luma(c) < 168)
     .filter((c) => !isSkyFill(c) && !isGrassFill(c) && !isGoldFill(c));
   const wall = asMasonry(candidates[0] ?? [64, 92, 90]);
-  const ground = ensureLuma(shade(wall, 0.78), 48, Math.max(48, luma(wall) - 8));
+  // Lift the floor a touch off the dark soot background so the walkable mass does not vanish,
+  // while staying clearly darker than walls (asserted below).
+  const ground = ensureLuma(shade(wall, 0.82), 58, Math.max(58, luma(wall) - 6));
   const ceiling = ensureLuma(shade(wall, 0.62), 40, Math.max(40, luma(ground) - 4));
-  // Ledges stay in the masonry family — grass/gold bible tokens are pickups, not walkable tops.
-  const platform = ensureLuma(mixRgb(wall, [110, 98, 78], 0.22), luma(wall) + 4, 118);
+  // Ledges stay in the masonry family — grass/gold bible tokens are pickups, not walkable tops —
+  // but read brighter than walls so platform tops are legible at a glance.
+  const platform = ensureLuma(mixRgb(wall, [140, 124, 96], 0.32), luma(wall) + 12, 150);
   return {
     wall,
     ground,
@@ -281,7 +284,9 @@ function roleStructureOffset(kind: TileRole, x: number, y: number, tileSize: num
     kind.startsWith('inside');
   const isPlatform = kind.includes('platform');
   const isCeiling = kind === 'ceiling' || kind === 'top_edge';
-  if (isPlatform && y <= 2) return -1;
+  // Brighten the platform cap so the walkable top reads as a distinct lip, not a flat block.
+  if (isPlatform && y === 1) return -2;
+  if (isPlatform && y <= 3) return -1;
   let courseHeight = Math.max(3, Math.floor(tileSize / 8));
   let jointWidth = Math.max(3, Math.floor(tileSize / 4));
   if (isWall) {
@@ -401,8 +406,13 @@ function paintTile(
   const right = kind.includes('right') || kind === 'outside_tr' || kind === 'outside_br' || kind === 'inside_tr' || kind === 'inside_br';
   const top = kind.includes('top') || kind.startsWith('outside_t') || kind.startsWith('inside_t') || kind === 'ceiling' || kind === 'platform' || kind === 'one_way';
   const bottom = kind.includes('bottom') || kind.startsWith('outside_b') || kind.startsWith('inside_b') || kind === 'ground';
+  // Walkable surfaces (platform family / one-way) get a bright top lip instead of the dark mortar
+  // outline so their edge separates from the room behind them without lightening the whole tile.
+  const surfaceTop = kind.includes('platform') || kind === 'one_way';
+  const topEdge = surfaceTop ? ensureLuma(shade(fill, 1.5), luma(fill) + 18, 190) : outline;
   for (let i = 0; i < tileSize; i++) {
-    if (masonry || top) setPixel(rgba, atlasW, originX + i, originY, outline);
+    if (surfaceTop) setPixel(rgba, atlasW, originX + i, originY, topEdge);
+    else if (masonry || top) setPixel(rgba, atlasW, originX + i, originY, outline);
     if (masonry || bottom) setPixel(rgba, atlasW, originX + i, originY + tileSize - 1, outline);
     if (masonry || edge) setPixel(rgba, atlasW, originX, originY + i, outline);
     if (masonry || right) setPixel(rgba, atlasW, originX + tileSize - 1, originY + i, outline);
