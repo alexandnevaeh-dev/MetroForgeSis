@@ -1,4 +1,4 @@
-export { VISUAL_STYLE_TEMPLATES, resolveVisualStyleTemplate } from './style-registry.js';
+export { VISUAL_STYLE_TEMPLATES, resolveVisualStyleTemplate, styleCueText } from './style-registry.js';
 export type { VisualStyleTemplate } from './style-registry.js';
 export { computeStyleFingerprint, fingerprintFromVisualDNA, hashVisualFragment } from './fingerprint.js';
 export { generateVisualDNA } from './dna.js';

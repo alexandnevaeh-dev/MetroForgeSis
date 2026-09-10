@@ -563,7 +563,9 @@ func _apply_camera(room: Node, size: Vector2) -> void:
 	var visual_kit := ""
 	var ground := room.get_node_or_null("Ground")
 	if ground:
-		visual_kit = String(ground.get("visual_kit"))
+		var kit = ground.get("visual_kit")
+		if typeof(kit) == TYPE_STRING:
+			visual_kit = kit
 	if camera and camera.has_method("apply_room_bounds"):
 		camera.apply_room_bounds(size, visual_kit)
 

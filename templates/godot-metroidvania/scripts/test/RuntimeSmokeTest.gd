@@ -1217,7 +1217,9 @@ func _sync_visual_camera() -> void:
 			var ground := room.get_node_or_null("Ground")
 			if ground:
 				size = Vector2(float(ground.get("room_width")), float(ground.get("room_height")))
-				visual_kit = String(ground.get("visual_kit"))
+				var kit = ground.get("visual_kit")
+				if typeof(kit) == TYPE_STRING:
+					visual_kit = kit
 	cam.apply_room_bounds(size, visual_kit)
 
 

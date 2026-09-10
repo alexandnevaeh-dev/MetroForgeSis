@@ -110,4 +110,29 @@ describe('VisualDNA', () => {
     });
     expect(again.promptHash).toBe(compiled.promptHash);
   });
+
+  it('matches mechanical-forge from a Foundry prompt even when visualStyle is HD pixel art', () => {
+    const foundryDna: GameDNA = {
+      ...dna,
+      identity: {
+        title: 'A courier in a furnace foundry, orange claw enemy, 32px indu',
+        tagline: 'A courier in a furnace foundry, orange claw enemy, 32px industrial kit, side-view metroidvania',
+        genre: 'Metroidvania',
+        tone: 'dark',
+        visualStyle: 'HD pixel art',
+      },
+      narrative: {
+        premise: 'A courier in a furnace foundry, orange claw enemy, 32px industrial kit, side-view metroidvania',
+        protagonist: 'The Wanderer',
+        centralConflict: 'Restore balance to a fractured world',
+      },
+    };
+    const art = generateArtBible(foundryDna, 20260909);
+    const style = generateStyleBible(foundryDna, art);
+    const visual = generateVisualDNA({ gameDna: foundryDna, artBible: art, styleBible: style });
+    expect(visual.artStyle.id).toBe('mechanical-forge');
+    const biomes = generateAllBiomeVisualDNA({ visualDNA: visual, gameDna: foundryDna });
+    expect(biomes[0]!.displayName.toLowerCase()).toMatch(/foundry|clockwork|vault/);
+    expect(art.palette.some((c) => c.hex === '#101018')).toBe(true);
+  });
 });

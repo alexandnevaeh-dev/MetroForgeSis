@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateDesignBible, generateStyleBible, applyStyleBiblePrompt } from '../src/bibles.js';
+import { generateDesignBible, generateStyleBible, applyStyleBiblePrompt, generateArtBible } from '../src/bibles.js';
 import type { GameDNA } from '@metroforge/schemas';
 
 const dna: GameDNA = {
@@ -57,5 +57,23 @@ describe('generateDesignBible', () => {
     const prompt = applyStyleBiblePrompt(style, 'CHARACTER', 'relic hunter');
     expect(prompt.toLowerCase()).toContain('pixel');
     expect(prompt).toContain('relic hunter');
+  });
+
+  it('uses the mechanical palette when the prompt is Foundry even if visualStyle is generic', () => {
+    const foundryDna: GameDNA = {
+      ...dna,
+      identity: {
+        ...dna.identity,
+        visualStyle: 'HD pixel art',
+        tagline: 'A courier in a furnace foundry, orange claw enemy, 32px industrial kit',
+      },
+      narrative: {
+        ...dna.narrative,
+        premise: 'A courier in a furnace foundry with an orange claw enemy',
+      },
+    };
+    const art = generateArtBible(foundryDna, 20260909);
+    expect(art.palette.map((c) => c.hex)).toContain('#101018');
+    expect(art.uiGuidelines.hudTheme).toBe('brass and cyan accents');
   });
 });
