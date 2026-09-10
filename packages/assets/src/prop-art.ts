@@ -7,6 +7,21 @@ function hexRgb(hex: string): [number, number, number] {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
+/** Readable fill/accent for world pickups. Never use palette.global[0] (void/sky) —
+ *  Foundry rooms paint that swatch into the background, so interactables vanish. */
+export function interactablePalette(palette?: {
+  global?: string[];
+  accents?: string[];
+  highlights?: string[];
+}): { fill: string; accent: string } {
+  const global = palette?.global ?? [];
+  const accents = palette?.accents ?? [];
+  const highlights = palette?.highlights ?? [];
+  const fill = global[1] ?? accents[0] ?? '#8a6840';
+  const accent = highlights[2] ?? accents[1] ?? global[2] ?? '#48b8c8';
+  return { fill, accent };
+}
+
 /** Palette-matched world interactables that replace ColorRect stubs in pickup/save/ability scenes. */
 export const WORLD_INTERACTABLE_ASSETS = [
   { id: 'world_pickup', path: 'assets/props/interact/pickup.png', family: 'pickup', width: 32, height: 32 },

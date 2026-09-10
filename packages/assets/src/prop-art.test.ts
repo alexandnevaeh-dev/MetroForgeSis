@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { decodePngRgba } from './png.js';
-import { WORLD_INTERACTABLE_ASSETS, generatePropSprite } from './prop-art.js';
+import { WORLD_INTERACTABLE_ASSETS, generatePropSprite, interactablePalette } from './prop-art.js';
 
 function opaqueCount(png: Buffer): number {
   const { rgba } = decodePngRgba(png);
@@ -35,5 +35,17 @@ describe('world interactable prop art', () => {
       expect(decoded.height).toBe(spec.height);
       expect(opaqueCount(png)).toBeGreaterThan(spec.width * spec.height * 0.12);
     }
+  });
+
+  it('does not paint interactables with the background/void swatch', () => {
+    const palette = {
+      global: ['#101018', '#8a6840', '#48b8c8', '#a84830'],
+      accents: ['#48b8c8', '#a84830'],
+      highlights: ['#325a96', '#4bc87d', '#ffe13f'],
+    };
+    const { fill, accent } = interactablePalette(palette);
+    expect(fill).not.toBe('#101018');
+    expect(fill).toBe('#8a6840');
+    expect(accent).toBe('#ffe13f');
   });
 });

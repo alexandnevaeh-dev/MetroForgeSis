@@ -49,7 +49,7 @@ import { applyVisualStyleContract, buildVisualStyleContract, compileVisualPrompt
 import { wrapIdentityProvider, capabilitiesFromRegistration, selectAnimationTier } from './identity/provider.js';
 import { writeCharacterIdentityPack } from './identity/pack.js';
 import { generateUiPanel, generateUiIcon, UI_FOUNDRY_ASSETS } from './ui-foundry.js';
-import { generatePropSprite, WORLD_INTERACTABLE_ASSETS } from './prop-art.js';
+import { generatePropSprite, WORLD_INTERACTABLE_ASSETS, interactablePalette } from './prop-art.js';
 import { sanitizeImagePromptText } from './sanitize-image-prompt.js';
 
 export interface GeneratedAsset {
@@ -1564,8 +1564,7 @@ export class AssetPipeline {
     }
 
     options.onTaskStarted?.('world_interactables', 'Generating world interactable sprites');
-    const interactFill = options.visualDNA?.palette.global[0] ?? '#3a4a58';
-    const interactAccent = options.visualDNA?.palette.highlights[0] ?? '#c4a060';
+    const { fill: interactFill, accent: interactAccent } = interactablePalette(options.visualDNA?.palette);
     for (const spec of WORLD_INTERACTABLE_ASSETS) {
       checkCancelled();
       const buffer = generatePropSprite({
