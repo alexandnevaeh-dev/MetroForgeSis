@@ -402,6 +402,12 @@ func _spawn_props(area: Dictionary) -> void:
 func _place_prop(path: String, ground_anchor_pos: Vector2, tile_size: int) -> void:
 	var tex: Texture2D = load(path)
 	if tex == null:
+		# Import-cache race: right after a fresh --import (especially under concurrent load) the
+		# .import metadata is on disk and ResourceLoader.exists() is true, but the compiled .ctex
+		# may not be readable yet and the first load() returns null and caches that null. Force one
+		# fresh, cache-ignoring read before giving up so the prop still appears.
+		tex = ResourceLoader.load(path, "Texture2D", ResourceLoader.CACHE_MODE_IGNORE)
+	if tex == null:
 		return
 	var prop := Node2D.new()
 	prop.position = ground_anchor_pos
