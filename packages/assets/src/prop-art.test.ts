@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { decodePngRgba } from './png.js';
-import { WORLD_INTERACTABLE_ASSETS, generatePropSprite, interactablePalette, actorPalette } from './prop-art.js';
+import { WORLD_INTERACTABLE_ASSETS, generatePropSprite, interactablePalette, actorPalette, npcActorPalette } from './prop-art.js';
 
 function opaqueCount(png: Buffer): number {
   const { rgba } = decodePngRgba(png);
@@ -59,5 +59,19 @@ describe('world interactable prop art', () => {
     expect(fill).toEqual([138, 104, 64, 255]);
     expect(accent).toEqual([255, 225, 63, 255]);
     expect(fill[0]).not.toBe(0x10);
+  });
+
+  it('paints NPC placeholders as soot couriers with a role accent, not a mustard cube', () => {
+    const palette = {
+      global: ['#101018', '#8a6840', '#48b8c8', '#a84830'],
+      accents: ['#48b8c8', '#a84830'],
+      highlights: ['#325a96', '#4bc87d', '#ffe13f'],
+    };
+    const { fill, accent } = npcActorPalette('quest_giver', palette);
+    expect(fill[0]).toBeLessThan(120);
+    expect(Math.abs(fill[0] - fill[1])).toBeLessThan(30);
+    expect(accent[0]).toBeGreaterThan(accent[2]);
+    expect(accent[0]).toBeGreaterThan(140);
+    expect(fill[0]).not.toBe(220);
   });
 });

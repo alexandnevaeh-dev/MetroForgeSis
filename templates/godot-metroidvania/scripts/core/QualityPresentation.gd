@@ -241,6 +241,12 @@ func _tune_parallax(room: Node, size: Vector2, archetype: String = "") -> void:
 			# Do not cover-zoom to leftover contain-view sky.
 			_layout_parallax_strip(far_sky as Sprite2D, size, "far_room")
 			(far_sky as Sprite2D).modulate = Color(0.38, 0.30, 0.28, 1)
+		elif archetype == "tutorial":
+			# Spawn capture is this room. Stretched FarSky + full-room contain-zoom
+			# wallpapered the critic (occupancy≈1, low lumaStdDev). Cover the plate
+			# and drop sky luma so empty soot is not "visible fill".
+			_layout_parallax_strip(far_sky as Sprite2D, size, "far_room")
+			(far_sky as Sprite2D).modulate = Color(0.28, 0.20, 0.20, 1)
 		else:
 			_layout_parallax_strip(far_sky as Sprite2D, size, "far")
 		return
@@ -533,33 +539,6 @@ func _ability_shrine_mouth_rect(size: Vector2) -> Rect2:
 	return Rect2(x, y, w, h)
 
 
-func _mute_shrine_npc(npc: Node2D) -> void:
-	if npc == null:
-		return
-	# Source NPC sheet is a saturated mustard cube. Multiplicative modulate
-	# cannot desaturate it, and hearth PointLights re-yellow anything on mask 1.
-	npc.modulate = Color.WHITE
-	npc.light_mask = 0
-	var sprite := npc.get_node_or_null("Sprite") as CanvasItem
-	if sprite == null:
-		return
-	sprite.light_mask = 0
-	var shader := Shader.new()
-	shader.code = """shader_type canvas_item;
-void fragment() {
-	vec4 tex = texture(TEXTURE, UV);
-	float luma = dot(tex.rgb, vec3(0.299, 0.587, 0.114));
-	vec3 soot = vec3(0.22, 0.23, 0.24);
-	vec3 body = soot + vec3(luma * 0.22);
-	body *= vec3(0.88, 0.94, 1.05);
-	COLOR = vec4(body, tex.a);
-}
-"""
-	var material := ShaderMaterial.new()
-	material.shader = shader
-	sprite.material = material
-
-
 func _furnace_hash(x: int, y: int) -> int:
 	var n := x * 374761393 + y * 668265263
 	n = (n ^ (n >> 13)) * 1274126177
@@ -736,7 +715,6 @@ func _dress_ability_shrine(room: Node, size: Vector2) -> void:
 					mat.set_shader_parameter("outline_color", Color(0.98, 0.94, 0.72, 0.95))
 					mat.set_shader_parameter("outline_width", 1.0)
 					sprite.material = mat
-	_mute_shrine_npc(_find_named_prefix(room, "NPC"))
 
 
 func _find_named_prefix(room: Node, prefix: String) -> Node2D:
@@ -890,15 +868,15 @@ func _apply_camera(room: Node, size: Vector2, info: Dictionary = {}) -> void:
 	var archetype := String(info.get("archetype", ""))
 	var playable_top := -1.0
 	var playable_bottom := -1.0
-	if archetype == "ability_shrine":
-		var band := _ability_shrine_playable_band(size, info)
+	if archetype == "ability_shrine" or archetype == "tutorial":
+		var band := _playable_band(size, info)
 		playable_top = band.x
 		playable_bottom = band.y
 	if camera and camera.has_method("apply_room_bounds"):
 		camera.apply_room_bounds(size, visual_kit, archetype, playable_top, playable_bottom)
 
 
-func _ability_shrine_playable_band(size: Vector2, info: Dictionary) -> Vector2:
+func _playable_band(size: Vector2, info: Dictionary) -> Vector2:
 	## World Y range that contains floor + climb platforms + jump apex. Camera
 	## contain-zooms this band (full room width) so empty sky is not the subject.
 	var floor_y := size.y - 48.0

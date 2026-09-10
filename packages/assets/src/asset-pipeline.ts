@@ -50,7 +50,7 @@ import { applyVisualStyleContract, buildVisualStyleContract, compileVisualPrompt
 import { wrapIdentityProvider, capabilitiesFromRegistration, selectAnimationTier } from './identity/provider.js';
 import { writeCharacterIdentityPack } from './identity/pack.js';
 import { generateUiPanel, generateUiIcon, UI_FOUNDRY_ASSETS } from './ui-foundry.js';
-import { generatePropSprite, WORLD_INTERACTABLE_ASSETS, interactablePalette, actorPalette } from './prop-art.js';
+import { generatePropSprite, WORLD_INTERACTABLE_ASSETS, interactablePalette, actorPalette, npcActorPalette } from './prop-art.js';
 import { sanitizeImagePromptText } from './sanitize-image-prompt.js';
 
 export interface GeneratedAsset {
@@ -248,14 +248,6 @@ export interface AssetPipelineResult {
   /** Posed animation failed identity QA or used single-still derivation. */
   fakeAnimationDetected?: boolean;
 }
-
-const NPC_ROLE_COLORS: Record<string, [number, number, number]> = {
-  quest_giver: [220, 180, 70],
-  merchant: [70, 170, 120],
-  lore: [150, 90, 200],
-  companion: [90, 160, 220],
-  neutral: [180, 140, 100],
-};
 
 const NPC_ROLES = ['quest_giver', 'merchant', 'lore', 'neutral'] as const;
 
@@ -1003,13 +995,17 @@ export class AssetPipeline {
       const npc = npcList[ni]!;
       const npcId = npc.id;
       const role = npc.role ?? NPC_ROLES[ni % NPC_ROLES.length]!;
-      const color = NPC_ROLE_COLORS[role] ?? NPC_ROLE_COLORS.neutral!;
+      const npcColors = npcActorPalette(
+        role,
+        options.visualDNA?.palette ?? { global: options.characterVisualDna?.palette },
+      );
       const npcFrame = compiledSpriteFrameSize('npc');
       const npcSpec: SpriteSpec = {
         id: npcId,
         width: npcFrame.width,
         height: npcFrame.height,
-        fill: [color[0], color[1], color[2], 255],
+        fill: npcColors.fill,
+        accent: npcColors.accent,
         shape: 'humanoid',
       };
 

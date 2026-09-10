@@ -1243,7 +1243,7 @@ func _sync_visual_camera() -> void:
 	if not info.is_empty():
 		archetype = String(info.get("archetype", archetype))
 		size = Vector2(float(info.get("width", size.x)), float(info.get("height", size.y)))
-		if archetype == "ability_shrine":
+		if archetype == "ability_shrine" or archetype == "tutorial":
 			var floor_y := size.y - 48.0
 			var top := floor_y
 			var platforms = info.get("platforms", [])

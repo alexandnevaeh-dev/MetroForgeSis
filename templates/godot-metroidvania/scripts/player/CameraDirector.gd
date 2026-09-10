@@ -39,8 +39,8 @@ func _load_profile() -> void:
 	_look_ahead = float(parsed.get("lookAheadPx", 28.0))
 	_profile_zoom = float(parsed.get("zoom", 1.85))
 
-## `playable_top`/`playable_bottom` are world Y of the reachable band. Used only for
-## ability_shrine (room 05) so the camera frames floor+platforms instead of empty sky.
+## `playable_top`/`playable_bottom` are world Y of the reachable band. Used for
+## ability_shrine and tutorial so the camera frames floor+platforms instead of empty sky.
 ## Other archetypes keep full-room contain-zoom. Does not change collision geometry.
 func apply_room_bounds(
 	room_size: Vector2,
@@ -50,7 +50,7 @@ func apply_room_bounds(
 	playable_bottom: float = -1.0,
 ) -> void:
 	_room_size = room_size
-	_frame_playable = archetype == "ability_shrine" and playable_top >= 0.0 and playable_bottom > playable_top
+	_frame_playable = (archetype == "ability_shrine" or archetype == "tutorial") and playable_top >= 0.0 and playable_bottom > playable_top
 	_frame_top = playable_top
 	_frame_bottom = playable_bottom
 	top_level = true
@@ -71,7 +71,7 @@ func apply_room_bounds(
 	var cover := maxf(vp.x / maxf(room_size.x, 1.0), vp.y / maxf(room_size.y, 1.0))
 	var fit := contain
 	if _frame_playable:
-		# Ability shrine only: contain the playable rect (full room width × reachable
+		# Ability shrine / tutorial: contain the playable rect (full room width × reachable
 		# band). Takes precedence over foundry cover-zoom so empty sky is not the subject.
 		# Does not stretch FarSky and does not crop climb platforms.
 		var band_h := maxf(240.0, playable_bottom - playable_top)

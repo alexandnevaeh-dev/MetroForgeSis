@@ -16,6 +16,33 @@ describe('PNG encoder', () => {
     expect(png.toString('ascii', 1, 4)).toBe('PNG');
   });
 
+  it('paints a courier silhouette with a leg gap and pack, not a solid cube', () => {
+    const png = generateProceduralSprite({
+      id: 'courier',
+      width: 64,
+      height: 64,
+      fill: [138, 104, 64, 255],
+      accent: [212, 162, 98, 255],
+      shape: 'humanoid',
+    });
+    const { rgba, width, height } = decodePngRgba(png);
+    expect(width).toBe(64);
+    expect(height).toBe(64);
+    const alpha = (x: number, y: number) => rgba[(y * width + x) * 4 + 3]!;
+    // Crotch gap between the two legs.
+    expect(alpha(32, 50)).toBe(0);
+    // Pack on the facing-right side.
+    expect(alpha(48, 30)).toBeGreaterThan(0);
+    // Head mass.
+    expect(alpha(32, 12)).toBeGreaterThan(0);
+    let opaque = 0;
+    for (let i = 3; i < rgba.length; i += 4) {
+      if (rgba[i]! > 0) opaque += 1;
+    }
+    expect(opaque).toBeGreaterThan(200);
+    expect(opaque).toBeLessThan(64 * 64 * 0.55);
+  });
+
   it('generates VFX burst textures', () => {
     const png = generateVfxTexture({
       id: 'hit_spark',

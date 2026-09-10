@@ -67,6 +67,18 @@ describe('AssetPipeline procedural path', () => {
     expect(result.assets.some((a) => a.path === 'assets/npcs/npc_000.png')).toBe(true);
     expect(result.assets.some((a) => a.path === 'assets/npcs/npc_000_walk.png')).toBe(true);
 
+    const npcStill = result.assets.find((a) => a.path === 'assets/npcs/npc_000.png')!;
+    const npcPx = decodePngRgba(npcStill.buffer);
+    let mustard = 0;
+    for (let i = 0; i < npcPx.rgba.length; i += 4) {
+      if ((npcPx.rgba[i + 3] ?? 0) < 128) continue;
+      const r = npcPx.rgba[i]!;
+      const g = npcPx.rgba[i + 1]!;
+      const b = npcPx.rgba[i + 2]!;
+      if (r > 180 && g > 140 && b < 100) mustard += 1;
+    }
+    expect(mustard).toBe(0);
+
     expect(result.assets.some((a) => a.path === 'assets/backgrounds/biome_0/far.png')).toBe(true);
     expect(result.assets.some((a) => a.path.includes('player_idle_pose.png'))).toBe(true);
     expect(result.assets.some((a) => a.path.includes('assets/ui/portraits/'))).toBe(true);

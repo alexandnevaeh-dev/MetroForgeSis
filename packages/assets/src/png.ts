@@ -66,29 +66,90 @@ export interface SpriteSpec {
   shape?: 'humanoid' | 'enemy' | 'boss' | 'item' | 'tile';
 }
 
+function paintHumanoid(
+  rgba: Uint8Array,
+  width: number,
+  height: number,
+  fill: [number, number, number, number],
+  accent: [number, number, number, number],
+): void {
+  const mask = new Uint8Array(width * height);
+  const kind = new Uint8Array(width * height);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const nx = x / width;
+      const ny = y / height;
+      const head = nx >= 0.4 && nx <= 0.6 && ny >= 0.1 && ny <= 0.3;
+      const torso = nx >= 0.34 && nx <= 0.66 && ny >= 0.28 && ny <= 0.62;
+      const arm = nx >= 0.26 && nx <= 0.36 && ny >= 0.36 && ny <= 0.58;
+      const legs =
+        ny > 0.62 && ny <= 0.92 && ((nx >= 0.36 && nx <= 0.48) || (nx >= 0.52 && nx <= 0.64));
+      const pack = nx >= 0.63 && nx <= 0.8 && ny >= 0.34 && ny <= 0.6;
+      if (!(head || torso || arm || legs || pack)) continue;
+      const idx = y * width + x;
+      mask[idx] = 1;
+      const visor = ny >= 0.16 && ny <= 0.22 && nx >= 0.42 && nx <= 0.58;
+      const helmet = ny >= 0.1 && ny <= 0.16 && nx >= 0.4 && nx <= 0.6;
+      if (visor || helmet || pack) kind[idx] = 2;
+      else if (legs && ny >= 0.84) kind[idx] = 3;
+      else kind[idx] = 1;
+    }
+  }
+  const outline: [number, number, number, number] = [
+    Math.max(0, Math.round(fill[0] * 0.22)),
+    Math.max(0, Math.round(fill[1] * 0.2)),
+    Math.max(0, Math.round(fill[2] * 0.18)),
+    255,
+  ];
+  const boot: [number, number, number, number] = [
+    Math.max(0, fill[0] - 28),
+    Math.max(0, fill[1] - 24),
+    Math.max(0, fill[2] - 18),
+    255,
+  ];
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = y * width + x;
+      const i = idx * 4;
+      let c: [number, number, number, number] | null = null;
+      if (mask[idx]) {
+        c = kind[idx] === 2 ? accent : kind[idx] === 3 ? boot : fill;
+      } else {
+        const neighbor =
+          (x > 0 && mask[idx - 1]) ||
+          (x + 1 < width && mask[idx + 1]) ||
+          (y > 0 && mask[idx - width]) ||
+          (y + 1 < height && mask[idx + width]);
+        if (neighbor) c = outline;
+      }
+      if (!c) {
+        rgba[i] = 0;
+        rgba[i + 1] = 0;
+        rgba[i + 2] = 0;
+        rgba[i + 3] = 0;
+      } else {
+        rgba[i] = c[0]!;
+        rgba[i + 1] = c[1]!;
+        rgba[i + 2] = c[2]!;
+        rgba[i + 3] = c[3]!;
+      }
+    }
+  }
+}
+
 export function generateProceduralSprite(spec: SpriteSpec): Buffer {
   const { width, height, fill, accent = fill } = spec;
   const rgba = new Uint8Array(width * height * 4);
+  if ((spec.shape ?? 'humanoid') === 'humanoid') {
+    paintHumanoid(rgba, width, height, fill, accent);
+    return encodePng(width, height, rgba);
+  }
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const i = (y * width + x) * 4;
       let inside = false;
-
-      const nx = x / width;
-      const ny = y / height;
       switch (spec.shape ?? 'humanoid') {
-        case 'humanoid': {
-          // Recognizable courier silhouette: head, shoulders/torso, two legs with a gap, and a
-          // carrying pack on the back — so the actor reads as a character, not a capsule blob.
-          const head = nx >= 0.4 && nx <= 0.6 && ny >= 0.08 && ny <= 0.28;
-          const torso = nx >= 0.34 && nx <= 0.66 && ny >= 0.28 && ny <= 0.62;
-          const legs =
-            ny > 0.62 && ny <= 0.92 && ((nx >= 0.36 && nx <= 0.48) || (nx >= 0.52 && nx <= 0.64));
-          const pack = nx >= 0.63 && nx <= 0.8 && ny >= 0.34 && ny <= 0.6;
-          inside = head || torso || legs || pack;
-          break;
-        }
         case 'enemy':
           inside = Math.hypot(x - width / 2, y - height / 2) < Math.min(width, height) * 0.4;
           break;
@@ -111,12 +172,7 @@ export function generateProceduralSprite(spec: SpriteSpec): Buffer {
         rgba[i + 2] = 0;
         rgba[i + 3] = 0;
       } else {
-        // Accent only the helmet/visor band and the carrying pack — a small identity cue rather
-        // than flooding the whole head, which read as a conspicuous cap.
-        const helmet = ny >= 0.08 && ny <= 0.16 && nx >= 0.4 && nx <= 0.6;
-        const pack = nx >= 0.63 && nx <= 0.8 && ny >= 0.34 && ny <= 0.6;
-        const useAccent = spec.shape === 'humanoid' && (helmet || pack);
-        const c = useAccent ? accent : fill;
+        const c = fill;
         rgba[i] = c[0]!;
         rgba[i + 1] = c[1]!;
         rgba[i + 2] = c[2]!;

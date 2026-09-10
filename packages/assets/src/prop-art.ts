@@ -39,6 +39,36 @@ export function actorPalette(palette?: {
   };
 }
 
+const NPC_ROLE_ACCENT: Record<string, [number, number, number]> = {
+  quest_giver: [186, 132, 58],
+  merchant: [70, 150, 110],
+  lore: [140, 110, 180],
+  companion: [90, 150, 190],
+  neutral: [160, 120, 90],
+};
+
+/** NPC placeholders share the courier silhouette. Fill is soot-iron derived from
+ *  the actor brass (not a full-body role flood — quest_giver used to be mustard).
+ *  Role color is a small helmet/pack accent only. */
+export function npcActorPalette(
+  role: string,
+  palette?: {
+    global?: string[];
+    accents?: string[];
+    highlights?: string[];
+  },
+): { fill: [number, number, number, number]; accent: [number, number, number, number] } {
+  const actor = actorPalette(palette);
+  const fill: [number, number, number, number] = [
+    Math.max(0, actor.fill[0] - 40),
+    Math.max(0, actor.fill[1] - 28),
+    Math.max(0, actor.fill[2] - 16),
+    255,
+  ];
+  const rgb = NPC_ROLE_ACCENT[role] ?? NPC_ROLE_ACCENT.neutral!;
+  return { fill, accent: [rgb[0], rgb[1], rgb[2], 255] };
+}
+
 /** Palette-matched world interactables that replace ColorRect stubs in pickup/save/ability scenes. */
 export const WORLD_INTERACTABLE_ASSETS = [
   { id: 'world_pickup', path: 'assets/props/interact/pickup.png', family: 'pickup', width: 32, height: 32 },
