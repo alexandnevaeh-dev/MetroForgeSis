@@ -445,10 +445,30 @@ func _enable_terrain_lighting(room: Node, archetype: String = "") -> void:
 			layer.light_mask = 2
 			layer.modulate = Color(0.34, 0.24, 0.22, 1)
 		elif node_name == "RearWall":
-			# Recede the rear architecture (mask 2 = not lit by the key/fill) and darken it so the
-			# lit walkable floor/platforms and the courier separate from the backdrop as depth.
+			# Recede the rear architecture (mask 2 = not lit by the key/fill) so the lit walkable
+			# floor/platforms and courier separate from the backdrop as depth — and tint it per
+			# gameplay role so rooms read as distinct Foundry spaces (cross-room diversity), all
+			# within the warm soot/gunmetal range.
 			layer.light_mask = 2
-			layer.modulate = Color(0.40, 0.40, 0.46, 1)
+			var rear_tint := Color(0.40, 0.40, 0.46, 1)
+			match archetype:
+				"combat", "arena", "miniboss":
+					rear_tint = Color(0.46, 0.32, 0.26, 1)  # furnace hall — warm soot
+				"traversal":
+					rear_tint = Color(0.34, 0.38, 0.46, 1)  # chain shaft — cool iron
+				"challenge":
+					rear_tint = Color(0.38, 0.40, 0.42, 1)  # maintenance wall — neutral
+				"save":
+					rear_tint = Color(0.48, 0.44, 0.40, 1)  # checkpoint station — warm-lit
+				"npc", "shop":
+					rear_tint = Color(0.50, 0.52, 0.56, 1)  # quiet gallery — brighter recede
+				"ability_gate":
+					rear_tint = Color(0.36, 0.42, 0.50, 1)  # gate colonnade — cool
+				"secret", "treasure":
+					rear_tint = Color(0.30, 0.28, 0.30, 1)  # maintenance recess — deep shadow
+				"boss":
+					rear_tint = Color(0.28, 0.30, 0.36, 1)  # boss ruin — darkest
+			layer.modulate = rear_tint
 
 
 func _attach_floor_occluder(room: Node, size: Vector2) -> void:

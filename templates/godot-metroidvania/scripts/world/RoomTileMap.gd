@@ -191,20 +191,35 @@ func _paint_rear_wall() -> void:
 	var variant := rng.randi() % 4
 	# Archetype chooses the silhouette family so traversal/combat/boss/NPC cannot
 	# collapse to the same arcade. Hash variant only flavors leftover connectors.
+	# Distinct architectural identity per gameplay role so rooms do not collapse to one silhouette
+	# (the cross-room diversity failure). Each role gets a different rear-wall family; the shared
+	# warm soot/gunmetal palette and all collision/traversal geometry are untouched.
 	match room_archetype:
-		"traversal", "challenge", "tutorial":
+		"tutorial":
 			_paint_night_apse(rear, cols, floor_row, crop_rows, wall, ceiling)
+		"traversal":
+			# Chain shaft: tall pier rhythm reads as a vertical climb shaft.
+			_paint_colonnade(rear, cols, floor_row, crop_rows, wall, ceiling)
+		"challenge":
+			# Maintenance wall: solid rear with a high slit — a hazard/climb gauntlet.
+			_paint_gallery_wall(rear, cols, floor_row, crop_rows, wall, ceiling)
 		"combat", "arena", "miniboss":
-			_paint_night_apse(rear, cols, floor_row, crop_rows, wall, ceiling)
+			# Furnace hall: furnace mouth + hood behind the fight.
+			_paint_furnace_hearth(rear, cols, floor_row, crop_rows, wall, ceiling)
 		"boss":
 			_paint_ruin_mass(rear, cols, floor_row, crop_rows, wall, ceiling, rng)
-		"npc", "shop", "save":
+		"npc", "shop":
 			_paint_night_apse(rear, cols, floor_row, crop_rows, wall, ceiling)
+		"save":
+			# Checkpoint station: a quiet solid rear framing the save shrine.
+			_paint_gallery_wall(rear, cols, floor_row, crop_rows, wall, ceiling)
 		"ability_shrine":
 			_paint_furnace_hearth(rear, cols, floor_row, crop_rows, wall, ceiling)
 		"ability_gate":
-			_paint_night_apse(rear, cols, floor_row, crop_rows, wall, ceiling)
+			# Gate colonnade: pier rhythm flanking the gate.
+			_paint_colonnade(rear, cols, floor_row, crop_rows, wall, ceiling)
 		"secret", "treasure":
+			# Maintenance recess: broken, asymmetric rubble masses.
 			_paint_ruin_mass(rear, cols, floor_row, crop_rows, wall, ceiling, rng)
 		_:
 			match variant:
