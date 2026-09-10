@@ -185,17 +185,19 @@ function paintFarVaultAndLanterns(
   x: number,
   y: number,
   seed: number,
+  vault: [number, number, number] = [34, 52, 108],
+  lantern: [number, number, number] = [168, 148, 78],
 ): void {
   const bay = Math.max(28, Math.round(width / 6));
   const cell = Math.floor(x / bay);
   const cx = Math.round(cell * bay + bay * 0.5);
   if (Math.abs(x - cx) <= 1 && y > height * 0.16 && y < height * 0.48) {
-    setPx(rgba, width, x, y, 34, 52, 108, 255);
+    setPx(rgba, width, x, y, vault[0], vault[1], vault[2], 255);
   }
   const ly = Math.floor(height * 0.47);
   const d = (x - cx) * (x - cx) + (y - ly) * (y - ly);
   if (d <= 4 && hash01(seed, cell + 4) > 0.35) {
-    setPx(rgba, width, x, y, 168, 148, 78, 255);
+    setPx(rgba, width, x, y, lantern[0], lantern[1], lantern[2], 255);
   }
 }
 
@@ -225,7 +227,14 @@ function pstripHex(hex: string): [number, number, number] {
 function foundryStripTones(
   palette: ParallaxStripPalette | undefined,
   seed: number,
-): { skyTop: [number, number, number]; skyBot: [number, number, number]; masonry: [number, number, number]; dark: [number, number, number] } | null {
+): {
+  skyTop: [number, number, number];
+  skyBot: [number, number, number];
+  masonry: [number, number, number];
+  dark: [number, number, number];
+  vault: [number, number, number];
+  lantern: [number, number, number];
+} | null {
   const globals = (palette?.global ?? []).map(pstripHex);
   const shadows = (palette?.shadows ?? []).map(pstripHex);
   if (globals.length === 0) return null;
@@ -244,11 +253,16 @@ function foundryStripTones(
   // hanging chains/piers a cold blue that reads as disconnected blue beacons against the warm
   // soot background. Keeping blue <= green makes them soot shadows that belong to the palette.
   const warmClamp = (c: [number, number, number]): [number, number, number] => [c[0], c[1], Math.min(c[2], c[1])];
+  const masonryTone = warmClamp(mix(voidTone, warm, 0.2).map((v, i) => v + jit(i + 7)) as [number, number, number]);
   return {
     skyTop: warmClamp(mix(voidTone, warm, 0.1).map((v, i) => v + jit(i + 1)) as [number, number, number]),
     skyBot: mix(voidTone, warm, 0.3).map((v, i) => v + jit(i + 4)) as [number, number, number],
-    masonry: warmClamp(mix(voidTone, warm, 0.2).map((v, i) => v + jit(i + 7)) as [number, number, number]),
+    masonry: masonryTone,
     dark: warmClamp(mix(voidTone, warm, 0.06).map((v, i) => v + jit(i + 10)) as [number, number, number]),
+    // Far-plate vault ribs and lanterns: warm structural tone + warm amber glow, so they read as
+    // foundry architecture instead of the hardcoded cold-blue "beacons" against the warm backdrop.
+    vault: warmClamp(mix(masonryTone, warm, 0.4) as [number, number, number]),
+    lantern: mix(warm, [255, 214, 150], 0.45) as [number, number, number],
   };
 }
 
@@ -266,6 +280,8 @@ export function generateParallaxStrip(
   const skyBot: [number, number, number] = foundry?.skyBot ?? [36 + Math.floor(hash01(seed, 4) * 10), 64 + Math.floor(hash01(seed, 5) * 14), 108 + Math.floor(hash01(seed, 6) * 16)];
   const masonry: [number, number, number] = foundry?.masonry ?? [32 + Math.floor(hash01(seed, 7) * 10), 42 + Math.floor(hash01(seed, 8) * 8), 62 + Math.floor(hash01(seed, 9) * 10)];
   const dark: [number, number, number] = foundry?.dark ?? [10 + Math.floor(hash01(seed, 10) * 8), 14 + Math.floor(hash01(seed, 11) * 8), 22 + Math.floor(hash01(seed, 12) * 10)];
+  const vault: [number, number, number] = foundry?.vault ?? [34, 52, 108];
+  const lantern: [number, number, number] = foundry?.lantern ?? [168, 148, 78];
 
   for (let y = 0; y < height; y++) {
     const t = y / Math.max(1, height - 1);
@@ -276,7 +292,7 @@ export function generateParallaxStrip(
         const b = Math.round(skyTop[2] + (skyBot[2] - skyTop[2]) * t);
         setPx(rgba, width, x, y, r, g, b, 255);
         paintFarHallMass(rgba, width, height, x, y, seed, masonry, dark);
-        paintFarVaultAndLanterns(rgba, width, height, x, y, seed);
+        paintFarVaultAndLanterns(rgba, width, height, x, y, seed, vault, lantern);
         continue;
       }
 

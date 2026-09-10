@@ -180,6 +180,21 @@ describe('parallax strips', () => {
     expect(blueDominant / opaque).toBeLessThan(0.02);
   });
 
+  it('paints far-plate vault ribs/lanterns warm (not the hardcoded cold-blue beacons) for a foundry palette', () => {
+    const palette = {
+      global: ['#101018', '#8a6840', '#48b8c8', '#a84830'],
+      shadows: ['#07070b', '#3e2f1d', '#20535a', '#4c2016'],
+      highlights: ['#14141e', '#ad8250', '#5ae6fa', '#d25a3c'],
+    };
+    const { rgba } = decodePngRgba(generateParallaxStrip('far', 7, 160, 90, palette));
+    // The old vault ribs were (34,52,108): blue clearly ahead of red. Warm ribs keep red >= blue.
+    let coldBlue = 0;
+    for (let i = 0; i < rgba.length; i += 4) {
+      if (rgba[i + 2]! > rgba[i]! + 20) coldBlue += 1;
+    }
+    expect(coldBlue).toBe(0);
+  });
+
   it('does not paint a circular moon in the upper far plate', () => {
     const { rgba, width, height } = decodePngRgba(generateParallaxStrip('far', 7, 160, 90));
     let bright = 0;
