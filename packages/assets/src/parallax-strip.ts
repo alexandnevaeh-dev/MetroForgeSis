@@ -203,18 +203,64 @@ function paintFarVaultAndLanterns(
  * Procedural side-view parallax plates. Far is an opaque night-citadel interior (not a
  * pine/mountain/lake vista); mid/near keep empty air transparent so they sit as depth silhouettes.
  */
+export interface ParallaxStripPalette {
+  global?: string[];
+  shadows?: string[];
+  highlights?: string[];
+  accents?: string[];
+}
+
+function pstripHex(hex: string): [number, number, number] {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return [30, 34, 42];
+  const n = Number.parseInt(m[1]!, 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+/** Warm foundry backdrop tones from the biome palette. The far plate fills the camera's
+ *  contain-zoom side-margins, so a hardcoded navy night sky reads as dead-navy margin bars in a
+ *  mechanical-forge slice. Deriving the gradient from the palette turns those margins into warm
+ *  soot/ember atmosphere without touching the camera (climb geometry is never cropped). Returns
+ *  null when no palette is supplied so the default drowned-citadel behavior is unchanged. */
+function foundryStripTones(
+  palette: ParallaxStripPalette | undefined,
+  seed: number,
+): { skyTop: [number, number, number]; skyBot: [number, number, number]; masonry: [number, number, number]; dark: [number, number, number] } | null {
+  const globals = (palette?.global ?? []).map(pstripHex);
+  const shadows = (palette?.shadows ?? []).map(pstripHex);
+  if (globals.length === 0) return null;
+  const lum = (c: [number, number, number]) => 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2];
+  const pool = [...globals, ...shadows];
+  const voidTone = [...pool].sort((a, b) => lum(a) - lum(b))[0]!;
+  const warm = [...globals].sort((a, b) => b[0] - b[2] - (a[0] - a[2]))[0]!;
+  const mix = (a: [number, number, number], b: [number, number, number], t: number): [number, number, number] => [
+    Math.round(a[0] + (b[0] - a[0]) * t),
+    Math.round(a[1] + (b[1] - a[1]) * t),
+    Math.round(a[2] + (b[2] - a[2]) * t),
+  ];
+  const jit = (n: number) => Math.floor(hash01(seed, n) * 8);
+  return {
+    skyTop: mix(voidTone, warm, 0.1).map((v, i) => v + jit(i + 1)) as [number, number, number],
+    skyBot: mix(voidTone, warm, 0.3).map((v, i) => v + jit(i + 4)) as [number, number, number],
+    masonry: mix(voidTone, warm, 0.2).map((v, i) => v + jit(i + 7)) as [number, number, number],
+    dark: mix(voidTone, [0, 0, 0], 0.4).map((v, i) => v + jit(i + 10)) as [number, number, number],
+  };
+}
+
 export function generateParallaxStrip(
   layer: ParallaxLayerName,
   seed: number,
   width = 640,
   height = 360,
+  palette?: ParallaxStripPalette,
 ): Buffer {
   const rgba = new Uint8Array(width * height * 4);
+  const foundry = foundryStripTones(palette, seed);
   // Drowned-citadel night sky (#284878 family). Do not drift into cream/green landscape slabs.
-  const skyTop: [number, number, number] = [22 + Math.floor(hash01(seed, 1) * 10), 38 + Math.floor(hash01(seed, 2) * 12), 70 + Math.floor(hash01(seed, 3) * 14)];
-  const skyBot: [number, number, number] = [36 + Math.floor(hash01(seed, 4) * 10), 64 + Math.floor(hash01(seed, 5) * 14), 108 + Math.floor(hash01(seed, 6) * 16)];
-  const masonry: [number, number, number] = [32 + Math.floor(hash01(seed, 7) * 10), 42 + Math.floor(hash01(seed, 8) * 8), 62 + Math.floor(hash01(seed, 9) * 10)];
-  const dark: [number, number, number] = [10 + Math.floor(hash01(seed, 10) * 8), 14 + Math.floor(hash01(seed, 11) * 8), 22 + Math.floor(hash01(seed, 12) * 10)];
+  const skyTop: [number, number, number] = foundry?.skyTop ?? [22 + Math.floor(hash01(seed, 1) * 10), 38 + Math.floor(hash01(seed, 2) * 12), 70 + Math.floor(hash01(seed, 3) * 14)];
+  const skyBot: [number, number, number] = foundry?.skyBot ?? [36 + Math.floor(hash01(seed, 4) * 10), 64 + Math.floor(hash01(seed, 5) * 14), 108 + Math.floor(hash01(seed, 6) * 16)];
+  const masonry: [number, number, number] = foundry?.masonry ?? [32 + Math.floor(hash01(seed, 7) * 10), 42 + Math.floor(hash01(seed, 8) * 8), 62 + Math.floor(hash01(seed, 9) * 10)];
+  const dark: [number, number, number] = foundry?.dark ?? [10 + Math.floor(hash01(seed, 10) * 8), 14 + Math.floor(hash01(seed, 11) * 8), 22 + Math.floor(hash01(seed, 12) * 10)];
 
   for (let y = 0; y < height; y++) {
     const t = y / Math.max(1, height - 1);

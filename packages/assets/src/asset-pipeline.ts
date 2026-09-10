@@ -18,6 +18,7 @@ import {
 import { PixelArtProcessor } from './pixel-art-processor.js';
 import {
   generateParallaxStrip,
+  type ParallaxStripPalette,
   farPlateLooksLikeOutdoorLandscape,
   PARALLAX_LAYER_PROMPTS,
   PARALLAX_STRIP_SIZE,
@@ -1476,7 +1477,13 @@ export class AssetPipeline {
           const bgPath = `assets/backgrounds/biome_${b}/${layer}.png`;
           options.onTaskStarted?.('background', `Generating ${layer} parallax for biome ${b}`);
           const dim = PARALLAX_STRIP_SIZE[layer];
-          let bgBuffer = generateParallaxStrip(layer, options.seed + b * 50 + li, dim.width, dim.height);
+          let bgBuffer = generateParallaxStrip(
+            layer,
+            options.seed + b * 50 + li,
+            dim.width,
+            dim.height,
+            options.visualDNA?.palette as ParallaxStripPalette | undefined,
+          );
           let bgFallback = true;
           let bgProvider = 'procedural';
           let bgModel: string | undefined;
@@ -1515,7 +1522,13 @@ export class AssetPipeline {
                 warnings.push(
                   `Background far biome ${b} looked like outdoor landscape (pines/figures) — procedural citadel fallback`,
                 );
-                bgBuffer = generateParallaxStrip(layer, options.seed + b * 50 + li, dim.width, dim.height);
+                bgBuffer = generateParallaxStrip(
+                  layer,
+                  options.seed + b * 50 + li,
+                  dim.width,
+                  dim.height,
+                  options.visualDNA?.palette as ParallaxStripPalette | undefined,
+                );
                 bgFallback = true;
                 bgProvider = 'procedural';
                 bgModel = undefined;

@@ -139,6 +139,28 @@ describe('parallax strips', () => {
     expect(mass / sampled).toBeGreaterThan(0.18);
   });
 
+  it('renders a warm foundry far plate (not navy) when a mechanical-forge palette is supplied', () => {
+    const palette = {
+      global: ['#101018', '#8a6840', '#48b8c8', '#a84830'],
+      shadows: ['#07070b', '#3e2f1d', '#20535a', '#4c2016'],
+      highlights: ['#14141e', '#ad8250', '#5ae6fa', '#d25a3c'],
+    };
+    const { rgba, width, height } = decodePngRgba(generateParallaxStrip('far', 7, 160, 90, palette));
+    let rSum = 0;
+    let bSum = 0;
+    for (let i = 0; i < rgba.length; i += 4) {
+      rSum += rgba[i]!;
+      bSum += rgba[i + 2]!;
+    }
+    // Warm soot/ember gradient: red channel now leads blue (the navy default was blue-dominant).
+    expect(rSum).toBeGreaterThan(bSum);
+    // Still a dark backdrop plate, not a bright vista.
+    let luma = 0;
+    for (let i = 0; i < rgba.length; i += 4) luma += 0.299 * rgba[i]! + 0.587 * rgba[i + 1]! + 0.114 * rgba[i + 2]!;
+    expect(luma / (width * height)).toBeLessThan(90);
+    expect(farPlateLooksLikeOutdoorLandscape(generateParallaxStrip('far', 7, 640, 360, palette))).toBe(false);
+  });
+
   it('does not paint a circular moon in the upper far plate', () => {
     const { rgba, width, height } = decodePngRgba(generateParallaxStrip('far', 7, 160, 90));
     let bright = 0;
