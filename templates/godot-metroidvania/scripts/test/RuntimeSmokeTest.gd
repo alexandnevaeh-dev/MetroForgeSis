@@ -954,6 +954,14 @@ func _check_inventory_equip_ui(world: Node) -> void:
 			break
 	_check("inventory_display_marks_equipped_items", found_equipped)
 
+func _is_presentation_capture() -> bool:
+	## Matches GameHUD._hud_mode: presentation stills hide scrap/echo text.
+	## Functional HUD asserts stay on DEBUG (no CAPTURE env / PLAYER/RELEASE/QA_CAPTURE).
+	var mode := OS.get_environment("METROFORGE_HUD_MODE")
+	if mode.is_empty() and OS.get_environment("METROFORGE_CAPTURE") == "1":
+		mode = "QA_CAPTURE"
+	return mode == "PLAYER" or mode == "RELEASE" or mode == "QA_CAPTURE"
+
 ## Proves the HUD's currency label actually reflects real QuestManager state, not just that the
 ## node exists — by this point in the test both a quest completion and an item pickup have
 ## already added scrap, so the label must show a real, non-empty, matching amount.
@@ -968,11 +976,18 @@ func _check_currency_hud(world: Node) -> void:
 	if currency_label == null:
 		return
 
+	var collectible_label: Label = hud.get_node_or_null("HUD/MarginContainer/VBox/CollectibleLabel")
+	_check("collectible_label_present", collectible_label != null)
+
+	# Presentation captures (METROFORGE_CAPTURE / PLAYER / RELEASE / QA_CAPTURE) clear
+	# currency and collectible text so the HUD band does not fail visual QA. Keep the
+	# real scrap/echo assertions for DEBUG functional runs. Do not weaken those thresholds.
+	if _is_presentation_capture():
+		return
+
 	var scrap: int = int(QuestManager.currency.get("scrap", 0))
 	_check("currency_hud_reflects_real_state", str(scrap) in currency_label.text)
 
-	var collectible_label: Label = hud.get_node_or_null("HUD/MarginContainer/VBox/CollectibleLabel")
-	_check("collectible_label_present", collectible_label != null)
 	if collectible_label != null:
 		var found := InventoryManager.get_collectible_found_count()
 		var total := InventoryManager.get_collectible_total_count()

@@ -22,6 +22,23 @@ export function interactablePalette(palette?: {
   return { fill, accent };
 }
 
+/** Actor fill/accent for procedural player/NPC placeholders. Same void skip as
+ *  interactables — palette.global[0] is the Foundry sky, so a courier painted with
+ *  it vanishes. Returns RGBA tuples for SpriteSpec. */
+export function actorPalette(palette?: {
+  global?: string[];
+  accents?: string[];
+  highlights?: string[];
+}): { fill: [number, number, number, number]; accent: [number, number, number, number] } {
+  const { fill, accent } = interactablePalette(palette);
+  const f = hexRgb(fill);
+  const a = hexRgb(accent);
+  return {
+    fill: [f[0], f[1], f[2], 255],
+    accent: [a[0], a[1], a[2], 255],
+  };
+}
+
 /** Palette-matched world interactables that replace ColorRect stubs in pickup/save/ability scenes. */
 export const WORLD_INTERACTABLE_ASSETS = [
   { id: 'world_pickup', path: 'assets/props/interact/pickup.png', family: 'pickup', width: 32, height: 32 },

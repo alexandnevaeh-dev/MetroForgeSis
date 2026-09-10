@@ -141,16 +141,20 @@ func _load_pose_overrides(frames: SpriteFrames) -> void:
 ## of crashing the scene.
 func _load_animation_frames(frames: SpriteFrames, anim: String, path: String, copy_to_idle: bool) -> void:
 	var res_path := path if path.begins_with("res://") else "res://" + path
-	if ResourceLoader.exists(res_path):
+	# Freshly generated PNGs may exist on disk before Godot's import cache
+	# registers them. WorldPropSprite already checks FileAccess; walk sheets
+	# must too or the player falls back to a solid ColorRect-like placeholder.
+	if ResourceLoader.exists(res_path) or FileAccess.file_exists(res_path):
 		var tex: Texture2D = _clean_contact_texture(load(res_path))
-		for i in range(frame_count):
-			var atlas := AtlasTexture.new()
-			atlas.atlas = tex
-			atlas.region = Rect2(i * frame_size.x, 0, frame_size.x, frame_size.y)
-			frames.add_frame(anim, atlas, 1.0)
-			if i == 0 and copy_to_idle:
-				frames.add_frame("idle", atlas, 1.0)
-		return
+		if tex != null:
+			for i in range(frame_count):
+				var atlas := AtlasTexture.new()
+				atlas.atlas = tex
+				atlas.region = Rect2(i * frame_size.x, 0, frame_size.x, frame_size.y)
+				frames.add_frame(anim, atlas, 1.0)
+				if i == 0 and copy_to_idle:
+					frames.add_frame("idle", atlas, 1.0)
+			return
 
 	push_warning("AnimatedAssetSprite: sheet not found for '%s': %s" % [anim, res_path])
 	var img := Image.create(frame_size.x, frame_size.y, false, Image.FORMAT_RGBA8)

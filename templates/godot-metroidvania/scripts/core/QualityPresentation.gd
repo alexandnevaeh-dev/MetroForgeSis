@@ -151,11 +151,14 @@ func _replace_stretched_background(room: Node, size: Vector2, biome: String) -> 
 		sky.color = _biome_far(biome)
 		sky.z_index = -30
 		sky.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		# Cover the whole room so uncovered camera edges aren't a black void.
-		sky.offset_left = -240.0
-		sky.offset_top = -180.0
-		sky.offset_right = size.x + 240.0
-		sky.offset_bottom = size.y + 180.0
+		# Cover the contain-zoom camera view, not a fixed 240px pad. Tall rooms
+		# (960×900) show ~320px of view past the plate; a blanket pad left navy
+		# gutters. Do not change CameraDirector zoom here — that crops climb.
+		var extra := _contain_view_pad(size)
+		sky.offset_left = -extra.x
+		sky.offset_top = -extra.y
+		sky.offset_right = size.x + extra.x
+		sky.offset_bottom = size.y + extra.y
 	elif bg is CanvasItem:
 		(bg as CanvasItem).visible = false
 
@@ -173,8 +176,12 @@ func _layout_parallax_strip(sprite: Sprite2D, size: Vector2, kind: String) -> vo
 		return
 	var s: float
 	if kind == "far":
-		# Contain the authored plate, then overscan so look-ahead does not flash the sky ColorRect.
-		s = minf(size.x / tw, size.y / th) * 2.1
+		# Cover the contain-zoom world view (and the room). Contain×2.1 of a wide
+		# cinematic plate left navy above/below a tall room. This is background
+		# coverage — CameraDirector still contain-zooms climb rooms.
+		var view := _visible_world_size(size)
+		var cover := Vector2(maxf(size.x, view.x), maxf(size.y, view.y))
+		s = maxf(cover.x / tw, cover.y / th) * 1.02
 		sprite.scale = Vector2(s, s)
 		sprite.position = size * 0.5
 	elif kind == "mid_full" or kind == "near_full":
@@ -554,6 +561,40 @@ func _apply_outline(room: Node) -> void:
 		var mat := ShaderMaterial.new()
 		mat.shader = shader
 		sprite.material = mat
+
+func _viewport_size() -> Vector2:
+	var vp := Vector2.ZERO
+	var tree := get_tree()
+	if tree:
+		var viewport := tree.root
+		if viewport:
+			vp = viewport.get_visible_rect().size
+	if vp.x < 64.0 or vp.y < 64.0:
+		vp = Vector2(
+			float(ProjectSettings.get_setting("display/window/size/viewport_width", 1920)),
+			float(ProjectSettings.get_setting("display/window/size/viewport_height", 1080)),
+		)
+	return vp
+
+
+func _visible_world_size(room_size: Vector2) -> Vector2:
+	## World size of a contain-zoom camera (viewport / min ratio). Matches
+	## CameraDirector for non-foundry rooms so Background/FarSky can cover
+	## letterbox without switching those rooms to cover-zoom.
+	var vp := _viewport_size()
+	var contain := minf(vp.x / maxf(room_size.x, 1.0), vp.y / maxf(room_size.y, 1.0))
+	if contain < 0.01:
+		return room_size
+	return vp / contain
+
+
+func _contain_view_pad(room_size: Vector2) -> Vector2:
+	var view := _visible_world_size(room_size)
+	return Vector2(
+		maxf(80.0, (view.x - room_size.x) * 0.5 + 80.0),
+		maxf(80.0, (view.y - room_size.y) * 0.5 + 80.0),
+	)
+
 
 func _apply_camera(room: Node, size: Vector2) -> void:
 	var player := room.get_node_or_null("Player")

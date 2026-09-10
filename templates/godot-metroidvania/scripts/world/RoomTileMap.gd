@@ -249,8 +249,10 @@ func _paint_night_apse(
 	wall: Vector2i,
 	ceiling: Vector2i,
 ) -> void:
-	## Low dado, corner haunches, two broken vault ribs. Empty air in the hall so
-	## FarSky can be depth, not a mountain range, and Ground keeps the collision walls.
+	## Low dado, short corner haunches, 2–3 tile piers. Empty hall air so FarSky
+	## is depth, not a mountain range. Ground keeps collision walls and climb
+	## platforms. Never paint ceiling-height ribs — those stacked identical teal
+	## columns read as wallpaper even when they do not collide.
 	rear.modulate = Color(0.78, 0.84, 0.90, 1)
 	var lintel := maxi(1, crop_rows)
 	for x in range(2, cols - 2):
@@ -258,13 +260,13 @@ func _paint_night_apse(
 		if x % 5 != 2:
 			_rear_cell(rear, x, floor_row - 2, wall)
 	for x in [2, 3, cols - 4, cols - 3]:
-		for y in range(maxi(lintel + 3, floor_row - 6), floor_row):
+		for y in range(maxi(lintel + 3, floor_row - 4), floor_row):
 			_rear_cell(rear, x, y, wall)
+	var pier_h := 3
 	for rib in [int(cols * 0.34), int(cols * 0.66)]:
-		for y in range(lintel + 2, floor_row - 4):
-			if y % 4 == 1:
-				continue
-			_rear_cell(rear, rib, y, ceiling if y < lintel + 5 else wall)
+		for y in range(floor_row - pier_h, floor_row):
+			_rear_cell(rear, rib, y, wall)
+		_rear_cell(rear, rib, floor_row - pier_h, ceiling)
 
 
 func _paint_gallery_wall(

@@ -49,7 +49,7 @@ import { applyVisualStyleContract, buildVisualStyleContract, compileVisualPrompt
 import { wrapIdentityProvider, capabilitiesFromRegistration, selectAnimationTier } from './identity/provider.js';
 import { writeCharacterIdentityPack } from './identity/pack.js';
 import { generateUiPanel, generateUiIcon, UI_FOUNDRY_ASSETS } from './ui-foundry.js';
-import { generatePropSprite, WORLD_INTERACTABLE_ASSETS, interactablePalette } from './prop-art.js';
+import { generatePropSprite, WORLD_INTERACTABLE_ASSETS, interactablePalette, actorPalette } from './prop-art.js';
 import { sanitizeImagePromptText } from './sanitize-image-prompt.js';
 
 export interface GeneratedAsset {
@@ -675,12 +675,20 @@ export class AssetPipeline {
     options.onTaskStarted?.('player_sprite', 'Generating player character sprite');
     checkCancelled();
     const playerFrame = compiledSpriteFrameSize('character');
+    // LOCAL_ONLY / no image provider yields generateProceduralSprite. Hardcoded
+    // blue [90,140,220] was the "courier" placeholder — it never sampled visual DNA,
+    // so Foundry brass/cyan never reached player.png. There is no courier PNG in
+    // this slice; palette-tint the existing humanoid instead of starting a new art
+    // pipeline. Skip palette.global[0] (void/sky), same as interactablePalette.
+    const actor = actorPalette(
+      options.visualDNA?.palette ?? { global: options.characterVisualDna?.palette },
+    );
     const playerSpec: SpriteSpec = {
       id: 'player',
       width: playerFrame.width,
       height: playerFrame.height,
-      fill: [90, 140, 220, 255],
-      accent: [240, 240, 250, 255],
+      fill: actor.fill,
+      accent: actor.accent,
       shape: 'humanoid',
     };
     const playerAsset = await this.generateSprite({

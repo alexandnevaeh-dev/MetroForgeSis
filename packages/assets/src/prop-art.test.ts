@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { decodePngRgba } from './png.js';
-import { WORLD_INTERACTABLE_ASSETS, generatePropSprite, interactablePalette } from './prop-art.js';
+import { WORLD_INTERACTABLE_ASSETS, generatePropSprite, interactablePalette, actorPalette } from './prop-art.js';
 
 function opaqueCount(png: Buffer): number {
   const { rgba } = decodePngRgba(png);
@@ -47,5 +47,17 @@ describe('world interactable prop art', () => {
     expect(fill).not.toBe('#101018');
     expect(fill).toBe('#8a6840');
     expect(accent).toBe('#ffe13f');
+  });
+
+  it('paints procedural actors with brass/energy, not the void sky swatch', () => {
+    const palette = {
+      global: ['#101018', '#8a6840', '#48b8c8', '#a84830'],
+      accents: ['#48b8c8', '#a84830'],
+      highlights: ['#325a96', '#4bc87d', '#ffe13f'],
+    };
+    const { fill, accent } = actorPalette(palette);
+    expect(fill).toEqual([138, 104, 64, 255]);
+    expect(accent).toEqual([255, 225, 63, 255]);
+    expect(fill[0]).not.toBe(0x10);
   });
 });
