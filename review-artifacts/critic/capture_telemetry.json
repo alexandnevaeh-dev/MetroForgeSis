@@ -3,7 +3,7 @@
   "attempts": [
     {
       "strategy": "headless",
-      "startedAt": "2026-09-10T07:13:59.856Z",
+      "startedAt": "2026-09-10T19:35:48.124Z",
       "elapsedMs": 0,
       "exitCode": 0,
       "textureNull": true,
@@ -16,8 +16,8 @@
     },
     {
       "strategy": "windowed_gpu",
-      "startedAt": "2026-09-10T07:14:11.811Z",
-      "elapsedMs": 11890,
+      "startedAt": "2026-09-10T19:35:59.711Z",
+      "elapsedMs": 11522,
       "exitCode": 0,
       "textureNull": false,
       "screenshotWritten": true,

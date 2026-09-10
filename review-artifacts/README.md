@@ -14,10 +14,10 @@ Actors were previously procedural courier silhouettes (not mustard cubes). Spawn
 
 | Field | Value |
 |---|---|
-| Code commit (after stills) | `30d350a` (warm beacons) on the playable-band framing pass |
+| Code commit (after stills) | `5b0225e` (per-role Foundry room identities); spawn baseline `89824e7` |
 | Message | composition + ability-shrine camera pass + palette color pass + readability pass (brighter ledges, courier silhouette, shrine focal core) |
 | Before stills | Pre-pass recapture of the same prompt/seed, generated from `a04ce27` |
-| Slug | `foundry-visual-slice-spawn2` (before: `foundry-visual-slice-pr2`) |
+| Slug | `foundry-visual-slice-div1` (before: `foundry-visual-slice-pr2`) |
 | Prompt | Ashen Foundry: a lone courier delves a ruined mechanical forge of brass and sooted iron, side-view metroidvania |
 | Profile | `VISUAL_VERTICAL_SLICE` |
 | Mode | `LOCAL_ONLY` |
@@ -29,7 +29,7 @@ Actors were previously procedural courier silhouettes (not mustard cubes). Spawn
 | `visualSliceApproved` | `false` |
 | `visualReviewStatus` | `VISUAL_SLICE_REVIEW_REQUIRED` |
 
-After PNGs are byte-identical to `GeneratedGames/foundry-visual-slice-spawn2/reports/{02,04,05,06,07}*.png` from that run.
+After PNGs are byte-identical to `GeneratedGames/foundry-visual-slice-div1/reports/{02,04,05,06,07}*.png` from that run.
 
 ## Traversal continuity — verified (not inferred from stills)
 
@@ -141,6 +141,12 @@ Capture path:
 The scene-critic gate has **two** dimensions: the single scored spawn frame (`critiqueGameplayScreenshot`) and cross-room diversity (`critiqueScreenshotDiversity`).
 
 - **Spawn frame — resolved (single-frame dimension).** A spawn focal light + receded backdrop + a tight warm **character key on the authored courier** + a broader fill took the scored start frame from score **40** (occupancy 1.0 / lumaStdDev 7.4, wallpaper/low-contrast) to score **100** (occupancy 0.40 / lumaStdDev 15.5, uniqueColors 106): a clear focal courier separated from a receded dark backdrop, readable mid/far walkable platforms, and real light→dark falloff — not black/noise added for the metric, and no threshold or capture-timing change. See `spawn_before_after.png` (same capture point and 1920×1080 resolution). Because a heuristic score is not proof of human quality, please eyeball the frame directly.
-- **Cross-room diversity — still unresolved.** `critiqueScreenshotDiversity` still fails: more than half of the room pairs share a near-identical luma-grid signature (mean pairwise distance ~8.3; the pass rule needs <55% of pairs below distance 6). The rooms are still the same gunmetal-grid platformer look. This is the remaining reason the gate fails.
+- **Cross-room diversity — resolved (measured).** Each gameplay role now has a distinct rear-wall silhouette family and a per-role receded backdrop tint (within the warm soot/gunmetal range): tutorial=apse, traversal/gate=colonnade chain-shaft, challenge/save=maintenance gallery wall, combat=furnace hall, shrine=furnace hearth, treasure/boss=ruin recess. `critiqueScreenshotDiversity` mean pairwise distance rose **8.5 → 13.8** and the check now **passes** (no near-duplicate cluster). Collision/traversal geometry is identical (fingerprint `pr2` vs tested slice) and the palette is unchanged. See the per-room before/after comparisons and contact sheet.
 
-**Net: `gameplay_screenshot_qa` is still an unresolved failure and 17/18 is partial validation.** The failing dimension is now room variety, not the spawn frame. Visual approval stays **pending**; MASS / LARGE / RC blocked.
+**Net (measured on tested slice `foundry-visual-slice-div1`, commit below): `gameplay_screenshot_qa` PASSES and runtime validation is 18/18.** This is a **measured** result, not visual approval — a passing heuristic is not human sign-off, so inspect the room comparisons and spawn frame directly. Visual approval stays **pending**; MASS / LARGE / RC blocked; PR #4 unmerged.
+
+## Continuous camera visibility during play
+
+Beyond the 84 sampled approach/apex/landing checks, `tools/continuous_traversal_recorder.gd` drives the real `PlayerController` (held move-right + timed jumps, actual physics) and records the real gameplay camera continuously. Recordings and per-frame findings are in [`camera-visibility/continuous/`](camera-visibility/continuous/).
+
+- **6 rooms (incl. both 960px-wide rooms), 780 logged frames, 0 frames where an upcoming platform/exit was off-screen.** In this slice every room's playable band fits the view, so the camera frames the whole playable area (no panning needed) and platforms/exits stay visible before commitment through movement — confirmed by an independent video review (continuous motion, no cropping, destinations visible before arrival).
