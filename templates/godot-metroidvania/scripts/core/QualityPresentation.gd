@@ -389,19 +389,34 @@ func _inject_lights(room: Node, size: Vector2, _biome: String, archetype: String
 		focal = Vector2(clampf(player.position.x + 24.0, size.x * 0.14, size.x * 0.52), player.position.y - 40.0)
 	key.position = focal
 	key.texture = tex
-	key.color = Color(1.0, 0.9, 0.74, 1) if tiled else Color(0.72, 0.86, 1.0, 1)
-	key.energy = 1.05 if tiled else 0.4
-	key.texture_scale = 1.25 if tiled else 1.35
+	key.color = Color(1.0, 0.88, 0.7, 1) if tiled else Color(0.72, 0.86, 1.0, 1)
+	key.energy = 1.1 if tiled else 0.4
+	key.texture_scale = 1.1 if tiled else 1.35
 	key.z_index = 5
 	key.shadow_enabled = false
 	host.add_child(key)
+	if tiled and player:
+		# Tight character key so the courier reads as the clear focal subject, separated from the
+		# receded backdrop, without brightening the whole frame.
+		var courierLight := PointLight2D.new()
+		courierLight.name = "QualityLightCourier"
+		courierLight.position = Vector2(player.position.x, player.position.y - 28.0)
+		courierLight.texture = tex
+		courierLight.color = Color(1.0, 0.86, 0.66, 1)
+		courierLight.energy = 0.9
+		courierLight.texture_scale = 0.5
+		courierLight.z_index = 6
+		courierLight.shadow_enabled = false
+		host.add_child(courierLight)
 	var fill := PointLight2D.new()
 	fill.name = "QualityLightFill"
-	fill.position = Vector2(size.x * 0.62, size.y * 0.74)
+	# Broader, slightly stronger ambient so mid/far walkable platforms stay readable (raising
+	# occupancy honestly) while the focal key still carries the light->dark contrast.
+	fill.position = Vector2(size.x * 0.6, size.y * 0.62)
 	fill.texture = tex
-	fill.color = Color(1.0, 0.82, 0.62, 1)
-	fill.energy = 0.42 if tiled else 0.22
-	fill.texture_scale = 1.35 if tiled else 1.05
+	fill.color = Color(0.96, 0.8, 0.6, 1)
+	fill.energy = 0.55 if tiled else 0.22
+	fill.texture_scale = 1.7 if tiled else 1.05
 	fill.z_index = 5
 	fill.shadow_enabled = false
 	host.add_child(fill)
