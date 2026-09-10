@@ -12,10 +12,10 @@ Visual approval: **rejected as a finished slice**. MASS / LARGE / RC stay **bloc
 
 | Field | Value |
 |---|---|
-| Code commit (after stills) | `ddb7163ea5f33d40f7f68467bae822b9f0c7efb6` (`ddb7163`) |
-| Message | `fix(godot): composition pass` (`ddbb803`) + palette color pass: `derive masonry from palette instead of teal` (`e5e6389`) + `warm the far/parallax backdrop from palette` (`ddb7163`) |
+| Code commit (after stills) | `b293f22b744f42c132e710009742d41bdc8f8e39` (`b293f22`) |
+| Message | composition + ability-shrine camera pass + palette color pass + readability pass (brighter ledges, courier silhouette, shrine focal core) |
 | Before stills | Pre-pass recapture of the same prompt/seed, generated from `a04ce27` |
-| Slug | `foundry-visual-slice-after` (before: `foundry-visual-slice-pr2`) |
+| Slug | `foundry-visual-slice-final` (before: `foundry-visual-slice-pr2`) |
 | Prompt | Ashen Foundry: a lone courier delves a ruined mechanical forge of brass and sooted iron, side-view metroidvania |
 | Profile | `VISUAL_VERTICAL_SLICE` |
 | Mode | `LOCAL_ONLY` |
@@ -24,12 +24,36 @@ Visual approval: **rejected as a finished slice**. MASS / LARGE / RC stay **bloc
 | Godot | `4.7.1.stable.official.a13da4feb` |
 | Viewport | 1920×1080 |
 | Windowed driver | `opengl3` (Linux) |
-| Created | `2026-09-10T05:06:34Z` |
-| Job id | `job_mtv2c003_5lfxl7` |
 | `visualSliceApproved` | `false` |
 | `visualReviewStatus` | `VISUAL_SLICE_REVIEW_REQUIRED` |
 
-After PNGs are byte-identical to `GeneratedGames/foundry-visual-slice-after/reports/{02,04,05,06,07}*.png` from that run.
+After PNGs are byte-identical to `GeneratedGames/foundry-visual-slice-final/reports/{02,04,05,06,07}*.png` from that run.
+
+## Traversal continuity — verified (not inferred from stills)
+
+The vanished tall columns were decorative runtime `RearWall` ribs (`collision_enabled = false`),
+not climb geometry. Evidence:
+
+- **Collidable geometry is byte-identical before vs after.** Every room's `StaticBody2D` +
+  `CollisionShape2D` count and every `RectangleShape2D` size match between `foundry-visual-slice-pr2`
+  (before) and `foundry-visual-slice-final` (after).
+- **Collision overlays** in [`collision/`](collision/) render each room's real collidable
+  surfaces (floor + platforms, green) over the art for rooms 02/04/05/07.
+- **Runtime gates pass:** `world_connectivity`, `world_reachability` (all rooms reachable via
+  progressive ability pickup), `movement_feasibility` (ability gates align with jump/dash reach),
+  and `godot_playtest` **8/8** (persona `victory_rusher`, ~38s, rooms 000–009) on Godot 4.7.1.
+
+## Readability pass in these stills
+
+- **Platform edges:** floor lifted off the soot background, platform ledges brighter than walls,
+  and a bright top lip on platform/one-way tiles — walls and the overall scene are not brightened.
+- **Courier silhouette:** head + torso + two legs + carrying pack, with the accent limited to a
+  small warm helmet band and the pack instead of a full cyan cap.
+- **Focal points:** shrine/save/ability props get a bright luminous core so a checkpoint reads as a
+  focal point. The ability-shrine room (05) is also camera-pinned to the playable band with a
+  furnace hearth (concurrent godot pass).
+- **Still open (follow-ups):** non-shrine rooms (02/04) still frame a tall room with action along
+  the bottom, and the blue vertical beacon elements are unchanged (source not conclusively traced).
 
 ## What the after pass changed (on top of `ddbb803`)
 
@@ -80,7 +104,7 @@ The FAIL in `validation_report.json` is **not** computed from rooms 02 / 04 / 05
 
 | Source | File | Role |
 |---|---|---|
-| Gate | `qa/screenshot_gameplay.png` | **Scored.** SHA-256 prefix `acb127411c9598a0`. 1920×1080. |
+| Gate | `qa/screenshot_gameplay.png` | **Scored.** SHA-256 prefix `8c90bbb7583df60a`. 1920×1080. |
 | Room stills | `qa/screenshot_slice_traversal.png` etc. = `reports/02-traversal.png` … | Same **windowed** RuntimeSmokeTest session; **different PNGs** (different hashes). |
 
 Capture path:
@@ -88,7 +112,7 @@ Capture path:
 1. Headless Godot smoke still hits `texture_2d_get` null (dummy renderer). Those runtime screenshot checks stay SOFT_FAIL. That is **not** the gate input.
 2. `captureGameplayScreenshots` then ran **windowed** Godot (`--rendering-driver opengl3`, `METROFORGE_CAPTURE=1`). Telemetry `strategy` is `windowed_gpu`. The scored frame is **not** blank (occupancy 100%, ~80 quantized colors).
 
-Reported gate numbers (`screenshot_critique.json` / `validation_report`) for this after run: occupancy **0.983**, uniqueColors **51**, lumaStdDev **6.39**, score **40**, issue wallpaper/low-contrast. The windowed (`windowed_gpu`, `opengl3`) frame is not blank.
+Reported gate numbers (`screenshot_critique.json` / `validation_report`) for this after run: occupancy **0.983**, uniqueColors **51**, lumaStdDev **6.63**, score **40**, issue wallpaper/low-contrast. The windowed (`windowed_gpu`, `opengl3`) frame is not blank.
 
 The warm-soot/gunmetal color pass slightly changes the numbers (the old navy run reported occupancy 1.0 / lumaStdDev 5.10 / 80 colors) but the deterministic `gameplay_screenshot_qa` gate **still fails** at score 40: a single spawn still frame is intentionally low-contrast for this heuristic. That is exactly why **visual approval stays pending** — automated QA is not a substitute for human review.
 

@@ -1,8 +1,8 @@
 {
-  "codeCommit": "ddb7163ea5f33d40f7f68467bae822b9f0c7efb6",
-  "codeCommitShort": "ddb7163",
+  "codeCommit": "b293f22b744f42c132e710009742d41bdc8f8e39",
+  "codeCommitShort": "b293f22",
   "generation": {
-    "slug": "foundry-visual-slice-after",
+    "slug": "foundry-visual-slice-final",
     "prompt": "Ashen Foundry: a lone courier delves a ruined mechanical forge of brass and sooted iron, side-view metroidvania",
     "profile": "VISUAL_VERTICAL_SLICE",
     "mode": "LOCAL_ONLY",
@@ -11,36 +11,34 @@
     "godot": "4.7.1.stable.official.a13da4feb",
     "viewport": "1920x1080",
     "windowedDriver": "opengl3",
-    "createdAt": "2026-09-10T05:06:34Z",
-    "jobId": "job_mtv2c003_5lfxl7",
     "visualSliceApproved": false,
     "visualReviewStatus": "VISUAL_SLICE_REVIEW_REQUIRED"
   },
   "files": [
     {
       "path": "after/02_traversal.png",
-      "bytes": 301118,
-      "sha256": "5d6e3164fde4e6384dcee9346bdd6e52d129593f1317eb179bd0950a75aee01a"
+      "bytes": 302612,
+      "sha256": "6eb944825cfef54b526cac96552075e00502bab67787d06532a266dc125d34e8"
     },
     {
       "path": "after/04_vertical.png",
-      "bytes": 297421,
-      "sha256": "ffbd30fc4eee79ae0fde530120222b28320606ce92d6168049f102516c88494f"
+      "bytes": 298300,
+      "sha256": "f96caec1b9953502c3cefa8e09312ef6a7d91c5640cad87b73fdd6559cb1986b"
     },
     {
       "path": "after/05_ability.png",
-      "bytes": 317624,
-      "sha256": "4dc759a590c6af6d2261d104b8aaf6090c6450f81661a8af85c7d9f13ecd19eb"
+      "bytes": 274232,
+      "sha256": "7d4e51768a32b955d15484899be64552f5bd2ceebffaf0b153f57d65f5784963"
     },
     {
       "path": "after/06_secret.png",
-      "bytes": 335004,
-      "sha256": "1727352608724312b183da74d116a314ebd63a2eab56b901541fbf9b84a5be36"
+      "bytes": 335385,
+      "sha256": "26e765f3e17f614e77946936a76fa1ec1064b7bb75da5fd466a52ab3fd91de04"
     },
     {
       "path": "after/07_checkpoint.png",
-      "bytes": 296510,
-      "sha256": "5567e617d2abf28fa6fc9def1376ad9282741c8487166dcc30490f532f722ad6"
+      "bytes": 297638,
+      "sha256": "8059fc2063d8371d3266b9694ee42cfb917b3bf2f67676589edc299259c4669a"
     },
     {
       "path": "before/02_traversal.png",
@@ -69,28 +67,28 @@
     },
     {
       "path": "critic/capture_telemetry.json",
-      "bytes": 1168,
-      "sha256": "1588eb76dea8b0368ae1da3e8d8e33a973f4f85a52e8b89b7992f1c9e72a7477"
+      "bytes": 1170,
+      "sha256": "16bdd97b29187d80d308e7ed615ef2e818ac938946b76d7e6ee535a4fa7da701"
     },
     {
       "path": "critic/screenshot_critique.json",
-      "bytes": 475,
-      "sha256": "35a4f6678319a105bec1487646911a5c1964289e67ca9b824b1d5698d712bc9a"
+      "bytes": 476,
+      "sha256": "828d626aaf082e9094dc45fc373cf5bb16d6876cd09c5fac4e57564a1eead950"
     },
     {
       "path": "critic/screenshot_gameplay.png",
-      "bytes": 306695,
-      "sha256": "acb127411c9598a0a494ac144dd246c928237126a13fdf55a73cbc72b6af7397"
+      "bytes": 306880,
+      "sha256": "8c90bbb7583df60aa160d559d8c0526593c0c54bfcdc4cd73295fd9eaf673a3e"
     },
     {
       "path": "foundry_slice_review_contact_sheet.png",
-      "bytes": 2722077,
-      "sha256": "05a38e6f0b962c1b3cb7a8410f5427ef222c7de864e1b076bd2c8a9816291651"
+      "bytes": 2542686,
+      "sha256": "dd592b778a32a46b038b6e199f1341517c9c00e1747a161a975cb7560201bedd"
     },
     {
       "path": "player/player_after_64px.png",
-      "bytes": 177,
-      "sha256": "c101418bb15ea53fc89b5a2f4c143ae428bed64eec257bcf9c8d751f06fbdee4"
+      "bytes": 196,
+      "sha256": "74888487e6ff3f389bb52d1b952750e05d241be8a2064cbd062d542f7716b7c6"
     },
     {
       "path": "player/player_after_8x.png",
@@ -111,6 +109,26 @@
       "path": "player/player_before_after_8x.png",
       "bytes": 13020,
       "sha256": "7e0a9a6f711f38ce120d79c592621e54d29d5badf2d69806324c60df5a8fd263"
+    },
+    {
+      "path": "collision/02_traversal_collision.png",
+      "bytes": 125305,
+      "sha256": "cec6a2a8af3699473a32821ef6454f89329585c653e59f83a464b8ec6b8dd35b"
+    },
+    {
+      "path": "collision/04_vertical_collision.png",
+      "bytes": 126890,
+      "sha256": "5ef35d19eb8b54130ee44e26f2f9d90cd2ee2a55889e780db1f6c672aa35633c"
+    },
+    {
+      "path": "collision/05_ability_collision.png",
+      "bytes": 106526,
+      "sha256": "0a5eef436bcf4736fc02cc6f78d06c6cb1025fd144e0aa4c08a0a005a118577b"
+    },
+    {
+      "path": "collision/07_checkpoint_collision.png",
+      "bytes": 136019,
+      "sha256": "55e056cfec09cb9276497b5de21e08348020b8897fa3b52a91bceb9f9cccb230"
     }
   ]
 }
