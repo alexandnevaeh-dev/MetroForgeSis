@@ -7,6 +7,13 @@ function hexRgb(hex: string): [number, number, number] {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
+/** Palette-matched world interactables that replace ColorRect stubs in pickup/save/ability scenes. */
+export const WORLD_INTERACTABLE_ASSETS = [
+  { id: 'world_pickup', path: 'assets/props/interact/pickup.png', family: 'pickup', width: 32, height: 32 },
+  { id: 'world_save_shrine', path: 'assets/props/interact/save_shrine.png', family: 'shrine', width: 32, height: 48 },
+  { id: 'world_ability', path: 'assets/props/interact/ability.png', family: 'ability', width: 32, height: 32 },
+] as const;
+
 export function generatePropSprite(opts: {
   width: number;
   height: number;
@@ -19,6 +26,7 @@ export function generatePropSprite(opts: {
   const fill = hexRgb(opts.fill);
   const accent = hexRgb(opts.accent);
   const rgba = new Uint8Array(width * height * 4);
+  const family = opts.family.toLowerCase();
   const h = (n: number) => {
     let x = (opts.seed + n * 374761393) >>> 0;
     x = Math.imul(x ^ (x >>> 13), 1274126177);
@@ -29,17 +37,25 @@ export function generatePropSprite(opts: {
       const nx = x / width;
       const ny = y / height;
       let inside = false;
-      if (opts.family.includes('lantern') || opts.family.includes('light')) {
+      if (family.includes('pickup') || family.includes('scrap') || family.includes('gem') || family.includes('item')) {
+        const dx = Math.abs(nx - 0.5);
+        const dy = Math.abs(ny - 0.52);
+        inside = dx + dy * 0.9 < 0.34 && ny > 0.18 && ny < 0.92;
+      } else if (family.includes('ability') || family.includes('crystal')) {
+        inside = Math.abs(nx - 0.5) < 0.2 - (ny - 0.15) * 0.1 && ny > 0.08 && ny < 0.94;
+      } else if (family.includes('lantern') || family.includes('light')) {
         inside = Math.hypot(nx - 0.5, ny - 0.45) < 0.28 || (ny > 0.7 && nx > 0.35 && nx < 0.65);
-      } else if (opts.family.includes('shrine') || opts.family.includes('statue')) {
-        inside = nx > 0.25 && nx < 0.75 && ny > 0.2 && ny < 0.95;
-      } else if (opts.family.includes('chain') || opts.family.includes('vine')) {
+      } else if (family.includes('shrine') || family.includes('statue') || family.includes('save')) {
+        const pillar = nx > 0.28 && nx < 0.72 && ny > 0.28 && ny < 0.96;
+        const cap = nx > 0.18 && nx < 0.82 && ny > 0.12 && ny < 0.32;
+        inside = pillar || cap;
+      } else if (family.includes('chain') || family.includes('vine')) {
         inside = Math.abs(nx - 0.5) < 0.12 && ny > 0.05;
       } else {
         inside = ny > 0.45 + h(x) * 0.12 && nx > 0.22 && nx < 0.78 && ny < 0.98;
       }
       if (!inside) continue;
-      const useAccent = h(x * 7 + y * 13) > 0.88;
+      const useAccent = h(x * 7 + y * 13) > 0.82;
       const i = (y * width + x) * 4;
       const grass = fill[1] > fill[0] + 20 && fill[1] > fill[2] + 10;
       const gold = fill[0] > 140 && fill[1] > 100 && fill[2] < 90;

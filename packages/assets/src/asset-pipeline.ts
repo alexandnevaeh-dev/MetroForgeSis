@@ -49,7 +49,7 @@ import { applyVisualStyleContract, buildVisualStyleContract, compileVisualPrompt
 import { wrapIdentityProvider, capabilitiesFromRegistration, selectAnimationTier } from './identity/provider.js';
 import { writeCharacterIdentityPack } from './identity/pack.js';
 import { generateUiPanel, generateUiIcon, UI_FOUNDRY_ASSETS } from './ui-foundry.js';
-import { generatePropSprite } from './prop-art.js';
+import { generatePropSprite, WORLD_INTERACTABLE_ASSETS } from './prop-art.js';
 import { sanitizeImagePromptText } from './sanitize-image-prompt.js';
 
 export interface GeneratedAsset {
@@ -1561,6 +1561,38 @@ export class AssetPipeline {
           );
         }
       }
+    }
+
+    options.onTaskStarted?.('world_interactables', 'Generating world interactable sprites');
+    const interactFill = options.visualDNA?.palette.global[0] ?? '#3a4a58';
+    const interactAccent = options.visualDNA?.palette.highlights[0] ?? '#c4a060';
+    for (const spec of WORLD_INTERACTABLE_ASSETS) {
+      checkCancelled();
+      const buffer = generatePropSprite({
+        width: spec.width,
+        height: spec.height,
+        fill: interactFill,
+        accent: interactAccent,
+        family: spec.family,
+        seed: options.seed + hashPrompt(spec.id).charCodeAt(0),
+      });
+      writeCheckpoint(options.outputDir, spec.path, buffer);
+      recordAsset(
+        {
+          id: spec.id,
+          path: spec.path,
+          buffer,
+          provider: 'procedural',
+          fallbackGenerated: true,
+          critiquePassed: true,
+          critiqueScore: 70,
+          styleFingerprint: options.visualDNA?.styleFingerprint,
+          compiler: 'prop-art',
+          transformation: 'world-interactable',
+          godotResourcePath: `res://${spec.path}`,
+        },
+        'prop',
+      );
     }
 
     options.onTaskStarted?.('vfx_textures', 'Generating gameplay VFX textures');

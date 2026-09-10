@@ -1209,6 +1209,7 @@ func _sync_visual_camera() -> void:
 	if cam == null or not cam.has_method("apply_room_bounds"):
 		return
 	var size := Vector2(800, 600)
+	var visual_kit := ""
 	var world := get_tree().get_first_node_in_group("world_manager")
 	if world:
 		var room: Node = world.get("_current_room") as Node
@@ -1216,7 +1217,8 @@ func _sync_visual_camera() -> void:
 			var ground := room.get_node_or_null("Ground")
 			if ground:
 				size = Vector2(float(ground.get("room_width")), float(ground.get("room_height")))
-	cam.apply_room_bounds(size)
+				visual_kit = String(ground.get("visual_kit"))
+	cam.apply_room_bounds(size, visual_kit)
 
 
 func _is_visual_slice() -> bool:

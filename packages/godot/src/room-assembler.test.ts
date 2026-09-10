@@ -394,6 +394,32 @@ describe('generateRoomScene combat sprites', () => {
     });
     expect(scene).toContain('ItemPickup.tscn');
     expect(scene).toContain('item_id = "heart_relic"');
+    expect(scene).toContain('sprite_path = "assets/props/interact/pickup.png"');
+  });
+
+  it('wires save shrine and ability interactable sprites', () => {
+    const saveScene = generateRoomScene('room_save', 2, {
+      ...baseOptions,
+      hasEnemy: false,
+      enemyIndex: 0,
+      isBossRoom: false,
+      bossId: '',
+      hasSavePoint: true,
+    });
+    expect(saveScene).toContain('SavePoint.tscn');
+    expect(saveScene).toContain('sprite_path = "assets/props/interact/save_shrine.png"');
+
+    const abilityScene = generateRoomScene('room_ability', 1, {
+      ...baseOptions,
+      hasEnemy: false,
+      enemyIndex: 0,
+      isBossRoom: false,
+      bossId: '',
+      hasAbilityPickup: true,
+      abilityPickups: ['dash'],
+    });
+    expect(abilityScene).toContain('AbilityPickup.tscn');
+    expect(abilityScene).toContain('sprite_path = "assets/props/interact/ability.png"');
   });
 
   it('puts the far sky on a room-space Sprite2D and omits stacked parallax strips', () => {

@@ -560,8 +560,12 @@ func _apply_camera(room: Node, size: Vector2) -> void:
 	if player == null:
 		return
 	var camera := player.get_node_or_null("Camera2D")
+	var visual_kit := ""
+	var ground := room.get_node_or_null("Ground")
+	if ground:
+		visual_kit = String(ground.get("visual_kit"))
 	if camera and camera.has_method("apply_room_bounds"):
-		camera.apply_room_bounds(size)
+		camera.apply_room_bounds(size, visual_kit)
 
 func _host(room: Node) -> Node2D:
 	var existing := room.get_node_or_null("QualityInjected") as Node2D
