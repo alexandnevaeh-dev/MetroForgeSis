@@ -122,5 +122,10 @@ func _snap_to_room() -> void:
 	if view.y < (visual_bottom - visual_top) - 2.0:
 		target.y = clampf(target.y, visual_top + half.y, maxf(visual_top + half.y, visual_bottom - half.y))
 	else:
-		target.y = visual_top + (visual_bottom - visual_top) * 0.5
+		# When the 16:9 view is taller than the reachable band, pin to the floor
+		# so extra pixels show the furnace hood — not a navy gutter under the plate.
+		if _frame_playable:
+			target.y = visual_bottom - half.y
+		else:
+			target.y = visual_top + (visual_bottom - visual_top) * 0.5
 	global_position = target.round()
