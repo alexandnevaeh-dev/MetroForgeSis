@@ -4,7 +4,9 @@ These files are **review evidence only**. They are not a new art pass and do not
 
 PR: https://github.com/alexandnevaeh-dev/MetroForgeSis/pull/4 (draft)  
 Branch: `cursor/foundry-visual-recapture-acbb`  
-Visual approval: **pending**. MASS / LARGE / RC stay **blocked**. Do not merge.
+Visual approval: **rejected as a finished slice**. MASS / LARGE / RC stay **blocked**. Do not merge.
+
+**Next visual target is room 05 only.** Recolored block actors are unresolved placeholders, not courier art. See [room05/](room05/) for the ability-shrine still and gameplay clip. Do not propagate that treatment across other rooms until the shrine is reviewed.
 
 ## Exact commit and generation
 

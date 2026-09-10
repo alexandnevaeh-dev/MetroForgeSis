@@ -23,10 +23,15 @@ func _ready() -> void:
 	if player == null:
 		get_tree().quit(1)
 		return
-	# Traverse toward the altar: walk right, hop the two climbRows platforms.
-	for i in range(420):
+	# Traverse the shrine: collect the floor pickup, hop the two climbRows
+	# platforms, stop before the right-edge ability_gate so the clip stays in room 05.
+	# Hold jump across several frames — a one-frame tap does not clear the altar.
+	for i in range(240):
+		if player.global_position.x > 640.0:
+			break
 		Input.action_press("move_right")
-		if i == 40 or i == 110 or i == 180 or i == 250:
+		var hold_jump := (i >= 16 and i < 32) or (i >= 52 and i < 78)
+		if hold_jump:
 			Input.action_press("jump")
 		else:
 			Input.action_release("jump")
