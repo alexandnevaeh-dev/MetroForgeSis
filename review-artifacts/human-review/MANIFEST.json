@@ -2,11 +2,27 @@
   "package": "foundry-visual-direction-human-review",
   "visualSliceApproved": false,
   "actorMaturity": "QA_REVIEW",
-  "branchHeadAtPackaging": "eb12ea9",
-  "spawnCodeCommit": "89824e7",
-  "spawnStillSha256": "9f1452c70da65891e364ee3148d98d4bb37b942fb29b740f22b1911c7e50eb18",
+  "branchHeadAtPackaging": "91d16e1",
+  "roomIdentityCommit": "f5af11b",
+  "spawnStillSha256": "2eddef154f46303cf6f1c9bd79b93141e4af786d4dcaf0c6746b8b18f3836cd8",
   "room05StillSha256": "2478d44ff449965ae54253d617e7c71c1348c67b44777eacede6ad4fd1cbdbff",
+  "slug": "foundry-visual-slice-div1",
   "files": [
+    {
+      "path": "HUMAN_REVIEW.md",
+      "bytes": 14103,
+      "sha256": "5eaee6f5904d220a78c93ac3779c595bc09e89020734d43c8fe2e4e902239300"
+    },
+    {
+      "path": "room02_traversal_current.png",
+      "bytes": 339023,
+      "sha256": "0c86b598d78c131a4b6c1198879c4659dfcaa4249130c54da36e88a6cd1cd1f8"
+    },
+    {
+      "path": "room04_vertical_current.png",
+      "bytes": 511542,
+      "sha256": "8be6cbc76477c170bf1c11f1039bd81227f881fdb30ddcd2c52a203401f6bc66"
+    },
     {
       "path": "room05_current.png",
       "bytes": 125902,
@@ -48,14 +64,19 @@
       "sha256": "0e907994e8d08c7d3a5bb184016288a4dc0208d9309332190f8860f6e6f89301"
     },
     {
+      "path": "room07_checkpoint_current.png",
+      "bytes": 514840,
+      "sha256": "402fab024d2537395d8c8e7887f7d19fb30f30a60987a2e62dbac75b55c082d5"
+    },
+    {
       "path": "spawn_current.png",
-      "bytes": 355874,
-      "sha256": "9f1452c70da65891e364ee3148d98d4bb37b942fb29b740f22b1911c7e50eb18"
+      "bytes": 355910,
+      "sha256": "2eddef154f46303cf6f1c9bd79b93141e4af786d4dcaf0c6746b8b18f3836cd8"
     },
     {
       "path": "spawn_frame_before_after.png",
-      "bytes": 502788,
-      "sha256": "66cb20cfc64845336292367e89afc3198f6bbd0e21f9817e180e72511620f68b"
+      "bytes": 501709,
+      "sha256": "a36d8ad7f62ea92baee2324f5c084a6a3866b0222042f3d77a67e0e3494e23a0"
     },
     {
       "path": "spawn_hud_native_and_4x.png",
