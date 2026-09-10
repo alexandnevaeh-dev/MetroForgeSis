@@ -126,7 +126,7 @@ describe('assertMassVisualGenerationAllowed — approval scoped per project', ()
 });
 
 describe('applyVisualSliceIdentityDefaults', () => {
-  it('defaults side-view VISUAL_VERTICAL_SLICE onto Foundry V3 and the visual reference library', () => {
+  it('defaults side-view VISUAL_VERTICAL_SLICE to the authored pipeline path (no forced pack) + reference library', () => {
     const next = applyVisualSliceIdentityDefaults({
       profile: 'VISUAL_VERTICAL_SLICE' as const,
       prompt: 'a courier runs industrial transit shafts',
@@ -134,19 +134,29 @@ describe('applyVisualSliceIdentityDefaults', () => {
       externalVisualPack: undefined as string | undefined,
       useVisualReferenceLibrary: undefined as boolean | undefined,
     });
-    expect(next.externalVisualPack).toBe(FOUNDRY_VISUAL_PACK_ID);
+    // The reviewed Foundry direction is the pipeline's authored courier/masonry path, not a
+    // prebuilt external pack — the review packet must match what `create` really exports.
+    expect(next.externalVisualPack).toBeUndefined();
     expect(next.useVisualReferenceLibrary).toBe(true);
   });
 
-  it('does not override an explicit pack or an explicit --no-visual-reference-library', () => {
-    const next = applyVisualSliceIdentityDefaults({
+  it('passes an explicit pack straight through, incl. the prebuilt metroforge-foundry-v3', () => {
+    const transit = applyVisualSliceIdentityDefaults({
       profile: 'VISUAL_VERTICAL_SLICE' as const,
       archetype: 'SIDE_VIEW_METROIDVANIA' as const,
       externalVisualPack: 'industrial-transit',
       useVisualReferenceLibrary: false,
     });
-    expect(next.externalVisualPack).toBe('industrial-transit');
-    expect(next.useVisualReferenceLibrary).toBe(false);
+    expect(transit.externalVisualPack).toBe('industrial-transit');
+    expect(transit.useVisualReferenceLibrary).toBe(false);
+
+    const v3 = applyVisualSliceIdentityDefaults({
+      profile: 'VISUAL_VERTICAL_SLICE' as const,
+      archetype: 'SIDE_VIEW_METROIDVANIA' as const,
+      externalVisualPack: FOUNDRY_VISUAL_PACK_ID,
+      useVisualReferenceLibrary: undefined as boolean | undefined,
+    });
+    expect(v3.externalVisualPack).toBe(FOUNDRY_VISUAL_PACK_ID);
   });
 
   it('leaves top-down visual slices and non-slice profiles unchanged', () => {

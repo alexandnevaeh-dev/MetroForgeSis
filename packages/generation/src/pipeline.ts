@@ -48,7 +48,7 @@ import {
   generateTopDownWorld,
   buildProgressionProof,
 } from '@metroforge/procedural';
-import { AssetPipeline, loadVisualReferenceLibrary } from '@metroforge/assets';
+import { AssetPipeline, loadVisualReferenceLibrary, shouldUseFoundryCourierKit } from '@metroforge/assets';
 import { GodotProjectAssembler, loadExternalVisualPack } from '@metroforge/godot';
 import type { ExternalVisualPackId } from '@metroforge/godot';
 import { ToolRegistry, exportProject, resolveGodotExecutableCanonical, readProjectGodotOverride } from '@metroforge/tools';
@@ -1136,6 +1136,9 @@ export class GenerationPipeline {
       overworld: topDownWorld?.overworld,
       styleBible,
       externalVisualPack: options.externalVisualPack,
+      foundryThemed:
+        !options.externalVisualPack &&
+        shouldUseFoundryCourierKit({ profile: gameDna.profile, gameDna, characterVisualDna }),
     });
 
     if (!assemblyResult.success) {

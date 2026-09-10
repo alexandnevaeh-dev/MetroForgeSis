@@ -141,13 +141,24 @@ export function tileSizeForProfile(profile: GenerationProfile): number {
   return profile === 'VISUAL_VERTICAL_SLICE' ? 32 : 16;
 }
 
-/** Authored industrial identity pack for side-view visual-slice review. */
+/**
+ * The `metroforge-foundry-v3` prebuilt pack — a complete but frozen blue-steel industrial set
+ * (128px characters + its own pre-rendered tileset). Kept as an explicit, first-class alternative
+ * (`--external-visual-pack metroforge-foundry-v3`), NOT the default. The current Foundry visual
+ * direction under review (PR #4) is the pipeline's own authored path: the hand-authored courier
+ * kit (`packages/assets/authored/foundry-courier/`), the authored masonry hearth atlas
+ * (`packages/assets/authored/foundry-masonry/` + RoomTileMap._paint_furnace_hearth), and the
+ * per-role room-identity system in RoomTileMap.gd. See review-artifacts/human-review/HUMAN_REVIEW.md.
+ */
 export const FOUNDRY_VISUAL_PACK_ID = 'metroforge-foundry-v3';
 
 /**
- * Side-view VISUAL_VERTICAL_SLICE defaults onto the Foundry V3 pack and the visual
- * reference library so generated rooms can actually look like the identity pack.
- * Explicit CLI/IPC values always win. Top-down is unchanged.
+ * Side-view VISUAL_VERTICAL_SLICE defaults to the pipeline's own authored Foundry direction
+ * (courier kit + masonry hearth + per-role rooms — what the visual-review packet depicts) and
+ * the visual reference library. It does NOT force an external pack: the review packet must
+ * depict the assets the standard `create` path really exports. Explicit CLI/IPC values always
+ * win (`--external-visual-pack metroforge-foundry-v3` still selects the prebuilt pack).
+ * Top-down is unchanged.
  */
 export function applyVisualSliceIdentityDefaults<
   T extends {
@@ -163,7 +174,9 @@ export function applyVisualSliceIdentityDefaults<
   if (isTopDownArchetype(archetype)) return options;
   return {
     ...options,
-    externalVisualPack: options.externalVisualPack ?? FOUNDRY_VISUAL_PACK_ID,
+    // No external-pack default — the authored courier/masonry path + per-role rooms is the
+    // reviewed direction. An explicit pack still passes through untouched.
+    externalVisualPack: options.externalVisualPack,
     useVisualReferenceLibrary: options.useVisualReferenceLibrary !== false,
   };
 }

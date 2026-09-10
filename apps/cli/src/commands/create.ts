@@ -63,7 +63,7 @@ export function registerCreateCommand(program: Command): void {
     .option('--seed <number>', 'Random seed', '42')
     .option('--slug <slug>', 'Project directory slug')
     .option('--hardware-profile <profile>', 'LOW_RESOURCE, BALANCED, or HIGH_QUALITY')
-    .option('--external-visual-pack <id>', 'Optional test pack: industrial-transit or metroforge-foundry-v3. Side-view VISUAL_VERTICAL_SLICE defaults to metroforge-foundry-v3.')
+    .option('--external-visual-pack <id>', 'Optional test pack: industrial-transit or metroforge-foundry-v3. Side-view VISUAL_VERTICAL_SLICE defaults to the authored courier+masonry pipeline path; pass metroforge-foundry-v3 for the prebuilt pack.')
     .option('--archetype <archetype>', 'Game archetype: SIDE_VIEW_METROIDVANIA or TOP_DOWN_ACTION_ADVENTURE')
     .option('--no-generate', 'Only create project metadata without generating')
     .option('--resume', 'Resume from an existing Game DNA checkpoint if the project already exists')
@@ -224,7 +224,7 @@ export function registerGenerateCommand(program: Command): void {
     .option('--seed <number>', 'Random seed')
     .option('--archetype <archetype>', 'Game archetype')
     .option('--hardware-profile <profile>', 'LOW_RESOURCE, BALANCED, or HIGH_QUALITY')
-    .option('--external-visual-pack <id>', 'Optional test pack: industrial-transit or metroforge-foundry-v3. Side-view VISUAL_VERTICAL_SLICE defaults to metroforge-foundry-v3.')
+    .option('--external-visual-pack <id>', 'Optional test pack: industrial-transit or metroforge-foundry-v3. Side-view VISUAL_VERTICAL_SLICE defaults to the authored courier+masonry pipeline path; pass metroforge-foundry-v3 for the prebuilt pack.')
     .option('--resume', 'Resume from an existing Game DNA checkpoint if present', true)
     .option(
       '--fresh',

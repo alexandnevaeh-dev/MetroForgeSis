@@ -283,6 +283,13 @@ export type { AssetPipelineOptions, AssetPipelineResult, GeneratedAsset, Compile
 export * from './pipeline-v2/index.js';
 export { sanitizeImagePromptText } from './sanitize-image-prompt.js';
 export {
+  shouldUseFoundryCourierKit,
+  AUTHORED_COURIER_PROVIDER,
+  AUTHORED_COURIER_LICENSE,
+  loadAuthoredCourierPng,
+  loadAuthoredMasonryPng,
+} from './authored-kit.js';
+export {
   planAssetReplacements,
   buildReplacementPrompt,
   runVisualEnhancementPass,

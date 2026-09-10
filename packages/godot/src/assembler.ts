@@ -78,6 +78,10 @@ export interface AssemblyInput {
   styleBible?: StyleBible;
   /** Test-only selected art pack. Default keeps the procedural asset pipeline unchanged. */
   externalVisualPack?: ExternalVisualPackId;
+  /** True when the asset pipeline used the authored Foundry courier/masonry direction (side-view
+   *  VISUAL_VERTICAL_SLICE with a foundry/courier theme). Drives `visual_kit = "foundry"` on Ground
+   *  nodes so the Foundry camera cinematic-plate + lighting paths engage without the prebuilt pack. */
+  foundryThemed?: boolean;
 }
 
 export interface AssemblyResult {
@@ -210,7 +214,7 @@ export class GodotProjectAssembler {
           input.gameContent,
           enemyCounter,
           textureExists,
-          { visualKit: input.externalVisualPack === 'metroforge-foundry-v3' ? 'foundry' : undefined },
+          { visualKit: (input.externalVisualPack === 'metroforge-foundry-v3' || input.foundryThemed) ? 'foundry' : undefined },
         );
         const enemySnapshot = enemyCounter.value;
         for (let salt = 1; salt <= 5; salt++) {
@@ -249,7 +253,7 @@ export class GodotProjectAssembler {
               hasEnemy: opts.hasEnemy,
               width: opts.width,
               height: opts.height,
-              visualKit: input.externalVisualPack === 'metroforge-foundry-v3' ? 'foundry' : undefined,
+              visualKit: (input.externalVisualPack === 'metroforge-foundry-v3' || input.foundryThemed) ? 'foundry' : undefined,
             },
           );
         }
