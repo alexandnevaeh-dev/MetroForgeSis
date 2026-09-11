@@ -172,6 +172,26 @@ describe('MODERN_METROIDVANIA_GATE', () => {
     expect(result.passed).toBe(false);
   });
 
+  it('marks SceneReadability N/A for top-down with no screenshots, but a real fail for side-view', () => {
+    const topDown = evaluateModernMetroidvaniaGate({
+      archetype: 'TOP_DOWN_ACTION_ADVENTURE',
+      artifacts: [],
+      rooms: [{ id: 'r0' }],
+      terrainSets: [{ tileSize: 16, roles: [{ role: 'ground' }], missingRoles: [], seamIssues: [] }],
+      screenshots: [],
+    });
+    const sideView = evaluateModernMetroidvaniaGate({
+      archetype: 'SIDE_VIEW_METROIDVANIA',
+      artifacts: [],
+      rooms: [{ id: 'r0' }],
+      terrainSets: [{ tileSize: 16, roles: [{ role: 'ground' }], missingRoles: [], seamIssues: [] }],
+      screenshots: [],
+    });
+    expect(topDown.dimensions.find((d) => d.dimension === 'SceneReadability')?.applicable).toBe(false);
+    expect(sideView.dimensions.find((d) => d.dimension === 'SceneReadability')?.applicable).toBe(true);
+    expect(sideView.dimensions.find((d) => d.dimension === 'SceneReadability')?.passed).toBe(false);
+  });
+
   it('adapts to a QAGateResult shape for the pipeline report', () => {
     const result = evaluateModernMetroidvaniaGate(placeholderInputs());
     const gate = modernGateToQAGateResult(result);

@@ -649,7 +649,15 @@ export function evaluateModernMetroidvaniaGate(
       applicable: parallaxApplicable,
       naReason: 'Horizontal parallax depth does not apply to the top-down archetype',
     },
-    { raw: scoreSceneReadability(screenshots), applicable: true, naReason: '' },
+    {
+      raw: scoreSceneReadability(screenshots),
+      // Side-view always captures gameplay screenshots, so an empty set there is a real failure
+      // ("a launch is not evidence of visual quality"). The top-down runtime path does not emit
+      // the qa/screenshot_*.png set at all, so scoring it 0 would be measuring an absent pipeline
+      // artifact rather than the art — mark it N/A there instead.
+      applicable: !(topDown && screenshots.length === 0),
+      naReason: 'Top-down runtime capture does not emit the qa/screenshot_*.png set this dimension reads',
+    },
   ];
 
   const dimensions: ModernGateDimension[] = raw.map(({ raw: d, applicable, naReason }) => {
