@@ -1,5 +1,15 @@
 import type { ImageGenRequest, ImageGenResult, ImageGenerator, ImageProviderHealthReport } from '../types/image-gen.js';
+import type { ImageGenerationProfile } from '../types/vision.js';
 import { LocalSpriteWorkerProvider, type LocalSpriteWorkerConfig } from './local-sprite-worker.js';
+
+/** Profiles the humanoid character-sheet worker can legitimately serve. Everything else
+ *  (props, backgrounds, tiles, icons, items, VFX, UI) must not be answered with a character. */
+const CHARACTER_PROFILES = new Set<ImageGenerationProfile>([
+  'CHARACTER',
+  'ENEMY',
+  'BOSS',
+  'NPC',
+]);
 
 /**
  * Adapts LocalSpriteWorkerProvider (its own richer, purpose-built interface — see
@@ -41,6 +51,18 @@ export class LocalSpriteWorkerImageAdapter implements ImageGenerator {
   }
 
   async generateImage(request: ImageGenRequest): Promise<ImageGenResult> {
+    // The underlying worker only knows how to draw a humanoid character sheet. When it is the
+    // last provider standing (every hosted/local diffusion provider UNAVAILABLE) the registry
+    // would otherwise route props, backgrounds, tiles, icons and VFX here too — and every one of
+    // them came back as a pale tan/cyan humanoid (the "stray figure standing next to the
+    // Wanderer" in slice captures was an environment prop). Refuse non-character profiles so the
+    // caller falls back to its own purpose-built procedural generator (prop-art, parallax
+    // strips, tile compiler, vfx-art) instead of a mis-categorised character.
+    if (!CHARACTER_PROFILES.has(request.profile)) {
+      throw new Error(
+        `local-sprite-worker only generates character sheets; refusing ${request.profile} request so the caller uses its own procedural fallback`,
+      );
+    }
     // A prompt-derived seed keeps a given prompt deterministic across retries within one run
     // without pretending the text is actually read by the (non-text-conditioned) generator.
     const seed = request.seed ?? hashStringToSeed(request.prompt);

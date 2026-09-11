@@ -49,7 +49,7 @@ describe('LocalSpriteWorkerImageAdapter.generateImage — ImageGenerator contrac
     const adapter = new LocalSpriteWorkerImageAdapter({ pythonPath: 'python3', workerPath: '/fake/worker.py' });
 
     const pending = adapter.generateImage({
-      profile: 'VISUAL_VERTICAL_SLICE' as never,
+      profile: 'CHARACTER',
       prompt: 'a lone scout',
       width: 64,
       height: 64,
@@ -86,7 +86,7 @@ describe('LocalSpriteWorkerImageAdapter.generateImage — ImageGenerator contrac
     const adapter = new LocalSpriteWorkerImageAdapter({ pythonPath: 'python3', workerPath: '/fake/worker.py' });
 
     const pending = adapter.generateImage({
-      profile: 'VISUAL_VERTICAL_SLICE' as never,
+      profile: 'BOSS',
       prompt: 'a boss',
       width: 256,
       height: 256,
@@ -103,4 +103,21 @@ describe('LocalSpriteWorkerImageAdapter.generateImage — ImageGenerator contrac
     fakeChild.emit('close', 0);
     await pending;
   });
+
+  it.each(['ICON', 'BACKGROUND', 'TILE_SOURCE', 'VFX_TEXTURE', 'ITEM', 'ENVIRONMENT'] as const)(
+    'refuses %s so the caller falls back to its own procedural generator instead of a humanoid',
+    async (profile) => {
+      // Regression: with every diffusion provider UNAVAILABLE this adapter became the last
+      // ImageGenerator standing and the registry routed props/backgrounds/tiles/VFX to it —
+      // each came back as the worker's only trick, a pale tan/cyan humanoid character sheet.
+      // A stray figure ended up standing next to the Wanderer at spawn (it was an env prop).
+      const { LocalSpriteWorkerImageAdapter } = await import('./local-sprite-worker-adapter.js');
+      const adapter = new LocalSpriteWorkerImageAdapter({ pythonPath: 'python3', workerPath: '/fake/worker.py' });
+
+      await expect(
+        adapter.generateImage({ profile, prompt: 'a crate', width: 32, height: 32 }),
+      ).rejects.toThrow(/only generates character sheets/);
+      expect(spawnMock).not.toHaveBeenCalled();
+    },
+  );
 });
