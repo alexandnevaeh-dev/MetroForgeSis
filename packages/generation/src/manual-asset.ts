@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { AssetPipeline, type GeneratedAsset } from '@metroforge/assets';
+import { AssetPipeline, type GeneratedAsset, TILE_ATLAS } from '@metroforge/assets';
+import { compileGodotTerrainSet, compileStyleBoxTexture, writePixelArtImport } from '@metroforge/godot';
 import { licenseFieldsForProvider } from '@metroforge/ai';
 import { GameDNASchema, type DesignBible, type StyleBible } from '@metroforge/schemas';
 import { loadConfig } from '@metroforge/shared';
@@ -178,6 +179,28 @@ export async function generateManualAsset(request: ManualAssetRequest): Promise<
     });
   }
   writeFileSync(targetFull, asset.buffer);
+  writePixelArtImport(targetFull, relPath);
+  if (request.assetType === 'tileset' || request.assetType === 'tile') {
+    const tresRel = relPath.replace(/source\.png$/i, 'terrain.tres').replace(/\.png$/i, '.tres');
+    const tresPath = tresRel.includes('terrain.tres')
+      ? tresRel
+      : join(dirname(relPath), 'terrain.tres').replace(/\\/g, '/');
+    writeFileSync(
+      join(request.projectPath, tresPath),
+      compileGodotTerrainSet({
+        biomeId: assetId,
+        texturePath: relPath,
+        tileSize: gameDna.technical.tileSize,
+        roles: TILE_ATLAS.roles,
+      }),
+    );
+  }
+  if (request.assetType === 'ui_panel' || request.assetType === 'ui_icon') {
+    writeFileSync(
+      join(request.projectPath, relPath.replace(/\.png$/i, '.tres')),
+      compileStyleBoxTexture({ texturePath: relPath }),
+    );
+  }
 
   const characterId = request.assetType === 'player_sprite' ? 'player' : '';
   let dirtyReason = '';
