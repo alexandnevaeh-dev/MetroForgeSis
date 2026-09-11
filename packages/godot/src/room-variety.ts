@@ -29,8 +29,14 @@ export function measureRoomLayout(input: {
   height: number;
   tileSize: number;
   layout: RoomTileLayoutResult;
+  /** Actual sprite-based decoration placed in this room (floor props + wall-mounted
+   *  architecture/statues/arches). The tile-cell decor count below only sees decor_a/decor_b
+   *  atlas cells; the authored-Foundry room-assembly path paints its dressing as Sprite2D nodes
+   *  instead and never touches those atlas cells, so without this input decorationDensity reads a
+   *  flat 0 for every room in that path regardless of how much is actually on screen. */
+  decorationCount?: number;
 }): RoomLayoutMetrics {
-  const { width, height, tileSize, layout } = input;
+  const { width, height, tileSize, layout, decorationCount } = input;
   const cols = Math.max(1, Math.floor(width / tileSize));
   const rows = Math.max(1, Math.floor(height / tileSize));
   const total = cols * rows;
@@ -55,16 +61,35 @@ export function measureRoomLayout(input: {
     .map((c) => `${c.x}:${c.y}:${c.col}:${c.row}`)
     .sort()
     .join('|');
+  // Traversable-area-ratio measures openness within the actually-reachable band (from just above
+  // the highest placed platform down through the floor), not the whole room rectangle. A tall
+  // room's purely decorative sky headroom above that band (hanging chains, gantries — atmosphere,
+  // never meant to be walked) is not "cramped or empty gameplay space"; measuring against the
+  // full rectangle structurally biased every generously-tall room toward a false "too open"
+  // reading regardless of how well-composed its actual floor band was.
+  const bandTopRow = Math.max(0, Math.floor(Math.max(0, minY - tileSize * 3) / tileSize));
+  const bandRows = Math.max(1, rows - bandTopRow);
+  const bandTotal = cols * bandRows;
+  let occupiedInBand = 0;
+  for (const key of occupied) {
+    const y = Number(key.slice(key.indexOf(',') + 1));
+    if (y >= bandTopRow) occupiedInBand++;
+  }
+  const tileDecorDensity = total > 0 ? decorCells / total : 0;
+  // Sprite-based decorations counted in the same units as the tile-cell density above (one
+  // decoration ~= one occupied "decor cell" out of the room's full cell grid), so a room that
+  // relies on Sprite2D dressing instead of decor-atlas tiles is not scored as if it had none.
+  const spriteDecorDensity = total > 0 ? Math.min(1, (decorationCount ?? 0) / total) : 0;
   return {
     silhouetteHash: silhouette.slice(0, 64) || 'empty',
     platformCount: layout.platforms.length,
     pitCount: layout.pits.length,
     elevationChanges,
     uniquePlatformHeights: uniqueHeights.size,
-    traversableAreaRatio: total > 0 ? Math.max(0, 1 - occupied.size / total) : 0,
+    traversableAreaRatio: bandTotal > 0 ? Math.max(0, 1 - occupiedInBand / bandTotal) : 0,
     verticality: height > 0 ? (height - minY) / height : 0,
     hazardDensity: total > 0 ? hazardCells / total : 0,
-    decorationDensity: total > 0 ? decorCells / total : 0,
+    decorationDensity: Math.max(tileDecorDensity, spriteDecorDensity),
     combatSpacePx,
     silhouetteFilled: occupied.size,
   };

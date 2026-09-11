@@ -227,6 +227,7 @@ export class GodotProjectAssembler {
               platforms: opts.platforms ?? [],
               pits: opts.pits ?? [],
             },
+            decorationCount: Math.min(6, opts.blueprint?.plan.propBudget.clusters ?? 0) + Math.min(4, opts.blueprint?.plan.majorArchitecture.length ?? 0),
           });
           const similar = previousLayouts.some((prev) =>
             layoutsTooSimilar(
@@ -267,6 +268,7 @@ export class GodotProjectAssembler {
               platforms: opts.platforms ?? [],
               pits: opts.pits ?? [],
             },
+            decorationCount: Math.min(6, opts.blueprint?.plan.propBudget.clusters ?? 0) + Math.min(4, opts.blueprint?.plan.majorArchitecture.length ?? 0),
           }),
           platforms: opts.platforms ?? [],
           pits: opts.pits ?? [],
