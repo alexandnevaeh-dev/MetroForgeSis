@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { mkdirSync, rmSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { generateWorldTopology } from '@metroforge/procedural';
+import { generateWorldTopology, generateFullMetroidvaniaWorld, FULL_WORLD_TEST_CONFIG } from '@metroforge/procedural';
 import { encodePng } from '@metroforge/assets';
 import { QAValidator, RepairEngineer, validateWorldSceneArchetypeIntegrity } from './validator.js';
 
@@ -207,6 +207,81 @@ describe('QAValidator', () => {
     const gate = report.results.find((r) => r.gate === 'world_connectivity');
     expect(gate?.passed).toBe(false);
     expect(report.passed).toBe(false);
+
+    rmSync(outputDir, { recursive: true, force: true });
+  });
+
+  it('skips world_design_metroidvania (not fails) for a small world below the four-zone threshold', () => {
+    const outputDir = join(tmpdir(), `metroforge-qa-worlddesign-small-${Date.now()}`);
+    mkdirSync(outputDir, { recursive: true });
+    const { worldGraph, progressionGraph } = generateWorldTopology({
+      seed: 1,
+      roomCount: 12,
+      biomeCount: 2,
+      abilities: ['dash'],
+      bossCount: 1,
+      profile: 'VISUAL_VERTICAL_SLICE',
+    });
+    writeFileSync(join(outputDir, 'world_graph.json'), JSON.stringify(worldGraph));
+    writeFileSync(join(outputDir, 'progression_graph.json'), JSON.stringify(progressionGraph));
+    mkdirSync(join(outputDir, 'data', 'rooms'), { recursive: true });
+    writeFileSync(join(outputDir, 'data', 'rooms', 'rooms.json'), JSON.stringify({ rooms: {} }));
+
+    const report = new QAValidator().validateProject(outputDir, 'proj_test');
+    const gate = report.results.find((r) => r.gate === 'world_design_metroidvania');
+    expect(gate?.passed).toBe(true);
+    expect(gate?.state).toBe('SKIPPED');
+
+    rmSync(outputDir, { recursive: true, force: true });
+  });
+
+  it('passes world_design_metroidvania for a genuine four-zone Metroidvania world', () => {
+    const outputDir = join(tmpdir(), `metroforge-qa-worlddesign-full-${Date.now()}`);
+    mkdirSync(outputDir, { recursive: true });
+    const { worldGraph, progressionGraph, roomIds } = generateFullMetroidvaniaWorld({ ...FULL_WORLD_TEST_CONFIG, seed: 700001 });
+    writeFileSync(join(outputDir, 'world_graph.json'), JSON.stringify(worldGraph));
+    writeFileSync(join(outputDir, 'progression_graph.json'), JSON.stringify(progressionGraph));
+    mkdirSync(join(outputDir, 'data', 'rooms'), { recursive: true });
+    const rooms = Object.fromEntries(roomIds.map((id) => [id, { width: 800, height: 600 }]));
+    writeFileSync(join(outputDir, 'data', 'rooms', 'rooms.json'), JSON.stringify({ rooms }));
+
+    const report = new QAValidator().validateProject(outputDir, 'proj_test');
+    const gate = report.results.find((r) => r.gate === 'world_design_metroidvania');
+    expect(gate?.passed).toBe(true);
+    expect(gate?.details?.zoneCount).toBe(4);
+
+    rmSync(outputDir, { recursive: true, force: true });
+  });
+
+  it('fails world_design_metroidvania when the four-zone world has a real structural defect', () => {
+    const outputDir = join(tmpdir(), `metroforge-qa-worlddesign-broken-${Date.now()}`);
+    mkdirSync(outputDir, { recursive: true });
+    const { worldGraph, progressionGraph, roomIds } = generateFullMetroidvaniaWorld({ ...FULL_WORLD_TEST_CONFIG, seed: 700001 });
+    // Break it deliberately: empty out the last zone's room list (a disconnected/undeclared zone).
+    const broken = { ...worldGraph, regions: [...worldGraph.regions.slice(0, -1), { ...worldGraph.regions[worldGraph.regions.length - 1]!, roomIds: [] }] };
+    writeFileSync(join(outputDir, 'world_graph.json'), JSON.stringify(broken));
+    writeFileSync(join(outputDir, 'progression_graph.json'), JSON.stringify(progressionGraph));
+    mkdirSync(join(outputDir, 'data', 'rooms'), { recursive: true });
+    const rooms = Object.fromEntries(roomIds.map((id) => [id, { width: 800, height: 600 }]));
+    writeFileSync(join(outputDir, 'data', 'rooms', 'rooms.json'), JSON.stringify({ rooms }));
+
+    const report = new QAValidator().validateProject(outputDir, 'proj_test');
+    const gate = report.results.find((r) => r.gate === 'world_design_metroidvania');
+    expect(gate?.passed).toBe(false);
+    expect(report.passed).toBe(false);
+
+    rmSync(outputDir, { recursive: true, force: true });
+  });
+
+  it('skips world_design_metroidvania for TOP_DOWN_ACTION_ADVENTURE', () => {
+    const outputDir = join(tmpdir(), `metroforge-qa-worlddesign-topdown-${Date.now()}`);
+    mkdirSync(outputDir, { recursive: true });
+    writeFileSync(join(outputDir, 'game_dna.json'), JSON.stringify({ identity: { title: 't' }, world: { roomCount: 1 }, archetype: 'TOP_DOWN_ACTION_ADVENTURE', abilities: [] }));
+
+    const report = new QAValidator().validateProject(outputDir, 'proj_test');
+    const gate = report.results.find((r) => r.gate === 'world_design_metroidvania');
+    expect(gate?.passed).toBe(true);
+    expect(gate?.state).toBe('SKIPPED');
 
     rmSync(outputDir, { recursive: true, force: true });
   });

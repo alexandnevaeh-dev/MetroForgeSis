@@ -15,7 +15,15 @@ import {
 } from '@metroforge/shared';
 
 const TOP_DOWN_ITEM_IDS = new Set<string>(TOP_DOWN_DUNGEON_ITEMS.map((item) => item.id));
-import { validateWorldConnectivity, validateWorldReachability, validateMovementFeasibility, movementStatsFromJson } from '@metroforge/procedural';
+import {
+  validateWorldConnectivity,
+  validateWorldReachability,
+  validateMovementFeasibility,
+  movementStatsFromJson,
+  validateWorldDesign,
+  evaluateFullWorldApplicability,
+} from '@metroforge/procedural';
+import type { ProgressionGraph } from '@metroforge/schemas';
 import { auditRoomArchetypeFidelity } from '@metroforge/godot';
 import { critiqueGameplayScreenshot, critiqueScreenshotDiversity } from '@metroforge/assets';
 import { parseSmokeTestOutput } from './smoke-output.js';
@@ -384,6 +392,49 @@ export class QAValidator {
         passed: false,
         message: 'Could not evaluate room archetype fidelity',
       });
+    }
+
+    // Gate: full-world Metroidvania structure (zones, layout consistency, distinct gate kinds,
+    // return loops, teaching rooms, tease metadata — see packages/procedural/src/world-design.ts).
+    // Side-view only: the checks reason about Metroidvania zone/gate concepts that don't apply to
+    // TOP_DOWN_ACTION_ADVENTURE's single-overworld model. Not applicable (and reported as such,
+    // not silently passed) for any world declaring fewer than MIN_FULL_WORLD_ZONES zones — a
+    // VISUAL_VERTICAL_SLICE or TINY_TEST slice is not expected to contain a whole four-zone world.
+    if (isTopDown) {
+      results.push({ gate: 'world_design_metroidvania', passed: true, state: 'SKIPPED', message: 'Not applicable to TOP_DOWN_ACTION_ADVENTURE' });
+    } else {
+      try {
+        const worldGraph = JSON.parse(readFileSync(join(projectPath, 'world_graph.json'), 'utf-8')) as WorldGraph;
+        const progressionGraph = JSON.parse(readFileSync(join(projectPath, 'progression_graph.json'), 'utf-8')) as ProgressionGraph;
+        const applicability = evaluateFullWorldApplicability(worldGraph);
+        if (!applicability.applicable) {
+          results.push({ gate: 'world_design_metroidvania', passed: true, state: 'SKIPPED', message: applicability.reason });
+        } else {
+          const roomsJson = JSON.parse(readFileSync(join(projectPath, 'data', 'rooms', 'rooms.json'), 'utf-8')) as {
+            rooms?: Record<string, { width?: number; height?: number }>;
+          };
+          const roomExtents = Object.entries(roomsJson.rooms ?? {}).map(([id, r]) => ({
+            id,
+            width: r.width ?? 800,
+            height: r.height ?? 600,
+          }));
+          const design = validateWorldDesign({ worldGraph, progressionGraph, roomExtents });
+          results.push({
+            gate: 'world_design_metroidvania',
+            passed: design.passed,
+            message: design.passed
+              ? `${design.zoneCount} zones, ${design.gateTypeCounts.movement} movement + ${design.gateTypeCounts.combat} combat gate(s), ${design.shortcutCount} shortcut(s), ${design.teachingRoomCount} teaching room(s)`
+              : `${design.issues.length} world-design issue(s): ${design.issues.slice(0, 3).map((i) => `[${i.code}] ${i.message}`).join('; ')}`,
+            details: { issues: design.issues, zoneCount: design.zoneCount, gateTypeCounts: design.gateTypeCounts, layout: design.layout },
+          });
+        }
+      } catch (err) {
+        results.push({
+          gate: 'world_design_metroidvania',
+          passed: false,
+          message: `Could not evaluate world design: ${err instanceof Error ? err.message : String(err)}`,
+        });
+      }
     }
 
     // Gate: rooms exist. TOP_DOWN_ACTION_ADVENTURE has no per-room .tscn files at all —
