@@ -20,6 +20,7 @@
     "validate": "pnpm typecheck && pnpm test && pnpm build",
     "smoke:generate": "pnpm build && node scripts/smoke-generate.mjs",
     "smoke:godot": "pnpm build && node scripts/smoke-godot.mjs",
+    "smoke:world-design": "pnpm build && node scripts/smoke-world-design.mjs",
     "providers:image:doctor": "pnpm build:cli && node apps/cli/dist/index.js providers:image:doctor",
     "providers:nvidia:image:probe": "pnpm build:cli && node apps/cli/dist/index.js providers:nvidia:image:probe",
     "providers:nvidia:image:edit:probe": "pnpm build:cli && node apps/cli/dist/index.js providers:nvidia:image:edit:probe",

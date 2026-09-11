@@ -60,6 +60,16 @@ jobs:
             GeneratedGames/metroforge-smoke-metroidvania/metroforge-validation.json
             GeneratedGames/metroforge-smoke-metroidvania/qa/capture_telemetry.json
             GeneratedGames/metroforge-smoke-metroidvania/qa/screenshot_gameplay.png
+      - run: pnpm smoke:world-design
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: metroforge-world-design-evidence
+          if-no-files-found: ignore
+          path: |
+            GeneratedGames/metroforge-smoke-world-design/world-design-smoke-report.json
+            GeneratedGames/metroforge-smoke-world-design/world_design_report.txt
+            GeneratedGames/metroforge-smoke-world-design/validation_report.json
 
   godot-runtime-macos-arm64:
     runs-on: macos-15
@@ -90,3 +100,13 @@ jobs:
             GeneratedGames/metroforge-smoke-metroidvania/metroforge-validation.json
             GeneratedGames/metroforge-smoke-metroidvania/qa/capture_telemetry.json
             GeneratedGames/metroforge-smoke-metroidvania/qa/screenshot_gameplay.png
+      - run: pnpm smoke:world-design
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: metroforge-world-design-evidence-macos-arm64
+          if-no-files-found: ignore
+          path: |
+            GeneratedGames/metroforge-smoke-world-design/world-design-smoke-report.json
+            GeneratedGames/metroforge-smoke-world-design/world_design_report.txt
+            GeneratedGames/metroforge-smoke-world-design/validation_report.json
