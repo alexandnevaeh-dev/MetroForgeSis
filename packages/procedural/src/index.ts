@@ -117,5 +117,7 @@ export type {
   ValidateWorldDesignInput,
   GameHookInfo,
 } from './world-design.js';
+export { validateExportFidelity } from './export-fidelity.js';
+export type { ExportedConnection, ExportedRoomData, ExportFidelityIssue, ExportFidelityReport } from './export-fidelity.js';
 export { generateTopDownWorld, collisionRectsFromTiles, isWalkableTile } from './topdown/world.js';
 export type { TopDownOverworld, TopDownArea, TopDownPoi, TopDownWorldGenResult } from './topdown/world.js';

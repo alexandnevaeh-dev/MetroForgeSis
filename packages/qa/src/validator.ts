@@ -22,6 +22,8 @@ import {
   movementStatsFromJson,
   validateWorldDesign,
   evaluateFullWorldApplicability,
+  validateExportFidelity,
+  type ExportedRoomData,
 } from '@metroforge/procedural';
 import type { ProgressionGraph } from '@metroforge/schemas';
 import { auditRoomArchetypeFidelity } from '@metroforge/godot';
@@ -433,6 +435,41 @@ export class QAValidator {
           gate: 'world_design_metroidvania',
           passed: false,
           message: `Could not evaluate world design: ${err instanceof Error ? err.message : String(err)}`,
+        });
+      }
+    }
+
+    // Gate: export fidelity (packages/procedural/src/export-fidelity.ts) — does the actual
+    // exported project (data/rooms/rooms.json's real doors/obstacles) agree with the WorldGraph
+    // that was supposed to produce it? world_design_metroidvania and generateWorldDesignReport
+    // both read the same in-memory WorldGraph the pipeline just built, which proves the graph and
+    // the report agree with *each other* but nothing about whether room-assembler.ts's own
+    // door/obstacle-placement logic actually preserved every edge/requirement/physical obstacle
+    // when it built the real project. Applies to every side-view world regardless of zone count —
+    // export fidelity is not a "full world" concept, a VISUAL_VERTICAL_SLICE's doors can drift
+    // from its graph just as easily.
+    if (isTopDown) {
+      results.push({ gate: 'export_fidelity', passed: true, state: 'SKIPPED', message: 'Not applicable to TOP_DOWN_ACTION_ADVENTURE' });
+    } else {
+      try {
+        const worldGraph = JSON.parse(readFileSync(join(projectPath, 'world_graph.json'), 'utf-8')) as WorldGraph;
+        const roomsJson = JSON.parse(readFileSync(join(projectPath, 'data', 'rooms', 'rooms.json'), 'utf-8')) as {
+          rooms?: Record<string, ExportedRoomData>;
+        };
+        const fidelity = validateExportFidelity(worldGraph, roomsJson.rooms ?? {});
+        results.push({
+          gate: 'export_fidelity',
+          passed: fidelity.passed,
+          message: fidelity.passed
+            ? `${worldGraph.edges.length} edge(s) verified against the exported project's real doors/obstacles`
+            : `${fidelity.issues.length} export-fidelity issue(s): ${fidelity.issues.slice(0, 3).map((i) => `[${i.code}] ${i.message}`).join('; ')}`,
+          details: { issues: fidelity.issues },
+        });
+      } catch (err) {
+        results.push({
+          gate: 'export_fidelity',
+          passed: false,
+          message: `Could not evaluate export fidelity: ${err instanceof Error ? err.message : String(err)}`,
         });
       }
     }

@@ -81,13 +81,22 @@ export interface PublishedRoomRecord {
   worldArchetype?: string;
   width: number;
   height: number;
-  connections: { direction: string; targetRoomId: string }[];
+  /** `optional`/`requirements` mirror the RoomConnection this was built from, so a Node-side
+   *  validator (packages/procedural/src/export-fidelity.ts) can cross-check a real exported
+   *  project's doors against the WorldGraph edges that produced it — direction/target alone
+   *  cannot tell whether an ability gate the graph declares actually made it into the door the
+   *  room-assembler built (or, conversely, whether the door ended up requiring something the
+   *  graph never asked for). */
+  connections: { direction: string; targetRoomId: string; optional: boolean; requirements: string[] }[];
   enemies: string[];
   npcs: string[];
   collectibles: string[];
   visualKit?: 'foundry';
   tileCells?: TileCell[];
   weakFloors?: { x: number; width: number; targetRoomId: string }[];
+  /** Real physical obstacles for phase-gated connections (see derivePhaseBarriers) — recorded the
+   *  same way weakFloors already is, for the same export-fidelity reason. */
+  phaseBarriers?: { x: number; targetRoomId: string }[];
   platforms?: PlatformRect[];
   pits?: PitGap[];
   blueprint?: RoomBlueprint;
@@ -629,6 +638,8 @@ export function buildPublishedRoomRecord(
     connections: opts.connections.map((c) => ({
       direction: c.direction,
       targetRoomId: c.targetRoomId,
+      optional: c.optional ?? false,
+      requirements: [...c.requirements],
     })),
     enemies: enemyId ? [enemyId] : opts.isBossRoom && opts.bossId ? [opts.bossId] : [],
     npcs: opts.npcs.map((n) => n.id),
@@ -639,6 +650,10 @@ export function buildPublishedRoomRecord(
       x: wf.x,
       width: wf.width,
       targetRoomId: wf.targetRoomId,
+    })),
+    phaseBarriers: derivePhaseBarriers(opts.connections, opts.width, floorTopPx(opts.height, opts.tileSize)).map((pb) => ({
+      x: pb.x,
+      targetRoomId: pb.targetRoomId,
     })),
     platforms: opts.platforms,
     pits: opts.pits,
