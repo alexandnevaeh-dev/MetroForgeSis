@@ -143,8 +143,14 @@ export const PROFILE_DEFAULTS: Record<
     npcs: 1,
     quests: 1,
   },
+  // biomes: 4, not 3 — MIN_FULL_WORLD_ZONES (packages/procedural/src/world-design.ts) requires at
+  // least 4 declared zones for the full Metroidvania world-design checks (world_design_metroidvania)
+  // to apply at all. SMALL is a real, playable full game (30-50 rooms) rather than a visual slice
+  // — VISUAL_VERTICAL_SLICE is the profile explicitly exempted from that requirement, not SMALL —
+  // so leaving it at 3 meant the only way to see the full-world generator/gate exercise a
+  // non-MASS-gated profile was the test-only `worldOverride`, never a real default `create` run.
   SMALL: {
-    biomes: 3,
+    biomes: 4,
     roomsMin: 30,
     roomsMax: 50,
     abilities: 4,

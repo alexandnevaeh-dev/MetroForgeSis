@@ -1,6 +1,6 @@
 import type { GraphEdge, GraphNode, ProgressionGraph, WorldGraph } from '@metroforge/schemas';
 import { generateId, isRegisteredAbilityId, type GenerationProfile } from '@metroforge/shared';
-import { generateWorldTopology, type WorldGenResult } from './world.js';
+import { generateWorldTopology, removeShortcutsThatBypassGates, type WorldGenResult } from './world.js';
 import { abilityGateRoomIndex } from './room-archetypes.js';
 import { buildProgressionProof, type ProgressionProof } from './progression-proof.js';
 import {
@@ -87,12 +87,24 @@ export interface FullWorldOptions {
  *  option, which is the only pipeline plumbing this adds — profile-keyed gates
  *  (assertMassVisualGenerationAllowed, isMassVisualProfile) are untouched because they read
  *  `profile` ('SMALL' here), never roomCount/biomeCount. */
+// profile: 'MEDIUM' (not 'SMALL') and this exact ability list are deliberate: LOCAL_ONLY DNA
+// generation without an LLM resolves abilities via pickRegisteredAbilities(profile)
+// (packages/shared/src/registered-abilities.ts) — profile-keyed and seed-independent — and
+// MEDIUM is the smallest profile whose deterministic 6-ability slice includes ground_slam
+// (dash, double_jump, wall_slide, wall_jump, air_dash, ground_slam). Without ground_slam in the
+// roster, generateFullMetroidvaniaWorld's breakable-wall link is never added (correctly — you
+// cannot gate on an ability nobody in the world ever obtains), so a real end-to-end pipeline run
+// (scripts/smoke-world-design.mjs) would never actually exercise a breakable wall in Godot. Room/
+// zone counts still come from worldOverride, not from MEDIUM's own 80-120-room/5-biome defaults —
+// this keeps the smoke run's asset/enemy/boss/npc budgets at MEDIUM's (still local, non-AI) scale
+// rather than SMALL's, which is a small, deliberate cost tradeoff for guaranteeing real breakable-
+// wall runtime coverage.
 export const FULL_WORLD_TEST_CONFIG: Omit<FullWorldOptions, 'seed'> = {
   roomCount: 40,
   biomeCount: MIN_FULL_WORLD_ZONES,
-  abilities: ['dash', 'wall_jump', 'grapple', 'ground_slam'],
+  abilities: ['dash', 'double_jump', 'wall_slide', 'wall_jump', 'air_dash', 'ground_slam'],
   bossCount: MIN_FULL_WORLD_ZONES,
-  profile: 'SMALL',
+  profile: 'MEDIUM',
   combatKeyItemId: 'item_reactor_key',
 };
 
@@ -366,6 +378,19 @@ export function generateFullMetroidvaniaWorld(options: FullWorldOptions): FullWo
       { targetRoomId: rewardId, previewOf: 'item', requiresAbility: gatingAbility },
     ];
   }
+
+  // world.ts's own removeShortcutsThatBypassGates already ran once inside generateWorldTopology
+  // above, but only against the base topology's movement-ability gates — the combat gate added
+  // just above did not exist yet at that point, so a base-topology branching shortcut that was a
+  // legitimate free route *then* can become an undetected bypass around the combat gate *now*.
+  // Found empirically: seed 700005's own base shortcut created exactly this bypass around the
+  // item_reactor_key gate once MEDIUM's ability roster (this module's own FULL_WORLD_TEST_CONFIG)
+  // added ground_slam/wall_jump/air_dash and shifted where the combat gate landed. Re-running
+  // bypass-removal here, after every edge this function adds is in place, protects the combat gate
+  // (and, defensively, the movement gates again) without touching the shortcut/breakable-wall/
+  // one-way edges this function just added on purpose — those are optional themselves, so they can
+  // only ever be *found and removed as* a bypass route, never mistaken for the gate being bypassed.
+  removeShortcutsThatBypassGates(edges);
 
   const worldGraph: WorldGraph = { ...base.worldGraph, nodes, edges };
   return { worldGraph, progressionGraph: base.progressionGraph, roomIds, zones: [...zones], zoneOfRoom };

@@ -128,15 +128,25 @@ export interface GenerateOptions {
    *  manifest) throws rather than silently disabling the feature, matching externalVisualPack's
    *  "no manufactured fallback" convention. */
   useVisualReferenceLibrary?: boolean;
-  /** Test-only topology override — lets a caller (packages/procedural/src/world-design.ts's
-   *  FULL_WORLD_TEST_CONFIG in particular) exercise a real end-to-end generation with more zones/
-   *  rooms than the chosen `profile`'s PROFILE_DEFAULTS would otherwise produce, without adding a
-   *  new GenerationProfile value or touching any profile-keyed gate (assertMassVisualGenerationAllowed
-   *  /isMassVisualProfile read `profile` alone, never roomCount/biomeCount, so this cannot bypass
-   *  MASS/visual-approval gating). Never set by the CLI or Studio — topology-only, no effect on
-   *  asset/enemy/boss/NPC budgets, which stay whatever the profile says. Absent ⇒ unchanged
-   *  existing behavior (profile-derived roomCount/biomeCount, exactly as before this field
-   *  existed). */
+  /** Test-only topology override. IMPORTANT: this is NOT the gate for reaching
+   *  generateFullMetroidvaniaWorld — every profile whose own PROFILE_DEFAULTS.biomes is already
+   *  >= MIN_FULL_WORLD_ZONES (SMALL, MEDIUM, LARGE, RELEASE_CANDIDATE — every profile except
+   *  TINY_TEST and VISUAL_VERTICAL_SLICE) reaches the full-world generator on a completely normal
+   *  `create` run, with no override involved (see generation-e2e.test.ts's *-normal-path tests).
+   *  This field exists only so a caller (packages/procedural/src/world-design.ts's
+   *  FULL_WORLD_TEST_CONFIG in particular) can exercise that same real end-to-end path at a
+   *  *cheaper* room/zone count than a real profile would otherwise force — e.g. a LARGE-shaped
+   *  4-zone/40-room CI smoke run instead of paying for 150-300 real rooms — without adding a new
+   *  GenerationProfile value or touching any profile-keyed gate
+   *  (assertMassVisualGenerationAllowed/isMassVisualProfile read `profile` alone, never
+   *  roomCount/biomeCount, so this cannot bypass MASS/visual-approval gating). Never set by the
+   *  CLI or Studio — topology-only, no effect on asset/enemy/boss/NPC budgets, which stay whatever
+   *  the profile says. Absent ⇒ unchanged existing behavior (profile-derived
+   *  roomCount/biomeCount, exactly as before this field existed). To exercise a specific ability
+   *  roster (e.g. to guarantee ground_slam is present so a breakable wall actually gets placed),
+   *  pick a `profile` whose deterministic pickRegisteredAbilities() output already includes it
+   *  (packages/shared/src/registered-abilities.ts) rather than overriding abilities here — LOCAL_ONLY
+   *  DNA generation without an LLM already resolves to that function, profile-keyed and seed-independent. */
   worldOverride?: { roomCount?: number; biomeCount?: number };
 }
 
@@ -657,7 +667,7 @@ export class GenerationPipeline {
       !worldArtifacts.ok
         ? `missing artifacts: ${worldArtifacts.missing.join(', ')}`
         : connected
-          ? `${roomIds.length} rooms, ${defaults.biomes} biomes`
+          ? `${roomIds.length} rooms, ${biomeCount} biomes`
           : `${unreachableRoomIds.length} room(s) disconnected from start`,
     );
 

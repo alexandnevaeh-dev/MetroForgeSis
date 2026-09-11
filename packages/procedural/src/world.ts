@@ -301,7 +301,7 @@ function buildEdges(
  * `optional: true` supplementary connectivity by construction, so removing one never disconnects
  * anything the spine doesn't already connect.
  */
-function removeShortcutsThatBypassGates(edges: WorldGraph['edges']): void {
+export function removeShortcutsThatBypassGates(edges: WorldGraph['edges']): void {
   const freeBypassPath = (fromId: string, toId: string, excludeEdgeId: string): WorldGraph['edges'] | null => {
     const adjacency = new Map<string, Array<{ to: string; edge: WorldGraph['edges'][number] }>>();
     for (const e of edges) {
