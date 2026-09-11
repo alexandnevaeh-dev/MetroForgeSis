@@ -181,8 +181,12 @@ function paintMidArchitecture(
   seed: number,
   masonry: [number, number, number],
 ): void {
-  const count = 2;
-  const cols = columnCenters(width, seed + 17, count, Math.round(width * 0.14));
+  // 2 columns read as sparse at small preview sizes but as nearly empty at real background
+  // resolution (640x360) — one small rectangle at each end of a mostly-black frame reads as
+  // missing content rather than "sparse ruin," not the intended atmospheric depth cue. 3 columns
+  // is still a colonnade, not a wall.
+  const count = 3;
+  const cols = columnCenters(width, seed + 17, count, Math.round(width * 0.1));
   let hit = false;
   for (let ci = 0; ci < cols.length; ci++) {
     const cx = cols[ci]!;
@@ -230,16 +234,21 @@ function paintNearOccluders(
 ): void {
   const leftPier = x < width * 0.04 && y > height * 0.72;
   const rightPier = x > width * 0.96 && y > height * 0.72;
-  const chainXs = columnCenters(width, seed + 31, 4, Math.round(width * 0.16));
+  // 4 chains + a rare debris speck read as near-empty black at real background resolution
+  // (640x360) rather than the intended near-layer atmosphere. 6 chains and a slightly more
+  // frequent debris band still leave the frame mostly transparent (this paints per-pixel; the
+  // playable-air majority is untouched), just enough more than before that the layer reads as
+  // present rather than absent next to the far plate.
+  const chainXs = columnCenters(width, seed + 31, 6, Math.round(width * 0.1));
   const onChain =
     chainXs.some((cx) => Math.abs(x - cx) <= 1 && y < height * 0.22 && y % 5 < 2);
   const vine = chainXs.some(
     (cx) => Math.abs(x - cx) <= 3 && y < height * 0.28 && hash01(seed, x * 9 + Math.floor(y / 4)) > 0.55,
   );
   const debris =
-    y > height * 0.9 &&
-    hash01(seed, Math.floor(x / 6) * 13) > 0.72 &&
-    Math.abs(x - width / 2) > width * 0.18;
+    y > height * 0.88 &&
+    hash01(seed, Math.floor(x / 6) * 13) > 0.65 &&
+    Math.abs(x - width / 2) > width * 0.14;
   if (!(leftPier || rightPier || onChain || vine || debris)) {
     setPx(rgba, width, x, y, 0, 0, 0, 0);
     return;
