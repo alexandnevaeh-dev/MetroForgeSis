@@ -14,11 +14,20 @@ describe('exportProject', () => {
 
   let projectPath: string;
 
+  // exportProject's own default (projectPath's grandparent + 'Exports') assumes a real
+  // GeneratedGames/<slug> layout; under a temp directory of arbitrary depth it can resolve
+  // outside the OS temp root entirely (observed: /tmp/Exports instead of anywhere under
+  // tmpdir()), which a sandboxed test runner correctly refuses to write to. Every call below
+  // passes this explicit, portable outputDir instead of relying on that path-derivation default.
+  let outputDir: string;
+
 
 
   beforeEach(() => {
 
     projectPath = mkdtempSync(join(tmpdir(), 'metroforge-export-'));
+
+    outputDir = join(tmpdir(), `metroforge-export-out-${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
     writeFileSync(join(projectPath, 'project.godot'), 'config_version=5\n');
 
@@ -76,6 +85,8 @@ describe('exportProject', () => {
 
     rmSync(projectPath, { recursive: true, force: true });
 
+    rmSync(outputDir, { recursive: true, force: true });
+
   });
 
 
@@ -90,7 +101,7 @@ describe('exportProject', () => {
 
   it('writes export_manifest in staged output', () => {
 
-    const result = exportProject({ projectPath, zip: false });
+    const result = exportProject({ projectPath, outputDir, zip: false });
 
     expect(result.success).toBe(true);
 
@@ -124,7 +135,7 @@ describe('exportProject', () => {
     // A staged-only export (no --windows) can never reach packageReady, so even an explicit
     // humanVisualApprovalGranted:true must not flip releaseReady. Human approval is necessary,
     // never sufficient — it must never substitute for a real technical gate.
-    const result = exportProject({ projectPath, zip: false, humanVisualApprovalGranted: true });
+    const result = exportProject({ projectPath, outputDir, zip: false, humanVisualApprovalGranted: true });
     expect(result.success).toBe(true);
     const manifest = JSON.parse(readFileSync(result.manifestPath!, 'utf-8'));
     expect(manifest.readiness.packageReady).toBe(false);
@@ -134,7 +145,7 @@ describe('exportProject', () => {
   });
 
   it('defaults humanVisualApprovalGranted to false and keeps releaseReady false without it', () => {
-    const result = exportProject({ projectPath, zip: false });
+    const result = exportProject({ projectPath, outputDir, zip: false });
     const manifest = JSON.parse(readFileSync(result.manifestPath!, 'utf-8'));
     expect(manifest.readiness.humanVisualApprovalGranted).toBe(false);
     expect(manifest.readiness.releaseReady).toBe(false);
@@ -146,6 +157,7 @@ describe('exportProject', () => {
   it('reports Windows package blocked instead of claiming a staged project is package-ready', () => {
     const result = exportProject({
       projectPath,
+      outputDir,
       zip: false,
       packageWindows: true,
       godotExecutable: join(projectPath, 'missing-godot.exe'),
@@ -183,7 +195,7 @@ describe('exportProject', () => {
 
     );
 
-    const result = exportProject({ projectPath, zip: false });
+    const result = exportProject({ projectPath, outputDir, zip: false });
 
     expect(result.success).toBe(true);
 
@@ -223,7 +235,7 @@ describe('exportProject', () => {
 
     );
 
-    const result = exportProject({ projectPath, zip: false });
+    const result = exportProject({ projectPath, outputDir, zip: false });
 
     expect(result.success).toBe(false);
 
@@ -250,7 +262,7 @@ describe('exportProject', () => {
 
     );
 
-    const result = exportProject({ projectPath, zip: false, requireCommercialSafe: false });
+    const result = exportProject({ projectPath, outputDir, zip: false, requireCommercialSafe: false });
 
     expect(result.success).toBe(true);
 
@@ -296,7 +308,7 @@ describe('exportProject', () => {
 
     );
 
-    const result = exportProject({ projectPath, zip: false, requireProductionAssets: true });
+    const result = exportProject({ projectPath, outputDir, zip: false, requireProductionAssets: true });
 
     expect(result.success).toBe(false);
 
@@ -340,7 +352,7 @@ describe('exportProject', () => {
 
     );
 
-    const result = exportProject({ projectPath, zip: false, requireProductionAssets: true });
+    const result = exportProject({ projectPath, outputDir, zip: false, requireProductionAssets: true });
 
     expect(result.success).toBe(true);
 
@@ -384,7 +396,7 @@ describe('exportProject', () => {
 
     );
 
-    const result = exportProject({ projectPath, zip: false });
+    const result = exportProject({ projectPath, outputDir, zip: false });
 
     expect(result.success).toBe(true);
 

@@ -1550,9 +1550,19 @@ export class GenerationPipeline {
     // `qaReport.passed` treats SKIPPED Godot gates as non-blocking; `validationLevel` is the
     // authoritative product outcome — do not claim RUNTIME_VALIDATED / complete when Godot was
     // never available or runtime hard-failed.
+    //
+    // `--skip-runtime-validation` (runGodotGates above) always pushes `godot_imports` as
+    // `state: 'SKIPPED'`, never 'PASS' — Godot is never actually invoked in this mode, so there is
+    // nothing for it to pass. deriveValidationLevel's own skip-branch reflects that correctly by
+    // returning STATIC_VALIDATED (import genuinely skipped, not validated) rather than
+    // IMPORT_VALIDATED (which asserts godot_imports actually passed). Checking for
+    // IMPORT_VALIDATED here was therefore checking a level this mode can never produce, making
+    // `validationPassed` always false whenever the flag was used — confirmed via generation-e2e.
+    // test.ts's TINY_TEST run, which failed its `export` phase assertion for exactly this reason
+    // on every profile, seed, and prior code state tried.
     let validationPassed =
       validationLevel === 'RUNTIME_VALIDATED' ||
-      (validationLevel === 'IMPORT_VALIDATED' && Boolean(options.skipRuntimeValidation));
+      (validationLevel === 'STATIC_VALIDATED' && Boolean(options.skipRuntimeValidation));
 
     // A top-down project reaching this point with godot_runtime genuinely PASSED but
     // godot_playtest SKIPPED is not a legitimate outcome — every documented SKIPPED reason above
