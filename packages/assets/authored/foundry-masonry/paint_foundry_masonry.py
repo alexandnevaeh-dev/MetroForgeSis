@@ -288,15 +288,26 @@ def ability_core() -> Image.Image:
     rect(9, 5, 14, 22, PAL["brass"])
     rect(10, 6, 12, 20, PAL["iron"])
     rect(11, 7, 10, 18, PAL["iron_d"])
-    # Recessed glass window with interior form
+    # Recessed glass window
     rect(12, 8, 8, 16, PAL["glass_d"])
     rect(13, 9, 6, 14, PAL["glass"])
-    rect(14, 11, 3, 8, PAL["core"])
-    rect(15, 12, 1, 4, PAL["glass_l"])
-    rect(16, 14, 1, 2, PAL["cream"])
-    # Mid band
-    rect(9, 14, 14, 3, PAL["brass"])
-    rect(10, 15, 12, 1, PAL["brass_l"])
+    # Interior forge-core: a bright cross-filament with a hot centre. Reads as a
+    # contained core at a glance rather than a plain lit recess, and the cross
+    # survives being dimmed by room lighting.
+    rect(15, 10, 2, 12, PAL["glass_l"])   # vertical filament sheath
+    rect(15, 11, 2, 10, PAL["core"])      # vertical filament
+    rect(13, 14, 6, 3, PAL["glass_l"])    # cross-bar sheath
+    rect(13, 15, 6, 1, PAL["core"])       # cross-bar
+    rect(15, 14, 2, 3, PAL["cream"])      # hot centre
+    put(13, 9, PAL["glass_l"])
+    put(18, 9, PAL["glass_l"])
+    put(13, 22, PAL["glass_l"])
+    put(18, 22, PAL["glass_l"])
+    # Mid band — split around the window so it does not slice the core
+    rect(9, 14, 4, 3, PAL["brass"])
+    rect(19, 14, 4, 3, PAL["brass"])
+    rect(10, 15, 3, 1, PAL["brass_l"])
+    rect(19, 15, 3, 1, PAL["brass_l"])
     # Cream rim baked in so lighting cannot erase the silhouette
     for y in range(2, 30):
         put(7, y, PAL["cream"])
