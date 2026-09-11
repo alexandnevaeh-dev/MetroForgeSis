@@ -713,17 +713,32 @@ func _inject_shrine_hearth_lights(room: Node, size: Vector2, host: Node, tex: Te
 	host.add_child(bounce)
 	var npc := _find_named_prefix(room, "NPC")
 	if npc:
+		# The tender stands away from the hearth mouth and was receding into the dark rear wall.
+		# A dedicated warm key on the tender + a small floor bounce at its feet separates the
+		# figure and the masonry immediately around it, without spilling into the recessed cavity
+		# (RearWall keeps light_mask 2, so the furnace interior stays dark regardless).
 		var tender := PointLight2D.new()
 		tender.name = "ShrineTenderLight"
-		tender.position = npc.position + Vector2(0, -28.0)
+		tender.position = npc.position + Vector2(0, -30.0)
 		tender.texture = tex
-		tender.color = Color(1.0, 0.72, 0.42, 1)
-		tender.energy = 0.32
-		tender.texture_scale = 0.24
+		tender.color = Color(1.0, 0.74, 0.46, 1)
+		tender.energy = 0.62
+		tender.texture_scale = 0.34
 		tender.range_item_cull_mask = 1
 		tender.z_index = 6
 		tender.shadow_enabled = false
 		host.add_child(tender)
+		var tender_bounce := PointLight2D.new()
+		tender_bounce.name = "ShrineTenderBounce"
+		tender_bounce.position = npc.position + Vector2(0, 2.0)
+		tender_bounce.texture = tex
+		tender_bounce.color = Color(0.96, 0.66, 0.40, 1)
+		tender_bounce.energy = 0.30
+		tender_bounce.texture_scale = 0.22
+		tender_bounce.range_item_cull_mask = 1
+		tender_bounce.z_index = 5
+		tender_bounce.shadow_enabled = false
+		host.add_child(tender_bounce)
 	var pickup := _find_named_prefix(room, "AbilityPickup")
 	if pickup:
 		var halo := PointLight2D.new()
