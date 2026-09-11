@@ -61,8 +61,23 @@ describe('AssetPipeline procedural path', () => {
     expect(result.assets.some((a) => a.path === 'assets/vfx/area_burst.png')).toBe(true);
     expect(result.assets.some((a) => a.path === 'assets/vfx/slam_shock.png')).toBe(true);
     expect(result.assets.some((a) => a.path === 'assets/vfx/landing_dust.png')).toBe(true);
+    expect(result.assets.some((a) => a.path === 'assets/props/interact/pickup.png')).toBe(true);
+    expect(result.assets.some((a) => a.path === 'assets/props/interact/save_shrine.png')).toBe(true);
+    expect(result.assets.some((a) => a.path === 'assets/props/interact/ability.png')).toBe(true);
     expect(result.assets.some((a) => a.path === 'assets/npcs/npc_000.png')).toBe(true);
     expect(result.assets.some((a) => a.path === 'assets/npcs/npc_000_walk.png')).toBe(true);
+
+    const npcStill = result.assets.find((a) => a.path === 'assets/npcs/npc_000.png')!;
+    const npcPx = decodePngRgba(npcStill.buffer);
+    let mustard = 0;
+    for (let i = 0; i < npcPx.rgba.length; i += 4) {
+      if ((npcPx.rgba[i + 3] ?? 0) < 128) continue;
+      const r = npcPx.rgba[i]!;
+      const g = npcPx.rgba[i + 1]!;
+      const b = npcPx.rgba[i + 2]!;
+      if (r > 180 && g > 140 && b < 100) mustard += 1;
+    }
+    expect(mustard).toBe(0);
 
     expect(result.assets.some((a) => a.path === 'assets/backgrounds/biome_0/far.png')).toBe(true);
     expect(result.assets.some((a) => a.path.includes('player_idle_pose.png'))).toBe(true);
@@ -173,6 +188,65 @@ describe('AssetPipeline procedural path', () => {
       const original = originalTiles.find((t) => t.id === tile.id)!;
       expect(tile.buffer.equals(original.buffer)).toBe(true);
     }
+
+    rmSync(outputDir, { recursive: true, force: true });
+  });
+
+  it('loads authored foundry courier actors for VISUAL_VERTICAL_SLICE', async () => {
+    const outputDir = join(tmpdir(), `metroforge-assets-authored-${Date.now()}`);
+    mkdirSync(outputDir, { recursive: true });
+
+    const pipeline = new AssetPipeline();
+    const result = await pipeline.generate({
+      gameDna: {
+        ...minimalDna,
+        profile: 'VISUAL_VERTICAL_SLICE',
+        technical: { ...minimalDna.technical, tileSize: 32 },
+      },
+      profile: 'VISUAL_VERTICAL_SLICE',
+      seed: 42,
+      outputDir,
+      skipVlm: true,
+      skipImageGen: true,
+    });
+
+    const player = result.assets.find((a) => a.path === 'assets/characters/player.png')!;
+    const npc = result.assets.find((a) => a.path === 'assets/npcs/npc_000.png')!;
+    const idle = result.assets.find((a) => a.path === 'assets/characters/player_idle_pose.png')!;
+    const walk = result.assets.find((a) => a.path === 'assets/characters/player_walk.png')!;
+    expect(player.provider).toBe('authored-original');
+    expect(player.fallbackGenerated).toBe(false);
+    expect(player.maturity).toBe('QA_REVIEW');
+    expect(player.sourceType).toBe('manual');
+    expect(player.fakeAnimation).toBeFalsy();
+    expect(npc.provider).toBe('authored-original');
+    expect(npc.fallbackGenerated).toBe(false);
+    expect(npc.maturity).toBe('QA_REVIEW');
+    expect(idle.provider).toBe('authored-original');
+    expect(idle.fallbackGenerated).toBe(false);
+    expect(walk.fallbackGenerated).toBe(false);
+    expect(walk.fakeAnimation).toBe(false);
+    expect(player.buffer.equals(npc.buffer)).toBe(false);
+
+    const tileset = result.assets.find((a) => a.path === 'assets/tilesets/biome_0/source.png')!;
+    expect(tileset.provider).toBe('authored-original');
+    expect(tileset.fallbackGenerated).toBe(false);
+    const ability = result.assets.find((a) => a.path === 'assets/props/interact/ability.png')!;
+    expect(ability.provider).toBe('authored-original');
+    expect(ability.fallbackGenerated).toBe(false);
+    expect(decodePngRgba(tileset.buffer).width).toBe(256);
+    expect(decodePngRgba(tileset.buffer).height).toBe(192);
+    expect(tileset.sourceType).toBe('manual');
+    expect(tileset.maturity).toBe('QA_REVIEW');
+    expect(ability.sourceType).toBe('manual');
+    const playerPx = decodePngRgba(player.buffer);
+    expect(playerPx.width).toBe(64);
+    expect(playerPx.height).toBe(64);
+    let feet = 0;
+    for (let x = 0; x < playerPx.width; x++) {
+      if ((playerPx.rgba[((playerPx.height - 1) * playerPx.width + x) * 4 + 3] ?? 0) > 128) feet += 1;
+    }
+    expect(feet).toBeGreaterThan(0);
 
     rmSync(outputDir, { recursive: true, force: true });
   });

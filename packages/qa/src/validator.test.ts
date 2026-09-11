@@ -290,6 +290,7 @@ describe('QAValidator', () => {
       'scenes/world/ShopOverlay.tscn',
       'scenes/world/ItemPickup.tscn',
       'scripts/world/ItemPickup.gd',
+      'scripts/core/WorldPropSprite.gd',
       'scenes/enemies/Projectile.tscn',
       'scripts/combat/Projectile.gd',
       'scenes/world/WeakFloor.tscn',

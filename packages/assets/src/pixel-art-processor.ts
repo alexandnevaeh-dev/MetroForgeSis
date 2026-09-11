@@ -8,6 +8,8 @@ export interface PixelArtOptions {
   alphaThreshold?: number;
   /** Keep source colors. Background plates must not be crushed to the sprite 8-color set. */
   skipQuantize?: boolean;
+  /** Crop to opaque pixels before scaling into the target frame. */
+  fitOpaque?: boolean;
 }
 
 export interface PixelArtResult {

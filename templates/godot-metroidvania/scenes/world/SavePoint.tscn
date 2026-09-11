@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://save_point"]
+[gd_scene load_steps=3 format=3 uid="uid://save_point"]
 
 [ext_resource type="Script" path="res://scripts/world/SavePoint.gd" id="1_save"]
+[ext_resource type="Script" path="res://scripts/core/WorldPropSprite.gd" id="2_sprite"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_save"]
 size = Vector2(32, 32)
@@ -10,12 +11,11 @@ collision_layer = 32
 collision_mask = 2
 script = ExtResource("1_save")
 
-[node name="Sprite" type="ColorRect" parent="."]
-offset_left = -16.0
-offset_top = -32.0
-offset_right = 16.0
-offset_bottom = 0.0
-color = Color(0.3, 0.75, 0.95, 1)
+[node name="Sprite" type="Sprite2D" parent="."]
+script = ExtResource("2_sprite")
+sprite_path = "assets/props/interact/save_shrine.png"
+fallback_color = Color(0.3, 0.75, 0.95, 1)
+display_size = Vector2(32, 40)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -16)

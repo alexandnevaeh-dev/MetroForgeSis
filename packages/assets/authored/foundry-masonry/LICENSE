@@ -1,0 +1,10 @@
+Original pixel-art tiles and the ability-core pickup in this directory were
+drawn for MetroForge (Foundry visual slice) using a local Python/Pillow
+construction script.
+
+Copyright 2026 MetroForge authors.
+License: you may use, copy, modify, and distribute these sprites, including
+commercially, with or without attribution.
+
+No third-party sprite packs, paid APIs, or hosted image models were used.
+Pillow is used only as a local rasterizer (HPND / PIL Software License).

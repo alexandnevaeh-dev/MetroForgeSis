@@ -1,0 +1,173 @@
+{
+  "package": "foundry-visual-direction-human-review",
+  "visualSliceApproved": false,
+  "actorMaturity": "QA_REVIEW",
+  "masonryMaturity": "QA_REVIEW",
+  "architectureCommit": "fb7c08e",
+  "packetCommit": "013ba86",
+  "roomIdentityCommit": "f5af11b",
+  "slug": "foundry-visual-slice-pr2",
+  "spawnStillSha256": "88a5f37af7d5d97488b20b3a7d1fa341f3d042ef4d9beada59a100c7ced0509b",
+  "room05StillSha256": "92e8e59229251d08385019a3a85fcf233abb60dd21d438869573b1be29c02796",
+  "scoredGameplayQa": {
+    "passed": true,
+    "score": 100,
+    "occupancy": 0.35,
+    "uniqueColors": 110,
+    "lumaStdDev": 17.66,
+    "note": "technical gate only"
+  },
+  "diversity": {
+    "passed": true,
+    "pairwiseMeanDistance": 11.28,
+    "compared": 11
+  },
+  "playtest": "8/8 PASS",
+  "files": [
+    {
+      "path": "HUMAN_REVIEW.md",
+      "bytes": 13065,
+      "sha256": "e30fcca07cc3e6ba3eaa8e21907c8c89530ee9ac229e776b4e7a9b81b8e200f0"
+    },
+    {
+      "path": "playtest_telemetry.json",
+      "bytes": 564,
+      "sha256": "9634e243b21e07133469786d2d3a8e113b19a2cc11d6d30b8ea448ff638459de"
+    },
+    {
+      "path": "room02_traversal_current.png",
+      "bytes": 276826,
+      "sha256": "4587d3a025321d491bc150277080a7178bfd284c3b9bd53aa6cd995106b30d4c"
+    },
+    {
+      "path": "room04_vertical_current.png",
+      "bytes": 236653,
+      "sha256": "45a6ed4cccee842441b067ea5358c71a97c56f727f01b59fedc504ead9b2ce97"
+    },
+    {
+      "path": "room05_before_after.png",
+      "bytes": 126195,
+      "sha256": "59593dac5ff76ae256a93f2de7d5884dd1f597edef4838aa3f9fce1b6e33827b"
+    },
+    {
+      "path": "room05_current.png",
+      "bytes": 81794,
+      "sha256": "92e8e59229251d08385019a3a85fcf233abb60dd21d438869573b1be29c02796"
+    },
+    {
+      "path": "room05_furnace_cavity.png",
+      "bytes": 15981,
+      "sha256": "ec1631e4341277d6b33570a4791b190ef05ea43c51ed9f5ece8669abe473cceb"
+    },
+    {
+      "path": "room05_pickup_native_and_4x.png",
+      "bytes": 23335,
+      "sha256": "d96c57a576c05e8496135eca7cabb10da2aa7e1396abe36c523e6ff84404e018"
+    },
+    {
+      "path": "room05_silhouette_vs_authored.png",
+      "bytes": 234989,
+      "sha256": "4da8c16fcaf01659eb2016c191c9fe3f7306b359501f3378319e8b1ccdd00f3c"
+    },
+    {
+      "path": "room05_tender_scene_crop_4x.png",
+      "bytes": 16983,
+      "sha256": "aa1e13661e0064a0321f02a060a7ae7bd22c8d815298bc8a7369c9a9e1642042"
+    },
+    {
+      "path": "room05_tender_scene_native_and_4x.png",
+      "bytes": 29442,
+      "sha256": "5f056affcce5cfbe444b70a551fe2838efe0efde2a7d325a002ecf2538c2da05"
+    },
+    {
+      "path": "room05_wanderer_scene_crop_4x.png",
+      "bytes": 12579,
+      "sha256": "c566d68ae49f3625e19e0bbac2f985307603136612ef938ec9fc24ea4004edbe"
+    },
+    {
+      "path": "room05_wanderer_scene_native_and_4x.png",
+      "bytes": 23506,
+      "sha256": "772bc835204e7bd490e25e9e1764d9aae008e9be163cbbd28103a83c002f296f"
+    },
+    {
+      "path": "room07_checkpoint_current.png",
+      "bytes": 250173,
+      "sha256": "17ce71c87efc25f3b9dfb1b2469b8c373f9d4a935cef3fe2324d37e4222e0ee8"
+    },
+    {
+      "path": "screenshot_critique.json",
+      "bytes": 928,
+      "sha256": "a846323aa03f331234565fc82b3f82e1a5305b4b2da89c694c233db9babe8305"
+    },
+    {
+      "path": "screenshot_gameplay.png",
+      "bytes": 207257,
+      "sha256": "fa11babc19a49720433ad9fa10b8354d36cf240d49c1a5bc10ac747b41843bab"
+    },
+    {
+      "path": "spawn_current.png",
+      "bytes": 208178,
+      "sha256": "88a5f37af7d5d97488b20b3a7d1fa341f3d042ef4d9beada59a100c7ced0509b"
+    },
+    {
+      "path": "spawn_frame_before_after.png",
+      "bytes": 331488,
+      "sha256": "278c200d3c2e11accab2ed403cf7272fd3b822d757773dde1cdaafa088769f05"
+    },
+    {
+      "path": "spawn_hud_native_and_4x.png",
+      "bytes": 10719,
+      "sha256": "2d814f399ca690a26614e4c088369d967a2b1adf15b6673d85c6140375e23673"
+    },
+    {
+      "path": "spawn_walk.webm",
+      "bytes": 335553,
+      "sha256": "1eaa412ee824c72ba0543aa1deb8c94cabb65a5a6d85f00807180b8c5a61e2ea"
+    },
+    {
+      "path": "spawn_wanderer_scene_crop_4x.png",
+      "bytes": 41259,
+      "sha256": "17ed6ef107ff4602395a5d474ccbc5d24d4adeeb1ec133037188d2302b11a674"
+    },
+    {
+      "path": "spawn_wanderer_scene_native_and_4x.png",
+      "bytes": 73806,
+      "sha256": "2a2be25d91849d514264091d874f56ed6c38e6637659182842872a418168a812"
+    },
+    {
+      "path": "tender_native_and_8x.png",
+      "bytes": 17258,
+      "sha256": "4975b32d80d460af84ebe6bef0441500a68af5769d5b50eb8f9d3b6865fae23c"
+    },
+    {
+      "path": "tender_placeholder_vs_authored_8x.png",
+      "bytes": 12084,
+      "sha256": "1b439fc279308f16847f72ca78b51fc977a1999c309be5caed4b59b02ea72152"
+    },
+    {
+      "path": "tender_walk_6x.png",
+      "bytes": 14592,
+      "sha256": "9eff9e4e8022f10b2fe323adfd32549cfb6fa24109dee4671b0b19342744ca64"
+    },
+    {
+      "path": "wanderer_native_and_8x.png",
+      "bytes": 16874,
+      "sha256": "137f637be5bf2aa18d654e2c93360093c1f6144f6dd70967e642a6b801ec9057"
+    },
+    {
+      "path": "wanderer_placeholder_vs_authored_8x.png",
+      "bytes": 12143,
+      "sha256": "da5b3c7267310e5716c4bc98dc4a7c3249676b042833ca74bdeea2cf3bbc6009"
+    },
+    {
+      "path": "wanderer_vs_tender_8x.png",
+      "bytes": 12504,
+      "sha256": "5933e099bf03b852b90aa24dd562c670734ce13cd79ac3f4b5c9dc214dadac45"
+    },
+    {
+      "path": "wanderer_walk_6x.png",
+      "bytes": 15767,
+      "sha256": "d7fc1904727fd83e753009d87c2548bb63f944e269be9c90ee90f787d603da3a"
+    }
+  ]
+}

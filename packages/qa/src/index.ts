@@ -8,6 +8,7 @@ export {
   captureGameplayScreenshots,
   needsWindowedCaptureFallback,
   headlessTextureNull,
+  windowedRenderingDriver,
 } from './gameplay-capture.js';
 export type { GameplayCaptureStrategy, GameplayCaptureTelemetry } from './gameplay-capture.js';
 export { parsePlaytestOutput, parsePlaytestTelemetry, playtestPassed, summarizePlaytestBalance } from './playtest-output.js';

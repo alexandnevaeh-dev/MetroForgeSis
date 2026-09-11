@@ -1,0 +1,7 @@
+{
+  "visualSliceApproved": false,
+  "status": "VISUAL_SLICE_REJECTED",
+  "projectSlug": "foundry-visual-slice-pr2",
+  "rejectedAt": "2026-09-10T05:05:00.000Z",
+  "notes": "Foundry visual slice remains rejected as a finished visual product. Player and shrine NPC now use original authored courier art (QA_REVIEW, not PLACEHOLDER), but Approve Visual Direction has not been granted. Enemies, tiles, VFX, HUD chrome, and boss remain PLACEHOLDER. MASS / LARGE / RC stay blocked."
+}

@@ -1,6 +1,6 @@
 import type { BiomeVisualDNA, GameDNA, VisualDNA } from '@metroforge/schemas';
 import { SeededRNG } from '../rng.js';
-import { resolveVisualStyleTemplate, type VisualStyleTemplate } from './style-registry.js';
+import { resolveVisualStyleTemplate, styleCueText, type VisualStyleTemplate } from './style-registry.js';
 import { hashVisualFragment } from './fingerprint.js';
 
 export interface BiomeMotifPack {
@@ -93,7 +93,9 @@ export function generateBiomeVisualDNA(input: {
   biomeIndex: number;
   biomeId?: string;
 }): BiomeVisualDNA {
-  const template = resolveVisualStyleTemplate(input.gameDna.identity.visualStyle);
+  const template = resolveVisualStyleTemplate(
+    styleCueText(input.gameDna) || input.gameDna.identity.visualStyle,
+  );
   const rng = new SeededRNG((input.gameDna.seed + input.biomeIndex * 7919) >>> 0 || 1);
   const motif = pickMotif(template, input.biomeIndex, rng);
   const biomeId = input.biomeId ?? `biome_${input.biomeIndex}`;

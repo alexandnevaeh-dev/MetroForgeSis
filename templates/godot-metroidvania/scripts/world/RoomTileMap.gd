@@ -14,7 +14,11 @@ extends TileMapLayer
 func _ready() -> void:
 	_build_tilemap()
 	texture_filter = TEXTURE_FILTER_NEAREST
-	z_index = 5
+	# Ground stays behind actors (player/NPC z=10). z=5 drew masonry over the courier
+	# because the 64px sprite overlaps neighboring wall cells. Collision is unchanged.
+	z_index = 1
+	z_as_relative = false
+	y_sort_enabled = false
 
 func _build_tilemap() -> void:
 	var source_path := "res://assets/tilesets/%s/source.png" % biome_id
@@ -47,11 +51,9 @@ func _build_tilemap() -> void:
 			for cell in parsed:
 				if cell is Array and cell.size() >= 4:
 					var atlas_coords := Vector2i(int(cell[2]), int(cell[3]))
-					# Atlas decor/moss cells were bible gold/lime, not masonry. Skip the tufts.
+					# Ground must not inherit assembler "tuft" cells; beam/duct belong on RearWall.
 					if atlas_coords.y == 2 and atlas_coords.x >= 6:
 						continue
-					if atlas_coords.y == 4:
-						atlas_coords = Vector2i(atlas_coords.x, 3)
 					atlas_coords = _variant_coords(int(cell[0]), int(cell[1]), atlas_coords)
 					set_cell(Vector2i(int(cell[0]), int(cell[1])), 0, atlas_coords)
 			_paint_visual_mass()
@@ -191,18 +193,36 @@ func _paint_rear_wall() -> void:
 	var variant := rng.randi() % 4
 	# Archetype chooses the silhouette family so traversal/combat/boss/NPC cannot
 	# collapse to the same arcade. Hash variant only flavors leftover connectors.
+	# Distinct architectural identity per gameplay role so rooms do not collapse to one silhouette
+	# (the cross-room diversity failure). Each role gets a different rear-wall family; the shared
+	# warm soot/gunmetal palette and all collision/traversal geometry are untouched.
 	match room_archetype:
-		"traversal", "challenge", "tutorial":
+		"tutorial":
 			_paint_night_apse(rear, cols, floor_row, crop_rows, wall, ceiling)
+			_paint_tutorial_gantry(rear, cols, floor_row, crop_rows)
+		"traversal":
+			# Chain shaft: tall pier rhythm reads as a vertical climb shaft.
+			_paint_colonnade(rear, cols, floor_row, crop_rows, wall, ceiling)
+		"challenge":
+			# Maintenance wall: solid rear with a high slit — a hazard/climb gauntlet.
+			_paint_gallery_wall(rear, cols, floor_row, crop_rows, wall, ceiling)
 		"combat", "arena", "miniboss":
-			_paint_night_apse(rear, cols, floor_row, crop_rows, wall, ceiling)
+			# Furnace hall: furnace mouth + hood behind the fight.
+			_paint_furnace_hearth(rear, cols, floor_row, crop_rows, wall, ceiling)
 		"boss":
 			_paint_ruin_mass(rear, cols, floor_row, crop_rows, wall, ceiling, rng)
-		"npc", "shop", "save":
+		"npc", "shop":
 			_paint_night_apse(rear, cols, floor_row, crop_rows, wall, ceiling)
-		"ability_shrine", "ability_gate":
-			_paint_night_apse(rear, cols, floor_row, crop_rows, wall, ceiling)
+		"save":
+			# Checkpoint station: a quiet solid rear framing the save shrine.
+			_paint_gallery_wall(rear, cols, floor_row, crop_rows, wall, ceiling)
+		"ability_shrine":
+			_paint_furnace_hearth(rear, cols, floor_row, crop_rows, wall, ceiling)
+		"ability_gate":
+			# Gate colonnade: pier rhythm flanking the gate.
+			_paint_colonnade(rear, cols, floor_row, crop_rows, wall, ceiling)
 		"secret", "treasure":
+			# Maintenance recess: broken, asymmetric rubble masses.
 			_paint_ruin_mass(rear, cols, floor_row, crop_rows, wall, ceiling, rng)
 		_:
 			match variant:
@@ -249,8 +269,10 @@ func _paint_night_apse(
 	wall: Vector2i,
 	ceiling: Vector2i,
 ) -> void:
-	## Low dado, corner haunches, two broken vault ribs. Empty air in the hall so
-	## FarSky can be depth, not a mountain range, and Ground keeps the collision walls.
+	## Low dado, short corner haunches, 2–3 tile piers. Empty hall air so FarSky
+	## is depth, not a mountain range. Ground keeps collision walls and climb
+	## platforms. Never paint ceiling-height ribs — those stacked identical teal
+	## columns read as wallpaper even when they do not collide.
 	rear.modulate = Color(0.78, 0.84, 0.90, 1)
 	var lintel := maxi(1, crop_rows)
 	for x in range(2, cols - 2):
@@ -258,13 +280,92 @@ func _paint_night_apse(
 		if x % 5 != 2:
 			_rear_cell(rear, x, floor_row - 2, wall)
 	for x in [2, 3, cols - 4, cols - 3]:
-		for y in range(maxi(lintel + 3, floor_row - 6), floor_row):
+		for y in range(maxi(lintel + 3, floor_row - 4), floor_row):
 			_rear_cell(rear, x, y, wall)
+	var pier_h := 3
 	for rib in [int(cols * 0.34), int(cols * 0.66)]:
-		for y in range(lintel + 2, floor_row - 4):
-			if y % 4 == 1:
-				continue
-			_rear_cell(rear, rib, y, ceiling if y < lintel + 5 else wall)
+		for y in range(floor_row - pier_h, floor_row):
+			_rear_cell(rear, rib, y, wall)
+		_rear_cell(rear, rib, floor_row - pier_h, ceiling)
+
+
+func _paint_tutorial_gantry(rear: TileMapLayer, cols: int, floor_row: int, crop_rows: int) -> void:
+	## Spawn hall: one foundry gantry in the empty upper air — a beam with hangers that
+	## meet the existing night-apse piers. Not a second wallpaper of rectangles.
+	var beam := Vector2i(6, 2)
+	var duct := Vector2i(7, 2)
+	var lintel := maxi(1, crop_rows)
+	var gy := maxi(lintel + 2, floor_row - 8)
+	var x0 := int(cols * 0.22)
+	var x1 := int(cols * 0.78)
+	for x in range(x0, x1):
+		_rear_cell(rear, x, gy, beam)
+	# Hang from the beam down onto the pier caps (pier_h is 3 in _paint_night_apse).
+	for hang in [int(cols * 0.34), int(cols * 0.66)]:
+		for y in range(gy, floor_row - 3):
+			_rear_cell(rear, hang, y, duct)
+
+
+func _paint_furnace_hearth(
+	rear: TileMapLayer,
+	cols: int,
+	floor_row: int,
+	crop_rows: int,
+	wall: Vector2i,
+	ceiling: Vector2i,
+) -> void:
+	## Ability shrine. Built furnace: jambs, corners, hood beam, stacks, side
+	## supports. Firebox stays empty (recessed cavity). No collision.
+	rear.modulate = Color(0.36, 0.24, 0.22, 1)
+	var lintel := maxi(1, crop_rows)
+	var left_e := Vector2i(4, 0)
+	var right_e := Vector2i(5, 0)
+	var top_e := Vector2i(6, 0)
+	var beam := Vector2i(6, 2)
+	var duct := Vector2i(7, 2)
+	var tl := Vector2i(0, 1)
+	var tr := Vector2i(1, 1)
+	var bl := Vector2i(2, 1)
+	var br := Vector2i(3, 1)
+	# Low dado only — not a wallpaper of wall cells across the hall.
+	for x in range(2, cols - 2):
+		_rear_cell(rear, x, floor_row - 1, wall)
+	# Pickup sits at x≈220 (col ~7 on 32px). Open the firebox around it so the
+	# core reads against the empty mouth instead of matching wall masonry.
+	var mouth_x0 := maxi(4, int(cols * 0.22))
+	var mouth_x1 := mini(cols - 3, int(cols * 0.72))
+	var mouth_top := maxi(lintel + 3, floor_row - 8)
+	var mouth_sill := floor_row - 1
+	# Hood plate: two courses, then a structural I-beam. Leave the cavity empty.
+	for x in range(mouth_x0, mouth_x1 + 1):
+		_rear_cell(rear, x, mouth_top, top_e)
+		_rear_cell(rear, x, mouth_top + 1, beam)
+		_rear_cell(rear, x, mouth_sill, ceiling)
+	_rear_cell(rear, mouth_x0, mouth_top, tl)
+	_rear_cell(rear, mouth_x1, mouth_top, tr)
+	_rear_cell(rear, mouth_x0, mouth_sill, bl)
+	_rear_cell(rear, mouth_x1, mouth_sill, br)
+	for y in range(mouth_top + 1, mouth_sill):
+		_rear_cell(rear, mouth_x0, y, left_e)
+		_rear_cell(rear, mouth_x1, y, right_e)
+	# Side buttresses (outside the mouth) so the hearth is a machine, not a hole.
+	for y in range(mouth_top, floor_row):
+		_rear_cell(rear, mouth_x0 - 1, y, left_e)
+		_rear_cell(rear, mouth_x1 + 1, y, right_e)
+	for x in range(mouth_x0 - 1, mouth_x1 + 2):
+		_rear_cell(rear, x, mouth_top - 1, beam)
+	# Twin stacks: masonry + duct, capped.
+	var stack_h := 5
+	for stack_x in [mouth_x0 + 1, mouth_x1 - 2]:
+		var cap_y := maxi(lintel + 2, mouth_top - stack_h)
+		for y in range(cap_y, mouth_top):
+			_rear_cell(rear, stack_x, y, wall)
+			_rear_cell(rear, stack_x + 1, y, duct)
+		_rear_cell(rear, stack_x, cap_y, top_e)
+		_rear_cell(rear, stack_x + 1, cap_y, duct)
+	# Short lateral duct from the right stack so the hood reads connected.
+	for x in range(mouth_x1 - 1, mini(mouth_x1 + 3, cols - 2)):
+		_rear_cell(rear, x, mouth_top - 2, beam)
 
 
 func _paint_gallery_wall(
@@ -292,6 +393,8 @@ func _paint_gallery_wall(
 				rear.erase_cell(Vector2i(wx, wy))
 		_rear_cell(rear, x - 1, slit_top, ceiling)
 		_rear_cell(rear, mini(x + 2, cols - 2), slit_top, ceiling)
+		_rear_cell(rear, x - 1, slit_top - 1, Vector2i(6, 0))
+		_rear_cell(rear, mini(x + 2, cols - 2), slit_top - 1, Vector2i(6, 0))
 		x += 7
 
 
@@ -306,12 +409,14 @@ func _paint_colonnade(
 	## Short 1-tile pilasters from the floor, not ceiling-height towers.
 	rear.modulate = Color(0.90, 0.86, 0.80, 1)
 	var lintel := maxi(1, crop_rows)
+	var pier := Vector2i(4, 0)
+	var cap := Vector2i(6, 2)
 	var pier_h := maxi(3, int((floor_row - lintel) * 0.38))
 	var x := 6
 	while x < cols - 6:
 		for y in range(floor_row - pier_h, floor_row):
-			_rear_cell(rear, x, y, wall)
-		_rear_cell(rear, x, floor_row - pier_h, ceiling)
+			_rear_cell(rear, x, y, pier)
+		_rear_cell(rear, x, floor_row - pier_h, cap)
 		x += 10
 
 

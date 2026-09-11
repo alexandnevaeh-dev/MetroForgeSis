@@ -1131,6 +1131,9 @@ attack_sheet_path = "assets/bosses/${bossId}_attack.png"
 position = Vector2(${x}, ${floorTop - 28})
 ability_id = "${abilityId}"
 display_name = "${abilityId}"
+
+[node name="Sprite" parent="AbilityPickup_${abilityId}"]
+sprite_path = "assets/props/interact/ability.png"
 `;
     }
   }
@@ -1139,6 +1142,9 @@ display_name = "${abilityId}"
     scene += `
 [node name="SavePoint" parent="." instance=ExtResource("8_savepoint")]
 position = Vector2(150, ${floorTop})
+
+[node name="Sprite" parent="SavePoint"]
+sprite_path = "assets/props/interact/save_shrine.png"
 `;
   }
 
@@ -1163,6 +1169,9 @@ frame_count = 4
 position = Vector2(${platformWidth * 0.5 + 100}, ${floorTop - 12})
 item_id = "${options.itemId}"
 amount = ${options.itemAmount}
+
+[node name="Sprite" parent="ItemPickup"]
+sprite_path = "assets/props/interact/pickup.png"
 `;
   }
 

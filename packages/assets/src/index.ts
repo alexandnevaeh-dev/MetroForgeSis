@@ -91,7 +91,7 @@ export { TileCompiler, TILE_ATLAS, tileRoleAt } from './tile-compiler.js';
 export type { CompiledTileset, TileRole } from './tile-compiler.js';
 export { pickTerrainVariant, variantAtlasForCell, TERRAIN_VARIANT_ROLES } from './tile-variants.js';
 export { generateUiPanel, generateUiIcon, UI_FOUNDRY_ASSETS } from './ui-foundry.js';
-export { generatePropSprite } from './prop-art.js';
+export { generatePropSprite, WORLD_INTERACTABLE_ASSETS, interactablePalette, actorPalette, npcActorPalette } from './prop-art.js';
 export {
   wrapIdentityProvider,
   capabilitiesFromRegistration,

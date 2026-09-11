@@ -9,6 +9,7 @@ import type {
 import type { GenerationProfile } from '@metroforge/shared';
 import { PROFILE_DEFAULTS, slugify, tileSizeForProfile } from '@metroforge/shared';
 import { SeededRNG } from './rng.js';
+import { styleCueText } from './visual/style-registry.js';
 
 const STYLE_PALETTES: Record<string, { name: string; hex: string; usage: string }[]> = {
   dark: [
@@ -33,14 +34,14 @@ const STYLE_PALETTES: Record<string, { name: string; hex: string; usage: string 
 
 function inferStyleBucket(visualStyle: string): keyof typeof STYLE_PALETTES {
   const lower = visualStyle.toLowerCase();
-  if (lower.includes('dark') || lower.includes('gothic') || lower.includes('ruin')) return 'dark';
-  if (lower.includes('mechanical') || lower.includes('industrial') || lower.includes('forge'))
+  if (lower.includes('mechanical') || lower.includes('industrial') || lower.includes('forge') || lower.includes('foundry'))
     return 'mechanical';
+  if (lower.includes('dark') || lower.includes('gothic') || lower.includes('ruin')) return 'dark';
   return 'vibrant';
 }
 
 export function generateArtBible(gameDna: GameDNA, seed: number): ArtBible {
-  const bucket = inferStyleBucket(gameDna.identity.visualStyle);
+  const bucket = inferStyleBucket(styleCueText(gameDna) || gameDna.identity.visualStyle);
   const palette = STYLE_PALETTES[bucket]!;
 
   return {

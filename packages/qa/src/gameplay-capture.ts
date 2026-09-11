@@ -113,6 +113,12 @@ function recordShotCritique(screenshotPath: string): {
   }
 }
 
+export function windowedRenderingDriver(platform: NodeJS.Platform = process.platform): string {
+  if (platform === 'win32') return 'd3d12';
+  if (platform === 'darwin') return 'metal';
+  return 'opengl3';
+}
+
 /**
  * Headless dummy renderer on Intel UHD returns a null texture.
  * Fallback: windowed/offscreen Godot run of RuntimeSmokeTest (real gameplay scene), auto-quit.
@@ -210,12 +216,16 @@ export function captureGameplayScreenshots(opts: {
       '--path',
       opts.projectPath,
       '--rendering-driver',
-      'd3d12',
+      windowedRenderingDriver(),
+      '--audio-driver',
+      'Dummy',
       '--resolution',
       readViewportResolution(opts.projectPath),
       scene,
+      '--quit-after',
+      '3600',
     ],
-    timeoutMs: 180_000,
+    timeoutMs: 300_000,
     windowsHide: false,
     env: {
       METROFORGE_CAPTURE: '1',
@@ -274,6 +284,13 @@ function collectShots(qaDir: string): string[] {
     'screenshot_combat.png',
     'screenshot_ability.png',
     'screenshot_boss.png',
+    'screenshot_slice_tutorial.png',
+    'screenshot_slice_traversal.png',
+    'screenshot_slice_combat.png',
+    'screenshot_slice_challenge.png',
+    'screenshot_slice_ability_shrine.png',
+    'screenshot_slice_secret.png',
+    'screenshot_slice_save.png',
   ];
   return names.filter((name) => existsSync(join(qaDir, name)));
 }

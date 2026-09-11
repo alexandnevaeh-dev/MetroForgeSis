@@ -954,6 +954,14 @@ func _check_inventory_equip_ui(world: Node) -> void:
 			break
 	_check("inventory_display_marks_equipped_items", found_equipped)
 
+func _is_presentation_capture() -> bool:
+	## Matches GameHUD._hud_mode: presentation stills hide scrap/echo text.
+	## Functional HUD asserts stay on DEBUG (no CAPTURE env / PLAYER/RELEASE/QA_CAPTURE).
+	var mode := OS.get_environment("METROFORGE_HUD_MODE")
+	if mode.is_empty() and OS.get_environment("METROFORGE_CAPTURE") == "1":
+		mode = "QA_CAPTURE"
+	return mode == "PLAYER" or mode == "RELEASE" or mode == "QA_CAPTURE"
+
 ## Proves the HUD's currency label actually reflects real QuestManager state, not just that the
 ## node exists — by this point in the test both a quest completion and an item pickup have
 ## already added scrap, so the label must show a real, non-empty, matching amount.
@@ -968,11 +976,18 @@ func _check_currency_hud(world: Node) -> void:
 	if currency_label == null:
 		return
 
+	var collectible_label: Label = hud.get_node_or_null("HUD/MarginContainer/VBox/CollectibleLabel")
+	_check("collectible_label_present", collectible_label != null)
+
+	# Presentation captures (METROFORGE_CAPTURE / PLAYER / RELEASE / QA_CAPTURE) clear
+	# currency and collectible text so the HUD band does not fail visual QA. Keep the
+	# real scrap/echo assertions for DEBUG functional runs. Do not weaken those thresholds.
+	if _is_presentation_capture():
+		return
+
 	var scrap: int = int(QuestManager.currency.get("scrap", 0))
 	_check("currency_hud_reflects_real_state", str(scrap) in currency_label.text)
 
-	var collectible_label: Label = hud.get_node_or_null("HUD/MarginContainer/VBox/CollectibleLabel")
-	_check("collectible_label_present", collectible_label != null)
 	if collectible_label != null:
 		var found := InventoryManager.get_collectible_found_count()
 		var total := InventoryManager.get_collectible_total_count()
@@ -1209,6 +1224,10 @@ func _sync_visual_camera() -> void:
 	if cam == null or not cam.has_method("apply_room_bounds"):
 		return
 	var size := Vector2(800, 600)
+	var visual_kit := ""
+	var archetype := ""
+	var playable_top := -1.0
+	var playable_bottom := -1.0
 	var world := get_tree().get_first_node_in_group("world_manager")
 	if world:
 		var room: Node = world.get("_current_room") as Node
@@ -1216,7 +1235,55 @@ func _sync_visual_camera() -> void:
 			var ground := room.get_node_or_null("Ground")
 			if ground:
 				size = Vector2(float(ground.get("room_width")), float(ground.get("room_height")))
-	cam.apply_room_bounds(size)
+				var kit = ground.get("visual_kit")
+				if typeof(kit) == TYPE_STRING:
+					visual_kit = kit
+				archetype = String(ground.get("room_archetype"))
+	var info := _current_room_info()
+	if not info.is_empty():
+		archetype = String(info.get("archetype", archetype))
+		size = Vector2(float(info.get("width", size.x)), float(info.get("height", size.y)))
+		# Frame the playable band (floor + platforms + jump apex) for every side-view room so the
+		# slice captures show the action, not a tall empty background. Routes are preserved: full
+		# width is kept by CameraDirector, rooms that exit upward keep full height, and the top crop
+		# is capped at 45%. Foundry plates are excluded inside CameraDirector.
+		var floor_y := size.y - 48.0
+		var top := floor_y
+		var platforms = info.get("platforms", [])
+		if platforms is Array:
+			for p in platforms:
+				if typeof(p) == TYPE_DICTIONARY:
+					top = minf(top, float(p.get("y", floor_y)))
+		var has_up := false
+		var conns = info.get("connections", [])
+		if conns is Array:
+			for c in conns:
+				if typeof(c) == TYPE_DICTIONARY and String(c.get("direction", "")) == "up":
+					has_up = true
+		if has_up:
+			playable_top = 0.0
+		else:
+			playable_top = minf(maxf(0.0, top - 140.0), size.y * 0.45)
+		playable_bottom = size.y
+	cam.apply_room_bounds(size, visual_kit, archetype, playable_top, playable_bottom)
+
+
+func _current_room_info() -> Dictionary:
+	var rooms_path := "res://data/rooms/rooms.json"
+	if not FileAccess.file_exists(rooms_path):
+		return {}
+	var file := FileAccess.open(rooms_path, FileAccess.READ)
+	if file == null:
+		return {}
+	var parsed = JSON.parse_string(file.get_as_text())
+	file.close()
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return {}
+	var rooms: Dictionary = parsed.get("rooms", {})
+	var id := GameManager.current_room_id
+	if rooms.has(id) and typeof(rooms[id]) == TYPE_DICTIONARY:
+		return rooms[id]
+	return {}
 
 
 func _is_visual_slice() -> bool:

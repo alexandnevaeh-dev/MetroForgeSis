@@ -139,6 +139,62 @@ describe('parallax strips', () => {
     expect(mass / sampled).toBeGreaterThan(0.18);
   });
 
+  it('renders a warm foundry far plate (not navy) when a mechanical-forge palette is supplied', () => {
+    const palette = {
+      global: ['#101018', '#8a6840', '#48b8c8', '#a84830'],
+      shadows: ['#07070b', '#3e2f1d', '#20535a', '#4c2016'],
+      highlights: ['#14141e', '#ad8250', '#5ae6fa', '#d25a3c'],
+    };
+    const { rgba, width, height } = decodePngRgba(generateParallaxStrip('far', 7, 160, 90, palette));
+    let rSum = 0;
+    let bSum = 0;
+    for (let i = 0; i < rgba.length; i += 4) {
+      rSum += rgba[i]!;
+      bSum += rgba[i + 2]!;
+    }
+    // Warm soot/ember gradient: red channel now leads blue (the navy default was blue-dominant).
+    expect(rSum).toBeGreaterThan(bSum);
+    // Still a dark backdrop plate, not a bright vista.
+    let luma = 0;
+    for (let i = 0; i < rgba.length; i += 4) luma += 0.299 * rgba[i]! + 0.587 * rgba[i + 1]! + 0.114 * rgba[i + 2]!;
+    expect(luma / (width * height)).toBeLessThan(90);
+    expect(farPlateLooksLikeOutdoorLandscape(generateParallaxStrip('far', 7, 640, 360, palette))).toBe(false);
+  });
+
+  it('paints near-parallax chains as warm soot shadows, not cold blue beacons, for a foundry palette', () => {
+    const palette = {
+      global: ['#101018', '#8a6840', '#48b8c8', '#a84830'],
+      shadows: ['#07070b', '#3e2f1d', '#20535a', '#4c2016'],
+      highlights: ['#14141e', '#ad8250', '#5ae6fa', '#d25a3c'],
+    };
+    const { rgba } = decodePngRgba(generateParallaxStrip('near', 31, 160, 90, palette));
+    let blueDominant = 0;
+    let opaque = 0;
+    for (let i = 0; i < rgba.length; i += 4) {
+      if (rgba[i + 3]! < 40) continue;
+      opaque += 1;
+      if (rgba[i + 2]! > rgba[i]! + 2) blueDominant += 1; // blue clearly ahead of red
+    }
+    expect(opaque).toBeGreaterThan(0);
+    // The old blue-black chains were blue-dominant; warm soot shadows keep blue <= red.
+    expect(blueDominant / opaque).toBeLessThan(0.02);
+  });
+
+  it('paints far-plate vault ribs/lanterns warm (not the hardcoded cold-blue beacons) for a foundry palette', () => {
+    const palette = {
+      global: ['#101018', '#8a6840', '#48b8c8', '#a84830'],
+      shadows: ['#07070b', '#3e2f1d', '#20535a', '#4c2016'],
+      highlights: ['#14141e', '#ad8250', '#5ae6fa', '#d25a3c'],
+    };
+    const { rgba } = decodePngRgba(generateParallaxStrip('far', 7, 160, 90, palette));
+    // The old vault ribs were (34,52,108): blue clearly ahead of red. Warm ribs keep red >= blue.
+    let coldBlue = 0;
+    for (let i = 0; i < rgba.length; i += 4) {
+      if (rgba[i + 2]! > rgba[i]! + 20) coldBlue += 1;
+    }
+    expect(coldBlue).toBe(0);
+  });
+
   it('does not paint a circular moon in the upper far plate', () => {
     const { rgba, width, height } = decodePngRgba(generateParallaxStrip('far', 7, 160, 90));
     let bright = 0;

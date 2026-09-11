@@ -34,21 +34,26 @@ func apply_room(room: Node2D, room_id: String) -> void:
 	var archetype := String(info.get("archetype", "connector"))
 	_replace_stretched_background(room, size, biome)
 	_hide_collision_slabs(room)
-	_tune_parallax(room, size)
+	_tune_parallax(room, size, archetype)
 	_inject_depth_layers(room, size, biome)
-	_inject_atmosphere_layers(room, size, biome)
+	_inject_atmosphere_layers(room, size, biome, archetype)
 	_inject_lights(room, size, biome, archetype)
 	_inject_ambient(room, size, biome, room_id)
 	_inject_decor(room, size, biome, archetype, info)
 	_apply_outline(room)
-	_apply_camera(room, size)
+	if archetype == "ability_shrine":
+		_dress_ability_shrine(room, size)
+	_apply_camera(room, size, info)
 	var modulate := get_tree().get_first_node_in_group("world_manager")
 	if modulate:
 		var cm := modulate.get_node_or_null("WorldCanvasModulate") as CanvasModulate
 		if cm:
 			# Tiled citadel interiors are already dark teal; extra dimming turns masonry into mud.
 			if room.get_node_or_null("Ground") != null:
-				cm.color = Color(0.86, 0.90, 0.96, 1)
+				if archetype == "ability_shrine":
+					cm.color = Color(1.0, 0.88, 0.74, 1)
+				else:
+					cm.color = Color(0.86, 0.90, 0.96, 1)
 			else:
 				cm.color = _modulate_for_biome(biome)
 
@@ -142,6 +147,21 @@ func _clear_injected(room: Node) -> void:
 	var floor_occ := room.get_node_or_null("QualityFloorOccluder")
 	if floor_occ:
 		floor_occ.free()
+	for child in room.get_children():
+		var n := String(child.name)
+		if n.begins_with("AbilityPickup"):
+			child.z_index = 0
+			var sprite := child.get_node_or_null("Sprite") as CanvasItem
+			if sprite:
+				sprite.material = null
+				sprite.modulate = Color.WHITE
+		elif n.begins_with("NPC"):
+			(child as CanvasItem).modulate = Color.WHITE
+			(child as CanvasItem).light_mask = 1
+			var npc_sprite := child.get_node_or_null("Sprite") as CanvasItem
+			if npc_sprite:
+				npc_sprite.material = null
+				npc_sprite.light_mask = 1
 
 func _replace_stretched_background(room: Node, size: Vector2, biome: String) -> void:
 	var bg := room.get_node_or_null("Background")
@@ -151,11 +171,14 @@ func _replace_stretched_background(room: Node, size: Vector2, biome: String) -> 
 		sky.color = _biome_far(biome)
 		sky.z_index = -30
 		sky.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		# Cover the whole room so uncovered camera edges aren't a black void.
-		sky.offset_left = -240.0
-		sky.offset_top = -180.0
-		sky.offset_right = size.x + 240.0
-		sky.offset_bottom = size.y + 180.0
+		# Cover the contain-zoom camera view, not a fixed 240px pad. Tall rooms
+		# (960×900) show ~320px of view past the plate; a blanket pad left navy
+		# gutters. Do not change CameraDirector zoom here — that crops climb.
+		var extra := _contain_view_pad(size)
+		sky.offset_left = -extra.x
+		sky.offset_top = -extra.y
+		sky.offset_right = size.x + extra.x
+		sky.offset_bottom = size.y + extra.y
 	elif bg is CanvasItem:
 		(bg as CanvasItem).visible = false
 
@@ -172,9 +195,15 @@ func _layout_parallax_strip(sprite: Sprite2D, size: Vector2, kind: String) -> vo
 	if tw < 2.0 or th < 2.0:
 		return
 	var s: float
-	if kind == "far":
-		# Contain the authored plate, then overscan so look-ahead does not flash the sky ColorRect.
-		s = minf(size.x / tw, size.y / th) * 2.1
+	if kind == "far" or kind == "far_room":
+		# Cover the authored room (far_room) or the contain-zoom world view (far).
+		# Ability shrine uses far_room so empty sky is not filled by stretching FarSky;
+		# CameraDirector frames the playable band instead.
+		var cover := size
+		if kind == "far":
+			var view := _visible_world_size(size)
+			cover = Vector2(maxf(size.x, view.x), maxf(size.y, view.y))
+		s = maxf(cover.x / tw, cover.y / th) * 1.02
 		sprite.scale = Vector2(s, s)
 		sprite.position = size * 0.5
 	elif kind == "mid_full" or kind == "near_full":
@@ -198,7 +227,7 @@ func _layout_parallax_strip(sprite: Sprite2D, size: Vector2, kind: String) -> vo
 			(layer as Parallax2D).repeat_times = 3
 
 
-func _tune_parallax(room: Node, size: Vector2) -> void:
+func _tune_parallax(room: Node, size: Vector2, archetype: String = "") -> void:
 	var px := room.get_node_or_null("ParallaxBg")
 	if px is CanvasItem:
 		(px as CanvasItem).visible = false
@@ -207,7 +236,19 @@ func _tune_parallax(room: Node, size: Vector2) -> void:
 		# Fullscreen CanvasLayer composites over the tilemap. Hide leftovers from older rooms.
 		far_sky.visible = false
 	elif far_sky is Sprite2D:
-		_layout_parallax_strip(far_sky as Sprite2D, size, "far")
+		if archetype == "ability_shrine":
+			# Cover the room plate only. Darken so masonry/actors/pickup separate.
+			# Do not cover-zoom to leftover contain-view sky.
+			_layout_parallax_strip(far_sky as Sprite2D, size, "far_room")
+			(far_sky as Sprite2D).modulate = Color(0.38, 0.30, 0.28, 1)
+		elif archetype == "tutorial":
+			# Spawn capture is this room. Stretched FarSky + full-room contain-zoom
+			# wallpapered the critic (occupancy≈1, low lumaStdDev). Cover the plate
+			# and drop sky luma so empty soot is not "visible fill".
+			_layout_parallax_strip(far_sky as Sprite2D, size, "far_room")
+			(far_sky as Sprite2D).modulate = Color(0.28, 0.20, 0.20, 1)
+		else:
+			_layout_parallax_strip(far_sky as Sprite2D, size, "far")
 		return
 	if px == null:
 		return
@@ -293,28 +334,38 @@ func _inject_depth_layers(room: Node, size: Vector2, biome: String) -> void:
 	floor_wash.mouse_filter = mouse
 	host.add_child(floor_wash)
 
-func _inject_atmosphere_layers(room: Node, size: Vector2, biome: String) -> void:
+func _inject_atmosphere_layers(room: Node, size: Vector2, biome: String, archetype: String = "") -> void:
 	var host := _host(room)
 	var mid_node := room.get_node_or_null("ParallaxMid")
 	if mid_node:
-		(mid_node as CanvasItem).visible = true
-		var mid_sprite := mid_node.get_node_or_null("Sprite") as Sprite2D
-		if mid_sprite:
-			_layout_parallax_strip(mid_sprite, size, "mid")
+		if archetype == "tutorial":
+			# Spawn: hanging mid-plate rectangles fought the gantry. Keep far soot + RearWall.
+			(mid_node as CanvasItem).visible = false
+		else:
+			(mid_node as CanvasItem).visible = true
+			var mid_sprite := mid_node.get_node_or_null("Sprite") as Sprite2D
+			if mid_sprite:
+				_layout_parallax_strip(mid_sprite, size, "mid")
 	else:
-		var mid_path := "res://assets/backgrounds/%s/mid.png" % biome
-		if ResourceLoader.exists(mid_path) and host.get_node_or_null("QualityMidSprite") == null:
-			_inject_parallax_sprite(host, "QualityMidSprite", mid_path, size * 0.5, -40)
-			var created := host.get_node_or_null("QualityMidSprite") as Sprite2D
-			if created:
-				_layout_parallax_strip(created, size, "mid")
+		if archetype != "tutorial":
+			var mid_path := "res://assets/backgrounds/%s/mid.png" % biome
+			if ResourceLoader.exists(mid_path) and host.get_node_or_null("QualityMidSprite") == null:
+				_inject_parallax_sprite(host, "QualityMidSprite", mid_path, size * 0.5, -40)
+				var created := host.get_node_or_null("QualityMidSprite") as Sprite2D
+				if created:
+					_layout_parallax_strip(created, size, "mid")
 	var near_node := room.get_node_or_null("ParallaxNear")
 	if near_node:
-		(near_node as CanvasItem).visible = true
-		var near_sprite := near_node.get_node_or_null("Sprite") as Sprite2D
-		if near_sprite:
-			_layout_parallax_strip(near_sprite, size, "near_full")
-	else:
+		# Ability shrine: hanging-chain near plate fights foreground tiles. Hide it
+		# here only — other rooms keep the layer. Do not stretch it to fill the frame.
+		if archetype == "ability_shrine":
+			(near_node as CanvasItem).visible = false
+		else:
+			(near_node as CanvasItem).visible = true
+			var near_sprite := near_node.get_node_or_null("Sprite") as Sprite2D
+			if near_sprite:
+				_layout_parallax_strip(near_sprite, size, "near_full")
+	elif archetype != "ability_shrine":
 		var near_path := "res://assets/backgrounds/%s/near.png" % biome
 		if ResourceLoader.exists(near_path) and host.get_node_or_null("QualityNearSprite") == null:
 			_inject_parallax_sprite(host, "QualityNearSprite", near_path, size * 0.5, -18)
@@ -323,37 +374,64 @@ func _inject_atmosphere_layers(room: Node, size: Vector2, biome: String) -> void
 				_layout_parallax_strip(created_near, size, "near_full")
 
 
-func _inject_lights(room: Node, size: Vector2, _biome: String, _archetype: String) -> void:
+func _inject_lights(room: Node, size: Vector2, _biome: String, archetype: String) -> void:
 	var host := _host(room)
 	var tex := _light_texture()
 	var tiled := room.get_node_or_null("Ground") != null
+	var shrine := archetype == "ability_shrine"
+	if shrine:
+		_inject_shrine_hearth_lights(room, size, host, tex)
+		_attach_actor_occluders(room)
+		_enable_terrain_lighting(room, archetype)
+		return
 	var key := PointLight2D.new()
 	key.name = "QualityLightKey"
-	key.position = Vector2(size.x * 0.22, size.y * 0.26)
+	# Anchor the key as a warm focal pool on the courier's spawn so the frame has a clear starting
+	# subject and a real light->dark falloff, instead of a flat cool wash in the empty upper sky.
+	var focal := Vector2(size.x * 0.22, size.y * 0.26)
+	var player := room.get_node_or_null("Player") as Node2D
+	if tiled and player:
+		focal = Vector2(clampf(player.position.x + 24.0, size.x * 0.14, size.x * 0.52), player.position.y - 40.0)
+	key.position = focal
 	key.texture = tex
-	key.color = Color(0.72, 0.86, 1.0, 1)
-	key.energy = 0.72 if tiled else 0.4
-	key.texture_scale = 1.55 if tiled else 1.35
+	key.color = Color(1.0, 0.88, 0.7, 1) if tiled else Color(0.72, 0.86, 1.0, 1)
+	key.energy = 1.1 if tiled else 0.4
+	key.texture_scale = 1.1 if tiled else 1.35
 	key.z_index = 5
 	key.shadow_enabled = false
 	host.add_child(key)
+	if tiled and player:
+		# Tight character key so the courier reads as the clear focal subject, separated from the
+		# receded backdrop, without brightening the whole frame.
+		var courierLight := PointLight2D.new()
+		courierLight.name = "QualityLightCourier"
+		courierLight.position = Vector2(player.position.x, player.position.y - 28.0)
+		courierLight.texture = tex
+		courierLight.color = Color(1.0, 0.86, 0.66, 1)
+		courierLight.energy = 0.9
+		courierLight.texture_scale = 0.5
+		courierLight.z_index = 6
+		courierLight.shadow_enabled = false
+		host.add_child(courierLight)
 	var fill := PointLight2D.new()
 	fill.name = "QualityLightFill"
-	fill.position = Vector2(size.x * 0.62, size.y * 0.74)
+	# Broader, slightly stronger ambient so mid/far walkable platforms stay readable (raising
+	# occupancy honestly) while the focal key still carries the light->dark contrast.
+	fill.position = Vector2(size.x * 0.6, size.y * 0.62)
 	fill.texture = tex
-	fill.color = Color(1.0, 0.82, 0.62, 1)
-	fill.energy = 0.42 if tiled else 0.22
-	fill.texture_scale = 1.35 if tiled else 1.05
+	fill.color = Color(0.96, 0.8, 0.6, 1)
+	fill.energy = 0.55 if tiled else 0.22
+	fill.texture_scale = 1.7 if tiled else 1.05
 	fill.z_index = 5
 	fill.shadow_enabled = false
 	host.add_child(fill)
 	# Tiled rooms already have PointLight2D fill. A DirectionalLight2D plus floor
 	# occluder stamped huge repeating shadows across every masonry cell.
 	_attach_actor_occluders(room)
-	_enable_terrain_lighting(room)
+	_enable_terrain_lighting(room, archetype)
 
 
-func _enable_terrain_lighting(room: Node) -> void:
+func _enable_terrain_lighting(room: Node, archetype: String = "") -> void:
 	## Tilemaps default to receiving lights, but an explicit mask plus a warm
 	## floor vs cool rear makes the key/fill read in screenshots.
 	for node_name in ["Ground", "RearWall"]:
@@ -362,7 +440,40 @@ func _enable_terrain_lighting(room: Node) -> void:
 			continue
 		layer.light_mask = 1
 		if node_name == "Ground":
-			layer.modulate = Color(0.86, 0.94, 0.98, 1)
+			if archetype == "ability_shrine":
+				# Walkable floor/platforms pick up the localized furnace light.
+				# RearWall uses a different mask so the glow does not flatten the hearth.
+				layer.modulate = Color(0.96, 0.90, 0.84, 1)
+			else:
+				layer.modulate = Color(0.86, 0.94, 0.98, 1)
+		elif node_name == "RearWall" and archetype == "ability_shrine":
+			layer.light_mask = 2
+			layer.modulate = Color(0.34, 0.24, 0.22, 1)
+		elif node_name == "RearWall":
+			# Recede the rear architecture (mask 2 = not lit by the key/fill) so the lit walkable
+			# floor/platforms and courier separate from the backdrop as depth — and tint it per
+			# gameplay role so rooms read as distinct Foundry spaces (cross-room diversity), all
+			# within the warm soot/gunmetal range.
+			layer.light_mask = 2
+			var rear_tint := Color(0.40, 0.40, 0.46, 1)
+			match archetype:
+				"combat", "arena", "miniboss":
+					rear_tint = Color(0.46, 0.32, 0.26, 1)  # furnace hall — warm soot
+				"traversal":
+					rear_tint = Color(0.34, 0.38, 0.46, 1)  # chain shaft — cool iron
+				"challenge":
+					rear_tint = Color(0.38, 0.40, 0.42, 1)  # maintenance wall — neutral
+				"save":
+					rear_tint = Color(0.48, 0.44, 0.40, 1)  # checkpoint station — warm-lit
+				"npc", "shop":
+					rear_tint = Color(0.50, 0.52, 0.56, 1)  # quiet gallery — brighter recede
+				"ability_gate":
+					rear_tint = Color(0.36, 0.42, 0.50, 1)  # gate colonnade — cool
+				"secret", "treasure":
+					rear_tint = Color(0.30, 0.28, 0.30, 1)  # maintenance recess — deep shadow
+				"boss":
+					rear_tint = Color(0.28, 0.30, 0.36, 1)  # boss ruin — darkest
+			layer.modulate = rear_tint
 
 
 func _attach_floor_occluder(room: Node, size: Vector2) -> void:
@@ -412,6 +523,10 @@ func _inject_ambient(room: Node, size: Vector2, biome: String, room_id: String) 
 	var biome_spec: Dictionary = spec.get("biome", {})
 	var kind := String(biome_spec.get("ambientVfx", "none"))
 	var tiled := room.get_node_or_null("Ground") != null
+	var archetype := String(_rooms.get(room_id, {}).get("archetype", ""))
+	if archetype == "ability_shrine":
+		_inject_shrine_mouth_embers(room, size)
+		return
 	if tiled and (kind == "" or kind == "none"):
 		kind = "mist"
 	if kind == "" or kind == "none":
@@ -457,6 +572,231 @@ func _light_texture() -> GradientTexture2D:
 	tex.fill_from = Vector2(0.5, 0.5)
 	tex.fill_to = Vector2(0.5, 0.0)
 	return tex
+
+
+func _ability_shrine_mouth_rect(size: Vector2) -> Rect2:
+	## Matches RoomTileMap._paint_furnace_hearth interior (no collision).
+	var ts := 32.0
+	var cols := int(size.x / ts)
+	var floor_row := int((size.y - ts * 2.0) / ts)
+	var mouth_x0 := maxi(4, int(cols * 0.22))
+	var mouth_x1 := mini(cols - 3, int(cols * 0.72))
+	var mouth_top := maxi(4, floor_row - 8)
+	var mouth_sill := floor_row - 1
+	var x := float(mouth_x0 + 1) * ts
+	var w := float(maxi(2, mouth_x1 - mouth_x0 - 1)) * ts
+	var y := float(mouth_top + 1) * ts
+	var h := float(maxi(2, mouth_sill - mouth_top - 1)) * ts
+	return Rect2(x, y, w, h)
+
+
+func _furnace_hash(x: int, y: int) -> int:
+	var n := x * 374761393 + y * 668265263
+	n = (n ^ (n >> 13)) * 1274126177
+	return n & 0x7fffffff
+
+
+func _furnace_interior_texture(width: int, height: int) -> ImageTexture:
+	var img := Image.create(maxi(width, 8), maxi(height, 8), false, Image.FORMAT_RGBA8)
+	_paint_furnace_interior(img)
+	return ImageTexture.create_from_image(img)
+
+
+func _paint_furnace_interior(img: Image) -> void:
+	var w := img.get_width()
+	var h := img.get_height()
+	var pickup_keepout := 56
+	var cavity := Color(0.028, 0.014, 0.012, 1.0)
+	var cavity_low := Color(0.046, 0.018, 0.012, 1.0)
+	var coal := Color(0.11, 0.05, 0.03, 1.0)
+	var coal_hot := Color(0.68, 0.24, 0.05, 1.0)
+	var coal_core := Color(0.88, 0.42, 0.07, 1.0)
+	var ash := Color(0.06, 0.032, 0.024, 1.0)
+	var grate := Color(0.10, 0.085, 0.082, 1.0)
+	var rim := Color(0.16, 0.13, 0.12, 1.0)
+	var rim_top := Color(0.22, 0.17, 0.14, 1.0)
+	for y in range(h):
+		var t := float(y) / float(maxi(h - 1, 1))
+		var lift := clampf((t - 0.78) / 0.22, 0.0, 1.0)
+		var row := cavity.lerp(cavity_low, lift)
+		for x in range(w):
+			var edge := maxf(
+				clampf(1.0 - float(x) / 18.0, 0.0, 1.0),
+				clampf(1.0 - float(w - 1 - x) / 18.0, 0.0, 1.0),
+			)
+			edge = maxf(edge, clampf(1.0 - float(y) / 22.0, 0.0, 1.0))
+			var pix := row.lerp(cavity.darkened(0.35), edge * 0.55)
+			if (_furnace_hash(x, y) % 1000) < 14:
+				pix = pix.lightened(0.012)
+			img.set_pixel(x, y, pix)
+	for i in 16:
+		var lx := pickup_keepout + 8 + (_furnace_hash(i, 11) % maxi(w - pickup_keepout - 24, 8))
+		var ly := h - 5 - (_furnace_hash(i, 3) % 7)
+		var rw := 4 + (_furnace_hash(i, 1) % 5)
+		var rh := 3 + (_furnace_hash(i, 2) % 4)
+		var hot := (_furnace_hash(i, 7) % 10) >= 7
+		for y in range(ly - rh, ly + 1):
+			for x in range(lx - rw, lx + rw):
+				if x < pickup_keepout or x >= w - 3 or y < 3 or y >= h - 3:
+					continue
+				var dx := absi(x - lx)
+				var dy := absi(y - ly)
+				if dx * rh + dy * rw > rw * rh + 2:
+					continue
+				var n := float(_furnace_hash(x, y) % 1000) / 1000.0
+				var col := coal
+				if n > 0.55:
+					col = ash
+				if hot and dx <= 1 and dy <= 1:
+					col = coal_core if n > 0.72 else coal_hot
+				elif hot and n > 0.82:
+					col = coal_hot
+				img.set_pixel(x, y, col)
+	var bar_x := 40
+	var bar_top := int(h * 0.48)
+	while bar_x < w - 10:
+		for y in range(bar_top, h - 3):
+			for dx in range(3):
+				var px := bar_x + dx
+				if px >= 0 and px < w:
+					img.set_pixel(px, y, grate)
+		bar_x += 28
+	var gy := h - 16
+	for x in range(3, w - 3):
+		for dy in range(3):
+			var py := gy + dy
+			if py >= 0 and py < h:
+				img.set_pixel(x, py, grate)
+	for i in range(3):
+		for x in range(w):
+			img.set_pixel(x, i, rim_top)
+			img.set_pixel(x, h - 1 - i, rim)
+		for y in range(h):
+			img.set_pixel(i, y, rim)
+			img.set_pixel(w - 1 - i, y, rim)
+
+
+func _inject_shrine_hearth_lights(room: Node, size: Vector2, host: Node, tex: Texture2D) -> void:
+	var mouth := _ability_shrine_mouth_rect(size)
+	var hearth := PointLight2D.new()
+	hearth.name = "ShrineHearthLight"
+	hearth.position = Vector2(mouth.position.x + mouth.size.x * 0.62, mouth.position.y + mouth.size.y - 16.0)
+	hearth.texture = tex
+	hearth.color = Color(1.0, 0.42, 0.12, 1)
+	hearth.energy = 0.34
+	hearth.texture_scale = 0.26
+	hearth.range_item_cull_mask = 1
+	hearth.z_index = 5
+	hearth.shadow_enabled = false
+	host.add_child(hearth)
+	var sill := PointLight2D.new()
+	sill.name = "ShrineSillLight"
+	sill.position = Vector2(mouth.position.x + mouth.size.x * 0.58, mouth.end.y + 6.0)
+	sill.texture = tex
+	sill.color = Color(1.0, 0.38, 0.10, 1)
+	sill.energy = 0.24
+	sill.texture_scale = 0.16
+	sill.range_item_cull_mask = 1
+	sill.z_index = 5
+	sill.shadow_enabled = false
+	host.add_child(sill)
+	var bounce := PointLight2D.new()
+	bounce.name = "ShrineGrateBounce"
+	bounce.position = Vector2(mouth.position.x + mouth.size.x * 0.55, mouth.end.y + 18.0)
+	bounce.texture = tex
+	bounce.color = Color(1.0, 0.48, 0.16, 1)
+	bounce.energy = 0.20
+	bounce.texture_scale = 0.18
+	bounce.range_item_cull_mask = 1
+	bounce.z_index = 5
+	bounce.shadow_enabled = false
+	host.add_child(bounce)
+	var npc := _find_named_prefix(room, "NPC")
+	if npc:
+		var tender := PointLight2D.new()
+		tender.name = "ShrineTenderLight"
+		tender.position = npc.position + Vector2(0, -28.0)
+		tender.texture = tex
+		tender.color = Color(1.0, 0.72, 0.42, 1)
+		tender.energy = 0.32
+		tender.texture_scale = 0.24
+		tender.range_item_cull_mask = 1
+		tender.z_index = 6
+		tender.shadow_enabled = false
+		host.add_child(tender)
+	var pickup := _find_named_prefix(room, "AbilityPickup")
+	if pickup:
+		var halo := PointLight2D.new()
+		halo.name = "ShrinePickupHalo"
+		halo.position = pickup.position + Vector2(0, -14.0)
+		halo.texture = tex
+		halo.color = Color(0.95, 0.92, 0.72, 1)
+		halo.energy = 0.22
+		halo.texture_scale = 0.12
+		halo.range_item_cull_mask = 1
+		halo.z_index = 8
+		halo.shadow_enabled = false
+		host.add_child(halo)
+
+
+func _inject_shrine_mouth_embers(room: Node, size: Vector2) -> void:
+	var host := _host(room)
+	var mouth := _ability_shrine_mouth_rect(size)
+	var keepout := 56.0
+	var span := maxf(mouth.size.x - keepout - 24.0, 8.0)
+	for i in 4:
+		var spark := ColorRect.new()
+		spark.name = "ShrineMouthEmber_%d" % i
+		spark.size = Vector2(2, 2)
+		spark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		spark.color = Color(1.0, 0.45, 0.10, 0.55) if i % 2 == 0 else Color(0.85, 0.22, 0.05, 0.40)
+		spark.position = Vector2(
+			mouth.position.x + keepout + 12.0 + float((i * 71) % int(span)),
+			mouth.position.y + mouth.size.y - 10.0 - float(i % 3)
+		)
+		spark.z_index = -4
+		spark.z_as_relative = false
+		spark.light_mask = 0
+		host.add_child(spark)
+
+
+func _dress_ability_shrine(room: Node, size: Vector2) -> void:
+	## Shrine-only readability: recessed furnace interior, pickup halo/outline, muted NPC.
+	## Does not change collision, camera, or HUD.
+	var host := _host(room)
+	var mouth := _ability_shrine_mouth_rect(size)
+	var furnace := Sprite2D.new()
+	furnace.name = "ShrineFurnaceInterior"
+	furnace.centered = false
+	furnace.texture = _furnace_interior_texture(int(mouth.size.x), int(mouth.size.y))
+	furnace.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	furnace.position = mouth.position
+	furnace.scale = Vector2.ONE
+	furnace.z_index = -5
+	furnace.z_as_relative = false
+	furnace.light_mask = 0
+	host.add_child(furnace)
+	var pickup := _find_named_prefix(room, "AbilityPickup")
+	if pickup:
+		pickup.z_index = 8
+		var sprite := pickup.get_node_or_null("Sprite") as CanvasItem
+		if sprite:
+			sprite.modulate = Color(1.0, 0.98, 0.94, 1)
+			if ResourceLoader.exists("res://scripts/shaders/sprite_outline.gdshader"):
+				var shader: Shader = load("res://scripts/shaders/sprite_outline.gdshader")
+				if shader:
+					var mat := ShaderMaterial.new()
+					mat.shader = shader
+					mat.set_shader_parameter("outline_color", Color(0.98, 0.94, 0.72, 0.95))
+					mat.set_shader_parameter("outline_width", 1.0)
+					sprite.material = mat
+
+
+func _find_named_prefix(room: Node, prefix: String) -> Node2D:
+	for child in room.get_children():
+		if String(child.name).begins_with(prefix) and child is Node2D:
+			return child as Node2D
+	return null
 
 func _inject_decor(
 	room: Node,
@@ -555,13 +895,81 @@ func _apply_outline(room: Node) -> void:
 		mat.shader = shader
 		sprite.material = mat
 
-func _apply_camera(room: Node, size: Vector2) -> void:
+func _viewport_size() -> Vector2:
+	var vp := Vector2.ZERO
+	var tree := get_tree()
+	if tree:
+		var viewport := tree.root
+		if viewport:
+			vp = viewport.get_visible_rect().size
+	if vp.x < 64.0 or vp.y < 64.0:
+		vp = Vector2(
+			float(ProjectSettings.get_setting("display/window/size/viewport_width", 1920)),
+			float(ProjectSettings.get_setting("display/window/size/viewport_height", 1080)),
+		)
+	return vp
+
+
+func _visible_world_size(room_size: Vector2) -> Vector2:
+	## World size of a contain-zoom camera (viewport / min ratio). Matches
+	## CameraDirector for non-foundry rooms so Background/FarSky can cover
+	## letterbox without switching those rooms to cover-zoom.
+	var vp := _viewport_size()
+	var contain := minf(vp.x / maxf(room_size.x, 1.0), vp.y / maxf(room_size.y, 1.0))
+	if contain < 0.01:
+		return room_size
+	return vp / contain
+
+
+func _contain_view_pad(room_size: Vector2) -> Vector2:
+	var view := _visible_world_size(room_size)
+	return Vector2(
+		maxf(80.0, (view.x - room_size.x) * 0.5 + 80.0),
+		maxf(80.0, (view.y - room_size.y) * 0.5 + 80.0),
+	)
+
+
+func _apply_camera(room: Node, size: Vector2, info: Dictionary = {}) -> void:
 	var player := room.get_node_or_null("Player")
 	if player == null:
 		return
 	var camera := player.get_node_or_null("Camera2D")
+	var visual_kit := ""
+	var ground := room.get_node_or_null("Ground")
+	if ground:
+		var kit = ground.get("visual_kit")
+		if typeof(kit) == TYPE_STRING:
+			visual_kit = kit
+	var archetype := String(info.get("archetype", ""))
+	var band := _playable_band(size, info)
+	var playable_top := band.x
+	var playable_bottom := band.y
 	if camera and camera.has_method("apply_room_bounds"):
-		camera.apply_room_bounds(size)
+		camera.apply_room_bounds(size, visual_kit, archetype, playable_top, playable_bottom)
+
+
+func _playable_band(size: Vector2, info: Dictionary) -> Vector2:
+	## World Y range that contains floor + climb platforms + jump apex, for ALL side-view rooms
+	## (not just the shrine) so the camera frames the action instead of a tall empty background.
+	## Required routes are preserved: full room width is always kept (see CameraDirector), the band
+	## spans down to the floor and up past the highest platform, rooms that exit upward keep full
+	## height, and the top crop is capped so framing stays gentle.
+	var floor_y := size.y - 48.0
+	var top := floor_y
+	var platforms = info.get("platforms", [])
+	if platforms is Array:
+		for p in platforms:
+			if typeof(p) != TYPE_DICTIONARY:
+				continue
+			top = minf(top, float(p.get("y", floor_y)))
+	var conns = info.get("connections", [])
+	if conns is Array:
+		for c in conns:
+			if typeof(c) == TYPE_DICTIONARY and String(c.get("direction", "")) == "up":
+				return Vector2(0.0, size.y)
+	top = maxf(0.0, top - 140.0)
+	top = minf(top, size.y * 0.45)
+	return Vector2(top, size.y)
 
 func _host(room: Node) -> Node2D:
 	var existing := room.get_node_or_null("QualityInjected") as Node2D

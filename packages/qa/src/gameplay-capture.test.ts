@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { headlessTextureNull, needsWindowedCaptureFallback } from '../src/gameplay-capture.js';
+import { headlessTextureNull, needsWindowedCaptureFallback, windowedRenderingDriver } from '../src/gameplay-capture.js';
 import { encodePng } from '@metroforge/assets';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -50,5 +50,11 @@ describe('GameplayCaptureStrategy detection', () => {
       }),
     ).toBe(false);
     rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('uses a native rendering driver for windowed GPU fallback', () => {
+    expect(windowedRenderingDriver('win32')).toBe('d3d12');
+    expect(windowedRenderingDriver('darwin')).toBe('metal');
+    expect(windowedRenderingDriver('linux')).toBe('opengl3');
   });
 });
