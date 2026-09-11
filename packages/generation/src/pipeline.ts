@@ -52,7 +52,7 @@ import { AssetPipeline, loadVisualReferenceLibrary, shouldUseFoundryCourierKit }
 import { GodotProjectAssembler, loadExternalVisualPack } from '@metroforge/godot';
 import type { ExternalVisualPackId } from '@metroforge/godot';
 import { ToolRegistry, exportProject, resolveGodotExecutableCanonical, readProjectGodotOverride } from '@metroforge/tools';
-import { QAValidator, RepairEngineer, deriveValidationLevel, runQualityPass, scoreVisualQuality, fingerprintFile, planVisualRepairs, applyVisualRepairs, VISUAL_REPAIR_BUDGET, certifyVisualAssets, writeAssetFoundryReport, classifyAssetTier, buildAssetProvenanceReport, writeAssetProvenanceReport, buildProductionAssetFamilies, productionSliceReady, gateState, validateWorldSceneArchetypeIntegrity, type QAReport, type QAGateResult } from '@metroforge/qa';
+import { QAValidator, RepairEngineer, deriveValidationLevel, runQualityPass, runModernMetroidvaniaGate, modernGateToQAGateResult, scoreVisualQuality, fingerprintFile, planVisualRepairs, applyVisualRepairs, VISUAL_REPAIR_BUDGET, certifyVisualAssets, writeAssetFoundryReport, classifyAssetTier, buildAssetProvenanceReport, writeAssetProvenanceReport, buildProductionAssetFamilies, productionSliceReady, gateState, validateWorldSceneArchetypeIntegrity, type QAReport, type QAGateResult } from '@metroforge/qa';
 import { createProjectCheckpoint } from './project-checkpoint.js';
 import { assertPhaseArtifacts, phaseCompleteStatus } from './phase-contract.js';
 import { withCategory, type GenerationEvent } from './events.js';
@@ -1423,6 +1423,37 @@ export class GenerationPipeline {
       skipRuntimeValidation: options.skipRuntimeValidation,
     });
 
+    // MODERN_METROIDVANIA_GATE — a provider-independent, data-driven presentation-readiness score
+    // over the generated visual slice. Deliberately NOT part of `deriveValidationLevel` /
+    // RUNTIME_VALIDATED (a game that compiles + launches is not automatically art-ready), never
+    // triggers repair, and is advisory for non-RC profiles. It exists so "not visually ready" is
+    // a legible, per-dimension result rather than something hidden behind a green runtime check.
+    let modernGate: ReturnType<typeof modernGateToQAGateResult> | undefined;
+    try {
+      const gate = runModernMetroidvaniaGate(outputPath, { profile: gameDna.profile });
+      modernGate = modernGateToQAGateResult(gate);
+      qaReport.results.push(modernGate);
+      const failedDims = gate.dimensions
+        .filter((d) => d.applicable && !d.passed)
+        .map((d) => `${d.dimension} ${d.score}/${d.threshold}`);
+      report(
+        'modern_metroidvania_gate',
+        gate.passed ? 'PASSED' : 'WARN',
+        failedDims.length
+          ? `${gate.overallScore}/100 — below bar: ${failedDims.join('; ')}`
+          : `${gate.overallScore}/100 — all applicable dimensions pass`,
+      );
+      if (!gate.passed) {
+        warnings.push(
+          `MODERN_METROIDVANIA_GATE: ${gate.overallScore}/100 — this generated slice is not visually production-ready (below bar: ${failedDims.join('; ')}). Advisory; does not change RUNTIME_VALIDATED.`,
+        );
+      }
+    } catch (err) {
+      warnings.push(
+        `MODERN_METROIDVANIA_GATE could not run: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+
     writeFileSync(
       join(outputPath, 'validation_report.json'),
       JSON.stringify(
@@ -1430,6 +1461,7 @@ export class GenerationPipeline {
           passed: qaReport.passed,
           validationLevel,
           results: qaReport.results,
+          modernMetroidvaniaGate: modernGate?.details ?? null,
           repairAttempts,
           timestamp: new Date().toISOString(),
         },

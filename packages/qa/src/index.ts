@@ -40,6 +40,27 @@ export {
 } from './presentation-gates.js';
 export type { IndependentQualityGates, CharacterScaleProfile } from './presentation-gates.js';
 export { QualityRepairEngine } from './quality-repair-engine.js';
+export {
+  MODERN_METROIDVANIA_GATE,
+  DIMENSION_PASS_THRESHOLD,
+  evaluateModernMetroidvaniaGate,
+  runModernMetroidvaniaGate,
+  modernGateToQAGateResult,
+} from './modern-metroidvania-gate.js';
+export type {
+  ModernGateDimension,
+  ModernMetroidvaniaGateResult,
+  ModernGateInputs,
+  ManifestArtifactLike,
+  RoomRecordLike,
+  RoomLayoutMetricsLike,
+  CompositionRoomLike,
+  CompositionLayerLike,
+  TerrainSetLike,
+  ScreenshotStatLike,
+  RunModernGateOptions,
+} from './modern-metroidvania-gate.js';
+
 export type {
   QualityReport,
   QualityPlan,
