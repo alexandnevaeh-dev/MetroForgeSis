@@ -75,17 +75,31 @@ export function generateWorldTopology(options: WorldGenOptions): WorldGenResult 
   const bossRoomId = roomIds[roomIds.length - 1]!;
   const startRoomId = roomIds[0]!;
 
+  // regions[i].roomIds is derived from each node's own metadata.biomeIndex (set two lines above)
+  // rather than recomputed with an independent formula — they used to disagree for medium+/large
+  // worlds (nodes assign biomeIndex in contiguous per-zone blocks there, but regions used a plain
+  // `roomIndex % biomeCount` interleave), so `regions[i].roomIds` listed rooms scattered across
+  // every other zone instead of the zone that room's own tag said it belonged to. Found via
+  // world-design.ts's generateWorldDesignReport, whose Zone Breakdown section is the first thing
+  // to actually iterate `region.roomIds` and print the result somewhere a human would notice the
+  // mismatch (e.g. "10 room(s): room_000..room_036" — a 40-room-wide "zone").
+  const regions = Array.from({ length: options.biomeCount }, (_, i) => ({
+    id: `region_${i}`,
+    name: `Region ${i}`,
+    biomeId: `biome_${i}`,
+    roomIds: [] as string[],
+  }));
+  nodes.forEach((node, i) => {
+    const bi = Math.max(0, Math.min(options.biomeCount - 1, node.metadata.biomeIndex));
+    regions[bi]!.roomIds.push(roomIds[i]!);
+  });
+
   const worldGraph: WorldGraph = {
     version: '0.1.0',
     seed: options.seed,
     nodes,
     edges,
-    regions: Array.from({ length: options.biomeCount }, (_, i) => ({
-      id: `region_${i}`,
-      name: `Region ${i}`,
-      biomeId: `biome_${i}`,
-      roomIds: roomIds.filter((_, ri) => ri % options.biomeCount === i),
-    })),
+    regions,
   };
 
   const progressionNodes = [
@@ -266,7 +280,66 @@ function buildEdges(
     });
   });
 
+  removeShortcutsThatBypassGates(edges);
+
   return edges;
+}
+
+/**
+ * The random branching-shortcut edges above are placed without knowledge of the ability gates
+ * added afterward (in this same function, further down) — so a shortcut spanning `from..from+8`
+ * rooms can land squarely across an ability-gated pair and give the player a free, ungated route
+ * around a requirement the gate claims is mandatory. Found empirically: validateWorldDesign
+ * (packages/procedural/src/world-design.ts) flagged real `mandatory_gate_bypassed` cases on
+ * several of this module's own generated worlds at medium+ room counts, all traced to exactly
+ * this shortcut/gate interaction, never to the gate-adjacency dedup above (which only removes a
+ * *direct*, same-pair duplicate — it can't see a bypass several rooms long).
+ *
+ * Shortcuts (and only shortcuts — never the main spine or a vertical biome shaft, both of which
+ * are load-bearing for basic connectivity) are removed, one at a time, until no free-edges-only
+ * path connects a gate's two endpoints. A shortcut is who has to give: it is explicitly
+ * `optional: true` supplementary connectivity by construction, so removing one never disconnects
+ * anything the spine doesn't already connect.
+ */
+function removeShortcutsThatBypassGates(edges: WorldGraph['edges']): void {
+  const freeBypassPath = (fromId: string, toId: string, excludeEdgeId: string): WorldGraph['edges'] | null => {
+    const adjacency = new Map<string, Array<{ to: string; edge: WorldGraph['edges'][number] }>>();
+    for (const e of edges) {
+      if (e.id === excludeEdgeId || e.requirements.length > 0) continue;
+      const list = adjacency.get(e.from) ?? [];
+      list.push({ to: e.to, edge: e });
+      adjacency.set(e.from, list);
+      if (e.bidirectional) {
+        const rlist = adjacency.get(e.to) ?? [];
+        rlist.push({ to: e.from, edge: e });
+        adjacency.set(e.to, rlist);
+      }
+    }
+    const visited = new Set<string>([fromId]);
+    const queue: Array<{ node: string; path: WorldGraph['edges'] }> = [{ node: fromId, path: [] }];
+    while (queue.length > 0) {
+      const { node, path } = queue.shift()!;
+      if (node === toId) return path;
+      for (const { to, edge } of adjacency.get(node) ?? []) {
+        if (visited.has(to)) continue;
+        visited.add(to);
+        queue.push({ node: to, path: [...path, edge] });
+      }
+    }
+    return null;
+  };
+
+  for (const gate of edges.filter((e) => e.requirements.length > 0)) {
+    for (let guard = 0; guard < 8; guard++) {
+      const bypass = freeBypassPath(gate.from, gate.to, gate.id);
+      if (!bypass) break;
+      const removable = bypass.find((e) => e.optional);
+      if (!removable) break; // bypass exists through non-optional (spine/shaft) edges only — not ours to remove.
+      const idx = edges.findIndex((e) => e.id === removable.id);
+      if (idx >= 0) edges.splice(idx, 1);
+      else break;
+    }
+  }
 }
 
 function transitionForAbilityGate(
