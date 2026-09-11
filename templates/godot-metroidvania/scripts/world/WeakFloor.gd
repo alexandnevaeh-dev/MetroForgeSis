@@ -3,10 +3,9 @@ extends StaticBody2D
 
 @export var floor_width: float = 128.0
 ## The room this WeakFloor gates access to — set by room-assembler.ts at instancing time.
-## Combined with GameManager.current_room_id (the room this instance actually lives in, read at
-## _ready() since a WeakFloor carries no export of its own owning room) into a save-key unique
-## enough to identify this exact obstacle across a same-session room re-entry — see
-## SaveManager.gd's mark_floor_broken/is_floor_broken.
+## Combined with the owning room's node name into a save-key unique enough to identify this exact
+## obstacle across a same-session room re-entry — see SaveManager.gd's
+## mark_floor_broken/is_floor_broken.
 @export var target_room_id: String = ""
 
 var _broken: bool = false
@@ -14,7 +13,15 @@ var _save_key: String = ""
 
 func _ready() -> void:
 	add_to_group("weak_floor")
-	_save_key = "%s:%s" % [GameManager.current_room_id, target_room_id]
+	# The owning room's node name, not GameManager.current_room_id: room-assembler.ts names each
+	# room scene's root after its room id and instances WeakFloor directly under it, so the parent
+	# name is correct the instant this node enters the tree. current_room_id is only correct once
+	# WorldManager has finished swapping rooms, which is not guaranteed to have happened by the
+	# time a freshly instantiated room's children run _ready() — reading it here produced a
+	# different key on re-entry than the one written when the floor broke, so a floor that had
+	# already been destroyed silently came back solid.
+	var owning_room := get_parent()
+	_save_key = "%s:%s" % [owning_room.name if owning_room != null else GameManager.current_room_id, target_room_id]
 	if SaveManager.is_floor_broken(_save_key):
 		_broken = true
 		collision_layer = 0
