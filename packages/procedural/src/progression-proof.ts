@@ -157,13 +157,19 @@ export function buildProgressionProof(
   worldGraph: WorldGraph,
   progressionGraph: ProgressionGraph,
   movement?: MovementFeasibilityReport,
+  /** Non-ability requirement strings this caller already knows are deliberate, real gate tokens
+   *  (e.g. a combat/key-item gate id from packages/procedural/src/world-design.ts) — same role as
+   *  the built-in TOP_DOWN_DUNGEON_ITEMS allowlist below, just supplied by the caller instead of
+   *  hardcoded here, so a new non-ability gate *kind* doesn't need this file edited every time one
+   *  is introduced. Defaults to empty — existing callers see no behavior change. */
+  additionalKnownTokens: Iterable<string> = [],
 ): ProgressionProof {
   const rooms = roomIdsOf(worldGraph);
   const startRoomId = progressionGraph.startNodeId || rooms[0] || '';
   const bossRoomId = progressionGraph.endNodeId || rooms[rooms.length - 1] || '';
   const startReachable = rooms.includes(startRoomId);
 
-  const itemIds = new Set<string>(TOP_DOWN_DUNGEON_ITEMS.map((item) => item.id));
+  const itemIds = new Set<string>([...TOP_DOWN_DUNGEON_ITEMS.map((item) => item.id), ...additionalKnownTokens]);
   const unknownAbilities = requiredAbilities(worldGraph).filter(
     (id) => !isRegisteredAbilityId(id) && !itemIds.has(id) && id.length > 0,
   );

@@ -92,5 +92,30 @@ export type {
 } from './visual/index.js';
 export { buildProgressionProof } from './progression-proof.js';
 export type { ProgressionProof, ProgressionTraceStep } from './progression-proof.js';
+export {
+  generateFullMetroidvaniaWorld,
+  validateWorldDesign,
+  deriveWorldLayout,
+  evaluateFullWorldApplicability,
+  generateWorldDesignReport,
+  DEFAULT_ZONE_THEMES,
+  MIN_FULL_WORLD_ZONES,
+  BREAKABLE_WALL_ABILITY,
+  FULL_WORLD_TEST_CONFIG,
+  FULL_WORLD_TEST_SEEDS,
+} from './world-design.js';
+export type {
+  ZoneTheme,
+  FullWorldOptions,
+  FullWorldResult,
+  RoomExtent,
+  RoomPlacement,
+  LayoutIssue,
+  WorldLayout,
+  WorldDesignReport,
+  WorldDesignIssueBase,
+  ValidateWorldDesignInput,
+  GameHookInfo,
+} from './world-design.js';
 export { generateTopDownWorld, collisionRectsFromTiles, isWalkableTile } from './topdown/world.js';
 export type { TopDownOverworld, TopDownArea, TopDownPoi, TopDownWorldGenResult } from './topdown/world.js';
