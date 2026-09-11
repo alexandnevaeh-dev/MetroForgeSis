@@ -53,6 +53,13 @@ func _load_room(room_id: String, spawn_side: String = "left") -> void:
 			if outgoing_health and outgoing_health.is_alive():
 				_carried_health = outgoing_health.current_health
 				_carried_max_health = outgoing_health.max_health
+		# queue_free() defers removal to end-of-frame; if _load_room awaits before then (see the
+		# _lock_room_exits await below) the outgoing room's Player and its ReadabilityOutline
+		# silhouette can still render for a frame or two alongside the incoming Player — the
+		# stray pale figure seen in some slice captures. Hide the whole outgoing room now so
+		# nothing from it draws during the transition window.
+		_current_room.visible = false
+		_current_room.process_mode = Node.PROCESS_MODE_DISABLED
 		_current_room.queue_free()
 		_current_room = null
 
