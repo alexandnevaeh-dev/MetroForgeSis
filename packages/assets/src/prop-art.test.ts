@@ -1,6 +1,43 @@
 import { describe, expect, it } from 'vitest';
 import { decodePngRgba } from './png.js';
-import { generatePropSprite, partitionPropFeatures, PROP_SUPPORTED_FEATURES } from './prop-art.js';
+import {
+  generatePropSprite,
+  partitionPropFeatures,
+  PROP_SUPPORTED_FEATURES,
+  environmentDecorationPalette,
+  interactablePalette,
+} from './prop-art.js';
+
+describe('environmentDecorationPalette', () => {
+  const palette = {
+    global: ['#284878', '#3ca064', '#dcb432', '#e87850'],
+    shadows: ['#122036', '#1b482d', '#635117', '#683624'],
+    accents: ['#dcb432', '#e87850'],
+    highlights: ['#325a96', '#4bc87d', '#ffe13f', '#ff9664'],
+  };
+
+  it('never uses palette.global[0] (the void/sky swatch)', () => {
+    const { fill, accent } = environmentDecorationPalette(palette);
+    expect(fill).not.toBe(palette.global[0]);
+    expect(accent).not.toBe(palette.global[0]);
+  });
+
+  it('picks a distinct swatch from interactablePalette so pickups still pop against scenery', () => {
+    // Regression: environment decoration (statues, debris, wall architecture) previously used
+    // palette.global[0] — the same "void/sky" blue interactablePalette explicitly avoids — so a
+    // shrine/pews prop rendered in cool blue standing right next to warm soot-and-brass Foundry
+    // rooms mismatched the whole room's material language.
+    const decor = environmentDecorationPalette(palette);
+    const interactable = interactablePalette(palette);
+    expect(decor.fill).not.toBe(interactable.fill);
+  });
+
+  it('falls back sanely when the palette is missing fields entirely', () => {
+    const { fill, accent } = environmentDecorationPalette(undefined);
+    expect(fill).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(accent).toMatch(/^#[0-9a-f]{6}$/i);
+  });
+});
 
 describe('generatePropSprite biome material features (fifteenth session)', () => {
   const base = { width: 48, height: 48, fill: '#384d60', accent: '#a9c3cb', family: 'pipe', seed: 17 };

@@ -282,6 +282,27 @@ export function actorPalette(palette?: {
   return { fill: [f[0], f[1], f[2], 255], accent: [a[0], a[1], a[2], 255] };
 }
 
+/** Fill/accent for inert environment decoration (statues, debris, chains, wall-mounted
+ *  architecture) — never palette.global[0] (void/sky, same reason as interactablePalette above)
+ *  and deliberately never the same swatch as interactablePalette/actorPalette either, so a real
+ *  interactive pickup or an actor still visually pops against ordinary scenery. Prefers the
+ *  palette's own darkest shadow tone — a neutral that sits into whatever room material language
+ *  this game's own generated palette already established — over an arbitrary bright accent. */
+export function environmentDecorationPalette(palette?: {
+  global?: string[];
+  shadows?: string[];
+  accents?: string[];
+  highlights?: string[];
+}): { fill: string; accent: string } {
+  const global = palette?.global ?? [];
+  const shadows = palette?.shadows ?? [];
+  const accents = palette?.accents ?? [];
+  const highlights = palette?.highlights ?? [];
+  const fill = shadows[shadows.length - 1] ?? global[3] ?? '#4a3428';
+  const accent = accents[accents.length - 1] ?? highlights[3] ?? '#8a6840';
+  return { fill, accent };
+}
+
 const NPC_ROLE_ACCENT: Record<string, [number, number, number]> = {
   quest_giver: [186, 132, 58],
   merchant: [70, 150, 110],
