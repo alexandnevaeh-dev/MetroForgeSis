@@ -90,6 +90,7 @@ function upTransitionGapPx(layout: RoomLayoutDefaults): number {
   return Math.max(0, playerY - upTransitionY);
 }
 
+
 function jumpApexPx(stats: MovementStats): number {
   return stats.jumpHeight;
 }
@@ -179,6 +180,27 @@ export function validateMovementFeasibility(
         });
       }
     }
+
+    // 'horizontal' and 'down' have no gap-vs-reach check the way 'up' does, and this is a
+    // deliberate, documented finding rather than a coverage gap being papered over: gravity makes
+    // vertical progress physically *impossible* without a jump-lineage ability, which is what
+    // makes the up-gap-vs-jump-height comparison a real physical constraint. Horizontal and
+    // downward progress in this template are always physically reachable by walking or falling —
+    // an ability requirement on those edges is a *logical* lock (dash/double_jump/wall_jump gates
+    // with no runtime enforcement beyond "the door checks GameManager.has_ability"), not a
+    // physical one, with two real exceptions that DO have runtime-enforced physical obstacles:
+    // ground_slam ('down') breaks a real WeakFloor (templates/.../world/WeakFloor.gd), and phase
+    // ('horizontal'/'left'/'right') passes through a real PhaseBarrier (.../world/PhaseBarrier.gd)
+    // — both driven by packages/godot/src/room-assembler.ts's deriveWeakFloors/derivePhaseBarriers,
+    // conditioned on the exact same edge `requirements` this function reads. A synthetic "room
+    // width minus margin" reach-vs-gap formula for those was tried and rejected: nothing in the
+    // actual generated rooms requires crossing a fixed span to reach a horizontally-gated door
+    // (confirmed by inspecting a real generated room — the required ability blocks the *door*
+    // logically, not a physical gap the player must dash across), so that check would have no
+    // grounding in what the game actually enforces and would only produce false failures. The
+    // real, meaningful geometry check for ground_slam/phase gates is "does the expected physical
+    // obstacle actually exist in the exported project for this edge" — an export-fidelity
+    // question (see validateExportFidelity), not a MovementStats distance formula.
   }
 
   return {

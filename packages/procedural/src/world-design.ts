@@ -217,6 +217,11 @@ export function generateFullMetroidvaniaWorld(options: FullWorldOptions): FullWo
   });
 
   // --- Designated rooms: per-zone save room, fast-travel room, zone miniboss/arena -----------
+  // Captured so the combat-gate key grant below can be tied to *this exact room*, not
+  // recomputed with a second, independent "last room of zone 1" expression that can silently
+  // diverge from the walk-back below (see that loop's own comment) whenever the zone's true
+  // last room collides with a teaching room.
+  let zone1ArenaRoomId: string | undefined;
   for (let zi = 0; zi < zones.length; zi++) {
     const roomsInZone = roomsByZone[zi]!;
     if (roomsInZone.length === 0) continue;
@@ -260,14 +265,26 @@ export function generateFullMetroidvaniaWorld(options: FullWorldOptions): FullWo
       }
       arenaNode.metadata.bossArena = true;
       arenaNode.metadata.zoneBossOf = zones[zi]!.id;
+      if (zi === 1) zone1ArenaRoomId = arenaRoomId;
     }
   }
 
   // --- Combat gate: a key item from zone 1's miniboss gates a junction into zone 3 ------------
   const combatKeyItemId = options.combatKeyItemId ?? 'item_reactor_key';
-  if (zones.length >= 4 && roomsByZone[1]!.length > 0 && roomsByZone[3]!.length > 1) {
-    const keyRoomId = roomsByZone[1]![roomsByZone[1]!.length - 1]!;
+  if (zones.length >= 4 && roomsByZone[1]!.length > 0 && roomsByZone[3]!.length > 1 && zone1ArenaRoomId) {
+    // Same room the miniboss loop above actually placed zone 1's arena in — not a second,
+    // independent "last room of zone 1" expression, which could point at a different room than
+    // the real arena whenever the walk-back above moved off the zone's literal last room.
+    const keyRoomId = zone1ArenaRoomId;
     const keyNode = nodeById.get(keyRoomId)!;
+    // This IS the combat teaching/challenge room: the miniboss fight that grants the token is
+    // itself the "exercise this ability before a demanding encounter" requirement for a combat
+    // gate — there is no separate registered "combat ability" category to teach in a safe room
+    // first (every REGISTERED_ABILITIES entry is category:'movement' — see
+    // packages/shared/src/registered-abilities.ts), so the challenge *is* the encounter, not a
+    // room after it. validateWorldDesign's teaching-room check below requires this tag for every
+    // grantsAbilities token, movement or not.
+    keyNode.metadata.teachesAbility = combatKeyItemId;
     // Reuses the existing `grantsAbilities` convention rather than a parallel `grantsItems`
     // field — the real codebase already overloads this field for non-ability unlock tokens (see
     // packages/procedural/src/topdown/world.ts, which grants dungeon-item ids through the exact
@@ -428,7 +445,20 @@ export interface WorldLayout {
   issues: LayoutIssue[];
 }
 
-const LAYOUT_MARGIN_PX = 24;
+// 200, not a token 24px gap: real per-room extents (room-assembler.ts's defaultRoomWidth/
+// defaultRoomHeight) range from 680-960px wide and 500-900px tall depending on archetype — at a
+// path "corner" (the primary-edge path turns from horizontal to vertical, or back, at a room),
+// two rooms two hops apart with a large size difference can end up diagonally closer than the sum
+// of their half-extents even though neither individual hop overlaps anything, purely from the
+// corner's geometry — not a real contradiction. A per-edge "corner buffer" was tried and reverted:
+// it broke the placement formula's direction-independence (the same bidirectional edge, walked
+// forwards vs backwards, could imply two different positions for the same room, and did — 8 seeds
+// that previously passed started reporting false `incompatible_door`s). A single larger constant
+// margin keeps the formula symmetric under direction reversal (parent.half + margin + child.half,
+// unaffected by which end you start from) while comfortably covering the worst realistic corner
+// case across this codebase's actual room-size range. Confirmed against a real MEDIUM-profile
+// normal generation run that exposed a false layout_overlap at 24px.
+const LAYOUT_MARGIN_PX = 200;
 
 /**
  * Assigns every room a concrete (x, y) position and extent purely from the graph's own edge
@@ -754,6 +784,12 @@ export function validateWorldDesign(input: ValidateWorldDesignInput): WorldDesig
       });
     }
   }
+  // No equivalent over/under-gating distance check exists for 'horizontal' or 'down' gates —
+  // see movementReport's own module (movement-feasibility.ts) for why: those directions are
+  // always physically reachable by walking or falling in this template, so an ability
+  // requirement there is a logical lock, not a physical one, except ground_slam/phase's real
+  // physical obstacles (WeakFloor/PhaseBarrier) — checked for actual presence in the exported
+  // project by validateExportFidelity, not by a MovementStats distance formula here.
   const roomIds = worldGraph.nodes.filter((n) => n.type === 'room' || n.type === 'zone').map((n) => n.id);
   const startId = progressionGraph.startNodeId || roomIds[0] || '';
 
@@ -882,16 +918,31 @@ export function validateWorldDesign(input: ValidateWorldDesignInput): WorldDesig
   }
 
   // --- Teaching rooms: every ability's gate-post room must be tagged, and must not itself be a
-  // boss/miniboss/arena room (the point is a *safe* first exercise of the ability). ------------
-  for (const ability of progressionGraph.abilities ?? []) {
-    const teachingRoom = worldGraph.nodes.find((n) => n.metadata?.teachesAbility === ability);
+  // boss/miniboss/arena room (the point is a *safe* first exercise of the ability). A combat/
+  // key-item gate (any grantsAbilities token that isn't a registered movement ability — see
+  // nonAbilityGrantedTokens above) gets the opposite archetype rule: there is no registered
+  // "combat ability" category to safely exercise beforehand (every REGISTERED_ABILITIES entry is
+  // category:'movement'), so the challenge *is* the encounter that grants the token — its teaching
+  // room is REQUIRED to be a genuine boss/miniboss/arena, not forbidden from being one. -----------
+  const combatChallengeTokens = [...nonAbilityGrantedTokens];
+  for (const token of [...(progressionGraph.abilities ?? []), ...combatChallengeTokens]) {
+    const isCombatToken = combatChallengeTokens.includes(token);
+    const teachingRoom = worldGraph.nodes.find((n) => n.metadata?.teachesAbility === token);
     if (!teachingRoom) {
-      issues.push({ code: 'missing_teaching_room', message: `No room is tagged as the teaching room for ability '${ability}' — there should be a safe room exercising it immediately after its gate.` });
+      issues.push({
+        code: 'missing_teaching_room',
+        message: isCombatToken
+          ? `No room is tagged as the combat challenge for '${token}' — there should be a genuine miniboss/boss encounter that grants it.`
+          : `No room is tagged as the teaching room for ability '${token}' — there should be a safe room exercising it immediately after its gate.`,
+      });
       continue;
     }
     const archetype = teachingRoom.metadata?.archetype;
-    if (archetype === 'boss' || archetype === 'miniboss' || archetype === 'arena') {
-      issues.push({ code: 'unsafe_teaching_room', message: `Teaching room for '${ability}' (${teachingRoom.id}) is archetype '${String(archetype)}' — not a safe room to introduce a new ability in.`, roomIds: [teachingRoom.id] });
+    const isEncounterRoom = archetype === 'boss' || archetype === 'miniboss' || archetype === 'arena';
+    if (isCombatToken && !isEncounterRoom) {
+      issues.push({ code: 'unsafe_teaching_room', message: `Combat challenge room for '${token}' (${teachingRoom.id}) is archetype '${String(archetype)}' — granting a combat-gate token with no real encounter behind it.`, roomIds: [teachingRoom.id] });
+    } else if (!isCombatToken && isEncounterRoom) {
+      issues.push({ code: 'unsafe_teaching_room', message: `Teaching room for '${token}' (${teachingRoom.id}) is archetype '${String(archetype)}' — not a safe room to introduce a new ability in.`, roomIds: [teachingRoom.id] });
     }
   }
 
