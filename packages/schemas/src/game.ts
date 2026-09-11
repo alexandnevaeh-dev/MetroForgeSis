@@ -29,6 +29,30 @@ export const GraphEdgeSchema = z.object({
   optional: z.boolean().default(false),
   bidirectional: z.boolean().default(true),
   transition: z.enum(['left', 'right', 'up', 'down']).optional(),
+  /** Connection classification for world-design validation (packages/procedural/src/world-design.ts).
+   *  'normal': an ordinary spine/gate edge, same semantics as before this field existed.
+   *  'shortcut': an optional, non-critical-path link (usually spanning zones back toward the
+   *    start) — never required for `victoryAchievable`, but must still resolve to a real,
+   *    traversable connection.
+   *  'one_way': `bidirectional` is false for this edge and the world-design validator checks it
+   *    doesn't strand the player (either another route back exists, or it leads to a
+   *    save/respawn-capable room).
+   *  'breakable': gated by an ability that destroys a wall/floor rather than merely traversing a
+   *    gap (currently only `ground_slam` has runtime support for this) — modeled identically to
+   *    an ability gate otherwise, tagged separately so a validator/report can call out "breakable
+   *    wall" connections distinctly from ordinary ability gates. */
+  // Optional (no `.default()`) rather than required-with-default like GraphNodeSchema.metadata,
+  // deliberately: this schema's inferred TS type backs plain object-literal construction all over
+  // the generator (world.ts, topdown/world.ts) and its tests, not just parsed/validated JSON —
+  // a `.default()` here makes the *output* type require the field even on a hand-built literal
+  // that never went through `.parse()`, breaking every existing call site for a field only new
+  // world-design code needs. Absent means exactly what it always meant before this field existed:
+  // an ordinary edge with no extra annotation. Consumers read `edge.kind ?? 'normal'`.
+  kind: z.enum(['normal', 'shortcut', 'one_way', 'breakable']).optional(),
+  /** Free-form annotation bag for world-design metadata that doesn't warrant its own schema field
+   *  yet (e.g. transition-motif text for a zone-crossing edge). Same optional-not-defaulted
+   *  reasoning as `kind` above. */
+  metadata: z.record(z.unknown()).optional(),
 });
 
 export type GraphEdge = z.infer<typeof GraphEdgeSchema>;
