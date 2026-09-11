@@ -126,6 +126,30 @@ describe('composePlayableVisuals', () => {
     expect(blueprint?.visualIntent.openPlayableAir).toBe(true);
   });
 
+  it('keeps decoration zones off the spawn footprint at both edges', () => {
+    // The player enters SPAWN_MARGIN (80px) from an edge; a decoration zone at width*0.05 put a
+    // prop on top of the courier at spawn. Every decoration zone must clear the outer ~12%.
+    const input = {
+      cells: [],
+      platforms: [] as Array<{ x: number; y: number; width: number; height: number }>,
+      pits: [] as Array<{ x: number; y: number; width: number; height: number }>,
+      cols: 100,
+      rows: 37,
+      floorRow: 35,
+      tileSize: 16,
+      width: 1600,
+      height: 600,
+      archetype: 'combat',
+      seed: 42,
+    };
+    const zones = composePlayableVisuals(input).blueprint.plan.decorationZones;
+    expect(zones.length).toBeGreaterThan(0);
+    for (const z of zones) {
+      expect(z.x).toBeGreaterThanOrEqual(input.width * 0.12);
+      expect(z.x + z.width).toBeLessThanOrEqual(input.width * 0.88);
+    }
+  });
+
   it('invokes dedicated boss arena composition', () => {
     const layout = buildRoomTileCells({
       width: 960,

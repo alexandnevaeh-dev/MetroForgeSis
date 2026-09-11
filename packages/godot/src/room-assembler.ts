@@ -1153,9 +1153,18 @@ position = Vector2(${Math.round(options.width / 2)}, ${Math.round(options.height
   const propCount = Math.min(propSprites.length, roomPlan?.propBudget.clusters ?? 0);
   const architectureAnchors = roomPlan?.majorArchitecture ?? [];
 
+  // A room is entered at SPAWN_MARGIN (80px, WorldManager) from whichever horizontal edge the
+  // player came through, so a floor prop dropped near either edge lands on top of the player at
+  // spawn — the courier-height figure standing beside the Wanderer in spawn captures was a
+  // shrine/statue prop placed in an edge decoration zone. Nudge such a prop inward past the
+  // spawn footprint; drop it only if the room is too narrow for it to clear both spawns.
+  const SPAWN_EDGE_CLEARANCE = 132;
   propSprites.slice(0, propCount).forEach((rel, i) => {
     const zone = propZones[i]!;
-    const x = Math.round(zone.x + zone.width * 0.5);
+    let x = Math.round(zone.x + zone.width * 0.5);
+    if (x < SPAWN_EDGE_CLEARANCE) x = SPAWN_EDGE_CLEARANCE;
+    else if (x > options.width - SPAWN_EDGE_CLEARANCE) x = options.width - SPAWN_EDGE_CLEARANCE;
+    if (x < SPAWN_EDGE_CLEARANCE || x > options.width - SPAWN_EDGE_CLEARANCE) return;
     const y = floorTop - 8;
     scene += `[node name="EnvProp_${i}" type="Sprite2D" parent="."]
 z_index = 3

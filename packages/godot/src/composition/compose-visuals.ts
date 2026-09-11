@@ -89,7 +89,10 @@ function buildRoomPlan(input: ComposeVisualsInput): RoomPlan {
     focalPoint: { x: focusX, y: focusY, kind: calm ? 'reward_or_save' : boss ? 'boss' : 'traversal' },
     safeZones: calm ? [{ ...quiet }] : [],
     combatZones: boss || input.archetype === 'combat' || input.archetype === 'arena' ? [combat] : [],
-    decorationZones: [{ purpose: 'decoration', x: input.width * 0.05, y: floorTop - input.tileSize * 2, width: input.width * 0.18, height: input.tileSize * 2 }, { purpose: 'decoration', x: input.width * 0.77, y: floorTop - input.tileSize * 2, width: input.width * 0.18, height: input.tileSize * 2 }],
+    // Kept off both the ~10%/90% spawn footprints (the player enters SPAWN_MARGIN from an edge)
+    // and out of the central combat band — a decoration zone at width*0.05 dropped a prop right
+    // on top of the courier at spawn.
+    decorationZones: [{ purpose: 'decoration', x: input.width * 0.16, y: floorTop - input.tileSize * 2, width: input.width * 0.16, height: input.tileSize * 2 }, { purpose: 'decoration', x: input.width * 0.68, y: floorTop - input.tileSize * 2, width: input.width * 0.16, height: input.tileSize * 2 }],
     noDecorationZones: [{ purpose: 'no_decoration', ...quiet }],
     foregroundExclusionZones: [{ purpose: 'foreground_exclusion', ...combat }],
     visualTheme: 'industrial_transit',
