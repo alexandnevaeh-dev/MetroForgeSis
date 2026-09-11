@@ -415,3 +415,28 @@ func get_discovered_rooms() -> Array:
 	if typeof(world_state) != TYPE_DICTIONARY:
 		return []
 	return world_state.get("discovered_rooms", [])
+
+## A destroyed WeakFloor (ground_slam breakable wall) must stay destroyed for the rest of the
+## session, including re-entering the room — otherwise re-loading the room .tscn (WorldManager
+## frees and re-instantiates rooms on every transition, not just on save/load) silently respawns
+## the obstacle, making the player re-slam a wall they already broke. `_save_data` is kept in
+## memory for the whole session regardless of whether save_game() has actually written it to disk
+## yet, so this persists across a same-session room re-entry the same way discovered_rooms already
+## does above. `floor_key` is "<room_id>:<target_room_id>" — unique per WeakFloor instance (see
+## WeakFloor.gd's own room_id/target_room_id exports).
+func mark_floor_broken(floor_key: String) -> void:
+	var world_state: Dictionary = _save_data.get("world_state", {})
+	if typeof(world_state) != TYPE_DICTIONARY:
+		world_state = {}
+	var broken: Array = world_state.get("broken_floors", [])
+	if not broken.has(floor_key):
+		broken.append(floor_key)
+	world_state["broken_floors"] = broken
+	_save_data["world_state"] = world_state
+
+func is_floor_broken(floor_key: String) -> bool:
+	var world_state: Dictionary = _save_data.get("world_state", {})
+	if typeof(world_state) != TYPE_DICTIONARY:
+		return false
+	var broken: Array = world_state.get("broken_floors", [])
+	return broken.has(floor_key)

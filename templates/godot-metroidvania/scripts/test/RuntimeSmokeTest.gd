@@ -132,6 +132,11 @@ func _ready() -> void:
 	# _check_ability_gated_transition may have navigated to a new room, which frees the
 	# previous Player instance — re-fetch rather than reuse the now-possibly-stale reference.
 	var current_player := get_tree().get_first_node_in_group("player")
+	await _check_breakable_wall(current_player, world)
+	current_player = get_tree().get_first_node_in_group("player")
+	await _check_shortcut_traversal(current_player, world)
+
+	current_player = get_tree().get_first_node_in_group("player")
 	_check_save_point(current_player)
 
 	current_player = get_tree().get_first_node_in_group("player")
@@ -556,6 +561,14 @@ func _check_player_death_respawn(player: Node, world: Node) -> void:
 	await _capture_runtime_state("checkpoint", "save checkpoint", {"roomId": checkpoint_room, "runtimeState": "checkpoint"})
 	_save_report_shot("checkpoint", "checkpoint.png")
 
+	# Respawn must never bypass mandatory progression by quietly rolling back an ability the
+	# player already earned — that would force redoing a gate they already opened. "dash" is a
+	# real registered ability (packages/shared/src/registered-abilities.ts) with a runtime
+	# implementation regardless of whether this particular generated world happens to grant it,
+	# so granting it here is a safe, direct probe of the respawn path itself.
+	var probe_ability := "dash"
+	GameManager._on_ability_acquired(probe_ability)
+
 	await GameManager._do_respawn()
 	await get_tree().process_frame
 	await get_tree().process_frame
@@ -565,6 +578,7 @@ func _check_player_death_respawn(player: Node, world: Node) -> void:
 		GameManager.current_state == GameManager.GameState.PLAYING,
 	)
 	_check("player_death_respawns_at_checkpoint_room", GameManager.current_room_id == checkpoint_room)
+	_check("player_death_respawn_preserves_earned_abilities", GameManager.has_ability(probe_ability))
 
 	var respawned_player := get_tree().get_first_node_in_group("player")
 	_check("player_exists_after_death_respawn", respawned_player != null)
@@ -2079,6 +2093,37 @@ func _check_boss_victory_flow() -> void:
 ## gate"), navigates the real WorldManager there, then proves the gate blocks the real
 ## spawned player before the ability is granted and allows the transition once it is —
 ## using the actual gameplay objects, not mocks.
+## Drives the *real* input actions PlayerController._physics_process reads (Input.action_press/
+## release for move_left/move_right, ticking real physics_frames) rather than setting position or
+## velocity directly — this is genuine gameplay simulation: the same code path a human player's
+## keypress would trigger, including real collision with whatever is in the way. Horizontal-only,
+## same-floor traversal — sufficient for every real check that uses it below (approaching a
+## same-floor door/pickup/obstacle); a caller that needs to cross a vertical gap presses "jump"
+## itself before or during this loop. Returns whether `target.x` was reached within max_frames —
+## a caller expecting to be *blocked* (a gate, an obstacle) checks its own success condition
+## instead of this return value, since "did not reach target.x" is exactly what blocking looks like.
+func _walk_player_toward_x(player: Node, target_x: float, max_frames: int = 240, tolerance: float = 10.0) -> bool:
+	if player == null or not is_instance_valid(player) or not (player is Node2D):
+		return false
+	var reached := false
+	for i in range(max_frames):
+		if not is_instance_valid(player):
+			break
+		var dx: float = target_x - (player as Node2D).global_position.x
+		if absf(dx) <= tolerance:
+			reached = true
+			break
+		if dx > 0:
+			Input.action_press("move_right")
+			Input.action_release("move_left")
+		else:
+			Input.action_press("move_left")
+			Input.action_release("move_right")
+		await get_tree().physics_frame
+	Input.action_release("move_left")
+	Input.action_release("move_right")
+	return reached
+
 func _check_ability_gated_transition(player: Node, world: Node) -> void:
 	if player == null or world == null:
 		_check("ability_gate_blocks_without_ability", false)
@@ -2093,6 +2138,10 @@ func _check_ability_gated_transition(player: Node, world: Node) -> void:
 		return
 	_check_soft("ability_gate_found_in_generated_world", true)
 
+	# Setup teleport, not gameplay: reaching this specific room by walking the full critical path
+	# from spawn would take far longer than a smoke test budget allows. Everything from here on —
+	# the block, the unlock, and (when a pickup exists) the ability grant — is real physical
+	# player input against the actual room, not a further teleport or a synthetic flag flip.
 	await world.transition_to_room(gated_room_id)
 	await get_tree().process_frame
 	await get_tree().process_frame
@@ -2120,14 +2169,13 @@ func _check_ability_gated_transition(player: Node, world: Node) -> void:
 
 	var required: PackedStringArray = gate.required_abilities
 	var ability: String = required[0]
-	# Captured before the second _on_body_entered call below, which — if it succeeds —
-	# triggers another room transition that frees `gate` itself along with its room.
+	# Captured before the walk-through below, which — if it succeeds — triggers a real room
+	# transition that frees `gate` itself along with its room.
 	var expected_target_room: String = gate.target_room_id
+	var gate_x: float = (gate as Node2D).global_position.x
 
-	# Slice capture / shrine pickup / action shots may already have unlocked this
-	# ability. The gate check must start from a known locked state, or the first
-	# _on_body_entered actually transitions, frees the gate, and the second call
-	# crashes on a previously-freed node (ability_gate_blocks_without_ability FAIL).
+	# Slice capture / shrine pickup / action shots may already have unlocked this ability. The
+	# gate check must start from a known locked state, or the first walk-in actually transitions.
 	_strip_ability(ability)
 	if not is_instance_valid(current_player):
 		current_player = get_tree().get_first_node_in_group("player")
@@ -2136,24 +2184,293 @@ func _check_ability_gated_transition(player: Node, world: Node) -> void:
 		_check("ability_gate_opens_after_unlock", false)
 		return
 
+	# A real AbilityPickup for this exact ability sometimes sits between spawn and the gate (this
+	# codebase's own generation pattern places one right in the gate room — see room-assembler.ts).
+	# Disable its monitoring for the block-check walk below, or simply walking toward/past the
+	# gate would grant the ability by real physical collision along the way and the "before" state
+	# would never actually be observed — re-enabled right before the real-pickup phase further
+	# down, which walks the player into it on purpose.
+	var pickup := _find_ability_pickup_for(world, ability)
+	if pickup != null:
+		pickup.monitoring = false
+
 	var room_before: String = GameManager.current_room_id
-	gate._on_body_entered(current_player)
-	await get_tree().process_frame
+	var start_x: float = (current_player as Node2D).global_position.x
+	# Walk *past* the door's x, not just up to it — RoomTransition is a non-solid Area2D
+	# (body_entered-only, see templates/.../world/RoomTransition.gd); with no ability, entering
+	# it is a no-op, so the player must be able to keep walking through the space where the door
+	# sits and prove the room never actually changed, not just that they stopped short of it.
+	var overshoot_x: float = gate_x + signf(gate_x - start_x) * 64.0
+	await _walk_player_toward_x(current_player, overshoot_x, 300)
 	var room_after_blocked: String = GameManager.current_room_id
 	_check("ability_gate_blocks_without_ability", room_after_blocked == room_before)
 
-	GameManager._on_ability_acquired(ability)
-	gate._on_body_entered(current_player)
-	# RoomTransition._on_body_entered fires WorldManager.transition_to_room() without awaiting it
-	# (correctly, for real gameplay — a signal handler has nothing useful to block on) and that
-	# coroutine now itself starts with an await get_tree().physics_frame() (see WorldManager.gd) to
-	# avoid mutating physics state mid-flush. A single idle process_frame here isn't guaranteed to
-	# land after that physics_frame resolves, so wait on the same signal type transition_to_room
-	# actually awaits internally, not a different frame type that only usually lines up with it.
+	# Real pickup if this exact room happens to have one for this exact ability (matches this
+	# codebase's actual generation pattern — see room-assembler.ts's AbilityPickup placement,
+	# confirmed present in real generated ability-gate rooms); otherwise fall back to a direct
+	# grant, explicitly logged as a setup step rather than presented as gameplay-verified.
+	if pickup != null and is_instance_valid(current_player):
+		pickup.monitoring = true
+		var pickup_x: float = (pickup as Node2D).global_position.x
+		await _walk_player_toward_x(current_player, pickup_x, 300, 16.0)
+		await get_tree().process_frame
+		_check("ability_gate_ability_granted_via_real_pickup", GameManager.has_ability(ability))
+		print("METROFORGE_RUNTIME_NOTE ability '%s' granted via real AbilityPickup collision (gameplay-verified)" % ability)
+	else:
+		print("METROFORGE_RUNTIME_NOTE ability '%s' granted via direct GameManager call — no AbilityPickup for this ability exists in room '%s' (setup step, not gameplay-verified)" % [ability, GameManager.current_room_id])
+		GameManager._on_ability_acquired(ability)
+
+	if not is_instance_valid(current_player):
+		current_player = get_tree().get_first_node_in_group("player")
+	if current_player == null or not is_instance_valid(gate):
+		_check("ability_gate_opens_after_unlock", false)
+		return
+	# Walk back toward the door from wherever the pickup/overshoot left the player, and through it.
+	await _walk_player_toward_x(current_player, overshoot_x, 300)
+	# WorldManager.transition_to_room() (fired by RoomTransition's own body_entered handler, not
+	# by this test) starts with an await get_tree().physics_frame() before mutating state — wait
+	# on the same signal type it actually awaits internally, not an idle frame that only usually
+	# happens to land after it.
 	await get_tree().physics_frame
 	await get_tree().physics_frame
 	var room_after_unlocked: String = GameManager.current_room_id
 	_check("ability_gate_opens_after_unlock", room_after_unlocked == expected_target_room)
+
+## Cheap text scan (no instantiation), matching _find_room_with_gate's own approach — the room
+## containing a real WeakFloor node (room-assembler.ts names it "WeakFloor_<target_room_id>").
+func _find_room_with_weak_floor() -> String:
+	var dir := DirAccess.open("res://scenes/rooms")
+	if dir == null:
+		return ""
+	dir.list_dir_begin()
+	var file_name := dir.get_next()
+	while file_name != "":
+		if file_name.ends_with(".tscn"):
+			var file := FileAccess.open("res://scenes/rooms/%s" % file_name, FileAccess.READ)
+			if file:
+				var text := file.get_as_text()
+				file.close()
+				if text.contains("[node name=\"WeakFloor_"):
+					return file_name.trim_suffix(".tscn")
+		file_name = dir.get_next()
+	return ""
+
+func _find_node_in_group(root: Node, group: String) -> Node:
+	for child in root.get_children():
+		if child.is_in_group(group):
+			return child
+		var found := _find_node_in_group(child, group)
+		if found != null:
+			return found
+	return null
+
+## Real ground_slam breakable wall: blocks passage while intact, requires the actual ability to
+## break (verified with the ability stripped first), breaks under real jump+move_down input, opens
+## the transition it was guarding, and — the one persistence guarantee this template makes for a
+## destructible obstacle — stays broken if the room is re-entered later in the same session.
+func _check_breakable_wall(player: Node, world: Node) -> void:
+	var weak_floor_room_id := _find_room_with_weak_floor()
+	if weak_floor_room_id == "":
+		# Not every generated world grants ground_slam (breakable walls only exist when it does —
+		# see world-design.ts's BREAKABLE_WALL_ABILITY gating) — informational, not a defect.
+		_check_soft("breakable_wall_found_in_generated_world", false)
+		return
+	_check_soft("breakable_wall_found_in_generated_world", true)
+
+	# Setup teleport, not gameplay — same reasoning as the ability-gate check above: reaching this
+	# specific room by walking the full critical path is far outside a smoke test's time budget.
+	await world.transition_to_room(weak_floor_room_id)
+	await get_tree().process_frame
+	await get_tree().process_frame
+
+	var current_player := get_tree().get_first_node_in_group("player")
+	if current_player == null:
+		_check("breakable_wall_blocks_before_ability", false)
+		_check("breakable_wall_breaks_with_ability", false)
+		return
+
+	var floor_node := _find_node_in_group(world, "weak_floor")
+	_check("breakable_wall_node_present", floor_node != null)
+	if floor_node == null:
+		return
+	_check("breakable_wall_starts_solid", int(floor_node.collision_layer) == 1)
+
+	_strip_ability("ground_slam")
+	var floor_pos: Vector2 = (floor_node as Node2D).global_position
+
+	# Setup positioning (not gameplay): place the player directly above the obstacle rather than
+	# walking/platforming there, so the physics that follow — falling, landing, jumping, slamming —
+	# are the only things actually under test.
+	(current_player as Node2D).global_position = floor_pos + Vector2(0, -96)
+	if current_player is CharacterBody2D:
+		(current_player as CharacterBody2D).velocity = Vector2.ZERO
+	for i in range(90):
+		await get_tree().physics_frame
+		if current_player.is_on_floor():
+			break
+	# Real collision, not a scripted assertion: gravity alone should have settled the player on
+	# top of the still-solid floor, not through it.
+	_check("breakable_wall_blocks_before_ability", is_instance_valid(floor_node) and current_player.is_on_floor())
+
+	# Real input attempt at breaking it without the ability: jump to get airborne (try_ground_slam
+	# requires not being on the floor — see AbilityController.gd), then hold move_down the same way
+	# a real ground-slam input would, for long enough to survive any one-frame input-timing slack
+	# (a jump's own is_action_just_pressed edge is masked by jump-buffering elsewhere in this file;
+	# ground_slam's is not buffered, so this check needs the retry margin explicitly). With
+	# ground_slam stripped, AbilityController's is_unlocked() check fails and try_ground_slam() is
+	# a safe no-op regardless of how many times move_down's press edge is retried — the obstacle
+	# must survive every one of them.
+	await _attempt_ground_slam(current_player)
+	for i in range(30):
+		await get_tree().physics_frame
+	_check("breakable_wall_survives_without_ability", is_instance_valid(floor_node))
+
+	# Setup grant, explicitly logged as such — no in-room pickup for this exact ability is
+	# guaranteed to exist in this specific room (unlike the dash-gate case, which does place one).
+	print("METROFORGE_RUNTIME_NOTE ability 'ground_slam' granted via direct GameManager call for the breakable-wall check (setup step, not gameplay-verified)")
+	GameManager._on_ability_acquired("ground_slam")
+
+	if not is_instance_valid(current_player):
+		current_player = get_tree().get_first_node_in_group("player")
+	if current_player == null:
+		_check("breakable_wall_breaks_with_ability", false)
+		return
+	(current_player as Node2D).global_position = floor_pos + Vector2(0, -96)
+	if current_player is CharacterBody2D:
+		(current_player as CharacterBody2D).velocity = Vector2.ZERO
+	for i in range(90):
+		await get_tree().physics_frame
+		if current_player.is_on_floor():
+			break
+	await _attempt_ground_slam(current_player)
+	for i in range(60):
+		await get_tree().physics_frame
+	_check("breakable_wall_breaks_with_ability", not is_instance_valid(floor_node))
+
+## Gets the player airborne (jump, buffered if still falling from a prior setup) and then holds
+## move_down for several physics frames — not just one — so a real is_action_just_pressed edge is
+## reliably observed by AbilityController regardless of exactly which frame this coroutine resumes
+## on relative to the engine's own input-processing order. Returns once is_slamming is observed
+## true or the retry budget is exhausted (the latter is the expected, checkable outcome when the
+## ability is stripped).
+func _attempt_ground_slam(player: Node) -> void:
+	Input.action_press("jump")
+	await get_tree().physics_frame
+	Input.action_release("jump")
+	for i in range(20):
+		await get_tree().physics_frame
+		if is_instance_valid(player) and not player.is_on_floor():
+			break
+	Input.action_press("move_down")
+	for i in range(6):
+		await get_tree().physics_frame
+		if is_instance_valid(player) and player.ability_controller.is_slamming:
+			break
+	Input.action_release("move_down")
+
+	# Persistence: leave and come back — a fresh WeakFloor instance in the re-loaded room must
+	# recognize the saved broken state and never re-solidify (see WeakFloor.gd/SaveManager.gd).
+	await world.transition_to_room(weak_floor_room_id)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var reloaded_floor := _find_node_in_group(world, "weak_floor")
+	await get_tree().process_frame
+	_check("breakable_wall_stays_broken_after_room_reentry", reloaded_floor == null or not is_instance_valid(reloaded_floor))
+
+## Real shortcut/return-loop traversal: room-assembler.ts marks a shortcut/branching connection
+## `is_optional = true` (see RoomTransition.gd's own export and world-design.ts's shortcut edges) —
+## finds one, walks the real player into it, and confirms it actually leads to the room it claims.
+func _check_shortcut_traversal(player: Node, world: Node) -> void:
+	var found := _find_room_with_optional_transition()
+	if found.is_empty():
+		_check_soft("shortcut_found_in_generated_world", false)
+		return
+	_check_soft("shortcut_found_in_generated_world", true)
+	var room_id: String = found["room_id"]
+	var target_room_id: String = found["target_room_id"]
+
+	# Setup teleport, not gameplay — same reasoning as above.
+	await world.transition_to_room(room_id)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var current_player := get_tree().get_first_node_in_group("player")
+	if current_player == null:
+		_check("shortcut_leads_to_declared_room", false)
+		return
+
+	# The shortcut itself is never ability-gated (see world-design.ts) — search every
+	# room_transition for the specific target this scan found, gated or not.
+	var transition_node: Node = null
+	for t in get_tree().get_nodes_in_group("room_transition"):
+		if String(t.get("target_room_id")) == target_room_id:
+			transition_node = t
+			break
+	if transition_node == null:
+		_check("shortcut_leads_to_declared_room", false)
+		return
+
+	var target_x: float = (transition_node as Node2D).global_position.x
+	await _walk_player_toward_x(current_player, target_x, 300)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	_check("shortcut_leads_to_declared_room", GameManager.current_room_id == target_room_id)
+
+## Returns the first room+target found with a real `is_optional = true` RoomTransition (a shortcut
+## or branching connection) via the same cheap text-scan _find_room_with_gate uses.
+func _find_room_with_optional_transition() -> Dictionary:
+	var dir := DirAccess.open("res://scenes/rooms")
+	if dir == null:
+		return {}
+	dir.list_dir_begin()
+	var file_name := dir.get_next()
+	while file_name != "":
+		if file_name.ends_with(".tscn"):
+			var file := FileAccess.open("res://scenes/rooms/%s" % file_name, FileAccess.READ)
+			if file:
+				var text := file.get_as_text()
+				file.close()
+				var marker := "is_optional = true"
+				var search_from := 0
+				while true:
+					var idx: int = text.find(marker, search_from)
+					if idx == -1:
+						break
+					search_from = idx + marker.length()
+					# The node header ("[node name=\"Transition_<dir>_<target>\" ...") precedes
+					# `is_optional = true` within the same node block — walk backward to it.
+					var header_idx: int = text.rfind("[node name=\"Transition_", idx)
+					if header_idx == -1:
+						continue
+					var name_start: int = text.find("\"", header_idx) + 1
+					var name_end: int = text.find("\"", name_start)
+					var node_name: String = text.substr(name_start, name_end - name_start)
+					var parts := node_name.split("_")
+					if parts.size() < 3:
+						continue
+					# Restricted to a horizontal (left/right) shortcut: _walk_player_toward_x is
+					# horizontal-only, and a shortcut's direction is otherwise whatever
+					# inferHorizontalDirection/resolveNonCollidingDirection happened to assign it
+					# (world-design.ts's own shortcut/breakable-wall edges don't fix a `transition`)
+					# — an 'up'/'down' shortcut is real and structurally verified elsewhere
+					# (export_fidelity), just not one this specific runtime walk can reach.
+					if parts[1] != "left" and parts[1] != "right":
+						continue
+					var target := "_".join(parts.slice(2))
+					return {"room_id": file_name.trim_suffix(".tscn"), "target_room_id": target}
+		file_name = dir.get_next()
+	return {}
+
+## A real AbilityPickup instance in `root` granting `ability_id` — not just any pickup, and not a
+## teleport target, so the caller can walk the real player into its real collision area instead of
+## calling its handler directly.
+func _find_ability_pickup_for(root: Node, ability_id: String) -> Node:
+	for child in root.get_children():
+		if child.get("ability_id") == ability_id and child.has_method("_on_body_entered"):
+			return child
+		var found := _find_ability_pickup_for(child, ability_id)
+		if found != null:
+			return found
+	return null
 
 ## GameManager.has_ability ORs ProgressionManager — both must drop the id.
 func _strip_ability(ability: String) -> void:

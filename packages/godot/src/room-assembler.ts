@@ -1222,6 +1222,7 @@ centered = true
 [node name="WeakFloor_${wf.targetRoomId}" parent="." instance=ExtResource("11_weakfloor")]
 position = Vector2(${wf.x}, ${floorY})
 floor_width = ${wf.width}
+target_room_id = "${wf.targetRoomId}"
 
 `;
   }
