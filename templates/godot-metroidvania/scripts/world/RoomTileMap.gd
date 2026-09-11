@@ -522,4 +522,25 @@ func _rear_cell(layer: TileMapLayer, x: int, y: int, atlas: Vector2i) -> void:
 		return
 	if layer.get_cell_source_id(Vector2i(x, y)) != -1:
 		return
-	layer.set_cell(Vector2i(x, y), 0, atlas)
+	layer.set_cell(Vector2i(x, y), 0, _rear_variant(x, y, atlas))
+
+## Seeded wear/crack/moss/rare variant for a solid rear-wall fill so a maintenance-gallery /
+## furnace-hall wall reads as aged foundry masonry instead of one repeated square panel. Only the
+## plain `wall` (1,0) and `ground` (0,0) atlas cells vary; every structural cell (edge/corner/
+## beam/duct/pier/cap) is returned unchanged. Grouped 2x2 so neighbours share a decision (no
+## tile-to-tile checkerboard) and kept canonical the majority of the time.
+func _rear_variant(x: int, y: int, atlas: Vector2i) -> Vector2i:
+	if atlas != Vector2i(1, 0) and atlas != Vector2i(0, 0):
+		return atlas
+	var h: int = hash("%s-rear-%d-%d" % [biome_id, x >> 1, y >> 1])
+	match posmod(h, 10):
+		6:
+			return Vector2i(atlas.x, 3)       # wear
+		7:
+			return Vector2i(atlas.x, 4)       # moss
+		8:
+			return Vector2i(4 + atlas.x, 3)   # crack
+		9:
+			return Vector2i(4 + atlas.x, 4)   # rare
+		_:
+			return atlas                      # 0-5: canonical (plurality)
