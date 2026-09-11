@@ -68,28 +68,30 @@ defect this session introduced or was asked to fix. 238 + 42 = 280, matching exa
   model access, no local GPU diffusion runtime installed. This is an environment fact, not a defect;
   it is why `AssetProduction` scores low in `MODERN_METROIDVANIA_GATE` (below) and why props/
   backgrounds fall back to procedural generation.
-- **Failed, real and unhidden:** `MODERN_METROIDVANIA_GATE` genuinely fails at **76/100** for
-  side-view (`AssetProduction 64/70`, `RoomComposition 44/70`, `RoomReadability 66/70`,
-  `ParallaxDepth 60/70` — all below the 70 bar) and **72/100** for top-down (`AssetProduction
-  15/70`). This is by design **advisory** — it is pushed into `qaReport.results` *after*
-  `qaReport.passed` is already computed (`pipeline.ts`), so it never flips `RUNTIME_VALIDATED` to
-  failed, and it is never fed into automated repair. It exists specifically so this exact situation
-  — "the game launches and plays cleanly, but is not visually production-ready" — has a legible,
-  per-dimension score instead of being invisible behind a green runtime gate. No threshold in this
-  gate was loosened to make the side-view slice look better; the fresh number (76, down slightly
-  from an inflated 78-79 in earlier passes) reflects the `AssetProduction` fix below.
+- **Failed, real and unhidden:** `MODERN_METROIDVANIA_GATE` genuinely fails at **80/100** for
+  side-view as of the current revision (`AssetProduction 63/70`, `RoomComposition 49/70`,
+  `ParallaxDepth 60/70` — below the 70 bar; `RoomReadability` now **passes at 100/70**, up from a
+  broken `66/70` — see `HUMAN_REVIEW.md` §4, the metric itself was measuring the wrong region of
+  every room, not the rooms themselves being bad). This is by design **advisory** — it is pushed
+  into `qaReport.results` *after* `qaReport.passed` is already computed (`pipeline.ts`), so it
+  never flips `RUNTIME_VALIDATED` to failed, and it is never fed into automated repair. It exists
+  specifically so this exact situation — "the game launches and plays cleanly, but is not visually
+  production-ready" — has a legible, per-dimension score instead of being invisible behind a green
+  runtime gate. **No pass/fail threshold in this gate was loosened at any point this session** —
+  every score change documented below and in `HUMAN_REVIEW.md` came from either fixing a metric
+  that was measuring the wrong thing, or from the underlying art/composition actually changing.
 
-## One number changed because a bug was fixed, not because a bar moved
+## Every MMG number that changed this session, and exactly why
 
-Earlier passes this session measured `AssetProduction 79/70` (PASS). The current number is
-`64/70` (FAIL) for the *same* room set, tileset, and player art. The reason: this session found
-and fixed a routing bug (`a4497d38`) where the local procedural sprite worker — a pure character-
-sheet generator — was being handed prop/background/icon requests it has no business answering, and
-answering them anyway with a humanoid figure mislabeled `fallbackGenerated: false` (i.e. counted as
-"real" art). Once that mislabeling was fixed, those assets correctly count as procedural
-placeholders, and the honest `AssetProduction` ratio drops. **The bar (70) did not move; the input
-got more honest.** See `HUMAN_REVIEW.md`'s "Effective asset sources" section for the visual
-before/after.
+| Dimension | Was | Now | Why (not "the bar moved") |
+|---|---|---|---|
+| AssetProduction | 79/70 (an earlier, inflated pass) | 63/70 | A routing bug (`a4497d38`, prior turn) had a character-sheet worker answering prop/background requests and mislabeling the result `fallbackGenerated: false` (counted as "real" art). Fixed — those assets now correctly count as placeholders, so the honest ratio is lower, not the bar. |
+| RoomComposition | 44/70 | 49/70 | `avgDecorationDensity` was a flat, wrong `0` — the metric only read TileMap decor cells, blind to the Sprite2D props/architecture this pipeline actually uses (`HUMAN_REVIEW.md` §3). Fixed to see real decoration; the room's actual (modest) prop count was not changed to produce this number. |
+| RoomReadability | 66/70, FAIL | 100/70, PASS | `traversableAreaRatio` measured occupancy against the *whole room rectangle*, including purely decorative sky headroom every Foundry room has by design. Every room was structurally biased toward "too open" regardless of its actual floor-band quality. Fixed to measure the reachable band only (`HUMAN_REVIEW.md` §4) — the `[0.35, 0.85]` band-pass threshold itself is byte-for-byte unchanged. |
+| ParallaxDepth | 60/70 | 60/70 (unchanged) | Visual density of mid/near backgrounds was independently improved and verified with real pixel measurements (`HUMAN_REVIEW.md` §6), but this dimension's remaining 40 points require provider-sourced (non-placeholder) art, not denser procedural pixels — stated explicitly so the density fix is never mistaken for score movement it cannot produce. |
+
+See `HUMAN_REVIEW.md`'s "Effective asset sources" and per-item sections for the visual evidence
+behind each of these.
 
 ## Reproduced (exact commands used for the numbers above)
 
