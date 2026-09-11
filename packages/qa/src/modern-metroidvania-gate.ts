@@ -193,7 +193,16 @@ function scoreAssetProduction(artifacts: ManifestArtifactLike[]): RawDimension {
   const aiGenerated = art.filter(
     (a) => !isPlaceholderArt(a) && (a.sourceType ?? '') === 'ai_generated',
   );
-  const missingProvenance = art.filter((a) => !a.promptHash).length;
+  // promptHash is AI-generation lineage (provider/model/seed/prompt) — it does not exist for, and
+  // was never claimed by, authored or procedural art. Checking every asset for it treated valid
+  // original/procedural work as "incomplete provenance" solely for not being AI-generated, which
+  // is a different and much larger number than assets with a *real* provenance gap. Only AI-
+  // sourced assets are checked for the field that actually applies to them; non-AI assets are
+  // checked for the provenance that applies to *them* instead — a recorded provider and
+  // sourceType, which authored/procedural assets are expected to always carry.
+  const aiMissingPromptHash = aiGenerated.filter((a) => !a.promptHash).length;
+  const nonAiArt = art.filter((a) => (a.sourceType ?? '') !== 'ai_generated');
+  const nonAiMissingProvenance = nonAiArt.filter((a) => !a.provider || !a.sourceType).length;
   const eligibleRatio = (art.length - placeholders.length) / art.length;
   const score = clamp(eligibleRatio * 100);
   if (placeholders.length > 0) {
@@ -201,9 +210,14 @@ function scoreAssetProduction(artifacts: ManifestArtifactLike[]): RawDimension {
       `${placeholders.length}/${art.length} art assets are procedural placeholders (non-production maturity); real art-directed assets require a working image provider`,
     );
   }
-  if (missingProvenance > 0) {
+  if (aiMissingPromptHash > 0) {
     reasons.push(
-      `${missingProvenance}/${art.length} art assets are missing promptHash provenance (provider/model/seed/promptHash lineage incomplete)`,
+      `${aiMissingPromptHash}/${aiGenerated.length} AI-generated art assets are missing promptHash provenance (provider/model/seed/promptHash lineage incomplete)`,
+    );
+  }
+  if (nonAiMissingProvenance > 0) {
+    reasons.push(
+      `${nonAiMissingProvenance}/${nonAiArt.length} non-AI art assets are missing basic provenance (no recorded provider/sourceType) — original or procedural work must still record accurate lineage, it is not expected to carry an AI promptHash`,
     );
   }
   return {
@@ -217,7 +231,8 @@ function scoreAssetProduction(artifacts: ManifestArtifactLike[]): RawDimension {
       placeholderCount: placeholders.length,
       aiGeneratedCount: aiGenerated.length,
       productionEligibleRatio: Number(eligibleRatio.toFixed(3)),
-      missingPromptHash: missingProvenance,
+      aiMissingPromptHash,
+      nonAiMissingProvenance,
     },
   };
 }

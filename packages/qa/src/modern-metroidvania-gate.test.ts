@@ -192,6 +192,41 @@ describe('MODERN_METROIDVANIA_GATE', () => {
     expect(sideView.dimensions.find((d) => d.dimension === 'SceneReadability')?.passed).toBe(false);
   });
 
+  it('does not flag valid authored/procedural art as deficient for lacking an AI promptHash', () => {
+    // Regression: promptHash is AI-generation lineage. It never applied to authored or
+    // procedural art, but every asset was checked for it regardless — so a project built
+    // entirely from original authored art + procedural fallback (no AI provider involved at
+    // all) was reported as having "incomplete provenance" for every single asset, which is
+    // false: those assets have their own complete, accurate provenance (provider + sourceType),
+    // they were just never claimed to have a prompt hash.
+    const inputs = productionQualityInputs();
+    inputs.artifacts = (inputs.artifacts ?? []).map((a) => ({
+      ...a,
+      sourceType: 'manual',
+      provider: 'authored-original',
+      promptHash: undefined,
+    }));
+    const result = evaluateModernMetroidvaniaGate(inputs);
+    const assetProd = result.dimensions.find((d) => d.dimension === 'AssetProduction');
+    expect(assetProd?.reasons.join(' ')).not.toMatch(/promptHash/i);
+    expect(assetProd?.metrics.aiMissingPromptHash).toBe(0);
+    expect(assetProd?.metrics.nonAiMissingProvenance).toBe(0);
+  });
+
+  it('still flags an AI-sourced asset missing promptHash, and a non-AI asset missing basic provenance', () => {
+    const inputs = productionQualityInputs();
+    inputs.artifacts = [
+      { ...(inputs.artifacts ?? [])[0]!, sourceType: 'ai_generated', promptHash: undefined },
+      { id: 'mystery', path: 'assets/props/biome_0/mystery.png', type: 'texture', maturity: 'QA_REVIEW' },
+    ];
+    const result = evaluateModernMetroidvaniaGate(inputs);
+    const assetProd = result.dimensions.find((d) => d.dimension === 'AssetProduction');
+    expect(assetProd?.metrics.aiMissingPromptHash).toBe(1);
+    expect(assetProd?.metrics.nonAiMissingProvenance).toBe(1);
+    expect(assetProd?.reasons.join(' ')).toMatch(/AI-generated art assets are missing promptHash/i);
+    expect(assetProd?.reasons.join(' ')).toMatch(/non-AI art assets are missing basic provenance/i);
+  });
+
   it('adapts to a QAGateResult shape for the pipeline report', () => {
     const result = evaluateModernMetroidvaniaGate(placeholderInputs());
     const gate = modernGateToQAGateResult(result);
