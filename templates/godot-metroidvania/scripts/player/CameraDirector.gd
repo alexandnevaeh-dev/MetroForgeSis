@@ -136,4 +136,20 @@ func _snap_to_room() -> void:
 			target.y = visual_bottom - half.y
 		else:
 			target.y = visual_top + (visual_bottom - visual_top) * 0.5
+	if parent:
+		# The floor-reveal trim and look-up bias above are tuned against a fixed reference
+		# room height. Procedurally generated rooms span a much wider range of heights and
+		# floor depths, and on a short room that cosmetic bias can push the frame far enough
+		# that the player — who is only ever constrained by the room's *real* bottom, not
+		# this cosmetic one — ends up outside the accepted viewing band. Pull the frame back
+		# toward the player when that happens, but never past the room's actual bounds, so
+		# the earth row stays hidden whenever there is room to hide it.
+		var safety := half.y - 16.0
+		var real_min_y := half.y
+		var real_max_y := maxf(half.y, _room_size.y - half.y)
+		var player_y: float = parent.global_position.y
+		if player_y - target.y > safety:
+			target.y = clampf(player_y - safety, real_min_y, real_max_y)
+		elif target.y - player_y > safety:
+			target.y = clampf(player_y + safety, real_min_y, real_max_y)
 	global_position = target.round()
