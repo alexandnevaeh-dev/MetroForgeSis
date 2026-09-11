@@ -47,6 +47,11 @@ import {
   enhanceMusicWithStableAudio,
   generateTopDownWorld,
   buildProgressionProof,
+  generateFullMetroidvaniaWorld,
+  validateWorldDesign,
+  evaluateFullWorldApplicability,
+  generateWorldDesignReport,
+  MIN_FULL_WORLD_ZONES,
 } from '@metroforge/procedural';
 import { AssetPipeline, loadVisualReferenceLibrary, shouldUseFoundryCourierKit } from '@metroforge/assets';
 import { GodotProjectAssembler, loadExternalVisualPack } from '@metroforge/godot';
@@ -123,6 +128,16 @@ export interface GenerateOptions {
    *  manifest) throws rather than silently disabling the feature, matching externalVisualPack's
    *  "no manufactured fallback" convention. */
   useVisualReferenceLibrary?: boolean;
+  /** Test-only topology override — lets a caller (packages/procedural/src/world-design.ts's
+   *  FULL_WORLD_TEST_CONFIG in particular) exercise a real end-to-end generation with more zones/
+   *  rooms than the chosen `profile`'s PROFILE_DEFAULTS would otherwise produce, without adding a
+   *  new GenerationProfile value or touching any profile-keyed gate (assertMassVisualGenerationAllowed
+   *  /isMassVisualProfile read `profile` alone, never roomCount/biomeCount, so this cannot bypass
+   *  MASS/visual-approval gating). Never set by the CLI or Studio — topology-only, no effect on
+   *  asset/enemy/boss/NPC budgets, which stay whatever the profile says. Absent ⇒ unchanged
+   *  existing behavior (profile-derived roomCount/biomeCount, exactly as before this field
+   *  existed). */
+  worldOverride?: { roomCount?: number; biomeCount?: number };
 }
 
 export interface GenerateResult {
@@ -594,24 +609,42 @@ export class GenerationPipeline {
           tileSize: gameDna.technical.tileSize,
         })
       : null;
-    const roomCount = topDownWorld ? topDownWorld.roomIds.length : resolveRoomCount(options.profile, options.seed);
+    const roomCount = topDownWorld
+      ? topDownWorld.roomIds.length
+      : (options.worldOverride?.roomCount ?? resolveRoomCount(options.profile, options.seed));
+    const biomeCount = options.worldOverride?.biomeCount ?? defaults.biomes;
+    // FULL_WORLD_TEST_CONFIG-style callers (worldOverride.biomeCount >= MIN_FULL_WORLD_ZONES) get
+    // the richer full-world generator (zones/shortcuts/breakable walls/teaching rooms/tease
+    // metadata — see packages/procedural/src/world-design.ts) instead of the plain topology, so a
+    // real end-to-end run through this override actually exercises world_design_metroidvania
+    // rather than producing a wider-but-still-plain world that gate would just skip or fail
+    // trivially on "no tease/no combat gate."
     const { worldGraph, progressionGraph, roomIds } = topDownWorld
       ? topDownWorld
-      : generateWorldTopology({
-          seed: options.seed,
-          roomCount,
-          biomeCount: defaults.biomes,
-          abilities: abilityIds,
-          bossCount: defaults.bosses,
-          profile: options.profile,
-        });
+      : biomeCount >= MIN_FULL_WORLD_ZONES
+        ? generateFullMetroidvaniaWorld({
+            seed: options.seed,
+            roomCount,
+            biomeCount,
+            abilities: abilityIds,
+            bossCount: defaults.bosses,
+            profile: options.profile,
+          })
+        : generateWorldTopology({
+            seed: options.seed,
+            roomCount,
+            biomeCount,
+            abilities: abilityIds,
+            bossCount: defaults.bosses,
+            profile: options.profile,
+          });
     writeFileSync(join(outputPath, 'world_graph.json'), JSON.stringify(worldGraph, null, 2));
     writeFileSync(join(outputPath, 'progression_graph.json'), JSON.stringify(progressionGraph, null, 2));
     emit({
       type: 'WorldGraphUpdated',
       roomCount: worldGraph.nodes.filter((n) => n.type === 'room').length,
       edgeCount: worldGraph.edges.length,
-      biomeCount: defaults.biomes,
+      biomeCount,
     });
     const { connected, unreachableRoomIds } = validateWorldConnectivity(worldGraph);
     if (!connected) {
@@ -647,8 +680,52 @@ export class GenerationPipeline {
         `Rooms unreachable via progressive ability pickup: ${worldUnreachableRoomIds.join(', ')}`,
       );
     }
-    const progressionProof = buildProgressionProof(worldGraph, progressionGraph);
+    // A combat/key-item gate (world-design.ts's generateFullMetroidvaniaWorld) grants its token
+    // through the same grantsAbilities field a movement ability uses (see that module's own
+    // comment on why — it mirrors the topdown dungeon-item convention already in this codebase),
+    // so tell buildProgressionProof about every such non-ability token up front the same way
+    // validateWorldDesign does below, or a perfectly real combat gate would be misreported as an
+    // "unknown ability" here.
+    const nonAbilityGrantedTokens = new Set<string>();
+    for (const node of worldGraph.nodes) {
+      const grants = node.metadata?.grantsAbilities;
+      if (Array.isArray(grants)) for (const g of grants) if (typeof g === 'string' && !isRegisteredAbilityId(g)) nonAbilityGrantedTokens.add(g);
+    }
+    const progressionProof = buildProgressionProof(worldGraph, progressionGraph, undefined, nonAbilityGrantedTokens);
     writeFileSync(join(outputPath, 'progression_proof.json'), JSON.stringify(progressionProof, null, 2));
+
+    // World-design report (Game Hook / Progression Sequence / Zone Breakdown / ASCII layout graph
+    // — see packages/procedural/src/world-design.ts) generated from these exact same in-memory
+    // worldGraph/progressionGraph/gameDna objects, not re-read from disk or independently
+    // narrated, so it cannot disagree with what actually got built. Written for every side-view
+    // generation (not just full 4+ zone worlds) — evaluateFullWorldApplicability/validateWorldDesign
+    // inside generateWorldDesignReport's "VALIDATION SUMMARY" section says plainly when the
+    // four-zone checks don't apply, rather than the report silently not existing for a slice.
+    if (!isTopDownArchetype(gameDna.archetype)) {
+      try {
+        const roomExtentsForDesign = worldGraph.nodes
+          .filter((n) => n.type === 'room' || n.type === 'zone')
+          .map((n) => ({ id: n.id, width: 800, height: 600 }));
+        const applicability = evaluateFullWorldApplicability(worldGraph);
+        const design = applicability.applicable
+          ? validateWorldDesign({ worldGraph, progressionGraph, roomExtents: roomExtentsForDesign })
+          : undefined;
+        const worldDesignReport = generateWorldDesignReport(
+          {
+            title: gameDna.identity.title,
+            tagline: gameDna.identity.tagline,
+            tone: gameDna.identity.tone,
+            visualStyle: gameDna.identity.visualStyle,
+          },
+          worldGraph,
+          progressionGraph,
+          design,
+        );
+        writeFileSync(join(outputPath, 'world_design_report.txt'), worldDesignReport);
+      } catch (err) {
+        warnings.push(`world_design_report generation failed: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
     if (!progressionProof.passed) {
       warnings.push(
         `Progression proof failed: start=${progressionProof.startReachable} boss=${progressionProof.bossReachable} selfLocks=${progressionProof.selfLocks.length} unknown=${progressionProof.unknownAbilities.join(',') || 'none'}`,
