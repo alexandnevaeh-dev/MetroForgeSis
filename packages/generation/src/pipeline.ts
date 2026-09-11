@@ -1562,6 +1562,7 @@ export class GenerationPipeline {
           passed: qaReport.passed,
           validationLevel,
           results: qaReport.results,
+          modernMetroidvaniaGate: modernGate?.details ?? null,
           repairAttempts,
           timestamp: new Date().toISOString(),
         },
