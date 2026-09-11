@@ -319,8 +319,11 @@ func _paint_furnace_hearth(
 	wall: Vector2i,
 	ceiling: Vector2i,
 ) -> void:
-	## Ability shrine. Built furnace: jambs, corners, hood beam, stacks, side
-	## supports. Firebox stays empty (recessed cavity). No collision.
+	## Ability shrine. Built furnace: jambs, corners, hood beam, twin stacks braced to their own
+	## buttress on BOTH sides (not just the right, as before), and a centered raised crown over
+	## the mouth so the whole apparatus reads as one connected machine with a clear focal peak
+	## instead of two independent towers flanking a hole. Firebox stays empty (recessed cavity).
+	## No collision.
 	rear.modulate = Color(0.36, 0.24, 0.22, 1)
 	var lintel := maxi(1, crop_rows)
 	var left_e := Vector2i(4, 0)
@@ -353,24 +356,59 @@ func _paint_furnace_hearth(
 	for y in range(mouth_top + 1, mouth_sill):
 		_rear_cell(rear, mouth_x0, y, left_e)
 		_rear_cell(rear, mouth_x1, y, right_e)
+	# A low apron ledge across the full mouth width, one row below the sill, so the firebox
+	# stands on a visible base plate instead of meeting the dado edge-on.
+	if mouth_sill + 1 < floor_row:
+		for x in range(mouth_x0 - 1, mouth_x1 + 2):
+			_rear_cell(rear, x, mouth_sill + 1, wall)
 	# Side buttresses (outside the mouth) so the hearth is a machine, not a hole.
 	for y in range(mouth_top, floor_row):
 		_rear_cell(rear, mouth_x0 - 1, y, left_e)
 		_rear_cell(rear, mouth_x1 + 1, y, right_e)
 	for x in range(mouth_x0 - 1, mouth_x1 + 2):
 		_rear_cell(rear, x, mouth_top - 1, beam)
-	# Twin stacks: masonry + duct, capped.
-	var stack_h := 5
-	for stack_x in [mouth_x0 + 1, mouth_x1 - 2]:
+	# Twin stacks: masonry + duct, capped, cross-braced to the buttress on their OWN side (a
+	# visible support strut, not a floating column) so every vertical mass ties back into the
+	# frame from both directions, not just the right. Kept to 3 rows (was 5): the shrine camera
+	# frames a fixed band starting only ~4 rows above the hood (mouth_top) — anything taller than
+	# that puts the stack caps and their braces right at the top edge of the visible frame, or
+	# past it, where they read as absent rather than "connected machine."
+	var stack_h := 3
+	var stack_xs: Array[int] = [mouth_x0 + 1, mouth_x1 - 2]
+	for i in range(stack_xs.size()):
+		var stack_x: int = stack_xs[i]
 		var cap_y := maxi(lintel + 2, mouth_top - stack_h)
 		for y in range(cap_y, mouth_top):
 			_rear_cell(rear, stack_x, y, wall)
 			_rear_cell(rear, stack_x + 1, y, duct)
 		_rear_cell(rear, stack_x, cap_y, top_e)
 		_rear_cell(rear, stack_x + 1, cap_y, duct)
-	# Short lateral duct from the right stack so the hood reads connected.
+		var brace_y := cap_y + 1
+		if i == 0:
+			for x in range(mouth_x0 - 1, stack_x):
+				_rear_cell(rear, x, brace_y, beam)
+		else:
+			for x in range(stack_x + 2, mouth_x1 + 2):
+				_rear_cell(rear, x, brace_y, beam)
+	# Lateral ducts from BOTH stacks toward the room's side walls, so the hood reads as one
+	# connected apparatus from either approach direction (previously the right side only).
+	for x in range(maxi(2, mouth_x0 - 3), mouth_x0):
+		_rear_cell(rear, x, mouth_top - 2, beam)
 	for x in range(mouth_x1 - 1, mini(mouth_x1 + 3, cols - 2)):
 		_rear_cell(rear, x, mouth_top - 2, beam)
+	# Centered raised crown above the hood: a clear focal peak over the firebox mouth instead of
+	# a flat beam line, drawing the eye to the furnace centerline the same way the pickup's glow
+	# does below it. Same row as the lateral ducts above (mouth_top - 2) — they never overlap in x
+	# (ducts hug the buttresses, the crown is centered) — kept low enough to stay inside the fixed
+	# shrine-camera frame rather than the taller placement used for the stacks/braces above.
+	var crown_w := maxi(2, int((mouth_x1 - mouth_x0) * 0.22))
+	var crown_x0 := int((mouth_x0 + mouth_x1) / 2.0 - crown_w / 2.0)
+	var crown_y := mouth_top - 2
+	if crown_y > lintel + 1:
+		for x in range(crown_x0, crown_x0 + crown_w):
+			_rear_cell(rear, x, crown_y, top_e)
+		_rear_cell(rear, crown_x0 - 1, crown_y, tl)
+		_rear_cell(rear, crown_x0 + crown_w, crown_y, tr)
 
 
 func _paint_gallery_wall(
