@@ -116,4 +116,16 @@ describe('foundry QA', () => {
     expect(qa.passed).toBe(false);
     expect(qa.issues.some((i) => /Width/i.test(i))).toBe(true);
   });
+
+  it('compiles boss_final to 160×160 when dimensions are omitted', () => {
+    const req = baseRequest({
+      id: 'boss_final',
+      assetType: 'boss',
+      dimensions: undefined,
+      output: { engine: 'godot', transparentBackground: true },
+    });
+    const compiled = new SpriteCompiler().compile(transPng(200, 180), req);
+    expect(compiled.width).toBe(160);
+    expect(compiled.height).toBe(160);
+  });
 });

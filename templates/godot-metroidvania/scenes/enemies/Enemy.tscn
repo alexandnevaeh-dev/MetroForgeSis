@@ -22,10 +22,13 @@ script = ExtResource("1_enemy")
 script = ExtResource("5_sprite")
 sheet_path = "assets/enemies/enemy_000_walk.png"
 frame_size = Vector2i(64, 64)
-frame_count = 4
+frame_count = 8
 hurt_sheet_path = "assets/enemies/enemy_000_hurt.png"
 death_sheet_path = "assets/enemies/enemy_000_death.png"
 attack_sheet_path = "assets/enemies/enemy_000_attack.png"
+extra_animation_sheets = {
+"idle": "assets/enemies/enemy_000_idle.png"
+}
 fallback_color = Color(0.9, 0.3, 0.3, 1)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]

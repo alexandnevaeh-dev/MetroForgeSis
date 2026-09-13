@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { mkdirSync, rmSync, readFileSync, existsSync } from 'node:fs';
+import { mkdirSync, rmSync, readFileSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { GodotProjectAssembler, topDownChestItemDefs } from '../src/assembler.js';
+import { GodotProjectAssembler, getTemplatePath, topDownChestItemDefs } from '../src/assembler.js';
 import type { GameDNA, ProgressionGraph, WorldGraph } from '@metroforge/schemas';
 import type { TopDownOverworld } from '@metroforge/procedural';
 
@@ -247,5 +247,44 @@ describe('GodotProjectAssembler', () => {
     expect(ids).not.toContain('health_vial');
     expect(ids).not.toContain('wind_disc');
     expect(ids).toContain('dungeon_000_key');
+  });
+
+  it('overlays authored 160px boss_final sheets for foundry-themed side-view games', () => {
+    const outputDir = join(tmpdir(), `metroforge-polish-overlay-${Date.now()}`);
+    mkdirSync(outputDir, { recursive: true });
+    const roomIds = ['room_000'];
+    const worldGraph: WorldGraph = {
+      version: '0.1.0',
+      seed: 1,
+      nodes: [{ id: 'room_000', type: 'room', label: 'room_000', metadata: { biomeIndex: 0 } }],
+      edges: [],
+      regions: [{ id: 'region_0', name: 'R0', biomeId: 'biome_0', roomIds }],
+    };
+    const progressionGraph: ProgressionGraph = {
+      version: '0.1.0',
+      seed: 1,
+      startNodeId: 'room_000',
+      endNodeId: 'room_000',
+      nodes: [],
+      edges: [],
+      abilities: [],
+      criticalPath: roomIds,
+    };
+    const assembler = new GodotProjectAssembler();
+    const result = assembler.assemble({
+      outputDir,
+      gameDna: minimalDna,
+      worldGraph,
+      progressionGraph,
+      roomIds,
+      foundryThemed: true,
+      textureFiles: new Map([['assets/bosses/boss_final_walk.png', Buffer.from('not-a-real-png')]]),
+    });
+    expect(result.success).toBe(true);
+    const overlaid = join(outputDir, 'assets/bosses/boss_final_walk.png');
+    const authored = join(getTemplatePath(), 'assets/bosses/boss_final_walk.png');
+    expect(existsSync(overlaid)).toBe(true);
+    expect(statSync(overlaid).size).toBe(statSync(authored).size);
+    rmSync(outputDir, { recursive: true, force: true });
   });
 });

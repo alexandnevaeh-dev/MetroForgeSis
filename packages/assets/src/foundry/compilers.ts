@@ -8,6 +8,7 @@ export const FOUNDRY_CANONICAL_FRAME = {
   npc: { width: 64, height: 64 },
   enemy: { width: 64, height: 64 },
   boss: { width: 96, height: 96 },
+  boss_final: { width: 160, height: 160 },
 } as const;
 
 export interface CompileResult {
@@ -235,7 +236,11 @@ function defaultSizeFor(request: AssetRequest): { width: number; height: number 
   if (request.assetType === 'player' || request.assetType === 'npc' || request.assetType === 'enemy') {
     return FOUNDRY_CANONICAL_FRAME[request.assetType];
   }
-  if (request.assetType === 'boss') return FOUNDRY_CANONICAL_FRAME.boss;
+  if (request.assetType === 'boss') {
+    const finalBoss =
+      request.id === 'boss_final' || request.id.includes('final') || request.id.endsWith('_final');
+    return finalBoss ? FOUNDRY_CANONICAL_FRAME.boss_final : FOUNDRY_CANONICAL_FRAME.boss;
+  }
   if (request.assetType === 'icon' || request.assetType === 'item' || request.assetType === 'pickup') {
     return { width: 16, height: 16 };
   }

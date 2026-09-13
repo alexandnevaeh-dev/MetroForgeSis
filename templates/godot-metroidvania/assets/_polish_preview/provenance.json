@@ -1,0 +1,21 @@
+{
+  "pass": "visual-polish-pass-2",
+  "direction": "Industrial sci-fi Foundry: compact cyan armored courier, rust enemies, amber telegraphs. 64x64 actors bottom-center, 160px boss, 32px steel terrain.",
+  "canvas": "64x64 actors, 160x160 boss, bottom-center contact, 32px tiles, nearest-neighbor",
+  "baseline": "assets/_baseline_v1/ box-courier; assets/_baseline_foundry_pass1/ first Foundry pass",
+  "implemented": [
+    "Hand-keyed courier stride (contact/passing/squash), jump-fall-land spacing, attack impact hold",
+    "160px boss idle/locomotion/telegraph/slam/projectile/burst/hurt/death/recovery",
+    "Distinct ranged cannon-walker, flying rotor chassis, lantern NPC",
+    "Flooded-utility and overgrown-reactor tilesets, parallax, props, ambient strips",
+    "Projectile/trail, menu panel chrome"
+  ],
+  "placeholdersRemaining": [
+    "Hand-painted far parallax unique to each biome (current plates are authored pixel silhouettes)",
+    "NPC portrait set and dialogue UI ornaments"
+  ],
+  "copied": [
+    "test-packs/metroforge-foundry-v3/background/backdrop.png -> backgrounds/biome_0/far.png",
+    "foundry props -> props/biome_0/"
+  ]
+}

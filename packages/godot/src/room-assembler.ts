@@ -1277,7 +1277,7 @@ attack_sheet_path = "assets/enemies/${enemyId}_attack.png"
 
   if (options.isBossRoom) {
     const bossId = options.bossId;
-    const bossFrame = bossId === 'boss_final' || bossId.includes('final') ? 128 : 96;
+    const bossFrame = bossId === 'boss_final' || bossId.includes('final') ? 160 : 96;
     scene += `
 [node name="Boss" parent="." instance=ExtResource("3_boss")]
 position = Vector2(${platformWidth / 2}, ${floorTop})

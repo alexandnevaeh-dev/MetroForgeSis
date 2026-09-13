@@ -13,6 +13,35 @@ func _ready() -> void:
 	$FileSelectPanel.visible = false
 	_refresh_continue()
 	$VBox/NewGameButton.grab_focus()
+	_apply_foundry_theme()
+
+func _apply_foundry_theme() -> void:
+	var bg := get_node_or_null("Background") as ColorRect
+	if bg:
+		bg.color = Color(0.075, 0.118, 0.173, 1)
+	if ResourceLoader.exists("res://assets/ui/menu_button.png"):
+		var btn_box := StyleBoxTexture.new()
+		btn_box.texture = load("res://assets/ui/menu_button.png")
+		btn_box.texture_margin_left = 8
+		btn_box.texture_margin_top = 6
+		btn_box.texture_margin_right = 8
+		btn_box.texture_margin_bottom = 6
+		for path in [
+			"VBox/NewGameButton",
+			"VBox/ContinueButton",
+			"VBox/FilesButton",
+			"FileSelectPanel/Slot0Button",
+			"FileSelectPanel/Slot1Button",
+			"FileSelectPanel/Slot2Button",
+			"FileSelectPanel/BackButton",
+		]:
+			var n := get_node_or_null(path)
+			if n is Button:
+				n.add_theme_stylebox_override("normal", btn_box)
+				n.add_theme_color_override("font_color", Color(0.88, 0.93, 0.96))
+	var title := get_node_or_null("VBox/TitleLabel") as Label
+	if title:
+		title.add_theme_color_override("font_color", Color(0.39, 0.86, 0.88))
 
 func _refresh_continue() -> void:
 	$VBox/ContinueButton.visible = SaveManager.has_any_save()

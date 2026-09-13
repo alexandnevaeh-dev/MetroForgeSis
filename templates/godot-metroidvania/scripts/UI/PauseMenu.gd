@@ -38,6 +38,7 @@ func _ready() -> void:
 	$Panel/QuestsPanel/VBox/BackButton.pressed.connect(_close_quests)
 
 	_sync_settings_ui()
+	_apply_foundry_theme()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_action_pressed("pause"):
@@ -132,3 +133,58 @@ func _sync_settings_ui() -> void:
 	$Panel/SettingsPanel/VBox/SfxRow/SfxSlider.value = SettingsManager.sfx_volume
 	$Panel/SettingsPanel/VBox/ScreenShakeRow/ScreenShakeCheck.button_pressed = SettingsManager.screen_shake_enabled
 	$Panel/SettingsPanel/VBox/FullscreenRow/FullscreenCheck.button_pressed = SettingsManager.fullscreen_enabled
+
+
+func _apply_foundry_theme() -> void:
+	var panel_tex: Texture2D = null
+	if ResourceLoader.exists("res://assets/ui/menu_panel.png"):
+		panel_tex = load("res://assets/ui/menu_panel.png")
+	var btn_tex: Texture2D = null
+	if ResourceLoader.exists("res://assets/ui/menu_button.png"):
+		btn_tex = load("res://assets/ui/menu_button.png")
+	for panel in [main_panel, settings_panel, map_panel, inventory_panel, quests_panel]:
+		if panel == null:
+			continue
+		if panel_tex:
+			var box := StyleBoxTexture.new()
+			box.texture = panel_tex
+			box.texture_margin_left = 8
+			box.texture_margin_top = 8
+			box.texture_margin_right = 8
+			box.texture_margin_bottom = 8
+			panel.add_theme_stylebox_override("panel", box)
+		else:
+			var flat := StyleBoxFlat.new()
+			flat.bg_color = Color(0.075, 0.118, 0.173, 0.96)
+			flat.border_color = Color(0.39, 0.86, 0.88, 0.85)
+			flat.border_width_left = 2
+			flat.border_width_top = 2
+			flat.border_width_right = 2
+			flat.border_width_bottom = 2
+			panel.add_theme_stylebox_override("panel", flat)
+	if btn_tex:
+		var btn_box := StyleBoxTexture.new()
+		btn_box.texture = btn_tex
+		btn_box.texture_margin_left = 6
+		btn_box.texture_margin_top = 4
+		btn_box.texture_margin_right = 6
+		btn_box.texture_margin_bottom = 4
+		for button in _menu_buttons():
+			button.add_theme_stylebox_override("normal", btn_box)
+			button.add_theme_color_override("font_color", Color(0.88, 0.93, 0.96))
+
+
+func _menu_buttons() -> Array[Button]:
+	var out: Array[Button] = []
+	for path in [
+		"Panel/MainPanel/VBox/ResumeButton",
+		"Panel/MainPanel/VBox/MapButton",
+		"Panel/MainPanel/VBox/InventoryButton",
+		"Panel/MainPanel/VBox/QuestsButton",
+		"Panel/MainPanel/VBox/SettingsButton",
+		"Panel/MainPanel/VBox/TitleButton",
+	]:
+		var n := get_node_or_null(path)
+		if n is Button:
+			out.append(n)
+	return out

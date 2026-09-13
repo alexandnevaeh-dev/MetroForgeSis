@@ -1,0 +1,31 @@
+{
+  "enemies": [
+    {
+      "id": "enemy_000",
+      "health": 30,
+      "damage": 15,
+      "speed": 40,
+      "movement": "patrol",
+      "perception": { "radius": 150 },
+      "combat": { "type": "melee", "cooldown": 1.5, "range": 80 }
+    },
+    {
+      "id": "enemy_001",
+      "health": 24,
+      "damage": 8,
+      "speed": 36,
+      "movement": "patrol",
+      "perception": { "radius": 220 },
+      "combat": { "type": "projectile", "cooldown": 1.6, "range": 220 }
+    },
+    {
+      "id": "enemy_002",
+      "health": 20,
+      "damage": 8,
+      "speed": 50,
+      "movement": "fly",
+      "perception": { "radius": 200 },
+      "combat": { "type": "projectile", "cooldown": 1.8, "range": 200 }
+    }
+  ]
+}

@@ -24,6 +24,7 @@ var _attack_cooldown: float = 0.0
 var _was_on_floor: bool = true
 var _land_timer: float = 0.0
 var _land_vfx_armed: bool = false
+var _air_phase: StringName = &""
 
 ## Minimal 3-hit combo: attack_2/attack_3 are real generated clips (player animation production
 ## pass), not dead assets sitting unused next to "attack" — pressing attack again while
@@ -67,6 +68,8 @@ func _ready() -> void:
 
 
 	ability_controller._sync_unlocked_abilities()
+	if sprite:
+		sprite.animation_finished.connect(_on_sprite_animation_finished)
 
 
 func _arm_land_vfx() -> void:
@@ -203,79 +206,90 @@ func _physics_process(delta: float) -> void:
 
 
 
-func _update_locomotion_animation(input_dir: float, is_running: bool = false) -> void:
-
-	var animation_locked := sprite.sprite_frames \
-
-		and (sprite.animation == "attack" or sprite.animation == "attack_2" or sprite.animation == "attack_3" or sprite.animation == "hurt" or sprite.animation == "death") \
-
-		and sprite.is_playing()
-
-	if animation_locked:
-
+func _play_clip(anim: StringName, restart: bool = false) -> void:
+	if sprite == null or sprite.sprite_frames == null:
 		return
+	if not sprite.sprite_frames.has_animation(anim):
+		return
+	if not restart and sprite.animation == anim:
+		if sprite.is_playing():
+			return
+		if not sprite.sprite_frames.get_animation_loop(anim):
+			return
+	sprite.play(anim)
 
+
+func _on_sprite_animation_finished() -> void:
+	if sprite.animation == "jump_start" and not is_on_floor() and velocity.y < 0.0:
+		_air_phase = &"jump"
+		_play_clip(&"jump", true)
+
+
+func _update_locomotion_animation(input_dir: float, is_running: bool = false) -> void:
+	var animation_locked := sprite.sprite_frames \
+		and (sprite.animation == "attack" or sprite.animation == "attack_2" or sprite.animation == "attack_3" or sprite.animation == "hurt" or sprite.animation == "death") \
+		and sprite.is_playing()
+	if animation_locked:
+		return
 	if not sprite.sprite_frames:
-
 		return
 
 	if ability_controller.swim_mode and sprite.sprite_frames.has_animation("swim"):
-		sprite.play("swim")
+		_air_phase = &""
+		_play_clip(&"swim")
 		return
 
 	if ability_controller.is_wall_sliding and sprite.sprite_frames.has_animation("wall_slide"):
-		sprite.play("wall_slide")
+		_air_phase = &"wall"
+		_play_clip(&"wall_slide")
 		return
 
-	if ability_controller.is_dashing and sprite.sprite_frames.has_animation("dash"):
-
-		sprite.play("dash")
-
+	if ability_controller.is_dashing:
+		_air_phase = &"dash"
+		if not is_on_floor() and sprite.sprite_frames.has_animation("air_dash"):
+			_play_clip(&"air_dash")
+		else:
+			_play_clip(&"dash")
 		return
 
 	if ability_controller.wall_jump_timer > 0.0 and sprite.sprite_frames.has_animation("wall_jump"):
-		sprite.play("wall_jump")
+		_air_phase = &"wall_jump"
+		_play_clip(&"wall_jump")
 		return
 
 	if not is_on_floor():
-
 		if velocity.y < 0.0:
-			if sprite.sprite_frames.has_animation("jump_start") and abs(velocity.y) > 160.0:
-				sprite.play("jump_start")
-			elif sprite.sprite_frames.has_animation("jump"):
-				sprite.play("jump")
-
-		elif sprite.sprite_frames.has_animation("fall"):
-
-			sprite.play("fall")
-
+			if _air_phase == &"" or _air_phase == &"land" or _air_phase == &"fall":
+				_air_phase = &"jump_start"
+				_play_clip(&"jump_start", true)
+			elif _air_phase == &"jump_start":
+				if sprite.animation != "jump_start" or not sprite.is_playing():
+					_air_phase = &"jump"
+					_play_clip(&"jump", true)
+			else:
+				_play_clip(&"jump")
+		else:
+			_air_phase = &"fall"
+			_play_clip(&"fall")
 		return
 
 	if _land_timer > 0.0 and sprite.sprite_frames.has_animation("land"):
-		sprite.play("land")
+		_air_phase = &"land"
+		_play_clip(&"land")
 		return
 
+	_air_phase = &""
 	if input_dir != 0:
-
 		if is_running and sprite.sprite_frames.has_animation("run"):
-
-			sprite.play("run")
-
+			_play_clip(&"run")
 		elif not is_running and sprite.sprite_frames.has_animation("walk"):
-
-			sprite.play("walk")
-
+			_play_clip(&"walk")
 		elif sprite.sprite_frames.has_animation("run"):
-
-			sprite.play("run")
-
+			_play_clip(&"run")
 		elif sprite.sprite_frames.has_animation("walk"):
-
-			sprite.play("walk")
-
-	elif sprite.sprite_frames.has_animation("idle"):
-
-		sprite.play("idle")
+			_play_clip(&"walk")
+	else:
+		_play_clip(&"idle")
 
 
 

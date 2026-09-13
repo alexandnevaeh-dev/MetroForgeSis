@@ -29,6 +29,12 @@ func _load_dialogues() -> void:
 			continue
 		_dialogues_by_id[dialogue_id] = dialogue
 
+func register_dialogue(dialogue: Dictionary) -> void:
+	var dialogue_id: String = dialogue.get("id", "")
+	if dialogue_id.is_empty():
+		return
+	_dialogues_by_id[dialogue_id] = dialogue
+
 func has_dialogue(dialogue_id: String) -> bool:
 	return _dialogues_by_id.has(dialogue_id)
 

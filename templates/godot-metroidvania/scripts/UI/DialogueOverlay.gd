@@ -29,6 +29,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
 	continue_button.pressed.connect(_on_continue_pressed)
+	_apply_foundry_theme()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not visible:
@@ -164,3 +165,41 @@ func _apply_portrait(portrait_key: String) -> void:
 	else:
 		portrait_image.texture = null
 		portrait_image.visible = false
+
+
+func _apply_foundry_theme() -> void:
+	var panel := get_node_or_null("Panel") as PanelContainer
+	if panel and ResourceLoader.exists("res://assets/ui/menu_panel.png"):
+		var box := StyleBoxTexture.new()
+		box.texture = load("res://assets/ui/menu_panel.png")
+		box.texture_margin_left = 10
+		box.texture_margin_top = 10
+		box.texture_margin_right = 10
+		box.texture_margin_bottom = 10
+		panel.add_theme_stylebox_override("panel", box)
+	if speaker_label:
+		speaker_label.add_theme_color_override("font_color", Color(0.39, 0.86, 0.88))
+	if text_label:
+		text_label.add_theme_color_override("font_color", Color(0.88, 0.91, 0.94))
+	if continue_button and ResourceLoader.exists("res://assets/ui/menu_button.png"):
+		var btn_box := StyleBoxTexture.new()
+		btn_box.texture = load("res://assets/ui/menu_button.png")
+		btn_box.texture_margin_left = 6
+		btn_box.texture_margin_top = 4
+		btn_box.texture_margin_right = 6
+		btn_box.texture_margin_bottom = 4
+		continue_button.add_theme_stylebox_override("normal", btn_box)
+		continue_button.add_theme_color_override("font_color", Color(0.88, 0.93, 0.96))
+	var ornament_path := "res://assets/ui/dialogue_ornament.png"
+	if ResourceLoader.exists(ornament_path) and get_node_or_null("Panel/HBox/Content/Ornament") == null:
+		var ornament := TextureRect.new()
+		ornament.name = "Ornament"
+		ornament.texture = load(ornament_path)
+		ornament.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		ornament.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+		ornament.custom_minimum_size = Vector2(0, 8)
+		ornament.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var content := get_node_or_null("Panel/HBox/Content")
+		if content:
+			content.add_child(ornament)
+			content.move_child(ornament, 0)

@@ -11,6 +11,7 @@ var _player_in_range: bool = false
 
 @onready var name_label: Label = $NameLabel
 @onready var prompt_label: Label = $PromptLabel
+@onready var sprite: AnimatedSprite2D = $Sprite
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
@@ -34,6 +35,8 @@ func _on_body_entered(body: Node2D) -> void:
 	_player_in_range = true
 	name_label.visible = true
 	prompt_label.visible = true
+	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("talk"):
+		sprite.play("talk")
 
 func _on_body_exited(body: Node2D) -> void:
 	if not body.is_in_group("player"):
@@ -41,6 +44,8 @@ func _on_body_exited(body: Node2D) -> void:
 	_player_in_range = false
 	name_label.visible = false
 	prompt_label.visible = false
+	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("idle"):
+		sprite.play("idle")
 
 func _begin_dialogue() -> void:
 	AudioManager.play_sfx("ui_click")

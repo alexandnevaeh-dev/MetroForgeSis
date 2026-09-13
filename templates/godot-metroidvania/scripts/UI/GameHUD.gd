@@ -220,13 +220,16 @@ func _update_collectibles() -> void:
 	]
 
 func _on_game_completed() -> void:
-	$VictoryOverlay.visible = true
+	var overlay := get_node_or_null("VictoryOverlay")
+	if overlay:
+		overlay.visible = true
 
-## Gives GameManager's now-real GAME_OVER window (previously an unused enum value with nothing
-## ever assigning it, and player_died/player_respawned had zero listeners) something the player
-## can actually see, for the real duration GameManager pauses before respawning at the checkpoint.
 func _on_player_died() -> void:
-	$DeathOverlay.visible = true
+	var overlay := get_node_or_null("DeathOverlay")
+	if overlay:
+		overlay.visible = true
 
 func _on_player_respawned() -> void:
-	$DeathOverlay.visible = false
+	var overlay := get_node_or_null("DeathOverlay")
+	if overlay:
+		overlay.visible = false

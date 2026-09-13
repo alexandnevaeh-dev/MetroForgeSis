@@ -587,7 +587,7 @@ describe('compiledSpriteFrameSize', () => {
     expect(compiledSpriteFrameSize('enemy')).toEqual({ width: 64, height: 64 });
     expect(compiledSpriteFrameSize('npc')).toEqual({ width: 64, height: 64 });
     expect(compiledSpriteFrameSize('boss')).toEqual({ width: 96, height: 96 });
-    expect(compiledSpriteFrameSize('boss_final')).toEqual({ width: 128, height: 128 });
+    expect(compiledSpriteFrameSize('boss_final')).toEqual({ width: 160, height: 160 });
     expect(compiledSpriteFrameSize('tileset')).toEqual({ width: 128, height: 128 });
     expect(compiledSpriteFrameSize('item')).toEqual({ width: 16, height: 16 });
   });

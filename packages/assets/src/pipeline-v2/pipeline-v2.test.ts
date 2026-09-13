@@ -40,6 +40,8 @@ describe('pipeline v2 — AssetRequest → AssetPlan', () => {
     const enemyPlan = buildAssetPlan(req({ id: 'enemy_000', category: 'enemy' }));
     const bossPlan = buildAssetPlan(req({ id: 'boss_final', category: 'boss', isFinalBoss: true }));
     expect(bossPlan.finalWidth).not.toBe(enemyPlan.finalWidth);
+    expect(bossPlan.finalWidth).toBe(160);
+    expect(bossPlan.finalHeight).toBe(160);
   });
 
   it('sets an explicit outline color only for player, not enemy/boss/npc (ninth-session visibility fix, category-aware and opt-in)', () => {

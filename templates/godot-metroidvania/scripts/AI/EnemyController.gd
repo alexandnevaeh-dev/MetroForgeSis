@@ -176,11 +176,18 @@ func _physics_process(delta: float) -> void:
 			pass
 		elif sprite.animation == "attack" and sprite.is_playing():
 			pass
+		elif _movement == "fly" or _movement == "hover":
+			if sprite.sprite_frames.has_animation("fly"):
+				_play_move("fly")
+			elif sprite.sprite_frames.has_animation("idle"):
+				_play_move("idle")
+			if velocity.x != 0:
+				sprite.scale.x = abs(sprite.scale.x) * sign(velocity.x)
 		elif velocity.x != 0:
-			sprite.play("walk")
+			_play_move("walk")
 			sprite.scale.x = abs(sprite.scale.x) * sign(velocity.x)
 		else:
-			sprite.play("idle")
+			_play_move("idle")
 
 	match _combat_type:
 		"projectile":
@@ -342,6 +349,15 @@ func _process_trap_attack(delta: float) -> void:
 		return
 	_attack_timer = _combat_cooldown
 	_spring_trap()
+
+func _play_move(anim: String) -> void:
+	if sprite == null or sprite.sprite_frames == null:
+		return
+	if not sprite.sprite_frames.has_animation(anim):
+		return
+	if sprite.animation == anim and sprite.is_playing():
+		return
+	sprite.play(anim)
 
 func _play_attack_animation() -> void:
 	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("attack"):

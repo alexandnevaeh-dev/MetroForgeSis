@@ -12,7 +12,7 @@ export function buildAssetPlan(request: AssetRequestV2): AssetPlanV2 {
     case 'npc':
       return characterPlan(request, 64, 'sheet_8');
     case 'boss':
-      return characterPlan(request, request.isFinalBoss ? 128 : 96, 'sheet_8');
+      return characterPlan(request, request.isFinalBoss ? 160 : 96, 'sheet_8');
     case 'environment':
       return environmentPlan(request);
     case 'background':

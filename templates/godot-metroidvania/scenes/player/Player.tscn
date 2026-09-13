@@ -35,15 +35,27 @@ death_sheet_path = "assets/characters/player_death.png"
 run_sheet_path = "assets/characters/player_run.png"
 extra_animation_sheets = {
 "idle": "assets/characters/player_idle.png",
+"walk": "assets/characters/player_walk.png",
 "jump_start": "assets/characters/player_jump_start.png",
 "jump": "assets/characters/player_jump.png",
 "fall": "assets/characters/player_fall.png",
 "land": "assets/characters/player_land.png",
 "dash": "assets/characters/player_dash.png",
+"air_dash": "assets/characters/player_air_dash.png",
+"double_jump": "assets/characters/player_double_jump.png",
 "wall_slide": "assets/characters/player_wall_slide.png",
 "wall_jump": "assets/characters/player_wall_jump.png",
 "swim": "assets/characters/player_swim.png",
-"attack_2": "assets/characters/player_attack_2.png"
+"swim_idle": "assets/characters/player_swim_idle.png",
+"attack_2": "assets/characters/player_attack_2.png",
+"ground_slam_start": "assets/characters/player_ground_slam_start.png",
+"ground_slam_fall": "assets/characters/player_ground_slam_fall.png",
+"ground_slam_impact": "assets/characters/player_ground_slam_impact.png",
+"grapple": "assets/characters/player_grapple.png",
+"phase": "assets/characters/player_phase.png",
+"respawn": "assets/characters/player_respawn.png",
+"interact": "assets/characters/player_interact.png",
+"ability_acquire": "assets/characters/player_ability_acquire.png"
 }
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]

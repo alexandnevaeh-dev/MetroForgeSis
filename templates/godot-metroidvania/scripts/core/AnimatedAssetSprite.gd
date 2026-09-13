@@ -126,6 +126,8 @@ func _build_frames() -> void:
 			frames.clear(anim_name)
 		_load_animation_frames(frames, anim_name, extra_path, false)
 
+	_load_prefixed_sheets(frames)
+
 	sprite_frames = frames
 	texture_filter = TEXTURE_FILTER_NEAREST
 	centered = true
@@ -148,7 +150,29 @@ func _sheet_prefix() -> String:
 	var prefix := sheet_path.get_basename()
 	if prefix.ends_with("_walk"):
 		prefix = prefix.substr(0, prefix.length() - 5)
+	elif prefix.ends_with("_run"):
+		prefix = prefix.substr(0, prefix.length() - 4)
 	return prefix
+
+
+func _load_prefixed_sheets(frames: SpriteFrames) -> void:
+	## When the assembler only patches walk/hurt/death/attack, still pick up idle/fly/telegraph
+	## sheets that share the same character prefix (enemy_001_idle.png next to enemy_001_walk.png).
+	var prefix := _sheet_prefix()
+	var extras := ["idle", "fly", "hover", "telegraph", "recovery", "talk", "attack_projectile", "attack_burst"]
+	for anim_name in extras:
+		var path := "%s_%s.png" % [prefix, anim_name]
+		var res_path := path if path.begins_with("res://") else "res://" + path
+		if not ResourceLoader.exists(res_path) and not FileAccess.file_exists(res_path):
+			continue
+		if not frames.has_animation(anim_name):
+			frames.add_animation(anim_name)
+		else:
+			frames.clear(anim_name)
+		var looping: bool = anim_name in ["idle", "fly", "hover", "telegraph", "recovery", "talk"]
+		frames.set_animation_loop(anim_name, looping)
+		_load_animation_frames(frames, anim_name, path, false)
+
 
 ## Applies real per-animation FPS/loop from a JSON sidecar the asset pipeline writes next to a
 ## character's sheets (`<prefix>_animations.json`, e.g. player_animations.json) — canonical
@@ -229,9 +253,20 @@ func _load_animation_frames(frames: SpriteFrames, anim: String, path: String, co
 			var sheet_frame_count := frame_count
 			if frame_size.x > 0:
 				var tex_width := tex.get_width()
+				var tex_height := tex.get_height()
+				if tex_height > 0 and tex_height != frame_size.y:
+					push_warning(
+						"AnimatedAssetSprite: '%s' sheet height %d does not match frame_size.y %d — check boss_final 160px compilation"
+						% [anim, tex_height, frame_size.y]
+					)
 				if tex_width > 0 and tex_width % frame_size.x == 0:
 					@warning_ignore("integer_division")  # exact multiple guaranteed by the modulo check above
 					sheet_frame_count = tex_width / frame_size.x
+				elif tex_width > 0:
+					push_warning(
+						"AnimatedAssetSprite: '%s' width %d is not a multiple of frame_size.x %d — frames will crop"
+						% [anim, tex_width, frame_size.x]
+					)
 			for i in range(sheet_frame_count):
 				var atlas := AtlasTexture.new()
 				atlas.atlas = tex

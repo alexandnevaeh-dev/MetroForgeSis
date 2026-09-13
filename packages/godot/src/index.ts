@@ -1,4 +1,4 @@
-export { GodotProjectAssembler, getTemplatePath } from './assembler.js';
+export { GodotProjectAssembler, getTemplatePath, overlayAuthoredVisualPolish } from './assembler.js';
 export type { AssemblyInput, AssemblyResult, RecompileRoomsInput, RecompileRoomsResult } from './assembler.js';
 export {
   deriveRoomIds,

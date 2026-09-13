@@ -35,6 +35,8 @@ const WEAKNESS_DAMAGE_MULTIPLIER := 2.0
 ## How much longer the "hurt" flash animation should keep playing before the normal walk/idle
 ## logic in _physics_process is allowed to override it again.
 var _hurt_timer: float = 0.0
+var _recovery_active: bool = false
+var _frozen: bool = false
 const HURT_FLASH_DURATION := 0.25
 
 @onready var health: HealthComponent = $HealthComponent
@@ -54,6 +56,14 @@ func _ready() -> void:
 	_apply_boss_data()
 	_start_attack_loop()
 
+
+func freeze_presentation() -> void:
+	_frozen = true
+	_attack_busy = true
+	_telegraph_active = false
+	_recovery_active = false
+	set_physics_process(false)
+
 func _get_phase_telegraph() -> float:
 	var idx := _phase - 1
 	if idx >= 0 and idx < _phase_telegraphs.size():
@@ -69,13 +79,25 @@ func _get_phase_recovery() -> float:
 func _set_telegraph_visual(active: bool) -> void:
 	_telegraph_active = active
 	if sprite:
-		sprite.modulate = Color(1.45, 0.4, 0.4) if active else Color.WHITE
+		sprite.modulate = Color(1.22, 0.88, 0.42) if active else Color.WHITE
+		if active and sprite.sprite_frames and sprite.sprite_frames.has_animation("telegraph"):
+			_play_named("telegraph")
+
+
+func _play_named(anim: String) -> void:
+	if sprite == null or sprite.sprite_frames == null:
+		return
+	if not sprite.sprite_frames.has_animation(anim):
+		return
+	if sprite.animation == anim and sprite.is_playing():
+		return
+	sprite.play(anim)
 
 func _start_attack_loop() -> void:
 	# Opening beat before the first telegraph — uses phase-1 recovery so larger profiles feel
 	# less oppressive on spawn while still honoring generated pacing data.
 	await get_tree().create_timer(_get_phase_recovery()).timeout
-	while is_inside_tree() and health.is_alive():
+	while is_inside_tree() and health.is_alive() and not _frozen:
 		_set_telegraph_visual(true)
 		await get_tree().create_timer(_get_phase_telegraph()).timeout
 		_set_telegraph_visual(false)
@@ -86,7 +108,10 @@ func _start_attack_loop() -> void:
 		_attack_busy = false
 		if not health.is_alive():
 			break
+		_recovery_active = true
+		_play_named("recovery")
 		await get_tree().create_timer(_get_phase_recovery()).timeout
+		_recovery_active = false
 
 func _apply_boss_data() -> void:
 	var data := _load_boss_definition(boss_id)
@@ -144,20 +169,38 @@ func _physics_process(delta: float) -> void:
 			pass
 		elif sprite.animation == "attack" and sprite.is_playing():
 			pass
+		elif sprite.animation == "attack_projectile" and sprite.is_playing():
+			pass
+		elif sprite.animation == "attack_burst" and sprite.is_playing():
+			pass
 		elif _telegraph_active:
-			if sprite.sprite_frames.has_animation("idle"):
-				sprite.play("idle")
+			if sprite.sprite_frames.has_animation("telegraph"):
+				_play_named("telegraph")
+			elif sprite.sprite_frames.has_animation("idle"):
+				_play_named("idle")
+		elif _recovery_active:
+			if sprite.sprite_frames.has_animation("recovery"):
+				_play_named("recovery")
+			elif sprite.sprite_frames.has_animation("idle"):
+				_play_named("idle")
+		elif sprite.sprite_frames.has_animation("idle"):
+			_play_named("idle")
 		else:
-			sprite.play("walk")
+			_play_named("walk")
 
 func _perform_attack() -> void:
-	_play_attack_animation()
 	var attacks: Array = _phase_attacks[_phase - 1] if _phase - 1 < _phase_attacks.size() else ["slam"]
 	var attack: String = String(attacks[randi() % attacks.size()]) if attacks.size() > 0 else "slam"
 	match attack:
 		"projectile":
+			_play_named("attack_projectile")
+			if sprite == null or sprite.sprite_frames == null or not sprite.sprite_frames.has_animation("attack_projectile"):
+				_play_attack_animation()
 			_fire_projectile_attack()
 		"area_burst":
+			_play_named("attack_burst")
+			if sprite == null or sprite.sprite_frames == null or not sprite.sprite_frames.has_animation("attack_burst"):
+				_play_attack_animation()
 			_fire_burst_attack()
 		"slam":
 			await _perform_slam_attack()

@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
+import { cpSync, mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, dirname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { GameDNA, ProgressionGraph, StyleBible, WorldGraph } from '@metroforge/schemas';
@@ -494,6 +494,8 @@ export class GodotProjectAssembler {
       if (input.externalVisualPack) {
         patchCharacterFrameSizeForExternalPack(input.outputDir, input.externalVisualPack);
         patchCharacterSheetPathsForFoundryPack(input.outputDir, input.externalVisualPack);
+      } else if (input.foundryThemed && !isTopDownArchetype(input.gameDna.archetype)) {
+        overlayAuthoredVisualPolish(input.outputDir, templatePath);
       }
 
       const incoming: AssetManifestEntry[] = [...(input.assetMetadata ?? [])];
@@ -646,8 +648,9 @@ const CHARACTER_SCENE_BY_BUCKET: Record<CharacterBucket, string> = {
 
 /**
  * Sixteenth-session fix: Player.tscn/Enemy.tscn/Boss.tscn each hardcode a `frame_size` for their
- * AnimatedAssetSprite (64x64 / 64x64 / 128x128 respectively — the native size of the default
- * procedural sprite generator's output). An external visual pack's actual character sheets can
+ * AnimatedAssetSprite (64x64 / 64x64 / 160x160 respectively — player/enemy stay on the template
+ * collision canvas; boss_final matches the visual constitution's native boss frame). An external
+ * visual pack's actual character sheets can
  * use a different native size (metroforge-foundry-v3's are 128x128 for player/enemies and 160x160
  * for its boss — see test-packs/metroforge-foundry-v3/manifest.json's nativeDimensions). Without
  * this, AnimatedAssetSprite.gd slices the pack's real, correctly-sized sheet into the WRONG number
@@ -711,6 +714,58 @@ const FOUNDRY_SHEET_PATCHES: Array<{ file: string; replacements: Array<[RegExp, 
     ],
   },
 ];
+
+/** Prefixes copied from the Godot template after generated textures write, so Foundry-themed
+ *  assembled games keep the authored courier/boss/biome sheets instead of 128px procedural
+ *  stand-ins that slice incorrectly against Boss.tscn's 160×160 frame_size. Unique generated
+ *  ids (enemy_003, extra bosses) are left untouched. */
+const AUTHORED_POLISH_PREFIXES = [
+  'assets/characters/player_',
+  'assets/enemies/enemy_000',
+  'assets/enemies/enemy_001',
+  'assets/enemies/enemy_002',
+  'assets/npcs/npc_000',
+  'assets/bosses/boss_final',
+  'assets/tilesets/biome_0/',
+  'assets/tilesets/biome_1/',
+  'assets/tilesets/biome_2/',
+  'assets/backgrounds/biome_0/',
+  'assets/backgrounds/biome_1/',
+  'assets/backgrounds/biome_2/',
+  'assets/vfx/',
+  'assets/ui/',
+  'assets/environment/',
+] as const;
+
+function shouldOverlayPolishAsset(rel: string): boolean {
+  const n = rel.replace(/\\/g, '/');
+  if (n.includes('/_baseline') || n.includes('/_polish_preview')) return false;
+  if (n.endsWith('.import') || n.endsWith('.uid')) return false;
+  return AUTHORED_POLISH_PREFIXES.some((prefix) => n.startsWith(prefix));
+}
+
+export function overlayAuthoredVisualPolish(outputDir: string, templatePath: string): number {
+  let copied = 0;
+  const walk = (relDir: string): void => {
+    const abs = join(templatePath, relDir);
+    if (!existsSync(abs)) return;
+    for (const entry of readdirSync(abs, { withFileTypes: true })) {
+      const rel = `${relDir}/${entry.name}`.replace(/\\/g, '/');
+      if (entry.isDirectory()) {
+        walk(rel);
+        continue;
+      }
+      if (!shouldOverlayPolishAsset(rel)) continue;
+      const dest = join(outputDir, rel);
+      mkdirSync(dirname(dest), { recursive: true });
+      cpSync(join(templatePath, rel), dest);
+      if (rel.endsWith('.png')) writePixelArtImport(dest, rel);
+      copied += 1;
+    }
+  };
+  walk('assets');
+  return copied;
+}
 
 export function patchCharacterSheetPathsForFoundryPack(outputDir: string, packId: ExternalVisualPackId): void {
   if (packId !== 'metroforge-foundry-v3') return;

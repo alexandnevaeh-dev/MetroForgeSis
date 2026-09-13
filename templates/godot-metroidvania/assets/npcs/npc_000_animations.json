@@ -1,0 +1,17 @@
+{
+  "idle": {
+    "frameCount": 6,
+    "fps": 6,
+    "loop": true
+  },
+  "walk": {
+    "frameCount": 8,
+    "fps": 8,
+    "loop": true
+  },
+  "talk": {
+    "frameCount": 4,
+    "fps": 8,
+    "loop": true
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "dialogues": [
+    {
+      "id": "dlg_npc_000_lore",
+      "lines": [
+        {
+          "speaker": "Keeper",
+          "portrait": "lore",
+          "text": "The Foundry still breathes. Keep your visor sealed past the flooded utility."
+        },
+        {
+          "speaker": "Keeper",
+          "portrait": "lore",
+          "text": "Reactor growth answers amber, not steel. Watch the telegraphs."
+        }
+      ]
+    },
+    {
+      "id": "dlg_npc_000_neutral",
+      "lines": [
+        {
+          "speaker": "Keeper",
+          "portrait": "neutral",
+          "text": "Transit is open. The core is not."
+        }
+      ]
+    }
+  ]
+}

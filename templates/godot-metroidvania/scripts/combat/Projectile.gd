@@ -13,13 +13,52 @@ var owner_node: Node2D = null
 
 var _age: float = 0.0
 var _hit_targets: Array[Node] = []
+var _trail: Line2D
+var _bolt: Sprite2D
 
 func _ready() -> void:
 	area_entered.connect(_on_area_entered)
+	_apply_bolt_visual()
+
+
+func _apply_bolt_visual() -> void:
+	var old := get_node_or_null("Sprite")
+	if old:
+		old.queue_free()
+	var spr := Sprite2D.new()
+	spr.name = "Sprite"
+	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	spr.centered = true
+	var path := "res://assets/vfx/ranged_projectile.png"
+	if not ResourceLoader.exists(path):
+		path = "res://assets/vfx/projectile.png"
+	if ResourceLoader.exists(path):
+		spr.texture = load(path)
+	add_child(spr)
+	var trail := Line2D.new()
+	trail.name = "Trail"
+	trail.width = 4.0
+	trail.default_color = Color(0.94, 0.74, 0.38, 0.72)
+	trail.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	if ResourceLoader.exists("res://assets/vfx/projectile_trail.png"):
+		trail.texture = load("res://assets/vfx/projectile_trail.png")
+		trail.texture_mode = Line2D.LINE_TEXTURE_STRETCH
+	add_child(trail)
+	_trail = trail
+	_bolt = spr
+
 
 func _physics_process(delta: float) -> void:
 	position += direction * speed * delta
 	_age += delta
+	if _bolt:
+		_bolt.rotation = direction.angle()
+	if _trail:
+		_trail.add_point(Vector2.ZERO)
+		if _trail.get_point_count() > 14:
+			_trail.remove_point(0)
+		for i in _trail.get_point_count():
+			_trail.set_point_position(i, _trail.get_point_position(i) - direction * speed * delta)
 	if _age >= lifetime:
 		queue_free()
 

@@ -20,11 +20,18 @@ script = ExtResource("1_boss")
 [node name="Sprite" type="AnimatedSprite2D" parent="."]
 script = ExtResource("5_sprite")
 sheet_path = "assets/bosses/boss_final_walk.png"
-frame_size = Vector2i(128, 128)
-frame_count = 3
+frame_size = Vector2i(160, 160)
+frame_count = 6
 hurt_sheet_path = "assets/bosses/boss_final_hurt.png"
 death_sheet_path = "assets/bosses/boss_final_death.png"
 attack_sheet_path = "assets/bosses/boss_final_attack.png"
+extra_animation_sheets = {
+"idle": "assets/bosses/boss_final_idle.png",
+"telegraph": "assets/bosses/boss_final_telegraph.png",
+"recovery": "assets/bosses/boss_final_recovery.png",
+"attack_projectile": "assets/bosses/boss_final_attack_projectile.png",
+"attack_burst": "assets/bosses/boss_final_attack_burst.png"
+}
 fallback_color = Color(0.7, 0.15, 0.7, 1)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]

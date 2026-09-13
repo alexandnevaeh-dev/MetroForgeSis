@@ -187,7 +187,7 @@ export function compiledSpriteFrameSize(kind: CompiledSpriteKind): { width: numb
     case 'boss':
       return { width: 96, height: 96 };
     case 'boss_final':
-      return { width: 128, height: 128 };
+      return { width: 160, height: 160 };
     case 'item':
       return { width: 16, height: 16 };
     case 'tileset':
@@ -3923,7 +3923,9 @@ export class AssetPipeline {
         break;
       case 'boss':
         profile = 'BOSS';
-        frame = compiledSpriteFrameSize('boss');
+        frame = compiledSpriteFrameSize(
+          opts.assetId === 'boss_final' || opts.assetId.includes('final') ? 'boss_final' : 'boss',
+        );
         shape = 'boss';
         break;
       case 'weapon':

@@ -39,6 +39,8 @@ func apply_room(room: Node2D, room_id: String) -> void:
 	_inject_atmosphere_layers(room, size, biome, archetype)
 	_inject_lights(room, size, biome, archetype)
 	_inject_ambient(room, size, biome, room_id)
+	_inject_foundry_motion(room, size, biome, archetype)
+	_dress_water_zones(room)
 	_inject_decor(room, size, biome, archetype, info)
 	_apply_outline(room)
 	if archetype == "ability_shrine":
@@ -147,6 +149,10 @@ func _clear_injected(room: Node) -> void:
 	var floor_occ := room.get_node_or_null("QualityFloorOccluder")
 	if floor_occ:
 		floor_occ.free()
+	for scroll_name in ["QualityParallaxMid", "QualityParallaxNear"]:
+		var scroll := room.get_node_or_null(scroll_name)
+		if scroll:
+			scroll.free()
 	for child in room.get_children():
 		var n := String(child.name)
 		if n.begins_with("AbilityPickup"):
@@ -252,7 +258,7 @@ func _tune_parallax(room: Node, size: Vector2, archetype: String = "") -> void:
 		return
 	if px == null:
 		return
-	for extra in ["overlay", "foreground", "mid", "near"]:
+	for extra in ["overlay", "foreground"]:
 		var junk := px.get_node_or_null(extra)
 		if junk:
 			(junk as CanvasItem).visible = false
@@ -260,10 +266,21 @@ func _tune_parallax(room: Node, size: Vector2, archetype: String = "") -> void:
 	if far_layer:
 		(far_layer as CanvasItem).visible = true
 		if far_layer is Parallax2D:
-			(far_layer as Parallax2D).scroll_scale = Vector2.ZERO
+			(far_layer as Parallax2D).scroll_scale = Vector2(0.12, 0.04)
 	var sprite := px.get_node_or_null("far/Sprite") as Sprite2D
 	if sprite:
 		_layout_parallax_strip(sprite, size, "far")
+	for pair in [["mid", Vector2(0.32, 0.08), "mid"], ["near", Vector2(0.68, 0.18), "near"]]:
+		var layer_name := String(pair[0])
+		var layer := px.get_node_or_null(layer_name)
+		if layer == null:
+			continue
+		(layer as CanvasItem).visible = true
+		if layer is Parallax2D:
+			(layer as Parallax2D).scroll_scale = pair[1]
+		var layer_sprite := layer.get_node_or_null("Sprite") as Sprite2D
+		if layer_sprite:
+			_layout_parallax_strip(layer_sprite, size, String(pair[2]))
 
 func _hide_collision_slabs(room: Node) -> void:
 	for child in room.get_children():
@@ -271,7 +288,7 @@ func _hide_collision_slabs(room: Node) -> void:
 		if vis is CanvasItem:
 			(vis as CanvasItem).visible = false
 			(vis as CanvasItem).modulate = Color(1, 1, 1, 0)
-		if child is Area2D and child.has_node("Visual"):
+		if child is Area2D and child.has_node("Visual") and not child.is_in_group("water_zone"):
 			var area_vis := child.get_node_or_null("Visual")
 			if area_vis is CanvasItem:
 				(area_vis as CanvasItem).visible = false
@@ -335,7 +352,6 @@ func _inject_depth_layers(room: Node, size: Vector2, biome: String) -> void:
 	host.add_child(floor_wash)
 
 func _inject_atmosphere_layers(room: Node, size: Vector2, biome: String, archetype: String = "") -> void:
-	var host := _host(room)
 	var mid_node := room.get_node_or_null("ParallaxMid")
 	if mid_node:
 		if archetype == "tutorial":
@@ -346,14 +362,18 @@ func _inject_atmosphere_layers(room: Node, size: Vector2, biome: String, archety
 			var mid_sprite := mid_node.get_node_or_null("Sprite") as Sprite2D
 			if mid_sprite:
 				_layout_parallax_strip(mid_sprite, size, "mid")
-	else:
-		if archetype != "tutorial":
-			var mid_path := "res://assets/backgrounds/%s/mid.png" % biome
-			if ResourceLoader.exists(mid_path) and host.get_node_or_null("QualityMidSprite") == null:
-				_inject_parallax_sprite(host, "QualityMidSprite", mid_path, size * 0.5, -40)
-				var created := host.get_node_or_null("QualityMidSprite") as Sprite2D
-				if created:
-					_layout_parallax_strip(created, size, "mid")
+			if mid_node is Parallax2D:
+				(mid_node as Parallax2D).scroll_scale = Vector2(0.32, 0.08)
+	elif archetype != "tutorial":
+		_inject_scroll_layer(
+			room,
+			"QualityParallaxMid",
+			"res://assets/backgrounds/%s/mid.png" % biome,
+			size,
+			-40,
+			Vector2(0.32, 0.08),
+			"mid",
+		)
 	var near_node := room.get_node_or_null("ParallaxNear")
 	if near_node:
 		# Ability shrine: hanging-chain near plate fights foreground tiles. Hide it
@@ -364,14 +384,19 @@ func _inject_atmosphere_layers(room: Node, size: Vector2, biome: String, archety
 			(near_node as CanvasItem).visible = true
 			var near_sprite := near_node.get_node_or_null("Sprite") as Sprite2D
 			if near_sprite:
-				_layout_parallax_strip(near_sprite, size, "near_full")
+				_layout_parallax_strip(near_sprite, size, "near")
+			if near_node is Parallax2D:
+				(near_node as Parallax2D).scroll_scale = Vector2(0.68, 0.18)
 	elif archetype != "ability_shrine":
-		var near_path := "res://assets/backgrounds/%s/near.png" % biome
-		if ResourceLoader.exists(near_path) and host.get_node_or_null("QualityNearSprite") == null:
-			_inject_parallax_sprite(host, "QualityNearSprite", near_path, size * 0.5, -18)
-			var created_near := host.get_node_or_null("QualityNearSprite") as Sprite2D
-			if created_near:
-				_layout_parallax_strip(created_near, size, "near_full")
+		_inject_scroll_layer(
+			room,
+			"QualityParallaxNear",
+			"res://assets/backgrounds/%s/near.png" % biome,
+			size,
+			-18,
+			Vector2(0.68, 0.18),
+			"near",
+		)
 
 
 func _inject_lights(room: Node, size: Vector2, _biome: String, archetype: String) -> void:
@@ -559,6 +584,122 @@ func _inject_ambient(room: Node, size: Vector2, biome: String, room_id: String) 
 		mat.color = Color(0.85, 0.8, 0.7, 0.28)
 	emitter.process_material = mat
 	host.add_child(emitter)
+
+
+func _inject_foundry_motion(room: Node, size: Vector2, biome: String, archetype: String) -> void:
+	## Biome hangers: chains (foundry), kelp (flooded), vines (overgrown). Terrain stays static.
+	if archetype == "ability_shrine":
+		return
+	var host := _host(room)
+	if host.get_node_or_null("QualityChain_0") != null:
+		return
+	var hang_path := "res://assets/environment/hanging_chain.png"
+	var steam_path := "res://assets/environment/steam.png"
+	if biome == "biome_1":
+		hang_path = "res://assets/environment/kelp.png"
+		steam_path = "res://assets/environment/bubble.png"
+	elif biome == "biome_2":
+		hang_path = "res://assets/environment/vine.png"
+		steam_path = "res://assets/environment/spore.png"
+	var chain_tex: Texture2D = null
+	if ResourceLoader.exists(hang_path):
+		chain_tex = load(hang_path)
+	var sway: Shader = null
+	if ResourceLoader.exists("res://scripts/shaders/chain_sway.gdshader"):
+		sway = load("res://scripts/shaders/chain_sway.gdshader")
+	var xs := [size.x * 0.18, size.x * 0.52, size.x * 0.84]
+	if archetype == "tutorial":
+		xs = [size.x * 0.12, size.x * 0.88]
+	for i in xs.size():
+		if chain_tex == null:
+			break
+		var chain := Sprite2D.new()
+		chain.name = "QualityChain_%d" % i
+		chain.texture = chain_tex
+		chain.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		chain.centered = false
+		chain.position = Vector2(xs[i], 8.0)
+		chain.z_index = -1
+		if sway:
+			var mat := ShaderMaterial.new()
+			mat.shader = sway
+			mat.set_shader_parameter("sway_amp", 3.0 + float(i))
+			mat.set_shader_parameter("sway_speed", 1.1 + float(i) * 0.15)
+			mat.set_shader_parameter("phase", float(i) * 1.7)
+			chain.material = mat
+		host.add_child(chain)
+	if ResourceLoader.exists(steam_path):
+		var steam := AnimatedSprite2D.new()
+		steam.name = "QualitySteam"
+		var frames := SpriteFrames.new()
+		frames.add_animation("steam")
+		frames.set_animation_loop("steam", true)
+		frames.set_animation_speed("steam", 6.0)
+		var steam_tex: Texture2D = load(steam_path)
+		var fw := 24
+		if steam_tex.get_height() <= 24 and steam_tex.get_width() % 16 == 0:
+			fw = 16
+		elif steam_tex.get_width() % 24 == 0:
+			fw = 24
+		elif steam_tex.get_width() % 8 == 0:
+			fw = 8
+		var count := maxi(1, steam_tex.get_width() / fw)
+		for f in count:
+			var atlas := AtlasTexture.new()
+			atlas.atlas = steam_tex
+			atlas.region = Rect2(f * fw, 0, fw, steam_tex.get_height())
+			frames.add_frame("steam", atlas, 1.0)
+		steam.sprite_frames = frames
+		steam.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		steam.position = Vector2(size.x * 0.72, size.y - 70.0)
+		steam.z_index = 2
+		steam.modulate = Color(0.85, 0.9, 0.95, 0.55)
+		host.add_child(steam)
+		steam.play("steam")
+	if biome == "biome_1" and ResourceLoader.exists("res://assets/environment/drip.png"):
+		var drip := AnimatedSprite2D.new()
+		drip.name = "QualityDrip"
+		var df := SpriteFrames.new()
+		df.add_animation("drip")
+		df.set_animation_loop("drip", true)
+		df.set_animation_speed("drip", 8.0)
+		var dtex: Texture2D = load("res://assets/environment/drip.png")
+		var dw := 8
+		if dtex.get_width() % 8 == 0:
+			dw = 8
+		for f in maxi(1, dtex.get_width() / dw):
+			var at := AtlasTexture.new()
+			at.atlas = dtex
+			at.region = Rect2(f * dw, 0, dw, dtex.get_height())
+			df.add_frame("drip", at, 1.0)
+		drip.sprite_frames = df
+		drip.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		drip.position = Vector2(size.x * 0.4, 48.0)
+		drip.z_index = 2
+		host.add_child(drip)
+		drip.play("drip")
+
+
+func _dress_water_zones(room: Node) -> void:
+	if not ResourceLoader.exists("res://scripts/shaders/water_surface.gdshader"):
+		return
+	var shader: Shader = load("res://scripts/shaders/water_surface.gdshader")
+	if shader == null:
+		return
+	for child in room.get_children():
+		if not (child is Area2D) or not child.is_in_group("water_zone"):
+			continue
+		var vis := child.get_node_or_null("Visual") as CanvasItem
+		if vis == null or vis.material != null:
+			continue
+		var mat := ShaderMaterial.new()
+		mat.shader = shader
+		vis.material = mat
+		if vis is Sprite2D and ResourceLoader.exists("res://assets/environment/water.png"):
+			(vis as Sprite2D).texture = load("res://assets/environment/water.png")
+			(vis as Sprite2D).texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		elif vis is ColorRect:
+			(vis as ColorRect).color = Color(0.08, 0.18, 0.22, 0.55)
 
 func _light_texture() -> GradientTexture2D:
 	var g := Gradient.new()
@@ -1006,6 +1147,35 @@ func _inject_parallax_sprite(host: Node, node_name: String, path: String, pos: V
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	host.add_child(sprite)
 
+func _inject_scroll_layer(
+	room: Node,
+	node_name: String,
+	path: String,
+	size: Vector2,
+	z: int,
+	scroll: Vector2,
+	kind: String,
+) -> void:
+	if room.get_node_or_null(node_name) != null:
+		return
+	if not ResourceLoader.exists(path):
+		return
+	var layer := Parallax2D.new()
+	layer.name = node_name
+	layer.scroll_scale = scroll
+	layer.z_index = z
+	layer.z_as_relative = false
+	layer.repeat_times = 3
+	var sprite := Sprite2D.new()
+	sprite.name = "Sprite"
+	sprite.texture = load(path)
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sprite.centered = true
+	layer.add_child(sprite)
+	room.add_child(layer)
+	room.move_child(layer, mini(1, room.get_child_count() - 1))
+	_layout_parallax_strip(sprite, size, kind)
+
 func _biome_far(biome: String) -> Color:
 	var idx := _biome_index(biome)
 	var far: Color = _palette.shadow.darkened(0.15)
@@ -1023,10 +1193,10 @@ func _biome_mid(biome: String) -> Color:
 func _modulate_for_biome(biome: String) -> Color:
 	var idx := _biome_index(biome)
 	if idx % 3 == 1:
-		return Color(0.88, 0.90, 0.98, 1)
+		return Color(0.82, 0.92, 0.94, 1)
 	if idx % 3 == 2:
-		return Color(0.92, 0.86, 0.86, 1)
-	return Color(0.90, 0.91, 0.96, 1)
+		return Color(0.88, 0.93, 0.84, 1)
+	return Color(0.86, 0.90, 0.96, 1)
 
 func _biome_index(biome: String) -> int:
 	var digits := biome.get_slice("_", 1)

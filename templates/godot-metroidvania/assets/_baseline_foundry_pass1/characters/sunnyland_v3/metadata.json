@@ -1,0 +1,100 @@
+{
+  "source": "SunnyLand Forest by Ansimuz (CC0 1.0)",
+  "license": "CC0 1.0 Universal (Public Domain)",
+  "normalizedDate": "2026-09-01T12:46:01.105Z",
+  "targetFrameSize": 64,
+  "targetPivot": "bottom-center (foot Y=61)",
+  "animations": [
+    {
+      "animation": "idle",
+      "gameplayState": "idle",
+      "file": "idle.png",
+      "frameCount": 9,
+      "frameSize": 64,
+      "fps": 8,
+      "loop": true,
+      "origin": "bottom-center",
+      "facingConvention": "right",
+      "mirrorSafe": true,
+      "description": "Standing neutral pose with breathing animation"
+    },
+    {
+      "animation": "jump",
+      "gameplayState": "jump",
+      "file": "jump.png",
+      "frameCount": 4,
+      "frameSize": 64,
+      "fps": 10,
+      "loop": true,
+      "origin": "bottom-center",
+      "facingConvention": "right",
+      "mirrorSafe": true,
+      "description": "Airborne rise/jump arc"
+    },
+    {
+      "animation": "fall",
+      "gameplayState": "fall",
+      "file": "fall.png",
+      "frameCount": 4,
+      "frameSize": 64,
+      "fps": 10,
+      "loop": true,
+      "origin": "bottom-center",
+      "facingConvention": "right",
+      "mirrorSafe": true,
+      "description": "Airborne descent/falling pose"
+    },
+    {
+      "animation": "duck",
+      "gameplayState": "interact",
+      "file": "duck.png",
+      "frameCount": 4,
+      "frameSize": 64,
+      "fps": 8,
+      "loop": true,
+      "origin": "bottom-center",
+      "facingConvention": "right",
+      "mirrorSafe": true,
+      "description": "Low-stance crouch pose"
+    },
+    {
+      "animation": "climb",
+      "gameplayState": "grapple",
+      "file": "climb.png",
+      "frameCount": 4,
+      "frameSize": 64,
+      "fps": 10,
+      "loop": true,
+      "origin": "bottom-center",
+      "facingConvention": "right",
+      "mirrorSafe": true,
+      "description": "Vertical climbing/grappling animation"
+    },
+    {
+      "animation": "hurt",
+      "gameplayState": "hurt",
+      "file": "hurt.png",
+      "frameCount": 2,
+      "frameSize": 64,
+      "fps": 14,
+      "loop": false,
+      "origin": "bottom-center",
+      "facingConvention": "right",
+      "mirrorSafe": true,
+      "description": "Damage feedback knockback reaction"
+    },
+    {
+      "animation": "skip",
+      "gameplayState": "dash",
+      "file": "skip.png",
+      "frameCount": 8,
+      "frameSize": 64,
+      "fps": 18,
+      "loop": false,
+      "origin": "bottom-center",
+      "facingConvention": "right",
+      "mirrorSafe": true,
+      "description": "Skipping/hopping movement (adapted for dash)"
+    }
+  ]
+}
