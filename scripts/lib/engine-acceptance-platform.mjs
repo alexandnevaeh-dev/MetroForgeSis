@@ -1,4 +1,5 @@
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve, relative, isAbsolute } from 'node:path';
+import { readFileSync, statSync } from 'node:fs';
 
 export function nativeBuildPlan(platform, editorPath, projectPath) {
   const targets = {
@@ -20,4 +21,23 @@ export function nativeBuildPlan(platform, editorPath, projectPath) {
 
 export function playtestPassed(exitCode, report, startedAt) {
   return exitCode === 0 && report !== null && report.modifiedAt >= startedAt && report.data?.status === 'PASS';
+}
+
+// Evidence availability only; a human still has to assess visual quality.
+export function freshCaptureEvidence(report, startedAt, captureRoot) {
+  if (!report || report.modifiedAt < startedAt || !Array.isArray(report.data?.captures) || report.data.captures.length === 0) return false;
+  const root = resolve(captureRoot);
+  return report.data.captures.every((file) => {
+    if (typeof file !== 'string') return false;
+    const path = resolve(file);
+    const child = relative(root, path);
+    if (!child || child === '..' || child.startsWith(`..${process.platform === 'win32' ? '\\' : '/'}`) || isAbsolute(child)) return false;
+    try {
+      const stat = statSync(path);
+      if (!stat.isFile() || stat.mtimeMs < startedAt || stat.size < 24) return false;
+      const bytes = readFileSync(path);
+      return bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) &&
+        bytes.toString('ascii', 12, 16) === 'IHDR' && bytes.readUInt32BE(16) >= 8 && bytes.readUInt32BE(20) >= 8;
+    } catch { return false; }
+  });
 }

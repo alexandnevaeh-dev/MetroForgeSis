@@ -9,7 +9,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, statSync } from 'no
 import { dirname, join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { arch, cpus, platform, release, totalmem } from 'node:os';
-import { nativeBuildPlan, playtestPassed } from './lib/engine-acceptance-platform.mjs';
+import { nativeBuildPlan, playtestPassed, freshCaptureEvidence } from './lib/engine-acceptance-platform.mjs';
 import { fileURLToPath } from 'node:url';
 import { validateForeignEngineProject } from '../packages/qa/dist/engine-validator.js';
 import { resolveUnityEditor, resolveUnrealEditor } from '../packages/tools/dist/index.js';
@@ -158,7 +158,7 @@ if (unityReady && unityGen.passed) {
     let playReport = null;
     try { playReport = { data: JSON.parse(readFileSync(resultPath, 'utf-8')), modifiedAt: statSync(resultPath).mtimeMs }; } catch { /* Missing or malformed evidence fails. */ }
     stages.unity.playtested = playtestPassed(play.status, playReport, playStartedAt) ? 'passed' : 'failed';
-    stages.unity.visualCapture = existsSync(join(unityProject, 'qa', 'captures')) ? 'pending_review' : 'failed';
+    stages.unity.visualCapture = freshCaptureEvidence(playReport, playStartedAt, join(unityProject, 'qa', 'captures')) ? 'pending_review' : 'failed';
     const build = runUnityStage(env.unity.path, `MetroForgeBuild.${nativeBuildPlan(process.platform, '', unityProject).unityMethod}`, [], 'unity-standalone.log', 25 * 60 * 1000, false);
     stages.unity.standaloneBuild = build.status === 0 ? 'passed' : 'failed';
     stages.unity.opened = stages.unity.playtested === 'passed' ? 'passed' : 'failed';
