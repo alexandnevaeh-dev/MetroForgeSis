@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import electron from 'vite-plugin-electron/simple';
 
 export default defineConfig({
+  base: './',
   plugins: [
     react(),
     electron({
@@ -18,6 +19,9 @@ export default defineConfig({
       },
       preload: {
         input: 'electron/preload.ts',
+        vite: {
+          build: { rollupOptions: { output: { format: 'cjs', entryFileNames: 'preload.cjs' } } },
+        },
       },
     }),
   ],

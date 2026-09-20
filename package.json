@@ -53,6 +53,8 @@
     "production:player": "node scripts/cli-build.mjs && node apps/cli/dist/index.js production:player",
     "validate:godot": "pnpm smoke:godot",
     "desktop:build": "pnpm --filter @metroforge/desktop build",
+    "desktop:build:native": "node scripts/desktop-build.mjs --native",
+    "smoke:desktop": "node scripts/smoke-desktop.mjs",
     "build:cli": "pnpm --filter @metroforge/cli build",
     "lint": "eslint . --ext .ts,.tsx",
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",

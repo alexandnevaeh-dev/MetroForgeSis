@@ -1,8 +1,8 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, dialog } from 'electron';
 import { existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { registerIpcHandlers } from './handlers.js';
+import { startDesktopSmoke, observeDesktopSmoke, failDesktopSmoke } from './desktop-smoke.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -12,8 +12,10 @@ function resolveRepoRoot(): string {
 }
 
 function resolvePreloadPath(): string {
+  const cjs = join(__dirname, 'preload.cjs');
   const mjs = join(__dirname, 'preload.mjs');
   const js = join(__dirname, 'preload.js');
+  if (existsSync(cjs)) return cjs;
   if (existsSync(mjs)) return mjs;
   if (existsSync(js)) return js;
   return mjs;
@@ -21,14 +23,20 @@ function resolvePreloadPath(): string {
 
 function createWindow(): void {
   const win = new BrowserWindow({
+    show: process.env.METROFORGE_DESKTOP_SMOKE !== '1',
     width: 1280,
     height: 800,
     webPreferences: {
       preload: resolvePreloadPath(),
       contextIsolation: true,
+      sandbox: true,
       nodeIntegration: false,
     },
   });
+
+  win.webContents.once('did-finish-load', () => observeDesktopSmoke('renderer-loaded'));
+  win.webContents.on('preload-error', (_event, _path, error) => failDesktopSmoke(error.message));
+  win.webContents.on('render-process-gone', (_event, details) => failDesktopSmoke(details.reason));
 
   if (process.env.VITE_DEV_SERVER_URL) {
     win.loadURL(process.env.VITE_DEV_SERVER_URL);
@@ -39,16 +47,28 @@ function createWindow(): void {
   if (process.env.METROFORGE_OPEN_DEVTOOLS) win.webContents.openDevTools({ mode: 'detach' });
   win.webContents.on('did-fail-load', (_event, code, description, validatedURL) => {
     console.error('did-fail-load', { code, description, validatedURL });
+    failDesktopSmoke(description);
   });
   win.webContents.on('console-message', (_event, _level, message, line, sourceId) => {
     console.log('renderer-console', { message, line, sourceId });
   });
 }
 
-app.whenReady().then(() => {
-  registerIpcHandlers(resolveRepoRoot());
-  createWindow();
-});
+startDesktopSmoke((success) => app.exit(success ? 0 : 1));
+app
+  .whenReady()
+  .then(async () => {
+    const { registerIpcHandlers } = await import('./handlers.js');
+    registerIpcHandlers(resolveRepoRoot());
+    createWindow();
+  })
+  .catch((error: unknown) => {
+    const message = error instanceof Error ? (error.stack ?? error.message) : String(error);
+    console.error('Desktop startup failed', message);
+    if (process.env.METROFORGE_DESKTOP_SMOKE === '1') failDesktopSmoke(message);
+    else dialog.showErrorBox('MetroForge could not start', message);
+    app.exit(1);
+  });
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();

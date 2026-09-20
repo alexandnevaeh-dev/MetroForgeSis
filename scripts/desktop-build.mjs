@@ -5,6 +5,10 @@ import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const desktop = join(root, 'apps', 'desktop');
+if (process.argv.includes('--native')) {
+  await import('./desktop-build-native.mjs');
+  process.exit(0);
+}
 const tsc = join(root, 'node_modules', 'typescript', 'bin', 'tsc');
 const vite = join(root, 'node_modules', 'vite', 'bin', 'vite.js');
 

@@ -1,6 +1,8 @@
 node_modules/
 .metroforge/live-bridge-smoke/
 .metroforge/live-inspector-harness/
+.metroforge/desktop-build/
+.metroforge/desktop-smoke/
 **/.metroforge/studio-bridge.json
 dist/
 build/

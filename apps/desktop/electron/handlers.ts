@@ -118,6 +118,7 @@ import {
   getProjectEditStatus,
 } from './edit-dirty-store.js';
 import type { WebContents } from 'electron';
+import { observeDesktopSmoke } from './desktop-smoke.js';
 import { inspectLivePlacement, saveLivePlacement, type LivePlacementInspection } from './live-placement-save.js';
 
 const generationQueue = new GenerationQueue();
@@ -438,7 +439,10 @@ export function registerIpcHandlers(cwd: string): void {
     }
   });
 
-  ipcMain.handle('get-version', () => getVersionString());
+  ipcMain.handle('get-version', () => {
+    observeDesktopSmoke('version-ipc');
+    return getVersionString();
+  });
 
   ipcMain.handle('resolve-godot', async (_event, projectPath?: string | null) => {
     return resolveCanonicalGodot(projectPath ?? null);

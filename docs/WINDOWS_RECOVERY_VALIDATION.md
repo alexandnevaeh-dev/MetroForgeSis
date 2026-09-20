@@ -19,3 +19,8 @@ This branch continues integration/metroforge-unified at d126bd26b695f788110d3ec7
 - Existing whitespace conventions are mixed in the recovered source; whitespace-only review findings remain. Source-save rollback does not provide crash-safe atomicity across two files.
 
 Local screenshots/capture sequences, dependency trees, caches, test sessions and machine-specific engine reports are excluded from this upload. Complete-game gameplay, asset quality, integrated editor acceptance and release packaging remain required work.
+
+## Native desktop build path
+`pnpm desktop:build:native` invokes the installed native esbuild executable directly, includes renderer/Electron typechecks, writes file-relative renderer URLs, and bundles a CommonJS preload. The default Vite path remains available. Electron's sandbox stays enabled; see https://www.electronjs.org/docs/latest/tutorial/esm for preload module requirements.
+
+`pnpm smoke:desktop` launches the actual production application hidden with isolated local app data and records its exit code and startup evidence under .metroforge/desktop-smoke. It requires renderer-load and the real application's normal version IPC before passing. It does not certify all screens, gameplay or GPU rendering. Native build succeeds on this Windows host; Electron 33.4.11 currently crashes with 0xC0000005 before app readiness. A minimal app without MetroForge reproduces this, including with GPU rendering disabled; Electron Node-only bootstrap succeeds. Full native desktop execution remains unverified.
