@@ -61,6 +61,8 @@ export interface RoomAssemblyOptions {
   itemAmount: number;
   worldGraphArchetype?: string;
   tileCells?: TileCell[];
+  /** Explicit Studio paint, including an empty layout; do not procedurally refill. */
+  tileCellsAuthored?: boolean;
   /** Real, collidable platforms derived from tileCells — the painted tiles alone carry no
    *  physics, so these drive an actual StaticBody2D per platform (see generateRoomScene). */
   platforms?: PlatformRect[];
@@ -162,6 +164,8 @@ export interface PublishedRoomRecord {
   collectibles: string[];
   visualKit?: 'foundry';
   tileCells?: TileCell[];
+  /** Explicit Studio paint, including an empty layout; do not procedurally refill. */
+  tileCellsAuthored?: boolean;
   weakFloors?: { x: number; width: number; targetRoomId: string }[];
   waterZones?: { x: number; y: number; width: number; height: number; targetRoomId: string }[];
   /** Real physical obstacles for phase-gated connections (see derivePhaseBarriers) — recorded the
@@ -714,6 +718,7 @@ export function buildPublishedRoomRecord(
     collectibles: opts.hasItemPickup && opts.itemId ? [opts.itemId] : [],
     ...(opts.visualKit ? { visualKit: opts.visualKit } : {}),
     tileCells: opts.tileCells,
+    ...(opts.tileCellsAuthored ? { tileCellsAuthored: true } : {}),
     weakFloors: deriveWeakFloors(opts.connections, opts.width).map((wf) => ({
       x: wf.x,
       width: wf.width,
@@ -1326,13 +1331,14 @@ room_height = ${options.height}
 tile_size = ${options.tileSize}
 room_archetype = "${(options.worldGraphArchetype ?? 'combat').replace(/"/g, '')}"
 ${options.visualKit === 'foundry' ? 'visual_kit = "foundry"\n' : ''}`;
-    if (options.tileCells?.length) {
+    if (options.tileCells !== undefined) {
       const encoded = JSON.stringify(
         options.tileCells.map((c) => [c.x, c.y, c.col, c.row]),
       );
       scene += `painted_cells_json = "${encoded.replace(/"/g, '\\"')}"
 `;
     }
+    if (options.tileCellsAuthored) scene += `authored_cells = true\n`;
     if (pitGaps.length > 0) {
       // Tell RoomTileMap.gd's visual backfill (_paint_visual_mass) which columns are a real
       // pit so it doesn't silently repaint solid ground back over the carved-out floor gap.
@@ -1770,10 +1776,13 @@ export function recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult
           authoredParallax: override?.authoredParallax ?? authoredParallax,
         },
       );
-      if (override?.tileCells?.length) {
+      const storedPaint = roomsData[roomId];
+      const authoredCells = override?.tileCells ?? (storedPaint?.tileCellsAuthored ? storedPaint.tileCells : undefined);
+      if (authoredCells !== undefined) {
         // Hand-edited cells (room editor) have no matching auto-generated collision geometry —
         // clear it rather than risk mismatched/floating platform or pit collision.
-        opts.tileCells = override.tileCells;
+        opts.tileCells = authoredCells;
+        opts.tileCellsAuthored = true;
         opts.platforms = [];
         opts.pits = [];
       }

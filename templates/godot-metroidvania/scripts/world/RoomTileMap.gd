@@ -5,6 +5,7 @@ extends TileMapLayer
 @export var room_height: int = 600
 @export var tile_size: int = 16
 @export var painted_cells_json: String = ""
+@export var authored_cells: bool = false
 @export var room_archetype: String = "combat"
 ## Set to "foundry" by the room-assembler for the Foundry visual slice. Consumed by
 ## CameraDirector.apply_room_bounds() (cinematic-plate cover-zoom) and QualityPresentation.
@@ -54,6 +55,9 @@ func _build_tilemap() -> void:
 	if painted_cells_json != "":
 		var parsed = JSON.parse_string(painted_cells_json)
 		if parsed is Array:
+			if authored_cells:
+				_paint_authored_cells(parsed)
+				return
 			for cell in parsed:
 				if cell is Array and cell.size() >= 4:
 					var atlas_coords := Vector2i(int(cell[2]), int(cell[3]))
@@ -77,6 +81,15 @@ func _build_tilemap() -> void:
 		set_cell(Vector2i(int(room_width / tile_size) - 1, y), 0, wall_tile)
 	_paint_visual_mass()
 	call_deferred("_paint_rear_wall")
+
+
+# Studio paint is exact visual data. Do not add procedural tiles or vary atlas choices.
+# Room shell/floor collision remains a separate geometry layer.
+func _paint_authored_cells(cells: Array) -> void:
+	clear()
+	for cell in cells:
+		if cell is Array and cell.size() >= 4:
+			set_cell(Vector2i(int(cell[0]), int(cell[1])), 0, Vector2i(int(cell[2]), int(cell[3])))
 
 
 func _configure_terrain_set(tile_set: TileSet, atlas: TileSetAtlasSource, cols: int, rows: int) -> void:
