@@ -89,6 +89,8 @@ export const ProjectMetadataSchema = z.object({
   gameDnaVersion: z.string(),
   generatorVersion: z.string(),
   archetype: GameArchetypeSchema.default('SIDE_VIEW_METROIDVANIA'),
+  /** Generation target. Absent on historical Godot projects — treat as godot. */
+  engine: z.enum(['godot', 'unity', 'unreal']).optional(),
   /** Human visual-direction approval for this project (slice). Distinct from technical QA. */
   visualSliceApproved: z.boolean().optional(),
   visualReviewStatus: z

@@ -40,13 +40,30 @@ func _ready() -> void:
 	_sync_settings_ui()
 	_apply_foundry_theme()
 
+var _pause_ignore_until_msec: int = 0
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_action_pressed("pause"):
 		return
+	if _try_toggle_pause():
+		get_viewport().set_input_as_handled()
+
+
+func _process(_delta: float) -> void:
+	# Simulated Input.action_press does not always emit _unhandled_input.
+	if Input.is_action_just_pressed("pause"):
+		_try_toggle_pause()
+
+
+func _try_toggle_pause() -> bool:
+	var now := Time.get_ticks_msec()
+	if now < _pause_ignore_until_msec:
+		return false
+	_pause_ignore_until_msec = now + 200
 	if GameManager.current_state == GameManager.GameState.PLAYING:
 		_open()
-		get_viewport().set_input_as_handled()
-	elif GameManager.current_state == GameManager.GameState.PAUSED:
+		return true
+	if GameManager.current_state == GameManager.GameState.PAUSED:
 		if map_panel.visible:
 			_close_map()
 		elif inventory_panel.visible:
@@ -55,7 +72,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_close_quests()
 		elif not settings_panel.visible:
 			_close()
-		get_viewport().set_input_as_handled()
+		return true
+	return false
 
 func _open() -> void:
 	_sync_settings_ui()

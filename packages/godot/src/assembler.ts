@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync } from 'node:fs';
+import { cpSync, mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync, rmSync } from 'node:fs';
 import { join, dirname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { GameDNA, ProgressionGraph, StyleBible, WorldGraph } from '@metroforge/schemas';
@@ -27,6 +27,7 @@ import {
   generateRoomScene,
   prepareRoomAssemblyContext,
   recompileRooms,
+  resolveFloorPropPlacements,
   type RecompileRoomsInput,
   type RecompileRoomsResult,
 } from './room-assembler.js';
@@ -147,7 +148,11 @@ export class GodotProjectAssembler {
 
     try {
       const priorManifest = readExistingGenerationManifest(input.outputDir);
-      cpSync(templatePath, input.outputDir, { recursive: true });
+      cpSync(templatePath, input.outputDir, {
+        recursive: true,
+        filter: (src) => !isRollbackOnlyTemplatePath(src, templatePath),
+      });
+      stripRollbackOnlyAssets(input.outputDir);
       if (input.externalVisualPack === 'metroforge-foundry-v3' && input.textureFiles) {
         expandFoundryTextureAliases(input.textureFiles);
       }
@@ -214,7 +219,10 @@ export class GodotProjectAssembler {
           input.gameContent,
           enemyCounter,
           textureExists,
-          { visualKit: (input.externalVisualPack === 'metroforge-foundry-v3' || input.foundryThemed) ? 'foundry' : undefined },
+          {
+            visualKit: (input.externalVisualPack === 'metroforge-foundry-v3' || input.foundryThemed) ? 'foundry' : undefined,
+            authoredParallax: Boolean(input.foundryThemed && !input.externalVisualPack),
+          },
         );
         const enemySnapshot = enemyCounter.value;
         for (let salt = 1; salt <= 5; salt++) {
@@ -227,7 +235,9 @@ export class GodotProjectAssembler {
               platforms: opts.platforms ?? [],
               pits: opts.pits ?? [],
             },
-            decorationCount: Math.min(6, opts.blueprint?.plan.propBudget.clusters ?? 0) + Math.min(4, opts.blueprint?.plan.majorArchitecture.length ?? 0),
+            decorationCount:
+              resolveFloorPropPlacements(opts).length +
+              Math.min(4, opts.architectureSprites?.length ?? opts.blueprint?.plan?.majorArchitecture.length ?? 0),
           });
           const similar = previousLayouts.some((prev) =>
             layoutsTooSimilar(
@@ -255,6 +265,7 @@ export class GodotProjectAssembler {
               width: opts.width,
               height: opts.height,
               visualKit: (input.externalVisualPack === 'metroforge-foundry-v3' || input.foundryThemed) ? 'foundry' : undefined,
+              authoredParallax: Boolean(input.foundryThemed && !input.externalVisualPack),
             },
           );
         }
@@ -268,7 +279,9 @@ export class GodotProjectAssembler {
               platforms: opts.platforms ?? [],
               pits: opts.pits ?? [],
             },
-            decorationCount: Math.min(6, opts.blueprint?.plan.propBudget.clusters ?? 0) + Math.min(4, opts.blueprint?.plan.majorArchitecture.length ?? 0),
+            decorationCount:
+              resolveFloorPropPlacements(opts).length +
+              Math.min(4, opts.architectureSprites?.length ?? opts.blueprint?.plan?.majorArchitecture.length ?? 0),
           }),
           platforms: opts.platforms ?? [],
           pits: opts.pits ?? [],
@@ -491,11 +504,12 @@ export class GodotProjectAssembler {
         );
       }
 
+      let overlaidAuthoredPaths: string[] = [];
       if (input.externalVisualPack) {
         patchCharacterFrameSizeForExternalPack(input.outputDir, input.externalVisualPack);
         patchCharacterSheetPathsForFoundryPack(input.outputDir, input.externalVisualPack);
       } else if (input.foundryThemed && !isTopDownArchetype(input.gameDna.archetype)) {
-        overlayAuthoredVisualPolish(input.outputDir, templatePath);
+        overlaidAuthoredPaths = overlayAuthoredVisualPolish(input.outputDir, templatePath);
       }
 
       const incoming: AssetManifestEntry[] = [...(input.assetMetadata ?? [])];
@@ -524,7 +538,10 @@ export class GodotProjectAssembler {
           });
         }
       }
-      const artifacts = mergeManifestArtifacts(priorManifest?.artifacts, incoming);
+      const artifacts = applyAuthoredOverlayProvenance(
+        mergeManifestArtifacts(priorManifest?.artifacts, incoming),
+        overlaidAuthoredPaths,
+      );
 
       writeFileSync(
         join(input.outputDir, 'generation_manifest.json'),
@@ -735,6 +752,9 @@ const AUTHORED_POLISH_PREFIXES = [
   'assets/vfx/',
   'assets/ui/',
   'assets/environment/',
+  'assets/props/',
+  'assets/architecture/',
+  'assets/generated/',
 ] as const;
 
 function shouldOverlayPolishAsset(rel: string): boolean {
@@ -744,8 +764,28 @@ function shouldOverlayPolishAsset(rel: string): boolean {
   return AUTHORED_POLISH_PREFIXES.some((prefix) => n.startsWith(prefix));
 }
 
-export function overlayAuthoredVisualPolish(outputDir: string, templatePath: string): number {
-  let copied = 0;
+/** Rollback-only comparison copies. Kept in the template; excluded from generated games so
+ *  Godot does not warn about duplicate UIDs against the live authored sheets. */
+export function isRollbackOnlyTemplatePath(src: string, templateRoot: string): boolean {
+  if (src === templateRoot) return false;
+  const rel = src.slice(templateRoot.length).replace(/\\/g, '/');
+  const parts = rel.split('/').filter(Boolean);
+  return parts.some((part) => part.startsWith('_baseline') || part === '_polish_preview');
+}
+
+/** Removes leftover rollback copies when reassembling into an existing generated folder. */
+export function stripRollbackOnlyAssets(outputDir: string): void {
+  const assets = join(outputDir, 'assets');
+  if (!existsSync(assets)) return;
+  for (const name of readdirSync(assets)) {
+    if (name.startsWith('_baseline') || name === '_polish_preview') {
+      rmSync(join(assets, name), { recursive: true, force: true });
+    }
+  }
+}
+
+export function overlayAuthoredVisualPolish(outputDir: string, templatePath: string): string[] {
+  const paths: string[] = [];
   const walk = (relDir: string): void => {
     const abs = join(templatePath, relDir);
     if (!existsSync(abs)) return;
@@ -760,11 +800,34 @@ export function overlayAuthoredVisualPolish(outputDir: string, templatePath: str
       mkdirSync(dirname(dest), { recursive: true });
       cpSync(join(templatePath, rel), dest);
       if (rel.endsWith('.png')) writePixelArtImport(dest, rel);
-      copied += 1;
+      paths.push(rel);
     }
   };
   walk('assets');
-  return copied;
+  return paths;
+}
+
+/** Overlay copies authored PNGs after the pipeline writes procedural stand-ins. The files on
+ *  disk are then authored; the manifest must say so or AssetProduction/ParallaxDepth score the
+ *  visible plates as placeholders. Does not invent promptHash and does not raise maturity to
+ *  PRODUCTION_READY. */
+export function applyAuthoredOverlayProvenance(
+  artifacts: AssetManifestEntry[],
+  overlaidRels: string[],
+): AssetManifestEntry[] {
+  if (overlaidRels.length === 0) return artifacts;
+  const overlay = new Set(overlaidRels.map((p) => p.replace(/\\/g, '/')));
+  return artifacts.map((entry) => {
+    const path = (entry.path ?? '').replace(/\\/g, '/').replace(/^res:\/\//, '');
+    if (!overlay.has(path)) return entry;
+    return {
+      ...entry,
+      provider: 'authored-original',
+      sourceType: 'manual',
+      fallbackGenerated: false,
+      maturity: entry.maturity === 'PRODUCTION_READY' ? 'PRODUCTION_READY' : 'QA_REVIEW',
+    };
+  });
 }
 
 export function patchCharacterSheetPathsForFoundryPack(outputDir: string, packId: ExternalVisualPackId): void {

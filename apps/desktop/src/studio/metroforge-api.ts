@@ -1,4 +1,14 @@
 import type { ModelEntry } from '@metroforge/schemas';
+import type { PlacementSaveSnapshot } from '@metroforge/generation';
+
+export type LivePlacementInspection = {
+  projectPath: string;
+  sessionStartedAt: string;
+  nodePath: string;
+  instanceId: string;
+  source: PlacementSaveSnapshot;
+  position: { x: number; y: number };
+};
 
 export type StudioProject = {
   slug: string;
@@ -260,6 +270,103 @@ export type MetroforgeBridge = {
   getProjectDashboard: (projectPath: string) => Promise<Record<string, unknown>>;
   openInGodot: (projectPath: string) => Promise<{ success: boolean; message: string }>;
   playInGodot: (projectPath: string) => Promise<{ success: boolean; message: string }>;
+  stopPlaytest: (projectPath: string) => Promise<{ success: boolean; message: string }>;
+  getPlaytestSession: (projectPath: string) => Promise<{
+    projectPath: string;
+    pid: number;
+    running: boolean;
+    startedAt: string;
+    pauseSupported: boolean;
+    pauseReason: string;
+    bridgePort?: number;
+    embedSupported?: boolean;
+    embedReason?: string;
+    liveEdit?: { live: string[]; requiresRestart: string[] };
+  } | null>;
+  playtestCommand: (
+    projectPath: string,
+    cmd: string,
+    payload?: Record<string, unknown>,
+  ) => Promise<{ ok: boolean; error?: string; result?: Record<string, unknown> }>;
+  inspectLivePlacement: (
+    projectPath: string,
+    target: { nodePath: string; instanceId: string; sessionStartedAt: string },
+  ) => Promise<LivePlacementInspection>;
+  saveLivePlacement: (
+    projectPath: string,
+    inspection: LivePlacementInspection,
+    position: { x: number; y: number },
+  ) => Promise<PlacementSaveSnapshot>;
+  scaffoldManualProject: (opts: {
+    title: string;
+    prompt?: string;
+    archetype?: string;
+    profile?: string;
+    mode?: string;
+    seed?: number;
+  }) => Promise<{
+    success: boolean;
+    projectPath: string;
+    slug: string;
+    errors: string[];
+    warnings: string[];
+  }>;
+  getStoryContent: (projectPath: string) => Promise<{
+    narrative: {
+      premise: string;
+      protagonist: string;
+      antagonist?: string;
+      centralConflict: string;
+    };
+    quests: Array<{
+      id: string;
+      name: string;
+      description: string;
+      prerequisites?: string[];
+      objectives: Array<{ id?: string; type: string; target: string; count?: number; description: string }>;
+      rewards?: Array<{ type: string; id: string; amount?: number }>;
+      dialogueStartId?: string;
+      dialogueCompleteId?: string;
+    }>;
+    dialogues: Array<{
+      id: string;
+      lines: Array<{
+        speaker?: string;
+        text: string;
+        choices?: Array<{ id?: string; text: string; nextDialogueId?: string; end?: boolean }>;
+      }>;
+    }>;
+    npcs: Array<{ id: string; name?: string; dialogueId?: string; roomId?: string }>;
+    rooms: Array<{ id: string; npcs?: string[] }>;
+  }>;
+  updateQuest: (
+    projectPath: string,
+    quest: unknown,
+  ) => Promise<{ success: boolean; quests?: unknown[]; errors: string[] }>;
+  updateDialogue: (
+    projectPath: string,
+    dialogue: unknown,
+  ) => Promise<{ success: boolean; dialogues?: unknown[]; errors: string[] }>;
+  updateNarrative: (
+    projectPath: string,
+    patch: { premise?: string; protagonist?: string; antagonist?: string; centralConflict?: string },
+  ) => Promise<{ success: boolean; narrative?: unknown; errors: string[] }>;
+  proposeStoryRewrite: (
+    projectPath: string,
+    request: { kind: 'narrative' | 'quest' | 'dialogue'; id?: string; draft: string },
+  ) => Promise<{
+    success: boolean;
+    proposal?: string;
+    scope?: { kind: string; id?: string };
+    errors: string[];
+    source?: string;
+  }>;
+  undoRoomEdit: (
+    projectPath: string,
+  ) => Promise<{ success?: boolean; error?: string; errors?: string[]; message?: string }>;
+  redoRoomEdit: (
+    projectPath: string,
+  ) => Promise<{ success?: boolean; error?: string; errors?: string[]; message?: string }>;
   refreshProjectTemplate: (projectPath: string) => Promise<{
     success: boolean;
     copied: string[];
@@ -327,7 +434,10 @@ export type MetroforgeBridge = {
   undoWorldEdit: (
     projectPath: string,
   ) => Promise<{ success?: boolean; error?: string; worldGraph?: WorldGraphPreview }>;
-  getEditHistory: (projectPath: string) => Promise<{ canUndo: boolean }>;
+  redoWorldEdit: (
+    projectPath: string,
+  ) => Promise<{ success?: boolean; error?: string; message?: string; worldGraph?: WorldGraphPreview }>;
+  getEditHistory: (projectPath: string) => Promise<{ canUndo: boolean; canRedo?: boolean }>;
   listGenerationQueue: () => Promise<
     Array<{ id: string; type: string; status: string; label: string; createdAt: string; error?: string }>
   >;

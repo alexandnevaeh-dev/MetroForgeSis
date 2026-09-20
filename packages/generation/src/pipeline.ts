@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
-import type { GenerationMode, GenerationProfile, GameArchetype } from '@metroforge/shared';
+import type { GenerationMode, GenerationProfile, GameArchetype, TargetEngine } from '@metroforge/shared';
 import {
   createLogger,
   generateId,
@@ -22,6 +22,8 @@ import {
   GenerationCancelledError,
   throwIfCancelled,
   isNonProductionMaturity,
+  DEFAULT_TARGET_ENGINE,
+  engineOutputSlug,
 } from '@metroforge/shared';
 import { remapGameDnaAbilities } from './remap-project-abilities.js';
 import { createDatabase, type MetroForgeDatabase } from '@metroforge/database';
@@ -55,6 +57,9 @@ import {
 } from '@metroforge/procedural';
 import { AssetPipeline, loadVisualReferenceLibrary, shouldUseFoundryCourierKit } from '@metroforge/assets';
 import { GodotProjectAssembler, loadExternalVisualPack } from '@metroforge/godot';
+import { UnityProjectAssembler } from '@metroforge/unity';
+import { UnrealProjectAssembler } from '@metroforge/unreal';
+import { assertEngineOutputIsolation, EngineOutputCollisionError, writeEngineManifest } from '@metroforge/engines';
 import type { ExternalVisualPackId } from '@metroforge/godot';
 import { ToolRegistry, exportProject, resolveGodotExecutableCanonical, readProjectGodotOverride } from '@metroforge/tools';
 import { QAValidator, RepairEngineer, deriveValidationLevel, runQualityPass, runModernMetroidvaniaGate, modernGateToQAGateResult, scoreVisualQuality, fingerprintFile, planVisualRepairs, applyVisualRepairs, VISUAL_REPAIR_BUDGET, certifyVisualAssets, writeAssetFoundryReport, classifyAssetTier, buildAssetProvenanceReport, writeAssetProvenanceReport, buildProductionAssetFamilies, productionSliceReady, gateState, validateWorldSceneArchetypeIntegrity, type QAReport, type QAGateResult } from '@metroforge/qa';
@@ -92,6 +97,8 @@ export interface GenerateOptions {
   slug?: string;
   cwd?: string;
   archetype?: GameArchetype;
+  /** Generation target. Default godot — existing callers stay on the Godot assembler. */
+  targetEngine?: TargetEngine;
   /** Skip the AI/network-dependent Game DNA phase if a checkpoint already exists on disk. */
   resume?: boolean;
   /** Skip Godot import, runtime smoke, and playtest subprocesses. Static validation still runs. */
@@ -242,13 +249,31 @@ export class GenerationPipeline {
       writeStageStatus(phase, status, message);
     };
 
-    const slug = options.slug ?? (slugify(options.prompt.slice(0, 60)) || 'untitled-game');
+    const requestedEngine = options.targetEngine ?? DEFAULT_TARGET_ENGINE;
+    const baseSlug = options.slug ?? (slugify(options.prompt.slice(0, 60)) || 'untitled-game');
+    const slug = engineOutputSlug(baseSlug, requestedEngine);
     const outputBase = resolveGeneratedGamesPath(config, cwd);
     // Defense-in-depth on top of the CLI-layer check (apps/cli/src/commands/create.ts) — this
     // is the actual filesystem-writing entry point, and GenerationPipeline.run() is a public
     // API any future caller (a test, a future HTTP endpoint) could invoke directly without
     // going through the CLI's own validation first.
     const outputPath = resolveProjectPathSafe(outputBase, slug);
+    try {
+      assertEngineOutputIsolation(outputPath, requestedEngine);
+    } catch (err) {
+      if (err instanceof EngineOutputCollisionError) {
+        return {
+          success: false,
+          projectSlug: slug,
+          outputPath,
+          jobId: '',
+          errors: [err.message],
+          warnings,
+          phases,
+        };
+      }
+      throw err;
+    }
     mkdirSync(outputPath, { recursive: true });
 
     let emitJobId: string | undefined;
@@ -343,8 +368,8 @@ export class GenerationPipeline {
     const dataDir = config.dataDir || join(cwd, '.metroforge');
     mkdirSync(dataDir, { recursive: true });
     db = await createDatabase(dataDir);
-    const hardwareProfile =
-      options.hardwareProfile ?? new HardwareProfiler().profile().profile;
+    const hardware = new HardwareProfiler().profile();
+    const hardwareProfile = options.hardwareProfile ?? hardware.profile;
 
     report('intake', 'PASSED');
 
@@ -595,6 +620,7 @@ export class GenerationPipeline {
           gameDnaVersion: gameDna.version,
           generatorVersion: PRODUCT.generatorVersion,
           archetype: gameDna.archetype,
+          engine: requestedEngine,
         }),
         null,
         2,
@@ -894,6 +920,12 @@ export class GenerationPipeline {
       mode: options.mode,
       visualMode: options.visualMode,
       hardwareProfile,
+      hardware: {
+        profile: hardware.profile,
+        ramMb: hardware.totalRamMb,
+        vramMb: hardware.vramMb,
+        freeVramMb: hardware.freeVramMb,
+      },
       signal: options.signal,
       providerEnabled: options.providerEnabled,
       assetGenerationBackend: options.assetGenerationBackend,
@@ -1208,9 +1240,19 @@ export class GenerationPipeline {
       return { success: false, projectSlug: slug, outputPath, jobId: job.id, errors: ['Cancelled at review gate'], warnings, phases };
     }
 
+    if (requestedEngine !== 'godot' && isTopDownArchetype(gameDna.archetype)) {
+      errors.push(
+        `${requestedEngine.toUpperCase()}_ARCHETYPE_UNSUPPORTED: first milestone is SIDE_VIEW_METROIDVANIA only. Generate with --engine godot for top-down.`,
+      );
+      report('project_assembly', 'FAILED');
+      db.projects.updateStatus(project.id, 'failed');
+      db.close();
+      return { success: false, projectSlug: slug, outputPath, jobId: job.id, errors, warnings, phases };
+    }
+
     report('project_assembly', 'RUNNING');
     createProjectCheckpoint(outputPath, 'before_assembly');
-    const assemblyResult = this.assembler.assemble({
+    const assemblyInput = {
       outputDir: outputPath,
       gameDna,
       worldGraph,
@@ -1226,7 +1268,16 @@ export class GenerationPipeline {
       foundryThemed:
         !options.externalVisualPack &&
         shouldUseFoundryCourierKit({ profile: gameDna.profile, gameDna, characterVisualDna }),
-    });
+    };
+    const assemblyResult =
+      requestedEngine === 'unity'
+        ? new UnityProjectAssembler().assemble(assemblyInput)
+        : requestedEngine === 'unreal'
+          ? new UnrealProjectAssembler().assemble(assemblyInput)
+          : this.assembler.assemble(assemblyInput);
+    if (requestedEngine === 'godot' && assemblyResult.success) {
+      writeEngineManifest(outputPath, 'godot');
+    }
 
     if (!assemblyResult.success) {
       errors.push(...assemblyResult.errors);
@@ -1275,6 +1326,8 @@ export class GenerationPipeline {
     const toolRegistry = new ToolRegistry();
     const tools = await toolRegistry.detectAll({
       godotPath: config.godotExecutable,
+      unityPath: config.unityEditor,
+      unrealPath: config.unrealEditor,
       ollamaUrl: config.ollamaBaseUrl,
     });
     const resolvedGodot = resolveGodotExecutableCanonical({
@@ -1318,6 +1371,52 @@ export class GenerationPipeline {
     // but the skip is recorded as an explicit SKIPPED gate with reason GODOT_NOT_AVAILABLE
     // rather than silently treating the project as fully validated.
     const runGodotGates = (target: QAReport): void => {
+      if (requestedEngine !== 'godot') {
+        pushGate(target, {
+          gate: 'godot_imports',
+          passed: true,
+          state: 'SKIPPED',
+          message: `GODOT_GATES_SKIPPED: target engine is ${requestedEngine}`,
+        });
+        pushGate(target, {
+          gate: 'godot_runtime',
+          passed: true,
+          state: 'SKIPPED',
+          message: `GODOT_GATES_SKIPPED: target engine is ${requestedEngine}`,
+        });
+        pushGate(target, {
+          gate: 'godot_playtest',
+          passed: true,
+          state: 'SKIPPED',
+          message: `GODOT_GATES_SKIPPED: target engine is ${requestedEngine}`,
+        });
+        pushGate(target, {
+          gate: 'gameplay_screenshot_qa',
+          passed: true,
+          state: 'SKIPPED',
+          message: `GODOT_GATES_SKIPPED: target engine is ${requestedEngine}`,
+        });
+        const editorMissing =
+          requestedEngine === 'unity'
+            ? 'UNITY_EDITOR_NOT_AVAILABLE'
+            : 'UNREAL_EDITOR_NOT_AVAILABLE';
+        const editorTool = tools.find((t) => t.id === requestedEngine);
+        pushGate(target, {
+          gate: `${requestedEngine}_compile`,
+          passed: true,
+          state: 'SKIPPED',
+          message: editorTool?.path
+            ? `${requestedEngine} editor detected at ${editorTool.path} — compile not run in this generator process (open the project to compile)`
+            : `${editorMissing}: project generated; compile/playtest blocked until the editor is installed`,
+        });
+        pushGate(target, {
+          gate: `${requestedEngine}_playtest`,
+          passed: true,
+          state: 'SKIPPED',
+          message: 'PLAYTEST_SKIPPED: editor play session is distinct from generation',
+        });
+        return;
+      }
       if (options.skipRuntimeValidation) {
         pushGate(target, {
           gate: 'godot_imports',
@@ -1448,7 +1547,7 @@ export class GenerationPipeline {
       passedAfter: boolean;
     }[] = [];
 
-    if (!qaReport.passed) {
+    if (!qaReport.passed && requestedEngine === 'godot') {
       report('automated_repair', 'RUNNING');
       createProjectCheckpoint(outputPath, 'before_repair');
       let attempt = 0;
@@ -1486,6 +1585,8 @@ export class GenerationPipeline {
           .map((a) => `#${a.attempt} [${a.failedGates.join(',')}] -> ${a.passedAfter ? 'passed' : 'still failing'}`)
           .join('; '),
       );
+    } else if (!qaReport.passed) {
+      report('automated_repair', 'SKIPPED', `Godot repair engine does not apply to ${requestedEngine} projects`);
     } else {
       // Completed jobs must not leave this stage unexplained-PENDING — SKIPPED with a reason
       // is meaningfully different from "never ran," and a clean job never invokes repair at all.
@@ -1506,8 +1607,8 @@ export class GenerationPipeline {
       staticPassed,
       importGate,
       runtimeGate: runtimeGateResult,
-      godotAvailable: Boolean(godotPath),
-      skipRuntimeValidation: options.skipRuntimeValidation,
+      godotAvailable: requestedEngine === 'godot' ? Boolean(godotPath) : false,
+      skipRuntimeValidation: options.skipRuntimeValidation || requestedEngine !== 'godot',
     });
 
     // MODERN_METROIDVANIA_GATE — a provider-independent, data-driven presentation-readiness score
@@ -1516,6 +1617,7 @@ export class GenerationPipeline {
     // triggers repair, and is advisory for non-RC profiles. It exists so "not visually ready" is
     // a legible, per-dimension result rather than something hidden behind a green runtime check.
     let modernGate: ReturnType<typeof modernGateToQAGateResult> | undefined;
+    if (requestedEngine === 'godot') {
     try {
       const gate = runModernMetroidvaniaGate(outputPath, { profile: gameDna.profile });
       modernGate = modernGateToQAGateResult(gate);
@@ -1539,6 +1641,7 @@ export class GenerationPipeline {
       warnings.push(
         `MODERN_METROIDVANIA_GATE could not run: ${err instanceof Error ? err.message : String(err)}`,
       );
+    }
     }
 
     writeFileSync(
@@ -1572,7 +1675,8 @@ export class GenerationPipeline {
     // on every profile, seed, and prior code state tried.
     let validationPassed =
       validationLevel === 'RUNTIME_VALIDATED' ||
-      (validationLevel === 'STATIC_VALIDATED' && Boolean(options.skipRuntimeValidation));
+      (validationLevel === 'STATIC_VALIDATED' &&
+        (Boolean(options.skipRuntimeValidation) || requestedEngine !== 'godot'));
 
     // A top-down project reaching this point with godot_runtime genuinely PASSED but
     // godot_playtest SKIPPED is not a legitimate outcome — every documented SKIPPED reason above
@@ -1605,7 +1709,7 @@ export class GenerationPipeline {
     // playtest checks passing, then failed to spawn a player at all once this pass had run.
     // Skipping it here (rather than genre-adapting the whole quality-pass subsystem, well beyond
     // this fix's scope) is the safe fix until top-down gets its own equivalent pass.
-    if (isProductionQualityProfile(gameDna.profile) && godotPath && validationPassed && !isTopDownArchetype(gameDna.archetype)) {
+    if (isProductionQualityProfile(gameDna.profile) && godotPath && validationPassed && !isTopDownArchetype(gameDna.archetype) && requestedEngine === 'godot') {
       try {
         const qualityReport = runQualityPass({
           projectPath: outputPath,
@@ -1674,7 +1778,13 @@ export class GenerationPipeline {
       `${validationLevel}: ${qaReport.results.filter((r) => r.passed).length}/${qaReport.results.length} gates passed`,
     );
 
-    if (!godotPath) {
+    if (requestedEngine !== 'godot') {
+      report(
+        'static_validation',
+        staticPassed ? 'PASSED' : 'WARN',
+        `${requestedEngine} static gates only — compile/open/playtest are separate statuses`,
+      );
+    } else if (!godotPath) {
       report('static_validation', 'SKIPPED', 'NEEDS_RUNTIME_VALIDATION: GODOT_NOT_AVAILABLE');
       warnings.push('NEEDS_RUNTIME_VALIDATION: GODOT_NOT_AVAILABLE — Godot binary not detected, static validation only');
     } else if (options.skipRuntimeValidation) {
@@ -1683,7 +1793,7 @@ export class GenerationPipeline {
     } else {
       report('static_validation', importGate?.passed ? 'PASSED' : 'WARN');
     }
-    if (validationLevel === 'NEEDS_RUNTIME_VALIDATION') {
+    if (requestedEngine === 'godot' && validationLevel === 'NEEDS_RUNTIME_VALIDATION') {
       warnings.push('NEEDS_RUNTIME_VALIDATION: install Godot and re-run validate or regenerate to reach RUNTIME_VALIDATED');
     }
     if (runtimeGateResult?.state === 'FAIL') {
@@ -1704,8 +1814,8 @@ export class GenerationPipeline {
           zip: false,
           requireValidation: false,
           requireCommercialSafe: options.mode === 'COMMERCIAL_SAFE',
-          packageWindows: Boolean(godotPath) && process.platform === 'win32',
-          packageMacOS: Boolean(godotPath) && process.platform === 'darwin',
+          packageWindows: Boolean(godotPath) && process.platform === 'win32' && requestedEngine === 'godot',
+          packageMacOS: Boolean(godotPath) && process.platform === 'darwin' && requestedEngine === 'godot',
           godotExecutable: godotPath ?? undefined,
         });
         warnings.push(...exportResult.warnings);

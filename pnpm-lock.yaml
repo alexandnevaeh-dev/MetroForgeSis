@@ -216,6 +216,25 @@ importers:
         specifier: ^5.7.2
         version: 5.9.3
 
+  packages/engines:
+    dependencies:
+      '@metroforge/godot':
+        specifier: workspace:*
+        version: link:../godot
+      '@metroforge/procedural':
+        specifier: workspace:*
+        version: link:../procedural
+      '@metroforge/schemas':
+        specifier: workspace:*
+        version: link:../schemas
+      '@metroforge/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
   packages/generation:
     dependencies:
       '@metroforge/ai':
@@ -227,6 +246,9 @@ importers:
       '@metroforge/database':
         specifier: workspace:*
         version: link:../database
+      '@metroforge/engines':
+        specifier: workspace:*
+        version: link:../engines
       '@metroforge/godot':
         specifier: workspace:*
         version: link:../godot
@@ -245,6 +267,12 @@ importers:
       '@metroforge/tools':
         specifier: workspace:*
         version: link:../tools
+      '@metroforge/unity':
+        specifier: workspace:*
+        version: link:../unity
+      '@metroforge/unreal':
+        specifier: workspace:*
+        version: link:../unreal
     devDependencies:
       typescript:
         specifier: ^5.7.2
@@ -332,6 +360,44 @@ importers:
       '@metroforge/ai':
         specifier: workspace:*
         version: link:../ai
+      '@metroforge/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  packages/unity:
+    dependencies:
+      '@metroforge/engines':
+        specifier: workspace:*
+        version: link:../engines
+      '@metroforge/godot':
+        specifier: workspace:*
+        version: link:../godot
+      '@metroforge/schemas':
+        specifier: workspace:*
+        version: link:../schemas
+      '@metroforge/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  packages/unreal:
+    dependencies:
+      '@metroforge/engines':
+        specifier: workspace:*
+        version: link:../engines
+      '@metroforge/godot':
+        specifier: workspace:*
+        version: link:../godot
+      '@metroforge/schemas':
+        specifier: workspace:*
+        version: link:../schemas
       '@metroforge/shared':
         specifier: workspace:*
         version: link:../shared

@@ -82,6 +82,12 @@ def ground() -> Image.Image:
     t.rect(0, 0, TS, 4, PAL["lip"])
     t.rect(0, 0, TS, 1, PAL["lip_hi"])
     t.rect(0, 3, TS, 1, PAL["mortar"])
+    # Frozen conduit channel — this floor carried glass-metal ingots, not blank rivets.
+    t.rect(0, 12, TS, 6, PAL["glass_d"])
+    t.rect(0, 13, TS, 4, PAL["glass"])
+    t.rect(0, 14, TS, 1, PAL["glass_l"])
+    t.rect(0, 11, TS, 1, PAL["brass"])
+    t.rect(0, 18, TS, 1, PAL["brass"])
     return t.im
 
 

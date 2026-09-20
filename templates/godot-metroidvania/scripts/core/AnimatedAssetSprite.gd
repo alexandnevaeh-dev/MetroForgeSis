@@ -159,7 +159,7 @@ func _load_prefixed_sheets(frames: SpriteFrames) -> void:
 	## When the assembler only patches walk/hurt/death/attack, still pick up idle/fly/telegraph
 	## sheets that share the same character prefix (enemy_001_idle.png next to enemy_001_walk.png).
 	var prefix := _sheet_prefix()
-	var extras := ["idle", "fly", "hover", "telegraph", "recovery", "talk", "attack_projectile", "attack_burst"]
+	var extras := ["idle", "fly", "hover", "telegraph", "recovery", "talk", "listen", "attack_2", "attack_3", "attack_projectile", "attack_burst"]
 	for anim_name in extras:
 		var path := "%s_%s.png" % [prefix, anim_name]
 		var res_path := path if path.begins_with("res://") else "res://" + path
@@ -169,7 +169,7 @@ func _load_prefixed_sheets(frames: SpriteFrames) -> void:
 			frames.add_animation(anim_name)
 		else:
 			frames.clear(anim_name)
-		var looping: bool = anim_name in ["idle", "fly", "hover", "telegraph", "recovery", "talk"]
+		var looping: bool = anim_name in ["idle", "fly", "hover", "telegraph", "recovery", "talk", "listen"]
 		frames.set_animation_loop(anim_name, looping)
 		_load_animation_frames(frames, anim_name, path, false)
 

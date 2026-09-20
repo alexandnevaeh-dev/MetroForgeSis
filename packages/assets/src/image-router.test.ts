@@ -151,3 +151,90 @@ describe('explainImageProviderRouting', () => {
     expect(explanation.candidates[0]?.reasons.some((r) => /local runtime/i.test(r))).toBe(true);
   });
 });
+
+describe('VRAM-aware image routing', () => {
+  it('skips a local GPU workflow that exceeds total VRAM and falls back to remote', async () => {
+    const registry = new ImageProviderRegistry();
+    registry.register({
+      provider: new MockImageGenerator('qwen-image-edit', true),
+      local: true,
+      priority: 95,
+      estimatedVramMb: 16384,
+    });
+    registry.register({
+      provider: new MockImageGenerator('nvidia-image', true),
+      local: false,
+      priority: 88,
+    });
+
+    const result = await registry.selectHealthy({
+      hardware: { profile: 'BALANCED', ramMb: 16384, vramMb: 8151, freeVramMb: 7420 },
+    });
+
+    expect(result.generator?.id).toBe('nvidia-image');
+    expect(result.warnings.some((w) => w.includes('INSUFFICIENT_VRAM'))).toBe(true);
+  });
+
+  it('keeps a local GPU workflow that fits the 8 GB budget', async () => {
+    const registry = new ImageProviderRegistry();
+    registry.register({
+      provider: new MockImageGenerator('comfyui', true),
+      local: true,
+      priority: 90,
+      estimatedVramMb: 6144,
+    });
+    registry.register({
+      provider: new MockImageGenerator('nvidia-image', true),
+      local: false,
+      priority: 88,
+    });
+
+    const result = await registry.selectHealthy({
+      hardware: { profile: 'BALANCED', ramMb: 16384, vramMb: 8151, freeVramMb: 7420 },
+      qualityProfile: 'BALANCED',
+    });
+
+    expect(result.generator?.id).toBe('comfyui');
+  });
+
+  it('never VRAM-filters a remote provider', async () => {
+    const registry = new ImageProviderRegistry();
+    registry.register({
+      provider: new MockImageGenerator('nvidia-image', true),
+      local: false,
+      priority: 10,
+      estimatedVramMb: 24000,
+    });
+
+    const result = await registry.selectHealthy({
+      hardware: { profile: 'BALANCED', ramMb: 16384, vramMb: 8151 },
+    });
+    expect(result.generator?.id).toBe('nvidia-image');
+  });
+
+  it('DRAFT prefers the faster local provider when both fit', async () => {
+    const registry = new ImageProviderRegistry();
+    registry.register({
+      provider: new MockImageGenerator('quality-local', true),
+      local: true,
+      priority: 90,
+      qualityScore: 95,
+      speedScore: 30,
+      estimatedVramMb: 4096,
+    });
+    registry.register({
+      provider: new MockImageGenerator('fast-local', true),
+      local: true,
+      priority: 80,
+      qualityScore: 50,
+      speedScore: 95,
+      estimatedVramMb: 2048,
+    });
+
+    const result = await registry.selectHealthy({
+      hardware: { profile: 'BALANCED', ramMb: 16384, vramMb: 8151, freeVramMb: 7000 },
+      qualityProfile: 'DRAFT',
+    });
+    expect(result.generator?.id).toBe('fast-local');
+  });
+});

@@ -107,6 +107,13 @@ def _model_is_cached(model_id: str) -> bool:
 
 
 def _ensure_model_available(model_id: str) -> dict[str, Any]:
+    # A registered local model is a directory, not a Hugging Face repository ID.
+    if os.path.isdir(model_id):
+        if not os.path.isfile(os.path.join(model_id, "model_index.json")):
+            raise ValueError(f"Local model is missing model_index.json: {model_id}")
+        return {"cached_before": True, "downloaded": False, "download_ms": 0, "cached_after": True}
+    if os.path.isabs(model_id):
+        raise ValueError(f"Local model directory does not exist: {model_id}")
     cached_before = _model_is_cached(model_id)
     download_ms = 0
     if not cached_before:
@@ -410,10 +417,15 @@ def get_pipeline(model_id: str, device: str = "cpu", local_files_only: bool = Fa
 
     from diffusers import AutoPipelineForText2Image
 
+    # Use installed half-precision weights without downloading duplicate full-precision files.
+    load_options = {}
+    if os.path.isfile(os.path.join(model_id, "unet", "diffusion_pytorch_model.fp16.safetensors")):
+        load_options["variant"] = "fp16"
     pipe = AutoPipelineForText2Image.from_pretrained(
         model_id,
         torch_dtype=_torch_dtype(device),
         local_files_only=local_files_only,
+        **load_options,
     )
     _pipeline = _move_pipe(pipe, device)
     return _pipeline
@@ -740,6 +752,8 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
         pipe = get_pipeline(model_id, device, local_files_only=True)
         pipeline_load_ms = int((time.perf_counter() - pipeline_start) * 1000)
         inference_start = time.perf_counter()
+        # Distilled Turbo models require classifier-free guidance to be disabled.
+        generation_options = {"guidance_scale": 0.0} if "turbo" in model_id.lower() else {}
         result = pipe(
             prompt=full_prompt,
             negative_prompt=negative,
@@ -747,6 +761,7 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
             height=height,
             num_inference_steps=steps,
             generator=generator,
+            **generation_options,
         )
         inference_ms = int((time.perf_counter() - inference_start) * 1000)
 

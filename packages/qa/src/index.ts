@@ -1,5 +1,6 @@
 export { QAValidator, RepairEngineer, gateState, validateWorldSceneArchetypeIntegrity } from './validator.js';
 export type { QAGateResult, QAReport, QAGateState } from './validator.js';
+export { detectProjectEngine, validateForeignEngineProject } from './engine-validator.js';
 export { deriveValidationLevel } from './validation-level.js';
 export type { ValidationLevel } from './validation-level.js';
 export { parseSmokeTestOutput, smokeTestPassed } from './smoke-output.js';

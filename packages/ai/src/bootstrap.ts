@@ -115,7 +115,7 @@ export async function bootstrapProviders(
       new NvidiaProvider({
         apiKey: config.nvidiaApiKey,
         baseUrl: config.nvidiaApiBaseUrl || 'https://integrate.api.nvidia.com/v1',
-        defaultModel: 'meta/llama-3.1-8b-instruct',
+        defaultModel: process.env.NVIDIA_DEFAULT_MODEL || 'nvidia/nemotron-3.5-lightning-30b-a3b',
         enabled: !!config.nvidiaApiKey && userEnabled('nvidia'),
         priority: providerDefaults.nvidia?.priority,
       }),

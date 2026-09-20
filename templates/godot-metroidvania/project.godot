@@ -22,6 +22,8 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+StudioRuntimeBridge="*res://scripts/core/StudioRuntimeBridge.gd"
+
 GameManager="*res://scripts/core/GameManager.gd"
 EventBus="*res://scripts/core/EventBus.gd"
 SaveManager="*res://scripts/core/SaveManager.gd"

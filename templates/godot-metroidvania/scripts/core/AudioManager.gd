@@ -42,6 +42,15 @@ var _current_music_id: String = ""
 var _sfx_cache: Dictionary = {}
 var _missing_sfx_warned: Dictionary = {}
 var _last_played_frame: Dictionary = {}
+## Map requested ids onto synthesized DEFAULT_SFX names when a dedicated clip is absent.
+const SFX_ALIASES := {
+	"player_hurt": "hit",
+	"player_attack": "hit",
+	"enemy_attack": "hit",
+	"boss_attack": "hit",
+	"checkpoint": "ability",
+	"door": "ui_click",
+}
 
 func _ready() -> void:
 	_ensure_buses()
@@ -126,16 +135,40 @@ func _load_sfx(sfx_name: String) -> AudioStream:
 	if _sfx_cache.has(sfx_name):
 		return _sfx_cache[sfx_name]
 
-	var path := "%s%s.wav" % [SFX_DIR, sfx_name]
-	var stream: AudioStream = null
-	if ResourceLoader.exists(path):
-		stream = load(path)
-	elif not _missing_sfx_warned.has(sfx_name):
-		push_warning("AudioManager: SFX file not found: %s" % path)
+	var stream := _load_sfx_file(sfx_name)
+	if stream == null:
+		var alias := String(SFX_ALIASES.get(sfx_name, ""))
+		if not alias.is_empty() and alias != sfx_name:
+			stream = _load_sfx_file(alias)
+	if stream == null and not _missing_sfx_warned.has(sfx_name):
 		_missing_sfx_warned[sfx_name] = true
+		if _sfx_dir_has_any():
+			push_warning("AudioManager: SFX file not found: %s%s.wav" % [SFX_DIR, sfx_name])
 
 	_sfx_cache[sfx_name] = stream
 	return stream
+
+
+func _load_sfx_file(sfx_name: String) -> AudioStream:
+	var path := "%s%s.wav" % [SFX_DIR, sfx_name]
+	if not ResourceLoader.exists(path):
+		return null
+	return load(path)
+
+
+func _sfx_dir_has_any() -> bool:
+	var dir := DirAccess.open(SFX_DIR)
+	if dir == null:
+		return false
+	dir.list_dir_begin()
+	var name := dir.get_next()
+	while name != "":
+		if not dir.current_is_dir() and name.ends_with(".wav"):
+			dir.list_dir_end()
+			return true
+		name = dir.get_next()
+	dir.list_dir_end()
+	return false
 
 ## Plays a one-shot dialogue voice clip from a res:// path when TTS assets were generated.
 ## Silently no-ops if the file is missing so dialogue still works without voice lines.

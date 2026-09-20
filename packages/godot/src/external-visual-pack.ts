@@ -21,6 +21,8 @@ export const EXTERNAL_VISUAL_PACKS = [
   // palettes). See test-packs/metroforge-research-facility-v2/manifest.json and
   // docs/debug/TOPDOWN_GENRE_MILESTONE.md's overhaul-pass section.
   'metroforge-research-facility-v2',
+  'conduit-foundry-heat',
+  'conduit-foundry-heat-v2',
 ] as const;
 export type ExternalVisualPackId = (typeof EXTERNAL_VISUAL_PACKS)[number];
 

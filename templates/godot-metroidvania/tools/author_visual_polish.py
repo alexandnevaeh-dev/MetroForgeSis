@@ -33,6 +33,9 @@ CYAN_GLOW = (180, 244, 246, 255)
 RUST = (185, 93, 62, 255)
 RUST_D = (96, 42, 28, 255)
 RUST_L = (227, 155, 88, 255)
+# Higher-value hull so melee rust still reads on dark moss floors without a bloom.
+HULL = (210, 138, 92, 255)
+HULL_HI = (238, 192, 132, 255)
 AMBER = (239, 189, 97, 255)
 AMBER_D = (168, 96, 32, 255)
 ASH = (168, 176, 168, 255)
@@ -81,6 +84,28 @@ def bevel_rect(img: Image.Image, x0: int, y0: int, x1: int, y1: int, mid, hi, lo
     fill_rect(img, x0, y0, x0, y1, hi)
     fill_rect(img, x0, y1, x1, y1, lo)
     fill_rect(img, x1, y0, x1, y1, lo)
+
+
+def lit_rim(img: Image.Image) -> None:
+    """1px lightward highlight on the silhouette. Not bloom — value contrast, not a glow."""
+    src = img.copy()
+    w, h = img.size
+    contact = int(h * 0.62)
+    for y in range(h):
+        for x in range(w):
+            c = src.getpixel((x, y))
+            if c[3] < 40:
+                continue
+            left = x == 0 or src.getpixel((x - 1, y))[3] < 40
+            up = y == 0 or src.getpixel((x, y - 1))[3] < 40
+            if not (left or up):
+                continue
+            # Contact band stays warm rust so sprite_foot_clean cannot punch pale steel.
+            if y >= contact:
+                hi = RUST_L
+            else:
+                hi = STEEL_H
+            px(img, x, y, hi)
 
 
 def outline(img: Image.Image, color=INK) -> None:
@@ -327,14 +352,14 @@ def stride_cycle(run: bool) -> list[Pose]:
         blade = 0.55
     else:
         keys = [
-            (4, 0, 0, -3, 5, 1, 1, 0, 2, -1, -2),
-            (2, 0, 1, 0, 2, 0, 2, 0, 1, 0, -1),
-            (0, 2, 1, 3, 6, 2, 0, 1, -1, 1, 1),
-            (-3, 4, 2, 4, 1, 0, -1, 1, -2, 2, 2),
-            (-3, 5, 1, 4, 0, 0, 1, 0, -2, 1, 2),
-            (0, 2, 0, 2, 0, 1, 2, 0, -1, 0, 1),
-            (3, 6, 2, 0, 2, 1, 0, 1, 1, -1, -1),
-            (4, 1, 0, -3, 4, 2, -1, 1, 2, -1, -2),
+            (5, 0, 0, -4, 8, 2, 1, 1, 3, -2, -3),   # R contact
+            (3, 0, 2, -1, 4, 1, 3, 1, 2, -1, -2),   # R plant hold
+            (-1, 3, 1, 4, 9, 3, 0, 2, -1, 2, 1),    # passing (L high)
+            (-5, 7, 3, 6, 2, 0, -2, 2, -3, 3, 3),   # L reaching
+            (-5, 8, 2, 6, 0, 0, 1, 1, -3, 2, 3),    # L contact
+            (-2, 4, 1, 4, 0, 2, 3, 1, -2, 0, 2),    # L plant hold
+            (4, 9, 3, -1, 3, 1, 0, 2, 2, -2, -1),   # passing (R high)
+            (5, 2, 0, -4, 7, 3, -2, 2, 3, -1, -3),  # R reaching
         ]
         blade = 0.45
     frames = []
@@ -433,10 +458,10 @@ def author_player() -> None:
         ],
         "attack": [
             # Hitbox is 0.15s from press (frames 0-2 at 18fps). F0 is a committed swing, not a rest pose.
-            Pose(crouch=2, lean=-1, arm_back=3, reach=2, blade=0.9, blade_drop=-2, rear_arm=3, pack=1, antenna=1),
-            Pose(crouch=1, lean=2, arm_back=0, reach=6, blade=1.6, blade_drop=0, visor=1.0, rear_arm=-1, pack=-1),
-            Pose(lean=4, reach=9, blade=2.1, blade_drop=1, visor=1.0, flash=0.25, rear_arm=-2, pack=-2, antenna=-1),  # impact hold
-            Pose(lean=3, reach=7, blade=1.7, blade_drop=3, arm_raise=1, rear_arm=-1, pack=0),  # follow-through
+            Pose(crouch=3, lean=-2, arm_back=6, reach=1, blade=1.1, blade_drop=-3, rear_arm=4, pack=2, antenna=2),
+            Pose(crouch=1, lean=3, arm_back=0, reach=8, blade=1.9, blade_drop=0, visor=1.0, rear_arm=-2, pack=-1),
+            Pose(lean=5, reach=11, blade=2.3, blade_drop=1, visor=1.0, flash=0.28, rear_arm=-3, pack=-2, antenna=-1),  # impact hold
+            Pose(lean=3, reach=8, blade=1.8, blade_drop=3, arm_raise=1, rear_arm=-1, pack=0),  # follow-through
             Pose(lean=1, reach=3, blade=0.9, blade_drop=4, arm_back=1, rear_arm=1, pack=1, antenna=1),
             Pose(arm_back=2, blade=0.5, blade_drop=3, rear_arm=1, pack=1),
         ],
@@ -573,59 +598,86 @@ def author_player() -> None:
 # ---------------------------------------------------------------------------
 
 def draw_melee(p: Pose) -> Image.Image:
+    """Hunched rust crawler occupying most of the 64px canvas. Pivot and collision stay 64/32x48."""
     img = blank(FS, FS)
     cx = 32 + int(p.lean)
     ground = 62
     crouch = int(p.crouch)
     bob = int(p.bob)
-    hip_y = 48 + crouch + bob
-    torso_top = 30 + crouch + bob
-    head_cy = 24 + crouch + bob + int(p.head_tilt)
+    hip_y = 42 + crouch + bob
+    torso_top = 16 + crouch + bob
+    head_cy = 11 + crouch + bob + int(p.head_tilt)
 
-    pack_x = cx - 13 + int(p.pack)
-    bevel_rect(img, pack_x, torso_top, pack_x + 7, hip_y - 2, RUST_D, RUST, INK)
+    # Dorsal exhaust — breaks the rectangle so the silhouette is not a rust box.
+    pack_x = cx - 17 + int(p.pack)
+    bevel_rect(img, pack_x, torso_top + 2, pack_x + 8, hip_y - 6, RUST_D, HULL, INK)
+    fill_rect(img, pack_x + 2, torso_top + 4, pack_x + 5, torso_top + 8, AMBER_D)
+    fill_rect(img, pack_x + 3, torso_top + 5, pack_x + 4, torso_top + 7, AMBER)
 
-    _leg(img, (cx - 6, hip_y), (cx - 8 + int(p.l_fwd), ground - int(p.l_lift)), RUST_D, INK, RUST, int(p.l_bend))
-    _leg(img, (cx + 5, hip_y), (cx + 8 + int(p.r_fwd), ground - int(p.r_lift)), RUST, RUST_D, RUST_L, int(p.r_bend))
+    # Rear arm opposes the claw so walk/attack read as a stride, not a slide.
+    rear = int(p.rear_arm)
+    rax = cx - 14 - int(p.arm_back) + rear
+    ray = torso_top + 9
+    bevel_rect(img, cx - 14, torso_top + 5, cx - 7, torso_top + 12, RUST_D, HULL, INK)
+    bevel_rect(img, rax - 2, ray, rax + 2, min(ground - 8, ray + 12), RUST_D, HULL, INK)
 
-    bevel_rect(img, cx - 9, hip_y - 2, cx + 9, hip_y + 3, RUST_D, RUST, INK)
-    bevel_rect(img, cx - 10, torso_top, cx + 10, hip_y - 1, RUST, RUST_L, RUST_D)
-    fill_rect(img, cx - 7, torso_top + 4, cx + 7, torso_top + 5, RUST_L)
-    fill_rect(img, cx - 3, torso_top + 9, cx + 3, torso_top + 14, AMBER_D)
-    fill_rect(img, cx - 1, torso_top + 10, cx + 1, torso_top + 13, AMBER)
+    _leg(
+        img,
+        (cx - 9, hip_y),
+        (cx - 13 + int(p.l_fwd), ground - int(p.l_lift)),
+        RUST_D, INK, HULL, int(p.l_bend), 4,
+    )
+    _leg(
+        img,
+        (cx + 8, hip_y),
+        (cx + 13 + int(p.r_fwd), ground - int(p.r_lift)),
+        HULL, RUST_D, HULL_HI, int(p.r_bend), 4,
+    )
 
-    # Claw arm — bulkier, lower than courier blade
-    shx, shy = cx + 10, torso_top + 6
+    bevel_rect(img, cx - 13, hip_y - 3, cx + 13, hip_y + 5, RUST_D, HULL, INK)
+    bevel_rect(img, cx - 14, torso_top, cx + 14, hip_y - 1, HULL, HULL_HI, RUST_D)
+    fill_rect(img, cx - 11, torso_top + 2, cx + 11, torso_top + 4, HULL_HI)
+    # Furnace core — large enough to read at World camera distance without a glow bloom.
+    fill_rect(img, cx - 7, torso_top + 8, cx + 7, torso_top + 20, AMBER_D)
+    fill_rect(img, cx - 5, torso_top + 10, cx + 5, torso_top + 18, AMBER)
+    fill_rect(img, cx - 2, torso_top + 12, cx + 2, torso_top + 16, STEEL_H)
+
+    shx, shy = cx + 12, torso_top + 7
     reach = int(p.reach)
     back = int(p.arm_back)
     raise_ = int(p.arm_raise)
-    ex = shx + 5 + reach - back
-    ey = shy + 6 - raise_
-    bevel_rect(img, shx - 2, shy - 3, shx + 4, shy + 4, RUST, RUST_L, RUST_D)
-    bevel_rect(img, shx + 2, shy, ex + 2, ey + 3, RUST, RUST_L, RUST_D)
-    # Three-finger claw
-    fill_rect(img, ex, ey - 2, ex + 6, ey - 1, RUST_L)
-    fill_rect(img, ex + 1, ey, ex + 8, ey + 1, AMBER)
-    fill_rect(img, ex, ey + 3, ex + 5, ey + 4, RUST_D)
+    ex = shx + 6 + reach - back
+    ey = shy + 7 - raise_
+    bevel_rect(img, shx - 3, shy - 4, shx + 5, shy + 5, HULL, HULL_HI, RUST_D)
+    bevel_rect(img, shx + 2, shy, ex + 3, ey + 4, HULL, HULL_HI, RUST_D)
+    fill_rect(img, ex, ey - 3, ex + 8, ey - 1, HULL_HI)
+    fill_rect(img, ex + 1, ey, ex + 10, ey + 2, AMBER)
+    fill_rect(img, ex, ey + 4, ex + 7, ey + 6, RUST_D)
+    px(img, ex + 10, ey + 1, AMBER)
 
-    # Heavy helm — no visor slit like the player; glowing amber eyes
-    bevel_rect(img, cx - 8, head_cy - 7, cx + 8, head_cy + 5, RUST, RUST_L, RUST_D)
-    fill_rect(img, cx - 7, head_cy - 6, cx + 7, head_cy - 5, RUST_L)
-    fill_rect(img, cx - 5, head_cy - 1, cx - 2, head_cy + 1, AMBER)
-    fill_rect(img, cx + 2, head_cy - 1, cx + 5, head_cy + 1, AMBER)
-    fill_rect(img, cx - 2, head_cy + 2, cx + 2, head_cy + 4, RUST_D)
+    # Crested helm — no courier visor slit; amber eyes plus a vertical crest.
+    fill_rect(img, cx - 2, head_cy - 13, cx + 2, head_cy - 7, HULL_HI)
+    fill_rect(img, cx - 1, head_cy - 12, cx + 1, head_cy - 8, AMBER_D)
+    bevel_rect(img, cx - 12, head_cy - 8, cx + 12, head_cy + 7, HULL, HULL_HI, RUST_D)
+    fill_rect(img, cx - 10, head_cy - 7, cx + 10, head_cy - 5, HULL_HI)
+    fill_rect(img, cx - 8, head_cy - 1, cx - 3, head_cy + 3, AMBER)
+    fill_rect(img, cx + 3, head_cy - 1, cx + 8, head_cy + 3, AMBER)
+    fill_rect(img, cx - 7, head_cy, cx - 4, head_cy + 2, STEEL_L)
+    fill_rect(img, cx + 4, head_cy, cx + 7, head_cy + 2, STEEL_L)
+    fill_rect(img, cx - 3, head_cy + 4, cx + 3, head_cy + 6, RUST_D)
 
     if p.flash > 0:
         overlay = blank(FS, FS)
         for y in range(FS):
             for x in range(FS):
                 if img.getpixel((x, y))[3] > 12:
-                    overlay.putpixel((x, y), (AMBER[0], AMBER[1], AMBER[2], int(120 * p.flash)))
+                    overlay.putpixel((x, y), (AMBER[0], AMBER[1], AMBER[2], int(90 * p.flash)))
         img = Image.alpha_composite(img, overlay)
     if p.scatter > 0:
         bits = img.copy()
         img = blank(FS, FS)
         img.paste(bits, (int(p.scatter * 3), int(p.scatter * 4)), bits)
+    lit_rim(img)
     outline(img)
     return img
 
@@ -645,19 +697,21 @@ def author_enemy() -> None:
             rear_arm=round(math.sin(ph)),
             l_fwd=1 if i < 3 else -1,
         ))
-    walk = stride_cycle(False)
+    walk = stride_cycle(True)
     for p in walk:
         p.crouch = 2
         p.blade = 0
         p.hide_blade = True
         p.lean = max(p.lean, 1)
     attack = [
-        Pose(crouch=3, arm_back=6, lean=-2, pack=2),
-        Pose(crouch=3, arm_back=7, lean=-3, pack=2),  # telegraph hold
-        Pose(reach=8, lean=4, crouch=1, visor=1.0, flash=0.2),  # strike
-        Pose(reach=9, lean=5, visor=1.0),  # impact hold
-        Pose(reach=4, lean=2, crouch=2),
-        Pose(arm_back=1, lean=0, crouch=2),
+        Pose(crouch=5, arm_back=10, lean=-4, pack=3, rear_arm=5),
+        Pose(crouch=5, arm_back=12, lean=-5, pack=4, rear_arm=6),  # telegraph hold
+        Pose(reach=12, lean=6, crouch=1, visor=1.0, flash=0.2, rear_arm=-4),  # strike
+        Pose(reach=13, lean=7, visor=1.0, flash=0.25, rear_arm=-3),  # impact hold
+        Pose(reach=8, lean=3, crouch=2, rear_arm=-1),  # follow-through
+        Pose(reach=3, lean=1, crouch=3, arm_back=2),  # recover
+        Pose(arm_back=3, lean=0, crouch=3, pack=1),  # recover hold
+        Pose(arm_back=1, lean=0, crouch=2),  # settle
     ]
     hurt = [
         Pose(lean=-3, crouch=2, flash=0.8),
@@ -682,11 +736,14 @@ def author_enemy() -> None:
         "death": death,
     }
     for name, poses in clips.items():
-        save_sheet(dest / f"enemy_000_{name}.png", [draw_melee(p) for p in poses])
+        frames = [draw_melee(p) for p in poses]
+        save_sheet(dest / f"enemy_000_{name}.png", frames)
+        if name == "idle":
+            frames[0].save(dest / "enemy_000_idle_pose.png")
     meta = {
         "idle": {"frameCount": 6, "fps": 8, "loop": True},
         "walk": {"frameCount": 8, "fps": 10, "loop": True},
-        "attack": {"frameCount": 6, "fps": 12, "loop": False},
+        "attack": {"frameCount": 8, "fps": 12, "loop": False},
         "hurt": {"frameCount": 3, "fps": 14, "loop": False},
         "death": {"frameCount": 8, "fps": 10, "loop": False},
     }
@@ -707,10 +764,10 @@ def draw_ranged(p: Pose) -> Image.Image:
     _leg(img, (cx - 4, hip_y), (cx - 5 + int(p.l_fwd), ground - int(p.l_lift)), RUST_D, INK, RUST, int(p.l_bend), 2)
     _leg(img, (cx + 3, hip_y), (cx + 5 + int(p.r_fwd), ground - int(p.r_lift)), RUST, RUST_D, RUST_L, int(p.r_bend), 2)
 
-    bevel_rect(img, cx - 5, hip_y - 2, cx + 5, hip_y + 2, RUST_D, RUST, INK)
-    bevel_rect(img, cx - 6, torso_top, cx + 6, hip_y - 1, RUST, RUST_L, RUST_D)
+    bevel_rect(img, cx - 5, hip_y - 2, cx + 5, hip_y + 2, RUST_D, HULL, INK)
+    bevel_rect(img, cx - 6, torso_top, cx + 6, hip_y - 1, HULL, HULL_HI, RUST_D)
     fill_rect(img, cx - 3, torso_top + 6, cx + 3, torso_top + 12, RUST_D)
-    fill_rect(img, cx - 1, torso_top + 8, cx + 1, torso_top + 11, AMBER_D)
+    fill_rect(img, cx - 1, torso_top + 8, cx + 1, torso_top + 11, AMBER)
 
     # Shoulder cannon
     shx, shy = cx + 6, torso_top + 4
@@ -735,6 +792,7 @@ def draw_ranged(p: Pose) -> Image.Image:
         bits = img.copy()
         img = blank(FS, FS)
         img.paste(bits, (int(p.scatter * 3), int(p.scatter * 3)), bits)
+    lit_rim(img)
     outline(img)
     return img
 
@@ -757,7 +815,7 @@ def draw_flyer(p: Pose) -> Image.Image:
     _stroke(img, cx - 10, body_y - 6, cx - 6, body_y, RUST, 1)
     _stroke(img, cx + 10, body_y - 6, cx + 6, body_y, RUST, 1)
 
-    bevel_rect(img, cx - 9, body_y - 4, cx + 9, body_y + 10, RUST, RUST_L, RUST_D)
+    bevel_rect(img, cx - 9, body_y - 4, cx + 9, body_y + 10, HULL, HULL_HI, RUST_D)
     fill_rect(img, cx - 4, body_y, cx + 4, body_y + 6, AMBER_D)
     fill_rect(img, cx - 2, body_y + 1, cx + 2, body_y + 5, AMBER if p.visor > 0.5 else AMBER_D)
 
@@ -776,6 +834,7 @@ def draw_flyer(p: Pose) -> Image.Image:
         bits = img.copy()
         img = blank(FS, FS)
         img.paste(bits, (int(p.scatter * 4), int(p.scatter * -2)), bits)
+    lit_rim(img)
     outline(img)
     return img
 
@@ -883,9 +942,9 @@ def author_ranged() -> None:
         p.lean = 1
         p.blade = 0
     attack = [
-        Pose(arm_back=2, crouch=1, lean=-1),
-        Pose(arm_back=1, reach=2, visor=1.0),
-        Pose(reach=4, flash=0.9, visor=1.0, lean=1),  # muzzle
+        Pose(arm_back=5, crouch=2, lean=-2),
+        Pose(arm_back=3, reach=1, visor=1.0, lean=-1),
+        Pose(reach=7, flash=0.95, visor=1.0, lean=2),  # muzzle
         Pose(reach=3, arm_back=-2, flash=0.3, lean=2),  # recoil
         Pose(reach=1, arm_back=0, lean=1),
         Pose(arm_back=1),
@@ -907,7 +966,10 @@ def author_ranged() -> None:
     ]
     clips = {"idle": idle, "walk": walk, "attack": attack, "hurt": hurt, "death": death}
     for name, poses in clips.items():
-        save_sheet(dest / f"enemy_001_{name}.png", [draw_ranged(p) for p in poses])
+        frames = [draw_ranged(p) for p in poses]
+        save_sheet(dest / f"enemy_001_{name}.png", frames)
+        if name == "idle":
+            frames[0].save(dest / "enemy_001_idle_pose.png")
     _write_actor_meta(dest / "enemy_001_animations.json", {
         "idle": {"frameCount": 6, "fps": 8, "loop": True},
         "walk": {"frameCount": 8, "fps": 10, "loop": True},
@@ -930,9 +992,9 @@ def author_flyer() -> None:
             lean=round(math.sin(ph) * 1),
         ))
     attack = [
-        Pose(bob=2, pack=1, visor=0.8),
-        Pose(bob=-1, lean=2, pack=0, visor=1.0),  # dip
-        Pose(bob=-2, lean=3, flash=0.8, visor=1.0, pack=3),  # spit
+        Pose(bob=3, pack=2, visor=0.8, lean=-1),
+        Pose(bob=-2, lean=3, pack=0, visor=1.0),  # dip
+        Pose(bob=-3, lean=4, flash=0.9, visor=1.0, pack=4),  # spit
         Pose(bob=0, lean=1, flash=0.3, pack=2),
         Pose(bob=1, pack=1),
         Pose(bob=2, pack=1),
@@ -954,7 +1016,10 @@ def author_flyer() -> None:
     ]
     clips = {"idle": fly, "walk": fly, "fly": fly, "attack": attack, "hurt": hurt, "death": death}
     for name, poses in clips.items():
-        save_sheet(dest / f"enemy_002_{name}.png", [draw_flyer(p) for p in poses])
+        frames = [draw_flyer(p) for p in poses]
+        save_sheet(dest / f"enemy_002_{name}.png", frames)
+        if name == "idle":
+            frames[0].save(dest / "enemy_002_idle_pose.png")
     _write_actor_meta(dest / "enemy_002_animations.json", {
         "idle": {"frameCount": 6, "fps": 10, "loop": True},
         "walk": {"frameCount": 6, "fps": 10, "loop": True},
@@ -1137,6 +1202,8 @@ def author_boss() -> None:
     def dump(name: str, poses: list[Pose], kind: str = "idle") -> None:
         frames = [draw_boss(p, kind) for p in poses]
         save_sheet(dest / f"boss_final_{name}.png", frames)
+        if name == "idle":
+            frames[0].save(dest / "boss_final_idle_pose.png")
 
     dump("idle", idle)
     dump("walk", walk)
@@ -1177,7 +1244,7 @@ class TilePalette:
 
 PAL_FOUNDRY = TilePalette(STEEL_M, STEEL_L, STEEL_D)
 PAL_FLOOD = TilePalette((45, 84, 86, 255), (159, 199, 194, 255), (22, 44, 48, 255), stain=(36, 70, 78, 255))
-PAL_GROWTH = TilePalette((48, 68, 44, 255), (138, 168, 96, 255), (24, 36, 22, 255), growth=(74, 110, 52, 255))
+PAL_GROWTH = TilePalette((52, 74, 48, 255), (168, 188, 118, 255), (30, 42, 26, 255), growth=(84, 122, 58, 255))
 
 
 def steel_panel(wear: float = 0.0, moss: float = 0.0, crack: bool = False, platform: bool = False, pal: TilePalette | None = None) -> Image.Image:
@@ -1436,7 +1503,164 @@ def author_backgrounds() -> None:
         for y in range(8, 300, 26):
             d.polygon([(x + 2, y), (x + 24, y + 10), (x + 2, y + 18)], fill=(70, 108, 52, 150))
     near2.save(grow / "near.png")
-    print("wrote backgrounds/biome_{0,1,2}/{far,mid,near}.png")
+    author_foreground_plates()
+    print("wrote backgrounds/biome_{0,1,2}/{far,mid,near,foreground}.png")
+
+
+ARCH_W, ARCH_H = 80, 112
+
+
+def _arch_base(pal: TilePalette) -> Image.Image:
+    img = blank(ARCH_W, ARCH_H)
+    bevel_rect(img, 8, ARCH_H - 10, ARCH_W - 9, ARCH_H - 1, pal.lo, pal.mid, INK)
+    return img
+
+
+def _arch_column(pal: TilePalette, kind: str) -> Image.Image:
+    img = _arch_base(pal)
+    bevel_rect(img, 28, 8, 51, ARCH_H - 10, pal.mid, pal.hi, pal.lo)
+    fill_rect(img, 30, 12, 33, ARCH_H - 14, pal.hi)
+    fill_rect(img, 46, 12, 49, ARCH_H - 14, pal.lo)
+    for y in range(18, ARCH_H - 16, 14):
+        fill_rect(img, 24, y, 55, y + 3, pal.lo)
+        fill_rect(img, 26, y + 1, 53, y + 2, pal.hi)
+    if kind == "flood":
+        fill_rect(img, 32, 20, 47, 28, pal.stain or pal.lo)
+        fill_rect(img, 34, 40, 36, ARCH_H - 18, (90, 160, 168, 180))
+    elif kind == "growth":
+        for y in range(16, ARCH_H - 20, 10):
+            fill_rect(img, 22, y, 26, y + 6, pal.growth or pal.hi)
+        fill_rect(img, 36, 14, 43, 22, AMBER_D)
+    else:
+        fill_rect(img, 36, 14, 43, 22, CYAN_D)
+        px(img, 39, 16, CYAN)
+    outline(img)
+    return img
+
+
+def _arch_hood(pal: TilePalette, kind: str) -> Image.Image:
+    img = _arch_base(pal)
+    bevel_rect(img, 10, 36, 69, ARCH_H - 10, pal.lo, pal.mid, INK)
+    bevel_rect(img, 6, 18, 73, 40, pal.mid, pal.hi, pal.lo)
+    fill_rect(img, 18, 8, 61, 22, pal.lo)
+    fill_rect(img, 22, 4, 57, 12, pal.mid)
+    mouth = AMBER_D if kind != "flood" else (40, 90, 100, 255)
+    fill_rect(img, 24, 48, 55, ARCH_H - 18, mouth)
+    fill_rect(img, 28, 52, 51, ARCH_H - 22, AMBER if kind != "flood" else (70, 140, 148, 255))
+    if kind == "growth":
+        fill_ellipse(img, 40, 64, 10, 8, pal.growth or pal.hi)
+    outline(img)
+    return img
+
+
+def _arch_panel(pal: TilePalette, kind: str) -> Image.Image:
+    img = _arch_base(pal)
+    bevel_rect(img, 8, 16, 71, ARCH_H - 12, pal.mid, pal.hi, pal.lo)
+    fill_rect(img, 14, 24, 65, 32, pal.lo)
+    for y in range(40, 90, 12):
+        fill_rect(img, 16, y, 36, y + 6, pal.lo)
+        fill_rect(img, 42, y, 63, y + 6, pal.hi if kind != "growth" else (pal.growth or pal.hi))
+    fill_rect(img, 34, 20, 45, 28, CYAN_D if kind == "steel" else AMBER_D)
+    outline(img)
+    return img
+
+
+def _arch_frame(pal: TilePalette, kind: str) -> Image.Image:
+    img = _arch_base(pal)
+    bevel_rect(img, 6, 6, 73, ARCH_H - 8, pal.lo, pal.mid, INK)
+    fill_rect(img, 16, 18, 63, ARCH_H - 20, VOID)
+    bevel_rect(img, 16, 18, 22, ARCH_H - 20, pal.mid, pal.hi, pal.lo)
+    bevel_rect(img, 57, 18, 63, ARCH_H - 20, pal.mid, pal.hi, pal.lo)
+    bevel_rect(img, 16, 18, 63, 26, pal.mid, pal.hi, pal.lo)
+    accent = CYAN if kind == "steel" else ((90, 180, 188, 255) if kind == "flood" else (168, 204, 92, 255))
+    fill_rect(img, 30, 10, 49, 16, accent)
+    outline(img)
+    return img
+
+
+def author_architecture() -> None:
+    for biome_id, pal, kind in (
+        ("biome_0", PAL_FOUNDRY, "steel"),
+        ("biome_1", PAL_FLOOD, "flood"),
+        ("biome_2", PAL_GROWTH, "growth"),
+    ):
+        dest = ASSETS / "architecture" / biome_id
+        dest.mkdir(parents=True, exist_ok=True)
+        _arch_column(pal, kind).save(dest / f"{biome_id}_arch_0.png")
+        _arch_hood(pal, kind).save(dest / f"{biome_id}_arch_1.png")
+        _arch_panel(pal, kind).save(dest / f"{biome_id}_arch_2.png")
+        _arch_frame(pal, kind).save(dest / f"{biome_id}_arch_3.png")
+    print("wrote assets/architecture/biome_{0,1,2}/*")
+
+
+def author_foreground_plates() -> None:
+    """Edge-only framing plates. Center stays empty so combat stays readable."""
+    specs = (
+        ("biome_0", (18, 28, 38, 210), (STEEL_L[0], STEEL_L[1], STEEL_L[2], 80), "pipes"),
+        ("biome_1", (12, 32, 36, 210), (70, 140, 148, 90), "drip"),
+        ("biome_2", (20, 32, 18, 210), (70, 108, 52, 140), "vines"),
+    )
+    for biome_id, post, accent, kind in specs:
+        img = blank(960, 540)
+        d = ImageDraw.Draw(img)
+        for x0 in (0, 888):
+            d.rectangle((x0, 0, x0 + 72, 539), fill=post)
+            if kind == "pipes":
+                for y in range(12, 520, 28):
+                    d.rectangle((x0 + 18, y, x0 + 54, y + 10), fill=(28, 42, 54, 220))
+                    d.rectangle((x0 + 22, y + 2, x0 + 28, y + 8), fill=accent)
+            elif kind == "drip":
+                for y in range(8, 520, 18):
+                    d.ellipse((x0 + 16, y, x0 + 56, y + 12), fill=(32, 64, 70, 160))
+                    d.rectangle((x0 + 34, y + 8, x0 + 38, y + 20), fill=accent)
+            else:
+                for y in range(0, 520, 26):
+                    d.polygon(
+                        [(x0 + 8, y), (x0 + 64, y + 10), (x0 + 10, y + 22)],
+                        fill=accent,
+                    )
+        dest = ASSETS / "backgrounds" / biome_id
+        dest.mkdir(parents=True, exist_ok=True)
+        img.save(dest / "foreground.png")
+
+
+def author_generated_interactives() -> None:
+    dest = ASSETS / "generated"
+    dest.mkdir(parents=True, exist_ok=True)
+    pickup = blank(24, 28)
+    fill_ellipse(pickup, 12, 14, 8, 10, CYAN_D)
+    fill_ellipse(pickup, 12, 12, 5, 6, CYAN)
+    px(pickup, 10, 10, CYAN_GLOW)
+    outline(pickup)
+    pickup.save(dest / "pickup.png")
+    checkpoint = blank(28, 36)
+    bevel_rect(checkpoint, 6, 16, 21, 34, STEEL_M, STEEL_L, STEEL_D)
+    fill_rect(checkpoint, 12, 2, 15, 18, STEEL_L)
+    fill_ellipse(checkpoint, 14, 8, 5, 5, CYAN)
+    outline(checkpoint)
+    checkpoint.save(dest / "checkpoint.png")
+    chest = blank(32, 24)
+    bevel_rect(chest, 2, 8, 29, 22, STEEL_M, STEEL_L, INK)
+    fill_rect(chest, 2, 8, 29, 12, STEEL_D)
+    fill_rect(chest, 14, 12, 17, 16, AMBER)
+    outline(chest)
+    chest.save(dest / "chest.png")
+    gate = blank(48, 64)
+    bevel_rect(gate, 4, 4, 43, 61, STEEL_D, STEEL_M, INK)
+    fill_rect(gate, 12, 10, 35, 54, SOOT)
+    fill_rect(gate, 20, 24, 27, 40, CYAN_D)
+    fill_rect(gate, 22, 26, 25, 38, CYAN)
+    outline(gate)
+    gate.save(dest / "gate.png")
+    (dest / "gate").mkdir(parents=True, exist_ok=True)
+    gate.save(dest / "gate" / "interactive_ability_gate.png")
+    portal = blank(40, 48)
+    fill_ellipse(portal, 20, 24, 16, 20, CYAN_D)
+    fill_ellipse(portal, 20, 24, 10, 14, CYAN)
+    fill_ellipse(portal, 20, 22, 4, 6, CYAN_GLOW)
+    outline(portal)
+    portal.save(dest / "portal.png")
+    print("wrote assets/generated/*")
 
 
 def spark_tex(color, w=16, h=16) -> Image.Image:
@@ -1616,6 +1840,38 @@ def author_props() -> None:
     bevel_rect(panel_g, 2, 2, 21, 21, PAL_GROWTH.mid, PAL_GROWTH.hi, PAL_GROWTH.lo)
     fill_rect(panel_g, 6, 6, 17, 8, PAL_GROWTH.growth)
     panel_g.save(grow_props / "biome_2_prop_3.png")
+    toolbox = blank(28, 22)
+    bevel_rect(toolbox, 2, 8, 25, 20, STEEL_M, STEEL_L, INK)
+    fill_rect(toolbox, 4, 4, 23, 10, STEEL_D)
+    fill_rect(toolbox, 10, 12, 17, 16, AMBER_D)
+    outline(toolbox)
+    toolbox.save(ASSETS / "props" / "biome_0" / "biome_0_prop_4.png")
+    lamp = blank(16, 28)
+    fill_rect(lamp, 7, 0, 8, 10, STEEL_L)
+    fill_ellipse(lamp, 8, 16, 6, 7, AMBER_D)
+    fill_ellipse(lamp, 8, 16, 3, 4, AMBER)
+    outline(lamp)
+    lamp.save(ASSETS / "props" / "biome_0" / "biome_0_prop_5.png")
+    pump = blank(28, 26)
+    bevel_rect(pump, 4, 8, 23, 24, PAL_FLOOD.mid, PAL_FLOOD.hi, PAL_FLOOD.lo)
+    fill_rect(pump, 12, 2, 15, 10, PAL_FLOOD.hi)
+    fill_ellipse(pump, 14, 14, 5, 5, (70, 140, 148, 255))
+    outline(pump)
+    pump.save(flood_props / "biome_1_prop_4.png")
+    hose = blank(32, 18)
+    bevel_rect(hose, 2, 4, 29, 15, PAL_FLOOD.lo, PAL_FLOOD.mid, INK)
+    fill_rect(hose, 6, 7, 25, 12, (40, 90, 100, 255))
+    hose.save(flood_props / "biome_1_prop_5.png")
+    tank = blank(24, 28)
+    bevel_rect(tank, 4, 6, 19, 26, PAL_GROWTH.lo, PAL_GROWTH.mid, INK)
+    fill_ellipse(tank, 12, 12, 6, 6, PAL_GROWTH.growth)
+    outline(tank)
+    tank.save(grow_props / "biome_2_prop_4.png")
+    spool = blank(26, 20)
+    fill_ellipse(spool, 13, 10, 10, 8, PAL_GROWTH.mid)
+    fill_ellipse(spool, 13, 10, 4, 3, PAL_GROWTH.lo)
+    outline(spool)
+    spool.save(grow_props / "biome_2_prop_5.png")
     vine = blank(16, 48)
     for y in range(0, 48, 6):
         ox = 3 if (y // 6) % 2 == 0 else -2
@@ -1695,6 +1951,20 @@ def author_ui() -> None:
         fill_rect(ornament, x, 1, x + 2, 6, CYAN)
         px(ornament, x + 1, 0, STEEL_H)
     ornament.save(dest / "dialogue_ornament.png")
+    icons = dest / "icons"
+    icons.mkdir(parents=True, exist_ok=True)
+    dash = blank(24, 24)
+    bevel_rect(dash, 1, 1, 22, 22, STEEL_D, STEEL_M, INK)
+    fill_rect(dash, 4, 10, 19, 13, CYAN)
+    fill_rect(dash, 16, 7, 20, 16, CYAN_GLOW)
+    outline(dash)
+    dash.save(icons / "ability_dash.png")
+    quest = blank(24, 24)
+    bevel_rect(quest, 1, 1, 22, 22, STEEL_D, STEEL_M, INK)
+    fill_ellipse(quest, 12, 10, 6, 7, AMBER)
+    fill_rect(quest, 11, 16, 13, 20, AMBER_D)
+    outline(quest)
+    quest.save(icons / "quest.png")
     print("wrote assets/ui/*")
 
 
@@ -1786,6 +2056,8 @@ def main() -> None:
     author_backgrounds()
     author_vfx()
     author_props()
+    author_architecture()
+    author_generated_interactives()
     author_ui()
     author_contact_sheet()
     write_provenance()

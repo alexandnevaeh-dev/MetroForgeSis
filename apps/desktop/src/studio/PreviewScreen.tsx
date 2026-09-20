@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { LiveRuntimeInspector } from './LiveRuntimeInspector.js';
 import { ScreenHeader } from './ScreenHeader.js';
 import { ProjectSelect } from './ProjectSelect.js';
 import { WorldMapPreview } from './WorldMapPreview.js';
@@ -23,6 +24,14 @@ export function PreviewScreen() {
   const [godotError, setGodotError] = useState<string | null>(null);
   const [launching, setLaunching] = useState(false);
   const [selectedAssetId, setSelectedAssetId] = useState('');
+  const [playing, setPlaying] = useState(false);
+  const [runtimeSessionId, setRuntimeSessionId] = useState('');
+  const [paused, setPaused] = useState(false);
+  const [pauseReason, setPauseReason] = useState(
+    'Pause/resume uses the authenticated loopback studio bridge when Godot connects.',
+  );
+  const [embedReason, setEmbedReason] = useState<string | null>(null);
+  const [liveEditNote, setLiveEditNote] = useState<string | null>(null);
 
   const reload = () => {
     if (!selectedPath || !window.metroforge?.getProjectPreview) return;
@@ -47,15 +56,42 @@ export function PreviewScreen() {
     reload();
   }, [selectedPath]);
 
+  useEffect(() => {
+    setPlaying(false);
+    setRuntimeSessionId('');
+    if (!selectedPath || !window.metroforge?.getPlaytestSession) return;
+    let cancelled = false;
+    const tick = async () => {
+      const session = await window.metroforge?.getPlaytestSession?.(selectedPath).catch(() => null);
+      if (cancelled) return;
+      setPlaying(Boolean(session?.running));
+      setRuntimeSessionId(session?.startedAt ?? '');
+      if (session?.pauseReason) setPauseReason(session.pauseReason);
+      if (session?.embedReason) setEmbedReason(session.embedReason);
+      if (session?.liveEdit) {
+        setLiveEditNote(
+          `Live: ${session.liveEdit.live.join(', ')}. Restart required: ${session.liveEdit.requiresRestart.join('; ')}.`,
+        );
+      }
+      setPaused(Boolean(session?.pauseReason?.toLowerCase().includes('is paused')));
+    };
+    void tick();
+    const id = window.setInterval(tick, 1500);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [selectedPath]);
+
   const selectedAsset = preview?.assetPreviews?.find((a) => a.id === selectedAssetId);
 
   return (
     <section className="workspace-screen preview-screen">
       <ScreenHeader
         compact
-        eyebrow="World"
-        title="Game Preview"
-        description="Launch Godot · inspect real world topology and generated textures — not a fake playable window."
+        eyebrow="Crucible Play"
+        title="Playtest"
+        description="This launches the real Godot runtime for the selected project. The map below is topology, not a fake in-app game."
         actions={
           <div className="row preview-header-actions">
             <ProjectSelect />
@@ -69,12 +105,37 @@ export function PreviewScreen() {
                 try {
                   const r = await window.metroforge.playInGodot(selectedPath);
                   if (!r.success) setGodotError(r.message);
+                  else setPlaying(true);
                 } finally {
                   setLaunching(false);
                 }
               }}
             >
-              {launching ? 'Launching…' : 'Play in Godot'}
+              {launching ? 'Launching…' : playing ? 'Restart' : 'Play'}
+            </Button>
+            <Button
+              disabled={!selectedPath || !playing}
+              onClick={async () => {
+                if (!selectedPath) return;
+                const r = await window.metroforge?.stopPlaytest?.(selectedPath);
+                if (r && !r.success) setGodotError(r.message);
+                setPlaying(false);
+              }}
+            >
+              Stop
+            </Button>
+            <Button
+              disabled={!selectedPath || !playing}
+              title={pauseReason}
+              onClick={async () => {
+                if (!selectedPath || !window.metroforge?.playtestCommand) return;
+                const cmd = paused ? 'resume' : 'pause';
+                const r = await window.metroforge.playtestCommand(selectedPath, cmd);
+                if (!r.ok) setGodotError(r.error ?? 'Bridge command failed');
+                else setPaused(cmd === 'pause');
+              }}
+            >
+              {paused ? 'Resume' : 'Pause'}
             </Button>
             <Button
               disabled={!selectedPath}
@@ -85,7 +146,7 @@ export function PreviewScreen() {
                 if (!r.success) setGodotError(r.message);
               }}
             >
-              Open in Godot
+              Open editor
             </Button>
             <Button onClick={() => navigate('World')}>World Editor</Button>
             <Button onClick={() => navigate('Assets')}>Asset Gallery</Button>
@@ -97,9 +158,21 @@ export function PreviewScreen() {
       {hasActiveProject && (
         <div className="preview-layout-p3">
           {godotError && <p className="result error">{godotError}</p>}
+          {playing && (
+            <p className="hint" role="status">
+              Godot runs in an external window (not embedded). Use Live objects to inspect and move
+              objects during play. Runtime moves last for this session; saved room geometry requires
+              restarting the preview.
+              {embedReason ? ` Embedding limit: ${embedReason}` : ''}
+              {liveEditNote ? ` ${liveEditNote}` : ''}
+            </p>
+          )}
 
           {loading && (
-            <EmptyState title="Loading preview…" description="Fetching world graph and asset previews." />
+            <EmptyState
+              title="Loading preview…"
+              description="Fetching world graph and asset previews."
+            />
           )}
 
           {!loading && error && (
@@ -186,13 +259,22 @@ export function PreviewScreen() {
                     <EmptyState
                       title="No texture assets"
                       description="No texture assets found in generation_manifest.json."
-                      actions={<Button onClick={() => navigate('Assets')}>Open Asset Gallery</Button>}
+                      actions={
+                        <Button onClick={() => navigate('Assets')}>Open Asset Gallery</Button>
+                      }
                     />
                   )}
                 </section>
               </div>
 
               <aside className="panel editor-inspector preview-inspector">
+                {playing && selectedPath && runtimeSessionId && (
+                  <LiveRuntimeInspector
+                    key={`${selectedPath}:${runtimeSessionId}`}
+                    projectPath={selectedPath}
+                    sessionStartedAt={runtimeSessionId}
+                  />
+                )}
                 <InspectorSection title="Project">
                   <dl className="settings-dl">
                     <dt>Title</dt>
@@ -218,7 +300,9 @@ export function PreviewScreen() {
                         <dd>{selectedAsset.provider ?? 'unknown'}</dd>
                         <dt>Provenance</dt>
                         <dd>
-                          {selectedAsset.fallbackGenerated ? 'procedural fallback' : 'provider / manifest'}
+                          {selectedAsset.fallbackGenerated
+                            ? 'procedural fallback'
+                            : 'provider / manifest'}
                         </dd>
                         {typeof selectedAsset.critiqueScore === 'number' && (
                           <>
@@ -227,8 +311,15 @@ export function PreviewScreen() {
                           </>
                         )}
                       </dl>
-                      <div className="row" style={{ marginTop: '0.45rem', flexWrap: 'wrap', gap: '0.35rem' }}>
-                        <Button variant="primary" size="sm" onClick={() => openAsset(selectedAsset.id)}>
+                      <div
+                        className="row"
+                        style={{ marginTop: '0.45rem', flexWrap: 'wrap', gap: '0.35rem' }}
+                      >
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => openAsset(selectedAsset.id)}
+                        >
                           Open in Gallery
                         </Button>
                       </div>

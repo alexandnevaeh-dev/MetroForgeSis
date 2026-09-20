@@ -77,3 +77,20 @@ describe('generatePropSprite biome material features (fifteenth session)', () =>
     expect(a.equals(c)).toBe(false);
   });
 });
+
+describe('foundry pouring-bay prop silhouettes', () => {
+  it('ladle is not a crate-shaped debris block', () => {
+    const ladle = decodePngRgba(generatePropSprite({
+      width: 48, height: 48, fill: '#6a4a2a', accent: '#e0a040', family: 'ladle', seed: 3,
+    }));
+    const debris = decodePngRgba(generatePropSprite({
+      width: 48, height: 48, fill: '#6a4a2a', accent: '#e0a040', family: 'debris', seed: 3,
+    }));
+    let differ = 0;
+    for (let i = 0; i < ladle.rgba.length; i += 4) {
+      if (ladle.rgba[i + 3] !== debris.rgba[i + 3]) differ++;
+    }
+    expect(differ).toBeGreaterThan(40);
+  });
+});
+

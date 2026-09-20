@@ -3,6 +3,9 @@ import { decodePngRgba } from '../src/png.js';
 import {
   loadAuthoredCourierPng,
   loadAuthoredMasonryPng,
+  loadAuthoredBiomePng,
+  loadAuthoredCastPng,
+  loadAuthoredFoundryTileset,
   shouldUseFoundryCourierKit,
   AUTHORED_COURIER_PROVIDER,
 } from '../src/authored-kit.js';
@@ -138,3 +141,83 @@ describe('authored foundry courier kit', () => {
     expect(npcDecoded.height).toBe(64);
   });
 });
+
+describe('authored foundry biomes and cast', () => {
+  it('ships distinct quench and cooling 256×192 atlases, not copies of pouring masonry', () => {
+    const masonry = loadAuthoredMasonryPng('source.png')!;
+    const quench = loadAuthoredBiomePng('quench_source.png')!;
+    const cooling = loadAuthoredBiomePng('cooling_source.png')!;
+    expect(loadAuthoredFoundryTileset(0, 32)?.equals(masonry)).toBe(true);
+    expect(loadAuthoredFoundryTileset(1, 32)?.equals(quench)).toBe(true);
+    expect(loadAuthoredFoundryTileset(2, 32)?.equals(cooling)).toBe(true);
+    expect(quench.equals(masonry)).toBe(false);
+    expect(cooling.equals(masonry)).toBe(false);
+    expect(cooling.equals(quench)).toBe(false);
+    for (const buf of [quench, cooling]) {
+      const d = decodePngRgba(buf);
+      expect(d.width).toBe(256);
+      expect(d.height).toBe(192);
+    }
+  });
+
+  it('ships hand-keyed wall/swim/combo sheets and NPC acting loops', () => {
+    for (const name of [
+      'player_wall_slide.png',
+      'player_wall_jump.png',
+      'player_swim.png',
+      'player_attack_2.png',
+      'player_attack_3.png',
+      'npc_000_idle.png',
+      'npc_000_talk.png',
+      'npc_000_listen.png',
+    ]) {
+      const buf = loadAuthoredCourierPng(name);
+      expect(buf, name).toBeTruthy();
+      const d = decodePngRgba(buf!);
+      expect(d.height).toBe(64);
+      expect(d.width % 64).toBe(0);
+      expect(d.width / 64).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it('ships biome equipment that is not a repeated cylinder stack', () => {
+    const pouring = loadAuthoredBiomePng('pouring_arch_0.png')!;
+    const quench = loadAuthoredBiomePng('quench_arch_0.png')!;
+    const cooling = loadAuthoredBiomePng('cooling_arch_0.png')!;
+    expect(pouring.equals(quench)).toBe(false);
+    expect(cooling.equals(pouring)).toBe(false);
+    for (const buf of [pouring, quench, cooling]) {
+      const d = decodePngRgba(buf);
+      expect(d.width).toBe(48);
+      expect(d.height).toBe(112);
+    }
+    const fg = loadAuthoredBiomePng('cooling_foreground.png')!;
+    const d = decodePngRgba(fg);
+    let opaque = 0;
+    for (let i = 3; i < d.rgba.length; i += 4) {
+      if ((d.rgba[i] ?? 0) > 16) opaque += 1;
+    }
+    expect(opaque / (d.width * d.height)).toBeLessThan(0.25);
+  });
+
+  it('ships a clamp-mite walk sheet with four unique frames', () => {
+    const walk = loadAuthoredCastPng('enemy_000_walk.png');
+    expect(walk).toBeTruthy();
+    const decoded = decodePngRgba(walk!);
+    expect(decoded.width).toBe(256);
+    expect(decoded.height).toBe(64);
+    const hashes = new Set<string>();
+    for (let f = 0; f < 4; f++) {
+      let h = 0;
+      for (let y = 0; y < 64; y++) {
+        for (let x = 0; x < 64; x++) {
+          const i = (y * 256 + f * 64 + x) * 4;
+          h = (h * 33 + decoded.rgba[i]! + decoded.rgba[i + 3]!) | 0;
+        }
+      }
+      hashes.add(String(h));
+    }
+    expect(hashes.size).toBe(4);
+  });
+});
+

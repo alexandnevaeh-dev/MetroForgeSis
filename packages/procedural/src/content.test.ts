@@ -217,6 +217,36 @@ describe('generateGameContent', () => {
     expect(offer?.lines.some((line) => (line.choices?.length ?? 0) > 0)).toBe(true);
   });
 
+  it('writes Foundry-specific quest dialogue for courier/foundry DNA without inventing rewards', () => {
+    const foundryDna = GameDNASchema.parse({
+      ...testDna,
+      identity: {
+        title: 'Ashen Foundry',
+        genre: 'Metroidvania',
+        tone: 'industrial',
+        visualStyle: 'pixel',
+        tagline: 'a lone courier delves a ruined mechanical forge',
+      },
+      narrative: {
+        premise: 'A courier walks a ruined foundry of brass and sooted iron',
+        protagonist: 'Courier',
+        centralConflict: 'The core automaton still turns',
+      },
+      profile: 'VISUAL_VERTICAL_SLICE',
+    });
+    const rooms = Array.from({ length: 13 }, (_, i) => `room_${i.toString().padStart(3, '0')}`);
+    const content = generateGameContent(foundryDna, 'VISUAL_VERTICAL_SLICE', 20260911, 'room_012', rooms);
+    expect(content.quests[0]?.name).toBe('Quiet the Core');
+    expect(content.quests[0]?.description).toMatch(/foundry core/i);
+    const offer = content.dialogues.find((dlg) => dlg.id === 'quest_000_offer');
+    const blob = JSON.stringify(offer);
+    expect(blob).toContain('The core still turns');
+    expect(blob).not.toContain('Awakening');
+    expect(blob).not.toContain('warden_seal');
+    expect(blob).not.toContain('dash');
+    expect(offer?.lines.some((line) => (line.choices?.length ?? 0) > 0)).toBe(true);
+  });
+
   it('assigns unique visualPrompt to each boss for AI art generation', () => {
     const smallDna = { ...testDna, profile: 'SMALL' as const, world: { biomeCount: 3, roomCount: 42 } };
     const smallRooms = Array.from({ length: 42 }, (_, i) => `room_${i.toString().padStart(3, '0')}`);

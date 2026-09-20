@@ -148,24 +148,29 @@ function humanoidPart(fx: number, fy: number, robe = false): BodyPart {
   return null;
 }
 
-/** Player-only silhouette layers: a rear cloak adds a stable asymmetric mass while the forward
- * blade remains visible at gameplay scale. These are evaluated before the generic anatomy so the
- * equipment reads as deliberate construction rather than a color variation on a humanoid. */
+/** Player-only silhouette: heat-suit ingot runner — visor slit, ladle-hook, ash cloak,
+ *  brass greaves. Evaluated before generic anatomy so equipment reads as construction. */
 function playerPart(fx: number, fy: number): BodyPart {
-  if (inTaperedRectFrac(fx, fy, 0.37, 0.79, 0.045, 0.1, 0.23)) return 'cape';
-  if (inTaperedRectFrac(fx, fy, 0.34, 0.72, 0.03, 0.025, 0.81)) return 'weapon';
-  if (inTaperedRectFrac(fx, fy, 0.12, 0.18, 0.05, 0.08, 0.54)) return 'glow';
+  if (inRectFrac(fx, fy, 0.40, 0.74, 0.145, 0.205)) return 'glow';
+  if (inTaperedRectFrac(fx, fy, 0.58, 0.96, 0.035, 0.028, 0.80)) return 'weapon';
+  if (inEllipseFrac(fx, fy, 0.84, 0.90, 0.07, 0.05)) return 'glow';
+  if (inTaperedRectFrac(fx, fy, 0.34, 0.82, 0.05, 0.11, 0.22)) return 'cape';
+  if (inTaperedRectFrac(fx, fy, 0.12, 0.19, 0.045, 0.07, 0.54)) return 'gauntlet';
   return humanoidPart(fx, fy);
 }
 
-/** Low wide quadruped-ish silhouette: body mass, forward head, stubby legs, a tail — reads as
- *  "beast" rather than "person" or "blob" at a glance. */
+/** Clamp/ladle mite: slag-glass carapace, forward pincers, stubby foundry legs.
+ *  Fills the sprite so it reads as scavenger hardware in-room, not two dark specks. */
 function beastPart(fx: number, fy: number): BodyPart {
-  if (inEllipseFrac(fx, fy, 0.78, 0.46, 0.15, 0.13)) return 'beastHead';
-  if (inEllipseFrac(fx, fy, 0.48, 0.6, 0.34, 0.22)) return 'torso';
-  if (inRectFrac(fx, fy, 0.06, 0.22, 0.4, 0.5)) return 'tail';
-  if (inRectFrac(fx, fy, 0.26, 0.37, 0.76, 0.94)) return 'legL';
-  if (inRectFrac(fx, fy, 0.61, 0.72, 0.76, 0.94)) return 'legR';
+  if (inTaperedRectFrac(fx, fy, 0.38, 0.92, 0.16, 0.09, 0.90)) return 'weapon';
+  if (inTaperedRectFrac(fx, fy, 0.34, 0.88, 0.16, 0.08, 0.10)) return 'weapon';
+  if (inEllipseFrac(fx, fy, 0.80, 0.48, 0.22, 0.20)) return 'beastHead';
+  if (inEllipseFrac(fx, fy, 0.48, 0.56, 0.46, 0.30)) return 'torso';
+  if (inEllipseFrac(fx, fy, 0.50, 0.52, 0.20, 0.16)) return 'glow';
+  if (inRectFrac(fx, fy, 0.02, 0.22, 0.42, 0.62)) return 'tail';
+  for (const cx of [0.16, 0.36, 0.56, 0.76]) {
+    if (inRectFrac(fx, fy, cx - 0.08, cx + 0.08, 0.74, 0.98)) return 'leg';
+  }
   return null;
 }
 
@@ -343,14 +348,62 @@ function mix(
   ];
 }
 
+const COURIER_VISOR: [number, number, number, number] = [52, 140, 152, 255];
+const COURIER_COAT: [number, number, number, number] = [62, 48, 38, 255];
+const COURIER_BRASS: [number, number, number, number] = [138, 104, 64, 255];
+const COURIER_IRON: [number, number, number, number] = [52, 46, 42, 255];
+const COURIER_EMBER: [number, number, number, number] = [204, 108, 52, 255];
+const COURIER_STEEL: [number, number, number, number] = [118, 122, 128, 255];
+const COURIER_BOOT: [number, number, number, number] = [30, 26, 24, 255];
+
 /** Body-part → color for the humanoid/enemy/boss constructions. Centralized so every archetype
  *  shares one readable, consistent shading language (skin, clothing, shadowed lower body, a
  *  bright accent for "this part matters" — head crest, weapon, glow). */
-function colorForPart(part: BodyPart, fill: [number, number, number, number], accent: [number, number, number, number]): [number, number, number, number] {
+function colorForPart(
+  part: BodyPart,
+  fill: [number, number, number, number],
+  accent: [number, number, number, number],
+  forPlayer = false,
+): [number, number, number, number] {
+  if (forPlayer) {
+    switch (part) {
+      case 'head':
+        return SKIN_TONE;
+      case 'neck':
+        return shade(SKIN_TONE, -20);
+      case 'helmet':
+      case 'glow':
+        return part === 'helmet' ? mix(COURIER_IRON, COURIER_VISOR, 0.55) : COURIER_VISOR;
+      case 'torso':
+        return COURIER_COAT;
+      case 'pauldron':
+      case 'gauntlet':
+      case 'belt':
+        return COURIER_BRASS;
+      case 'cape':
+        return shade(COURIER_COAT, -24);
+      case 'armL':
+      case 'armR':
+        return shade(COURIER_COAT, 12);
+      case 'hip':
+      case 'legL':
+      case 'legR':
+      case 'leg':
+        return COURIER_IRON;
+      case 'footL':
+      case 'footR':
+        return COURIER_BOOT;
+      case 'weapon':
+        return COURIER_STEEL;
+      default:
+        return COURIER_EMBER;
+    }
+  }
   switch (part) {
     case 'head':
-    case 'beastHead':
       return SKIN_TONE;
+    case 'beastHead':
+      return mix(fill, accent, 0.28);
     case 'neck':
       return shade(SKIN_TONE, -20);
     case 'torso':
@@ -452,7 +505,7 @@ export function generateProceduralSprite(spec: SpriteSpec): Buffer {
         if (spec.shape === 'item' || spec.shape === 'tile') {
           c = fill;
         } else {
-          c = colorForPart(part, fill, accent);
+          c = colorForPart(part, fill, accent, spec.id === 'player');
         }
         // Directional highlight (top edge of each region) and a lower-edge shadow line — cheap,
         // consistent "form" cue that keeps flat archetypes from reading as solid stickers.
@@ -892,95 +945,151 @@ export function generateVfxTexture(spec: VfxSpec): Buffer {
   return encodePng(size, size, rgba);
 }
 
+interface ArticulationPose {
+  phase: number;
+  stridePx: number;
+  footLiftPx: number;
+  torsoLeanPx: number;
+  armSwingPx: number;
+  compress: number;
+  extend: number;
+  attackReachPx: number;
+}
+
+/** Inverse warp: destination (x,y) → source. Left/right legs opposite phase, arms opposite
+ *  the same-side leg, torso leans from the hip, head counters the torso. Foot lift is local
+ *  to the swinging leg — never a whole-sprite bob. */
+function srcForArticulated(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  pose: ArticulationPose,
+): { sx: number; sy: number } {
+  const fx = (x + 0.5) / width;
+  const fy = (y + 0.5) / height;
+  const hipY = 0.56;
+  const neckY = 0.30;
+  const midX = 0.5;
+  let sx = x;
+  let sy = y;
+
+  if (pose.compress > 0 && fy > neckY) {
+    const fold = fy >= hipY ? pose.compress * 0.42 : pose.compress * 0.14;
+    sy = neckY * height + (y - neckY * height) * (1 + fold);
+  }
+  if (pose.extend > 0 && fy > neckY) {
+    sy = neckY * height + (y - neckY * height) / (1 + pose.extend * 0.22);
+  }
+
+  if (fy < hipY) {
+    const fromHip = hipY - fy;
+    sx -= pose.torsoLeanPx * fromHip * 2.2;
+    if (fy < neckY) {
+      sx += pose.torsoLeanPx * (neckY - fy) * 1.6;
+    }
+  }
+
+  if (fy >= hipY) {
+    const isLeft = fx < midX;
+    const legPhase = pose.phase + (isLeft ? 0 : Math.PI);
+    const swing = Math.sin(legPhase);
+    sx -= Math.cos(legPhase) * pose.stridePx;
+    if (swing > 0) {
+      sy += swing * pose.footLiftPx;
+    }
+  } else if (fy > neckY && (fx < 0.38 || fx > 0.62)) {
+    const isLeft = fx < midX;
+    const armPhase = pose.phase + (isLeft ? Math.PI : 0);
+    sx -= Math.sin(armPhase) * pose.armSwingPx;
+    sy += ((1 - Math.cos(armPhase)) * 0.5) * pose.armSwingPx * 0.2;
+  }
+
+  if (pose.attackReachPx !== 0 && fy < hipY && fx > 0.52) {
+    sx -= pose.attackReachPx;
+    sy += Math.round(pose.attackReachPx * 0.15);
+  }
+
+  return { sx: Math.round(sx), sy: Math.round(sy) };
+}
+
+function blitArticulatedSheet(
+  rgba: Uint8Array,
+  width: number,
+  height: number,
+  frameCount: number,
+  poseAt: (frame: number) => ArticulationPose,
+): Buffer {
+  const sheet = new Uint8Array(width * frameCount * height * 4);
+  for (let f = 0; f < frameCount; f++) {
+    const pose = poseAt(f);
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const { sx, sy } = srcForArticulated(x, y, width, height, pose);
+        const di = (y * width * frameCount + f * width + x) * 4;
+        if (sx < 0 || sx >= width || sy < 0 || sy >= height) {
+          sheet[di + 3] = 0;
+          continue;
+        }
+        const si = (sy * width + sx) * 4;
+        sheet[di] = rgba[si]!;
+        sheet[di + 1] = rgba[si + 1]!;
+        sheet[di + 2] = rgba[si + 2]!;
+        sheet[di + 3] = rgba[si + 3]!;
+      }
+    }
+  }
+  return encodePng(width * frameCount, height, sheet);
+}
+
 /** Horizontal walk-cycle spritesheet (frameCount frames) */
 export function generateWalkCycleSheet(spec: SpriteSpec, frameCount = 4, sourcePng?: Buffer): Buffer {
   const { rgba, width, height } = sourcePng
     ? decodePngRgba(sourcePng)
     : decodePngRgba(generateProceduralSprite(spec));
-  const sheet = new Uint8Array(width * frameCount * height * 4);
-  // Stride the legs. A 1px whole-sprite bob quantized away to four identical
-  // stills; shearing the whole NVIDIA silhouette looks worse than that. Moving
-  // only below the hip keeps the hat/coat and reads as a step.
-  const hip = Math.floor(height * 0.55);
-  const stride = Math.max(3, Math.round(width * 0.14));
-
-  for (let f = 0; f < frameCount; f++) {
+  const stride = Math.max(3, Math.round(width * 0.12));
+  const lift = Math.max(2, Math.round(height * 0.06));
+  const arms = Math.max(2, Math.round(width * 0.08));
+  return blitArticulatedSheet(rgba, width, height, frameCount, (f) => {
     const phase = frameCount > 1 ? (2 * Math.PI * f) / frameCount : 0;
-    const legShift = Math.round(Math.sin(phase) * stride);
-    const plant = yPlant(phase);
-    for (let y = 0; y < height; y++) {
-      const srcY = y >= hip ? y - plant : y;
-      if (srcY < 0 || srcY >= height) continue;
-      const shift = y >= hip ? legShift : Math.round(legShift * 0.25);
-      for (let x = 0; x < width; x++) {
-        const srcX = x - shift;
-        const di = (y * width * frameCount + f * width + x) * 4;
-        if (srcX < 0 || srcX >= width) {
-          sheet[di + 3] = 0;
-          continue;
-        }
-        const si = (srcY * width + srcX) * 4;
-        sheet[di] = rgba[si]!;
-        sheet[di + 1] = rgba[si + 1]!;
-        sheet[di + 2] = rgba[si + 2]!;
-        sheet[di + 3] = rgba[si + 3]!;
-      }
-    }
-  }
-
-  return encodePng(width * frameCount, height, sheet);
-}
-
-function yPlant(phase: number): number {
-  return Math.round((1 - Math.cos(phase)) * 0.5);
+    return {
+      phase,
+      stridePx: stride,
+      footLiftPx: lift,
+      torsoLeanPx: Math.sin(phase) * 1.4,
+      armSwingPx: arms,
+      compress: 0.08 * (0.5 + 0.5 * Math.sin(phase * 2)),
+      extend: 0,
+      attackReachPx: 0,
+    };
+  });
 }
 
 /**
- * Horizontal run-cycle spritesheet (frameCount frames) — a distinct, more athletic gait than
- * generateWalkCycleSheet: longer stride, sharper vertical bob, and a constant forward torso lean
- * (shear that increases toward the head) that walk does not have. Same technique family as the
- * walk cycle (never a relabeled copy of it) — the production standard requires run (12-16 frames)
- * to read as genuinely faster/different locomotion than walk (10-14 frames), not the same clip
- * renamed. Arms/shoulders counter-swing opposite the legs, same as the walk cycle's upper-body
- * quarter-shift, but layered under the constant lean.
+ * Horizontal run-cycle spritesheet — longer stride, stronger opposing arms, constant
+ * forward lean. Never a relabeled walk: amplitude and lean differ on every frame.
  */
 export function generateRunCycleSheet(spec: SpriteSpec, frameCount = 12, sourcePng?: Buffer): Buffer {
   const { rgba, width, height } = sourcePng
     ? decodePngRgba(sourcePng)
     : decodePngRgba(generateProceduralSprite(spec));
-  const sheet = new Uint8Array(width * frameCount * height * 4);
-  const hip = Math.floor(height * 0.5);
-  const stride = Math.max(4, Math.round(width * 0.22));
-  const leanPx = Math.max(1, Math.round(width * 0.06));
-
-  for (let f = 0; f < frameCount; f++) {
+  const stride = Math.max(5, Math.round(width * 0.20));
+  const lift = Math.max(3, Math.round(height * 0.09));
+  const arms = Math.max(3, Math.round(width * 0.12));
+  const lean = Math.max(2, Math.round(width * 0.07));
+  return blitArticulatedSheet(rgba, width, height, frameCount, (f) => {
     const phase = frameCount > 1 ? (2 * Math.PI * f) / frameCount : 0;
-    const legShift = Math.round(Math.sin(phase) * stride);
-    const plant = Math.round(yPlant(phase) * 1.6);
-    for (let y = 0; y < height; y++) {
-      const isUpper = y < hip;
-      const leanFrac = isUpper ? 1 - y / Math.max(1, hip) : 0;
-      const lean = Math.round(leanPx * leanFrac);
-      const srcY = isUpper ? y : y - plant;
-      if (srcY < 0 || srcY >= height) continue;
-      const shift = isUpper ? Math.round(legShift * 0.2) - lean : legShift;
-      for (let x = 0; x < width; x++) {
-        const srcX = x - shift;
-        const di = (y * width * frameCount + f * width + x) * 4;
-        if (srcX < 0 || srcX >= width) {
-          sheet[di + 3] = 0;
-          continue;
-        }
-        const si = (srcY * width + srcX) * 4;
-        sheet[di] = rgba[si]!;
-        sheet[di + 1] = rgba[si + 1]!;
-        sheet[di + 2] = rgba[si + 2]!;
-        sheet[di + 3] = rgba[si + 3]!;
-      }
-    }
-  }
-
-  return encodePng(width * frameCount, height, sheet);
+    return {
+      phase,
+      stridePx: stride,
+      footLiftPx: lift,
+      torsoLeanPx: lean + Math.sin(phase) * 1.2,
+      armSwingPx: arms,
+      compress: 0.12 * (0.5 + 0.5 * Math.sin(phase * 2)),
+      extend: 0,
+      attackReachPx: 0,
+    };
+  });
 }
 
 /**
@@ -1244,11 +1353,14 @@ export function generateAttackSheet(spec: SpriteSpec, frameCount = 4, sourcePng?
     const vertSign = arcKind === 'upward' ? -1 : arcKind === 'downward' ? 1 : 0;
     const shiftY = Math.round(maxVertical * swingT * vertSign);
     const isImpactFrame = f === impactFrame;
+    const hip = height * 0.56;
     for (let y = 0; y < height; y++) {
       const srcYUnclamped = y - shiftY;
       const srcY = Math.min(height - 1, Math.max(0, srcYUnclamped));
+      const armReach = y < hip ? Math.round(shiftX * 0.4) : 0;
       for (let x = 0; x < width; x++) {
-        const srcX = Math.min(width - 1, Math.max(0, x - shiftX));
+        const extra = x > width * 0.5 ? armReach : Math.round(armReach * -0.25);
+        const srcX = Math.min(width - 1, Math.max(0, x - shiftX - extra));
         const si = (srcY * width + srcX) * 4;
         const di = (y * width * frameCount + f * width + x) * 4;
         const alpha = rgba[si + 3]!;
@@ -1356,6 +1468,13 @@ export const POSE_TRANSFORMS: Record<string, PoseTransformSpec> = {
   grapple: { cropY: [0, 0.9], shearX: [12, -4], tint: 10 },
   swim: { cropY: [0.08, 0.94], shearX: [-5, 5], scaleX: 0.95 },
   phase: { cropY: [0.04, 0.96], tint: 22, scaleX: 0.88 },
+  // Boss combat family — stronger mechanical motion than player idle. Kept off the player
+  // `idle` key so courier breathing tests stay on the shallow crop.
+  boss_idle: { cropY: [0.06, 0.90], shearX: [4, -4], scaleX: 1.05, tint: 12 },
+  boss_telegraph: { cropY: [0.14, 1], shearX: [-16, 14], scaleX: 0.88, tint: 36 },
+  boss_recovery: { cropY: [0.18, 1], scaleX: 1.22, tint: -20 },
+  boss_projectile: { cropY: [0.02, 0.88], shearX: [14, -6], scaleX: 1.12, tint: 20 },
+  boss_burst: { cropY: [0.08, 0.96], scaleX: 1.28, tint: 40 },
 };
 
 /**
@@ -1438,6 +1557,62 @@ export function generateProgressionSheet(
   const { rgba, width, height } = sourcePng
     ? decodePngRgba(sourcePng)
     : decodePngRgba(generateProceduralSprite(spec));
+
+  if (poseName === 'jump_start' || poseName === 'jump' || poseName === 'fall' || poseName === 'land') {
+    return blitArticulatedSheet(rgba, width, height, frameCount, (f) => {
+      const raw = frameCount > 1 ? f / (frameCount - 1) : 1;
+      const eased = raw * raw * (3 - 2 * raw);
+      const progress =
+        options.mode === 'ramp' ? eased : 0.2 + 0.8 * Math.sin(raw * Math.PI);
+      if (poseName === 'jump_start') {
+        return {
+          phase: 0,
+          stridePx: 0,
+          footLiftPx: 0,
+          torsoLeanPx: -progress * 2.4,
+          armSwingPx: 0,
+          compress: progress * 0.78,
+          extend: 0,
+          attackReachPx: -progress * 2,
+        };
+      }
+      if (poseName === 'jump') {
+        return {
+          phase: Math.PI * 0.15,
+          stridePx: 1,
+          footLiftPx: progress * 2,
+          torsoLeanPx: progress * 1.6,
+          armSwingPx: progress * 2,
+          compress: 0,
+          extend: progress * 0.7,
+          attackReachPx: 0,
+        };
+      }
+      if (poseName === 'fall') {
+        return {
+          phase: Math.PI,
+          stridePx: 1,
+          footLiftPx: 1,
+          torsoLeanPx: -progress * 1.2,
+          armSwingPx: progress * 3,
+          compress: 0,
+          extend: progress * 0.25,
+          attackReachPx: 0,
+        };
+      }
+      return {
+        phase: 0,
+        stridePx: 0,
+        footLiftPx: 0,
+        torsoLeanPx: progress * 0.8,
+        armSwingPx: 0,
+        compress: progress * 0.88,
+        extend: 0,
+        attackReachPx: 0,
+      };
+    });
+  }
+
   const t = POSE_TRANSFORMS[poseName] ?? {};
   const [cropTopTarget, cropBottomTarget] = t.cropY ?? [0, 1];
   const [shearTopTarget, shearBottomTarget] = t.shearX ?? [0, 0];
@@ -1492,6 +1667,58 @@ export function generateProgressionSheet(
   }
 
   return encodePng(width * frameCount, height, sheet);
+}
+
+/** First (or indexed) frame of a horizontal strip, encoded as its own PNG. */
+export function extractSheetFramePng(
+  sheetPng: Buffer,
+  frameWidth: number,
+  frameHeight: number,
+  index = 0,
+): Buffer {
+  const { rgba, width, height } = decodePngRgba(sheetPng);
+  const frames = frameWidth > 0 ? Math.max(1, Math.floor(width / frameWidth)) : 1;
+  const frame = Math.max(0, Math.min(frames - 1, index));
+  const h = Math.min(frameHeight, height);
+  const out = new Uint8Array(frameWidth * h * 4);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < frameWidth; x++) {
+      const si = (y * width + frame * frameWidth + x) * 4;
+      const di = (y * frameWidth + x) * 4;
+      out[di] = rgba[si]!;
+      out[di + 1] = rgba[si + 1]!;
+      out[di + 2] = rgba[si + 2]!;
+      out[di + 3] = rgba[si + 3]!;
+    }
+  }
+  return encodePng(frameWidth, h, out);
+}
+
+export interface BossCombatSheets {
+  idle: Buffer;
+  telegraph: Buffer;
+  recovery: Buffer;
+  attack: Buffer;
+  attack_projectile: Buffer;
+  attack_burst: Buffer;
+  hurt: Buffer;
+  death: Buffer;
+  walk: Buffer;
+}
+
+/** Combat-cycle sheets from one still. Hit windows stay a runtime concern; these clips only change pose. */
+export function compileBossCombatSheets(spec: SpriteSpec, sourcePng: Buffer): BossCombatSheets {
+  return {
+    idle: generateProgressionSheet(spec, 'boss_idle', 6, sourcePng, { mode: 'oscillate', tintPulse: 16 }),
+    telegraph: generateProgressionSheet(spec, 'boss_telegraph', 4, sourcePng, { mode: 'oscillate', tintPulse: 22 }),
+    recovery: generateProgressionSheet(spec, 'boss_recovery', 4, sourcePng, { mode: 'oscillate' }),
+    attack: generateAttackSheet(spec, 6, sourcePng, 'horizontal'),
+    attack_projectile: generateProgressionSheet(spec, 'boss_projectile', 6, sourcePng, { mode: 'ramp', tintPulse: 18 }),
+    attack_burst: generateProgressionSheet(spec, 'boss_burst', 6, sourcePng, { mode: 'ramp', tintPulse: 28 }),
+    hurt: generateHurtFlashSheet(spec, 3, sourcePng),
+    death: generateDeathSheet(spec, 8, sourcePng),
+    walk: generateWalkCycleSheet(spec, 6, sourcePng),
+  };
 }
 
 function paethPredictor(a: number, b: number, c: number): number {

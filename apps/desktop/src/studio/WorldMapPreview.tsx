@@ -69,6 +69,7 @@ export function WorldMapPreview({
   selectedId,
   onSelect,
   onActivate,
+  onMove,
   emptyTitle,
   emptyDescription,
   fitView = true,
@@ -79,6 +80,7 @@ export function WorldMapPreview({
   selectedId?: string;
   onSelect?: (id: string) => void;
   onActivate?: (id: string) => void;
+  onMove?: (id: string, x: number, y: number) => void;
   emptyTitle?: string;
   emptyDescription?: string;
   fitView?: boolean;
@@ -267,7 +269,28 @@ export function WorldMapPreview({
               className={selected ? 'map-node-selected' : undefined}
               onClick={() => onSelect?.(node.id)}
               onDoubleClick={() => onActivate?.(node.id)}
-              style={{ cursor: interactive ? 'pointer' : 'default' }}
+              onPointerDown={(event) => {
+                if (!onMove) return;
+                event.preventDefault();
+                const origin = positions.get(node.id);
+                if (!origin) return;
+                const startX = event.clientX;
+                const startY = event.clientY;
+                const onUp = (up: PointerEvent) => {
+                  window.removeEventListener('pointerup', onUp);
+                  const dx = (up.clientX - startX) / spacing;
+                  const dy = (up.clientY - startY) / spacing;
+                  if (Math.abs(dx) < 0.15 && Math.abs(dy) < 0.15) return;
+                  const meta = node.metadata ?? {};
+                  const baseX = Number(meta.x ?? meta.col ?? meta.mapX);
+                  const baseY = Number(meta.y ?? meta.row ?? meta.mapY);
+                  const x = (Number.isFinite(baseX) ? baseX : origin.x / spacing) + dx;
+                  const y = (Number.isFinite(baseY) ? baseY : origin.y / spacing) + dy;
+                  onMove(node.id, Math.round(x * 10) / 10, Math.round(y * 10) / 10);
+                };
+                window.addEventListener('pointerup', onUp);
+              }}
+              style={{ cursor: onMove ? 'grab' : interactive ? 'pointer' : 'default' }}
             >
               <circle cx={pos.x} cy={pos.y} r={selected ? 16 : 13} className={cls} />
               {showLabels && (

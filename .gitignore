@@ -1,4 +1,7 @@
 node_modules/
+.metroforge/live-bridge-smoke/
+.metroforge/live-inspector-harness/
+**/.metroforge/studio-bridge.json
 dist/
 build/
 out/
@@ -43,3 +46,8 @@ kernel.errors.txt
 *.zip
 *.db-shm
 *.db-wal
+
+# Local visual captures and machine-specific acceptance results are not source assets.
+templates/godot-metroidvania/qa/visual-polish/
+review-artifacts/ENGINE_ENV.json
+review-artifacts/ENGINE_ACCEPTANCE.json

@@ -15,6 +15,9 @@ var _line_index: int = 0
 var _speaker_name: String = ""
 var _context: Dictionary = {}
 var _paused_for_dialogue: bool = false
+## Ignore the same interact press that opened this overlay (NPC + overlay share just_pressed).
+var _ignore_interact_until_msec: int = 0
+var _last_advance_msec: int = 0
 
 const PORTRAIT_COLORS := {
 	"merchant": Color(0.92, 0.72, 0.2),
@@ -31,15 +34,61 @@ func _ready() -> void:
 	continue_button.pressed.connect(_on_continue_pressed)
 	_apply_foundry_theme()
 
+func _input(event: InputEvent) -> void:
+	if not visible:
+		return
+	if event.is_action_pressed("interact") or event.is_action_pressed("ui_accept"):
+		if _try_advance_from_input():
+			get_viewport().set_input_as_handled()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not visible:
 		return
-	if event.is_action_pressed("interact") and continue_button.visible:
-		_on_continue_pressed()
-		get_viewport().set_input_as_handled()
+	if event.is_action_pressed("interact") or event.is_action_pressed("ui_accept"):
+		if _try_advance_from_input():
+			get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("pause"):
 		close_dialogue()
 		get_viewport().set_input_as_handled()
+
+
+func _process(_delta: float) -> void:
+	# Simulated Input.action_press does not always emit _unhandled_input (same as NPC.gd).
+	if not visible:
+		return
+	if Input.is_action_just_pressed("interact") or Input.is_action_just_pressed("ui_accept"):
+		_try_advance_from_input()
+
+
+func _try_advance_from_input() -> bool:
+	var now := Time.get_ticks_msec()
+	if now < _ignore_interact_until_msec:
+		return false
+	if now - _last_advance_msec < 160:
+		return false
+	if continue_button.visible:
+		_last_advance_msec = now
+		_on_continue_pressed()
+		return true
+	var chosen := _activate_focused_or_first_choice()
+	if chosen:
+		_last_advance_msec = now
+	return chosen
+
+
+func _activate_focused_or_first_choice() -> bool:
+	if choices_box == null:
+		return false
+	var focused := get_viewport().gui_get_focus_owner()
+	if focused and focused.get_parent() == choices_box and focused is BaseButton:
+		(focused as BaseButton).pressed.emit()
+		return true
+	for child in choices_box.get_children():
+		if child is BaseButton:
+			(child as BaseButton).pressed.emit()
+			return true
+	return false
 
 func start_dialogue(dialogue_id: String, speaker_name: String, context: Dictionary = {}) -> void:
 	if not DialogueManager.has_dialogue(dialogue_id):
@@ -52,6 +101,7 @@ func start_dialogue(dialogue_id: String, speaker_name: String, context: Dictiona
 	if _paused_for_dialogue:
 		get_tree().paused = true
 	visible = true
+	_ignore_interact_until_msec = Time.get_ticks_msec() + 250
 	_show_current_line()
 
 func close_dialogue() -> void:
@@ -80,9 +130,11 @@ func _show_current_line() -> void:
 		close_dialogue()
 		return
 
-	var speaker: String = line.get("speaker", _speaker_name)
-	if speaker.is_empty():
-		speaker = _speaker_name
+	var speaker: String = String(line.get("speaker", ""))
+	var key := speaker.to_lower()
+	if speaker.is_empty() or key == "quest giver" or key == "npc" or key == "speaker" or key == "narrator":
+		if not _speaker_name.is_empty():
+			speaker = _speaker_name
 	speaker_label.text = speaker
 	text_label.text = line.get("text", "")
 	_apply_portrait(line.get("portrait", _context.get("role", "neutral")))
@@ -102,6 +154,8 @@ func _show_current_line() -> void:
 			button.text = choice.get("text", "...")
 			button.pressed.connect(_on_choice_pressed.bind(choice))
 			choices_box.add_child(button)
+		if choices_box.get_child_count() > 0 and choices_box.get_child(0) is Control:
+			(choices_box.get_child(0) as Control).grab_focus()
 	else:
 		continue_button.visible = true
 
@@ -149,6 +203,8 @@ func _finish_linear_dialogue() -> void:
 	close_dialogue()
 
 func _clear_choices() -> void:
+	if choices_box == null:
+		return
 	for child in choices_box.get_children():
 		child.queue_free()
 

@@ -1,5 +1,6 @@
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 import { DiffusersProvider } from './diffusers.js';
 import { generationRequestHash, buildGenerationSpecification } from '../pipeline-v2/production-capacity.js';
@@ -10,14 +11,29 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // why it must never be pointed at by a real generation path.
 const STUB_WORKER = join(__dirname, '__fixtures__', 'stub_diffusers_worker.py');
 
+function resolveTestPython(): string | undefined {
+  const candidates = process.platform === 'win32' ? ['python', 'py'] : ['python3', 'python'];
+  for (const candidate of candidates) {
+    try {
+      execFileSync(candidate, ['-c', 'import sys'], { timeout: 3000, windowsHide: true, stdio: 'ignore' });
+      return candidate;
+    } catch {
+      // try next
+    }
+  }
+  return undefined;
+}
+
+const testPython = resolveTestPython();
+
 function stubProvider(overrides: { generationTimeoutMs?: number } = {}) {
   return new DiffusersProvider({
-    pythonPath: 'python3', workerPath: STUB_WORKER, modelId: 'stub-model', device: 'mps',
+    pythonPath: testPython ?? 'python3', workerPath: STUB_WORKER, modelId: 'stub-model', device: 'mps',
     generationTimeoutMs: overrides.generationTimeoutMs ?? 10_000,
   });
 }
 
-describe('DiffusersProvider — inferenceSteps precedence (regression for the fixed provenance bug)', () => {
+describe.skipIf(!testPython)('DiffusersProvider — inferenceSteps precedence (regression for the fixed provenance bug)', () => {
   it('sends a per-request inferenceSteps to the worker instead of the process-wide default', async () => {
     const provider = stubProvider();
     const result = await provider.generateImage({ profile: 'CHARACTER', prompt: 'p', width: 8, height: 8, seed: 1, inferenceSteps: 17 });
@@ -40,7 +56,7 @@ describe('DiffusersProvider — inferenceSteps precedence (regression for the fi
   });
 });
 
-describe('DiffusersProvider — effective conditioning provenance', () => {
+describe.skipIf(!testPython)('DiffusersProvider — effective conditioning provenance', () => {
   it('echoes the exact prompt/negative prompt/dimensions actually sent, for provenance', async () => {
     const provider = stubProvider();
     const result = await provider.generateImage({
@@ -54,7 +70,7 @@ describe('DiffusersProvider — effective conditioning provenance', () => {
   });
 });
 
-describe('DiffusersProvider — prompt-budget check plumbing', () => {
+describe.skipIf(!testPython)('DiffusersProvider — prompt-budget check plumbing', () => {
   it('checkPromptBudget() reaches the worker and returns a structured positive/negative result', async () => {
     const provider = stubProvider();
     const result = await provider.checkPromptBudget('a short prompt', 'a short negative');
@@ -83,7 +99,7 @@ describe('DiffusersProvider — prompt-budget check plumbing', () => {
   });
 });
 
-describe('DiffusersProvider — segmentForeground() plumbing', () => {
+describe.skipIf(!testPython)('DiffusersProvider — segmentForeground() plumbing', () => {
   it('sends the image and decodes the returned matte', async () => {
     const provider = stubProvider();
     const input = Buffer.from('fake-png-bytes');

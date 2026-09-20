@@ -1,40 +1,41 @@
 /**
- * MetroForge P2 — central design tokens (Concept A)
- * Source of truth: --forge-*  →  Concept A / legacy aliases map here.
- * Palette: obsidian/graphite + #38B2F6 / #238CFF
+ * MetroForge forge tokens — charcoal hearths, copper, molten orange.
+ * Aliases keep existing --forge-* / Concept A class names working.
  */
 :root {
-  /* ── Surfaces (user palette) ── */
-  --forge-bg-app: #080b0f;
-  --forge-bg-sidebar: #0a0f15;
-  --forge-bg-surface: #0b1016;
-  --forge-bg-panel: #10161d;
-  --forge-bg-raised: #141c25;
-  --forge-bg-hover: #17222e;
-  --forge-bg-input: #0a0f15;
-  --forge-bg-accent-tint: #102737;
+  /* ── Surfaces ── */
+  --forge-bg-app: #120e0c;
+  --forge-bg-sidebar: #16110e;
+  --forge-bg-surface: #1a1410;
+  --forge-bg-panel: #211a15;
+  --forge-bg-raised: #2a211a;
+  --forge-bg-hover: #33281f;
+  --forge-bg-input: #140f0c;
+  --forge-bg-accent-tint: #3a2214;
 
   /* ── Borders ── */
-  --forge-border-subtle: #1a2430;
-  --forge-border: #243040;
-  --forge-border-strong: #334658;
-  --forge-border-focus: #238cff;
+  --forge-border-subtle: #2c221c;
+  --forge-border: #3d2e24;
+  --forge-border-strong: #5a4334;
+  --forge-border-focus: #e07a3a;
 
   /* ── Text ── */
-  --forge-text: #e8edf3;
-  --forge-text-secondary: #9aa9b8;
-  --forge-text-muted: #667789;
-  --forge-text-inverse: #061018;
+  --forge-text: #f4e6d4;
+  --forge-text-secondary: #c4aa90;
+  --forge-text-muted: #8a7260;
+  --forge-text-inverse: #1a1008;
 
-  /* ── Accents ── */
-  --forge-accent: #238cff;
-  --forge-accent-bright: #38b2f6;
-  --forge-accent-hover: #399cff;
-  --forge-accent-pressed: #1a74d9;
-  --forge-accent-soft: rgba(35, 140, 255, 0.14);
-  --forge-accent-soft-strong: rgba(56, 178, 246, 0.22);
-  --forge-nav-active-bg: rgba(35, 140, 255, 0.28);
-  --forge-nav-active-fg: #f2f7fc;
+  /* ── Accents: molten orange + copper ── */
+  --forge-accent: #e07030;
+  --forge-accent-bright: #ff8a3d;
+  --forge-accent-hover: #f0843a;
+  --forge-accent-pressed: #c45c22;
+  --forge-accent-soft: rgba(224, 112, 48, 0.16);
+  --forge-accent-soft-strong: rgba(255, 138, 61, 0.24);
+  --forge-nav-active-bg: rgba(224, 112, 48, 0.28);
+  --forge-nav-active-fg: #fff4e8;
+  --forge-copper: #c47a48;
+  --forge-ember: #ffb070;
 
   /* ── Semantic status ── */
   --forge-success: #3dba7a;
@@ -43,10 +44,10 @@
   --forge-warn-soft: rgba(212, 160, 23, 0.14);
   --forge-fail: #e06c75;
   --forge-fail-soft: rgba(224, 108, 117, 0.14);
-  --forge-info: #38b2f6;
-  --forge-info-soft: rgba(56, 178, 246, 0.14);
-  --forge-pending: #667789;
-  --forge-running: #38b2f6;
+  --forge-info: #d4925a;
+  --forge-info-soft: rgba(212, 146, 90, 0.14);
+  --forge-pending: #8a7260;
+  --forge-running: #ff8a3d;
 
   /* ── Spacing (4–32) ── */
   --forge-space-1: 4px;
@@ -154,8 +155,8 @@
   --accent-cyan-muted: var(--forge-accent-soft);
   --accent-blue: var(--forge-accent);
   --accent-blue-muted: var(--forge-accent-soft);
-  --accent-violet: #6b8caf;
-  --accent-violet-muted: rgba(107, 140, 175, 0.12);
+  --accent-violet: #c47a48;
+  --accent-violet-muted: rgba(196, 122, 72, 0.12);
   --accent-amber: var(--forge-warn);
   --accent-amber-hover: #e0b020;
   --accent-amber-muted: var(--forge-warn-soft);
@@ -219,7 +220,7 @@
   --canvas-node-stroke: #9a9284;
   --canvas-critical: var(--forge-accent-bright);
   --canvas-locked: var(--forge-warn);
-  --canvas-boss: #5a2e2a;
+  --canvas-boss: #6a2e22;
 
   /* --mf-* aliases (shared component namespace) */
   --mf-bg-app: var(--forge-bg-app);
@@ -234,8 +235,8 @@
   --mf-grid-min: 200px;
 
   /* Neutralize legacy neon glow */
-  --glow-cyan: none;
-  --glow-amber: none;
+  --glow-cyan: 0 0 18px rgba(224, 112, 48, 0.18);
+  --glow-amber: 0 0 16px rgba(255, 176, 112, 0.2);
   --glow-violet: none;
-  --border-glow: transparent;
+  --border-glow: rgba(224, 112, 48, 0.35);
 }

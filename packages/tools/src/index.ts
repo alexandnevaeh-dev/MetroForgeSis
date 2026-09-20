@@ -1,5 +1,13 @@
-export { ToolRegistry, detectGodot, detectOllama, detectGeneric } from './registry.js';
+export { ToolRegistry, detectGodot, detectOllama, detectGeneric, detectUnity, detectUnreal } from './registry.js';
 export type { ToolInfo, ToolStatus } from './registry.js';
+export {
+  resolveUnityEditor,
+  resolveUnrealEditor,
+  unityVersionSupported,
+  unrealVersionSupported,
+  missingEditorError,
+} from './engine-resolver.js';
+export type { UnityResolveResult, UnrealResolveResult } from './engine-resolver.js';
 export {
   launchGodotEditor,
   launchGodotGame,
@@ -9,6 +17,8 @@ export {
   readProjectGodotOverride,
 } from './godot-launcher.js';
 export type { LaunchGodotResult, GodotResolveResult, GodotResolveSource, ResolveGodotOptions } from './godot-launcher.js';
+export { startPlaytest, stopPlaytest, getPlaytestSession, sendPlaytestCommand } from './playtest-session.js';
+export type { PlaytestSession } from './playtest-session.js';
 export { exportProject } from './project-export.js';
 export type { ExportManifest, ExportProjectOptions, ExportProjectResult } from './project-export.js';
 export {

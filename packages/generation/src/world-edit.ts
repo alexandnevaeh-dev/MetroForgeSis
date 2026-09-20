@@ -31,7 +31,32 @@ export interface DisconnectRoomsCommand {
   to: string;
 }
 
-export type WorldEditCommand = AddRoomCommand | ConnectRoomsCommand | DisconnectRoomsCommand;
+export interface RemoveRoomCommand {
+  type: 'remove_room';
+  roomId: string;
+}
+
+export interface DuplicateRoomCommand {
+  type: 'duplicate_room';
+  roomId: string;
+  newRoomId: string;
+  label?: string;
+}
+
+export interface MoveRoomCommand {
+  type: 'move_room';
+  roomId: string;
+  x: number;
+  y: number;
+}
+
+export type WorldEditCommand =
+  | AddRoomCommand
+  | ConnectRoomsCommand
+  | DisconnectRoomsCommand
+  | RemoveRoomCommand
+  | DuplicateRoomCommand
+  | MoveRoomCommand;
 
 export function validateWorldGraph(graph: WorldGraph): WorldEditValidationResult {
   const errors: string[] = [];
@@ -117,6 +142,64 @@ export function applyWorldEditCommand(graph: WorldGraph, command: WorldEditComma
           !(e.from === command.from && e.to === command.to) &&
           !(e.from === command.to && e.to === command.from),
       );
+      break;
+    }
+    case 'remove_room': {
+      if (next.nodes.length <= 1) {
+        throw new Error('Cannot remove the last room');
+      }
+      if (!next.nodes.some((n) => n.id === command.roomId)) {
+        throw new Error(`Room ${command.roomId} not found`);
+      }
+      next.nodes = next.nodes.filter((n) => n.id !== command.roomId);
+      next.edges = next.edges.filter((e) => e.from !== command.roomId && e.to !== command.roomId);
+      next.regions = next.regions.map((region) => ({
+        ...region,
+        roomIds: region.roomIds.filter((id) => id !== command.roomId),
+      }));
+      break;
+    }
+    case 'duplicate_room': {
+      const source = next.nodes.find((n) => n.id === command.roomId);
+      if (!source) {
+        throw new Error(`Room ${command.roomId} not found`);
+      }
+      if (next.nodes.some((n) => n.id === command.newRoomId)) {
+        throw new Error(`Room ${command.newRoomId} already exists`);
+      }
+      next.nodes.push({
+        ...source,
+        id: command.newRoomId,
+        label: command.label ?? `${source.label} copy`,
+        metadata: {
+          ...(source.metadata ?? {}),
+          x:
+            typeof source.metadata?.x === 'number'
+              ? Number(source.metadata.x) + 1
+              : source.metadata?.x,
+        },
+      });
+      next.edges.push({
+        id: `edge_${command.roomId}_${command.newRoomId}`,
+        from: command.roomId,
+        to: command.newRoomId,
+        requirements: [],
+        optional: true,
+        bidirectional: true,
+      });
+      next.regions = next.regions.map((region) =>
+        region.roomIds.includes(command.roomId)
+          ? { ...region, roomIds: [...region.roomIds, command.newRoomId] }
+          : region,
+      );
+      break;
+    }
+    case 'move_room': {
+      const node = next.nodes.find((n) => n.id === command.roomId);
+      if (!node) {
+        throw new Error(`Room ${command.roomId} not found`);
+      }
+      node.metadata = { ...(node.metadata ?? {}), x: command.x, y: command.y };
       break;
     }
   }

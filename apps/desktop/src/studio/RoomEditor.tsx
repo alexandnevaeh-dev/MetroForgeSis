@@ -37,7 +37,14 @@ type RoomRecord = {
   connections?: Array<{ direction: string; targetRoomId: string; requirements?: string[] }>;
   tileCells?: Array<{ x: number; y: number; col: number; row: number }>;
   weakFloors?: Array<{ x: number; width: number; targetRoomId: string }>;
+  entityPlacements?: Array<{ kind: string; id: string; x: number; y: number }>;
 };
+
+type EntityPlacement = { kind: string; id: string; x: number; y: number };
+
+function entityKey(p: EntityPlacement): string {
+  return `${p.kind}:${p.id}`;
+}
 
 /** View-mode tabs (Concept A Room Editor reference). */
 type ViewModeId = 'visual' | 'collision' | 'entities' | 'navigation' | 'progression' | 'debug';
@@ -87,6 +94,8 @@ export function RoomEditor() {
   const [selectedTile, setSelectedTile] = useState<TileCoord>({ col: 0, row: 2 });
   const [paintTool, setPaintTool] = useState<PaintTool>('paint');
   const [gridSnap, setGridSnap] = useState(true);
+  const [selectedEntityKey, setSelectedEntityKey] = useState<string | null>(null);
+  const [dragEntityKey, setDragEntityKey] = useState<string | null>(null);
 
   const loadRooms = async (path: string) => {
     if (!window.metroforge?.listRooms) return;
@@ -142,14 +151,32 @@ export function RoomEditor() {
 
   const selected = rooms.find((r) => r.id === selectedRoomId) ?? filtered[0];
   const hasGeometry = selected ? roomHasGeometry(selected, collision) : false;
+  const placements: EntityPlacement[] = selected?.entityPlacements ?? [];
+  const selectedPlacement = placements.find((p) => entityKey(p) === selectedEntityKey) ?? null;
 
-  const runRoomAction = async (action: () => Promise<{ success?: boolean; error?: string; message?: string }>) => {
+  const persistPlacements = async (next: EntityPlacement[], extras?: Partial<RoomRecord>) => {
+    if (!selectedPath || !selected) return;
+    await runRoomAction(() =>
+      window.metroforge!.updateRoom!(selectedPath, {
+        roomId: selected.id,
+        entityPlacements: next,
+        enemies: extras?.enemies ?? selected.enemies,
+        npcs: extras?.npcs ?? selected.npcs,
+      }),
+    );
+  };
+
+  const runRoomAction = async (action: () => Promise<{ success?: boolean; error?: string; errors?: string[]; message?: string }>) => {
     setError(null);
     setMessage(null);
-    const result = await action();
-    if (result.error || result.success === false) setError(result.error ?? 'Action failed');
-    else setMessage(result.message ?? 'Done');
-    await loadRooms(selectedPath);
+    try {
+      const result = await action();
+      if (result.error || result.success === false) setError(result.error ?? result.errors?.join('; ') ?? 'Action failed');
+      else setMessage(result.message ?? 'Done');
+      await loadRooms(selectedPath);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
   };
 
   const widthTiles = selected ? Math.round((selected.width ?? 800) / TILE) : 0;
@@ -458,12 +485,39 @@ export function RoomEditor() {
                 />
               ) : (
                 <>
-                  <div
-                    className="room-canvas-zoom"
-                    style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top left' }}
-                  >
-                    <RoomCanvasPreview room={selected} layer={viewMode} collision={collision} fill />
-                  </div>
+                    <div
+                      className="room-canvas-zoom"
+                      style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top left' }}
+                    >
+                      <RoomCanvasPreview
+                        room={selected}
+                        layer={viewMode}
+                        collision={collision}
+                        fill
+                        selectedEntityKey={selectedEntityKey}
+                        onSelectEntity={setSelectedEntityKey}
+                        onMoveEntity={(key, x, y) => {
+                          const next = placements.map((p) =>
+                            entityKey(p) === key ? { ...p, x, y } : p,
+                          );
+                          setRooms((prev) =>
+                            prev.map((r) =>
+                              r.id === selected.id ? { ...r, entityPlacements: next } : r,
+                            ),
+                          );
+                        }}
+                        onMoveEntityEnd={(key, x, y) => {
+                          const next = placements.map((p) =>
+                            entityKey(p) === key ? { ...p, x, y } : p,
+                          );
+                          void persistPlacements(next);
+                          setDragEntityKey(null);
+                        }}
+                        dragEntityKey={dragEntityKey}
+                        setDragEntityKey={setDragEntityKey}
+                        gridSnap={gridSnap}
+                      />
+                    </div>
                   {viewMode === 'collision' && (
                     <p className="hint">
                       {collision?.rects?.length
@@ -475,8 +529,8 @@ export function RoomEditor() {
                   )}
                   {viewMode === 'entities' && (
                     <p className="hint">
-                      Entity lists come from the room record. Positions are not authored — canvas shows counts
-                      only, not invented spawn markers.
+                      Drag markers to author coordinates. Positions persist to rooms.json and Godot assembly.
+                      Missing placements fall back to legacy defaults on compile.
                     </p>
                   )}
                 </>
@@ -533,30 +587,57 @@ export function RoomEditor() {
                       <li>Enemies ({(selected.enemies ?? []).length})</li>
                       <li>NPCs ({(selected.npcs ?? []).length})</li>
                       <li>Collectibles ({(selected.collectibles ?? []).length})</li>
+                      <li>Entity placements ({placements.length})</li>
                       <li>Painted cells ({selected.tileCells?.length ?? 0})</li>
                       <li>Weak floors ({selected.weakFloors?.length ?? 0})</li>
                       <li>Connections ({selected.connections?.length ?? 0})</li>
                     </ul>
-                    {(selected.enemies?.length || selected.npcs?.length || selected.collectibles?.length) ? (
+                    {selectedPlacement ? (
                       <dl className="settings-dl" style={{ marginTop: '0.4rem' }}>
-                        {(selected.enemies ?? []).length > 0 && (
-                          <>
-                            <dt>Enemy ids</dt>
-                            <dd>{selected.enemies!.join(', ')}</dd>
-                          </>
-                        )}
-                        {(selected.npcs ?? []).length > 0 && (
-                          <>
-                            <dt>NPC ids</dt>
-                            <dd>{selected.npcs!.join(', ')}</dd>
-                          </>
-                        )}
-                        {(selected.collectibles ?? []).length > 0 && (
-                          <>
-                            <dt>Collectible ids</dt>
-                            <dd>{selected.collectibles!.join(', ')}</dd>
-                          </>
-                        )}
+                        <dt>Selected</dt>
+                        <dd className="mono">
+                          {selectedPlacement.kind} · {selectedPlacement.id}
+                        </dd>
+                        <dt>X</dt>
+                        <dd>
+                          <input
+                            type="number"
+                            className="input"
+                            value={selectedPlacement.x}
+                            onChange={(e) => {
+                              const x = Number(e.target.value);
+                              const next = placements.map((p) =>
+                                entityKey(p) === selectedEntityKey ? { ...p, x } : p,
+                              );
+                              setRooms((prev) =>
+                                prev.map((r) =>
+                                  r.id === selected.id ? { ...r, entityPlacements: next } : r,
+                                ),
+                              );
+                            }}
+                            onBlur={() => void persistPlacements(placements)}
+                          />
+                        </dd>
+                        <dt>Y</dt>
+                        <dd>
+                          <input
+                            type="number"
+                            className="input"
+                            value={selectedPlacement.y}
+                            onChange={(e) => {
+                              const y = Number(e.target.value);
+                              const next = placements.map((p) =>
+                                entityKey(p) === selectedEntityKey ? { ...p, y } : p,
+                              );
+                              setRooms((prev) =>
+                                prev.map((r) =>
+                                  r.id === selected.id ? { ...r, entityPlacements: next } : r,
+                                ),
+                              );
+                            }}
+                            onBlur={() => void persistPlacements(placements)}
+                          />
+                        </dd>
                       </dl>
                     ) : null}
                   </InspectorSection>
@@ -589,6 +670,92 @@ export function RoomEditor() {
                     <div className="row" style={{ flexWrap: 'wrap', gap: '0.35rem' }}>
                       <Button
                         size="sm"
+                        onClick={() => {
+                          if (!selectedPath) return;
+                          void runRoomAction(() => window.metroforge!.undoRoomEdit!(selectedPath));
+                        }}
+                      >
+                        Undo room edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          if (!selectedPath) return;
+                          void runRoomAction(() => window.metroforge!.redoRoomEdit(selectedPath));
+                        }}
+                      >
+                        Redo room edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          const enemyId = `enemy_${String((selected.enemies?.length ?? 0)).padStart(3, '0')}`;
+                          const floorY = (selected.height ?? 600) - 64;
+                          const nextPlacements = [
+                            ...placements,
+                            {
+                              kind: 'enemy',
+                              id: enemyId,
+                              x: Math.round((selected.width ?? 800) * 0.55),
+                              y: floorY,
+                            },
+                          ];
+                          const nextEnemies = [...(selected.enemies ?? []), enemyId];
+                          void persistPlacements(nextPlacements, { enemies: nextEnemies });
+                          setSelectedEntityKey(`enemy:${enemyId}`);
+                        }}
+                      >
+                        Place enemy
+                      </Button>
+                      <Button
+                        size="sm"
+                        disabled={!selectedPlacement}
+                        onClick={() => {
+                          if (!selectedPlacement) return;
+                          const copy: EntityPlacement = {
+                            ...selectedPlacement,
+                            id: `${selectedPlacement.id}_copy`,
+                            x: selectedPlacement.x + 32,
+                          };
+                          const next = [...placements, copy];
+                          const extras: Partial<RoomRecord> = {};
+                          if (copy.kind === 'enemy') {
+                            extras.enemies = [...(selected.enemies ?? []), copy.id];
+                          }
+                          if (copy.kind === 'npc') {
+                            extras.npcs = [...(selected.npcs ?? []), copy.id];
+                          }
+                          void persistPlacements(next, extras);
+                          setSelectedEntityKey(entityKey(copy));
+                        }}
+                      >
+                        Duplicate
+                      </Button>
+                      <Button
+                        size="sm"
+                        disabled={!selectedPlacement || selectedPlacement.kind === 'player_spawn'}
+                        onClick={() => {
+                          if (!selectedPlacement) return;
+                          const next = placements.filter((p) => entityKey(p) !== selectedEntityKey);
+                          const extras: Partial<RoomRecord> = {};
+                          if (selectedPlacement.kind === 'enemy') {
+                            extras.enemies = (selected.enemies ?? []).filter(
+                              (id) => id !== selectedPlacement.id,
+                            );
+                          }
+                          if (selectedPlacement.kind === 'npc') {
+                            extras.npcs = (selected.npcs ?? []).filter(
+                              (id) => id !== selectedPlacement.id,
+                            );
+                          }
+                          void persistPlacements(next, extras);
+                          setSelectedEntityKey(null);
+                        }}
+                      >
+                        Delete
+                      </Button>
+                      <Button
+                        size="sm"
                         onClick={() =>
                           runRoomAction(() =>
                             window.metroforge!.updateRoom!(selectedPath, {
@@ -599,6 +766,20 @@ export function RoomEditor() {
                         }
                       >
                         Add Enemy
+                      </Button>
+                      <Button
+                        size="sm"
+                        disabled={!selected.enemies?.length}
+                        onClick={() =>
+                          runRoomAction(() =>
+                            window.metroforge!.updateRoom!(selectedPath, {
+                              roomId: selected.id,
+                              enemies: (selected.enemies ?? []).slice(0, -1),
+                            }),
+                          )
+                        }
+                      >
+                        Remove last enemy
                       </Button>
                       <Button
                         size="sm"
@@ -659,12 +840,26 @@ function RoomCanvasPreview({
   collision,
   mini = false,
   fill = false,
+  selectedEntityKey = null,
+  onSelectEntity,
+  onMoveEntity,
+  onMoveEntityEnd,
+  dragEntityKey = null,
+  setDragEntityKey,
+  gridSnap = true,
 }: {
   room: RoomRecord;
   layer: ViewModeId;
   collision?: RoomCollisionPreview | null;
   mini?: boolean;
   fill?: boolean;
+  selectedEntityKey?: string | null;
+  onSelectEntity?: (key: string | null) => void;
+  onMoveEntity?: (key: string, x: number, y: number) => void;
+  onMoveEntityEnd?: (key: string, x: number, y: number) => void;
+  dragEntityKey?: string | null;
+  setDragEntityKey?: (key: string | null) => void;
+  gridSnap?: boolean;
 }) {
   const w = room.width ?? 800;
   const h = room.height ?? 600;
@@ -674,21 +869,90 @@ function RoomCanvasPreview({
   const authoredRects = layer === 'collision' ? collision?.rects ?? [] : [];
   const tileCells = room.tileCells ?? [];
   const hasPaint = tileCells.length > 0 || authoredRects.length > 0;
+  const placements = room.entityPlacements ?? [];
+
+  const clientToRoom = (svg: SVGSVGElement, clientX: number, clientY: number) => {
+    const pt = svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return { x: 0, y: 0 };
+    const local = pt.matrixTransform(ctm.inverse());
+    let x = local.x;
+    let y = local.y;
+    if (gridSnap) {
+      x = Math.round(x / TILE) * TILE;
+      y = Math.round(y / TILE) * TILE;
+    }
+    return {
+      x: Math.max(0, Math.min(w, Math.round(x))),
+      y: Math.max(0, Math.min(h, Math.round(y))),
+    };
+  };
 
   if (layer === 'entities') {
     return (
-      <div className={`room-canvas-wrap${fill ? ' room-canvas-fill' : ''} room-entities-summary`}>
-        <ul className="stat-list">
-          <li>Enemies: {(room.enemies ?? []).length || 'none'}</li>
-          <li>NPCs: {(room.npcs ?? []).length || 'none'}</li>
-          <li>Collectibles: {(room.collectibles ?? []).length || 'none'}</li>
-        </ul>
-        <p className="hint">No authored entity coordinates — listing ids only (no fake spawn markers).</p>
-        {(room.enemies ?? []).length > 0 && <p className="mono hint">{room.enemies!.join(', ')}</p>}
-        {(room.npcs ?? []).length > 0 && <p className="mono hint">{room.npcs!.join(', ')}</p>}
-        {(room.collectibles ?? []).length > 0 && (
-          <p className="mono hint">{room.collectibles!.join(', ')}</p>
-        )}
+      <div className={`room-canvas-wrap${fill ? ' room-canvas-fill' : ''} room-canvas-pixelated`}>
+        <svg
+          className="room-canvas"
+          width={w * scale}
+          height={h * scale}
+          viewBox={`0 0 ${w} ${h}`}
+          style={{ imageRendering: 'pixelated' }}
+          onMouseMove={(e) => {
+            if (!dragEntityKey || !onMoveEntity) return;
+            const { x, y } = clientToRoom(e.currentTarget, e.clientX, e.clientY);
+            onMoveEntity(dragEntityKey, x, y);
+          }}
+          onMouseUp={(e) => {
+            if (!dragEntityKey || !onMoveEntityEnd) return;
+            const { x, y } = clientToRoom(e.currentTarget, e.clientX, e.clientY);
+            onMoveEntityEnd(dragEntityKey, x, y);
+          }}
+          onMouseLeave={() => {
+            if (dragEntityKey && setDragEntityKey) setDragEntityKey(null);
+          }}
+        >
+          <rect className="room-floor" x={0} y={0} width={w} height={h} />
+          {tileCells.map((cell, i) => (
+            <rect
+              key={`tile-${i}`}
+              className="room-paint"
+              x={cell.x * TILE}
+              y={cell.y * TILE}
+              width={TILE}
+              height={TILE}
+              opacity={0.35}
+            />
+          ))}
+          {placements.length === 0 ? (
+            <text x={16} y={32} fill="currentColor" fontSize={12}>
+              No placements yet — Place enemy or Add Enemy, then drag markers.
+            </text>
+          ) : (
+            placements.map((p) => {
+              const key = entityKey(p);
+              const selected = key === selectedEntityKey;
+              return (
+                <g
+                  key={key}
+                  transform={`translate(${p.x}, ${p.y})`}
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    onSelectEntity?.(key);
+                    setDragEntityKey?.(key);
+                  }}
+                  style={{ cursor: 'grab' }}
+                >
+                  <circle r={10} fill={selected ? '#c47a3a' : '#8a9bb0'} stroke="#1a1c1f" strokeWidth={2} />
+                  <text x={14} y={4} fontSize={11} fill="currentColor">
+                    {p.kind}:{p.id}
+                  </text>
+                </g>
+              );
+            })
+          )}
+        </svg>
       </div>
     );
   }
@@ -733,6 +997,14 @@ function RoomCanvasPreview({
             height={Math.max(1, rect.h)}
           />
         ))}
+        {(layer === 'visual' || layer === 'debug') &&
+          placements.map((p) => (
+            <circle key={entityKey(p)} cx={p.x} cy={p.y} r={6} fill="#c47a3a" opacity={0.85}>
+              <title>
+                {p.kind}:{p.id}
+              </title>
+            </circle>
+          ))}
         {showNav &&
           (room.weakFloors ?? []).map((floor, i) => (
             <rect
@@ -777,7 +1049,7 @@ function RoomCanvasPreview({
             ? authoredRects.length > 0
               ? 'Collision layer from getRoomCollision.'
               : 'Occupancy overlay from painted cells — authored collision unavailable for this room.'
-            : 'Visual preview from authored tileCells / connections only — no invented player or enemy sprites.'}
+            : 'Visual preview from authored tileCells / connections / entity markers.'}
         </p>
       )}
     </div>

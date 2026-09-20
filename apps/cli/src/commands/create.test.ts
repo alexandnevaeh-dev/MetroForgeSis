@@ -16,6 +16,24 @@ describe('resolveResumeFlag (metroforge generate --fresh)', () => {
   });
 });
 
+describe('parseTargetEngine (metroforge create --engine)', () => {
+  it('defaults to godot and accepts unity/unreal', async () => {
+    const { parseTargetEngine } = await import('@metroforge/shared');
+    expect(parseTargetEngine(undefined)).toBe('godot');
+    expect(parseTargetEngine('unity')).toBe('unity');
+    expect(parseTargetEngine('unreal')).toBe('unreal');
+  });
+
+  it('rejects unknown engines with the valid list', async () => {
+    const { parseTargetEngine } = await import('@metroforge/shared');
+    const result = parseTargetEngine('source');
+    expect(typeof result).toBe('object');
+    if (typeof result === 'object') {
+      expect(result.error).toContain('godot, unity, unreal');
+    }
+  });
+});
+
 describe('resolveVisualMode (metroforge create --visual-mode)', () => {
   it('defaults to procedural-only when the flag is absent', () => {
     expect(resolveVisualMode(undefined)).toEqual({ visualMode: 'procedural-only' });

@@ -36,6 +36,35 @@ export function loadAuthoredMasonryPng(filename: string): Buffer | null {
   return loadAuthoredPng(authoredMasonryDir(), filename);
 }
 
+export function authoredBiomeDir(): string {
+  return join(packageDirFromMeta(import.meta.url), '..', 'authored', 'foundry-biomes');
+}
+
+export function authoredCastDir(): string {
+  return join(packageDirFromMeta(import.meta.url), '..', 'authored', 'foundry-cast');
+}
+
+export function loadAuthoredBiomePng(filename: string): Buffer | null {
+  return loadAuthoredPng(authoredBiomeDir(), filename);
+}
+
+export function loadAuthoredCastPng(filename: string): Buffer | null {
+  return loadAuthoredPng(authoredCastDir(), filename);
+}
+
+export function loadAuthoredFoundryTileset(biomeIndex: number, tileSize: number): Buffer | null {
+  if (tileSize !== 32) return null;
+  if (biomeIndex === 1) return loadAuthoredBiomePng('quench_source.png');
+  if (biomeIndex === 2) return loadAuthoredBiomePng('cooling_source.png');
+  return loadAuthoredMasonryPng('source.png');
+}
+
+export function foundryBiomeStem(biomeId: string): 'pouring' | 'quench' | 'cooling' {
+  if (biomeId.includes('1')) return 'quench';
+  if (biomeId.includes('2')) return 'cooling';
+  return 'pouring';
+}
+
 /** The hand-authored courier kit is a SIDE-VIEW foundry-courier design (visor/pack/blade,
  *  foundry-tender). It ships for the side-view Foundry visual slice and for any side-view gen
  *  whose theme is explicitly foundry/courier/wanderer. It must never apply to a top-down game

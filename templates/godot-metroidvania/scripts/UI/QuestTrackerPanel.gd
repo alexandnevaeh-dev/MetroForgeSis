@@ -5,8 +5,8 @@ const MAX_QUESTS := 2
 const MAX_OBJECTIVES := 2
 
 func _ready() -> void:
+	_set_host_visible(false)
 	if OS.get_environment("METROFORGE_CAPTURE") == "1" or OS.get_environment("METROFORGE_HUD_MODE") in PackedStringArray(["PLAYER", "RELEASE", "QA_CAPTURE"]):
-		visible = false
 		return
 	if not EventBus.quest_updated.is_connected(_on_quest_updated):
 		EventBus.quest_updated.connect(_on_quest_updated)
@@ -15,12 +15,18 @@ func _ready() -> void:
 func _on_quest_updated(_quest_id: String) -> void:
 	queue_redraw()
 
+func _set_host_visible(show: bool) -> void:
+	visible = show
+	var host := get_parent()
+	if host:
+		host.visible = show
+
 func _draw() -> void:
 	var entries: Array = QuestManager.get_hud_entries()
 	if entries.is_empty():
-		visible = false
+		_set_host_visible(false)
 		return
-	visible = true
+	_set_host_visible(true)
 
 	var y := 16.0
 	var shown := 0

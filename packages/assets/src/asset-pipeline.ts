@@ -37,6 +37,7 @@ import {
   type AttackArcKind,
 } from './png.js';
 import { PLAYER_ANIMATION_SPEC, buildAnimationMetadataSidecar, type PlayerAnimationDefinition } from './player-animation-spec.js';
+import { BOSS_ANIMATION_SPEC, buildBossAnimationSidecar } from './boss-animation-spec.js';
 import { PixelArtProcessor } from './pixel-art-processor.js';
 import {
   generateParallaxStrip,
@@ -93,7 +94,11 @@ import {
   AUTHORED_COURIER_PROVIDER,
   loadAuthoredCourierPng,
   loadAuthoredMasonryPng,
+  loadAuthoredBiomePng,
+  loadAuthoredCastPng,
+  loadAuthoredFoundryTileset,
   shouldUseFoundryCourierKit,
+  foundryBiomeStem,
 } from './authored-kit.js';
 import { sanitizeImagePromptText } from './sanitize-image-prompt.js';
 import { runAssetPipelineV2 } from './pipeline-v2/orchestrator.js';
@@ -328,6 +333,14 @@ export interface AssetPipelineOptions {
   mode?: GenerationMode;
   /** When LOW_RESOURCE, ImageProviderRegistry prefers remote/hosted image providers. */
   hardwareProfile?: string;
+  /** Measured hardware snapshot used for VRAM-aware local GPU routing. Remote providers ignore this. */
+  hardware?: {
+    profile?: string;
+    ramMb?: number;
+    vramMb?: number;
+    freeVramMb?: number;
+  };
+  qualityProfile?: import('@metroforge/schemas').AssetQualityProfile;
   /** When aborted, generation stops at the next cooperative checkpoint. */
   signal?: AbortSignal;
   /** Per-provider Settings toggles (missing ⇒ enabled). */
@@ -700,6 +713,8 @@ async function resolveImageGenerator(options: {
   enablePollinations?: boolean;
   mode?: GenerationMode;
   hardwareProfile?: string;
+  hardware?: AssetPipelineOptions['hardware'];
+  qualityProfile?: AssetPipelineOptions['qualityProfile'];
   providerEnabled?: Record<string, boolean>;
 }): Promise<{
   generator: ImageGenerator | null;
@@ -735,6 +750,8 @@ async function resolveImageGenerator(options: {
   const selected = await registry.selectHealthy({
     mode: options.mode,
     hardwareProfile: options.hardwareProfile,
+    hardware: options.hardware,
+    qualityProfile: options.qualityProfile,
   });
   if (selected.generator) {
     return {
@@ -1025,6 +1042,8 @@ export class AssetPipeline {
           enablePollinations: options.enablePollinations,
           mode: options.mode,
           hardwareProfile: options.hardwareProfile,
+          hardware: options.hardware,
+          qualityProfile: options.qualityProfile,
           providerEnabled: options.providerEnabled,
         });
     const imageGen = imageRoute.generator;
@@ -1075,8 +1094,8 @@ export class AssetPipeline {
       id: 'player',
       width: playerFrame.width,
       height: playerFrame.height,
-      fill: [90, 140, 220, 255],
-      accent: [240, 240, 250, 255],
+      fill: [62, 48, 38, 255],
+      accent: [204, 108, 52, 255],
       shape: 'humanoid',
     };
     // Foundry visual slice (and foundry-themed gens) ship a hand-authored courier still — prefer
@@ -1148,20 +1167,24 @@ export class AssetPipeline {
       filename: string,
       path: string,
       kind: AnimationKind,
-    ): GeneratedAsset | null =>
-      useCourierKit
-        ? this.materializeAuthoredCourier({
-            id: path.split('/').pop()!.replace('.png', ''),
-            path,
-            filename,
-            width: playerFrame.width * 4,
-            height: playerFrame.height,
-            outputDir: options.outputDir,
-            animationKind: kind,
-            frameCount: 4,
-            expectedFrameWidth: playerFrame.width,
-          })
-        : null;
+    ): GeneratedAsset | null => {
+      if (!useCourierKit) return null;
+      const raw = loadAuthoredCourierPng(filename);
+      if (!raw) return null;
+      const decoded = decodePngRgba(raw);
+      const frames = Math.max(1, Math.round(decoded.width / playerFrame.width));
+      return this.materializeAuthoredCourier({
+        id: path.split('/').pop()!.replace('.png', ''),
+        path,
+        filename,
+        width: decoded.width,
+        height: decoded.height,
+        outputDir: options.outputDir,
+        animationKind: kind,
+        frameCount: frames,
+        expectedFrameWidth: playerFrame.width,
+      });
+    };
     const walkDef = PLAYER_ANIMATION_SPEC.walk!;
     recordAsset(
       authoredSheet('player_walk.png', 'assets/characters/player_walk.png', 'walk') ??
@@ -1196,30 +1219,32 @@ export class AssetPipeline {
     // found and fixed for `walk`/`swim`/`wall_jump`, applied proactively here instead of reactively.
     const attack2Def = PLAYER_ANIMATION_SPEC.attack_2!;
     recordAsset(
-      this.buildAttackSheetAsset(
-        'player',
-        playerSpec,
-        'assets/characters/player_attack_2.png',
-        attack2Def.frameCount,
-        tileSize,
-        playerSource,
-        attack2Def.arcKind,
-        'attack_2',
-      ),
+      authoredSheet('player_attack_2.png', 'assets/characters/player_attack_2.png', 'attack_2') ??
+        this.buildAttackSheetAsset(
+          'player',
+          playerSpec,
+          'assets/characters/player_attack_2.png',
+          attack2Def.frameCount,
+          tileSize,
+          playerSource,
+          attack2Def.arcKind,
+          'attack_2',
+        ),
       'animation',
     );
     const attack3Def = PLAYER_ANIMATION_SPEC.attack_3!;
     recordAsset(
-      this.buildAttackSheetAsset(
-        'player',
-        playerSpec,
-        'assets/characters/player_attack_3.png',
-        attack3Def.frameCount,
-        tileSize,
-        playerSource,
-        attack3Def.arcKind,
-        'attack_3',
-      ),
+      authoredSheet('player_attack_3.png', 'assets/characters/player_attack_3.png', 'attack_3') ??
+        this.buildAttackSheetAsset(
+          'player',
+          playerSpec,
+          'assets/characters/player_attack_3.png',
+          attack3Def.frameCount,
+          tileSize,
+          playerSource,
+          attack3Def.arcKind,
+          'attack_3',
+        ),
       'animation',
     );
     const hurtDef = PLAYER_ANIMATION_SPEC.hurt!;
@@ -1255,14 +1280,15 @@ export class AssetPipeline {
     // would otherwise clobber it with one static frame.
     const runDef = PLAYER_ANIMATION_SPEC.run!;
     recordAsset(
-      this.buildRunSheetAsset(
-        'player',
-        playerSpec,
-        'assets/characters/player_run.png',
-        runDef.frameCount,
-        tileSize,
-        playerSource,
-      ),
+      authoredSheet('player_run.png', 'assets/characters/player_run.png', 'run') ??
+        this.buildRunSheetAsset(
+          'player',
+          playerSpec,
+          'assets/characters/player_run.png',
+          runDef.frameCount,
+          tileSize,
+          playerSource,
+        ),
       'animation',
     );
 
@@ -1286,14 +1312,30 @@ export class AssetPipeline {
     for (const [key, path] of progressionStates) {
       const def = PLAYER_ANIMATION_SPEC[key]!;
       progressionDefs.push(def);
-      recordAsset(this.buildProgressionSheetAsset('player', def, playerSpec, path, tileSize, playerSource), 'animation');
+      recordAsset(
+        authoredSheet(`player_${key}.png`, path, key as AnimationKind) ??
+          this.buildProgressionSheetAsset('player', def, playerSpec, path, tileSize, playerSource),
+        'animation',
+      );
     }
     {
       const animSidecarDir = join(options.outputDir, 'assets', 'characters');
       mkdirSync(animSidecarDir, { recursive: true });
+      const sidecar = buildAnimationMetadataSidecar(progressionDefs);
+      if (useCourierKit) {
+        for (const def of progressionDefs) {
+          const raw = loadAuthoredCourierPng(`player_${def.name}.png`);
+          if (!raw) continue;
+          const decoded = decodePngRgba(raw);
+          const frames = Math.max(1, Math.round(decoded.width / playerFrame.width));
+          const specDuration = def.frameCount / Math.max(1, def.fps);
+          const fps = Math.max(6, Math.round(frames / specDuration));
+          sidecar[def.name] = { frameCount: frames, fps, loop: def.loop };
+        }
+      }
       writeFileSync(
         join(animSidecarDir, 'player_animations.json'),
-        JSON.stringify(buildAnimationMetadataSidecar(progressionDefs), null, 2),
+        JSON.stringify(sidecar, null, 2),
       );
     }
 
@@ -1407,7 +1449,17 @@ export class AssetPipeline {
         `Generating enemy ${i + 1} / ${defaults.enemies}`,
       );
 
-      const enemyAsset = await this.generateSprite({
+      const authoredEnemy = useCourierKit
+        ? this.materializeAuthoredCourier({
+            id: enemyId,
+            path: `assets/enemies/${enemyId}.png`,
+            filename: `${enemyId}.png`,
+            width: enemyFrame.width,
+            height: enemyFrame.height,
+            outputDir: options.outputDir,
+          })
+        : null;
+      const enemyAsset = authoredEnemy ?? (await this.generateSprite({
         id: enemyId,
         path: `assets/enemies/${enemyId}.png`,
         spec: enemySpec,
@@ -1429,55 +1481,77 @@ export class AssetPipeline {
         outputDir: options.outputDir,
         resume: options.resume,
         signal: options.signal,
-      });
+      }));
       if (visualTemplate) finalizeVisualTemplateProvenance(visualTemplate.provenance, enemyAsset.provider, enemyAsset.modelId);
       recordAsset(enemyAsset, 'enemy');
 
       const enemySource = enemyAsset.fallbackGenerated ? undefined : enemyAsset.buffer;
+      const authoredEnemySheet = (filename: string, path: string, kind: AnimationKind): GeneratedAsset | null =>
+        useCourierKit
+          ? this.materializeAuthoredCourier({
+              id: path.split('/').pop()!.replace('.png', ''),
+              path,
+              filename,
+              width: enemyFrame.width * 4,
+              height: enemyFrame.height,
+              outputDir: options.outputDir,
+              animationKind: kind,
+              frameCount: 4,
+              expectedFrameWidth: enemyFrame.width,
+            })
+          : null;
       recordAsset(
-        this.buildWalkSheetAsset(
-          enemyId,
-          enemySpec,
-          `assets/enemies/${enemyId}_walk.png`,
-          4,
-          tileSize,
-          enemySource,
-        ),
+        authoredEnemySheet(`${enemyId}_walk.png`, `assets/enemies/${enemyId}_walk.png`, 'walk') ??
+          this.buildWalkSheetAsset(
+            enemyId,
+            enemySpec,
+            `assets/enemies/${enemyId}_walk.png`,
+            4,
+            tileSize,
+            enemySource,
+          ),
         'animation',
       );
       recordAsset(
-        this.buildHurtSheetAsset(
-          enemyId,
-          enemySpec,
-          `assets/enemies/${enemyId}_hurt.png`,
-          4,
-          tileSize,
-          enemySource,
-        ),
+        authoredEnemySheet(`${enemyId}_hurt.png`, `assets/enemies/${enemyId}_hurt.png`, 'hurt') ??
+          this.buildHurtSheetAsset(
+            enemyId,
+            enemySpec,
+            `assets/enemies/${enemyId}_hurt.png`,
+            4,
+            tileSize,
+            enemySource,
+          ),
         'animation',
       );
       recordAsset(
-        this.buildDeathSheetAsset(
-          enemyId,
-          enemySpec,
-          `assets/enemies/${enemyId}_death.png`,
-          4,
-          tileSize,
-          enemySource,
-        ),
+        authoredEnemySheet(`${enemyId}_death.png`, `assets/enemies/${enemyId}_death.png`, 'death') ??
+          this.buildDeathSheetAsset(
+            enemyId,
+            enemySpec,
+            `assets/enemies/${enemyId}_death.png`,
+            4,
+            tileSize,
+            enemySource,
+          ),
         'animation',
       );
       recordAsset(
-        this.buildAttackSheetAsset(
-          enemyId,
-          enemySpec,
-          `assets/enemies/${enemyId}_attack.png`,
-          4,
-          tileSize,
-          enemySource,
-        ),
+        authoredEnemySheet(`${enemyId}_attack.png`, `assets/enemies/${enemyId}_attack.png`, 'attack') ??
+          this.buildAttackSheetAsset(
+            enemyId,
+            enemySpec,
+            `assets/enemies/${enemyId}_attack.png`,
+            4,
+            tileSize,
+            enemySource,
+          ),
         'animation',
       );
+      for (const extra of [`${enemyId}_idle.png`, `${enemyId}_fly.png`]) {
+        const extraAsset = authoredEnemySheet(extra, `assets/enemies/${extra}`, extra.endsWith('fly.png') ? 'idle' : 'idle');
+        if (extraAsset) recordAsset(extraAsset, 'animation');
+      }
       if (options.profile === 'VISUAL_VERTICAL_SLICE') {
         const poseSet = await this.tryCanonicalPoseSet({
           id: enemyId,
@@ -1623,6 +1697,22 @@ export class AssetPipeline {
           ),
         'animation',
       );
+      if (useCourierKit && npcId === 'npc_000') {
+        for (const extra of ['idle', 'talk', 'listen'] as const) {
+          const extraAsset = this.materializeAuthoredCourier({
+            id: `${npcId}_${extra}`,
+            path: `assets/npcs/${npcId}_${extra}.png`,
+            filename: `npc_000_${extra}.png`,
+            width: npcSpec.width * 4,
+            height: npcSpec.height,
+            outputDir: options.outputDir,
+            animationKind: extra === 'idle' ? 'idle' : 'walk',
+            frameCount: 4,
+            expectedFrameWidth: npcSpec.width,
+          });
+          if (extraAsset) recordAsset(extraAsset, 'animation');
+        }
+      }
       const portraitRole = role.replace(/[^a-z0-9_]/gi, '_').toLowerCase();
       const portraitPath = `assets/ui/portraits/${portraitRole}.png`;
       if (!assets.some((a) => a.path === portraitPath)) {
@@ -1761,7 +1851,17 @@ export class AssetPipeline {
         buildBossImagePrompt(boss, options.gameDna, options.artBible, isFinal),
       );
 
-      const bossAsset = await this.generateSprite({
+      const authoredBoss = useCourierKit
+        ? this.materializeAuthoredCourier({
+            id: bossId,
+            path: `assets/bosses/${bossId}.png`,
+            filename: `${bossId}.png`,
+            width: bossFrame.width,
+            height: bossFrame.height,
+            outputDir: options.outputDir,
+          })
+        : null;
+      const bossAsset = authoredBoss ?? (await this.generateSprite({
         id: bossId,
         path: `assets/bosses/${bossId}.png`,
         spec: bossSpec,
@@ -1777,54 +1877,97 @@ export class AssetPipeline {
         outputDir: options.outputDir,
         resume: options.resume,
         signal: options.signal,
-      });
+      }));
       recordAsset(bossAsset, 'boss');
 
       const bossSource = bossAsset.fallbackGenerated ? undefined : bossAsset.buffer;
+      const authoredBossSheet = (filename: string, path: string, kind: AnimationKind): GeneratedAsset | null =>
+        useCourierKit
+          ? this.materializeAuthoredCourier({
+              id: path.split('/').pop()!.replace('.png', ''),
+              path,
+              filename,
+              width: bossFrame.width * 4,
+              height: bossFrame.height,
+              outputDir: options.outputDir,
+              animationKind: kind === 'idle' ? 'idle' : kind,
+              frameCount: 4,
+              expectedFrameWidth: bossFrame.width,
+            })
+          : null;
       recordAsset(
-        this.buildWalkSheetAsset(
-          bossId,
-          bossSpec,
-          `assets/bosses/${bossId}_walk.png`,
-          3,
-          tileSize,
-          bossSource,
-        ),
+        authoredBossSheet(`${bossId}_walk.png`, `assets/bosses/${bossId}_walk.png`, 'walk') ??
+          this.buildWalkSheetAsset(
+            bossId,
+            bossSpec,
+            `assets/bosses/${bossId}_walk.png`,
+            BOSS_ANIMATION_SPEC.walk!.frameCount,
+            tileSize,
+            bossSource,
+          ),
         'animation',
       );
       recordAsset(
-        this.buildHurtSheetAsset(
-          bossId,
-          bossSpec,
-          `assets/bosses/${bossId}_hurt.png`,
-          3,
-          tileSize,
-          bossSource,
-        ),
+        authoredBossSheet(`${bossId}_hurt.png`, `assets/bosses/${bossId}_hurt.png`, 'hurt') ??
+          this.buildHurtSheetAsset(
+            bossId,
+            bossSpec,
+            `assets/bosses/${bossId}_hurt.png`,
+            BOSS_ANIMATION_SPEC.hurt!.frameCount,
+            tileSize,
+            bossSource,
+          ),
         'animation',
       );
       recordAsset(
-        this.buildDeathSheetAsset(
-          bossId,
-          bossSpec,
-          `assets/bosses/${bossId}_death.png`,
-          3,
-          tileSize,
-          bossSource,
-        ),
+        authoredBossSheet(`${bossId}_death.png`, `assets/bosses/${bossId}_death.png`, 'death') ??
+          this.buildDeathSheetAsset(
+            bossId,
+            bossSpec,
+            `assets/bosses/${bossId}_death.png`,
+            BOSS_ANIMATION_SPEC.death!.frameCount,
+            tileSize,
+            bossSource,
+          ),
         'animation',
       );
       recordAsset(
-        this.buildAttackSheetAsset(
-          bossId,
-          bossSpec,
-          `assets/bosses/${bossId}_attack.png`,
-          3,
-          tileSize,
-          bossSource,
-        ),
+        authoredBossSheet(`${bossId}_attack.png`, `assets/bosses/${bossId}_attack.png`, 'attack') ??
+          this.buildAttackSheetAsset(
+            bossId,
+            bossSpec,
+            `assets/bosses/${bossId}_attack.png`,
+            BOSS_ANIMATION_SPEC.attack!.frameCount,
+            tileSize,
+            bossSource,
+          ),
         'animation',
       );
+      const bossCombatProgression = ['idle', 'telegraph', 'recovery', 'attack_projectile', 'attack_burst'] as const;
+      for (const clip of bossCombatProgression) {
+        const def = BOSS_ANIMATION_SPEC[clip]!;
+        const kind: AnimationKind = clip === 'attack_projectile' || clip === 'attack_burst' ? 'attack' : 'idle';
+        recordAsset(
+          authoredBossSheet(`${bossId}_${clip}.png`, `assets/bosses/${bossId}_${clip}.png`, kind) ??
+            this.buildProgressionSheetAsset(
+              bossId,
+              def,
+              bossSpec,
+              `assets/bosses/${bossId}_${clip}.png`,
+              tileSize,
+              bossSource,
+            ),
+          'animation',
+        );
+      }
+      {
+        const animSidecarDir = join(options.outputDir, 'assets', 'bosses');
+        mkdirSync(animSidecarDir, { recursive: true });
+        writeFileSync(
+          join(animSidecarDir, `${bossId}_animations.json`),
+          JSON.stringify(buildBossAnimationSidecar(), null, 2),
+        );
+      }
       if (options.profile === 'VISUAL_VERTICAL_SLICE') {
         const poseSet = await this.tryCanonicalPoseSet({
           id: bossId,
@@ -1899,9 +2042,8 @@ export class AssetPipeline {
           profile: options.profile,
           gameDna: options.gameDna,
           characterVisualDna: options.characterVisualDna,
-        }) &&
-        tileSize === 32
-          ? loadAuthoredMasonryPng('source.png')
+        })
+          ? loadAuthoredFoundryTileset(b, tileSize)
           : null;
 
       if (cachedTileset) {
@@ -2095,6 +2237,43 @@ export class AssetPipeline {
           const bgPath = `assets/backgrounds/biome_${b}/${layer}.png`;
           options.onTaskStarted?.('background', `Generating ${layer} parallax for biome ${b}`);
           const dim = PARALLAX_STRIP_SIZE[layer];
+          const authoredBgName =
+            (layer === 'foreground' || layer === 'near') && b === 0
+              ? `pouring_${layer}.png`
+              : (layer === 'foreground' || layer === 'near') && b === 1
+                ? `quench_${layer}.png`
+                : (layer === 'foreground' || layer === 'near') && b === 2
+                  ? `cooling_${layer}.png`
+                  : b === 1 && (layer === 'far' || layer === 'mid')
+                    ? `quench_${layer}.png`
+                    : b === 2 && (layer === 'far' || layer === 'mid')
+                      ? `cooling_${layer}.png`
+                      : null;
+          const authoredBgRaw =
+            useCourierKit && authoredBgName ? loadAuthoredBiomePng(authoredBgName) : null;
+          if (authoredBgRaw) {
+            const processedBg = this.pixelArt.process(authoredBgRaw, {
+              targetWidth: dim.width,
+              targetHeight: dim.height,
+              tileSize,
+              skipQuantize: true,
+            });
+            writeCheckpoint(options.outputDir, bgPath, processedBg.buffer);
+            recordAsset(
+              {
+                id: `bg_biome_${b}_${layer}`,
+                path: bgPath,
+                buffer: processedBg.buffer,
+                provider: AUTHORED_COURIER_PROVIDER,
+                fallbackGenerated: false,
+                critiquePassed: true,
+                critiqueScore: 82,
+                sourceType: 'manual',
+              },
+              'background',
+            );
+            continue;
+          }
           const backgroundVisualTemplate = await resolveBackgroundVisualTemplate(
             options.visualReferenceLibrary,
             b,
@@ -2342,9 +2521,33 @@ export class AssetPipeline {
           const rel = `assets/props/${kit.biomeId}/${prop.id}.png`;
           const family = prop.family.includes('moss') || prop.family.includes('plant') ? 'debris' : prop.family;
           const familyKey = `${kit.biomeId}:${family}`;
+          const propIndex = Number(prop.id.replace(/.*_prop_/, '')) || 0;
+          const authoredPropRaw =
+            useCourierKit ? loadAuthoredBiomePng(`${foundryBiomeStem(kit.biomeId)}_prop_${propIndex % 4}.png`) : null;
 
           let familyAsset = familyAssets.get(familyKey);
-          if (!familyAsset) {
+          if (authoredPropRaw) {
+            const processedProp = this.pixelArt.process(authoredPropRaw, {
+              targetWidth: 32,
+              targetHeight: 32,
+              skipQuantize: true,
+            });
+            writeCheckpoint(options.outputDir, rel, processedProp.buffer);
+            familyAsset = withMaturity({
+              id: prop.id,
+              path: rel,
+              buffer: processedProp.buffer,
+              provider: AUTHORED_COURIER_PROVIDER,
+              fallbackGenerated: false,
+              critiquePassed: true,
+              critiqueScore: 82,
+              sourceType: 'manual',
+              compiler: 'authored-courier',
+              transformation: 'authored-original',
+              godotResourcePath: `res://${rel}`,
+            });
+            familyAssets.set(`${kit.biomeId}:${prop.id}`, familyAsset);
+          } else if (!familyAsset) {
             const useAiForThisFamily = attemptAiProps && aiFamiliesAttempted < MAX_AI_PROP_FAMILIES;
             if (useAiForThisFamily) aiFamiliesAttempted++;
             const familySeed = options.seed + hashPrompt(familyKey).charCodeAt(0);
@@ -2414,6 +2617,35 @@ export class AssetPipeline {
         for (const arch of kit.architecture.slice(0, 4)) {
           checkCancelled();
           const rel = `assets/architecture/${kit.biomeId}/${arch.id}.png`;
+          const archIndex = Number(arch.id.replace(/.*_arch_/, '')) || 0;
+          const authoredArchRaw =
+            useCourierKit ? loadAuthoredBiomePng(`${foundryBiomeStem(kit.biomeId)}_arch_${archIndex % 4}.png`) : null;
+          if (authoredArchRaw) {
+            const processedArch = this.pixelArt.process(authoredArchRaw, {
+              targetWidth: 48,
+              targetHeight: 112,
+              skipQuantize: true,
+            });
+            writeCheckpoint(options.outputDir, rel, processedArch.buffer);
+            recordAsset(
+              {
+                id: arch.id,
+                path: rel,
+                buffer: processedArch.buffer,
+                provider: AUTHORED_COURIER_PROVIDER,
+                fallbackGenerated: false,
+                critiquePassed: true,
+                critiqueScore: 82,
+                sourceType: 'manual',
+                compiler: 'authored-courier',
+                transformation: 'authored-original',
+                godotResourcePath: `res://${rel}`,
+                styleFingerprint: kit.styleFingerprint,
+              },
+              'prop',
+            );
+            continue;
+          }
           const familyAsset = await this.generatePropFamilyAsset({
             id: `${kit.biomeId}_architecture_family_${arch.family.replace(/\s+/g, '_')}`,
             path: rel,
@@ -2501,6 +2733,34 @@ export class AssetPipeline {
         },
         spec.family,
       );
+    }
+    if (useCourierKit) {
+      const barrierRaw = loadAuthoredBiomePng('foundry_phase_barrier.png');
+      if (barrierRaw) {
+        const barrierPath = 'assets/generated/gate/foundry_phase_barrier.png';
+        const processedBarrier = this.pixelArt.process(barrierRaw, {
+          targetWidth: 48,
+          targetHeight: 160,
+          skipQuantize: true,
+        });
+        writeCheckpoint(options.outputDir, barrierPath, processedBarrier.buffer);
+        recordAsset(
+          {
+            id: 'foundry_phase_barrier',
+            path: barrierPath,
+            buffer: processedBarrier.buffer,
+            provider: AUTHORED_COURIER_PROVIDER,
+            fallbackGenerated: false,
+            critiquePassed: true,
+            critiqueScore: 82,
+            sourceType: 'manual',
+            compiler: 'authored-courier',
+            transformation: 'authored-original',
+            godotResourcePath: `res://${barrierPath}`,
+          },
+          'gate',
+        );
+      }
     }
 
     const visualEnhancement = await this.runVisualEnhancement(options, assets);
@@ -2933,7 +3193,7 @@ export class AssetPipeline {
     frameCount?: number;
     expectedFrameWidth?: number;
   }): GeneratedAsset | null {
-    const raw = loadAuthoredCourierPng(opts.filename);
+    const raw = loadAuthoredCourierPng(opts.filename) ?? loadAuthoredCastPng(opts.filename);
     if (!raw) return null;
     const processed = this.pixelArt.process(raw, {
       targetWidth: opts.width,
@@ -3123,7 +3383,7 @@ export class AssetPipeline {
       : undefined;
     const sheet = generateProgressionSheet(spec, def.poseKey ?? def.name, def.frameCount, still, {
       mode: def.mode === 'progression-oscillate' ? 'oscillate' : 'ramp',
-      tintPulse: def.name === 'idle' ? 6 : undefined,
+      tintPulse: def.poseKey === 'boss_idle' ? 16 : def.poseKey === 'boss_telegraph' ? 22 : def.name === 'idle' ? 6 : undefined,
     });
     const processed = this.pixelArt.process(sheet, {
       targetWidth: spec.width * def.frameCount,

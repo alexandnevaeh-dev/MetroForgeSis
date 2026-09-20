@@ -58,6 +58,7 @@ var _summons: Array = []
 @onready var sprite: AnimatedSprite2D = $Sprite
 
 func _ready() -> void:
+	add_to_group("enemies")
 	_start_x = global_position.x
 	_start_y = global_position.y
 	_base_collision_layer = collision_layer
@@ -71,6 +72,8 @@ func _ready() -> void:
 	hurtbox.hit_received.connect(_on_hit_received)
 
 	_apply_enemy_data()
+	if enemy_id.begins_with("enemy_000") and sprite:
+		sprite.scale = Vector2(1.35, 1.35)
 	if is_minion:
 		_become_minion()
 	contact_hitbox.damage = contact_damage
@@ -183,10 +186,19 @@ func _physics_process(delta: float) -> void:
 				_play_move("idle")
 			if velocity.x != 0:
 				sprite.scale.x = abs(sprite.scale.x) * sign(velocity.x)
+		elif _movement == "hop":
+			if (not is_on_floor()) or velocity.y < -20.0:
+				_play_move("walk")
+			else:
+				_play_move("idle")
+			if velocity.x != 0:
+				sprite.scale.x = abs(sprite.scale.x) * sign(velocity.x)
 		elif velocity.x != 0:
 			_play_move("walk")
 			sprite.scale.x = abs(sprite.scale.x) * sign(velocity.x)
+			sprite.speed_scale = clampf(abs(velocity.x) / maxf(move_speed, 1.0), 0.7, 1.25)
 		else:
+			sprite.speed_scale = 1.0
 			_play_move("idle")
 
 	match _combat_type:
@@ -355,12 +367,20 @@ func _play_move(anim: String) -> void:
 		return
 	if not sprite.sprite_frames.has_animation(anim):
 		return
+	if anim == "walk":
+		if abs(velocity.x) < 24.0:
+			sprite.speed_scale = 1.0
+		elif abs(velocity.x) >= 40.0:
+			sprite.speed_scale = clampf(abs(velocity.x) / maxf(move_speed, 1.0), 0.72, 1.25)
+	elif sprite.animation != anim:
+		sprite.speed_scale = 1.0
 	if sprite.animation == anim and sprite.is_playing():
 		return
 	sprite.play(anim)
 
 func _play_attack_animation() -> void:
 	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("attack"):
+		sprite.speed_scale = 1.0
 		sprite.play("attack")
 
 func _fire_projectile(direction: Vector2) -> void:

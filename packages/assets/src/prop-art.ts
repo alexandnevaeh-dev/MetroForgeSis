@@ -11,14 +11,28 @@ function hexRgb(hex: string): [number, number, number] {
  *  "gothic arches", "gear pile") maps onto. These are the macro environment features — arches,
  *  columns, statues, machinery — that break up a room's read far more than tile-level variation
  *  alone; a room with 2-3 of these plus varied tiles no longer reads as "wallpaper". */
-type PropShape = 'lantern' | 'statue' | 'chain' | 'arch' | 'pillar' | 'gear' | 'pipe' | 'debris';
+type PropShape =
+  | 'lantern'
+  | 'statue'
+  | 'chain'
+  | 'arch'
+  | 'pillar'
+  | 'gear'
+  | 'pipe'
+  | 'debris'
+  | 'ladle'
+  | 'crucible'
+  | 'mold';
 
 function classifyFamily(family: string): PropShape {
   const f = family.toLowerCase();
+  if (f.includes('ladle')) return 'ladle';
+  if (f.includes('crucible') || f.includes('quench')) return 'crucible';
+  if (f.includes('mold') || f.includes('ingot') || f.includes('cooling_rack')) return 'mold';
   if (f.includes('arch') || f.includes('window') || f.includes('vault')) return 'arch';
   if (f.includes('pillar') || f.includes('column') || f.includes('colonnade') || f.includes('rib')) return 'pillar';
   if (f.includes('gear') || f.includes('cog') || f.includes('clock') || f.includes('pendulum')) return 'gear';
-  if (f.includes('pipe') || f.includes('exhaust') || f.includes('stack') || f.includes('catwalk')) return 'pipe';
+  if (f.includes('pipe') || f.includes('exhaust') || f.includes('stack') || f.includes('catwalk') || f.includes('conduit')) return 'pipe';
   if (f.includes('lantern') || f.includes('light') || f.includes('lamp') || f.includes('worklamp')) return 'lantern';
   if (f.includes('shrine') || f.includes('statue') || f.includes('lectern') || f.includes('save')) return 'statue';
   if (f.includes('ability') || f.includes('crystal') || f.includes('altar')) return 'lantern';
@@ -79,6 +93,32 @@ function insidePipe(nx: number, ny: number): boolean {
   const shaft = nx > 0.38 && nx < 0.62;
   const joint = ny % 0.24 < 0.06 && nx > 0.26 && nx < 0.74;
   return shaft || joint;
+}
+
+/** Overhead foundry ladle: hook shaft plus a slag bowl. */
+function insideLadle(nx: number, ny: number): boolean {
+  const shaft = nx > 0.44 && nx < 0.56 && ny > 0.04 && ny < 0.58;
+  const hook = ny > 0.48 && ny < 0.62 && nx > 0.28 && nx < 0.72;
+  const bowl =
+    inEllipse(nx, ny, 0.5, 0.78, 0.34, 0.18) && !(ny < 0.72 && inEllipse(nx, ny, 0.5, 0.72, 0.22, 0.1));
+  return shaft || hook || bowl;
+}
+
+/** Floor crucible / quench tank: thick vessel with a glowing mouth. */
+function insideCrucible(nx: number, ny: number): boolean {
+  const vessel = nx > 0.18 && nx < 0.82 && ny > 0.38 && ny < 0.96;
+  const mouth = nx > 0.28 && nx < 0.72 && ny > 0.22 && ny < 0.48;
+  const lip = ny > 0.34 && ny < 0.42 && nx > 0.14 && nx < 0.86;
+  return vessel || mouth || lip;
+}
+
+/** Ingot mold train: three open troughs, not a crate. */
+function insideMold(nx: number, ny: number): boolean {
+  const bed = ny > 0.62 && ny < 0.92 && nx > 0.06 && nx < 0.94;
+  const troughA = nx > 0.1 && nx < 0.34 && ny > 0.4 && ny < 0.78;
+  const troughB = nx > 0.38 && nx < 0.62 && ny > 0.36 && ny < 0.78;
+  const troughC = nx > 0.66 && nx < 0.9 && ny > 0.4 && ny < 0.78;
+  return bed || troughA || troughB || troughC;
 }
 
 /** Broken masonry / crate rubble: two or three overlapping irregular-ish blocks instead of one
@@ -247,6 +287,12 @@ function isSameShapePixel(shape: PropShape, nx: number, ny: number, seed: number
       return insideGear(nx, ny);
     case 'pipe':
       return insidePipe(nx, ny);
+    case 'ladle':
+      return insideLadle(nx, ny);
+    case 'crucible':
+      return insideCrucible(nx, ny);
+    case 'mold':
+      return insideMold(nx, ny);
     case 'debris':
     default:
       return insideDebris(nx, ny, seed);

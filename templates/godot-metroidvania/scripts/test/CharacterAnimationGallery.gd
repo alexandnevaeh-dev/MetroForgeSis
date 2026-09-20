@@ -1,5 +1,7 @@
 extends Node2D
 
+const CaptureGuard := preload("res://scripts/test/CaptureGuard.gd")
+
 const ACTORS := [
 	{"label": "Player", "scene": "res://scenes/player/Player.tscn", "position": Vector2(180, 440)},
 	{"label": "Security Walker", "scene": "res://scenes/enemies/Enemy.tscn", "position": Vector2(440, 440)},
@@ -37,7 +39,12 @@ func _ready() -> void:
 		add_child(caption)
 	_show_clip()
 	if OS.get_environment("METROFORGE_GALLERY_CAPTURE") == "1":
-		await get_tree().create_timer(1.0).timeout
+		if CaptureGuard.refuse_if_visual_unsupported():
+			get_tree().quit(CaptureGuard.EXIT_DUMMY)
+			return
+		if not await CaptureGuard.await_frames(self, 8, 2.0):
+			get_tree().quit(CaptureGuard.EXIT_TIMEOUT)
+			return
 		var image := get_viewport().get_texture().get_image()
 		if image and not image.is_empty():
 			image.save_png(ProjectSettings.globalize_path("res://qa/character-animation-gallery.png"))

@@ -319,8 +319,8 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
   const rightDoor = connections.some((c) => c.direction === 'right');
   const upDoor = connections.some((c) => c.direction === 'up');
   for (let y = 0; y < floorRow; y++) {
-    const leftOpening = leftDoor && y >= floorRow - 4 && y < floorRow;
-    const rightOpening = rightDoor && y >= floorRow - 4 && y < floorRow;
+    const leftOpening = leftDoor && y >= floorRow - SIDE_DOOR_ROWS && y < floorRow;
+    const rightOpening = rightDoor && y >= floorRow - SIDE_DOOR_ROWS && y < floorRow;
     if (!leftOpening) cells.push(cell(0, y, 'wall'));
     if (!rightOpening) cells.push(cell(cols - 1, y, 'wall'));
   }
@@ -552,4 +552,60 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
 export function floorTopPx(height: number, tileSize: number): number {
   const floorRow = Math.max(1, Math.floor((height - tileSize * 2) / tileSize));
   return floorRow * tileSize;
+}
+
+/** Side-door cut matches the painted wall opening (`floorRow - 4` .. `floorRow`). */
+export const SIDE_DOOR_ROWS = 4;
+
+export interface ShellColliderRect {
+  name: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** Collision for painted wall/ceiling tiles. Openings match `buildRoomTileCells` so
+ *  jump/dash cannot leave the room except through real doors, pits, and down shafts. */
+export function buildRoomShellColliders(input: {
+  width: number;
+  height: number;
+  tileSize: number;
+  connections?: Array<{ direction: string }>;
+}): ShellColliderRect[] {
+  const { width, height, tileSize } = input;
+  const cols = Math.max(1, Math.floor(width / tileSize));
+  const floorRow = Math.max(1, Math.floor((height - tileSize * 2) / tileSize));
+  const floorTop = floorRow * tileSize;
+  const connections = input.connections ?? [];
+  const leftDoor = connections.some((c) => c.direction === 'left');
+  const rightDoor = connections.some((c) => c.direction === 'right');
+  const upDoor = connections.some((c) => c.direction === 'up');
+  const doorTop = Math.max(0, (floorRow - SIDE_DOOR_ROWS) * tileSize);
+  const rects: ShellColliderRect[] = [];
+
+  const push = (name: string, x: number, y: number, w: number, h: number) => {
+    if (w >= 1 && h >= 1) rects.push({ name, x, y, width: w, height: h });
+  };
+
+  if (leftDoor) {
+    push('ShellLeftUpper', 0, 0, tileSize, doorTop);
+  } else {
+    push('ShellLeft', 0, 0, tileSize, floorTop);
+  }
+  if (rightDoor) {
+    push('ShellRightUpper', width - tileSize, 0, tileSize, doorTop);
+  } else {
+    push('ShellRight', width - tileSize, 0, tileSize, floorTop);
+  }
+
+  if (upDoor) {
+    const upLeft = Math.floor(cols * 0.4) * tileSize;
+    const upRight = (Math.floor(cols * 0.6) + 1) * tileSize;
+    push('ShellCeilingLeft', 0, 0, upLeft, tileSize);
+    push('ShellCeilingRight', upRight, 0, Math.max(0, width - upRight), tileSize);
+  } else {
+    push('ShellCeiling', 0, 0, width, tileSize);
+  }
+  return rects;
 }

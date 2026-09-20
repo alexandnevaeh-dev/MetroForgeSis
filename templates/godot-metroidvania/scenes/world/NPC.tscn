@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://scripts/core/AnimatedAssetSprite.gd" id="2_sprite"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_npc"]
-size = Vector2(28, 52)
+size = Vector2(56, 56)
 
 [node name="NPC" type="Area2D"]
 collision_layer = 32
@@ -19,7 +19,8 @@ frame_size = Vector2i(64, 64)
 frame_count = 4
 extra_animation_sheets = {
 "idle": "assets/npcs/npc_000_idle.png",
-"talk": "assets/npcs/npc_000_talk.png"
+"talk": "assets/npcs/npc_000_talk.png",
+"listen": "assets/npcs/npc_000_listen.png"
 }
 fallback_color = Color(0.22, 0.32, 0.42, 1)
 

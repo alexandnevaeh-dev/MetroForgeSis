@@ -112,6 +112,44 @@ export async function detectGeneric(
   };
 }
 
+export async function detectUnity(customPath?: string | null): Promise<ToolInfo> {
+  const { resolveUnityEditor, unityVersionSupported } = await import('./engine-resolver.js');
+  const resolved = resolveUnityEditor({ envPath: customPath ?? process.env.UNITY_EDITOR ?? process.env.UNITY_PATH });
+  const supported = unityVersionSupported(resolved.version);
+  return {
+    id: 'unity',
+    name: 'Unity',
+    installed: Boolean(resolved.path),
+    version: resolved.version,
+    path: resolved.path,
+    status: resolved.path && supported ? 'PASS' : resolved.path ? 'WARN' : 'WARN',
+    message: resolved.path
+      ? `${resolved.version ?? 'detected'} · ${resolved.source} · ${resolved.path}${supported ? '' : ' (supported: 6000.3 LTS)'}`
+      : resolved.message,
+    capabilities: resolved.path ? ['project_open', 'batch_compile'] : [],
+  };
+}
+
+export async function detectUnreal(customPath?: string | null): Promise<ToolInfo> {
+  const { resolveUnrealEditor, unrealVersionSupported } = await import('./engine-resolver.js');
+  const resolved = resolveUnrealEditor({
+    envPath: customPath ?? process.env.UE_ROOT ?? process.env.UNREAL_ENGINE ?? process.env.UNREAL_EDITOR,
+  });
+  const supported = unrealVersionSupported(resolved.version);
+  return {
+    id: 'unreal',
+    name: 'Unreal Engine',
+    installed: Boolean(resolved.path),
+    version: resolved.version,
+    path: resolved.path,
+    status: resolved.path && supported ? 'PASS' : resolved.path ? 'WARN' : 'WARN',
+    message: resolved.path
+      ? `${resolved.version ?? 'detected'} · ${resolved.source} · ${resolved.path}${supported ? '' : ' (supported: 5.5–5.8)'}`
+      : resolved.message,
+    capabilities: resolved.path ? ['project_open', 'compile'] : [],
+  };
+}
+
 export class ToolRegistry {
   private tools: Map<string, ToolInfo> = new Map();
 
@@ -121,6 +159,8 @@ export class ToolRegistry {
       godotPreference?: string | null;
       godotProjectOverride?: string | null;
       godotEnvPath?: string | null;
+      unityPath?: string | null;
+      unrealPath?: string | null;
       ollamaUrl?: string;
     } = {},
   ): Promise<ToolInfo[]> {
@@ -130,6 +170,8 @@ export class ToolRegistry {
         projectOverride: options.godotProjectOverride,
         envPath: options.godotEnvPath,
       }),
+      detectUnity(options.unityPath),
+      detectUnreal(options.unrealPath),
       detectOllama(options.ollamaUrl ?? 'http://localhost:11434'),
       detectGeneric('python', 'Python', [['python', '--version'], ['python3', '--version']], ['scripting', 'diffusers_worker']),
       detectGeneric('ffmpeg', 'FFmpeg', [['ffmpeg', '-version']], ['audio_processing']),

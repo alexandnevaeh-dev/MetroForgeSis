@@ -19,8 +19,10 @@ export function dressPlatforms(input: {
   tileSize: number;
   floorRow: number;
   strategy: PlatformVisualStrategy;
+  biomeId?: string;
 }): VisualCell[] {
   const extras: VisualCell[] = [];
+  const mossBiome = Boolean(input.biomeId?.endsWith('2'));
   for (const platform of input.platforms) {
     const row = Math.floor(platform.y / input.tileSize);
     const start = Math.floor(platform.x / input.tileSize);
@@ -42,6 +44,13 @@ export function dressPlatforms(input: {
       if (chainRow > 0) {
         extras.push(roleToCell(start, chainRow, 'decor_b'));
         extras.push(roleToCell(end, chainRow, 'decor_b'));
+      }
+    }
+    if (mossBiome && !embedded) {
+      extras.push(roleToCell(start, row, 'platform_left'));
+      extras.push(roleToCell(end, row, 'platform_right'));
+      for (let x = start + 1; x < end; x++) {
+        extras.push(roleToCell(x, row, 'platform_moss'));
       }
     }
   }

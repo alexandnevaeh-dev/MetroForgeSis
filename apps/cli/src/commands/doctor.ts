@@ -75,6 +75,8 @@ export function registerDoctorCommand(program: Command): void {
       const toolRegistry = new ToolRegistry();
       const tools = await toolRegistry.detectAll({
         godotPath: config.godotExecutable,
+        unityPath: config.unityEditor,
+        unrealPath: config.unrealEditor,
         ollamaUrl: config.ollamaBaseUrl,
       });
 

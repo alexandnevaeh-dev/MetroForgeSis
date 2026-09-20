@@ -23,6 +23,10 @@ import { PreviewScreen } from './studio/PreviewScreen.js';
 import { SettingsScreen } from './studio/SettingsScreen.js';
 import { VisualReviewScreen } from './studio/VisualReviewScreen.js';
 import { HealthPopover } from './studio/HealthPopover.js';
+import { StoryWorkspace } from './studio/StoryWorkspace.js';
+import { CreationModeSwitch } from './studio/CreationModeSwitch.js';
+import { ForgeActivityDrawer } from './studio/ForgeActivityDrawer.js';
+import { ForgeAssistPanel } from './studio/ForgeAssistPanel.js';
 
 function navBreadcrumb(activeNav: NavId): { group: string; label: string } {
   for (const group of NAV_GROUPS) {
@@ -77,6 +81,7 @@ function TopCommandBar({
 
       <div className="topbar-project">
         <ProjectSelect compact />
+        <CreationModeSwitch />
         <nav className="topbar-breadcrumb type-caption" aria-label="Workspace context">
           <span className="topbar-crumb-group">{crumb.group}</span>
           <span className="topbar-crumb-sep" aria-hidden="true">
@@ -129,6 +134,14 @@ function TopCommandBar({
           disabled={!hasActiveProject}
         >
           Preview
+        </button>
+        <button
+          type="button"
+          className={activeNav === 'Story' ? 'topbar-action active' : 'topbar-action'}
+          onClick={() => onNavigate('Story')}
+          disabled={!hasActiveProject}
+        >
+          Story
         </button>
         <HealthPopover bridgeReady={bridgeReady} onOpenProviders={() => onNavigate('Providers')} />
       </div>
@@ -199,7 +212,7 @@ export function App() {
 
   return (
     <StudioProvider onNavigate={setActiveNav}>
-      <div className={`app${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}>
+      <div className={`app forge-shell${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}>
         <a className="skip-link" href="#studio-main">
           Skip to workspace
         </a>
@@ -230,14 +243,12 @@ export function App() {
                       aria-current={activeNav === item.id ? 'page' : undefined}
                       aria-label={tooltip}
                       title={tooltip}
-                      data-abbrev={item.label
-                        .split(/\s+/)
-                        .map((w) => w[0])
-                        .join('')
-                        .slice(0, 2)
-                        .toUpperCase()}
+                      data-abbrev={item.functionLabel.slice(0, 2).toUpperCase()}
                     >
-                      <span className="nav-item-label">{item.label}</span>
+                      <span className="nav-item-label">
+                        <span className="nav-forge">{item.forge}</span>
+                        <span className="nav-function">{item.functionLabel}</span>
+                      </span>
                       {shortcut ? <span className="nav-shortcut">{shortcut}</span> : null}
                     </button>
                   );
@@ -263,6 +274,7 @@ export function App() {
           {activeNav === 'Rooms' && <RoomEditor />}
           {activeNav === 'Dungeon' && <DungeonEditor />}
           {activeNav === 'Preview' && <PreviewScreen />}
+          {activeNav === 'Story' && <StoryWorkspace />}
           {activeNav === 'Models' && <ModelsScreen />}
           {activeNav === 'Providers' && <ProvidersScreen />}
           {activeNav === 'Routing' && <RoutingInspector />}
@@ -271,6 +283,8 @@ export function App() {
           {activeNav === 'Export' && <ExportScreen />}
           {activeNav === 'Settings' && <SettingsScreen />}
         </main>
+        <ForgeAssistPanel activeNav={activeNav} />
+        <ForgeActivityDrawer />
         <StatusBar version={version} bridgeReady={bridgeReady} activeNav={activeNav} />
         <GoToPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} onSelect={setActiveNav} />
       </div>

@@ -8,6 +8,9 @@ const SPAWN_MARGIN := 80
 var _current_room: Node2D = null
 var _room_data: Dictionary = {}
 var _transitioning: bool = false
+var _room_scenes: Dictionary = {}
+## Last door/load profile. Walk-to-door time is measured by WorldPerfCapture, not here.
+var last_transition_profile: Dictionary = {}
 ## Health-continuity fix: every room is its own scene with its own embedded Player node (see
 ## _load_room below), so the outgoing Player instance and its HealthComponent are destroyed on
 ## every transition. Without carrying the value forward here, an ordinary door — with no death,
@@ -28,7 +31,7 @@ func _ready() -> void:
 	# is even loaded) sets GameManager.current_room_id to the checkpoint room. A fresh game
 	# leaves it empty, so this correctly falls back to start_room_id.
 	var resume_room_id := GameManager.current_room_id if GameManager.current_room_id != "" else start_room_id
-	_load_room(resume_room_id, "left")
+	await _load_room(resume_room_id, "left")
 
 func _load_room_data() -> void:
 	var path := "res://data/rooms/rooms.json"
@@ -76,9 +79,16 @@ func _load_room(room_id: String, spawn_side: String = "left") -> void:
 	# a save/checkpoint load always restores the persisted value instead.
 	var used_save_restore := SaveManager.has_pending_health_restore()
 
-	var scene: PackedScene = load(scene_path)
-	_current_room = scene.instantiate()
+	var t_res := Time.get_ticks_usec()
+	var packed: PackedScene = await _ensure_packed(room_id)
+	last_transition_profile["resource_ms"] = (Time.get_ticks_usec() - t_res) / 1000.0
+	if packed == null:
+		push_warning("Room scene not found: %s" % scene_path)
+		return
+	var t_inst := Time.get_ticks_usec()
+	_current_room = packed.instantiate()
 	add_child(_current_room)
+	last_transition_profile["instantiate_ms"] = (Time.get_ticks_usec() - t_inst) / 1000.0
 
 	var boss := _current_room.get_node_or_null("Boss")
 	if boss and boss.has_node("HealthComponent"):
@@ -92,9 +102,6 @@ func _load_room(room_id: String, spawn_side: String = "left") -> void:
 			# aren't locked yet.
 			await _lock_room_exits(_current_room, health)
 
-	GameManager.current_room_id = room_id
-	EventBus.room_entered.emit(room_id)
-
 	var player := _current_room.get_node_or_null("Player")
 	if player:
 		if not used_save_restore and _carried_health >= 0.0:
@@ -105,9 +112,14 @@ func _load_room(room_id: String, spawn_side: String = "left") -> void:
 				incoming_health.current_health = _carried_health
 				incoming_health.health_changed.emit(incoming_health.current_health, incoming_health.max_health)
 		_position_player_for_spawn(player, spawn_side)
+		_apply_room_containment(player, room_id)
 		_move_camera_to_room(player)
-		if has_node("/root/QualityPresentation"):
-			QualityPresentation.apply_room(_current_room, room_id)
+
+	var t_pres := Time.get_ticks_usec()
+	GameManager.current_room_id = room_id
+	EventBus.room_entered.emit(room_id)
+	last_transition_profile["presentation_ms"] = (Time.get_ticks_usec() - t_pres) / 1000.0
+	_preload_neighbors(room_id)
 
 ## Classic boss-arena pattern: seal the room's own RoomTransition triggers while its boss is
 ## alive, so nothing — a real player fumbling into an edge trigger mid-fight, or an automated
@@ -148,25 +160,83 @@ func transition_to_room(room_id: String, spawn_side: String = "left") -> void:
 	if _transitioning or room_id.is_empty():
 		return
 	_transitioning = true
+	last_transition_profile = {"room_id": room_id, "from": GameManager.current_room_id}
+	var t_all := Time.get_ticks_usec()
 	var fader := get_node_or_null("TransitionFader")
 	var skip_fade := has_node("/root/CombatFeedback") and CombatFeedback.is_automated_harness()
 	if fader and fader.has_method("fade_out") and not skip_fade:
-		await fader.fade_out(0.08)
-	# This is called synchronously from RoomTransition's body_entered signal, which fires *during*
-	# the physics server's own step — freeing the old room and add_child()-ing the new one from
-	# here throws "Can't change this state while flushing queries" on the new room's own physics
-	# nodes (one-way platforms, weak floors, its own RoomTransition triggers) configuring their
-	# shapes in _ready(), because that's still nested inside the same physics flush. Waiting one
-	# physics frame first moves the whole load outside it — real, reliably reproducible failure at
-	# larger world sizes (more concurrent physics activity per step), not a cosmetic warning.
-	await get_tree().physics_frame
-	# _load_room is a coroutine now (it awaits the boss-room exit lock) — awaiting it here too
-	# keeps _transitioning true for the room's *entire* load, not just its synchronous prefix,
-	# so a second transition can't interleave with one that's still finishing.
-	await _load_room(room_id, spawn_side)
-	if fader and fader.has_method("fade_in") and not skip_fade:
-		await fader.fade_in(0.08)
+		var t_fo := Time.get_ticks_usec()
+		fader.fade_out(0.15)
+		# Leave the physics flush before swapping rooms. Load overlaps the remaining fade.
+		await get_tree().physics_frame
+		last_transition_profile["physics_wait_ms"] = (Time.get_ticks_usec() - t_fo) / 1000.0
+		await _load_room(room_id, spawn_side)
+		if fader.has_method("wait_until_black"):
+			var t_black := Time.get_ticks_usec()
+			await fader.wait_until_black()
+			last_transition_profile["fade_out_remainder_ms"] = (Time.get_ticks_usec() - t_black) / 1000.0
+		last_transition_profile["fade_out_ms"] = (Time.get_ticks_usec() - t_fo) / 1000.0
+		var t_fi := Time.get_ticks_usec()
+		if fader.has_method("fade_in"):
+			await fader.fade_in(0.15)
+		last_transition_profile["fade_in_ms"] = (Time.get_ticks_usec() - t_fi) / 1000.0
+	else:
+		await get_tree().physics_frame
+		await _load_room(room_id, spawn_side)
+	last_transition_profile["total_ms"] = (Time.get_ticks_usec() - t_all) / 1000.0
+	print(
+		"TRANSITION_PROFILE from=%s to=%s physics_wait_ms=%.2f resource_ms=%.2f instantiate_ms=%.2f presentation_ms=%.2f fade_out_ms=%.2f fade_out_remainder_ms=%.2f fade_in_ms=%.2f total_ms=%.2f"
+		% [
+			String(last_transition_profile.get("from", "")),
+			room_id,
+			float(last_transition_profile.get("physics_wait_ms", 0.0)),
+			float(last_transition_profile.get("resource_ms", 0.0)),
+			float(last_transition_profile.get("instantiate_ms", 0.0)),
+			float(last_transition_profile.get("presentation_ms", 0.0)),
+			float(last_transition_profile.get("fade_out_ms", 0.0)),
+			float(last_transition_profile.get("fade_out_remainder_ms", 0.0)),
+			float(last_transition_profile.get("fade_in_ms", 0.0)),
+			float(last_transition_profile.get("total_ms", 0.0)),
+		]
+	)
 	_transitioning = false
+
+func _ensure_packed(room_id: String) -> PackedScene:
+	if _room_scenes.has(room_id):
+		return _room_scenes[room_id]
+	var path := "res://scenes/rooms/%s.tscn" % room_id
+	var status := ResourceLoader.load_threaded_get_status(path)
+	while status == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+		await get_tree().process_frame
+		status = ResourceLoader.load_threaded_get_status(path)
+	var packed: PackedScene = null
+	if status == ResourceLoader.THREAD_LOAD_LOADED:
+		packed = ResourceLoader.load_threaded_get(path) as PackedScene
+	elif ResourceLoader.exists(path):
+		packed = load(path) as PackedScene
+	if packed:
+		_room_scenes[room_id] = packed
+	return packed
+
+func _preload_room(room_id: String) -> void:
+	if room_id.is_empty() or _room_scenes.has(room_id):
+		return
+	var path := "res://scenes/rooms/%s.tscn" % room_id
+	if not ResourceLoader.exists(path):
+		return
+	var status := ResourceLoader.load_threaded_get_status(path)
+	if status == ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
+		ResourceLoader.load_threaded_request(path)
+
+func _preload_neighbors(room_id: String) -> void:
+	var info: Dictionary = _room_data.get(room_id, {})
+	var conns = info.get("connections", [])
+	if typeof(conns) != TYPE_ARRAY:
+		return
+	for conn in conns:
+		if typeof(conn) != TYPE_DICTIONARY:
+			continue
+		_preload_room(String(conn.get("targetRoomId", "")))
 
 func _current_room_width() -> float:
 	if _current_room:
@@ -207,6 +277,27 @@ func _position_player_for_spawn(player: Node2D, spawn_side: String) -> void:
 		_:
 			player.position.x = SPAWN_MARGIN
 	player.position.y = player.position.y if spawn_side in ["top", "bottom"] else floor_y
+
+
+func _apply_room_containment(player: Node, room_id: String) -> void:
+	if player == null or not player.has_method("set_room_containment"):
+		return
+	var width := _current_room_width()
+	var height := 600.0
+	if _current_room:
+		var ground := _current_room.get_node_or_null("Ground")
+		if ground != null and ground.get("room_height") != null:
+			height = float(ground.get("room_height"))
+	var info: Dictionary = _room_data.get(room_id, {})
+	var has_down := false
+	var conns = info.get("connections", [])
+	if typeof(conns) == TYPE_ARRAY:
+		for conn in conns:
+			if typeof(conn) == TYPE_DICTIONARY and String(conn.get("direction", "")) == "down":
+				has_down = true
+				break
+	player.call("set_room_containment", width, height, has_down)
+
 
 func _on_room_entered(room_id: String) -> void:
 	var room_info: Dictionary = _room_data.get(room_id, {})

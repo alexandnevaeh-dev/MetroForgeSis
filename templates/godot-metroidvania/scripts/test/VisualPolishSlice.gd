@@ -4,6 +4,7 @@ extends Node2D
 ## 60fps motion strips, and a slow-motion attack pass. METROFORGE_POLISH_BIOME selects
 ## biome_0 / biome_1 / biome_2 tiles and parallax.
 
+const CaptureGuard := preload("res://scripts/test/CaptureGuard.gd")
 const ROOM := Vector2(960, 540)
 const QA := "res://qa/visual-polish"
 
@@ -11,8 +12,10 @@ const QA := "res://qa/visual-polish"
 @onready var enemy: CharacterBody2D = $Enemy
 
 func _ready() -> void:
+	if OS.get_environment("METROFORGE_POLISH_CAPTURE") == "1" and CaptureGuard.refuse_if_visual_unsupported():
+		get_tree().quit(CaptureGuard.EXIT_DUMMY)
+		return
 	GameManager.start_new_game()
-	EventBus.ability_acquired.emit("dash")
 	var biome := _biome_id()
 	_apply_biome(biome)
 	_load_far_sky(biome)
@@ -264,7 +267,9 @@ func _still_clips_pass(qa: String, full: bool) -> void:
 			actor.set_physics_process(true)
 
 func _shot(qa: String, name: String) -> void:
-	await RenderingServer.frame_post_draw
+	if not await CaptureGuard.await_post_draw(self, 2.0):
+		push_error("CAPTURE_TIMEOUT: screenshot %s" % name)
+		return
 	var img := get_viewport().get_texture().get_image()
 	if img and not img.is_empty():
 		img.save_png(ProjectSettings.globalize_path("%s/%s.png" % [qa, name]))
@@ -277,7 +282,9 @@ func _motion_strip(qa: String, clip: String, sprite: AnimatedSprite2D, frames: i
 		sprite.play(play_name)
 	for i in frames:
 		await get_tree().create_timer(1.0 / fps).timeout
-		await RenderingServer.frame_post_draw
+		if not await CaptureGuard.await_post_draw(self, 2.0):
+			push_error("CAPTURE_TIMEOUT: motion strip %s frame %d" % [clip, i])
+			break
 		var img := get_viewport().get_texture().get_image()
 		if img and not img.is_empty():
 			img.save_png(ProjectSettings.globalize_path("%s/f%02d.png" % [dir, i]))

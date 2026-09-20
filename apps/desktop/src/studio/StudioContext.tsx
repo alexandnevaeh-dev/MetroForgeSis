@@ -11,12 +11,15 @@ import type { StudioProject } from './metroforge-api.js';
 import type { NavId } from './nav.js';
 
 const STORAGE_KEY = 'metroforge.activeProjectPath';
+const MODE_KEY = 'metroforge.creationMode';
 
 export type GeneratorPrefill = {
   description?: string;
   assetType?: string;
   assetId?: string;
 };
+
+export type CreationMode = 'manual' | 'assisted' | 'full-ai';
 
 type StudioContextValue = {
   projects: StudioProject[];
@@ -33,6 +36,12 @@ type StudioContextValue = {
   openAsset: (assetId: string) => void;
   generatorPrefill: GeneratorPrefill | null;
   openGenerator: (prefill?: GeneratorPrefill) => void;
+  creationMode: CreationMode;
+  setCreationMode: (mode: CreationMode) => void;
+  activityOpen: boolean;
+  setActivityOpen: (open: boolean) => void;
+  focusStoryId: string;
+  openStory: (id?: string) => void;
 };
 
 const StudioContext = createContext<StudioContextValue | null>(null);
@@ -43,6 +52,16 @@ function readStoredPath(): string {
   } catch {
     return '';
   }
+}
+
+function readStoredMode(): CreationMode {
+  try {
+    const value = sessionStorage.getItem(MODE_KEY);
+    if (value === 'manual' || value === 'assisted' || value === 'full-ai') return value;
+  } catch {
+    /* optional */
+  }
+  return 'assisted';
 }
 
 export function StudioProvider({
@@ -57,6 +76,18 @@ export function StudioProvider({
   const [focusRoomId, setFocusRoomId] = useState('');
   const [focusAssetId, setFocusAssetId] = useState('');
   const [generatorPrefill, setGeneratorPrefill] = useState<GeneratorPrefill | null>(null);
+  const [creationMode, setCreationModeState] = useState<CreationMode>(readStoredMode);
+  const [activityOpen, setActivityOpen] = useState(true);
+  const [focusStoryId, setFocusStoryId] = useState('');
+
+  const setCreationMode = useCallback((mode: CreationMode) => {
+    setCreationModeState(mode);
+    try {
+      sessionStorage.setItem(MODE_KEY, mode);
+    } catch {
+      /* optional */
+    }
+  }, []);
 
   const setSelectedPath = useCallback((path: string) => {
     setSelectedPathState(path);
@@ -111,6 +142,14 @@ export function StudioProvider({
     [onNavigate],
   );
 
+  const openStory = useCallback(
+    (id?: string) => {
+      if (id) setFocusStoryId(id);
+      onNavigate('Story');
+    },
+    [onNavigate],
+  );
+
   const selectedProject = useMemo(
     () => projects.find((project) => project.path === selectedPath),
     [projects, selectedPath],
@@ -134,6 +173,12 @@ export function StudioProvider({
       openAsset,
       generatorPrefill,
       openGenerator,
+      creationMode,
+      setCreationMode,
+      activityOpen,
+      setActivityOpen,
+      focusStoryId,
+      openStory,
     }),
     [
       projects,
@@ -149,6 +194,11 @@ export function StudioProvider({
       openAsset,
       generatorPrefill,
       openGenerator,
+      creationMode,
+      setCreationMode,
+      activityOpen,
+      focusStoryId,
+      openStory,
     ],
   );
 

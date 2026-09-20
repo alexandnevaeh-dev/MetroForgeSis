@@ -89,15 +89,21 @@ function buildRoomPlan(input: ComposeVisualsInput): RoomPlan {
     focalPoint: { x: focusX, y: focusY, kind: calm ? 'reward_or_save' : boss ? 'boss' : 'traversal' },
     safeZones: calm ? [{ ...quiet }] : [],
     combatZones: boss || input.archetype === 'combat' || input.archetype === 'arena' ? [combat] : [],
-    // Kept off both the ~10%/90% spawn footprints (the player enters SPAWN_MARGIN from an edge)
-    // and out of the central combat band — a decoration zone at width*0.05 dropped a prop right
-    // on top of the courier at spawn.
-    decorationZones: [{ purpose: 'decoration', x: input.width * 0.16, y: floorTop - input.tileSize * 2, width: input.width * 0.16, height: input.tileSize * 2 }, { purpose: 'decoration', x: input.width * 0.68, y: floorTop - input.tileSize * 2, width: input.width * 0.16, height: input.tileSize * 2 }],
+    // Two workstation clusters, kept off spawn footprints and the central combat band.
+    // Isolated mid-floor scatter was reading as density farming, not a room.
+    decorationZones: boss
+      ? []
+      : calm
+        ? [{ purpose: 'decoration', x: input.width * 0.42, y: floorTop - input.tileSize * 2, width: input.width * 0.16, height: input.tileSize * 2 }]
+        : [
+            { purpose: 'decoration', x: input.width * 0.32, y: floorTop - input.tileSize * 2, width: input.width * 0.14, height: input.tileSize * 2 },
+            { purpose: 'decoration', x: input.width * 0.70, y: floorTop - input.tileSize * 2, width: input.width * 0.14, height: input.tileSize * 2 },
+          ],
     noDecorationZones: [{ purpose: 'no_decoration', ...quiet }],
     foregroundExclusionZones: [{ purpose: 'foreground_exclusion', ...combat }],
     visualTheme: 'industrial_transit',
     landmarkType: calm ? 'sanctuary_frame' : boss ? 'arena_frame' : vertical ? 'shaft_frame' : 'edge_supports',
-    propBudget: { clusters: calm || boss ? 0 : 2, propsPerCluster: 1, majorStructures: edgeAnchors.length },
+    propBudget: { clusters: boss ? 0 : calm ? 1 : 2, propsPerCluster: 2, majorStructures: edgeAnchors.length },
   };
 }
 
@@ -132,7 +138,7 @@ export function composePlayableVisuals(input: ComposeVisualsInput): ComposeVisua
 
   markPlatformOccupancy(grid, platforms, tileSize);
   const strategy = platformStrategyFor(archetype);
-  const platformExtras = dressPlatforms({ grid, platforms, tileSize, floorRow, strategy });
+  const platformExtras = dressPlatforms({ grid, platforms, tileSize, floorRow, strategy, biomeId: input.biomeId });
 
   const architecture = placeArchitecture({
     grid,

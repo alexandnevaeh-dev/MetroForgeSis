@@ -2,8 +2,15 @@ extends Node
 ## Windowed review capture for the ability shrine only. Walks the authored
 ## platforms and collects the shrine pickup. Does not change other rooms.
 
+const CaptureGuard := preload("res://scripts/test/CaptureGuard.gd")
+
 func _ready() -> void:
-	await get_tree().process_frame
+	if CaptureGuard.refuse_if_visual_unsupported():
+		get_tree().quit(CaptureGuard.EXIT_DUMMY)
+		return
+	if not await CaptureGuard.await_frames(self, 1, 2.0):
+		get_tree().quit(CaptureGuard.EXIT_TIMEOUT)
+		return
 	GameManager.start_new_game()
 	var packed := load("res://scenes/world/World.tscn") as PackedScene
 	if packed == null:

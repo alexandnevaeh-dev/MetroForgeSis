@@ -215,6 +215,46 @@ function buildQuestObjective(
   }
 }
 
+function isFoundrySetting(gameDna: GameDNA): boolean {
+  const hay = [
+    gameDna.identity.title,
+    gameDna.identity.tagline,
+    gameDna.identity.tone,
+    gameDna.identity.visualStyle,
+    gameDna.narrative.premise,
+    gameDna.narrative.protagonist,
+    gameDna.narrative.centralConflict,
+  ]
+    .filter((value): value is string => Boolean(value))
+    .join(' ')
+    .toLowerCase();
+  return /\bfoundry\b|\bcourier\b/.test(hay);
+}
+
+function questTitleAndBlurb(
+  gameDna: GameDNA,
+  index: number,
+  objective: { type: string; description: string },
+): { name: string; description: string } {
+  if (isFoundrySetting(gameDna) && objective.type === 'BossKill') {
+    const bossName = objective.description.replace(/^Defeat\s+/i, '');
+    return {
+      name: 'Quiet the Core',
+      description: `Put down ${bossName} in the foundry core.`,
+    };
+  }
+  if (isFoundrySetting(gameDna)) {
+    return {
+      name: index === 0 ? 'Quiet the Core' : `Shaft ${index + 1}`,
+      description: objective.description,
+    };
+  }
+  return {
+    name: index === 0 ? 'Awakening' : `Trial ${index + 1}`,
+    description: `Complete objective ${index + 1} in ${gameDna.identity.title}.`,
+  };
+}
+
 export function generateGameContent(
   gameDna: GameDNA,
   profile: GenerationProfile,
@@ -292,11 +332,12 @@ export function generateGameContent(
   for (let i = 0; i < defaults.quests; i++) {
     const questId = `quest_${i.toString().padStart(3, '0')}`;
     const objective = buildQuestObjective(i, questId, defaults, bosses, enemies, gameDna, roomIds);
+    const copy = questTitleAndBlurb(gameDna, i, objective);
     quests.push(
       QuestSchema.parse({
         id: questId,
-        name: i === 0 ? 'Awakening' : `Trial ${i + 1}`,
-        description: `Complete objective ${i + 1} in ${gameDna.identity.title}.`,
+        name: copy.name,
+        description: copy.description,
         prerequisites: i > 0 ? [`quest_${(i - 1).toString().padStart(3, '0')}`] : [],
         objectives: [
           {
@@ -317,18 +358,28 @@ export function generateGameContent(
   }
 
   const dialogues: Dialogue[] = [];
+  const foundryVoice = isFoundrySetting(gameDna);
   for (const quest of quests) {
     const choiceObjective = quest.objectives.find((o) => o.type === 'Choice');
     const acceptChoice = {
-      text: 'Yes, I will help.',
+      text: foundryVoice ? "I'll walk it." : 'Yes, I will help.',
       end: true as const,
       action: 'accept_quest' as const,
       ...(choiceObjective ? { id: choiceObjective.target } : {}),
     };
-    dialogues.push(
-      DialogueSchema.parse({
-        id: `${quest.id}_offer`,
-        lines: [
+    const offerLines = foundryVoice
+      ? [
+          { speaker: 'Quest Giver', portrait: 'quest_giver', text: 'The core still turns in the lowest shaft.' },
+          { text: quest.description },
+          {
+            text: 'Will you take the run?',
+            choices: [
+              acceptChoice,
+              { text: 'Not yet.', nextDialogueId: `${quest.id}_decline` },
+            ],
+          },
+        ]
+      : [
           { speaker: 'Quest Giver', portrait: 'quest_giver', text: `I need help with "${quest.name}".` },
           { text: quest.description },
           {
@@ -338,19 +389,40 @@ export function generateGameContent(
               { text: 'Not right now.', nextDialogueId: `${quest.id}_decline` },
             ],
           },
-        ],
+        ];
+    dialogues.push(
+      DialogueSchema.parse({
+        id: `${quest.id}_offer`,
+        lines: offerLines,
       }),
       DialogueSchema.parse({
         id: `${quest.id}_decline`,
-        lines: [{ portrait: 'quest_giver', text: 'Come back when you are ready.' }],
+        lines: [
+          {
+            portrait: 'quest_giver',
+            text: foundryVoice ? 'Then keep off the catwalks.' : 'Come back when you are ready.',
+          },
+        ],
       }),
       DialogueSchema.parse({
         id: `${quest.id}_active`,
-        lines: [{ portrait: 'quest_giver', text: `Any progress on "${quest.name}" yet?` }],
+        lines: [
+          {
+            portrait: 'quest_giver',
+            text: foundryVoice ? 'The core is still turning.' : `Any progress on "${quest.name}" yet?`,
+          },
+        ],
       }),
       DialogueSchema.parse({
         id: `${quest.id}_complete`,
-        lines: [{ portrait: 'quest_giver', text: `Thank you for finishing "${quest.name}".` }],
+        lines: [
+          {
+            portrait: 'quest_giver',
+            text: foundryVoice
+              ? 'The shafts are quiet. That is enough.'
+              : `Thank you for finishing "${quest.name}".`,
+          },
+        ],
       }),
     );
   }
@@ -395,9 +467,9 @@ export function generateGameContent(
         DialogueSchema.parse({
           id: greetId,
           lines: [
-            { portrait: 'merchant', text: 'Welcome, traveler.' },
+            { portrait: 'merchant', text: foundryVoice ? 'Scrap only. No credit in the foundry.' : 'Welcome, traveler.' },
             {
-              text: 'Looking to trade scrap for supplies?',
+              text: foundryVoice ? 'Vials and an edge, if you have the metal.' : 'Looking to trade scrap for supplies?',
               choices: [
                 { text: 'Show me your wares.', end: true, action: 'open_shop' },
                 { text: 'Maybe later.', nextDialogueId: `dlg_${npcId}_later` },
@@ -407,7 +479,7 @@ export function generateGameContent(
         }),
         DialogueSchema.parse({
           id: `dlg_${npcId}_later`,
-          lines: [{ portrait: 'merchant', text: 'Safe travels.' }],
+          lines: [{ portrait: 'merchant', text: foundryVoice ? 'Stay off the open grates.' : 'Safe travels.' }],
         }),
       );
       dialogueIds = [greetId];
@@ -417,7 +489,7 @@ export function generateGameContent(
         DialogueSchema.parse({
           id: loreId,
           lines: [
-            { portrait: 'lore', text: `These halls remember ${gameDna.identity.title}.` },
+            { portrait: 'lore', text: foundryVoice ? `These halls remember the foundry.` : `These halls remember ${gameDna.identity.title}.` },
             {
               text: 'What would you like to know?',
               choices: [
@@ -437,7 +509,7 @@ export function generateGameContent(
         }),
         DialogueSchema.parse({
           id: `dlg_${npcId}_advice`,
-          lines: [{ portrait: 'lore', text: 'Upgrade your abilities before facing the final boss.' }],
+          lines: [{ portrait: 'lore', text: foundryVoice ? 'Learn the shafts before you face the core.' : 'Upgrade your abilities before facing the final boss.' }],
         }),
       );
       dialogueIds = [loreId];
@@ -449,7 +521,7 @@ export function generateGameContent(
         DialogueSchema.parse({
           id: neutralId,
           lines: [
-            { portrait: 'neutral', text: 'Stay safe out there.' },
+            { portrait: 'neutral', text: foundryVoice ? 'Keep your visor sealed.' : 'Stay safe out there.' },
             {
               text: 'Need directions?',
               choices: [
@@ -461,7 +533,7 @@ export function generateGameContent(
         }),
         DialogueSchema.parse({
           id: `dlg_${npcId}_boss_hint`,
-          lines: [{ portrait: 'neutral', text: 'The final chamber lies at the far end of the world.' }],
+          lines: [{ portrait: 'neutral', text: foundryVoice ? 'The core sits at the far end of the line.' : 'The final chamber lies at the far end of the world.' }],
         }),
       );
       dialogueIds = [neutralId];

@@ -43,6 +43,7 @@ func apply_room(room: Node2D, room_id: String) -> void:
 	_dress_water_zones(room)
 	_inject_decor(room, size, biome, archetype, info)
 	_apply_outline(room)
+	_clear_spawn_lane(room, size)
 	if archetype == "ability_shrine":
 		_dress_ability_shrine(room, size)
 	_apply_camera(room, size, info)
@@ -51,12 +52,11 @@ func apply_room(room: Node2D, room_id: String) -> void:
 		var cm := modulate.get_node_or_null("WorldCanvasModulate") as CanvasModulate
 		if cm:
 			# Tiled citadel interiors are already dark teal; extra dimming turns masonry into mud.
-			if room.get_node_or_null("Ground") != null:
-				if archetype == "ability_shrine":
-					cm.color = Color(1.0, 0.88, 0.74, 1)
-				else:
-					cm.color = Color(0.86, 0.90, 0.96, 1)
+			if archetype == "ability_shrine":
+				cm.color = Color(1.0, 0.88, 0.74, 1)
 			else:
+				# Per-biome even on tiled Ground rooms. The old cool teal
+				# (0.86, 0.90, 0.96) crushed rust hulls in biome 2.
 				cm.color = _modulate_for_biome(biome)
 
 func _on_room_entered(room_id: String) -> void:
@@ -168,6 +168,17 @@ func _clear_injected(room: Node) -> void:
 			if npc_sprite:
 				npc_sprite.material = null
 				npc_sprite.light_mask = 1
+		elif n.begins_with("Enemy"):
+			# Modest value lift from authored hull; biome-2 canvas used to crush rust to a mass.
+			var enemy_sprite := child.get_node_or_null("Sprite") as CanvasItem
+			if enemy_sprite:
+				enemy_sprite.light_mask = 1
+				var ground := room.get_node_or_null("Ground")
+				var biome := String(ground.get("biome_id")) if ground else ""
+				if biome.ends_with("2"):
+					enemy_sprite.modulate = Color(1.22, 1.12, 1.06)
+				else:
+					enemy_sprite.modulate = Color(1.14, 1.10, 1.06)
 
 func _replace_stretched_background(room: Node, size: Vector2, biome: String) -> void:
 	var bg := room.get_node_or_null("Background")
@@ -407,7 +418,7 @@ func _inject_lights(room: Node, size: Vector2, _biome: String, archetype: String
 	if shrine:
 		_inject_shrine_hearth_lights(room, size, host, tex)
 		_attach_actor_occluders(room)
-		_enable_terrain_lighting(room, archetype)
+		_enable_terrain_lighting(room, archetype, _biome)
 		return
 	var key := PointLight2D.new()
 	key.name = "QualityLightKey"
@@ -440,23 +451,38 @@ func _inject_lights(room: Node, size: Vector2, _biome: String, archetype: String
 		host.add_child(courierLight)
 	var fill := PointLight2D.new()
 	fill.name = "QualityLightFill"
-	# Broader, slightly stronger ambient so mid/far walkable platforms stay readable (raising
-	# occupancy honestly) while the focal key still carries the light->dark contrast.
-	fill.position = Vector2(size.x * 0.6, size.y * 0.62)
+	# Floor-band fill so enemies away from the courier key still have local illumination.
+	# Keep energy modest — this is readability, not a bloom wash.
+	fill.position = Vector2(size.x * 0.52, size.y * 0.72)
 	fill.texture = tex
-	fill.color = Color(0.96, 0.8, 0.6, 1)
-	fill.energy = 0.55 if tiled else 0.22
-	fill.texture_scale = 1.7 if tiled else 1.05
+	fill.color = Color(0.94, 0.86, 0.74, 1)
+	fill.energy = 0.7 if tiled else 0.22
+	fill.texture_scale = 2.1 if tiled else 1.05
 	fill.z_index = 5
 	fill.shadow_enabled = false
 	host.add_child(fill)
+	if tiled:
+		var combat_fill := PointLight2D.new()
+		combat_fill.name = "QualityLightCombatBand"
+		var enemy := room.get_node_or_null("Enemy") as Node2D
+		var band := Vector2(size.x * 0.78, size.y * 0.78)
+		if enemy:
+			band = Vector2(enemy.position.x, enemy.position.y - 36.0)
+		combat_fill.position = band
+		combat_fill.texture = tex
+		combat_fill.color = Color(0.90, 0.84, 0.76, 1)
+		combat_fill.energy = 0.38
+		combat_fill.texture_scale = 1.35
+		combat_fill.z_index = 5
+		combat_fill.shadow_enabled = false
+		host.add_child(combat_fill)
 	# Tiled rooms already have PointLight2D fill. A DirectionalLight2D plus floor
 	# occluder stamped huge repeating shadows across every masonry cell.
 	_attach_actor_occluders(room)
-	_enable_terrain_lighting(room, archetype)
+	_enable_terrain_lighting(room, archetype, _biome)
 
 
-func _enable_terrain_lighting(room: Node, archetype: String = "") -> void:
+func _enable_terrain_lighting(room: Node, archetype: String = "", biome: String = "") -> void:
 	## Tilemaps default to receiving lights, but an explicit mask plus a warm
 	## floor vs cool rear makes the key/fill read in screenshots.
 	for node_name in ["Ground", "RearWall"]:
@@ -469,8 +495,13 @@ func _enable_terrain_lighting(room: Node, archetype: String = "") -> void:
 				# Walkable floor/platforms pick up the localized furnace light.
 				# RearWall uses a different mask so the glow does not flatten the hearth.
 				layer.modulate = Color(0.96, 0.90, 0.84, 1)
+			elif biome.ends_with("2"):
+				# Olive floor, not a cool cyan wash that equalizes rust enemies.
+				layer.modulate = Color(0.94, 0.95, 0.88, 1)
+			elif biome.ends_with("1"):
+				layer.modulate = Color(0.88, 0.94, 0.96, 1)
 			else:
-				layer.modulate = Color(0.86, 0.94, 0.98, 1)
+				layer.modulate = Color(0.90, 0.93, 0.97, 1)
 		elif node_name == "RearWall" and archetype == "ability_shrine":
 			layer.light_mask = 2
 			layer.modulate = Color(0.34, 0.24, 0.22, 1)
@@ -699,7 +730,7 @@ func _dress_water_zones(room: Node) -> void:
 			(vis as Sprite2D).texture = load("res://assets/environment/water.png")
 			(vis as Sprite2D).texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		elif vis is ColorRect:
-			(vis as ColorRect).color = Color(0.08, 0.18, 0.22, 0.55)
+			(vis as ColorRect).color = Color(0.18, 0.52, 0.58, 0.42)
 
 func _light_texture() -> GradientTexture2D:
 	var g := Gradient.new()
@@ -1014,6 +1045,27 @@ func _excluded(pos: Vector2, rects: Array[Rect2]) -> bool:
 			return true
 	return false
 
+func _clear_spawn_lane(room: Node, size: Vector2) -> void:
+	## Floor clusters at ~12% width sat on the first stride from a 100px spawn.
+	var player := room.get_node_or_null("Player") as Node2D
+	if player == null:
+		return
+	var lane := player.position.x + 200.0
+	var shift := 0.0
+	for child in room.get_children():
+		if not String(child.name).begins_with("EnvProp"):
+			continue
+		if child is Node2D and child.position.x < lane and child.position.x > player.position.x - 48.0:
+			shift = maxf(shift, lane - child.position.x)
+	if shift <= 1.0:
+		return
+	for child in room.get_children():
+		if not String(child.name).begins_with("EnvProp"):
+			continue
+		if child is Node2D and child.position.x < lane:
+			child.position.x = minf(child.position.x + shift, size.x * 0.48)
+
+
 func _apply_outline(room: Node) -> void:
 	## Interior knockout holes get a pale ring from this shader and read as a
 	## cluster of eyes at the player's feet. Tiled rooms already have contrast
@@ -1193,10 +1245,12 @@ func _biome_mid(biome: String) -> Color:
 func _modulate_for_biome(biome: String) -> Color:
 	var idx := _biome_index(biome)
 	if idx % 3 == 1:
-		return Color(0.82, 0.92, 0.94, 1)
+		# Cool flood, but do not crush reds into mud.
+		return Color(0.90, 0.94, 0.96, 1)
 	if idx % 3 == 2:
-		return Color(0.88, 0.93, 0.84, 1)
-	return Color(0.86, 0.90, 0.96, 1)
+		# Slightly warm so rust hulls keep chroma against olive floors.
+		return Color(0.96, 0.94, 0.90, 1)
+	return Color(0.90, 0.92, 0.96, 1)
 
 func _biome_index(biome: String) -> int:
 	var digits := biome.get_slice("_", 1)

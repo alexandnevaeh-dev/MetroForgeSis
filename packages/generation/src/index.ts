@@ -8,6 +8,28 @@ export * from './world-edit.js';
 export { generateManualAsset } from './manual-asset.js';
 export type { ManualAssetRequest, ManualAssetResult, ManualAssetType } from './manual-asset.js';
 export { loadProjectContext } from './project-loader.js';
+export {
+  getStoryContent,
+  updateQuest,
+  updateDialogue,
+  updateNarrative,
+  buildStoryRewritePrompt,
+  fallbackStoryProposal,
+} from './story-edit.js';
+export type {
+  StoryContent,
+  StoryProposeKind,
+  StoryProposeRequest,
+  StoryProposeResult,
+} from './story-edit.js';
+export {
+  scaffoldManualProject,
+  uniqueProjectDir,
+} from './scaffold-manual-project.js';
+export type {
+  ScaffoldManualProjectOptions,
+  ScaffoldManualProjectResult,
+} from './scaffold-manual-project.js';
 export type {
   LoadedProject,
   PlaytestRouteSummary,
@@ -32,7 +54,12 @@ export {
   applyWorldEditAndRecompile,
   applyRoomEditAndRecompile,
   regenerateRoom,
+  snapshotRoomRecord,
+  restoreRoomRecord,
 } from './project-edit-service.js';
+export type { RoomEditPatch, ProjectEditResult } from './project-edit-service.js';
+export { inspectPlacementForSave, saveAuthoredPlacement } from './live-placement-save.js';
+export type { AuthoredPlacementIdentity, PlacementSaveSnapshot } from './live-placement-save.js';
 export * from './interactive-generation.js';
 export { parseProjectCommand } from './ai-commands.js';
 export type { ProjectCommand, CommandContext } from './ai-commands.js';

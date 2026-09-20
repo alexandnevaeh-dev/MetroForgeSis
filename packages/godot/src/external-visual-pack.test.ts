@@ -10,6 +10,8 @@ describe('external visual packs — registry and manifest loading', () => {
   it('lists both the original test pack and the eleventh-session QA-approved Foundry V3 pack', () => {
     expect(EXTERNAL_VISUAL_PACKS).toContain('industrial-transit');
     expect(EXTERNAL_VISUAL_PACKS).toContain('metroforge-foundry-v3');
+    expect(EXTERNAL_VISUAL_PACKS).toContain('conduit-foundry-heat');
+    expect(EXTERNAL_VISUAL_PACKS).toContain('conduit-foundry-heat-v2');
   });
 
   it('still loads industrial-transit unchanged (regression for adding a second pack)', () => {
@@ -44,5 +46,28 @@ describe('external visual packs — registry and manifest loading', () => {
     expect(destinations).toContain('assets/backgrounds/biome_0/mid.png');
     expect(destinations).toContain('assets/backgrounds/biome_0/near.png');
     expect(destinations).toContain('assets/props/biome_0/biome_0_prop_0.png');
+  });
+
+  it('loads the Unity conduit-foundry-heat pack from compiled destinations', () => {
+    const manifest = loadExternalVisualPack(REPO_ROOT, 'conduit-foundry-heat');
+    expect(manifest.id).toBe('conduit-foundry-heat');
+    expect(manifest.playerReferenceHeight).toBe(48);
+    const destinations = manifest.assets.map((a) => a.destination);
+    expect(destinations).toContain('assets/characters/player_idle.png');
+    expect(destinations).toContain('assets/enemies/enemy_000_idle.png');
+    expect(destinations).toContain('assets/backgrounds/biome_1/far.png');
+    expect(destinations).toContain('assets/backgrounds/biome_2/far.png');
+    expect(destinations).toContain('assets/bosses/boss_idle.png');
+  });
+
+  it('loads the Unity conduit-foundry-heat-v2 pack from compiled destinations', () => {
+    const manifest = loadExternalVisualPack(REPO_ROOT, 'conduit-foundry-heat-v2');
+    expect(manifest.id).toBe('conduit-foundry-heat-v2');
+    expect(manifest.playerReferenceHeight).toBe(48);
+    const destinations = manifest.assets.map((a) => a.destination);
+    expect(destinations).toContain('assets/characters/player_idle.png');
+    expect(destinations).toContain('assets/vfx/ambient_steam.png');
+    expect(destinations).toContain('assets/props/biome_1/biome_1_prop_0.png');
+    expect(destinations).toContain('assets/backgrounds/biome_2/near.png');
   });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mkdirSync, rmSync, readFileSync, existsSync, statSync } from 'node:fs';
+import { mkdirSync, rmSync, readFileSync, existsSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { GodotProjectAssembler, getTemplatePath, topDownChestItemDefs } from '../src/assembler.js';
@@ -285,6 +285,152 @@ describe('GodotProjectAssembler', () => {
     const authored = join(getTemplatePath(), 'assets/bosses/boss_final_walk.png');
     expect(existsSync(overlaid)).toBe(true);
     expect(statSync(overlaid).size).toBe(statSync(authored).size);
+    rmSync(outputDir, { recursive: true, force: true });
+  });
+
+  it('assembles flooded-biome WaterZones and authored parallax without fixture patches', () => {
+    const outputDir = join(tmpdir(), `metroforge-water-parallax-${Date.now()}`);
+    mkdirSync(outputDir, { recursive: true });
+    const roomIds = ['room_000', 'room_001', 'room_002'];
+    const worldGraph: WorldGraph = {
+      version: '0.1.0',
+      seed: 1,
+      nodes: roomIds.map((id, i) => ({
+        id,
+        type: 'room',
+        label: id,
+        metadata: { biomeIndex: i, archetype: 'combat' },
+      })),
+      edges: [
+        {
+          id: 'e1',
+          from: 'room_000',
+          to: 'room_001',
+          requirements: [],
+          optional: false,
+          bidirectional: true,
+        },
+        {
+          id: 'e2',
+          from: 'room_001',
+          to: 'room_002',
+          requirements: [],
+          optional: false,
+          bidirectional: true,
+        },
+      ],
+      regions: roomIds.map((id, i) => ({
+        id: `region_${i}`,
+        name: `R${i}`,
+        biomeId: `biome_${i}`,
+        roomIds: [id],
+      })),
+    };
+    const progressionGraph: ProgressionGraph = {
+      version: '0.1.0',
+      seed: 1,
+      startNodeId: 'room_000',
+      endNodeId: 'room_002',
+      nodes: [],
+      edges: [],
+      abilities: [],
+      criticalPath: roomIds,
+    };
+    const assembler = new GodotProjectAssembler();
+    const result = assembler.assemble({
+      outputDir,
+      gameDna: { ...minimalDna, identity: { ...minimalDna.identity, title: 'Foundry Courier' }, world: { biomeCount: 3, roomCount: 3 } },
+      worldGraph,
+      progressionGraph,
+      roomIds,
+      foundryThemed: true,
+    });
+    expect(result.success).toBe(true);
+    const flooded = readFileSync(join(outputDir, 'scenes/rooms/room_001.tscn'), 'utf8');
+    expect(flooded).toContain('WaterZone.tscn');
+    expect(flooded).toContain('WaterZone_biome_pool');
+    expect(flooded).toContain('[node name="ParallaxMid"');
+    const foundry = readFileSync(join(outputDir, 'scenes/rooms/room_000.tscn'), 'utf8');
+    expect(foundry).not.toContain('WaterZone.tscn');
+    expect(foundry).toContain('[node name="ParallaxMid"');
+    const rooms = JSON.parse(readFileSync(join(outputDir, 'data/rooms/rooms.json'), 'utf8')) as {
+      rooms: Record<string, { waterZones?: unknown[] }>;
+    };
+    expect(rooms.rooms.room_001?.waterZones?.length).toBeGreaterThan(0);
+    rmSync(outputDir, { recursive: true, force: true });
+  });
+
+  it('excludes rollback baselines and retags overlaid authored art in the manifest', () => {
+    const outputDir = join(tmpdir(), `metroforge-baseline-overlay-${Date.now()}`);
+    mkdirSync(outputDir, { recursive: true });
+    const roomIds = ['room_000'];
+    const worldGraph: WorldGraph = {
+      version: '0.1.0',
+      seed: 1,
+      nodes: [{ id: 'room_000', type: 'room', label: 'room_000', metadata: { biomeIndex: 0, archetype: 'combat' } }],
+      edges: [],
+      regions: [{ id: 'region_0', name: 'R0', biomeId: 'biome_0', roomIds }],
+    };
+    const progressionGraph: ProgressionGraph = {
+      version: '0.1.0',
+      seed: 1,
+      startNodeId: 'room_000',
+      endNodeId: 'room_000',
+      nodes: [],
+      edges: [],
+      abilities: [],
+      criticalPath: roomIds,
+    };
+    mkdirSync(join(outputDir, 'assets', '_baseline_v1'), { recursive: true });
+    writeFileSync(join(outputDir, 'assets', '_baseline_v1', 'stale.png'), 'stale');
+    const assembler = new GodotProjectAssembler();
+    const result = assembler.assemble({
+      outputDir,
+      gameDna: { ...minimalDna, identity: { ...minimalDna.identity, title: 'Ashen Foundry' } },
+      worldGraph,
+      progressionGraph,
+      roomIds,
+      foundryThemed: true,
+      assetMetadata: [
+        {
+          id: 'bg_biome_0_far',
+          path: 'assets/backgrounds/biome_0/far.png',
+          type: 'texture',
+          provider: 'procedural',
+          fallbackGenerated: true,
+          sourceType: 'procedural',
+          maturity: 'PROCEDURAL_PRODUCTION',
+        },
+        {
+          id: 'player_idle',
+          path: 'assets/characters/player_idle.png',
+          type: 'texture',
+          provider: 'procedural',
+          fallbackGenerated: true,
+          sourceType: 'procedural',
+          maturity: 'REJECTED',
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+    expect(existsSync(join(outputDir, 'assets/_baseline_v1'))).toBe(false);
+    expect(existsSync(join(outputDir, 'assets/_baseline_foundry_pass1'))).toBe(false);
+    expect(existsSync(join(outputDir, 'assets/_polish_preview'))).toBe(false);
+    expect(existsSync(join(getTemplatePath(), 'assets/_baseline_v1'))).toBe(true);
+    expect(existsSync(join(outputDir, 'assets/props/biome_0/biome_0_prop_0.png'))).toBe(true);
+    const scene = readFileSync(join(outputDir, 'scenes/rooms/room_000.tscn'), 'utf8');
+    expect(scene).toContain('EnvProp_');
+    const manifest = JSON.parse(readFileSync(join(outputDir, 'generation_manifest.json'), 'utf-8')) as {
+      artifacts: Array<{ path?: string; provider?: string; sourceType?: string; fallbackGenerated?: boolean; maturity?: string }>;
+    };
+    const far = manifest.artifacts.find((a) => a.path === 'assets/backgrounds/biome_0/far.png');
+    expect(far?.provider).toBe('authored-original');
+    expect(far?.sourceType).toBe('manual');
+    expect(far?.fallbackGenerated).toBe(false);
+    expect(far?.maturity).toBe('QA_REVIEW');
+    const idle = manifest.artifacts.find((a) => a.path === 'assets/characters/player_idle.png');
+    expect(idle?.provider).toBe('authored-original');
+    expect(idle?.maturity).toBe('QA_REVIEW');
     rmSync(outputDir, { recursive: true, force: true });
   });
 });

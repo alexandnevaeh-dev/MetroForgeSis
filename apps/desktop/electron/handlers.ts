@@ -33,9 +33,20 @@ import {
   remapProjectAbilities,
   applyVisualReviewDecision,
   visualReviewPath,
+  getStoryContent,
+  updateQuest,
+  updateDialogue,
+  updateNarrative,
+  scaffoldManualProject,
+  uniqueProjectDir,
+  snapshotRoomRecord,
+  buildStoryRewritePrompt,
+  fallbackStoryProposal,
   type GenerationEvent,
   type WorldEditCommand,
   type GenerationControlMode,
+  type StoryProposeKind,
+  type RoomEditPatch,
 } from '@metroforge/generation';
 import {
   bootstrapProviders,
@@ -57,10 +68,13 @@ import type { TopDownOverworld, TopDownPoi } from '@metroforge/procedural';
 import {
   ToolRegistry,
   launchGodotEditor,
-  launchGodotGame,
   exportProject,
   refreshProjectTemplate,
   resolveGodotForProject,
+  startPlaytest,
+  stopPlaytest,
+  getPlaytestSession,
+  sendPlaytestCommand,
   type GodotResolveResult,
 } from '@metroforge/tools';
 import {
@@ -78,9 +92,17 @@ import { GenerationQueue } from './generation-queue.js';
 import {
   recordWorldEdit,
   popWorldUndo,
+  popWorldRedo,
   canUndoWorld,
   canRedoWorld,
   listWorldEditHistory,
+  recordRoomEdit,
+  recordLivePlacementEdit,
+  undoRoomEdit,
+  redoRoomEdit,
+  canUndoRoom,
+  canRedoRoom,
+  listRoomEditHistory,
 } from './edit-history-store.js';
 import { GodotProjectAssembler } from '@metroforge/godot';
 import { ConcurrencyPool } from './concurrency-pool.js';
@@ -96,6 +118,7 @@ import {
   getProjectEditStatus,
 } from './edit-dirty-store.js';
 import type { WebContents } from 'electron';
+import { inspectLivePlacement, saveLivePlacement, type LivePlacementInspection } from './live-placement-save.js';
 
 const generationQueue = new GenerationQueue();
 const workerPool = new ConcurrencyPool();
@@ -1064,11 +1087,74 @@ export function registerIpcHandlers(cwd: string): void {
     const config = loadConfig();
     const dataDir = config.dataDir || join(cwd, '.metroforge');
     const prefs = await loadAppPreferences(dataDir);
-    return launchGodotGame(projectPath, {
+    return startPlaytest(projectPath, {
       preference: prefs[APP_SETTING_KEYS.godotExecutable] ?? null,
       envPath: config.godotExecutable,
     });
   });
+
+  ipcMain.handle('stop-playtest', async (_event, projectPath: string) => {
+    assertProjectPath(projectPath, cwd);
+    return stopPlaytest(projectPath);
+  });
+
+  ipcMain.handle('get-playtest-session', async (_event, projectPath: string) => {
+    assertProjectPath(projectPath, cwd);
+    return getPlaytestSession(projectPath);
+  });
+
+  ipcMain.handle(
+    'playtest-command',
+    async (_event, projectPath: string, cmd: string, payload?: Record<string, unknown>) => {
+      assertProjectPath(projectPath, cwd);
+      return sendPlaytestCommand(projectPath, cmd, payload ?? {});
+    },
+  );
+
+  ipcMain.handle('inspect-live-placement', async (_event, projectPath: string, target: { nodePath: string; instanceId: string; sessionStartedAt: string }) => {
+    assertProjectPath(projectPath, cwd);
+    return inspectLivePlacement(projectPath, target);
+  });
+  ipcMain.handle('save-live-placement', async (_event, projectPath: string, inspection: LivePlacementInspection, position: { x: number; y: number }) => {
+    assertProjectPath(projectPath, cwd);
+    const result = await saveLivePlacement(projectPath, inspection, position);
+    recordLivePlacementEdit(projectPath, result.saved, result.previousRoom);
+    return result.saved;
+  });
+
+  ipcMain.handle(
+    'scaffold-manual-project',
+    async (
+      _event,
+      opts: {
+        title: string;
+        prompt?: string;
+        archetype?: GameArchetype;
+        profile?: GenerationProfile;
+        mode?: GenerationMode;
+        seed?: number;
+      },
+    ) => {
+      const config = loadConfig();
+      const gamesDir = resolveGeneratedGamesPath(config, cwd);
+      const baseSlug = (opts.title || 'untitled-forge')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 48) || 'untitled-forge';
+      const located = uniqueProjectDir(gamesDir, baseSlug);
+      return scaffoldManualProject({
+        outputDir: located.path,
+        title: opts.title,
+        slug: located.slug,
+        prompt: opts.prompt,
+        archetype: opts.archetype,
+        profile: opts.profile,
+        mode: opts.mode,
+        seed: opts.seed,
+      });
+    },
+  );
 
   ipcMain.handle(
     'generate-game',
@@ -1526,16 +1612,13 @@ export function registerIpcHandlers(cwd: string): void {
     async (
       _event,
       projectPath: string,
-      patch: {
-        roomId: string;
-        hasEnemy?: boolean;
-        width?: number;
-        height?: number;
-        archetype?: string;
-        tileCells?: Array<{ x: number; y: number; col: number; row: number }>;
-      },
+      patch: RoomEditPatch,
     ) => {
       assertProjectPath(projectPath, cwd);
+      const previous = snapshotRoomRecord(projectPath, patch.roomId);
+      if (previous) {
+        recordRoomEdit(projectPath, patch.roomId, previous, `Edit room ${patch.roomId}`);
+      }
       markProjectDirty(projectPath, `Edit room ${patch.roomId}`);
       markProjectCompiling(projectPath, 'Recompiling room');
       const result = applyRoomEditAndRecompile(projectPath, patch);
@@ -1764,12 +1847,125 @@ export function registerIpcHandlers(cwd: string): void {
     };
   });
 
+  ipcMain.handle('redo-world-edit', async (_event, projectPath: string) => {
+    assertProjectPath(projectPath, cwd);
+    const command = popWorldRedo(projectPath);
+    if (!command) return { success: false, error: 'Nothing to redo' };
+    markProjectDirty(projectPath, 'Redo world edit');
+    markProjectCompiling(projectPath, 'Recompiling rooms');
+    const result = applyWorldEditAndRecompile(projectPath, command);
+    if (result.success) markProjectClean(projectPath);
+    return result;
+  });
+
+  ipcMain.handle('get-story-content', async (_event, projectPath: string) => {
+    assertProjectPath(projectPath, cwd);
+    return getStoryContent(projectPath);
+  });
+
+  ipcMain.handle('update-quest', async (_event, projectPath: string, quest: unknown) => {
+    assertProjectPath(projectPath, cwd);
+    return updateQuest(projectPath, quest as Parameters<typeof updateQuest>[1]);
+  });
+
+  ipcMain.handle('update-dialogue', async (_event, projectPath: string, dialogue: unknown) => {
+    assertProjectPath(projectPath, cwd);
+    return updateDialogue(projectPath, dialogue as Parameters<typeof updateDialogue>[1]);
+  });
+
+  ipcMain.handle(
+    'update-narrative',
+    async (_event, projectPath: string, patch: { premise?: string; protagonist?: string; antagonist?: string; centralConflict?: string }) => {
+      assertProjectPath(projectPath, cwd);
+      return updateNarrative(projectPath, patch);
+    },
+  );
+
+  ipcMain.handle(
+    'propose-story-rewrite',
+    async (
+      _event,
+      projectPath: string,
+      request: { kind: StoryProposeKind; id?: string; draft: string },
+    ) => {
+      assertProjectPath(projectPath, cwd);
+      const story = getStoryContent(projectPath);
+      const config = loadConfig();
+      let ragContext = '';
+      try {
+        const embedder = new OllamaEmbeddingProvider({
+          baseUrl: config.ollamaBaseUrl ?? 'http://127.0.0.1:11434',
+        });
+        if (await embedder.checkHealth()) {
+          ragContext = await queryProjectMemory(
+            projectPath,
+            request.draft || `${request.kind} rewrite`,
+            embedder,
+            5,
+          );
+        }
+      } catch {
+        // optional
+      }
+      const { systemPrompt, prompt, scope } = buildStoryRewritePrompt(story, {
+        ...request,
+        ragContext,
+      });
+      try {
+        const dataDir = config.dataDir || join(cwd, '.metroforge');
+        const { generationRouter } = await bootstrapProviders(
+          await textBootstrapConfig(dataDir, 'LOCAL_ONLY', config.ollamaBaseUrl),
+        );
+        const result = await generationRouter.generate({
+          capability: 'JSON_GENERATION',
+          task: 'story_rewrite',
+          prompt,
+          systemPrompt,
+          jsonMode: false,
+          mode: 'LOCAL_ONLY',
+        });
+        const proposal = String(result.result ?? '').trim();
+        if (!proposal) {
+          return {
+            success: true,
+            proposal: fallbackStoryProposal(request),
+            scope,
+            errors: [],
+            source: 'fallback',
+          };
+        }
+        return { success: true, proposal, scope, errors: [], source: 'generationRouter' };
+      } catch (err) {
+        return {
+          success: true,
+          proposal: fallbackStoryProposal(request),
+          scope,
+          errors: [err instanceof Error ? err.message : String(err)],
+          source: 'fallback',
+        };
+      }
+    },
+  );
+
+  ipcMain.handle('undo-room-edit', async (_event, projectPath: string) => {
+    assertProjectPath(projectPath, cwd);
+    return undoRoomEdit(projectPath);
+  });
+
+  ipcMain.handle('redo-room-edit', async (_event, projectPath: string) => {
+    assertProjectPath(projectPath, cwd);
+    return redoRoomEdit(projectPath);
+  });
+
   ipcMain.handle('get-edit-history', async (_event, projectPath: string) => {
     assertProjectPath(projectPath, cwd);
     return {
-      canUndo: canUndoWorld(projectPath),
-      canRedo: canRedoWorld(projectPath),
-      history: listWorldEditHistory(projectPath),
+      canUndo: canUndoWorld(projectPath) || canUndoRoom(projectPath),
+      canRedo: canRedoWorld(projectPath) || canRedoRoom(projectPath),
+      history: [
+        ...listWorldEditHistory(projectPath),
+        ...listRoomEditHistory(projectPath),
+      ].sort((a, b) => String(a.timestamp).localeCompare(String(b.timestamp))),
     };
   });
 

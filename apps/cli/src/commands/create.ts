@@ -1,7 +1,7 @@
 import type { Command } from 'commander';
 import { GenerationPipeline } from '@metroforge/generation';
 import type { GenerateOptions } from '@metroforge/generation';
-import type { GenerationMode, GenerationProfile, GameArchetype } from '@metroforge/shared';
+import type { GenerationMode, GenerationProfile, GameArchetype, TargetEngine } from '@metroforge/shared';
 
 type ExternalVisualPackId = NonNullable<GenerateOptions['externalVisualPack']>;
 import {
@@ -10,6 +10,7 @@ import {
   resolveProjectPathSafe,
   UnsafeProjectPathError,
   GENERATION_PROFILES,
+  parseTargetEngine,
 } from '@metroforge/shared';
 import { ProjectMetadataSchema } from '@metroforge/schemas';
 import { HardwareProfiler } from '@metroforge/ai';
@@ -65,6 +66,7 @@ export function registerCreateCommand(program: Command): void {
     .option('--hardware-profile <profile>', 'LOW_RESOURCE, BALANCED, or HIGH_QUALITY')
     .option('--external-visual-pack <id>', 'Optional test pack: industrial-transit or metroforge-foundry-v3. Side-view VISUAL_VERTICAL_SLICE defaults to the authored courier+masonry pipeline path; pass metroforge-foundry-v3 for the prebuilt pack.')
     .option('--archetype <archetype>', 'Game archetype: SIDE_VIEW_METROIDVANIA or TOP_DOWN_ACTION_ADVENTURE')
+    .option('--engine <engine>', 'Target engine: godot (default), unity, or unreal')
     .option('--no-generate', 'Only create project metadata without generating')
     .option('--resume', 'Resume from an existing Game DNA checkpoint if the project already exists')
     .option('--skip-runtime-validation', 'Skip Godot runtime smoke test (static/import validation still runs)')
@@ -94,6 +96,7 @@ export function registerCreateCommand(program: Command): void {
         hardwareProfile?: string;
         externalVisualPack?: string;
         archetype?: string;
+        engine?: string;
         generate: boolean;
         resume?: boolean;
         skipRuntimeValidation?: boolean;
@@ -118,6 +121,13 @@ export function registerCreateCommand(program: Command): void {
           return;
         }
         const { visualMode } = visualModeResult;
+        const engineResult = parseTargetEngine(opts.engine);
+        if (typeof engineResult === 'object') {
+          console.log(`✗ ${engineResult.error}`);
+          process.exitCode = 1;
+          return;
+        }
+        const targetEngine = engineResult;
         const seed = parseInt(opts.seed, 10);
         const hardwareProfile = resolveHardwareProfile(opts.hardwareProfile);
 
@@ -128,6 +138,7 @@ export function registerCreateCommand(program: Command): void {
 
         console.log(`Generating ${profile} game...`);
         console.log(`Mode: ${mode}`);
+        console.log(`Engine: ${targetEngine}`);
         if (visualMode !== 'procedural-only') console.log(`Visual mode: ${visualMode}`);
         console.log(`Prompt: ${opts.prompt.slice(0, 80)}...`);
         console.log('');
@@ -142,6 +153,7 @@ export function registerCreateCommand(program: Command): void {
           seed,
           slug: opts.slug,
           archetype: opts.archetype as GameArchetype | undefined,
+          targetEngine,
           resume: opts.resume,
           skipRuntimeValidation: opts.skipRuntimeValidation,
           skipExport: opts.skipExport,
@@ -195,7 +207,13 @@ export function registerCreateCommand(program: Command): void {
         } else {
           console.log(`✓ Game generated: ${result.outputPath}`);
           console.log(`  Validation: ${result.validationLevel ?? (result.validationPassed ? 'RUNTIME_VALIDATED' : 'FAILED')}`);
-          console.log(`  Open in Godot 4.x and press F5 to play`);
+          if (targetEngine === 'godot') {
+            console.log(`  Open in Godot 4.x and press F5 to play`);
+          } else if (targetEngine === 'unity') {
+            console.log(`  Open in Unity 6.3 LTS (generated ≠ compiled ≠ playtested)`);
+          } else {
+            console.log(`  Open MetroForgeGame.uproject in Unreal 5.8 (generated ≠ compiled ≠ playtested)`);
+          }
           console.log(`  Job ID: ${result.jobId}`);
         }
       },
@@ -223,6 +241,7 @@ export function registerGenerateCommand(program: Command): void {
     )
     .option('--seed <number>', 'Random seed')
     .option('--archetype <archetype>', 'Game archetype')
+    .option('--engine <engine>', 'Target engine: godot, unity, or unreal (defaults to project.json)')
     .option('--hardware-profile <profile>', 'LOW_RESOURCE, BALANCED, or HIGH_QUALITY')
     .option('--external-visual-pack <id>', 'Optional test pack: industrial-transit or metroforge-foundry-v3. Side-view VISUAL_VERTICAL_SLICE defaults to the authored courier+masonry pipeline path; pass metroforge-foundry-v3 for the prebuilt pack.')
     .option('--resume', 'Resume from an existing Game DNA checkpoint if present', true)
@@ -232,7 +251,7 @@ export function registerGenerateCommand(program: Command): void {
     )
     .option('--skip-runtime-validation', 'Skip Godot runtime smoke test')
     .option('--skip-export', 'Skip staging a packaged copy under Exports/<slug>/ after generation')
-    .action(async (slug: string, opts: { profile?: string; mode?: string; visualMode?: string; seed?: string; resume?: boolean; fresh?: boolean; skipRuntimeValidation?: boolean; skipExport?: boolean; hardwareProfile?: string; externalVisualPack?: string }) => {
+    .action(async (slug: string, opts: { profile?: string; mode?: string; visualMode?: string; seed?: string; resume?: boolean; fresh?: boolean; skipRuntimeValidation?: boolean; skipExport?: boolean; hardwareProfile?: string; externalVisualPack?: string; engine?: string }) => {
       const config = loadConfig();
       let projectPath: string;
       try {
@@ -252,6 +271,7 @@ export function registerGenerateCommand(program: Command): void {
       let savedProfile: GenerationProfile | undefined;
       let savedMode: GenerationMode | undefined;
       let savedSeed: number | undefined;
+      let savedEngine: TargetEngine | undefined;
 
       if (existsSync(projectJsonPath)) {
         const parsed = ProjectMetadataSchema.safeParse(
@@ -262,6 +282,7 @@ export function registerGenerateCommand(program: Command): void {
           savedProfile = parsed.data.profile;
           savedMode = parsed.data.mode;
           savedSeed = parsed.data.seed;
+          savedEngine = parsed.data.engine;
         } else {
           console.log(`Warning: project.json exists but failed validation — using defaults (${parsed.error.issues[0]?.message ?? 'unknown error'})`);
         }
@@ -287,6 +308,15 @@ export function registerGenerateCommand(program: Command): void {
         process.exitCode = 1;
         return;
       }
+      if (opts.engine) {
+        const engineResult = parseTargetEngine(opts.engine);
+        if (typeof engineResult === 'object') {
+          console.log(`✗ ${engineResult.error}`);
+          process.exitCode = 1;
+          return;
+        }
+        savedEngine = engineResult;
+      }
       const result = await pipeline.run({
         prompt,
         profile,
@@ -295,6 +325,7 @@ export function registerGenerateCommand(program: Command): void {
         externalVisualPack: opts.externalVisualPack as ExternalVisualPackId | undefined,
         seed: opts.seed ? parseInt(opts.seed, 10) : (savedSeed ?? 42),
         slug,
+        targetEngine: savedEngine,
         resume: resolveResumeFlag(opts),
         skipRuntimeValidation: opts.skipRuntimeValidation,
         skipExport: opts.skipExport,

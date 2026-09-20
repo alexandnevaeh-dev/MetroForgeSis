@@ -9,3 +9,16 @@ describe('Godot configuration compatibility', () => {
     expect(loadConfig({ GODOT_PATH: '/godot' }).godotExecutable).toBe('/godot');
   });
 });
+
+describe('Unity and Unreal configuration', () => {
+  it('reads UNITY_EDITOR and UE_ROOT without colliding with Godot', () => {
+    const cfg = loadConfig({
+      GODOT_EXECUTABLE: '/godot',
+      UNITY_EDITOR: '/unity',
+      UE_ROOT: '/unreal',
+    });
+    expect(cfg.godotExecutable).toBe('/godot');
+    expect(cfg.unityEditor).toBe('/unity');
+    expect(cfg.unrealEditor).toBe('/unreal');
+  });
+});

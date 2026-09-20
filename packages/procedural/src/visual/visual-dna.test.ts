@@ -154,7 +154,9 @@ describe('VisualDNA', () => {
     const visual = generateVisualDNA({ gameDna: foundryDna, artBible: art, styleBible: style });
     expect(visual.artStyle.id).toBe('mechanical-forge');
     const biomes = generateAllBiomeVisualDNA({ visualDNA: visual, gameDna: foundryDna });
-    expect(biomes[0]!.displayName.toLowerCase()).toMatch(/foundry|clockwork|vault/);
+    expect(biomes[0]!.displayName.toLowerCase()).toMatch(/pouring bay|foundry|clockwork|vault/);
+    if (biomes.length > 1) expect(biomes[1]!.displayName.toLowerCase()).toMatch(/quench/);
+    if (biomes.length > 2) expect(biomes[2]!.displayName.toLowerCase()).toMatch(/cooling/);
     expect(art.palette.some((c) => c.hex === '#101018')).toBe(true);
   });
 });

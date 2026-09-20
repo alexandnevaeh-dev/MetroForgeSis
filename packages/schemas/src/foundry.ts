@@ -49,6 +49,10 @@ export const FoundryRoutingModeSchema = z.enum([
 
 export type FoundryRoutingMode = z.infer<typeof FoundryRoutingModeSchema>;
 
+/** User-facing generation quality. The capability router picks models/workflows; UI must not hardcode them. */
+export const AssetQualityProfileSchema = z.enum(['DRAFT', 'BALANCED', 'QUALITY', 'MAXIMUM_SUPPORTED']);
+export type AssetQualityProfile = z.infer<typeof AssetQualityProfileSchema>;
+
 export const FoundryCostClassSchema = z.enum(['free', 'credit', 'paid', 'local']);
 export type FoundryCostClass = z.infer<typeof FoundryCostClassSchema>;
 
@@ -140,6 +144,7 @@ export const AssetRequestSchema = z.object({
     })
     .optional(),
   routingMode: FoundryRoutingModeSchema.optional(),
+  qualityProfile: AssetQualityProfileSchema.optional(),
   maxRetries: z.number().int().min(0).max(8).optional(),
 });
 

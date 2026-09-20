@@ -50,6 +50,7 @@ export function WorldEditor() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
   const [newRoomId, setNewRoomId] = useState('room_treasure_optional');
   const [connectFrom, setConnectFrom] = useState('');
   const [connectTo, setConnectTo] = useState('');
@@ -67,6 +68,7 @@ export function WorldEditor() {
     if (!selectedPath || !window.metroforge?.getEditHistory) return;
     const h = await window.metroforge.getEditHistory(selectedPath);
     setCanUndo(h.canUndo);
+    setCanRedo(Boolean(h.canRedo));
   };
 
   const loadGraph = async (path: string) => {
@@ -179,6 +181,35 @@ export function WorldEditor() {
     await refreshHistory();
   };
 
+  const handleRedo = async () => {
+    if (!selectedPath || !window.metroforge?.redoWorldEdit) return;
+    setError(null);
+    const result = await window.metroforge.redoWorldEdit(selectedPath);
+    if (result.error || !result.success) setError(result.error ?? 'Redo failed');
+    else {
+      setMessage('Redid last world edit');
+      setWorldGraph(result.worldGraph ?? null);
+    }
+    await refreshHistory();
+  };
+
+  const handleDuplicate = () => {
+    if (!selectedId) return;
+    void runWorldCommand(
+      { type: 'duplicate_room', roomId: selectedId, newRoomId: `${selectedId}_copy`, label: `${selectedId} copy` },
+      `Duplicated ${selectedId}`,
+    );
+  };
+
+  const handleRemove = () => {
+    if (!selectedId) return;
+    void runWorldCommand({ type: 'remove_room', roomId: selectedId }, `Removed ${selectedId}`);
+  };
+
+  const handleMove = (id: string, x: number, y: number) => {
+    void runWorldCommand({ type: 'move_room', roomId: id, x, y }, `Moved ${id}`);
+  };
+
   const nodeOptions = (worldGraph?.nodes ?? []).map((n) => (
     <option key={n.id} value={n.id}>
       {n.label ?? n.id}
@@ -186,12 +217,24 @@ export function WorldEditor() {
   ));
 
   return (
-    <section className="workspace-screen world-editor-screen">
+    <section
+      className="workspace-screen world-editor-screen"
+      onKeyDown={(event) => {
+        if (!(event.ctrlKey || event.metaKey)) return;
+        if (event.key.toLowerCase() === 'z' && event.shiftKey) {
+          event.preventDefault();
+          void handleRedo();
+        } else if (event.key.toLowerCase() === 'z') {
+          event.preventDefault();
+          void handleUndo();
+        }
+      }}
+    >
       <ScreenHeader
         compact
         eyebrow="World"
         title="World Editor"
-        description="Canonical WorldGraph · topology via validated updateWorldGraph."
+        description="Canonical WorldGraph · add, duplicate, remove, connect. Drag in Spatial to move. Ctrl+Z / Ctrl+Shift+Z."
         actions={
           <>
             <ProjectSelect />
@@ -266,6 +309,7 @@ export function WorldEditor() {
                   setDisconnectFrom(id);
                 }}
                 onActivate={openRoom}
+                onMove={view === 'spatial' ? handleMove : undefined}
               />
             </EditorViewport>
 
@@ -337,6 +381,15 @@ export function WorldEditor() {
                   <Button size="sm" disabled={!canUndo} onClick={() => void handleUndo()}>
                     Undo
                   </Button>
+                  <Button size="sm" disabled={!canRedo} onClick={() => void handleRedo()}>
+                    Redo
+                  </Button>
+                  <Button size="sm" disabled={!selectedId} onClick={handleDuplicate}>
+                    Duplicate
+                  </Button>
+                  <Button size="sm" disabled={!selectedId} onClick={handleRemove}>
+                    Remove
+                  </Button>
                 </div>
               </InspectorSection>
             </aside>
@@ -369,6 +422,9 @@ export function WorldEditor() {
                   </Button>
                   <Button size="sm" disabled={!canUndo} onClick={() => void handleUndo()}>
                     Undo
+                  </Button>
+                  <Button size="sm" disabled={!canRedo} onClick={() => void handleRedo()}>
+                    Redo
                   </Button>
                 </div>
               </div>

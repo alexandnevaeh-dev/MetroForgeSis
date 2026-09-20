@@ -12,6 +12,7 @@ import {
   auditRoomArchetypeFidelity,
   pickRoomPickupItem,
   buildRoomConnections,
+  resolveFloorPropPlacements,
 } from '../src/room-assembler.js';
 import { foundryBackdropCoverScale } from '../src/foundry-visual-pack.js';
 import { generateWorldTopology } from '@metroforge/procedural';
@@ -152,6 +153,16 @@ describe('deriveWaterZones', () => {
     );
     expect(zones).toHaveLength(1);
     expect(zones[0]?.targetRoomId).toBe('room_003');
+  });
+
+  it('places a biome pool in flooded rooms that have no swim gate', () => {
+    const zones = deriveWaterZones([], 960, 500, { biomePool: true, floorTop: 476 });
+    expect(zones).toHaveLength(1);
+    expect(zones[0]).toMatchObject({
+      targetRoomId: 'biome_pool',
+      height: 96,
+      y: 380,
+    });
   });
 });
 
@@ -597,4 +608,211 @@ describe('generateRoomScene combat sprites', () => {
     expect(scene).not.toContain('assets/backgrounds/biome_0/mid.png');
     expect(scene).not.toContain('assets/backgrounds/biome_0/near.png');
   });
+
+  it('emits authored mid/near parallax plates for foundry-themed courier kits', () => {
+    const scene = generateRoomScene('room_000', 0, {
+      ...baseOptions,
+      width: 960,
+      height: 540,
+      hasEnemy: false,
+      enemyIndex: 0,
+      isBossRoom: false,
+      bossId: '',
+      hasTileset: true,
+      tileSize: 32,
+      visualKit: 'foundry',
+      authoredParallax: true,
+      biomeTexturePath: 'assets/tilesets/biome_0/source.png',
+      backgroundLayers: {
+        far: 'assets/backgrounds/biome_0/far.png',
+        mid: 'assets/backgrounds/biome_0/mid.png',
+        near: 'assets/backgrounds/biome_0/near.png',
+      },
+    });
+    expect(scene).toContain('[node name="ParallaxMid" type="Parallax2D"');
+    expect(scene).toContain('[node name="ParallaxNear" type="Parallax2D"');
+    expect(scene).toContain('assets/backgrounds/biome_0/mid.png');
+    expect(scene).toContain('scroll_scale = Vector2(0.3, 0.12)');
+  });
+
+  it('emits wall architecture and edge foreground for authored foundry kits', () => {
+    const scene = generateRoomScene('room_000', 0, {
+      ...baseOptions,
+      width: 960,
+      height: 540,
+      hasEnemy: false,
+      enemyIndex: 0,
+      isBossRoom: false,
+      bossId: '',
+      hasTileset: true,
+      tileSize: 32,
+      visualKit: 'foundry',
+      authoredParallax: true,
+      biomeTexturePath: 'assets/tilesets/biome_0/source.png',
+      backgroundLayers: {
+        far: 'assets/backgrounds/biome_0/far.png',
+        mid: 'assets/backgrounds/biome_0/mid.png',
+        near: 'assets/backgrounds/biome_0/near.png',
+        foreground: 'assets/backgrounds/biome_0/foreground.png',
+      },
+      architectureSprites: [
+        'assets/architecture/biome_0/biome_0_arch_0.png',
+        'assets/architecture/biome_0/biome_0_arch_1.png',
+      ],
+    });
+    expect(scene).toContain('[node name="Architecture_0"');
+    expect(scene).toContain('assets/architecture/biome_0/biome_0_arch_0.png');
+    expect(scene).toContain('[node name="ParallaxForeground"');
+    expect(scene).toContain('assets/backgrounds/biome_0/foreground.png');
+  });
+
+  it('places authored floor props even when the combat prop budget is zero', () => {
+    const scene = generateRoomScene('room_000', 0, {
+      ...baseOptions,
+      width: 960,
+      height: 540,
+      hasEnemy: false,
+      enemyIndex: 0,
+      isBossRoom: false,
+      bossId: '',
+      authoredParallax: true,
+      propSprites: [
+        'assets/props/biome_0/biome_0_prop_0.png',
+        'assets/props/biome_0/biome_0_prop_1.png',
+        'assets/props/biome_0/biome_0_prop_2.png',
+        'assets/props/biome_0/biome_0_prop_3.png',
+      ],
+    });
+    expect(scene).toContain('[node name="EnvProp_0"');
+    expect(scene).toContain('assets/props/biome_0/biome_0_prop_0.png');
+    const placed = resolveFloorPropPlacements({
+      width: 960,
+      authoredParallax: true,
+      isBossRoom: false,
+      propSprites: ['assets/props/biome_0/biome_0_prop_0.png', 'assets/props/biome_0/biome_0_prop_1.png'],
+    });
+    expect(placed.length).toBe(2);
+    const bossClear = resolveFloorPropPlacements({
+      width: 960,
+      authoredParallax: true,
+      isBossRoom: true,
+      propSprites: ['assets/props/biome_0/biome_0_prop_0.png'],
+    });
+    expect(bossClear.length).toBe(0);
+  });
+
+  it('places a WaterZone in flooded biome rooms without a swim-gated door', () => {
+    const scene = generateRoomScene('room_004', 4, {
+      ...baseOptions,
+      biomeIndex: 1,
+      hasEnemy: false,
+      enemyIndex: 0,
+      isBossRoom: false,
+      bossId: '',
+      hasTileset: true,
+      tileSize: 32,
+      width: 960,
+      height: 540,
+      connections: [{ direction: 'right', targetRoomId: 'room_005', requirements: [] }],
+    });
+    expect(scene).toContain('WaterZone.tscn');
+    expect(scene).toContain('WaterZone_biome_pool');
+    expect(scene).toContain('zone_height = 96');
+  });
 });
+
+describe('generateRoomScene shell colliders', () => {
+  const sealed = {
+    hasEnemy: false,
+    enemyIndex: 0,
+    hasAbilityPickup: false,
+    abilityPickups: [] as string[],
+    isBossRoom: false,
+    bossId: '',
+    hasSavePoint: false,
+    width: 800,
+    height: 600,
+    biomeIndex: 0,
+    connections: [] as Array<{
+      direction: 'left' | 'right' | 'up' | 'down';
+      targetRoomId: string;
+      requirements: string[];
+    }>,
+    hasTileset: true,
+    tileSize: 16,
+    npcs: [] as Array<{ id: string; name: string; role: string; questIds: string[] }>,
+    hasItemPickup: false,
+    itemId: '',
+    itemAmount: 0,
+  };
+
+  it('emits wall and ceiling shells so jump/dash cannot leave a sealed room', () => {
+    const scene = generateRoomScene('room_000', 0, sealed);
+    expect(scene).toContain('[node name="ShellLeft"');
+    expect(scene).toContain('[node name="ShellRight"');
+    expect(scene).toContain('[node name="ShellCeiling"');
+    expect(scene).toContain('id="shell_0_shape"');
+  });
+
+  it('keeps a left door opening instead of a full-height wall', () => {
+    const scene = generateRoomScene('room_001', 1, {
+      ...sealed,
+      connections: [{ direction: 'left', targetRoomId: 'room_000', requirements: [] }],
+    });
+    expect(scene).toContain('[node name="ShellLeftUpper"');
+    expect(scene).not.toContain('[node name="ShellLeft" type="StaticBody2D"');
+    expect(scene).toContain('[node name="ShellRight"');
+  });
+
+  it('places a down exit below the floor so pit falls can reach it', () => {
+    const scene = generateRoomScene('room_002', 2, {
+      ...sealed,
+      hasTileset: false,
+      connections: [
+        { direction: 'left', targetRoomId: 'room_001', requirements: [] },
+        { direction: 'right', targetRoomId: 'room_003', requirements: [] },
+        { direction: 'down', targetRoomId: 'room_010', requirements: [] },
+      ],
+    });
+    expect(scene).toContain('Transition_down_room_010');
+    expect(scene).toContain('position = Vector2(388, 632)');
+    expect(scene).not.toContain('position = Vector2(388, 120)');
+  });
+});
+
+  it('keeps procedural masonry atlas coords for authored foundry kits', () => {
+    const ctx = {
+      roomIds: ['room_000'],
+      roomConnections: new Map([['room_000', []]]),
+      worldGraphNodesById: new Map([
+        ['room_000', { id: 'room_000', type: 'room', label: 'Start', metadata: { archetype: 'tutorial' } }],
+      ]),
+      npcsByRoom: new Map(),
+      bossesByRoom: new Map(),
+    } as import('../src/room-assembler.js').RoomAssemblyContext;
+    const v3 = buildRoomAssemblyOptions(
+      'room_000',
+      0,
+      ctx,
+      mediumDna,
+      undefined,
+      { value: 0 },
+      () => true,
+      { visualKit: 'foundry' },
+    );
+    const authored = buildRoomAssemblyOptions(
+      'room_000',
+      0,
+      ctx,
+      mediumDna,
+      undefined,
+      { value: 0 },
+      () => true,
+      { visualKit: 'foundry', authoredParallax: true },
+    );
+    const v3Platform = v3.tileCells?.find((c) => c.col === 2 && c.row === 0);
+    const authoredPlatform = authored.tileCells?.find((c) => c.col === 3 && c.row === 0);
+    expect(authoredPlatform).toBeTruthy();
+    expect(v3Platform).toBeTruthy();
+  });
+

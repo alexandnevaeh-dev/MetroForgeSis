@@ -58,6 +58,7 @@ contextBridge.exposeInMainWorld('metroforge', {
   updateWorldGraph: (projectPath: string, command: unknown) =>
     ipcRenderer.invoke('update-world-graph', projectPath, command),
   undoWorldEdit: (projectPath: string) => ipcRenderer.invoke('undo-world-edit', projectPath),
+  redoWorldEdit: (projectPath: string) => ipcRenderer.invoke('redo-world-edit', projectPath),
   getEditHistory: (projectPath: string) => ipcRenderer.invoke('get-edit-history', projectPath),
   listGenerationQueue: () => ipcRenderer.invoke('list-generation-queue'),
   cancelGenerationJob: (jobId: string) => ipcRenderer.invoke('cancel-generation-job', jobId),
@@ -67,6 +68,37 @@ contextBridge.exposeInMainWorld('metroforge', {
     ipcRenderer.invoke('open-in-godot', projectPath) as Promise<{ success: boolean; message: string }>,
   playInGodot: (projectPath: string) =>
     ipcRenderer.invoke('play-in-godot', projectPath) as Promise<{ success: boolean; message: string }>,
+  stopPlaytest: (projectPath: string) =>
+    ipcRenderer.invoke('stop-playtest', projectPath) as Promise<{ success: boolean; message: string }>,
+  getPlaytestSession: (projectPath: string) =>
+    ipcRenderer.invoke('get-playtest-session', projectPath),
+  playtestCommand: (projectPath: string, cmd: string, payload?: Record<string, unknown>) =>
+    ipcRenderer.invoke('playtest-command', projectPath, cmd, payload),
+  inspectLivePlacement: (projectPath: string, target: { nodePath: string; instanceId: string; sessionStartedAt: string }) =>
+    ipcRenderer.invoke('inspect-live-placement', projectPath, target),
+  saveLivePlacement: (projectPath: string, inspection: import('./live-placement-save.js').LivePlacementInspection, position: { x: number; y: number }) =>
+    ipcRenderer.invoke('save-live-placement', projectPath, inspection, position),
+  scaffoldManualProject: (opts: {
+    title: string;
+    prompt?: string;
+    archetype?: string;
+    profile?: string;
+    mode?: string;
+    seed?: number;
+  }) => ipcRenderer.invoke('scaffold-manual-project', opts),
+  getStoryContent: (projectPath: string) => ipcRenderer.invoke('get-story-content', projectPath),
+  updateQuest: (projectPath: string, quest: unknown) =>
+    ipcRenderer.invoke('update-quest', projectPath, quest),
+  updateDialogue: (projectPath: string, dialogue: unknown) =>
+    ipcRenderer.invoke('update-dialogue', projectPath, dialogue),
+  updateNarrative: (projectPath: string, patch: unknown) =>
+    ipcRenderer.invoke('update-narrative', projectPath, patch),
+  proposeStoryRewrite: (
+    projectPath: string,
+    request: { kind: 'narrative' | 'quest' | 'dialogue'; id?: string; draft: string },
+  ) => ipcRenderer.invoke('propose-story-rewrite', projectPath, request),
+  undoRoomEdit: (projectPath: string) => ipcRenderer.invoke('undo-room-edit', projectPath),
+  redoRoomEdit: (projectPath: string) => ipcRenderer.invoke('redo-room-edit', projectPath),
   generateGame: (opts: {
     prompt: string;
     profile: string;

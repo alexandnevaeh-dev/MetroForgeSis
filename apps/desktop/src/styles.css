@@ -4120,3 +4120,174 @@ select {
     min-width: 0;
   }
 }
+
+/* ── Living forge workspace ── */
+.app.forge-shell {
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr) minmax(220px, var(--forge-inspector-w));
+  grid-template-rows: var(--topbar-h) minmax(0, 1fr) auto var(--status-h);
+  background:
+    radial-gradient(1200px 480px at 12% -10%, rgba(224, 112, 48, 0.12), transparent 55%),
+    radial-gradient(900px 420px at 100% 0%, rgba(196, 122, 72, 0.08), transparent 50%),
+    var(--bg-app);
+}
+.app.forge-shell.sidebar-collapsed {
+  grid-template-columns: var(--sidebar-w-collapsed) minmax(0, 1fr) minmax(200px, var(--forge-inspector-w));
+}
+.app.forge-shell .status-bar {
+  grid-row: 4;
+  grid-column: 1 / -1;
+}
+.app.forge-shell .topbar {
+  background:
+    linear-gradient(90deg, rgba(224, 112, 48, 0.12), transparent 42%),
+    var(--bg-surface);
+}
+.brand-mark {
+  box-shadow: var(--glow-amber);
+  background: linear-gradient(180deg, var(--forge-accent-bright), var(--forge-copper));
+}
+.nav-item-label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  min-width: 0;
+  white-space: normal;
+}
+.nav-forge {
+  font-size: 0.72rem;
+  color: var(--forge-ember);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.nav-function {
+  font-size: 0.7rem;
+  color: inherit;
+}
+.app.sidebar-collapsed .nav-forge,
+.app.sidebar-collapsed .nav-function {
+  display: none;
+}
+.creation-mode-switch {
+  flex-shrink: 0;
+}
+.forge-assist {
+  grid-column: 3;
+  grid-row: 2;
+  min-height: 0;
+  overflow: auto;
+  margin: 0;
+  border-radius: 0;
+  border-top: none;
+  border-bottom: none;
+  border-right: none;
+}
+.forge-activity {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  border-top: 1px solid var(--forge-border);
+  background: var(--forge-bg-surface);
+}
+.forge-activity-toggle {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--forge-copper);
+  padding: 0.35rem var(--space-4);
+}
+.forge-activity-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
+  gap: var(--space-3);
+  padding: 0 var(--space-4) var(--space-3);
+  max-height: 180px;
+  overflow: auto;
+}
+.forge-overview-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  min-height: 220px;
+}
+.forge-overview-map .map-preview-wrap {
+  min-height: 180px;
+}
+.forge-overview-thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  gap: 6px;
+  margin-bottom: var(--space-3);
+}
+.forge-thumb {
+  padding: 0;
+  border: 1px solid var(--forge-border);
+  background: var(--forge-bg-input);
+  aspect-ratio: 1;
+  overflow: hidden;
+}
+.forge-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+.story-canvas {
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(224, 112, 48, 0.12), transparent 40%),
+    var(--canvas-bg);
+}
+.story-node rect {
+  fill: var(--forge-bg-raised);
+  stroke: var(--forge-copper);
+}
+.story-node text {
+  fill: var(--forge-text);
+  font-size: 11px;
+}
+.story-node.selected rect {
+  stroke: var(--forge-accent-bright);
+  fill: var(--forge-bg-accent-tint);
+}
+.story-edge {
+  stroke: var(--forge-copper);
+  stroke-width: 1.5;
+}
+.linkish {
+  background: none;
+  border: none;
+  color: var(--forge-accent-bright);
+  padding: 0;
+  text-decoration: underline;
+}
+
+@media (max-width: 1199px) {
+  .app.forge-shell,
+  .app.forge-shell.sidebar-collapsed {
+    grid-template-columns: var(--sidebar-w-collapsed) minmax(0, 1fr);
+  }
+  .forge-assist {
+    display: none;
+  }
+  .forge-overview-strip,
+  .forge-activity-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-mark {
+    box-shadow: none;
+  }
+  .app.forge-shell {
+    background: var(--bg-app);
+  }
+  .app.forge-shell .topbar {
+    background: var(--bg-surface);
+  }
+}
+

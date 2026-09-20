@@ -10,7 +10,7 @@
     "loop": true
   },
   "attack": {
-    "frameCount": 6,
+    "frameCount": 8,
     "fps": 12,
     "loop": false
   },

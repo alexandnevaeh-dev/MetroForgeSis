@@ -31,6 +31,7 @@ import { critiqueGameplayScreenshot, critiqueScreenshotDiversity } from '@metrof
 import { parseSmokeTestOutput } from './smoke-output.js';
 import { parsePlaytestOutput, summarizePlaytestBalance } from './playtest-output.js';
 import { captureGameplayScreenshots } from './gameplay-capture.js';
+import { detectProjectEngine, validateForeignEngineProject } from './engine-validator.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..', '..', '..');
@@ -227,6 +228,11 @@ const REQUIRED_INPUT_ACTIONS = [
 
 export class QAValidator {
   validateProject(projectPath: string, projectId: string): QAReport {
+    const engine = detectProjectEngine(projectPath);
+    if (engine === 'unity' || engine === 'unreal') {
+      return validateForeignEngineProject(projectPath, engine);
+    }
+
     const results: QAGateResult[] = [];
 
     // Gate: required files. The player controller filename genuinely differs by archetype

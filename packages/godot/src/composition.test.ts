@@ -127,8 +127,8 @@ describe('composePlayableVisuals', () => {
   });
 
   it('keeps decoration zones off the spawn footprint at both edges', () => {
-    // The player enters SPAWN_MARGIN (80px) from an edge; a decoration zone at width*0.05 put a
-    // prop on top of the courier at spawn. Every decoration zone must clear the outer ~12%.
+    // The player enters ~100px from an edge and immediately walks inward; 12% of a
+    // 720px tutorial still planted a crate on the first stride. Clear the outer ~28%.
     const input = {
       cells: [],
       platforms: [] as Array<{ x: number; y: number; width: number; height: number }>,
@@ -145,9 +145,12 @@ describe('composePlayableVisuals', () => {
     const zones = composePlayableVisuals(input).blueprint.plan.decorationZones;
     expect(zones.length).toBeGreaterThan(0);
     for (const z of zones) {
-      expect(z.x).toBeGreaterThanOrEqual(input.width * 0.12);
+      expect(z.x).toBeGreaterThanOrEqual(input.width * 0.28);
       expect(z.x + z.width).toBeLessThanOrEqual(input.width * 0.88);
     }
+    expect(composePlayableVisuals(input).blueprint.plan.propBudget.clusters).toBe(2);
+    expect(composePlayableVisuals(input).blueprint.plan.propBudget.propsPerCluster).toBe(2);
+    expect(zones.length).toBe(2);
   });
 
   it('invokes dedicated boss arena composition', () => {

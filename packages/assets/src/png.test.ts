@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { encodePng, decodePngRgba, generateProceduralSprite, generateWalkCycleSheet, generateRunCycleSheet, generateAttackSheet, generateHurtFlashSheet, generateVfxTexture, knockoutVfxBackground, generatePoseStill, POSE_TRANSFORMS, pickEnemyArchetype, computeFrameQualityMetrics, generateProgressionSheet, generateTilesetSource, partitionTilesetFeatures, TILESET_SUPPORTED_FEATURES } from '../src/png.js';
+import { encodePng, decodePngRgba, generateProceduralSprite, generateWalkCycleSheet, generateRunCycleSheet, generateAttackSheet, generateHurtFlashSheet, generateVfxTexture, knockoutVfxBackground, generatePoseStill, POSE_TRANSFORMS, pickEnemyArchetype, computeFrameQualityMetrics, generateProgressionSheet, generateTilesetSource, partitionTilesetFeatures, TILESET_SUPPORTED_FEATURES, compileBossCombatSheets } from '../src/png.js';
 import { PixelArtProcessor } from '../src/pixel-art-processor.js';
 import { runDeterministicAssetChecks } from '../src/vlm-critic.js';
 
@@ -586,6 +586,24 @@ describe('generateWalkCycleSheet identity', () => {
     }
     expect(hashes.size).toBeGreaterThan(1);
   });
+
+  it('moves left and right legs on opposite phases instead of bobbing the whole body', () => {
+    const spec = {
+      id: 'player',
+      width: 32,
+      height: 32,
+      fill: [90, 140, 220, 255] as [number, number, number, number],
+      shape: 'humanoid' as const,
+    };
+    const still = generateProceduralSprite(spec);
+    const sheet = decodePngRgba(generateWalkCycleSheet(spec, 4, still));
+    const metrics = computeFrameQualityMetrics(sheet.rgba, 32, 32, 4);
+    expect(metrics.uniqueFrameRatio).toBeGreaterThanOrEqual(0.75);
+    expect(metrics.meanSilhouetteDelta).toBeGreaterThan(0);
+    const walk = generateWalkCycleSheet(spec, 4, still);
+    const run = generateRunCycleSheet(spec, 4, still);
+    expect(walk.equals(run)).toBe(false);
+  });
 });
 
 describe('generateRunCycleSheet', () => {
@@ -982,5 +1000,26 @@ describe('generateProceduralSprite portal', () => {
       }
     }
     expect(differingPixels).toBeGreaterThan(20);
+  });
+});
+
+describe('boss combat sheets', () => {
+  const spec = {
+    id: 'boss_final',
+    width: 32,
+    height: 32,
+    fill: [70, 80, 95, 255] as [number, number, number, number],
+    shape: 'boss' as const,
+  };
+
+  it('compileBossCombatSheets produces distinct idle/telegraph/attack clips', () => {
+    const still = generateProceduralSprite(spec);
+    const sheets = compileBossCombatSheets(spec, still);
+    expect(sheets.idle.equals(sheets.telegraph)).toBe(false);
+    expect(sheets.attack.equals(sheets.idle)).toBe(false);
+    expect(sheets.attack_projectile.equals(sheets.attack_burst)).toBe(false);
+    const idle = decodePngRgba(sheets.idle);
+    const metrics = computeFrameQualityMetrics(idle.rgba, 32, 32, 6);
+    expect(metrics.uniqueFrameRatio).toBeGreaterThan(0.3);
   });
 });

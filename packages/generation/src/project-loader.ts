@@ -105,8 +105,12 @@ function loadProjectMemorySummary(projectPath: string): ProjectMemorySummary | u
 }
 
 export function loadProjectContext(projectPath: string): LoadedProject {
-  if (!existsSync(join(projectPath, 'project.godot'))) {
-    throw new Error('Not a Godot project');
+  const isGeneratedProject =
+    existsSync(join(projectPath, 'project.godot')) ||
+    existsSync(join(projectPath, 'engine.json')) ||
+    existsSync(join(projectPath, 'game_dna.json'));
+  if (!isGeneratedProject) {
+    throw new Error('Not a MetroForge generated project');
   }
 
   const gameDna = GameDNASchema.parse(readJson(join(projectPath, 'game_dna.json')));

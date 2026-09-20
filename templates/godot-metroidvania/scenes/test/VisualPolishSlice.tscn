@@ -169,12 +169,12 @@ show_percentage = false
 
 [node name="AbilityLabel" type="Label" parent="GameHUD/HUD/MarginContainer/VBox"]
 layout_mode = 2
-text = "dash"
+text = ""
 
 [node name="CurrencyLabel" type="Label" parent="GameHUD/HUD/MarginContainer/VBox"]
 layout_mode = 2
-text = "scrap 12"
+text = ""
 
 [node name="CollectibleLabel" type="Label" parent="GameHUD/HUD/MarginContainer/VBox"]
 layout_mode = 2
-text = "cores 1"
+text = ""

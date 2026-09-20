@@ -19,6 +19,7 @@ extends CharacterBody2D
 
 
 var facing: int = 1
+var _loco_facing: int = 1
 
 var _attack_cooldown: float = 0.0
 var _was_on_floor: bool = true
@@ -31,6 +32,13 @@ var _air_phase: StringName = &""
 ## _combo_window_timer is still open advances the combo instead of restarting attack_1.
 var _combo_step: int = 0
 var _combo_window_timer: float = 0.0
+## Last grounded position inside the current room. Used to recover from missing
+## containment (jump/dash through a visual wall) and from pit falls with no down exit.
+var _last_safe: Vector2 = Vector2.ZERO
+var _contain_width: float = 0.0
+var _contain_height: float = 0.0
+var _contain_has_down: bool = false
+var _contain_armed: bool = false
 
 
 
@@ -97,11 +105,9 @@ func _physics_process(delta: float) -> void:
 
 
 	if ability_controller.movement_locked():
-
 		if ability_controller.process_abilities(delta):
-
 			move_and_slide()
-
+			_update_room_containment()
 			return
 
 
@@ -125,7 +131,7 @@ func _physics_process(delta: float) -> void:
 
 		if _land_vfx_armed and not _was_on_floor:
 
-			_land_timer = 0.18
+			_land_timer = 0.22
 			if has_node("/root/VFXManager"):
 				VFXManager.play("landing_dust", global_position + Vector2(0, 8), 0.55)
 
@@ -203,7 +209,7 @@ func _physics_process(delta: float) -> void:
 
 
 	move_and_slide()
-
+	_update_room_containment()
 
 
 func _play_clip(anim: StringName, restart: bool = false) -> void:
@@ -211,6 +217,9 @@ func _play_clip(anim: StringName, restart: bool = false) -> void:
 		return
 	if not sprite.sprite_frames.has_animation(anim):
 		return
+	var loco := anim == &"walk" or anim == &"run"
+	if not loco:
+		sprite.speed_scale = 1.0
 	if not restart and sprite.animation == anim:
 		if sprite.is_playing():
 			return
@@ -230,6 +239,7 @@ func _update_locomotion_animation(input_dir: float, is_running: bool = false) ->
 		and (sprite.animation == "attack" or sprite.animation == "attack_2" or sprite.animation == "attack_3" or sprite.animation == "hurt" or sprite.animation == "death") \
 		and sprite.is_playing()
 	if animation_locked:
+		sprite.speed_scale = 1.0
 		return
 	if not sprite.sprite_frames:
 		return
@@ -280,15 +290,25 @@ func _update_locomotion_animation(input_dir: float, is_running: bool = false) ->
 
 	_air_phase = &""
 	if input_dir != 0:
+		var reversed := facing != _loco_facing
+		_loco_facing = facing
 		if is_running and sprite.sprite_frames.has_animation("run"):
-			_play_clip(&"run")
+			_play_clip(&"run", reversed)
 		elif not is_running and sprite.sprite_frames.has_animation("walk"):
-			_play_clip(&"walk")
+			_play_clip(&"walk", reversed)
 		elif sprite.sprite_frames.has_animation("run"):
-			_play_clip(&"run")
+			_play_clip(&"run", reversed)
 		elif sprite.sprite_frames.has_animation("walk"):
-			_play_clip(&"walk")
+			_play_clip(&"walk", reversed)
+		var expected := ability_controller.config.run_speed if is_running else ability_controller.config.walk_speed
+		if sprite.animation == "run" or sprite.animation == "walk":
+			# Deadband 32–48 avoids flipping 1.0 ↔ scaled every frame at the threshold.
+			if abs(velocity.x) < 32.0:
+				sprite.speed_scale = 1.0
+			elif abs(velocity.x) >= 48.0:
+				sprite.speed_scale = clampf(abs(velocity.x) / maxf(expected, 1.0), 0.72, 1.25)
 	else:
+		sprite.speed_scale = 1.0
 		_play_clip(&"idle")
 
 
@@ -334,7 +354,7 @@ func _perform_attack() -> void:
 	attack_timer.start(0.15)
 
 	if sprite.sprite_frames and sprite.sprite_frames.has_animation(anim_name):
-
+		sprite.speed_scale = 1.0
 		sprite.play(anim_name)
 
 
@@ -354,7 +374,7 @@ func _on_hit_received(damage: float, knockback: Vector2) -> void:
 	health.invulnerable = true
 
 	if sprite.sprite_frames and sprite.sprite_frames.has_animation("hurt"):
-
+		sprite.speed_scale = 1.0
 		sprite.play("hurt")
 
 	_shake_camera()
@@ -449,5 +469,30 @@ func exit_water() -> void:
 func _update_phase_collision_mask() -> void:
 
 	set_collision_mask_value(7, not ability_controller.is_phase_dashing)
+
+
+func set_room_containment(width: float, height: float, has_down_exit: bool) -> void:
+	_contain_width = width
+	_contain_height = height
+	_contain_has_down = has_down_exit
+	_contain_armed = width > 0.0 and height > 0.0
+	_last_safe = global_position
+
+
+func _update_room_containment() -> void:
+	if not _contain_armed:
+		return
+	var inside_x := position.x >= 8.0 and position.x <= _contain_width - 8.0
+	var inside_y := position.y >= 0.0 and position.y <= _contain_height
+	if is_on_floor() and inside_x and inside_y:
+		_last_safe = global_position
+		return
+	var fall_limit := _contain_height + (80.0 if _contain_has_down else 48.0)
+	var escaped := position.y > fall_limit or position.y < -24.0 \
+		or position.x < -20.0 or position.x > _contain_width + 20.0
+	if not escaped:
+		return
+	global_position = _last_safe
+	velocity = Vector2.ZERO
 
 

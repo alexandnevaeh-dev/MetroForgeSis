@@ -79,7 +79,51 @@ const BIOME_MOTIF_LIBRARY: BiomeMotifPack[] = [
   },
 ];
 
+/** Collapse sequence for the ruined conduit foundry — not color-swaps of one rivet kit
+ *  and not a pastoral grove. Each biome is a different machine after the pour failed. */
+const FOUNDRY_COLLAPSE_SEQUENCE: BiomeMotifPack[] = [
+  {
+    id: 'pouring_bay',
+    displayName: 'Ashen Pouring Bay',
+    architecture: ['frozen ladle cranes', 'ingot mold trains', 'cracked pour basins', 'overhead I-beams'],
+    terrain: ['slag brick', 'heat-warped iron plate', 'glass-metal spill'],
+    organic: ['cinder growth', 'soot veils'],
+    atmosphere: 'furnace haze, mid-pour freeze',
+    foreground: ['hanging ladles', 'mold clamps', 'warning glyphs'],
+    midground: ['crane travellers', 'crucible stacks'],
+    background: ['pouring hall silhouettes', 'ember glow stacks'],
+    props: ['ladle', 'crucible', 'ingot_mold', 'worklamp'],
+  },
+  {
+    id: 'quench_tunnels',
+    displayName: 'Flooded Quench Tunnels',
+    architecture: ['submerged quench tanks', 'burst coolant mains', 'drowned catwalks', 'glass-slag sluices'],
+    terrain: ['wet iron grate', 'coolant-stained brick', 'silted slag'],
+    organic: ['mineral crust', 'heat-bleached weed'],
+    atmosphere: 'cold steam over dead quench water',
+    foreground: ['pipe clusters', 'hanging chains', 'tank rims'],
+    midground: ['flooded galleries', 'broken sluice gates'],
+    background: ['tunnel mouths', 'coolant glow'],
+    props: ['quench_tank', 'conduit_pipe', 'debris', 'worklamp'],
+  },
+  {
+    id: 'cooling_yards',
+    displayName: 'Overgrown Cooling Yards',
+    architecture: ['collapsed cooling racks', 'slag-glass chimneys', 'root-split molds', 'split conduit towers'],
+    terrain: ['cooled slag crust', 'mossed grate', 'broken conduit'],
+    organic: ['heat-wilted slag-glass fans', 'cinder vines'],
+    atmosphere: 'open-yard dusk through cracked sheds',
+    foreground: ['cooling fins', 'snapped clamps', 'cinder vines'],
+    midground: ['rack silhouettes', 'chimney masses'],
+    background: ['yard sheds', 'distant stacks'],
+    props: ['cooling_rack', 'slag_chunk', 'broken_mold', 'lantern'],
+  },
+];
+
 function pickMotif(template: VisualStyleTemplate, biomeIndex: number, rng: SeededRNG): BiomeMotifPack {
+  if (template.id === 'mechanical-forge') {
+    return FOUNDRY_COLLAPSE_SEQUENCE[biomeIndex % FOUNDRY_COLLAPSE_SEQUENCE.length]!;
+  }
   const keyed = BIOME_MOTIF_LIBRARY.filter((pack) =>
     template.keywords.some((k) => pack.id.includes(k) || pack.displayName.toLowerCase().includes(k)),
   );

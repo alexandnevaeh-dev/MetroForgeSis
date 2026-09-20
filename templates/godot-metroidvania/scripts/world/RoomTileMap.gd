@@ -24,6 +24,7 @@ func _ready() -> void:
 	z_index = 1
 	z_as_relative = false
 	y_sort_enabled = false
+	call_deferred("_ensure_shell_colliders")
 
 func _build_tilemap() -> void:
 	var source_path := "res://assets/tilesets/%s/source.png" % biome_id
@@ -192,10 +193,24 @@ func _paint_rear_wall() -> void:
 	var cols := int(room_width / float(tile_size))
 	var floor_row := int((room_height - tile_size * 2) / float(tile_size))
 	var wall := Vector2i(1, 0)
+	if biome_id.ends_with("1"):
+		wall = Vector2i(1, 3)
+	elif biome_id.ends_with("2"):
+		wall = Vector2i(1, 4)
 	var ceiling := Vector2i(2, 0)
 	var crop_rows := 1
 	var rng := _arch_rng()
 	var variant := rng.randi() % 4
+	if biome_id.ends_with("1"):
+		_paint_quench_gallery(rear, cols, floor_row, crop_rows, wall, ceiling)
+		call_deferred("_spawn_quench")
+		_paint_biome_material_band(rear, cols, floor_row, wall)
+		return
+	if biome_id.ends_with("2"):
+		_paint_cooling_yard(rear, cols, floor_row, crop_rows, wall, ceiling)
+		call_deferred("_spawn_cooling_yard")
+		_paint_biome_material_band(rear, cols, floor_row, wall)
+		return
 	# Archetype chooses the silhouette family so traversal/combat/boss/NPC cannot
 	# collapse to the same arcade. Hash variant only flavors leftover connectors.
 	# Distinct architectural identity per gameplay role so rooms do not collapse to one silhouette
@@ -203,24 +218,30 @@ func _paint_rear_wall() -> void:
 	# warm soot/gunmetal palette and all collision/traversal geometry are untouched.
 	match room_archetype:
 		"tutorial":
-			_paint_night_apse(rear, cols, floor_row, crop_rows, wall, ceiling)
 			_paint_tutorial_gantry(rear, cols, floor_row, crop_rows)
+			call_deferred("_spawn_pouring_bay")
 		"traversal":
 			# Chain shaft: tall pier rhythm reads as a vertical climb shaft.
 			_paint_colonnade(rear, cols, floor_row, crop_rows, wall, ceiling)
 		"challenge":
-			# Maintenance wall: solid rear with a high slit — a hazard/climb gauntlet.
+			# Maintenance gallery: dado + piers + slit windows, not a solid wallpaper.
 			_paint_gallery_wall(rear, cols, floor_row, crop_rows, wall, ceiling)
 		"combat", "arena", "miniboss":
-			# Furnace hall: furnace mouth + hood behind the fight.
-			_paint_furnace_hearth(rear, cols, floor_row, crop_rows, wall, ceiling)
+			# Furnace hall in foundry biomes. Biome 2's riveted masonry as a hood
+			# read as full-width brown bands; use a cavern with openings instead.
+			if biome_id.ends_with("2"):
+				_paint_moss_cavern(rear, cols, floor_row, crop_rows, wall, ceiling)
+			else:
+				_paint_furnace_hearth(rear, cols, floor_row, crop_rows, wall, ceiling)
 		"boss":
 			_paint_ruin_mass(rear, cols, floor_row, crop_rows, wall, ceiling, rng)
 		"npc", "shop":
 			_paint_night_apse(rear, cols, floor_row, crop_rows, wall, ceiling)
 		"save":
-			# Checkpoint station: a quiet solid rear framing the save shrine.
-			_paint_gallery_wall(rear, cols, floor_row, crop_rows, wall, ceiling)
+			if biome_id.ends_with("2"):
+				_paint_moss_cavern(rear, cols, floor_row, crop_rows, wall, ceiling)
+			else:
+				_paint_gallery_wall(rear, cols, floor_row, crop_rows, wall, ceiling)
 		"ability_shrine":
 			_paint_furnace_hearth(rear, cols, floor_row, crop_rows, wall, ceiling)
 		"ability_gate":
@@ -239,6 +260,28 @@ func _paint_rear_wall() -> void:
 					_paint_ruin_mass(rear, cols, floor_row, crop_rows, wall, ceiling, rng)
 				_:
 					_paint_ruin_mass(rear, cols, floor_row, crop_rows, wall, ceiling, rng)
+	_paint_biome_material_band(rear, cols, floor_row, wall)
+
+func _paint_biome_material_band(rear: TileMapLayer, cols: int, floor_row: int, wall: Vector2i) -> void:
+	## Dado of a second material so the rear wall is not one flat tile. No collision.
+	if room_archetype == "tutorial":
+		return
+	if biome_id.ends_with("2"):
+		# Slag crust / vine at the floor line only — not a green masonry wallpaper.
+		var moss := Vector2i(0, 4)
+		for x in range(2, cols - 2):
+			if x % 5 == 2:
+				_rear_cell(rear, x, floor_row - 1, moss)
+		return
+	var dado := wall
+	if biome_id.ends_with("1"):
+		dado = Vector2i(0, 3)
+	else:
+		dado = Vector2i(0, 3)
+	for x in range(2, cols - 2):
+		_rear_cell(rear, x, floor_row - 1, dado)
+		if x % 4 == 0:
+			_rear_cell(rear, x, floor_row - 2, wall)
 
 func _ensure_rear_layer() -> TileMapLayer:
 	var parent := get_parent()
@@ -295,20 +338,39 @@ func _paint_night_apse(
 
 
 func _paint_tutorial_gantry(rear: TileMapLayer, cols: int, floor_row: int, crop_rows: int) -> void:
-	## Spawn hall: one foundry gantry in the empty upper air — a beam with hangers that
-	## meet the existing night-apse piers. Not a second wallpaper of rectangles.
+	## Opening room is the pouring bay. Place the ladle machine in the *camera* band
+	## (just above the player), not up in the cropped ceiling void.
 	var beam := Vector2i(6, 2)
 	var duct := Vector2i(7, 2)
+	var hazard := Vector2i(3, 2)
+	var cap := Vector2i(2, 0)
 	var lintel := maxi(1, crop_rows)
-	var gy := maxi(lintel + 2, floor_row - 8)
-	var x0 := int(cols * 0.22)
+	var gy := maxi(lintel + 3, floor_row - 5)
+	var x0 := int(cols * 0.16)
 	var x1 := int(cols * 0.78)
 	for x in range(x0, x1):
 		_rear_cell(rear, x, gy, beam)
-	# Hang from the beam down onto the pier caps (pier_h is 3 in _paint_night_apse).
+	var ladle_x := int(cols * 0.46)
+	for dx in range(-2, 3):
+		_rear_cell(rear, ladle_x + dx, gy, cap)
+		_rear_cell(rear, ladle_x + dx, gy + 1, duct)
+	_rear_cell(rear, ladle_x, gy + 2, duct)
+	_rear_cell(rear, ladle_x, gy + 3, hazard)
+	_rear_cell(rear, ladle_x - 1, gy + 3, hazard)
+	_rear_cell(rear, ladle_x + 1, gy + 3, hazard)
 	for hang in [int(cols * 0.34), int(cols * 0.66)]:
-		for y in range(gy, floor_row - 3):
+		for y in range(gy, mini(floor_row - 1, gy + 4)):
 			_rear_cell(rear, hang, y, duct)
+	var crucible := int(cols * 0.20)
+	for y in range(maxi(gy, floor_row - 5), floor_row - 1):
+		_rear_cell(rear, crucible, y, cap)
+		_rear_cell(rear, crucible + 3, y, cap)
+	_rear_cell(rear, crucible + 1, maxi(gy, floor_row - 5), beam)
+	_rear_cell(rear, crucible + 2, maxi(gy, floor_row - 5), beam)
+	for x in range(int(cols * 0.28), int(cols * 0.70)):
+		if (x % 4) != 1:
+			_rear_cell(rear, x, floor_row - 1, hazard)
+
 
 
 func _paint_furnace_hearth(
@@ -411,6 +473,128 @@ func _paint_furnace_hearth(
 		_rear_cell(rear, crown_x0 + crown_w, crown_y, tr)
 
 
+func _paint_quench_gallery(
+	rear: TileMapLayer,
+	cols: int,
+	floor_row: int,
+	crop_rows: int,
+	wall: Vector2i,
+	ceiling: Vector2i,
+) -> void:
+	## Flooded quench tunnels: tanks, coolant mains, valve risers. Playable air stays empty.
+	rear.modulate = Color(0.82, 0.92, 0.94, 1)
+	var lintel := maxi(1, crop_rows)
+	var beam := Vector2i(6, 2)
+	var duct := Vector2i(7, 2)
+	var hazard := Vector2i(3, 2)
+	var glass_wall := Vector2i(1, 3)
+	# Coolant main at mid height — leave the walk band open.
+	var main_y := maxi(lintel + 3, floor_row - 7)
+	var x0 := 2
+	var x1 := cols - 3
+	if room_archetype == "combat" or room_archetype == "arena":
+		x0 = 3
+		x1 = cols - 4
+	for x in range(x0, x1):
+		_rear_cell(rear, x, main_y, beam)
+	# Side tanks (not a wallpaper). Combat keeps a wider center gap.
+	var tank_w := 3 if room_archetype == "traversal" else 2
+	for tx in [2, cols - 2 - tank_w]:
+		for x in range(tx, mini(tx + tank_w, cols - 2)):
+			for y in range(maxi(lintel + 2, floor_row - 8), floor_row):
+				_rear_cell(rear, x, y, glass_wall)
+			_rear_cell(rear, x, maxi(lintel + 1, floor_row - 9), ceiling)
+	# Valve risers
+	var step := 6 if room_archetype == "traversal" else 8
+	var vx := 5
+	while vx < cols - 6:
+		for y in range(main_y, mini(floor_row - 2, main_y + 4)):
+			_rear_cell(rear, vx, y, duct)
+		_rear_cell(rear, vx, mini(floor_row - 2, main_y + 4), hazard)
+		vx += step
+	for x in range(3, cols - 3):
+		if x % 4 == 1:
+			_rear_cell(rear, x, floor_row - 1, Vector2i(0, 3))
+
+
+func _paint_cooling_yard(
+	rear: TileMapLayer,
+	cols: int,
+	floor_row: int,
+	crop_rows: int,
+	wall: Vector2i,
+	ceiling: Vector2i,
+) -> void:
+	## Overgrown cooling yards: abandoned racks, not masonry brick stacks.
+	rear.modulate = Color(1, 1, 1, 1)
+	var lintel := maxi(1, crop_rows)
+	var moss := Vector2i(1, 4)
+	var beam := Vector2i(6, 2)
+	var duct := Vector2i(7, 2)
+	var gap := 7 if room_archetype == "combat" or room_archetype == "arena" else 5
+	var x := 3
+	var n := 0
+	while x < cols - 4:
+		var hgt := 5 + (n % 4)
+		if room_archetype == "combat" and n % 2 == 1:
+			hgt = 3
+		var top := maxi(lintel + 2, floor_row - hgt)
+		var right := mini(x + 2, cols - 3)
+		for y in range(top, floor_row):
+			_rear_cell(rear, x, y, duct)
+			if right != x:
+				_rear_cell(rear, right, y, duct)
+		var shelf := top + 1
+		while shelf < floor_row - 1:
+			if x + 1 < cols - 3:
+				_rear_cell(rear, x + 1, shelf, beam)
+			shelf += 2
+		if n % 2 == 0:
+			_rear_cell(rear, mini(x + 3, cols - 3), floor_row - 2, moss)
+		x += gap
+		n += 1
+	for hx in range(4, cols - 4, 6):
+		_rear_cell(rear, hx, floor_row - 1, moss)
+
+
+func _paint_moss_cavern(
+	rear: TileMapLayer,
+	cols: int,
+	floor_row: int,
+	crop_rows: int,
+	wall: Vector2i,
+	ceiling: Vector2i,
+) -> void:
+	## Biome 2 rear wall: piers, arched openings, hanging moss. Playable air stays
+	## empty so fern parallax reads. No collision. Does not touch Ground cells.
+	rear.modulate = Color(0.72, 0.82, 0.70, 1)
+	var lintel := maxi(1, crop_rows)
+	var moss := Vector2i(1, 4)
+	var moss_cap := Vector2i(2, 4)
+	var pier_h := mini(6, maxi(3, floor_row - lintel - 4))
+	var x := 3
+	while x < cols - 4:
+		for px in range(x, mini(x + 2, cols - 3)):
+			for y in range(floor_row - pier_h, floor_row):
+				_rear_cell(rear, px, y, moss if y > floor_row - pier_h else wall)
+			_rear_cell(rear, px, floor_row - pier_h, moss_cap)
+		var arch_l := x + 3
+		var arch_r := mini(x + 6, cols - 4)
+		var arch_top := lintel + 2
+		var arch_bot := mini(floor_row - 3, arch_top + 4)
+		if arch_r > arch_l + 1:
+			for sx in range(arch_l, arch_r):
+				_rear_cell(rear, sx, arch_top, ceiling)
+				_rear_cell(rear, sx, arch_bot, moss)
+			for y in range(arch_top + 1, arch_bot):
+				_rear_cell(rear, arch_l, y, moss)
+				_rear_cell(rear, arch_r - 1, y, moss)
+		x += 8
+	for hx in range(4, cols - 4, 6):
+		_rear_cell(rear, hx, lintel + 1, Vector2i(7, 2))
+		_rear_cell(rear, hx, lintel + 2, moss)
+
+
 func _paint_gallery_wall(
 	rear: TileMapLayer,
 	cols: int,
@@ -419,25 +603,29 @@ func _paint_gallery_wall(
 	wall: Vector2i,
 	ceiling: Vector2i,
 ) -> void:
-	## Solid rear with a high slit row. Reads as a wall, not an arcade of piers.
+	## Maintenance gallery: dado, piers, and high slit windows. Playable air stays
+	## open so parallax reads. Not a solid wallpaper of wall cells.
 	rear.modulate = Color(0.76, 0.84, 0.90, 1)
 	var lintel := maxi(1, crop_rows)
-	for y in range(lintel, floor_row):
-		for x in range(1, cols - 1):
-			_rear_cell(rear, x, y, ceiling if y <= lintel + 1 else wall)
-	var slit_top := lintel + 2
-	var slit_bot := mini(lintel + 5, floor_row - 3)
-	if slit_bot <= slit_top:
-		return
-	var x := 3
-	while x < cols - 4:
-		for wx in range(x, mini(x + 2, cols - 2)):
-			for wy in range(slit_top, slit_bot + 1):
-				rear.erase_cell(Vector2i(wx, wy))
-		_rear_cell(rear, x - 1, slit_top, ceiling)
-		_rear_cell(rear, mini(x + 2, cols - 2), slit_top, ceiling)
-		_rear_cell(rear, x - 1, slit_top - 1, Vector2i(6, 0))
-		_rear_cell(rear, mini(x + 2, cols - 2), slit_top - 1, Vector2i(6, 0))
+	for x in range(1, cols - 1):
+		_rear_cell(rear, x, floor_row - 1, wall)
+		_rear_cell(rear, x, floor_row - 2, wall)
+		_rear_cell(rear, x, lintel, ceiling)
+	var pier_h := mini(8, maxi(4, floor_row - lintel - 3))
+	var x := 2
+	while x < cols - 3:
+		for px in range(x, mini(x + 2, cols - 2)):
+			for y in range(floor_row - pier_h, floor_row - 1):
+				_rear_cell(rear, px, y, wall)
+			_rear_cell(rear, px, floor_row - pier_h, ceiling)
+		var slit_l := x + 3
+		var slit_r := mini(x + 5, cols - 3)
+		var slit_top := lintel + 2
+		var slit_bot := mini(slit_top + 3, floor_row - pier_h + 1)
+		if slit_r > slit_l and slit_bot > slit_top:
+			for sx in range(slit_l, slit_r):
+				_rear_cell(rear, sx, slit_top, ceiling)
+				_rear_cell(rear, sx, slit_bot, wall)
 		x += 7
 
 
@@ -555,6 +743,56 @@ func _paint_window_frame(
 		_rear_cell(layer, x1 - 1, header + 1, ceiling)
 
 
+
+func _spawn_quench() -> void:
+	var parent := get_parent()
+	if parent == null or parent.get_node_or_null("QuenchDecor") != null:
+		return
+	var deco := Node2D.new()
+	deco.name = "QuenchDecor"
+	deco.z_index = 4
+	deco.z_as_relative = false
+	deco.set_script(load("res://scripts/world/QuenchDecor.gd"))
+	deco.set("room_width", room_width)
+	deco.set("room_height", room_height)
+	deco.set("tile_size", tile_size)
+	deco.set("room_archetype", room_archetype)
+	parent.add_child(deco)
+
+
+func _spawn_cooling_yard() -> void:
+	var parent := get_parent()
+	if parent == null or parent.get_node_or_null("CoolingYardDecor") != null:
+		return
+	var deco := Node2D.new()
+	deco.name = "CoolingYardDecor"
+	deco.z_index = 4
+	deco.z_as_relative = false
+	deco.set_script(load("res://scripts/world/CoolingYardDecor.gd"))
+	deco.set("room_width", room_width)
+	deco.set("room_height", room_height)
+	deco.set("tile_size", tile_size)
+	deco.set("room_archetype", room_archetype)
+	parent.add_child(deco)
+
+
+func _spawn_pouring_bay() -> void:
+	if room_archetype != "tutorial":
+		return
+	var parent := get_parent()
+	if parent == null or parent.get_node_or_null("PouringBay") != null:
+		return
+	var deco := Node2D.new()
+	deco.name = "PouringBay"
+	deco.z_index = 4
+	deco.z_as_relative = false
+	deco.set_script(load("res://scripts/world/PouringBayDecor.gd"))
+	deco.set("room_width", room_width)
+	deco.set("room_height", room_height)
+	deco.set("tile_size", tile_size)
+	parent.add_child(deco)
+
+
 func _rear_cell(layer: TileMapLayer, x: int, y: int, atlas: Vector2i) -> void:
 	if get_cell_source_id(Vector2i(x, y)) != -1:
 		return
@@ -582,3 +820,79 @@ func _rear_variant(x: int, y: int, atlas: Vector2i) -> Vector2i:
 			return Vector2i(4 + atlas.x, 4)   # rare
 		_:
 			return atlas                      # 0-5: canonical (plurality)
+
+
+func _ensure_shell_colliders() -> void:
+	## Assembler-authored Shell* bodies win when present. Fallback builds collision from the
+	## painted Ground cells so older rooms and the visual-polish slice still contain jump/dash.
+	var parent := get_parent()
+	if parent == null:
+		return
+	for name in ["ShellCeiling", "ShellCeilingLeft", "ShellLeft", "ShellLeftUpper"]:
+		if parent.get_node_or_null(name) != null:
+			return
+	_build_painted_shell(parent)
+
+
+func _is_shell_atlas(coords: Vector2i) -> bool:
+	if coords.x == 1 and coords.y in [0, 3, 4]:
+		return true
+	if coords.x == 2 and coords.y in [0, 3, 4]:
+		return true
+	if coords.y == 1 and coords.x in [0, 1]:
+		return true
+	if coords.y == 0 and coords.x in [4, 5]:
+		return true
+	if coords.x == 5 and coords.y in [3, 4]:
+		return true
+	return false
+
+
+func _build_painted_shell(parent: Node) -> void:
+	var cols := int(room_width / float(tile_size))
+	var holder := StaticBody2D.new()
+	holder.name = "PaintedShell"
+	parent.add_child(holder)
+	var index := 0
+	# Left / right columns: merge consecutive shell cells into vertical rects.
+	for col in [0, cols - 1]:
+		var run_start := -1
+		for row in range(int(room_height / float(tile_size)) + 1):
+			var atlas := get_cell_atlas_coords(Vector2i(col, row))
+			var solid := get_cell_source_id(Vector2i(col, row)) != -1 and _is_shell_atlas(atlas)
+			if solid and run_start < 0:
+				run_start = row
+			elif (not solid) and run_start >= 0:
+				index = _add_shell_rect(holder, index, col * tile_size, run_start * tile_size, tile_size, (row - run_start) * tile_size)
+				run_start = -1
+		if run_start >= 0:
+			var end_row := int(room_height / float(tile_size)) + 1
+			index = _add_shell_rect(holder, index, col * tile_size, run_start * tile_size, tile_size, (end_row - run_start) * tile_size)
+	# Ceiling row, skipping the left/right columns already covered.
+	var ceil_start := -1
+	for col in range(cols):
+		var atlas := get_cell_atlas_coords(Vector2i(col, 0))
+		var solid := get_cell_source_id(Vector2i(col, 0)) != -1 and _is_shell_atlas(atlas)
+		if col == 0 or col == cols - 1:
+			solid = false
+		if solid and ceil_start < 0:
+			ceil_start = col
+		elif (not solid) and ceil_start >= 0:
+			index = _add_shell_rect(holder, index, ceil_start * tile_size, 0, (col - ceil_start) * tile_size, tile_size)
+			ceil_start = -1
+	if ceil_start >= 0:
+		_add_shell_rect(holder, index, ceil_start * tile_size, 0, (cols - ceil_start) * tile_size, tile_size)
+
+
+func _add_shell_rect(holder: StaticBody2D, index: int, x: float, y: float, w: float, h: float) -> int:
+	if w < 1.0 or h < 1.0:
+		return index
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(w, h)
+	var col := CollisionShape2D.new()
+	col.name = "ShellSeg_%d" % index
+	col.shape = shape
+	col.position = Vector2(x + w * 0.5, y + h * 0.5)
+	holder.add_child(col)
+	return index + 1
+

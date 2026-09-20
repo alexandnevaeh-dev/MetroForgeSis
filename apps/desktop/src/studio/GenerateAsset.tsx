@@ -92,6 +92,12 @@ export function GenerateAssetScreen() {
 
   const handleGenerate = async (replaceId?: string) => {
     if (!selectedPath || !description.trim() || !window.metroforge?.generateAsset) return;
+    if (replaceId) {
+      const ok = window.confirm(
+        `Replace ${replaceId}? A version snapshot is kept so you can restore. Unrelated assets are not rewritten.`,
+      );
+      if (!ok) return;
+    }
     setGenerating(true);
     setVariantResults([]);
     const response = await window.metroforge.generateAsset({

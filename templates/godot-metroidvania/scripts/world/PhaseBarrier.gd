@@ -5,6 +5,7 @@ extends StaticBody2D
 ## See SavePoint.gd's identical comment — additive-only, zero-provider games never see this file.
 ## Does not touch the existing "Visual" node's default invisibility when no texture is present.
 const GENERATED_TEXTURE_PATH := "res://assets/generated/gate/interactive_ability_gate.png"
+const FOUNDRY_TEXTURE_PATH := "res://assets/generated/gate/foundry_phase_barrier.png"
 
 
 func _ready() -> void:
@@ -26,11 +27,13 @@ func _refresh_phase_state() -> void:
 
 
 func _apply_generated_texture_if_present() -> void:
-	if not ResourceLoader.exists(GENERATED_TEXTURE_PATH):
+	var path := FOUNDRY_TEXTURE_PATH if ResourceLoader.exists(FOUNDRY_TEXTURE_PATH) else GENERATED_TEXTURE_PATH
+	if not ResourceLoader.exists(path):
 		return
 	var generated := $GeneratedSprite as Sprite2D
 	if generated == null:
 		return
-	generated.texture = load(GENERATED_TEXTURE_PATH)
+	generated.texture = load(path)
 	generated.visible = true
+	generated.texture_filter = TEXTURE_FILTER_NEAREST
 

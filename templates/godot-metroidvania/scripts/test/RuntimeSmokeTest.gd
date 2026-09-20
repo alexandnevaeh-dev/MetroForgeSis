@@ -5,6 +5,8 @@ extends Node
 ## code 0 (all checks passed) or 1 (at least one failed). Never left running — always
 ## calls get_tree().quit() itself so no external --quit-after is required.
 
+const CaptureGuard := preload("res://scripts/test/CaptureGuard.gd")
+
 var _results: Array[Dictionary] = []
 var _runtime_capture_manifest: Array[Dictionary] = []
 var _keep_endgame_overlays_for_next_capture := false
@@ -1078,12 +1080,30 @@ func _capture_named_screenshot(shot_id: String, hard: bool = false) -> bool:
 	await get_tree().process_frame
 	var headless := DisplayServer.get_name() == "headless"
 	if not headless:
-		await RenderingServer.frame_post_draw
+		if not await CaptureGuard.await_post_draw(self, 2.0):
+			print("CAPTURE_TIMEOUT: screenshot wait shot=%s" % shot_id)
+			if hard:
+				_check("gameplay_screenshot_captured", false)
+			else:
+				_check_soft("gameplay_screenshot_%s" % shot_id, false)
+			return false
 		await get_tree().process_frame
 		RenderingServer.force_draw(true)
-		await RenderingServer.frame_post_draw
+		if not await CaptureGuard.await_post_draw(self, 2.0):
+			print("CAPTURE_TIMEOUT: screenshot wait shot=%s" % shot_id)
+			if hard:
+				_check("gameplay_screenshot_captured", false)
+			else:
+				_check_soft("gameplay_screenshot_%s" % shot_id, false)
+			return false
 	else:
-		await get_tree().process_frame
+		if not await CaptureGuard.await_frames(self, 1, 2.0):
+			print("CAPTURE_TIMEOUT: screenshot wait shot=%s" % shot_id)
+			if hard:
+				_check_soft("gameplay_screenshot_captured", false)
+			else:
+				_check_soft("gameplay_screenshot_%s" % shot_id, false)
+			return false
 
 	var tex := get_viewport().get_texture()
 	if tex == null:
@@ -2148,6 +2168,35 @@ func _walk_player_toward_x(player: Node, target_x: float, max_frames: int = 240,
 	Input.action_release("move_right")
 	return reached
 
+## Enters a transition the way its own direction demands. RoomTransition now requires real motion
+## along the door's axis (see that script's _player_is_ascending/_player_is_descending), so a
+## horizontal walk alone only opens a left/right door: 'up' must be jumped into, 'down' must be
+## descended through. A single jump satisfies both — it rises through an up door, and falls back
+## down through a down door. Returns whether the room actually became `expected_room`.
+func _enter_transition(player: Node, transition: Node, expected_room: String) -> bool:
+	if player == null or not is_instance_valid(player) or not is_instance_valid(transition):
+		return false
+	var dir := String(transition.get("transition_direction"))
+	var door_pos: Vector2 = (transition as Node2D).global_position
+	_approach_from(player, door_pos.x, (player as Node2D).global_position.x)
+	await _walk_player_toward_x(player, door_pos.x, APPROACH_WALK_FRAMES, 12.0)
+	for attempt in range(3):
+		if GameManager.current_room_id == expected_room:
+			return true
+		if not is_instance_valid(player):
+			return GameManager.current_room_id == expected_room
+		if dir == "up" or dir == "down":
+			Input.action_press("jump")
+			await get_tree().physics_frame
+			Input.action_release("jump")
+		for i in range(40):
+			await get_tree().physics_frame
+			if GameManager.current_room_id == expected_room:
+				return true
+			if not is_instance_valid(player):
+				return GameManager.current_room_id == expected_room
+	return GameManager.current_room_id == expected_room
+
 func _check_ability_gated_transition(player: Node, world: Node) -> void:
 	if player == null or world == null:
 		_check("ability_gate_blocks_without_ability", false)
@@ -2196,7 +2245,6 @@ func _check_ability_gated_transition(player: Node, world: Node) -> void:
 	# Captured before the walk-through below, which — if it succeeds — triggers a real room
 	# transition that frees `gate` itself along with its room.
 	var expected_target_room: String = gate.target_room_id
-	var gate_x: float = (gate as Node2D).global_position.x
 
 	# Slice capture / shrine pickup / action shots may already have unlocked this ability. The
 	# gate check must start from a known locked state, or the first walk-in actually transitions.
@@ -2219,16 +2267,17 @@ func _check_ability_gated_transition(player: Node, world: Node) -> void:
 		pickup.monitoring = false
 
 	var room_before: String = GameManager.current_room_id
-	var start_x: float = (current_player as Node2D).global_position.x
 	# Walk *past* the door's x, not just up to it — RoomTransition is a non-solid Area2D
 	# (body_entered-only, see templates/.../world/RoomTransition.gd); with no ability, entering
 	# it is a no-op, so the player must be able to keep walking through the space where the door
 	# sits and prove the room never actually changed, not just that they stopped short of it.
-	var overshoot_x: float = gate_x + signf(gate_x - start_x) * 64.0
-	_approach_from(current_player, gate_x, start_x)
-	await _walk_player_toward_x(current_player, overshoot_x, APPROACH_WALK_FRAMES)
+	# Attempt a genuine, direction-correct entry, not just a walk past: with RoomTransition now
+	# gating 'up'/'down' doors on real motion, a horizontal walk past a vertical gate would fail to
+	# transition for the wrong reason and make this assertion vacuous. This way the only thing
+	# standing between the player and the next room is the missing ability.
+	var entered_while_locked: bool = await _enter_transition(current_player, gate, expected_target_room)
 	var room_after_blocked: String = GameManager.current_room_id
-	_check("ability_gate_blocks_without_ability", room_after_blocked == room_before)
+	_check("ability_gate_blocks_without_ability", not entered_while_locked and room_after_blocked == room_before)
 
 	# Real pickup if this exact room happens to have one for this exact ability (matches this
 	# codebase's actual generation pattern — see room-assembler.ts's AbilityPickup placement,
@@ -2251,17 +2300,9 @@ func _check_ability_gated_transition(player: Node, world: Node) -> void:
 	if current_player == null or not is_instance_valid(gate):
 		_check("ability_gate_opens_after_unlock", false)
 		return
-	# Walk back toward the door from wherever the pickup/overshoot left the player, and through it.
-	_approach_from(current_player, gate_x, (current_player as Node2D).global_position.x)
-	await _walk_player_toward_x(current_player, overshoot_x, APPROACH_WALK_FRAMES)
-	# WorldManager.transition_to_room() (fired by RoomTransition's own body_entered handler, not
-	# by this test) starts with an await get_tree().physics_frame() before mutating state — wait
-	# on the same signal type it actually awaits internally, not an idle frame that only usually
-	# happens to land after it.
-	await get_tree().physics_frame
-	await get_tree().physics_frame
-	var room_after_unlocked: String = GameManager.current_room_id
-	_check("ability_gate_opens_after_unlock", room_after_unlocked == expected_target_room)
+	# Same entry, now with the ability in hand — the door must actually open this time.
+	var entered_after_unlock: bool = await _enter_transition(current_player, gate, expected_target_room)
+	_check("ability_gate_opens_after_unlock", entered_after_unlock)
 
 ## Cheap text scan (no instantiation), matching _find_room_with_gate's own approach — the room
 ## containing a real WeakFloor node (room-assembler.ts names it "WeakFloor_<target_room_id>").
@@ -2487,34 +2528,30 @@ func _find_room_with_optional_transition(accepted_directions: Array[String]) -> 
 			if file:
 				var text := file.get_as_text()
 				file.close()
-				var marker := "is_optional = true"
-				var search_from := 0
-				while true:
-					var idx: int = text.find(marker, search_from)
-					if idx == -1:
-						break
-					search_from = idx + marker.length()
-					# The node header ("[node name=\"Transition_<dir>_<target>\" ...") precedes
-					# `is_optional = true` within the same node block — walk backward to it.
-					var header_idx: int = text.rfind("[node name=\"Transition_", idx)
-					if header_idx == -1:
-						continue
-					var name_start: int = text.find("\"", header_idx) + 1
-					var name_end: int = text.find("\"", name_start)
-					var node_name: String = text.substr(name_start, name_end - name_start)
-					var parts := node_name.split("_")
-					if parts.size() < 3:
-						continue
-					if not accepted_directions.has(parts[1]):
-						continue
-					var target := "_".join(parts.slice(2))
-					return {"room_id": file_name.trim_suffix(".tscn"), "target_room_id": target, "direction": parts[1]}
+				# Walk the scene text forwards, remembering the most recent transition-node
+				# header, instead of searching backwards from each `is_optional = true` line.
+				# The backward search this replaced returned -1 for every room whose optional
+				# door was not its *first* transition — so rooms 009 and 035, the two with a
+				# genuinely horizontal shortcut door, were silently skipped and the scan fell
+				# through to an unreachable 'down' door instead.
+				var current_node := ""
+				for line in text.split("\n"):
+					var trimmed := line.strip_edges()
+					if trimmed.begins_with("[node name=\"Transition_"):
+						var name_start: int = trimmed.find("\"") + 1
+						var name_end: int = trimmed.find("\"", name_start)
+						current_node = trimmed.substr(name_start, name_end - name_start)
+					elif trimmed == "is_optional = true" and current_node != "":
+						var parts := current_node.split("_")
+						if parts.size() >= 3 and accepted_directions.has(parts[1]):
+							return {
+								"room_id": file_name.trim_suffix(".tscn"),
+								"target_room_id": "_".join(parts.slice(2)),
+								"direction": parts[1],
+							}
 		file_name = dir.get_next()
 	return {}
 
-## A real AbilityPickup instance in `root` granting `ability_id` — not just any pickup, and not a
-## teleport target, so the caller can walk the real player into its real collision area instead of
-## calling its handler directly.
 func _find_ability_pickup_for(root: Node, ability_id: String) -> Node:
 	for child in root.get_children():
 		if child.get("ability_id") == ability_id and child.has_method("_on_body_entered"):

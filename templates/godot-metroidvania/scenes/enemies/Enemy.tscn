@@ -19,6 +19,7 @@ z_index = 10
 script = ExtResource("1_enemy")
 
 [node name="Sprite" type="AnimatedSprite2D" parent="."]
+self_modulate = Color(1.14, 1.10, 1.06, 1)
 script = ExtResource("5_sprite")
 sheet_path = "assets/enemies/enemy_000_walk.png"
 frame_size = Vector2i(64, 64)

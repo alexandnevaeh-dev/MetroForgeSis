@@ -61,6 +61,7 @@ const PLAYER_TEMPLATE_IDLE_ALIASES = [
   'assets/characters/player_wall_jump.png',
   'assets/characters/player_swim.png',
   'assets/characters/player_attack_2.png',
+  'assets/characters/player_attack_3.png',
 ];
 
 const ENEMY_ALIASES: Array<[string, string]> = [

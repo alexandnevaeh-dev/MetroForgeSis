@@ -3,13 +3,27 @@ import { join } from 'node:path';
 import type { GameDNA, Room, WorldGraph } from '@metroforge/schemas';
 import type { GameContent } from '@metroforge/procedural';
 import { buildMovementJson, movementFeasibilityStats } from '@metroforge/shared';
-import { buildRoomTileCells, floorTopPx, type PlatformRect, type PitGap } from './tile-layout.js';
+import { buildRoomTileCells, buildRoomShellColliders, floorTopPx, type PlatformRect, type PitGap } from './tile-layout.js';
 import type { RoomBlueprint } from './composition/index.js';
 import {
   foundryBackdropCoverScale,
   projectUsesFoundryVisualKit,
   remapTileCellsForFoundry,
 } from './foundry-visual-pack.js';
+import {
+  defaultEntityPlacements,
+  findPlacement,
+  resolveEntityPlacements,
+  type EntityPlacement,
+} from './entity-placements.js';
+
+export type { EntityPlacement, EntityKind } from './entity-placements.js';
+export {
+  defaultEntityPlacements,
+  resolveEntityPlacements,
+  mergeEntityPlacementsForIds,
+  findPlacement,
+} from './entity-placements.js';
 
 export interface RoomConnection {
   direction: 'left' | 'right' | 'up' | 'down';
@@ -63,6 +77,61 @@ export interface RoomAssemblyOptions {
   blueprint?: RoomBlueprint;
   /** When set to foundry, rooms consume the Foundry V3 atlas/backdrop instead of VGF wallpaper. */
   visualKit?: 'foundry';
+  /**
+   * Authored courier/biome kits ship distinct far/mid/near plates. Foundry V3 pack rooms skip
+   * mid/near (one corridor plate). Authored foundry-themed assemble keeps the plates so runtime
+   * parallax is in the generated room, not a fixture patch.
+   */
+  authoredParallax?: boolean;
+  /**
+   * Studio-authored entity coordinates. Absent/empty → assembler defaults (legacy projects).
+   */
+  entityPlacements?: EntityPlacement[];
+}
+
+/** Floor props stay off the first stride from spawn (player ~100px, not just SPAWN_MARGIN 80px).
+ *  rooms dress calm interiors with a few props even when the plan's combat budget is 0; boss
+ *  arenas stay clear. */
+const SPAWN_EDGE_CLEARANCE = 240;
+
+export function resolveFloorPropPlacements(
+  options: Pick<RoomAssemblyOptions, 'width' | 'authoredParallax' | 'isBossRoom' | 'propSprites' | 'blueprint'>,
+): Array<{ rel: string; x: number; index: number }> {
+  const propSprites = options.propSprites ?? [];
+  if (propSprites.length === 0 || options.isBossRoom === true) return [];
+  const budget = options.blueprint?.plan?.propBudget;
+  const plannedClusters = budget?.clusters ?? 0;
+  const zones = options.blueprint?.plan?.decorationZones ?? [];
+  const authoredDress = options.authoredParallax === true;
+  const perCluster = Math.max(1, budget?.propsPerCluster ?? (authoredDress ? 2 : 1));
+  // Authored Foundry still dresses calm interiors, but as workstation clusters — not four isolates.
+  const clusters = authoredDress
+    ? Math.max(plannedClusters, zones.length > 0 ? Math.min(zones.length, 2) : 1)
+    : plannedClusters;
+  if (clusters <= 0) return [];
+  const width = options.width;
+  const placed: Array<{ rel: string; x: number; index: number }> = [];
+  let spriteIndex = 0;
+  for (let c = 0; c < clusters; c++) {
+    const zone = zones[c];
+    const n = Math.min(perCluster, propSprites.length - spriteIndex);
+    if (n <= 0) break;
+    const cx = zone
+      ? Math.round(zone.x + zone.width * 0.5)
+      : Math.round(SPAWN_EDGE_CLEARANCE + ((width - 2 * SPAWN_EDGE_CLEARANCE) * (c + 1)) / (clusters + 1));
+    for (let p = 0; p < n; p++) {
+      let x = Math.round(cx + (p - (n - 1) / 2) * 28);
+      if (x < SPAWN_EDGE_CLEARANCE) x = SPAWN_EDGE_CLEARANCE;
+      else if (x > width - SPAWN_EDGE_CLEARANCE) x = width - SPAWN_EDGE_CLEARANCE;
+      if (x < SPAWN_EDGE_CLEARANCE || x > width - SPAWN_EDGE_CLEARANCE) {
+        spriteIndex += 1;
+        continue;
+      }
+      placed.push({ rel: propSprites[spriteIndex]!, x, index: spriteIndex });
+      spriteIndex += 1;
+    }
+  }
+  return placed;
 }
 
 export interface TileCell {
@@ -94,12 +163,15 @@ export interface PublishedRoomRecord {
   visualKit?: 'foundry';
   tileCells?: TileCell[];
   weakFloors?: { x: number; width: number; targetRoomId: string }[];
+  waterZones?: { x: number; y: number; width: number; height: number; targetRoomId: string }[];
   /** Real physical obstacles for phase-gated connections (see derivePhaseBarriers) — recorded the
    *  same way weakFloors already is, for the same export-fidelity reason. */
   phaseBarriers?: { x: number; targetRoomId: string }[];
   platforms?: PlatformRect[];
   pits?: PitGap[];
   blueprint?: RoomBlueprint;
+  /** Optional authored entity positions; missing means runtime uses assembler defaults. */
+  entityPlacements?: EntityPlacement[];
 }
 
 /**
@@ -168,19 +240,6 @@ export function deriveRoomIds(worldGraph: WorldGraph, existing?: string[]): stri
     }
   }
   return merged;
-}
-
-function spawnSideForEntry(exitDirection: RoomConnection['direction']): string {
-  switch (exitDirection) {
-    case 'up':
-      return 'bottom';
-    case 'down':
-      return 'top';
-    case 'right':
-      return 'left';
-    case 'left':
-      return 'right';
-  }
 }
 
 function reverseDirection(direction: RoomConnection['direction']): RoomConnection['direction'] {
@@ -508,7 +567,10 @@ export function buildRoomAssemblyOptions(
   enemyCounter: { value: number },
   textureExists: (relPath: string) => boolean,
   overrides?: Partial<
-    Pick<RoomAssemblyOptions, 'hasEnemy' | 'width' | 'height' | 'uniquenessSalt' | 'visualKit'>
+    Pick<
+      RoomAssemblyOptions,
+      'hasEnemy' | 'width' | 'height' | 'uniquenessSalt' | 'visualKit' | 'authoredParallax'
+    >
   >,
 ): RoomAssemblyOptions {
   const bossId = ctx.bossesByRoom.get(roomId);
@@ -565,7 +627,12 @@ export function buildRoomAssemblyOptions(
   });
 
   const foundryKit = overrides?.visualKit === 'foundry';
-  const tileCells = foundryKit ? remapTileCellsForFoundry(layout.cells) : layout.cells;
+  const authoredParallax = overrides?.authoredParallax === true;
+  // V3 rivet-atlas remap is only for the frozen metroforge-foundry-v3 pack.
+  // Authored masonry (foundry-themed courier kit) already matches procedural ROLES.
+  const tileCells =
+    foundryKit && !authoredParallax ? remapTileCellsForFoundry(layout.cells) : layout.cells;
+  const includeAuthoredPlates = !foundryKit || authoredParallax;
 
   return {
     hasEnemy,
@@ -592,22 +659,23 @@ export function buildRoomAssemblyOptions(
     pits: layout.pits,
     blueprint: layout.blueprint,
     visualKit: overrides?.visualKit,
+    authoredParallax,
     backgroundLayers: {
-      far: textureExists(far) ? far : undefined,
-      mid: foundryKit ? undefined : textureExists(mid) ? mid : undefined,
-      near: foundryKit ? undefined : textureExists(near) ? near : undefined,
+      far: textureExists(far) || authoredParallax ? far : undefined,
+      mid: includeAuthoredPlates && (textureExists(mid) || authoredParallax) ? mid : undefined,
+      near: includeAuthoredPlates && (textureExists(near) || authoredParallax) ? near : undefined,
       overlay: foundryKit ? undefined : textureExists(overlay) ? overlay : undefined,
-      foreground: foundryKit ? undefined : textureExists(foreground) ? foreground : undefined,
+      foreground: (!foundryKit || authoredParallax) && (textureExists(foreground) || authoredParallax) ? foreground : undefined,
     },
     propSprites: Array.from({ length: 6 }, (_, i) => `assets/props/biome_${biomeIndex}/biome_${biomeIndex}_prop_${i}.png`).filter(
-      (p) => textureExists(p),
+      (p) => textureExists(p) || authoredParallax,
     ),
-    architectureSprites: foundryKit
-      ? []
-      : Array.from(
+    architectureSprites: (!foundryKit || authoredParallax)
+      ? Array.from(
           { length: 4 },
           (_, i) => `assets/architecture/biome_${biomeIndex}/biome_${biomeIndex}_arch_${i}.png`,
-        ).filter((p) => textureExists(p)),
+        ).filter((p) => textureExists(p) || authoredParallax)
+      : [],
   };
 }
 
@@ -651,6 +719,20 @@ export function buildPublishedRoomRecord(
       width: wf.width,
       targetRoomId: wf.targetRoomId,
     })),
+    waterZones: deriveWaterZones(opts.connections, opts.width, floorTopPx(opts.height, opts.tileSize) + (opts.hasTileset ? opts.tileSize : 32), {
+      biomePool: isFloodedBiomeRoom({
+        biomeIndex: opts.biomeIndex,
+        isBossRoom: opts.isBossRoom,
+        worldGraphArchetype: opts.worldGraphArchetype,
+      }),
+      floorTop: floorTopPx(opts.height, opts.tileSize),
+    }).map((wz) => ({
+      x: wz.x,
+      y: wz.y,
+      width: wz.width,
+      height: wz.height,
+      targetRoomId: wz.targetRoomId,
+    })),
     phaseBarriers: derivePhaseBarriers(opts.connections, opts.width, floorTopPx(opts.height, opts.tileSize)).map((pb) => ({
       x: pb.x,
       targetRoomId: pb.targetRoomId,
@@ -658,6 +740,20 @@ export function buildPublishedRoomRecord(
     platforms: opts.platforms,
     pits: opts.pits,
     blueprint: opts.blueprint,
+    entityPlacements: resolveEntityPlacements(opts.entityPlacements, {
+      width: opts.width,
+      height: opts.height,
+      tileSize: opts.tileSize,
+      hasEnemy: opts.hasEnemy,
+      enemyIndex: opts.enemyIndex,
+      isBossRoom: opts.isBossRoom,
+      bossId: opts.bossId,
+      abilityPickups: opts.abilityPickups,
+      hasSavePoint: opts.hasSavePoint,
+      npcs: opts.npcs,
+      hasItemPickup: opts.hasItemPickup,
+      itemId: opts.itemId,
+    }),
   };
 }
 
@@ -726,6 +822,7 @@ export function deriveWaterZones(
   connections: RoomConnection[],
   platformWidth: number,
   floorY: number,
+  extras?: { biomePool?: boolean; floorTop?: number },
 ): WaterZonePlacement[] {
   const placements: WaterZonePlacement[] = [];
   for (const conn of connections) {
@@ -738,7 +835,31 @@ export function deriveWaterZones(
       targetRoomId: conn.targetRoomId,
     });
   }
+  if (extras?.biomePool && placements.length === 0) {
+    const height = 96;
+    const floorTop = extras.floorTop ?? floorY - 32;
+    placements.push({
+      x: platformWidth / 2,
+      y: floorTop - height,
+      width: Math.min(platformWidth - 160, 520),
+      height,
+      targetRoomId: 'biome_pool',
+    });
+  }
   return placements;
+}
+
+/** Flooded utility is biome index 1 in the 3-biome Foundry slice (foundry / flooded / overgrown). */
+export function isFloodedBiomeRoom(opts: {
+  biomeIndex: number;
+  isBossRoom?: boolean;
+  worldGraphArchetype?: string;
+}): boolean {
+  if (opts.isBossRoom) return false;
+  if (opts.worldGraphArchetype === 'ability_shrine' || opts.worldGraphArchetype === 'boss') {
+    return false;
+  }
+  return opts.biomeIndex % 3 === 1;
 }
 
 export function derivePhaseBarriers(
@@ -933,6 +1054,115 @@ shape = SubResource("${shapeId}")
   return { subResources, nodes };
 }
 
+function buildShellColliderSection(
+  rects: { name: string; x: number; y: number; width: number; height: number }[],
+): { subResources: string; nodes: string } {
+  let subResources = '';
+  let nodes = '';
+  rects.forEach((r, i) => {
+    const shapeId = `shell_${i}_shape`;
+    subResources += `[sub_resource type="RectangleShape2D" id="${shapeId}"]
+size = Vector2(${r.width}, ${r.height})
+
+`;
+    nodes += `[node name="${r.name}" type="StaticBody2D" parent="."]
+position = Vector2(${r.x + r.width / 2}, ${r.y + r.height / 2})
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="${r.name}"]
+shape = SubResource("${shapeId}")
+
+`;
+  });
+  return { subResources, nodes };
+}
+
+export interface CollisionRect {
+  name: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** Godot Y-down top-left rects matching the StaticBody2D volumes `generateRoomScene` emits. */
+export function collectRoomCollisionRects(options: RoomAssemblyOptions): CollisionRect[] {
+  const tileSize = options.tileSize || 16;
+  const floorThickness = options.hasTileset ? tileSize * 2 : 64;
+  const floorTop = options.hasTileset
+    ? floorTopPx(options.height, tileSize)
+    : options.height - 96;
+  const platformWidth = options.width;
+  const weakFloors = deriveWeakFloors(options.connections, platformWidth);
+  const pitGaps: FloorGap[] = options.hasTileset
+    ? (options.pits ?? []).map((p) => ({ x: p.x + p.width / 2, width: p.width }))
+    : [];
+  const gaps: FloorGap[] = [
+    ...weakFloors.map((wf) => ({ x: wf.x, width: wf.width })),
+    ...pitGaps,
+  ];
+  const rects: CollisionRect[] = [];
+
+  const spans = gaps
+    .map((g) => ({
+      left: Math.max(0, g.x - g.width / 2),
+      right: Math.min(platformWidth, g.x + g.width / 2),
+    }))
+    .filter((g) => g.right > g.left)
+    .sort((a, b) => a.left - b.left)
+    .reduce<{ left: number; right: number }[]>((acc, g) => {
+      const last = acc[acc.length - 1];
+      if (last && g.left <= last.right) last.right = Math.max(last.right, g.right);
+      else acc.push({ ...g });
+      return acc;
+    }, []);
+
+  const bounds = spans.length === 0 ? [0, platformWidth] : [0, ...spans.flatMap((s) => [s.left, s.right]), platformWidth];
+  let seg = 0;
+  for (let i = 0; i < bounds.length; i += 2) {
+    const segLeft = bounds[i]!;
+    const segRight = bounds[i + 1]!;
+    const segWidth = segRight - segLeft;
+    if (segWidth <= 0) continue;
+    seg += 1;
+    rects.push({
+      name: `FloorSeg${seg}`,
+      x: segLeft,
+      y: floorTop,
+      width: segWidth,
+      height: floorThickness,
+    });
+  }
+
+  if (options.hasTileset) {
+    for (const [i, p] of (options.platforms ?? []).entries()) {
+      rects.push({ name: `Platform_${i}`, x: p.x, y: p.y, width: p.width, height: p.height });
+    }
+  }
+
+  for (const shell of buildRoomShellColliders({
+    width: options.width,
+    height: options.height,
+    tileSize,
+    connections: options.connections,
+  })) {
+    rects.push(shell);
+  }
+  return rects;
+}
+
+export function spawnSideForEntry(exitDirection: RoomConnection['direction']): string {
+  switch (exitDirection) {
+    case 'up':
+      return 'bottom';
+    case 'down':
+      return 'top';
+    case 'right':
+      return 'left';
+    case 'left':
+      return 'right';
+  }
+}
+
 export function generateRoomScene(roomId: string, _index: number, options: RoomAssemblyOptions): string {
   const foundryKit = options.visualKit === 'foundry';
   const tileSize = options.tileSize || 16;
@@ -942,9 +1172,30 @@ export function generateRoomScene(roomId: string, _index: number, options: RoomA
     : options.height - 96;
   const floorY = floorTop + floorThickness / 2;
   const platformWidth = options.width;
+  const placements = resolveEntityPlacements(options.entityPlacements, {
+    width: options.width,
+    height: options.height,
+    tileSize,
+    hasEnemy: options.hasEnemy,
+    enemyIndex: options.enemyIndex,
+    isBossRoom: options.isBossRoom,
+    bossId: options.bossId,
+    abilityPickups: options.abilityPickups,
+    hasSavePoint: options.hasSavePoint,
+    npcs: options.npcs,
+    hasItemPickup: options.hasItemPickup,
+    itemId: options.itemId,
+  });
   const weakFloors = deriveWeakFloors(options.connections, platformWidth);
   const grapplePoints = deriveGrapplePoints(options.connections, platformWidth, floorY);
-  const waterZones = deriveWaterZones(options.connections, platformWidth, floorY);
+  const waterZones = deriveWaterZones(options.connections, platformWidth, floorY, {
+    biomePool: isFloodedBiomeRoom({
+      biomeIndex: options.biomeIndex,
+      isBossRoom: options.isBossRoom,
+      worldGraphArchetype: options.worldGraphArchetype,
+    }),
+    floorTop,
+  });
   const phaseBarriers = derivePhaseBarriers(options.connections, platformWidth, floorY);
   // Pits/platforms are painted-tile features — only carve real collision for them when a tileset
   // actually exists to render them, otherwise they'd be invisible floating collision volumes.
@@ -960,11 +1211,18 @@ export function generateRoomScene(roomId: string, _index: number, options: RoomA
     floorThickness,
   );
   const platformSection = buildPlatformColliders(realPlatforms);
+  const shellRects = buildRoomShellColliders({
+    width: options.width,
+    height: options.height,
+    tileSize,
+    connections: options.connections,
+  });
+  const shellSection = buildShellColliderSection(shellRects);
   const layers = options.backgroundLayers ?? {};
   // Far is an opaque room-space plate so clear color cannot leak. Mid/near are true
   // Parallax2D layers with distinct scroll scales and transparent air.
   const farPath = layers.far;
-  let loadSteps = 6 + floorSection.extraSubResources + realPlatforms.length;
+  let loadSteps = 6 + floorSection.extraSubResources + realPlatforms.length + shellRects.length;
   if (weakFloors.length > 0) loadSteps += 1;
   if (grapplePoints.length > 0) loadSteps += 1;
   if (waterZones.length > 0) loadSteps += 1;
@@ -975,8 +1233,11 @@ export function generateRoomScene(roomId: string, _index: number, options: RoomA
   if (options.hasItemPickup) loadSteps += 1;
   if (options.abilityPickups.length > 0) loadSteps += options.abilityPickups.length;
   if (farPath) loadSteps += 1;
-  if (layers.mid && !foundryKit) loadSteps += 1;
-  if (layers.near && !foundryKit) loadSteps += 1;
+  const emitParallaxPlates = options.authoredParallax === true || !foundryKit;
+  if (layers.mid && emitParallaxPlates) loadSteps += 1;
+  if (layers.near && emitParallaxPlates) loadSteps += 1;
+  const emitForeground = Boolean(layers.foreground) && options.authoredParallax === true;
+  if (emitForeground) loadSteps += 1;
   const propSprites = options.propSprites ?? [];
   if (propSprites.length > 0) loadSteps += propSprites.length;
   const architectureSprites = options.architectureSprites ?? [];
@@ -1027,12 +1288,16 @@ export function generateRoomScene(roomId: string, _index: number, options: RoomA
     scene += `[ext_resource type="Texture2D" path="res://${farPath}" id="21_bg_far"]
 `;
   }
-  if (layers.mid && !foundryKit) {
+  if (layers.mid && emitParallaxPlates) {
     scene += `[ext_resource type="Texture2D" path="res://${layers.mid}" id="22_bg_mid"]
 `;
   }
-  if (layers.near && !foundryKit) {
+  if (layers.near && emitParallaxPlates) {
     scene += `[ext_resource type="Texture2D" path="res://${layers.near}" id="23_bg_near"]
+`;
+  }
+  if (emitForeground && layers.foreground) {
+    scene += `[ext_resource type="Texture2D" path="res://${layers.foreground}" id="24_bg_fg"]
 `;
   }
   propSprites.forEach((rel, i) => {
@@ -1045,7 +1310,7 @@ export function generateRoomScene(roomId: string, _index: number, options: RoomA
   });
 
   scene += `
-${floorSection.subResources}${platformSection.subResources}
+${floorSection.subResources}${platformSection.subResources}${shellSection.subResources}
 [node name="${roomId}" type="Node2D"]
 
 `;
@@ -1127,7 +1392,7 @@ scale = Vector2(${farScale.toFixed(4)}, ${farScale.toFixed(4)})
   // Foundry V3 uses a single authored 1920x320 corridor plate — duplicating it as mid/near
   // wallpaper is what made pack-backed rooms still look like VGF landscape cubes.
   const bgScale = Math.min(options.width / 640, options.height / 360) * 1.08;
-  if (layers.mid && !foundryKit) {
+  if (layers.mid && emitParallaxPlates) {
     scene += `[node name="ParallaxMid" type="Parallax2D" parent="."]
 z_index = -40
 z_as_relative = false
@@ -1144,7 +1409,7 @@ position = Vector2(${Math.round(options.width / 2)}, ${Math.round(options.height
 
 `;
   }
-  if (layers.near && !foundryKit) {
+  if (layers.near && emitParallaxPlates) {
     scene += `[node name="ParallaxNear" type="Parallax2D" parent="."]
 z_index = -20
 z_as_relative = false
@@ -1161,35 +1426,45 @@ position = Vector2(${Math.round(options.width / 2)}, ${Math.round(options.height
 
 `;
   }
+  if (emitForeground && layers.foreground) {
+    const fgScaleX = options.width / 960;
+    const fgScaleY = options.height / 540;
+    scene += `[node name="ParallaxForeground" type="Parallax2D" parent="."]
+z_index = 6
+z_as_relative = false
+scroll_scale = Vector2(0.92, 0.35)
+
+[node name="Sprite" type="Sprite2D" parent="ParallaxForeground"]
+texture_filter = 0
+texture = ExtResource("24_bg_fg")
+centered = true
+scale = Vector2(${fgScaleX.toFixed(4)}, ${fgScaleY.toFixed(4)})
+position = Vector2(${Math.round(options.width / 2)}, ${Math.round(options.height / 2)})
+
+`;
+  }
   // Structural assets are placed only through the semantic RoomPlan. This avoids the old
   // percentage-based scatter that created unrelated central pillars and props in fight space.
   const roomPlan = options.blueprint?.plan;
-  const propZones = roomPlan?.decorationZones ?? [];
-  const propCount = Math.min(propSprites.length, roomPlan?.propBudget.clusters ?? 0);
-  const architectureAnchors = roomPlan?.majorArchitecture ?? [];
+  const architectureAnchors = (roomPlan?.majorArchitecture?.length ?? 0) > 0
+    ? roomPlan!.majorArchitecture
+    : architectureSprites.slice(0, 2).map((_, i) => ({
+        role: 'edge_pillar' as const,
+        x: options.width * (i === 0 ? 0.12 : 0.88),
+        grounded: true,
+      }));
+  const floorProps = resolveFloorPropPlacements(options);
 
-  // A room is entered at SPAWN_MARGIN (80px, WorldManager) from whichever horizontal edge the
-  // player came through, so a floor prop dropped near either edge lands on top of the player at
-  // spawn — the courier-height figure standing beside the Wanderer in spawn captures was a
-  // shrine/statue prop placed in an edge decoration zone. Nudge such a prop inward past the
-  // spawn footprint; drop it only if the room is too narrow for it to clear both spawns.
-  const SPAWN_EDGE_CLEARANCE = 132;
-  propSprites.slice(0, propCount).forEach((rel, i) => {
-    const zone = propZones[i]!;
-    let x = Math.round(zone.x + zone.width * 0.5);
-    if (x < SPAWN_EDGE_CLEARANCE) x = SPAWN_EDGE_CLEARANCE;
-    else if (x > options.width - SPAWN_EDGE_CLEARANCE) x = options.width - SPAWN_EDGE_CLEARANCE;
-    if (x < SPAWN_EDGE_CLEARANCE || x > options.width - SPAWN_EDGE_CLEARANCE) return;
+  floorProps.forEach((placed, i) => {
     const y = floorTop - 8;
     scene += `[node name="EnvProp_${i}" type="Sprite2D" parent="."]
 z_index = 3
 texture_filter = 0
-position = Vector2(${x}, ${y})
-texture = ExtResource("30_prop_${i}")
+position = Vector2(${placed.x}, ${y})
+texture = ExtResource("30_prop_${placed.index}")
 centered = true
 
 `;
-    void rel;
   });
   // Wall-mounted macro architecture (arches/pillars/statues) — visibly larger than the tile-scale
   // floor props above, standing tall against the wall instead of sitting small on the floor.
@@ -1215,6 +1490,7 @@ centered = true
 
   scene += floorSection.nodes;
   scene += platformSection.nodes;
+  scene += shellSection.nodes;
 
   if (weakFloors.length > 0) {
     const wf = weakFloors[0]!;
@@ -1237,12 +1513,15 @@ position = Vector2(${gp.x}, ${gp.y})
   }
 
   if (waterZones.length > 0) {
-    const wz = waterZones[0]!;
-    scene += `
+    for (const wz of waterZones) {
+      scene += `
 [node name="WaterZone_${wz.targetRoomId}" parent="." instance=ExtResource("13_water")]
 position = Vector2(${wz.x}, ${wz.y})
+zone_width = ${wz.width}
+zone_height = ${wz.height}
 
 `;
+    }
   }
 
   if (phaseBarriers.length > 0) {
@@ -1254,16 +1533,32 @@ position = Vector2(${pb.x}, ${pb.y})
 `;
   }
 
+  // Only emitted placement roots carry authoring identity. Child sprites and fallback
+  // coordinates without a unique saved placement must never become persistence targets.
+  const authoredMetadata = (placement: Partial<EntityPlacement>): string => {
+    if (!placement.kind || !placement.id ||
+        placements.filter((p) => p.kind === placement.kind && p.id === placement.id).length !== 1) {
+      return '';
+    }
+    return `metadata/metroforge_room_id = ${JSON.stringify(roomId)}\n` +
+      `metadata/metroforge_entity_kind = ${JSON.stringify(placement.kind)}\n` +
+      `metadata/metroforge_entity_id = ${JSON.stringify(placement.id)}\n`;
+  };
+
+  const playerPos = findPlacement(placements, 'player_spawn') ?? { x: 100, y: floorTop };
   scene += `[node name="Player" parent="." instance=ExtResource("1_player")]
-position = Vector2(100, ${floorTop})
-`;
+position = Vector2(${playerPos.x}, ${playerPos.y})
+${authoredMetadata(playerPos)}`;
 
   if (options.hasEnemy && !options.isBossRoom) {
     const enemyId = `enemy_${options.enemyIndex.toString().padStart(3, '0')}`;
+    const enemyPos =
+      findPlacement(placements, 'enemy', enemyId) ??
+      findPlacement(placements, 'enemy') ?? { x: platformWidth - 150, y: floorTop };
     scene += `
 [node name="Enemy" parent="." instance=ExtResource("2_enemy")]
-position = Vector2(${platformWidth - 150}, ${floorTop})
-enemy_id = "${enemyId}"
+position = Vector2(${enemyPos.x}, ${enemyPos.y})
+${authoredMetadata(enemyPos)}enemy_id = "${enemyId}"
 
 [node name="Sprite" parent="Enemy"]
 sheet_path = "assets/enemies/${enemyId}_walk.png"
@@ -1278,10 +1573,13 @@ attack_sheet_path = "assets/enemies/${enemyId}_attack.png"
   if (options.isBossRoom) {
     const bossId = options.bossId;
     const bossFrame = bossId === 'boss_final' || bossId.includes('final') ? 160 : 96;
+    const bossPos =
+      findPlacement(placements, 'boss', bossId) ??
+      findPlacement(placements, 'boss') ?? { x: platformWidth / 2, y: floorTop };
     scene += `
 [node name="Boss" parent="." instance=ExtResource("3_boss")]
-position = Vector2(${platformWidth / 2}, ${floorTop})
-boss_id = "${bossId}"
+position = Vector2(${bossPos.x}, ${bossPos.y})
+${authoredMetadata(bossPos)}boss_id = "${bossId}"
 
 [node name="Sprite" parent="Boss"]
 sheet_path = "assets/bosses/${bossId}_walk.png"
@@ -1298,28 +1596,39 @@ attack_sheet_path = "assets/bosses/${bossId}_attack.png"
       const abilityId = options.abilityPickups[pi]!;
       // Keep pickups off the room center: up/down transitions and water volumes
       // are placed at platformWidth/2, and a center pickup overlaps those sensors.
-      const x = 220 + pi * 40;
+      const pickupPos =
+        findPlacement(placements, 'ability_pickup', abilityId) ?? {
+          x: 220 + pi * 40,
+          y: floorTop - 28,
+        };
       scene += `
 [node name="AbilityPickup_${abilityId}" parent="." instance=ExtResource("4_pickup")]
-position = Vector2(${x}, ${floorTop - 28})
-ability_id = "${abilityId}"
+position = Vector2(${pickupPos.x}, ${pickupPos.y})
+${authoredMetadata(pickupPos)}ability_id = "${abilityId}"
 display_name = "${abilityId}"
 `;
     }
   }
 
   if (options.hasSavePoint) {
+    const savePos =
+      findPlacement(placements, 'checkpoint') ?? { x: 150, y: floorTop };
     scene += `
 [node name="SavePoint" parent="." instance=ExtResource("8_savepoint")]
-position = Vector2(150, ${floorTop})
-`;
+position = Vector2(${savePos.x}, ${savePos.y})
+${authoredMetadata(savePos)}`;
   }
 
   options.npcs.forEach((npc, npcIdx) => {
+    const npcPos =
+      findPlacement(placements, 'npc', npc.id) ?? {
+        x: platformWidth * 0.75 - npcIdx * 60,
+        y: floorTop,
+      };
     scene += `
 [node name="NPC_${npcIdx}" parent="." instance=ExtResource("9_npc")]
-position = Vector2(${platformWidth * 0.75 - npcIdx * 60}, ${floorTop})
-npc_id = "${npc.id}"
+position = Vector2(${npcPos.x}, ${npcPos.y})
+${authoredMetadata(npcPos)}npc_id = "${npc.id}"
 npc_name = "${npc.name.replace(/"/g, '\\"')}"
 role = "${npc.role}"${npc.questIds.length > 0 ? `\nquest_ids = PackedStringArray(${npc.questIds.map((q) => `"${q}"`).join(', ')})` : ''}${npc.shopId ? `\nshop_id = "${npc.shopId}"` : ''}
 
@@ -1331,17 +1640,21 @@ frame_count = 4
   });
 
   if (options.hasItemPickup) {
+    const itemPos =
+      findPlacement(placements, 'item_pickup', options.itemId) ??
+      findPlacement(placements, 'item_pickup') ?? {
+        x: platformWidth * 0.5 + 100,
+        y: floorTop - 12,
+      };
     scene += `
 [node name="ItemPickup" parent="." instance=ExtResource("10_item")]
-position = Vector2(${platformWidth * 0.5 + 100}, ${floorTop - 12})
-item_id = "${options.itemId}"
+position = Vector2(${itemPos.x}, ${itemPos.y})
+${authoredMetadata(itemPos)}item_id = "${options.itemId}"
 amount = ${options.itemAmount}
 `;
   }
 
   const directionSlot: Record<string, number> = {};
-  const hasLeft = options.connections.some((c) => c.direction === 'left');
-  const hasRight = options.connections.some((c) => c.direction === 'right');
   for (const conn of options.connections) {
     const spawnSide = spawnSideForEntry(conn.direction);
     const slot = directionSlot[conn.direction] ?? 0;
@@ -1354,12 +1667,11 @@ amount = ${options.itemAmount}
         y = floorY - 80;
         break;
       case 'down':
+        // Always below the walk line so falling into a pit or weak floor can hit the
+        // sensor, and walkers crossing the room cannot. Intended vertical exits are
+        // falls, not mid-hall teleports.
         x = platformWidth / 2 - 12 + slot * 48;
-        y = weakFloors.some((wf) => wf.targetRoomId === conn.targetRoomId)
-          ? floorY + 96
-          : hasLeft && hasRight
-            ? 120
-            : floorY - 96;
+        y = floorY + 96;
         break;
       case 'right':
         x = platformWidth - 24 - slot * 48;
@@ -1391,9 +1703,15 @@ export interface RecompileRoomsInput {
   roomIds?: string[];
   targetRoomIds: string[];
   visualKit?: 'foundry';
+  authoredParallax?: boolean;
   roomOverrides?: Record<
     string,
-    Partial<Pick<RoomAssemblyOptions, 'hasEnemy' | 'width' | 'height' | 'tileCells' | 'visualKit'>>
+    Partial<
+      Pick<
+        RoomAssemblyOptions,
+        'hasEnemy' | 'width' | 'height' | 'tileCells' | 'visualKit' | 'authoredParallax' | 'entityPlacements'
+      >
+    >
   >;
 }
 
@@ -1412,7 +1730,7 @@ export function recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult
   const roomIds = deriveRoomIds(input.worldGraph, input.roomIds);
   const ctx = prepareRoomAssemblyContext(input.worldGraph, input.gameContent, roomIds);
   const enemyCounter = { value: 0 };
-  const textureExists = (rel: string) => existsSync(join(input.outputDir, rel.replace(/\//g, '\\')));
+  const textureExists = (rel: string) => existsSync(join(input.outputDir, ...rel.split(/[\\/]/)));
 
   let roomsData: Record<string, PublishedRoomRecord> = {};
   const roomsJsonPath = join(input.outputDir, 'data', 'rooms', 'rooms.json');
@@ -1430,6 +1748,7 @@ export function recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult
   const targets = new Set(input.targetRoomIds);
   const visualKit =
     input.visualKit ?? (projectUsesFoundryVisualKit(input.outputDir) ? 'foundry' : undefined);
+  const authoredParallax = input.authoredParallax === true;
   for (let i = 0; i < roomIds.length; i++) {
     const roomId = roomIds[i]!;
     if (!targets.has(roomId)) continue;
@@ -1445,7 +1764,11 @@ export function recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult
         input.gameContent,
         enemyCounter,
         textureExists,
-        { ...override, visualKit: override?.visualKit ?? visualKit },
+        {
+          ...override,
+          visualKit: override?.visualKit ?? visualKit,
+          authoredParallax: override?.authoredParallax ?? authoredParallax,
+        },
       );
       if (override?.tileCells?.length) {
         // Hand-edited cells (room editor) have no matching auto-generated collision geometry —
@@ -1453,6 +1776,28 @@ export function recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult
         opts.tileCells = override.tileCells;
         opts.platforms = [];
         opts.pits = [];
+      }
+      const existingRecord = roomsData[roomId] as PublishedRoomRecord | undefined;
+      if (override?.entityPlacements?.length) {
+        opts.entityPlacements = override.entityPlacements;
+      } else if (existingRecord?.entityPlacements?.length) {
+        // Preserve studio-authored coordinates across geometry-only recompiles.
+        opts.entityPlacements = existingRecord.entityPlacements;
+      } else {
+        opts.entityPlacements = defaultEntityPlacements({
+          width: opts.width,
+          height: opts.height,
+          tileSize: opts.tileSize,
+          hasEnemy: opts.hasEnemy,
+          enemyIndex: opts.enemyIndex,
+          isBossRoom: opts.isBossRoom,
+          bossId: opts.bossId,
+          abilityPickups: opts.abilityPickups,
+          hasSavePoint: opts.hasSavePoint,
+          npcs: opts.npcs,
+          hasItemPickup: opts.hasItemPickup,
+          itemId: opts.itemId,
+        });
       }
       const scene = generateRoomScene(roomId, i, opts);
       writeFileSync(join(roomsDir, `${roomId}.tscn`), scene);

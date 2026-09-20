@@ -15,6 +15,10 @@ import { OpenGameArtProvider } from '../providers/opengameart.js';
 import { PollinationsImageProvider } from '../providers/pollinations-image.js';
 import { DreamOProvider, PulidProvider, QwenImageEditProvider } from '../providers/local-visual-fleet.js';
 import { NVIDIA_MODEL_CATALOG } from './nvidia-catalog.js';
+import {
+  LOCAL_GPU_IMAGE_ESTIMATED_VRAM_MB,
+  LOCAL_IMAGE_EDIT_ESTIMATED_VRAM_MB,
+} from './vram.js';
 
 export interface FoundryImageBootstrapOptions {
   comfyuiUrl?: string;
@@ -108,6 +112,7 @@ export function registerFoundryImageProviders(
         license: 'ComfyUI workflow — model license unverified',
         executionTargets: ['LOCAL_SERVICE', 'REMOTE_COMFYUI'],
         endpoint: options.comfyuiUrl,
+        estimatedVramMb: LOCAL_GPU_IMAGE_ESTIMATED_VRAM_MB,
       },
       'comfyui',
       'Disabled in Settings',
@@ -166,6 +171,8 @@ export function registerFoundryImageProviders(
       commercialUse: 'unknown',
       license: 'Local diffusion — model license unverified',
       executionTargets: ['LOCAL_CPU', 'LOCAL_CUDA', 'REMOTE_WORKER'],
+      estimatedVramMb: LOCAL_GPU_IMAGE_ESTIMATED_VRAM_MB,
+      supportsCpuOffload: true,
     },
     'diffusers',
     'Disabled in Settings',
@@ -195,6 +202,7 @@ export function registerFoundryImageProviders(
       commercialUse: 'allowed',
       license: 'MetroForge internally authored procedural generator (original work)',
       executionTargets: ['LOCAL_CPU'],
+      estimatedVramMb: 0,
       // This worker's real memory footprint is a few MB of Pillow image buffers, nothing like
       // the 12GB FP32 floor production-capacity.ts's gate assumes for a real diffusion backend —
       // applying that gate here would incorrectly block a provider that was never measured
@@ -253,6 +261,7 @@ export function registerFoundryImageProviders(
       license: 'Qwen-Image-Edit-2509 model card required',
       executionTargets: ['LOCAL_CUDA', 'REMOTE_WORKER'],
       hardwareOwner: 'configured qwen worker',
+      estimatedVramMb: LOCAL_IMAGE_EDIT_ESTIMATED_VRAM_MB,
     },
     'qwen-image-edit',
     'Disabled in Settings',
@@ -275,6 +284,7 @@ export function registerFoundryImageProviders(
       license: 'DreamO v1.1 model card required',
       executionTargets: ['LOCAL_CUDA', 'REMOTE_WORKER'],
       hardwareOwner: 'configured dreamo worker',
+      estimatedVramMb: LOCAL_IMAGE_EDIT_ESTIMATED_VRAM_MB,
     },
     'dreamo',
     'Disabled in Settings',
@@ -295,6 +305,7 @@ export function registerFoundryImageProviders(
       reliabilityScore: 30,
       commercialUse: 'unknown',
       license: 'PuLID experimental model/checkpoint terms required',
+      estimatedVramMb: LOCAL_IMAGE_EDIT_ESTIMATED_VRAM_MB,
     },
     'pulid',
     'Disabled in Settings',

@@ -16,7 +16,8 @@ function phaseTone(status: string): 'default' | 'accent' | 'success' | 'warning'
 }
 
 export function CreateScreen({ bridgeReady }: { bridgeReady: boolean | null }) {
-  const { setSelectedPath, refreshProjects, navigate } = useStudio();
+  const { setSelectedPath, refreshProjects, navigate, creationMode, setCreationMode } = useStudio();
+  const [title, setTitle] = useState('Untitled Forge');
   const [prompt, setPrompt] = useState('');
   const [profile, setProfile] = useState('TINY_TEST');
   const [mode, setMode] = useState('HYBRID_FREE');
@@ -72,12 +73,44 @@ export function CreateScreen({ bridgeReady }: { bridgeReady: boolean | null }) {
     }
   }, [prompt, profile, mode, seed, archetype, refreshProjects, setSelectedPath]);
 
+  const [scaffolding, setScaffolding] = useState(false);
+  const handleScaffold = useCallback(async () => {
+    if (!window.metroforge?.scaffoldManualProject) return;
+    setScaffolding(true);
+    setResult(null);
+    try {
+      const res = await window.metroforge.scaffoldManualProject({
+        title,
+        prompt: prompt.trim() || undefined,
+        profile,
+        mode,
+        seed: parseInt(seed, 10) || 42,
+        archetype,
+      });
+      setResult({
+        success: res.success,
+        outputPath: res.projectPath,
+        errors: res.errors,
+        warnings: res.warnings,
+      });
+      if (res.success && res.projectPath) {
+        await refreshProjects();
+        setSelectedPath(res.projectPath);
+        setCreationMode('manual');
+      }
+    } catch (err) {
+      setResult({ success: false, errors: [String(err)] });
+    } finally {
+      setScaffolding(false);
+    }
+  }, [title, prompt, profile, mode, seed, archetype, refreshProjects, setSelectedPath, setCreationMode]);
+
   return (
     <section className="workspace-screen create-screen">
       <ScreenHeader
-        eyebrow="Create"
+        eyebrow="Commission"
         title="New Game"
-        description="Write the world. MetroForge runs the real generation pipeline — progress below is live phase events, not a spinner."
+        description="Manual starts from the Godot template. Assisted and Full AI run the live generation pipeline into the same project format."
       />
 
       <div className="create-layout">
@@ -112,6 +145,11 @@ export function CreateScreen({ bridgeReady }: { bridgeReady: boolean | null }) {
               <span>Overworld, regions, dungeons, lock-and-key routing.</span>
             </button>
           </div>
+
+          <label className="create-field">
+            Project title
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} disabled={generating || scaffolding} />
+          </label>
 
           <label className="create-field">
             Game description
@@ -159,17 +197,33 @@ export function CreateScreen({ bridgeReady }: { bridgeReady: boolean | null }) {
           </div>
 
           <p className="hint">
-            Archetype is sent on generateGame. The pipeline reads <code>options.archetype</code>.
+            {creationMode === 'manual'
+              ? 'Manual builds a playable TINY_TEST Godot project from the template — no LLM. You can still run Full AI later on this project.'
+              : 'Archetype is sent on generateGame. The pipeline reads options.archetype. Failed phases leave completed files on disk; retry from Crucible rather than inventing progress.'}
           </p>
 
           <div className="row create-actions">
             <Button
               variant="primary"
-              disabled={!prompt.trim() || generating || bridgeReady !== true}
-              onClick={handleGenerate}
+              disabled={generating || scaffolding || bridgeReady !== true || (creationMode !== 'manual' && !prompt.trim())}
+              onClick={creationMode === 'manual' ? handleScaffold : handleGenerate}
             >
-              {generating ? 'Generating…' : 'Generate Game'}
+              {scaffolding
+                ? 'Forging template…'
+                : generating
+                  ? 'Generating…'
+                  : creationMode === 'manual'
+                    ? 'Create from template'
+                    : 'Generate Game'}
             </Button>
+            {creationMode === 'manual' && (
+              <Button
+                disabled={!prompt.trim() || generating || scaffolding || bridgeReady !== true}
+                onClick={handleGenerate}
+              >
+                Generate with AI instead
+              </Button>
+            )}
             {bridgeReady !== true && (
               <Badge tone="warning">Bridge unavailable</Badge>
             )}

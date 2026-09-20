@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { DEFAULT_MOVEMENT_STATS } from '@metroforge/procedural';
 import { analyzeRepetition } from './composition/repetition.js';
-import { buildRoomTileCells, floorTopPx } from '../src/tile-layout.js';
+import { buildRoomTileCells, floorTopPx, buildRoomShellColliders, SIDE_DOOR_ROWS } from '../src/tile-layout.js';
 
 const BASE = { width: 800, height: 600, tileSize: 16 };
 
@@ -302,5 +302,58 @@ describe('buildRoomTileCells — role/atlas agreement', () => {
       expect(c.row).toBeGreaterThanOrEqual(0);
       expect(c.row).toBeLessThan(6);
     }
+  });
+});
+
+describe('buildRoomShellColliders', () => {
+  it('closes walls and ceiling when the room has no doors', () => {
+    const rects = buildRoomShellColliders({ width: 800, height: 600, tileSize: 16, connections: [] });
+    const names = rects.map((r) => r.name).sort();
+    expect(names).toEqual(['ShellCeiling', 'ShellLeft', 'ShellRight']);
+    const left = rects.find((r) => r.name === 'ShellLeft')!;
+    expect(left.x).toBe(0);
+    expect(left.width).toBe(16);
+    expect(left.y).toBe(0);
+    expect(left.height).toBe(floorTopPx(600, 16));
+    const ceiling = rects.find((r) => r.name === 'ShellCeiling')!;
+    expect(ceiling.y).toBe(0);
+    expect(ceiling.height).toBe(16);
+    expect(ceiling.width).toBe(800);
+  });
+
+  it('cuts a side-door hole matching the painted opening, not the full wall', () => {
+    const tileSize = 16;
+    const height = 600;
+    const floorRow = Math.max(1, Math.floor((height - tileSize * 2) / tileSize));
+    const doorTop = Math.max(0, (floorRow - SIDE_DOOR_ROWS) * tileSize);
+    const rects = buildRoomShellColliders({
+      width: 800,
+      height,
+      tileSize,
+      connections: [{ direction: 'left' }, { direction: 'right' }],
+    });
+    expect(rects.some((r) => r.name === 'ShellLeft')).toBe(false);
+    const upper = rects.find((r) => r.name === 'ShellLeftUpper')!;
+    expect(upper.height).toBe(doorTop);
+    expect(upper.y).toBe(0);
+    expect(rects.find((r) => r.name === 'ShellRightUpper')!.height).toBe(doorTop);
+  });
+
+  it('leaves a ceiling shaft for an up door and keeps the corners solid', () => {
+    const tileSize = 16;
+    const width = 800;
+    const cols = Math.floor(width / tileSize);
+    const rects = buildRoomShellColliders({
+      width,
+      height: 600,
+      tileSize,
+      connections: [{ direction: 'up' }],
+    });
+    expect(rects.some((r) => r.name === 'ShellCeiling')).toBe(false);
+    const left = rects.find((r) => r.name === 'ShellCeilingLeft')!;
+    const right = rects.find((r) => r.name === 'ShellCeilingRight')!;
+    expect(left.width).toBe(Math.floor(cols * 0.4) * tileSize);
+    expect(right.x).toBe((Math.floor(cols * 0.6) + 1) * tileSize);
+    expect(left.width + right.width).toBeLessThan(width);
   });
 });

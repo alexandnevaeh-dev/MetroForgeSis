@@ -49,6 +49,7 @@ export {
 } from './generators/game-dna.js';
 export type { GameDNAInput, GameDNATextSource } from './generators/game-dna.js';
 export { HardwareProfiler, getStarterPack } from './hardware-profiler.js';
+export type { NvidiaSmiGpuRow, HardwareProfilerOptions } from './hardware-profiler.js';
 export { ModelCatalogService, rankModelsForCapability, explainModelRouting } from './model-catalog.js';
 export type {
   RankedModel,

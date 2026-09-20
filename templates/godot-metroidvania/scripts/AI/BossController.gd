@@ -37,6 +37,9 @@ const WEAKNESS_DAMAGE_MULTIPLIER := 2.0
 var _hurt_timer: float = 0.0
 var _recovery_active: bool = false
 var _frozen: bool = false
+var _dying: bool = false
+## Last attack id chosen by the production randi() pick — readable by acceptance, not a weight.
+var _last_attack: String = ""
 const HURT_FLASH_DURATION := 0.25
 
 @onready var health: HealthComponent = $HealthComponent
@@ -45,6 +48,7 @@ const HURT_FLASH_DURATION := 0.25
 @onready var sprite: AnimatedSprite2D = $Sprite
 
 func _ready() -> void:
+	add_to_group("bosses")
 	health.died.connect(_on_died)
 	attack_hitbox.owner_node = self
 	health.health_changed.connect(_on_health_changed)
@@ -85,6 +89,8 @@ func _set_telegraph_visual(active: bool) -> void:
 
 
 func _play_named(anim: String) -> void:
+	if _dying and anim != "death":
+		return
 	if sprite == null or sprite.sprite_frames == null:
 		return
 	if not sprite.sprite_frames.has_animation(anim):
@@ -93,11 +99,20 @@ func _play_named(anim: String) -> void:
 		return
 	sprite.play(anim)
 
+func _attack_clip_playing() -> bool:
+	if sprite == null:
+		return false
+	var anim := String(sprite.animation)
+	return sprite.is_playing() and (
+		anim == "attack" or anim == "attack_projectile" or anim == "attack_burst"
+	)
+
 func _start_attack_loop() -> void:
 	# Opening beat before the first telegraph — uses phase-1 recovery so larger profiles feel
 	# less oppressive on spawn while still honoring generated pacing data.
 	await get_tree().create_timer(_get_phase_recovery()).timeout
-	while is_inside_tree() and health.is_alive() and not _frozen:
+	while is_inside_tree() and health.is_alive() and not _frozen and not _dying:
+		_face_player()
 		_set_telegraph_visual(true)
 		await get_tree().create_timer(_get_phase_telegraph()).timeout
 		_set_telegraph_visual(false)
@@ -106,10 +121,14 @@ func _start_attack_loop() -> void:
 		_attack_busy = true
 		await _perform_attack()
 		_attack_busy = false
-		if not health.is_alive():
+		if not health.is_alive() or _dying:
 			break
+		# Recovery timer starts now (combat timing unchanged). Do not replace a
+		# still-playing attack clip — area_burst/projectile returned immediately
+		# and recovery used to overwrite them on the same frame.
 		_recovery_active = true
-		_play_named("recovery")
+		if not _attack_clip_playing():
+			_play_named("recovery")
 		await get_tree().create_timer(_get_phase_recovery()).timeout
 		_recovery_active = false
 
@@ -188,9 +207,17 @@ func _physics_process(delta: float) -> void:
 		else:
 			_play_named("walk")
 
+
+func _face_player() -> void:
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null or sprite == null:
+		return
+	sprite.flip_h = (player as Node2D).global_position.x < global_position.x
+
 func _perform_attack() -> void:
 	var attacks: Array = _phase_attacks[_phase - 1] if _phase - 1 < _phase_attacks.size() else ["slam"]
 	var attack: String = String(attacks[randi() % attacks.size()]) if attacks.size() > 0 else "slam"
+	_last_attack = attack
 	match attack:
 		"projectile":
 			_play_named("attack_projectile")
@@ -219,6 +246,10 @@ func _perform_melee_attack() -> void:
 	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("attack"):
 		sprite.play("attack")
 	attack_hitbox.activate()
+	if sprite:
+		var squash := create_tween()
+		squash.tween_property(sprite, "position:y", 6.0, 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		squash.tween_property(sprite, "position:y", 0.0, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	await get_tree().create_timer(0.3).timeout
 	attack_hitbox.deactivate()
 
@@ -252,15 +283,21 @@ func _spawn_projectile(direction: Vector2) -> void:
 ## the player's real dash state rather than adding a new signal parameter to plumb the attacker
 ## through HurtboxComponent, which every other hitbox/hurtbox pair would have had to adopt too.
 func _on_hit_received(damage: float, knockback: Vector2) -> void:
+	if _dying or not health.is_alive():
+		return
 	var final_damage := damage
 	if "dash_through" in _weaknesses:
 		var player := get_tree().get_first_node_in_group("player")
 		if player and player.get("_is_dashing") == true:
 			final_damage *= WEAKNESS_DAMAGE_MULTIPLIER
 	health.take_damage(final_damage)
+	# died is synchronous: _on_died starts (and may await) before this resumes.
+	# Playing hurt here used to cut off the death clip while the player was still swinging.
+	if _dying or not health.is_alive():
+		return
 	velocity = knockback
 	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("hurt"):
-		sprite.play("hurt")
+		_play_named("hurt")
 		_hurt_timer = HURT_FLASH_DURATION
 
 func _on_health_changed(current: float, max_h: float) -> void:
@@ -288,9 +325,35 @@ func _apply_phase_presentation() -> void:
 	grow.tween_property(self, "scale", target_scale, 0.4).set_trans(Tween.TRANS_BACK)
 
 func _on_died() -> void:
+	_dying = true
+	_frozen = true
+	_attack_busy = true
+	_telegraph_active = false
+	_recovery_active = false
+	_hurt_timer = 0.0
 	set_physics_process(false)
+	health.invulnerable = true
+	if hurtbox:
+		hurtbox.set_deferred("monitoring", false)
+		hurtbox.set_deferred("monitorable", false)
+	if attack_hitbox:
+		attack_hitbox.deactivate()
+	var death_sec := 0.0
 	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("death"):
-		sprite.play("death")
-		await sprite.animation_finished
+		_play_named("death")
+		if sprite.animation != "death":
+			sprite.play("death")
+		var frames := sprite.sprite_frames
+		var fps := frames.get_animation_speed("death")
+		var count := frames.get_frame_count("death")
+		if fps > 0.0 and count > 0:
+			death_sec = float(count) / fps
+		# Clip length only — animation_finished has failed to resume in this runtime.
+		# No extra hold after the last frame; victory emits as soon as the clip is done.
+		var deadline := Time.get_ticks_msec() + int((death_sec + 0.05) * 1000.0)
+		while Time.get_ticks_msec() < deadline and is_inside_tree():
+			if sprite.animation != "death":
+				sprite.play("death")
+			await get_tree().process_frame
 	EventBus.boss_defeated.emit(boss_id)
 	queue_free()

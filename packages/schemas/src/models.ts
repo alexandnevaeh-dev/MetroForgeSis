@@ -218,15 +218,29 @@ export const HardwareProfileSchema = z.object({
   os: z.string(),
   cpuArch: z.string(),
   cpuCores: z.number().int(),
+  cpuModel: z.string().optional(),
   totalRamMb: z.number().int(),
   freeRamMb: z.number().int().optional(),
   gpuVendor: z.string().optional(),
   gpuModel: z.string().optional(),
   vramMb: z.number().int().optional(),
+  freeVramMb: z.number().int().optional(),
   cudaAvailable: z.boolean().default(false),
+  cudaVersion: z.string().optional(),
+  gpuDriverVersion: z.string().optional(),
   rocmAvailable: z.boolean().default(false),
   directMlAvailable: z.boolean().default(false),
   metalAvailable: z.boolean().default(false),
+  diskFreeMb: z.number().int().optional(),
+  comfyuiConfigured: z.boolean().optional(),
+  comfyuiUrl: z.string().optional(),
+  localEndpoints: z
+    .object({
+      comfyui: z.boolean().optional(),
+      automatic1111: z.boolean().optional(),
+      diffusersPython: z.boolean().optional(),
+    })
+    .optional(),
   profile: z.enum(['LOW_RESOURCE', 'BALANCED', 'HIGH_QUALITY']),
 });
 

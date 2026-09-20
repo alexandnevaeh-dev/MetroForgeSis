@@ -48,6 +48,7 @@ extra_animation_sheets = {
 "swim": "assets/characters/player_swim.png",
 "swim_idle": "assets/characters/player_swim_idle.png",
 "attack_2": "assets/characters/player_attack_2.png",
+"attack_3": "assets/characters/player_attack_3.png",
 "ground_slam_start": "assets/characters/player_ground_slam_start.png",
 "ground_slam_fall": "assets/characters/player_ground_slam_fall.png",
 "ground_slam_impact": "assets/characters/player_ground_slam_impact.png",

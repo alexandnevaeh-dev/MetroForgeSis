@@ -26,6 +26,8 @@ export interface AppConfig {
   defaultMode: GenerationMode;
   defaultProfile: GenerationProfile;
   godotExecutable: string | null;
+  unityEditor: string | null;
+  unrealEditor: string | null;
   ollamaBaseUrl: string;
 }
 
@@ -38,6 +40,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     defaultMode: (env.METROFORGE_DEFAULT_MODE as GenerationMode) ?? 'LOCAL_ONLY',
     defaultProfile: (env.METROFORGE_DEFAULT_PROFILE as GenerationProfile) ?? 'TINY_TEST',
     godotExecutable: env.GODOT_EXECUTABLE ?? env.GODOT4_PATH ?? env.GODOT_PATH ?? null,
+    unityEditor: env.UNITY_EDITOR ?? env.UNITY_PATH ?? env.UNITY_HOME ?? null,
+    unrealEditor: env.UE_ROOT ?? env.UNREAL_ENGINE ?? env.UNREAL_EDITOR ?? env.UE_ENGINE ?? null,
     ollamaBaseUrl: env.OLLAMA_BASE_URL ?? 'http://localhost:11434',
   };
 }

@@ -10,6 +10,7 @@ import {
 } from './AssetProductionGatePanel.js';
 import { AllowPlaceholdersControl } from './AllowPlaceholdersControl.js';
 import { ProjectReadinessSummary } from './ProjectReadinessSummary.js';
+import { ForgeOverviewStrip } from './ForgeOverviewStrip.js';
 import { Badge, Button, DataTable, EmptyState, Panel } from './ui/index.js';
 
 type PlaytestRouteSummary = {
@@ -104,12 +105,12 @@ function logTone(type: string): string {
 }
 
 const QUICK_LAUNCH: Array<{ id: NavId; label: string; shortcut?: string }> = [
-  { id: 'Studio', label: 'Generation Studio', shortcut: 'Ctrl+3' },
-  { id: 'World', label: 'World Editor' },
-  { id: 'Rooms', label: 'Room Editor' },
-  { id: 'Assets', label: 'Asset Gallery', shortcut: 'Ctrl+5' },
-  { id: 'QA', label: 'QA' },
-  { id: 'Routing', label: 'Routing Inspector' },
+  { id: 'Studio', label: 'Crucible · Generation', shortcut: 'Ctrl+3' },
+  { id: 'World', label: 'World Map' },
+  { id: 'Rooms', label: 'Chambers' },
+  { id: 'Story', label: 'Chronicle' },
+  { id: 'Assets', label: 'Foundry', shortcut: 'Ctrl+5' },
+  { id: 'Preview', label: 'Playtest' },
 ];
 
 export function ProjectDashboard() {
@@ -207,9 +208,9 @@ export function ProjectDashboard() {
   return (
     <section className="workspace-screen dashboard-screen">
       <ScreenHeader
-        eyebrow="Create"
-        title="Dashboard"
-        description="Timeline, environment, recent projects, and live project telemetry."
+        eyebrow="Hearth"
+        title="Project overview"
+        description="What exists in this game, what still needs attention, and where to edit it."
         actions={
           <div className="row">
             <ProjectSelect />
@@ -221,6 +222,14 @@ export function ProjectDashboard() {
         }
       />
       <NoProjectHint />
+
+      {hasActiveProject && dashboard && (
+        <ForgeOverviewStrip
+          questCount={dashboard.questCount}
+          roomCount={dashboard.roomCount}
+          assetCount={dashboard.assetCount}
+        />
+      )}
 
       {hasActiveProject && !dashboard && loading && <p className="hint">Loading dashboard…</p>}
       {hasActiveProject && !dashboard && !loading && (

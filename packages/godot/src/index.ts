@@ -1,4 +1,4 @@
-export { GodotProjectAssembler, getTemplatePath, overlayAuthoredVisualPolish } from './assembler.js';
+export { GodotProjectAssembler, getTemplatePath, overlayAuthoredVisualPolish, applyAuthoredOverlayProvenance, isRollbackOnlyTemplatePath, stripRollbackOnlyAssets } from './assembler.js';
 export type { AssemblyInput, AssemblyResult, RecompileRoomsInput, RecompileRoomsResult } from './assembler.js';
 export {
   deriveRoomIds,
@@ -6,9 +6,28 @@ export {
   auditRoomArchetypeFidelity,
   recompileRooms,
   pickRoomPickupItem,
+  prepareRoomAssemblyContext,
+  buildRoomAssemblyOptions,
+  buildPublishedRoomRecord,
+  collectRoomCollisionRects,
+  spawnSideForEntry,
+  defaultEntityPlacements,
+  resolveEntityPlacements,
+  mergeEntityPlacementsForIds,
+  findPlacement,
 } from './room-assembler.js';
-export type { PublishedRoomRecord, TileCell, RoomArchetypeFidelityIssue } from './room-assembler.js';
-export { buildRoomTileCells, floorTopPx } from './tile-layout.js';
+export type {
+  PublishedRoomRecord,
+  TileCell,
+  RoomArchetypeFidelityIssue,
+  RoomAssemblyOptions,
+  RoomAssemblyContext,
+  CollisionRect,
+  RoomConnection,
+  EntityPlacement,
+  EntityKind,
+} from './room-assembler.js';
+export { buildRoomTileCells, buildRoomShellColliders, floorTopPx, SIDE_DOOR_ROWS } from './tile-layout.js';
 export {
   composePlayableVisuals,
   composeBossArena,

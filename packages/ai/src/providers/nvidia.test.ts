@@ -264,3 +264,25 @@ describe('NvidiaProvider — health', () => {
     expect(details.errorCode).toBe('NVIDIA_AUTH_FAILED');
   });
 });
+
+describe('NvidiaProvider — current default and environment override', () => {
+  it('uses the current default and honors NVIDIA_DEFAULT_MODEL when no explicit model is supplied', async () => {
+    const previous = process.env.NVIDIA_DEFAULT_MODEL;
+    const requested: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (_url: string, init: RequestInit) => {
+      requested.push(JSON.parse(init.body as string).model);
+      return jsonResponse({ choices: [{ message: { content: '{}' } }] });
+    }));
+    try {
+      delete process.env.NVIDIA_DEFAULT_MODEL;
+      await new NvidiaProvider({apiKey: FAKE_KEY, baseUrl: 'https://example.test/v1', defaultModel: '', enabled: true}).generateText({prompt:'test'});
+      process.env.NVIDIA_DEFAULT_MODEL = 'configured-model';
+      await new NvidiaProvider({apiKey: FAKE_KEY, baseUrl: 'https://example.test/v1', defaultModel: '', enabled: true}).generateText({prompt:'test'});
+      await new NvidiaProvider({apiKey: FAKE_KEY, baseUrl: 'https://example.test/v1', defaultModel: 'explicit-model', enabled: true}).generateText({prompt:'test'});
+      expect(requested).toEqual(['nvidia/nemotron-3.5-lightning-30b-a3b','configured-model','explicit-model']);
+    } finally {
+      if (previous === undefined) delete process.env.NVIDIA_DEFAULT_MODEL;
+      else process.env.NVIDIA_DEFAULT_MODEL = previous;
+    }
+  });
+});

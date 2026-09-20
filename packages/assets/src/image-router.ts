@@ -1,5 +1,5 @@
 import type { GenerationMode } from '@metroforge/shared';
-import type { FoundryCostClass } from '@metroforge/schemas';
+import type { AssetQualityProfile, FoundryCostClass } from '@metroforge/schemas';
 import type {
   ImageGenerator,
   ImageProviderHealthReport,
@@ -13,6 +13,11 @@ import {
   nvidiaFamily,
   resolveImageCostClass,
 } from './foundry/mode-flags.js';
+import { resolveAssetQualityProfile } from './foundry/quality-profiles.js';
+import {
+  evaluateVramFit,
+  type ImageHardwareSnapshot,
+} from './foundry/vram.js';
 
 export interface ImageProviderRegistration {
   provider: ImageGenerator;
@@ -41,12 +46,19 @@ export interface ImageProviderRegistration {
    *  backend's actual observed memory use) — that gate's fixed 12 GB FP32 floor does not describe
    *  every local backend and must not be silently applied to one it was never measured against. */
   useProductionCapacityGate?: boolean;
+  /** Estimated GPU memory for the default workflow. 0/undefined = CPU or unknown (not VRAM-filtered). */
+  estimatedVramMb?: number;
+  /** When true, a tight free-VRAM budget does not hard-exclude the provider. */
+  supportsCpuOffload?: boolean;
 }
 
 export interface ImageRoutingContext {
   mode?: GenerationMode;
   /** When LOW_RESOURCE, prefer remote/hosted providers (local VRAM is insufficient). */
   hardwareProfile?: 'LOW_RESOURCE' | 'BALANCED' | 'HIGH_QUALITY' | string;
+  hardware?: ImageHardwareSnapshot;
+  qualityProfile?: AssetQualityProfile;
+  maxVramMb?: number;
 }
 
 export interface ImageSelectionResult {
@@ -68,7 +80,7 @@ export interface ImageRoutingExplanation {
   rejected: Array<{ modelId: string; provider: string; reasons: string[] }>;
   fallbacks: Array<{ modelId: string; provider: string }>;
   license?: string;
-  hardware?: { profile: string; ramMb: number; vramMb?: number; note?: string };
+  hardware?: { profile?: string; ramMb?: number; vramMb?: number; freeVramMb?: number; note?: string };
   /** True when no image provider was healthy and procedural placeholder would be used. */
   degradedFallback?: boolean;
 }
@@ -101,7 +113,9 @@ export class ImageProviderRegistry {
    *  remote/hosted candidates sort ahead of local runtimes so ~1GB iGPU machines prefer NVIDIA. */
   getCandidates(context: ImageRoutingContext = {}): ImageProviderRegistration[] {
     const flags = imageModeFlags(context.mode);
-    const preferRemote = context.hardwareProfile === 'LOW_RESOURCE' && !flags.localOnly;
+    const quality = resolveAssetQualityProfile(context.qualityProfile, context.mode);
+    const preferRemote =
+      (context.hardware?.profile ?? context.hardwareProfile) === 'LOW_RESOURCE' && !flags.localOnly;
     return this.registrations
       .filter((r) => {
         if ((flags.localOnly || flags.offline) && !r.local) return false;
@@ -111,6 +125,7 @@ export class ImageProviderRegistry {
         if (flags.commercialSafeOnly && r.commercialUse !== undefined && r.commercialUse !== 'allowed') {
           return false;
         }
+        if (!evaluateVramFit(r, context).ok) return false;
         return true;
       })
       .sort((a, b) => {
@@ -123,8 +138,10 @@ export class ImageProviderRegistry {
         if (preferRemote && a.local !== b.local) {
           return a.local ? 1 : -1;
         }
-        if (flags.fastest) return (b.speedScore ?? b.priority) - (a.speedScore ?? a.priority);
-        if (flags.highestQuality) return (b.qualityScore ?? b.priority) - (a.qualityScore ?? a.priority);
+        if (flags.fastest || quality.preferSpeed) return (b.speedScore ?? b.priority) - (a.speedScore ?? a.priority);
+        if (flags.highestQuality || quality.preferQuality) {
+          return (b.qualityScore ?? b.priority) - (a.qualityScore ?? a.priority);
+        }
         return b.priority - a.priority;
       });
   }
@@ -140,7 +157,26 @@ export class ImageProviderRegistry {
     const warnings: string[] = [];
     const healthByProvider: Record<string, ImageProviderHealthReport> = {};
     let fallbackDepth = 0;
+    const flags = imageModeFlags(context.mode);
+    const modeCandidates = this.registrations.filter((r) => {
+      if ((flags.localOnly || flags.offline) && !r.local) return false;
+      const cost = resolveImageCostClass(r.local, r.costClass);
+      if (flags.freeOnly && !allowedByFreeOnly(cost)) return false;
+      if (flags.nvidiaOnly && !nvidiaFamily(r.provider.id, r.family)) return false;
+      if (flags.commercialSafeOnly && r.commercialUse !== undefined && r.commercialUse !== 'allowed') {
+        return false;
+      }
+      return true;
+    });
     const candidates = this.getCandidates(context);
+
+    for (const candidate of modeCandidates) {
+      const vram = evaluateVramFit(candidate, context);
+      if (!vram.ok) {
+        warnings.push(`${candidate.provider.id}: ${vram.reason} [INSUFFICIENT_VRAM]`);
+        fallbackDepth += 1;
+      }
+    }
 
     for (const candidate of candidates) {
       const report = await resolveImageProviderHealth(candidate.provider);
@@ -179,17 +215,29 @@ export class ImageProviderRegistry {
  */
 export async function explainImageProviderRouting(
   registry: ImageProviderRegistry,
-  context: ImageRoutingContext & {
-    hardware?: { profile: string; ramMb: number; vramMb?: number };
-  } = {},
+  context: ImageRoutingContext = {},
 ): Promise<ImageRoutingExplanation> {
   const routingContext: ImageRoutingContext = {
     mode: context.mode,
     hardwareProfile: context.hardware?.profile ?? context.hardwareProfile,
+    hardware: context.hardware,
+    qualityProfile: context.qualityProfile,
+    maxVramMb: context.maxVramMb,
   };
   const candidatesList = registry.getCandidates(routingContext);
   const candidates: ImageRoutingExplanation['candidates'] = [];
   const rejected: ImageRoutingExplanation['rejected'] = [];
+
+  for (const reg of registry.list()) {
+    const vram = evaluateVramFit(reg, routingContext);
+    if (reg.local && !vram.ok) {
+      rejected.push({
+        modelId: reg.provider.id,
+        provider: reg.provider.id,
+        reasons: [`INSUFFICIENT_VRAM: ${vram.reason}`],
+      });
+    }
+  }
 
   for (const reg of candidatesList) {
     const report = await resolveImageProviderHealth(reg.provider);

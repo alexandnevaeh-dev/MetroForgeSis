@@ -75,7 +75,7 @@ export class NvidiaProvider extends BaseHttpTextProvider {
     super({
       ...config,
       baseUrl: config.baseUrl || 'https://integrate.api.nvidia.com/v1',
-      defaultModel: config.defaultModel || 'meta/llama-3.1-8b-instruct',
+      defaultModel: config.defaultModel || process.env.NVIDIA_DEFAULT_MODEL || 'nvidia/nemotron-3.5-lightning-30b-a3b',
       priority: config.priority ?? 70,
     });
     this.maxRetries = config.maxRetries ?? DEFAULT_MAX_RETRIES;

@@ -21,14 +21,15 @@ func _ready() -> void:
 	if not required_abilities.is_empty():
 		$Visual.color = Color(0.95, 0.45, 0.25, 0.0)
 	body_entered.connect(_on_body_entered)
-	# Only a 'down' exit needs the per-frame overlap re-check below; every other direction fires
-	# correctly off the entry signal alone.
-	set_physics_process(transition_direction == "down")
+	# Only the directional ('up'/'down') exits need the per-frame overlap re-check below; a
+	# left/right door fires correctly off the entry signal alone.
+	set_physics_process(transition_direction == "down" or transition_direction == "up")
 
-## A 'down' exit only fires on a real descent (see _player_is_descending), and Godot does not
-## re-emit body_entered for a body that was already overlapping when that condition became true —
-## a player standing in the doorway who then falls would never re-trigger it. So a down door
-## re-checks its overlaps each physics frame rather than relying on the entry signal alone.
+## A directional exit only fires on real motion in that direction (see _player_is_ascending /
+## _player_is_descending), and Godot does not re-emit body_entered for a body already overlapping
+## when that condition becomes true — a player standing in the doorway who then jumps or falls
+## would never re-trigger it. So these doors re-check their overlaps each physics frame rather
+## than relying on the entry signal alone.
 func _physics_process(_delta: float) -> void:
 	for body in get_overlapping_bodies():
 		if _try_transition(body):
@@ -57,19 +58,33 @@ func _try_transition(body: Node2D) -> bool:
 			return false
 	if transition_direction == "down" and not _player_is_descending(body):
 		return false
+	if transition_direction == "up" and not _player_is_ascending(body):
+		return false
 	var world_manager := get_tree().get_first_node_in_group("world_manager")
 	if world_manager and world_manager.has_method("transition_to_room"):
 		world_manager.transition_to_room(target_room_id, spawn_side)
 		return true
 	return false
 
-## A 'down' exit is a hole you fall through, not a doorway you walk past. room-assembler.ts places
-## a down door at floorY - 96 when the room has no weak floor backing it, which puts it mid-room at
-## walking height — so simply walking across the room clipped it and yanked the player backwards.
-## That happened in 4 of 40 rooms in a real generation and blocked the playtest bot's critical path
-## outright: it could never reach the room holding the double_jump pickup. Requiring an actual
-## descent makes the trigger mean what the direction says. Weak-floor down exits are unaffected —
-## slamming through one leaves the player airborne and falling.
+## Vertical exits are holes you fall through or climb into, not doorways you walk past.
+## room-assembler.ts places 'up' on the walk line (floorY - 80) and 'down' *below* the floor
+## (floorY + 96) so a pit/weak-floor fall can hit the sensor without intercepting walkers.
+## 'up' still needs an ascending check because its sensor sits at walking height.
+##
+## Measured on a real 4-zone/40-room generation: 4 of 40 rooms had the 'down' shape (it blocked
+## access to the room holding the double_jump pickup), and the 'up' shape broke the critical path
+## outright — the playtest bot walking room_009 -> room_035 (a shortcut at x=936) was intercepted
+## at x=468 by room_009's up exit to room_010, and never reached victory. With both gated, the bot
+## completes the route and reaches the victory room.
+##
+## Weak-floor 'down' exits are unaffected: slamming through one leaves the player airborne and
+## falling, which satisfies the descent check.
+func _player_is_ascending(body: Node2D) -> bool:
+	if not (body is CharacterBody2D):
+		return true
+	var character := body as CharacterBody2D
+	return character.velocity.y < 0.0
+
 func _player_is_descending(body: Node2D) -> bool:
 	if not (body is CharacterBody2D):
 		return true

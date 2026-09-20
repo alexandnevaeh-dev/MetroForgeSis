@@ -1,7 +1,8 @@
-export { encodePng, decodePngRgba, generateProceduralSprite, generateTilesetSource, generateWalkCycleSheet, generateRunCycleSheet, generateHurtFlashSheet, generateAttackSheet, generateVfxTexture, knockoutVfxBackground, computeFrameQualityMetrics, generateProgressionSheet, generateDeathSheet, generatePoseStill, POSE_TRANSFORMS } from './png.js';
+export { encodePng, decodePngRgba, generateProceduralSprite, generateTilesetSource, generateWalkCycleSheet, generateRunCycleSheet, generateHurtFlashSheet, generateAttackSheet, generateVfxTexture, knockoutVfxBackground, computeFrameQualityMetrics, generateProgressionSheet, generateDeathSheet, generatePoseStill, extractSheetFramePng, compileBossCombatSheets, POSE_TRANSFORMS } from './png.js';
 export type { ProgressionSheetOptions, AttackArcKind, PoseTransformSpec } from './png.js';
 export { PLAYER_ANIMATION_SPEC, PLAYER_ANIMATION_NAMES, buildAnimationMetadataSidecar } from './player-animation-spec.js';
 export type { PlayerAnimationDefinition, PlayerAnimationGenerationMode, AttackSyncMetadata, AnimationMetadataSidecar } from './player-animation-spec.js';
+export { BOSS_ANIMATION_SPEC, buildBossAnimationSidecar } from './boss-animation-spec.js';
 export {
   createAssetGenerationGateway,
   classifyFailure,
@@ -134,6 +135,19 @@ export type {
   ImageSelectionResult,
   ImageRoutingExplanation,
 } from './image-router.js';
+export {
+  evaluateVramFit,
+  usableVramMb,
+  effectiveVramBudgetMb,
+  LOCAL_GPU_IMAGE_ESTIMATED_VRAM_MB,
+  LOCAL_IMAGE_EDIT_ESTIMATED_VRAM_MB,
+} from './foundry/vram.js';
+export type { ImageHardwareSnapshot, VramFitResult } from './foundry/vram.js';
+export {
+  ASSET_QUALITY_PROFILES,
+  resolveAssetQualityProfile,
+  qualityProfileForGenerationMode,
+} from './foundry/quality-profiles.js';
 export { VLMCritic, runDeterministicAssetChecks } from './vlm-critic.js';
 export type { AssetCritiqueRequest, VLMCriticConfig, DeterministicAssetChecks } from './vlm-critic.js';
 export { HttpRemoteVisualWorkerClient } from './execution/http-worker-client.js';
@@ -288,6 +302,9 @@ export {
   AUTHORED_COURIER_LICENSE,
   loadAuthoredCourierPng,
   loadAuthoredMasonryPng,
+  loadAuthoredBiomePng,
+  loadAuthoredCastPng,
+  loadAuthoredFoundryTileset,
 } from './authored-kit.js';
 export {
   planAssetReplacements,
