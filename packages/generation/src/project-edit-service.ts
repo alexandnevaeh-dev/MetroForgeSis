@@ -1,4 +1,4 @@
-import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs';
+import { writeFileSync, mkdirSync, readFileSync, existsSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { GodotProjectAssembler, mergeEntityPlacementsForIds, type EntityPlacement } from '@metroforge/godot';
 import { loadProjectContext } from './project-loader.js';
@@ -130,7 +130,48 @@ function readRoomsFile(projectPath: string): Record<string, Record<string, unkno
   }
 }
 
+/** Roll back ordinary room edits when compilation or writing fails (not crash atomic). */
 export function applyRoomEditAndRecompile(
+  projectPath: string,
+  patch: RoomEditPatch,
+): ProjectEditResult {
+  if (!/^[A-Za-z0-9_-]+$/.test(patch.roomId)) {
+    return { success: false, errors: ['Invalid room identifier'] };
+  }
+  const files = [
+    join(projectPath, 'data', 'rooms', 'rooms.json'),
+    join(projectPath, 'scenes', 'rooms', `${patch.roomId}.tscn`),
+  ];
+  let originals: Array<Buffer | null>;
+  try {
+    originals = files.map((file) => existsSync(file) ? readFileSync(file) : null);
+  } catch (error) {
+    return { success: false, errors: [`Cannot snapshot room edit: ${String(error)}`] };
+  }
+  let result: ProjectEditResult;
+  try {
+    result = applyRoomEditUnchecked(projectPath, patch);
+  } catch (error) {
+    result = { success: false, errors: [error instanceof Error ? error.message : String(error)] };
+  }
+  if (result.success) return result;
+  const errors = [...result.errors];
+  files.forEach((file, index) => {
+    try {
+      const original = originals[index];
+      if (original === null) {
+        if (existsSync(file)) unlinkSync(file);
+      } else if (original !== undefined && (!existsSync(file) || !readFileSync(file).equals(original))) {
+        writeFileSync(file, original);
+      }
+    } catch (error) {
+      errors.push(`Room rollback failed for ${file}: ${String(error)}`);
+    }
+  });
+  return { success: false, errors, recompiledRooms: [] };
+}
+
+function applyRoomEditUnchecked(
   projectPath: string,
   patch: RoomEditPatch,
 ): ProjectEditResult {
