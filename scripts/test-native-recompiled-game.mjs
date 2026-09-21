@@ -13,6 +13,7 @@ const project = mkdtempSync(join(tmpdir(), 'metroforge-native-recompiled-'));
 cpSync(source, project, { recursive:true, filter: path => !['qa','.git'].includes(basename(path)) });
 cpSync(new URL('../templates/godot-metroidvania/scripts/core/AudioManager.gd', import.meta.url), join(project, 'scripts/core/AudioManager.gd'));
 cpSync(new URL('../templates/godot-metroidvania/scripts/UI/DialogueOverlay.gd', import.meta.url), join(project, 'scripts/UI/DialogueOverlay.gd'));
+cpSync(new URL('../templates/godot-metroidvania/scripts/world/WeakFloor.gd', import.meta.url), join(project, 'scripts/world/WeakFloor.gd'));
 const context = loadProjectContext(project);
 const mechanicsFixture = process.argv.includes('--mechanics-fixture');
 if (mechanicsFixture) {

@@ -357,3 +357,8 @@ METROFORGE_TEST_AUDIO_DRIVER=WASAPI full native runner completed on NVIDIA RTX 5
 ## Targeted mechanics regression fixture
 
 Added --mechanics-fixture to native recompiled-game runner. It adds optional ground_slam down-edge and horizontal shortcut to a disposable copy, recompiles all rooms and requires explicit break/persistence/shortcut assertions. Run E:/Metroforge/Recovery-Audit/temp/metroforge-native-recompiled-4GWYat: WASAPI, 8 rooms, exit 1, 256 PASS, 1 FAIL, 0 SOFT_FAIL. Floor collision and breaking with ability pass; shortcut traversal passes. breakable_wall_stays_broken_after_room_reentry FAILS. Current fixture WeakFloor matches production template and uses parent node name plus target as key; root cause not established. This is an intentionally failing regression test, not a green release gate. Next instrument floor keys/state and reentry transition timing. New diagnostics/error guards executed during this run.
+
+
+## Broken-floor persistence fix and native proof
+
+Trace floor-persistence-trace.log showed first key room_006:room_007 saved true, but re-entry used @Node2D@91:room_007 and read false. Godot renamed the new root while the outgoing same-named room awaited deletion. WeakFloor now derives room identity from owning scene_file_path basename, falling back to node name only for non-scene instances. Existing generated room-id save keys remain compatible. Runner overlays current WeakFloor. Native WASAPI mechanics fixture E:/Metroforge/Recovery-Audit/temp/metroforge-native-recompiled-5jS3cK: 8 rooms, exit 0, 257 PASS, 0 FAIL, 0 SOFT_FAIL. Break, re-entry persistence and shortcut traversal all pass. Certificate-store and ObjectDB diagnostics remain. This does not prove Unity/Unreal or production visual quality.
