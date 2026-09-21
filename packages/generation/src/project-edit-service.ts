@@ -237,6 +237,9 @@ export function applyRoomEditAndRecompile(
   patch: RoomEditPatch,
   options?: { regenerate?: 'full' | 'geometry' | 'encounter'; restoreRecord?: Record<string, unknown> },
 ): ProjectEditResult {
+  if (detectProjectEngine(projectPath) !== 'godot') {
+    return { success: false, errors: ['This room edit requires the Godot adapter; Unity and Unreal recompilation is not implemented here.'] };
+  }
   const validationErrors = validateRoomPatch(patch);
   if (validationErrors.length) return { success: false, errors: validationErrors };
   const files = [
@@ -277,9 +280,6 @@ function applyRoomEditUnchecked(
   patch: RoomEditPatch,
   options?: { regenerate?: 'full' | 'geometry' | 'encounter'; restoreRecord?: Record<string, unknown> },
 ): ProjectEditResult {
-  if (detectProjectEngine(projectPath) !== 'godot') {
-    return { success: false, errors: ['This room edit requires the Godot adapter; Unity and Unreal recompilation is not implemented here.'] };
-  }
   const project = loadProjectContext(projectPath);
   const roomsData = { ...project.roomsData };
   const existing = roomsData[patch.roomId] as Record<string, unknown> | undefined;

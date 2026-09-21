@@ -417,3 +417,8 @@ Production CommandBar in browser harness with controlled executeAiCommand promis
 ## Speech cancellation and microphone cleanup
 
 startSpeechRecording now remembers stop requests made before getUserMedia resolves and stops returned tracks without creating a recorder. A finally block releases tracks and timeout after normal stop, recorder errors, constructor failures or start failures. scripts/test-speech-recording.mjs passed with mocked media devices: pending cancellation creates no recorder, constructor/start failures each stop tracks, and normal stop produces a blob and releases tracks. Desktop TypeScript passed. These are lifecycle tests, not actual microphone/permission UI or audible capture verification.
+
+
+## Foreign-engine room edit rejection without writes
+
+Moved Godot adapter check before snapshot/rollback in applyRoomEditAndRecompile. Previously a rejected Unity/Unreal edit entered rollback and rewrote existing room data despite no mutation. scripts/test-foreign-room-edit.mjs verifies explicit rejection and unchanged bytes plus modification time for both engine manifests. Generation TypeScript build and test passed. This is adapter-boundary validation, not native Unity/Unreal compile or gameplay evidence.
