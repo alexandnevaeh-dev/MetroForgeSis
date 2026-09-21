@@ -287,3 +287,7 @@ Native probe reproduced8s WAV with LOOP_FORWARD but loop_begin=loop_end=0; playi
 
 ## Audio during dialogue/menu pause - continuation
 AudioManager now PROCESS_MODE_ALWAYS so its shared music/SFX/voice players remain active when dialogue/menu pauses scene tree. Extended music-loop-runtime verifies music processing and unpaused stream, active UI click during pause, full-duration looping and explicit stop. Actual native A/B: fixed exit0 PASS, removing process-mode line in disposable fixture exit1 FAIL pause interrupts music; fixed template restored afterward. Evidence Recovery-Audit/music-pause-runtime.log and music-pause-baseline.log. Dummy driver checks playback state, not audible mix; gameplay actors remain paused normally.
+
+
+## Dedicated dialogue voice lifecycle - continuation
+Dialogue voice now has a dedicated AudioStreamPlayer on SFX bus, separate from pooled effects. New voice stops prior clip, duplicates stream before disabling WAV looping, and overlay stops voice on line replacement and close. Native dialogue-voice-runtime fixture passes active playback during dialogue pause,12frames of SFX without voice theft, nonlooping WAV and close/line cleanup; log Recovery-Audit/dialogue-voice-runtime.log. Fixture uses existing music WAV as a deterministic voice surrogate, not speech quality evaluation. Dummy driver/root certificate/leak limits remain. Integrated runner overlays current AudioManager and DialogueOverlay templates.

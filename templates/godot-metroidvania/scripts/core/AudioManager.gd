@@ -37,6 +37,7 @@ const BUS_AMBIENCE := "Ambience"
 
 var _sfx_pool: Array[AudioStreamPlayer] = []
 var _sfx_pool_cursor := 0
+var _voice_player: AudioStreamPlayer
 var _music_player: AudioStreamPlayer
 var _current_music_id: String = ""
 var _sfx_cache: Dictionary = {}
@@ -61,6 +62,10 @@ func _ready() -> void:
 		player.bus = BUS_SFX
 		add_child(player)
 		_sfx_pool.append(player)
+
+	_voice_player = AudioStreamPlayer.new()
+	_voice_player.bus = BUS_SFX
+	add_child(_voice_player)
 
 	_music_player = AudioStreamPlayer.new()
 	_music_player.bus = BUS_MUSIC
@@ -177,20 +182,23 @@ func _sfx_dir_has_any() -> bool:
 
 ## Plays a one-shot dialogue voice clip from a res:// path when TTS assets were generated.
 ## Silently no-ops if the file is missing so dialogue still works without voice lines.
-func play_dialogue_voice(voice_path: String) -> void:
-	if voice_path.is_empty():
-		return
-	if not ResourceLoader.exists(voice_path):
-		return
+func stop_dialogue_voice() -> void:
+	_voice_player.stop()
+	_voice_player.stream = null
 
-	var stream: AudioStream = load(voice_path)
+func play_dialogue_voice(voice_path: String) -> void:
+	stop_dialogue_voice()
+	if voice_path.is_empty() or not ResourceLoader.exists(voice_path):
+		return
+	var stream := load(voice_path) as AudioStream
 	if stream == null:
 		return
-
-	var player := _next_sfx_player()
-	player.stream = stream
-	player.volume_db = 0.0
-	player.play()
+	# Voice is one-shot; never mutate a cached resource used by music or another player.
+	stream = stream.duplicate() as AudioStream
+	if stream is AudioStreamWAV:
+		stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
+	_voice_player.stream = stream
+	_voice_player.play()
 
 func _load_music(track_id: String) -> AudioStream:
 	var path := "%s%s.wav" % [MUSIC_DIR, track_id]

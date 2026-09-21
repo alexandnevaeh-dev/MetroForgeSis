@@ -105,6 +105,7 @@ func start_dialogue(dialogue_id: String, speaker_name: String, context: Dictiona
 	_show_current_line()
 
 func close_dialogue() -> void:
+	AudioManager.stop_dialogue_voice()
 	if not visible:
 		return
 	visible = false
@@ -120,6 +121,7 @@ func is_active() -> bool:
 	return visible
 
 func _show_current_line() -> void:
+	AudioManager.stop_dialogue_voice()
 	_clear_choices()
 	if _dialogue_id.is_empty():
 		close_dialogue()
