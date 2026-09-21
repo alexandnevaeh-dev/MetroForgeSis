@@ -1,17 +1,35 @@
 import { useEffect, useState } from 'react';
 
 export function EditStatusBadge({ projectPath }: { projectPath: string }) {
-  const [state, setState] = useState('CLEAN');
+  const [status, setStatus] = useState({ projectPath: '', state: 'CHECKING' });
+  const state = status.projectPath === projectPath ? status.state : 'CHECKING';
 
   useEffect(() => {
-    if (!projectPath || !window.metroforge?.getEditStatus) return;
-    const tick = () => window.metroforge!.getEditStatus!(projectPath).then((s) => setState(s.state));
-    tick();
-    const id = window.setInterval(tick, 1500);
-    return () => window.clearInterval(id);
+    let cancelled = false;
+    let timer: number | undefined;
+    setStatus({ projectPath, state: 'CHECKING' });
+    if (!projectPath || !window.metroforge?.getEditStatus) {
+      setStatus({ projectPath, state: 'UNAVAILABLE' });
+      return;
+    }
+    const tick = async () => {
+      try {
+        const result = await window.metroforge!.getEditStatus(projectPath);
+        if (!cancelled) setStatus({ projectPath, state: result.state || 'UNAVAILABLE' });
+      } catch {
+        if (!cancelled) setStatus({ projectPath, state: 'UNAVAILABLE' });
+      } finally {
+        if (!cancelled) timer = window.setTimeout(() => { void tick(); }, 1500);
+      }
+    };
+    void tick();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, [projectPath]);
 
-  const cls =
-    state === 'DIRTY' ? 'badge-warn' : state === 'COMPILING' ? 'status-running' : 'badge-ok';
-  return <span className={`edit-status ${cls}`}>{state}</span>;
+  const cls = state === 'CLEAN' ? 'badge-ok'
+    : state === 'COMPILING' || state === 'CHECKING' ? 'status-running' : 'badge-warn';
+  return <span className={`edit-status ${cls}`} role="status">{state}</span>;
 }

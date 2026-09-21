@@ -397,3 +397,8 @@ CommandBar now catches executeAiCommand rejection, releases busy state in finall
 ## Visible compact command outcomes
 
 Browser checks confirmed rejected command retains input and re-enables Run, but revealed compact CSS hid all result/error messages. Compact bar now wraps status and alert text beneath controls and exposes live roles. Browser verified Injected command failure, retained input, successful retry, and separate Command applied / editor refresh failure text with mocked IPC. Cross-project response isolation remains pending.
+
+
+## Honest edit-status polling
+
+EditStatusBadge now starts CHECKING, reports UNAVAILABLE when bridge/status requests fail, ignores responses after project change/unmount, and schedules the next poll only after completion to avoid overlapping requests. Only confirmed CLEAN receives the success style. Browser with injected rejection showed status UNAVAILABLE. TypeScript and native bundle passed (.metroforge/desktop-build/1789961349489). Delayed cross-project response behavior remains untested interactively.
