@@ -442,3 +442,18 @@ Added one-step Redo position to LiveRuntimeInspector. Undo records runtime-ackno
 ## Native live position redo verification
 
 Production LiveRuntimeInspector browser harness connected to actual headless Godot bridge. Selected Enemy at (92.25,73.5), applied X=120, Undo restored 92.25, Redo restored 120. Independent Inspect running scene confirmed X=120 and reset both history controls. Saved source stayed at (92.25,73.5); no persistence write requested. This validates browser UI -> harness transport -> native runtime acknowledgement, not native Electron shell or Unity/Unreal. Test tab and harness/native session stopped afterward.
+
+
+### Preview control failure handling
+
+Preview Stop now retains the live session when stopping fails or the API is unavailable. Launch, stop, pause/resume and editor-open promise rejections produce a visible alert. Successful Stop clears the runtime session identity and paused state. Confirmed the existing inspector key already isolates each project/runtime session. Desktop TypeScript check and native bundle passed (build evidence .metroforge/desktop-build/1789962562840). Interactive failure-path verification remains pending; this is not Unity, Unreal or Electron runtime evidence.
+
+
+### Preview project isolation and polling
+
+The preview content is keyed by selected project, resetting preview data, errors, selection, launch and live-session state on each project switch (including A-B-A). Old asynchronous handlers belong to the unmounted project view. Session polling schedules its next request only after the previous response, avoiding overlapping requests and stale response ordering. Missing session metadata clears prior embedding/live-edit notes. Desktop TypeScript and native bundle passed; build evidence .metroforge/desktop-build/1789962939521. Interactive project-switch and delayed-response checks remain pending.
+
+
+### Preview control and session poll ordering
+
+Play/restart, stop and pause/resume now share a synchronous pending guard and disable conflicting controls. Session polls capture a control revision and discard results overlapping any control request; rejected polls schedule the next check normally. Successful restart clears the previous inspector session identity. TypeScript and native bundle passed (.metroforge/desktop-build/1789963021793). Browser checks with actual PreviewScreen/StudioProvider and mock IPC verified: rejected Stop retains live inspector; held running poll released after successful Stop cannot restore running controls; rejected Open editor displays alert; switching to project B clears that alert and renders B. Fixture is .metroforge/preview-control-harness on E:, server stopped after checks. These are UI checks, not native-engine tests.

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { LiveRuntimeInspector } from './LiveRuntimeInspector.js';
 import { ScreenHeader } from './ScreenHeader.js';
 import { ProjectSelect } from './ProjectSelect.js';
@@ -17,12 +17,34 @@ import {
 } from './ui/index.js';
 
 export function PreviewScreen() {
+  const { selectedPath } = useStudio();
+  return <ProjectPreviewScreen key={selectedPath ?? ''} />;
+}
+
+function ProjectPreviewScreen() {
   const { selectedPath, hasActiveProject, navigate, openRoom, openAsset } = useStudio();
   const [preview, setPreview] = useState<ProjectPreview | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [godotError, setGodotError] = useState<string | null>(null);
   const [launching, setLaunching] = useState(false);
+  const [controlling, setControlling] = useState(false);
+  const controlPending = useRef(false);
+  const controlRevision = useRef(0);
+
+  function beginControl() {
+    if (controlPending.current) return false;
+    controlPending.current = true;
+    controlRevision.current += 1;
+    setControlling(true);
+    return true;
+  }
+
+  function endControl() {
+    controlPending.current = false;
+    controlRevision.current += 1;
+    setControlling(false);
+  }
   const [selectedAssetId, setSelectedAssetId] = useState('');
   const [playing, setPlaying] = useState(false);
   const [runtimeSessionId, setRuntimeSessionId] = useState('');
@@ -61,25 +83,32 @@ export function PreviewScreen() {
     setRuntimeSessionId('');
     if (!selectedPath || !window.metroforge?.getPlaytestSession) return;
     let cancelled = false;
+    let timer: number | undefined;
     const tick = async () => {
+      const revision = controlRevision.current;
       const session = await window.metroforge?.getPlaytestSession?.(selectedPath).catch(() => null);
       if (cancelled) return;
+      if (controlPending.current || revision !== controlRevision.current) {
+        timer = window.setTimeout(tick, 1500);
+        return;
+      }
       setPlaying(Boolean(session?.running));
       setRuntimeSessionId(session?.startedAt ?? '');
-      if (session?.pauseReason) setPauseReason(session.pauseReason);
-      if (session?.embedReason) setEmbedReason(session.embedReason);
+      setPauseReason(session?.pauseReason ?? 'Waiting for the runtime bridge.');
+      setEmbedReason(session?.embedReason ?? null);
       if (session?.liveEdit) {
         setLiveEditNote(
           `Live: ${session.liveEdit.live.join(', ')}. Restart required: ${session.liveEdit.requiresRestart.join('; ')}.`,
         );
       }
+      if (!session?.liveEdit) setLiveEditNote(null);
       setPaused(Boolean(session?.pauseReason?.toLowerCase().includes('is paused')));
+      timer = window.setTimeout(tick, 1500);
     };
     void tick();
-    const id = window.setInterval(tick, 1500);
     return () => {
       cancelled = true;
-      window.clearInterval(id);
+      window.clearTimeout(timer);
     };
   }, [selectedPath]);
 
@@ -97,42 +126,70 @@ export function PreviewScreen() {
             <ProjectSelect />
             <Button
               variant="primary"
-              disabled={!selectedPath || launching}
+              disabled={!selectedPath || controlling}
               onClick={async () => {
                 setGodotError(null);
                 if (!selectedPath || !window.metroforge?.playInGodot) return;
+                if (!beginControl()) return;
                 setLaunching(true);
                 try {
                   const r = await window.metroforge.playInGodot(selectedPath);
                   if (!r.success) setGodotError(r.message);
-                  else setPlaying(true);
+                  else {
+                    setPlaying(true);
+                    setRuntimeSessionId('');
+                    setPaused(false);
+                  }
+                } catch (err) {
+                  setGodotError(String(err));
                 } finally {
                   setLaunching(false);
+                  endControl();
                 }
               }}
             >
-              {launching ? 'Launching…' : playing ? 'Restart' : 'Play'}
+              {launching ? 'Launchingâ€¦' : playing ? 'Restart' : 'Play'}
             </Button>
             <Button
-              disabled={!selectedPath || !playing}
+              disabled={!selectedPath || !playing || controlling}
               onClick={async () => {
-                if (!selectedPath) return;
-                const r = await window.metroforge?.stopPlaytest?.(selectedPath);
-                if (r && !r.success) setGodotError(r.message);
-                setPlaying(false);
+                if (!selectedPath || !beginControl()) return;
+                setGodotError(null);
+                try {
+                  const r = await window.metroforge?.stopPlaytest?.(selectedPath);
+                  if (!r?.success) {
+                    setGodotError(r?.message ?? 'Stopping the playtest is unavailable.');
+                    return;
+                  }
+                  setPlaying(false);
+                  setRuntimeSessionId('');
+                  setPaused(false);
+                } catch (err) {
+                  setGodotError(String(err));
+                } finally {
+                  endControl();
+                }
               }}
             >
               Stop
             </Button>
             <Button
-              disabled={!selectedPath || !playing}
+              disabled={!selectedPath || !playing || controlling}
               title={pauseReason}
               onClick={async () => {
                 if (!selectedPath || !window.metroforge?.playtestCommand) return;
+                if (!beginControl()) return;
                 const cmd = paused ? 'resume' : 'pause';
-                const r = await window.metroforge.playtestCommand(selectedPath, cmd);
-                if (!r.ok) setGodotError(r.error ?? 'Bridge command failed');
-                else setPaused(cmd === 'pause');
+                setGodotError(null);
+                try {
+                  const r = await window.metroforge.playtestCommand(selectedPath, cmd);
+                  if (!r.ok) setGodotError(r.error ?? 'Bridge command failed');
+                  else setPaused(cmd === 'pause');
+                } catch (err) {
+                  setGodotError(String(err));
+                } finally {
+                  endControl();
+                }
               }}
             >
               {paused ? 'Resume' : 'Pause'}
@@ -142,8 +199,12 @@ export function PreviewScreen() {
               onClick={async () => {
                 setGodotError(null);
                 if (!selectedPath || !window.metroforge?.openInGodot) return;
-                const r = await window.metroforge.openInGodot(selectedPath);
-                if (!r.success) setGodotError(r.message);
+                try {
+                  const r = await window.metroforge.openInGodot(selectedPath);
+                  if (!r.success) setGodotError(r.message);
+                } catch (err) {
+                  setGodotError(String(err));
+                }
               }}
             >
               Open editor
@@ -157,7 +218,7 @@ export function PreviewScreen() {
 
       {hasActiveProject && (
         <div className="preview-layout-p3">
-          {godotError && <p className="result error">{godotError}</p>}
+          {godotError && <p className="result error" role="alert">{godotError}</p>}
           {playing && (
             <p className="hint" role="status">
               Godot runs in an external window (not embedded). Use Live objects to inspect and move
@@ -170,7 +231,7 @@ export function PreviewScreen() {
 
           {loading && (
             <EmptyState
-              title="Loading preview…"
+              title="Loading previewâ€¦"
               description="Fetching world graph and asset previews."
             />
           )}
@@ -195,7 +256,7 @@ export function PreviewScreen() {
                       {preview.profile ? <Badge tone="info">{preview.profile}</Badge> : null}
                       <span className="status-grow" />
                       <span className="hint">
-                        {preview.worldGraph?.nodes?.length ?? 0} rooms ·{' '}
+                        {preview.worldGraph?.nodes?.length ?? 0} rooms Â·{' '}
                         {preview.worldGraph?.edges?.length ?? 0} edges
                       </span>
                     </EditorToolbar>
@@ -278,9 +339,9 @@ export function PreviewScreen() {
                 <InspectorSection title="Project">
                   <dl className="settings-dl">
                     <dt>Title</dt>
-                    <dd>{preview.title ?? '—'}</dd>
+                    <dd>{preview.title ?? 'â€”'}</dd>
                     <dt>Profile</dt>
-                    <dd>{preview.profile ?? '—'}</dd>
+                    <dd>{preview.profile ?? 'â€”'}</dd>
                     <dt>Rooms</dt>
                     <dd>{preview.worldGraph?.nodes?.length ?? 0}</dd>
                     <dt>Assets</dt>
