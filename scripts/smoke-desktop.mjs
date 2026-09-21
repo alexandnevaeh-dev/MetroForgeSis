@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const desktop = join(root, 'apps', 'desktop');
 const require = createRequire(join(desktop, 'package.json'));
-const electron = require('electron');
+const electron = process.env.METROFORGE_ELECTRON_EXECUTABLE || require('electron');
 const reportDir = join(root, '.metroforge', 'desktop-smoke', String(Date.now()));
 for (const directory of ['', 'temp', 'appdata', 'localappdata', 'data']) {
   mkdirSync(join(reportDir, directory), { recursive: true });
@@ -44,6 +44,7 @@ writeFileSync(
   JSON.stringify(
     {
       passed,
+      executable: electron,
       exitCode: result.status,
       signal: result.signal,
       error: result.error?.message,
