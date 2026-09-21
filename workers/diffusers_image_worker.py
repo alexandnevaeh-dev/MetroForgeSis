@@ -643,7 +643,13 @@ def get_img2img_pipeline(model_id: str, device: str = "cpu"):
 
     from diffusers import AutoPipelineForImage2Image
 
-    pipe = AutoPipelineForImage2Image.from_pretrained(model_id, torch_dtype=_torch_dtype(device))
+    # Match text-to-image loading for locally installed half-precision snapshots.
+    load_options = {}
+    if os.path.isfile(os.path.join(model_id, "unet", "diffusion_pytorch_model.fp16.safetensors")):
+        load_options["variant"] = "fp16"
+    pipe = AutoPipelineForImage2Image.from_pretrained(
+        model_id, torch_dtype=_torch_dtype(device), **load_options
+    )
     _img2img_pipeline = _move_pipe(pipe, device)
     _img2img_pipeline_key = key
     return _img2img_pipeline

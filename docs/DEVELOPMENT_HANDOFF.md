@@ -492,3 +492,6 @@ AcceptanceDriver now emits invariant decimal timing values and escapes all JSON 
 ### Shared native gameplay completeness gate
 
 Unity and Unreal acceptance now share gameplayComplete: all required feature keys and every reported subcheck must be passed, with an explicit empty notImplemented list. A top-level harness PASS cannot hide partial, pending, inconclusive or unimplemented gameplay. Platform/evidence tests plus complete/incomplete/missing/null and failed-subcheck cases passed. No new native gameplay result is claimed.
+
+### Local reference-image FP16 loading
+Image-to-image loading now selects variant fp16 when the local UNet FP16 weights exist, matching text generation. Extracted production-function checks passed for FP16 and default snapshots; Python syntax passed. SDXL download session 72260 terminated with HTTP 503 from the model CDN; model is incomplete and no SDXL render is claimed. Trial script: Recovery-Audit/work/generate-courier-sdxl.py; download plan pins revision and files on E:.
