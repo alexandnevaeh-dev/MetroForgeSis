@@ -9,7 +9,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, statSync } from 'no
 import { dirname, join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { arch, cpus, platform, release, totalmem } from 'node:os';
-import { nativeBuildPlan, playtestPassed, freshCaptureEvidence } from './lib/engine-acceptance-platform.mjs';
+import { nativeBuildPlan, playtestPassed, freshCaptureEvidence, gameplayComplete } from './lib/engine-acceptance-platform.mjs';
 import { fileURLToPath } from 'node:url';
 import { validateForeignEngineProject } from '../packages/qa/dist/engine-validator.js';
 import { resolveUnityEditor, resolveUnrealEditor } from '../packages/tools/dist/index.js';
@@ -157,7 +157,7 @@ if (unityReady && unityGen.passed) {
     const resultPath = join(unityProject, 'qa', 'acceptance-result.json');
     let playReport = null;
     try { playReport = { data: JSON.parse(readFileSync(resultPath, 'utf-8')), modifiedAt: statSync(resultPath).mtimeMs }; } catch { /* Missing or malformed evidence fails. */ }
-    stages.unity.playtested = playtestPassed(play.status, playReport, playStartedAt) ? 'passed' : 'failed';
+    stages.unity.playtested = playtestPassed(play.status, playReport, playStartedAt) && gameplayComplete(playReport?.data) ? 'passed' : 'failed';
     stages.unity.visualCapture = freshCaptureEvidence(playReport, playStartedAt, join(unityProject, 'qa', 'captures')) ? 'pending_review' : 'failed';
     const build = runUnityStage(env.unity.path, `MetroForgeBuild.${nativeBuildPlan(process.platform, '', unityProject).unityMethod}`, [], 'unity-standalone.log', 25 * 60 * 1000, false);
     stages.unity.standaloneBuild = build.status === 0 ? 'passed' : 'failed';
@@ -186,11 +186,7 @@ if (unrealReady && unrealGen.passed) {
     stages.unreal.playExit = play.status;
     stages.unreal.playError = play.error?.message ?? null;
     stages.unreal.opened = playReport && playReport.modifiedAt >= playStartedAt ? 'passed' : 'failed';
-    const required = ['traversal', 'containment', 'combat', 'abilities', 'gates',
-      'npc_interaction', 'save_continue', 'respawn', 'boss_phases', 'victory'];
-    const complete = required.every((feature) => playReport?.data?.features?.[feature] === 'passed') &&
-      Array.isArray(playReport?.data?.notImplemented) && playReport.data.notImplemented.length === 0;
-    stages.unreal.playtested = playtestPassed(play.status, playReport, playStartedAt) && complete ? 'passed' : 'failed';
+    stages.unreal.playtested = playtestPassed(play.status, playReport, playStartedAt) && gameplayComplete(playReport?.data) ? 'passed' : 'failed';
     stages.unreal.visualCapture = freshCaptureEvidence(playReport, playStartedAt, join(unrealProject, 'qa', 'captures')) ? 'pending_review' : 'failed';
     stages.unreal.featureResults = playReport?.data?.features ?? {};
     stages.unreal.notImplemented = playReport?.data?.notImplemented ?? [];

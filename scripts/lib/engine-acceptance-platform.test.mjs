@@ -44,3 +44,16 @@ assert.equal(freshCaptureEvidence(evidence([capture]), startedAt, captureRoot), 
 writeFileSync(capture, png); utimesSync(capture, new Date(0), new Date(0));
 assert.equal(freshCaptureEvidence(evidence([capture]), startedAt, captureRoot), false);
 console.log('PASS: fresh capture evidence rejects empty, stale, missing, outside and invalid captures');
+
+const { gameplayComplete } = await import('./engine-acceptance-platform.mjs');
+const allFeatures = Object.fromEntries(['traversal', 'containment', 'combat', 'abilities', 'gates',
+  'npc_interaction', 'save_continue', 'respawn', 'boss_phases', 'victory'].map(key => [key, 'passed']));
+assert.equal(gameplayComplete({features: allFeatures, notImplemented: []}), true);
+for (const value of ['partial', 'pending', 'inconclusive', 'not_implemented', 'failed']) {
+  assert.equal(gameplayComplete({features: {...allFeatures, combat: value}, notImplemented: []}), false);
+}
+assert.equal(gameplayComplete({features: allFeatures, notImplemented: ['boss phases']}), false);
+assert.equal(gameplayComplete({features: {...allFeatures, combat_kill: 'failed'}, notImplemented: []}), false);
+assert.equal(gameplayComplete({features: {}, notImplemented: []}), false);
+assert.equal(gameplayComplete(null), false);
+console.log('PASS: complete gameplay requires all required and reported features with no unimplemented work');

@@ -41,3 +41,11 @@ export function freshCaptureEvidence(report, startedAt, captureRoot) {
     } catch { return false; }
   });
 }
+
+export function gameplayComplete(report) {
+  const required = ['traversal', 'containment', 'combat', 'abilities', 'gates',
+    'npc_interaction', 'save_continue', 'respawn', 'boss_phases', 'victory'];
+  return required.every((feature) => report?.features?.[feature] === 'passed') &&
+    Object.values(report?.features ?? {}).every((result) => result === 'passed') &&
+    Array.isArray(report?.notImplemented) && report.notImplemented.length === 0;
+}

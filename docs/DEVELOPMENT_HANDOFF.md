@@ -487,3 +487,8 @@ MFAcceptance now serializes its result through the existing Unreal Json dependen
 ### Unity acceptance JSON portability
 
 AcceptanceDriver now emits invariant decimal timing values and escapes all JSON control characters in strings. The extracted production C# escape method was compiled and round-tripped quotes, backslashes, newline, tab and NUL through a JSON parser; invariant decimal formatting was checked under de-DE. This validates the helper only, not Unity compilation/runtime. Updated the disposable unity-animated-0pJWTi acceptance source to match.
+
+
+### Shared native gameplay completeness gate
+
+Unity and Unreal acceptance now share gameplayComplete: all required feature keys and every reported subcheck must be passed, with an explicit empty notImplemented list. A top-level harness PASS cannot hide partial, pending, inconclusive or unimplemented gameplay. Platform/evidence tests plus complete/incomplete/missing/null and failed-subcheck cases passed. No new native gameplay result is claimed.
