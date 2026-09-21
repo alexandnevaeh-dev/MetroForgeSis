@@ -14,7 +14,61 @@ export interface ProjectEditResult {
   message?: string;
 }
 
+/** Restore world data and room scenes on failed writes/compilation (not crash atomic). */
 export function applyWorldEditAndRecompile(
+  projectPath: string,
+  command: WorldEditCommand,
+  options?: { recompileRoomIds?: string[] },
+): ProjectEditResult {
+  let files: string[];
+  let originals: Array<Buffer | null>;
+  try {
+    if (detectProjectEngine(projectPath) !== 'godot') {
+      return { success: false, errors: ['This room/world edit requires the Godot adapter; Unity and Unreal recompilation is not implemented here.'] };
+    }
+    const project = loadProjectContext(projectPath);
+    const updated = applyWorldEditCommand(project.worldGraph, command);
+    const ids = new Set([...project.worldGraph.nodes, ...updated.nodes].filter((node) => node.type === 'room').map((node) => node.id));
+    for (const id of [...ids, ...(options?.recompileRoomIds ?? [])]) {
+      if (!/^[A-Za-z0-9_-]+$/.test(id)) throw new Error('Invalid room identifier');
+    }
+    if (command.type === 'move_room' && (!Number.isFinite(command.x) || !Number.isFinite(command.y))) {
+      throw new Error('World positions must be finite numbers');
+    }
+    files = [
+      join(projectPath, 'world_graph.json'),
+      join(projectPath, 'data', 'world', 'world_graph.json'),
+      join(projectPath, 'data', 'rooms', 'rooms.json'),
+      ...[...ids].map((id) => join(projectPath, 'scenes', 'rooms', `${id}.tscn`)),
+    ];
+    originals = files.map((file) => existsSync(file) ? readFileSync(file) : null);
+  } catch (error) {
+    return { success: false, errors: [error instanceof Error ? error.message : String(error)] };
+  }
+  let result: ProjectEditResult;
+  try {
+    result = applyWorldEditUnchecked(projectPath, command, options);
+  } catch (error) {
+    result = { success: false, errors: [error instanceof Error ? error.message : String(error)] };
+  }
+  if (result.success) return result;
+  const errors = [...result.errors];
+  files.forEach((file, index) => {
+    try {
+      const original = originals[index];
+      if (original === null) {
+        if (existsSync(file)) unlinkSync(file);
+      } else if (original !== undefined && (!existsSync(file) || !readFileSync(file).equals(original))) {
+        writeFileSync(file, original);
+      }
+    } catch (error) {
+      errors.push(`World rollback failed for ${file}: ${String(error)}`);
+    }
+  });
+  return { success: false, errors, recompiledRooms: [] };
+}
+
+function applyWorldEditUnchecked(
   projectPath: string,
   command: WorldEditCommand,
   options?: { recompileRoomIds?: string[] },
@@ -95,6 +149,7 @@ export function applyWorldEditAndRecompile(
   });
 
   if (recompile.errors.length) errors.push(...recompile.errors);
+  if (!recompile.success && errors.length === 0) errors.push("World room compilation failed");
 
   return {
     success: errors.length === 0,
