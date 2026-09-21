@@ -146,7 +146,7 @@ func _run_acceptance() -> Dictionary:
 		_mark_room()
 		await _wait_fade_idle()
 		await _maybe_biome_evidence("door")
-		if String(GameManager.current_room_id) == "room_008":
+		if not _save_ok and _current_room() != null and _current_room().get_node_or_null("SavePoint") != null:
 			if not await _activate_save_and_continue():
 				return {"ok": false, "reason": "save_or_reload_failed"}
 
@@ -160,8 +160,13 @@ func _run_acceptance() -> Dictionary:
 	)
 	_check("boss_defeated_via_input", boss_ok)
 	_check("victory_state", _victory_ok)
-	_check("all_thirteen_rooms_visited", _unique_room_count() >= 13)
-	_check("quen_isley_dialogue_via_input", _npc_ok)
+	var expected_rooms: Array = route.get("visitedRoomOrder", [])
+	var route_rooms_visited := not expected_rooms.is_empty()
+	for room_id in expected_rooms:
+		if not _rooms_visited.has(String(room_id)):
+			route_rooms_visited = false
+	_check("all_route_rooms_visited", route_rooms_visited)
+	_check("generated_npc_dialogue_via_input", _npc_ok)
 	_check("dash_acquired_via_pickup", _dash_ok)
 	_check("save_beacon_activated", _save_ok)
 	_check("save_reload_restored_checkpoint", _reload_ok)
@@ -257,7 +262,7 @@ func _activate_save_and_continue() -> bool:
 	var player := _player()
 	var save_point := _current_room().get_node_or_null("SavePoint") if _current_room() else null
 	if save_point == null:
-		_limit("room_008 has no SavePoint node")
+		_limit("current room has no SavePoint node")
 		_check("save_point_present", false)
 		return false
 	_note("save_approach", "walk into SavePoint Area2D")
@@ -275,7 +280,7 @@ func _activate_save_and_continue() -> bool:
 	await _shot("save_activated")
 	var expected_room := SaveManager.get_checkpoint_room_id()
 	var had_dash := GameManager.has_ability("dash")
-	_check("checkpoint_room_is_save_room", expected_room == "room_008")
+	_check("checkpoint_room_is_save_room", expected_room == String(GameManager.current_room_id))
 	_check("dash_held_at_save", had_dash)
 	_note("continue_flow", "SaveManager.load_game + World.tscn (TitleScreen Continue path)")
 	_world.queue_free()
@@ -663,6 +668,13 @@ func _wait_victory(timeout_sec: float) -> void:
 
 
 func _shot(name: String) -> void:
+	# Room identity changes before fade-in completes; wait for the whole transition.
+	var deadline := Time.get_ticks_msec() + 10000
+	while is_instance_valid(_world) and _world.get("_transitioning") == true:
+		if Time.get_ticks_msec() >= deadline:
+			_check("screenshot_transition_timeout_%s" % name, false)
+			return
+		await get_tree().process_frame
 	if not await CaptureGuard.await_frames(self, 2, 2.0):
 		_check("screenshot_wait_%s" % name, false)
 		return
