@@ -81,6 +81,7 @@ public class AcceptanceDriver : MonoBehaviour
 
     private IEnumerator Start()
     {
+        Application.runInBackground = true;
         _game = GetComponent<GameBootstrap>();
         _mode = ArgValue("-acceptanceMode", string.IsNullOrEmpty(ForcedMode) ? "normal_input" : ForcedMode);
         _captureEnabled = _mode == "capture" || _mode == "all";

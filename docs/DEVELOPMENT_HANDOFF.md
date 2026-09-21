@@ -596,3 +596,7 @@ Headless PID15308 completed WRAITH_CHAIN_VALIDATION_OK in wraith-native.log. All
 ### Wraith Chain visual compiled, visual review pending
 Added a lazily created animated LineRenderer tether with ember-to-spectral color, endpoint-preserving ripples, cancel cleanup and material destruction. Unity Roslyn wraith-compile.rsp passed exit0. Rendering has not been observed; this is a first visual implementation, not approved artwork or animation. Source only: active full-game PID21516 remains on prior snapshot. Do not overwrite active game scripts. Native mechanics results predate this visual addition.
 
+
+### Acceptance diagnostics and knight v3 render active
+Previous goal turn made source progress. Current full-game PID21516 rechecked alive but remains at spawn marker, no capture/pass. Do not infer terminal state from silence. New template Editor watchdog logs pause/timeScale/frame/focus every10s and fails after configured timeout+30s; runtime acceptance sets runInBackground. Runtime and Editor response-file Roslyn compilations passed, native watchdog execution pending. Changes have NOT been copied into active game. Capture uses yield null and Camera.Render, not WaitForEndOfFrame; that suspected explanation was ruled out by source inspection. Local SDXL knight v3 launched as exec session12043 with E: log knight-local-v3.log and exit receipt knight-local-v3.exit; model loaded, render pending. Preserve process; no image review yet.
+
