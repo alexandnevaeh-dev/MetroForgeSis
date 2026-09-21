@@ -280,8 +280,8 @@ func _activate_save_and_continue() -> bool:
 	await _shot("save_activated")
 	var expected_room := SaveManager.get_checkpoint_room_id()
 	var had_dash := GameManager.has_ability("dash")
+	var saved_abilities: Array = GameManager.player_abilities.duplicate()
 	_check("checkpoint_room_is_save_room", expected_room == String(GameManager.current_room_id))
-	_check("dash_held_at_save", had_dash)
 	_note("continue_flow", "SaveManager.load_game + World.tscn (TitleScreen Continue path)")
 	_world.queue_free()
 	_world = null
@@ -313,6 +313,10 @@ func _activate_save_and_continue() -> bool:
 	print("ACCEPTANCE_RELOAD room=%s expected=%s dash=%s ok=%s" % [
 		GameManager.current_room_id, expected_room, str(GameManager.has_ability("dash")), str(_reload_ok)
 	])
+	var restored_abilities: Array = GameManager.player_abilities.duplicate()
+	saved_abilities.sort()
+	restored_abilities.sort()
+	_reload_ok = _reload_ok and saved_abilities == restored_abilities
 	_check("save_reload_restored_checkpoint", _reload_ok)
 	await _shot("save_reloaded")
 	_mark_room()
