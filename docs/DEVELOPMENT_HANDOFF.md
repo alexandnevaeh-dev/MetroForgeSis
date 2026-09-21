@@ -342,3 +342,8 @@ Re-ran the GDBxDS native gameplay fixture with --verbose; process exited 0. Evid
 ## Audio teardown candidate comparison
 
 In the disposable GDBxDS fixture only, added AudioManager._exit_tree to stop pooled SFX, voice and music players, clear their streams and clear the SFX cache. Native verbose run exited 0 with 248 PASS and no FAIL, but biome_0.wav and AudioStreamPlaybackWAV remained retained. Evidence: E:/Metroforge/Recovery-Audit/native-gameplay-teardown-candidate.log. Rejected the candidate as ineffective and restored fixture AudioManager from the production template. No production audio change made. Next isolate retained playback in a minimal music-only lifecycle before changing runtime ownership.
+
+
+## Music lifecycle driver isolation
+
+Minimal native scene using production AudioManager played biome_0 for 0.5s, asserted playing, stopped, cleared its stream and waited two frames. Dummy audio reproduced retained AudioStreamWAV/PlaybackWAV; WASAPI exited cleanly without those diagnostics. WASAPI log confirms active stereo 48kHz output. Evidence: E:/Metroforge/Recovery-Audit/music-lifecycle.log and music-lifecycle-wasapi.log. This narrows the resource warning to driver-dependent behavior in this reproduction; full-game timers remain a separate issue. Native gameplay runner now accepts METROFORGE_TEST_AUDIO_DRIVER (default Dummy) and records the selected driver, enabling full WASAPI comparison. Audible quality is not assessed.
