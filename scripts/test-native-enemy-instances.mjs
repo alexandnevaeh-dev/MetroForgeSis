@@ -3,6 +3,7 @@ import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, basename } from 'node:path';
 import { applyRoomEditAndRecompile } from '../packages/generation/dist/project-edit-service.js';
+import { inspectPlacementForSave, saveAuthoredPlacement } from '../packages/generation/dist/live-placement-save.js';
 import { spawnCapturedSync } from '../packages/qa/dist/process-capture.js';
 const source = process.argv[2];
 const godot = process.env.GODOT_EXECUTABLE;
@@ -17,6 +18,17 @@ assert.ok(original);
 const copy = { ...original, id: `${original.id}_copy`, definitionId: original.id, x: original.x - 120 };
 const edit = applyRoomEditAndRecompile(project, { roomId: room.id, enemies: [original.id, copy.id], entityPlacements: [...room.entityPlacements, copy] });
 assert.equal(edit.success, true, edit.errors.join('\n'));
+const identity = { roomId: room.id, kind: 'enemy', id: copy.id };
+const inspected = inspectPlacementForSave(project, identity);
+const moved = { x: copy.x - 32, y: copy.y };
+const saved = saveAuthoredPlacement(project, identity, inspected.revision, moved);
+assert.throws(() => saveAuthoredPlacement(project, identity, inspected.revision, { x: 0, y: 0 }), /changed since inspection/);
+const undone = saveAuthoredPlacement(project, identity, saved.saved.revision, { x: copy.x, y: copy.y });
+saveAuthoredPlacement(project, identity, undone.saved.revision, moved);
+const savedRows = JSON.parse(readFileSync(join(project, 'data/rooms/rooms.json'))).rooms[room.id].entityPlacements;
+assert.deepEqual(savedRows.find(p => p.id === original.id), original);
+assert.deepEqual(savedRows.find(p => p.id === copy.id), { ...copy, ...moved });
+
 const script = `extends Node
 func _ready() -> void:
 	var room = load(${JSON.stringify(`res://scenes/rooms/${room.id}.tscn`)}).instantiate()
@@ -28,7 +40,7 @@ func _ready() -> void:
 		failures.append("shared definition")
 	if first.get_meta("metroforge_entity_id", "") != ${JSON.stringify(original.id)} or second.get_meta("metroforge_entity_id", "") != ${JSON.stringify(copy.id)}:
 		failures.append("distinct authoring identities")
-	if absf(first.position.x - second.position.x - 120.0) > 0.1:
+	if absf(first.position.x - second.position.x - 152.0) > 0.1:
 		failures.append("authored positions")
 	for enemy in [first, second]:
 		if enemy._load_enemy_definition(enemy.enemy_id).is_empty():
@@ -71,4 +83,4 @@ writeFileSync(join(project, 'native-enemies.log'), result.stdout + result.stderr
 console.log(JSON.stringify({ project, exitCode: result.status, error: result.error?.message }));
 assert.equal(result.status, 0);
 assert.match(result.stdout, /NATIVE_ENEMY_RESULT.*"failures":\[\]/);
-console.log('PASS: native enemy definitions, artwork, identities, positions, rendered frame and independent damage/death');
+console.log('PASS: native enemy definitions, artwork, identities, positions, rendered frame and independent damage/death after targeted save/undo/redo');

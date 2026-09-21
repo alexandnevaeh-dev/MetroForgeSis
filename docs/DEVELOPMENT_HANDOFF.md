@@ -227,3 +227,7 @@ Added scripts/test-native-enemy-instances.mjs: copies an existing generated game
 
 ## Native duplicate enemy damage/death - continuation
 Extended native-enemy-instances test to invoke actual HurtboxComponent.receive_hit for nonlethal then lethal damage. Verifies independent health, death-animation completion/removal of only the defeated instance, survivor full health and exactly one enemy_killed event with shared content definition id. Native windowed run exited0 with failures=[] on RTX5060; evidence Recovery-Audit/temp/metroforge-native-enemies-DtbWnO/native-enemies.log. This exercises hurtbox signal/controller/health/death chain directly, not player input or physics collision delivery. Physics stays frozen for deterministic instance isolation; broader combat playtest and complete product quality remain open.
+
+
+## Duplicate placement save round-trip - continuation
+Native multi-enemy harness now saves only duplicate coordinates through live-placement-save service, rejects stale revision, undoes and redoes position via current revisions, asserts original placement byte-equivalent data and copied definitionId retained, then reloads scene in native Godot. Run exit0 failures=[]; authored separation152px verified, shared definition/artwork and independent damage/death still pass. Evidence Recovery-Audit/temp/metroforge-native-enemies-M2wnOu/native-enemies.log. This covers persistence service and native reload; it does not substitute for browser UI or live runtime command/ack bridge interaction. Existing root certificate diagnostic remains.
