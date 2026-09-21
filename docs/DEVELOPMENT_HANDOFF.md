@@ -422,3 +422,8 @@ startSpeechRecording now remembers stop requests made before getUserMedia resolv
 ## Foreign-engine room edit rejection without writes
 
 Moved Godot adapter check before snapshot/rollback in applyRoomEditAndRecompile. Previously a rejected Unity/Unreal edit entered rollback and rewrote existing room data despite no mutation. scripts/test-foreign-room-edit.mjs verifies explicit rejection and unchanged bytes plus modification time for both engine manifests. Generation TypeScript build and test passed. This is adapter-boundary validation, not native Unity/Unreal compile or gameplay evidence.
+
+
+## Foreign-engine edit boundary regression coverage
+
+Expanded test-foreign-room-edit.mjs to cover room and world commands for Unity/Unreal via explicit engine manifest and native project fingerprints. Complete recursive file snapshot checks no files created, content changed or modification times touched. All four detection cases passed. Existing room rollback and world rollback suites also passed, including actual room duplication compilation. This does not provide native Unity/Unreal gameplay or compile acceptance.
