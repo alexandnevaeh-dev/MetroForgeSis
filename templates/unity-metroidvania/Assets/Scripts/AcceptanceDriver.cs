@@ -209,8 +209,8 @@ public class AcceptanceDriver : MonoBehaviour
         var lastProgressRoom = _game.CurrentRoomId;
         var lastProgressX = _game.Player != null ? _game.Player.transform.position.x : 0f;
         var lastProgressAt = Time.unscaledTime;
-        var sawGateWithoutDash = false;
-        var sawGateWithDash = false;
+        var sawLockedGate = false;
+        var sawUnlockedGate = false;
         var combatKilled = false;
         var combatOnceVerified = false;
         var combatFollowUp = false;
@@ -273,19 +273,25 @@ public class AcceptanceDriver : MonoBehaviour
                 if (_captureEnabled && enemy != null)
                     yield return Capture("enemy_" + enemy.EnemyId);
             }
-            if (_game.Player.Abilities.Contains("dash"))
-            {
+            if (AllConfiguredAbilitiesUnlocked())
                 _feature["abilities"] = "passed";
+            if (_game.Player.Abilities.Contains("dash") || _game.Player.Abilities.Contains("phase"))
+            {
                 Pulse(KeyCode.K);
                 if (_captureEnabled)
                     yield return Capture("player_dash");
             }
             if (_game.CurrentRoom != null && _game.CurrentRoom.gates != null && _game.CurrentRoom.gates.Length > 0)
             {
-                if (_game.Player.Abilities.Contains("dash"))
-                    sawGateWithDash = true;
-                else
-                    sawGateWithoutDash = true;
+                foreach (var gate in _game.CurrentRoom.gates)
+                {
+                    if (gate == null || string.IsNullOrEmpty(gate.requiredAbility))
+                        continue;
+                    if (_game.Player.Abilities.Contains(gate.requiredAbility))
+                        sawUnlockedGate = true;
+                    else
+                        sawLockedGate = true;
+                }
                 if (_captureEnabled)
                     yield return Capture("ability_gate");
             }
@@ -339,9 +345,9 @@ public class AcceptanceDriver : MonoBehaviour
         _feature["combat"] = combatReady ? "passed" : combatFailed ? "failed" : "inconclusive";
         if (_feature["abilities"] == "pending")
             _feature["abilities"] = "failed";
-        if (sawGateWithoutDash && sawGateWithDash)
+        if (sawLockedGate && sawUnlockedGate)
             _feature["gates"] = "passed";
-        else if (sawGateWithoutDash)
+        else if (sawLockedGate)
             _feature["gates"] = "inconclusive";
         else
             _feature["gates"] = "inconclusive";
@@ -511,6 +517,18 @@ public class AcceptanceDriver : MonoBehaviour
             ",\"deaths\":" + deaths +
             ",\"rooms\":" + _roomsVisited.Count + "}\n";
         File.AppendAllText(path, line);
+    }
+
+    private bool AllConfiguredAbilitiesUnlocked()
+    {
+        if (_game == null || _game.Player == null || _game.Pack?.abilities == null || _game.Pack.abilities.Length == 0)
+            return false;
+        foreach (var ability in _game.Pack.abilities)
+        {
+            if (ability == null || string.IsNullOrEmpty(ability.id) || !_game.Player.Abilities.Contains(ability.id))
+                return false;
+        }
+        return true;
     }
 
     private static bool HasActor(GameplayActor actor)
