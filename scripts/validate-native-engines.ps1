@@ -32,6 +32,7 @@ $paths = @{
   LOCALAPPDATA = (Join-Path $storagePath 'appdata\local')
   UPM_CACHE_ROOT = (Join-Path $storagePath 'cache\unity-upm')
   BEE_CACHE_DIRECTORY = (Join-Path $storagePath 'cache\unity-bee')
+  METROFORGE_UNITY_GI_CACHE = (Join-Path $storagePath 'cache\unity-gi')
   'UE-LocalDataCachePath' = (Join-Path $storagePath 'cache\unreal-ddc')
   'UE-ZenDataPath' = (Join-Path $storagePath 'cache\unreal-zen')
   METROFORGE_ENGINE_REPORT_DIR = $runPath

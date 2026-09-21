@@ -33,6 +33,7 @@ public static class MetroForgeAcceptance
         }
         EditorSceneManager.OpenScene(scene);
         AcceptanceDriver.ForcedMode = mode;
+        SessionState.SetString("MetroForge.Acceptance.PendingMode", mode);
         EditorApplication.EnterPlaymode();
     }
 }

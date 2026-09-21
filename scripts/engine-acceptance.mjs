@@ -71,7 +71,10 @@ function generationCheck(projectPath, engine) {
 }
 
 function runUnityStage(unityBin, method, extraArgs, logName, timeoutMs, graphics) {
+  const giCache = process.env.METROFORGE_UNITY_GI_CACHE || join(unityProject, 'Library', 'GICache');
+  mkdirSync(giCache, { recursive: true });
   const args = [
+    '-giCustomCacheLocation', giCache,
     '-projectPath',
     unityProject,
     '-logFile',
@@ -244,7 +247,7 @@ const acceptance = {
       stages: stages.unity,
       blocked: stages.unity.blocked,
       nextPrerequisite: unityReady
-        ? 'Editors present — inspect qa logs for compile/play/capture/standalone.'
+        ? 'Editors present â€” inspect qa logs for compile/play/capture/standalone.'
         : 'Install a supported Unity editor for this host on E:, activate its license and set UNITY_EDITOR.',
     },
     unreal: {

@@ -20,6 +20,20 @@ public class AcceptanceDriver : MonoBehaviour
     public static string LastResultPath;
     public static string ForcedMode;
 
+#if UNITY_EDITOR
+    // Static fields reset during the Play Mode domain reload. Consume only this launch's request.
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void RestoreEditorAcceptanceMode()
+    {
+        const string key = "MetroForge.Acceptance.PendingMode";
+        var pending = UnityEditor.SessionState.GetString(key, "");
+        UnityEditor.SessionState.EraseString(key);
+        if (!string.IsNullOrEmpty(pending))
+            ForcedMode = pending;
+    }
+#endif
+
+
     private GameBootstrap _game;
     private readonly HashSet<string> _roomsVisited = new HashSet<string>();
     private readonly List<string> _events = new List<string>();
