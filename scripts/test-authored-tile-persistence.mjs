@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, copyFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { applyRoomEditAndRecompile } from '../packages/generation/dist/project-edit-service.js';
+import { applyRoomEditAndRecompile, applyWorldEditAndRecompile } from '../packages/generation/dist/project-edit-service.js';
 const source = process.argv[2];
 if (!source) throw new Error('Provide a generated project fixture');
 const project = mkdtempSync(join(tmpdir(), 'metroforge-authored-tiles-'));
@@ -29,7 +29,20 @@ for (const cells of [painted,[]]) {
   assert.equal(resized.success,true,resized.errors.join('\n'));
   assert.deepEqual(room().tileCells,cells,'Unrelated recompilation must preserve Studio paint');
 }
-console.log('PASS: explicit empty/nonempty tile paint persists through actual assembler and subsequent room resize');
+const dimensions = { width: 1232, height: 736 };
+assert.equal(applyRoomEditAndRecompile(project, { roomId, ...dimensions }).success, true);
+assert.equal(applyRoomEditAndRecompile(project, { roomId, tileCells: painted }).success, true);
+assert.equal(room().width, dimensions.width, 'Painting must preserve authored width');
+assert.equal(room().height, dimensions.height, 'Painting must preserve authored height');
+const duplicate = applyWorldEditAndRecompile(project, { type: 'duplicate_room', roomId, newRoomId: 'authored_copy' });
+assert.equal(duplicate.success, true, duplicate.errors.join('\n'));
+for (const id of [roomId, 'authored_copy']) {
+  const record = JSON.parse(readFileSync(roomsPath)).rooms[id];
+  assert.equal(record.width, dimensions.width, 'World recompilation must retain authored width');
+  assert.equal(record.height, dimensions.height, 'World recompilation must retain authored height');
+  assert.deepEqual(record.tileCells, painted);
+}
+console.log('PASS: painted cells and dimensions survive room edits and actual world duplication');
 
 if (process.env.GODOT_EXECUTABLE) {
   const { spawnSync } = await import('node:child_process');

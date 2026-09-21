@@ -1760,6 +1760,7 @@ export function recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult
     if (!targets.has(roomId)) continue;
     try {
       const override = input.roomOverrides?.[roomId];
+      const existingRecord = roomsData[roomId] as PublishedRoomRecord | undefined;
       // Rebuild layout from the seeded assembler. Restoring rooms.json tileCells would
       // re-bake previous wallpaper infills into every interior cell.
       const opts = buildRoomAssemblyOptions(
@@ -1772,6 +1773,9 @@ export function recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult
         textureExists,
         {
           ...override,
+          // Recompiling doors or paint must not reset Studio-authored room bounds.
+          width: override?.width ?? existingRecord?.width,
+          height: override?.height ?? existingRecord?.height,
           visualKit: override?.visualKit ?? visualKit,
           authoredParallax: override?.authoredParallax ?? authoredParallax,
         },
@@ -1786,7 +1790,6 @@ export function recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult
         opts.platforms = [];
         opts.pits = [];
       }
-      const existingRecord = roomsData[roomId] as PublishedRoomRecord | undefined;
       if (override?.entityPlacements?.length) {
         opts.entityPlacements = override.entityPlacements;
       } else if (existingRecord?.entityPlacements?.length) {
