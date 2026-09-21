@@ -337,3 +337,8 @@ Ran scripts/test-native-recompiled-game.mjs against the existing generated gamep
 ## Verbose native shutdown investigation
 
 Re-ran the GDBxDS native gameplay fixture with --verbose; process exited 0. Evidence: E:/Metroforge/Recovery-Audit/native-gameplay-verbose.log. Shutdown identifies res://audio/music/biome_0.wav (AudioStreamWAV) still in use, with AudioStreamPlaybackWAV and SceneTreeTimer instances also retained. This narrows the audio resource diagnostic but does not establish its root cause or prove a production memory leak. Next investigate music playback teardown separately from pending test/gameplay timers, using a baseline/candidate shutdown comparison. No runtime workaround applied.
+
+
+## Audio teardown candidate comparison
+
+In the disposable GDBxDS fixture only, added AudioManager._exit_tree to stop pooled SFX, voice and music players, clear their streams and clear the SFX cache. Native verbose run exited 0 with 248 PASS and no FAIL, but biome_0.wav and AudioStreamPlaybackWAV remained retained. Evidence: E:/Metroforge/Recovery-Audit/native-gameplay-teardown-candidate.log. Rejected the candidate as ineffective and restored fixture AudioManager from the production template. No production audio change made. Next isolate retained playback in a minimal music-only lifecycle before changing runtime ownership.
