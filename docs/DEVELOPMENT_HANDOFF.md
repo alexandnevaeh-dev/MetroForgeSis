@@ -367,3 +367,8 @@ Trace floor-persistence-trace.log showed first key room_006:room_007 saved true,
 ## Broken-floor disk persistence verification
 
 Extended native RuntimeSmokeTest to save after breaking a floor, clear in-memory broken_floors, load the save and re-enter the room. Runner now overlays current smoke-test script and requires the disk-persistence assertion in mechanics mode. Native WASAPI run E:/Metroforge/Recovery-Audit/temp/metroforge-native-recompiled-mtevbg: 8 rooms, exit 0, 260 PASS, 0 FAIL, 0 SOFT_FAIL. Save write/load and floor absence after reload all passed. This exercises actual save I/O within the same native process, not an OS process restart. Existing certificate-store/ObjectDB diagnostics remain.
+
+
+## Stable decoration on room re-entry
+
+RoomTileMap seeded architecture from runtime parent name, so two actual instances of room_000 yielded 3291913211 versus 3170656501 when Godot renamed the second @Node2D@28. Changed seed identity to owning scene filename, preserving original room-id seed. Native baseline FAIL became PASS with both seeds 3291913211. Evidence E:/Metroforge/Recovery-Audit/room-seed-baseline.log and room-seed-fixed.log. Retained fixture scripts/fixtures/room-decoration-seed-runtime.gd; full runner overlays current RoomTileMap. This proves deterministic seed across renamed instances, not visual quality approval.

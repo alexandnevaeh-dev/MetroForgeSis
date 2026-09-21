@@ -157,7 +157,11 @@ func _in_pit(x: int, pits: Array) -> bool:
 ## wall. Interior mass belongs on RearWall, which has no collision.
 func _arch_rng() -> RandomNumberGenerator:
 	var rng := RandomNumberGenerator.new()
-	var room_key := get_parent().name if get_parent() else name
+	var owning_room := get_parent()
+	var room_key := str(owning_room.name if owning_room else name)
+	# Re-entry can rename sibling room instances while the outgoing one awaits deletion.
+	if owning_room and not owning_room.scene_file_path.is_empty():
+		room_key = owning_room.scene_file_path.get_file().get_basename()
 	rng.seed = hash("%s-%d-%d" % [str(room_key), room_width, room_height])
 	return rng
 
