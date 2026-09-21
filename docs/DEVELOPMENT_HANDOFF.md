@@ -211,3 +211,7 @@ Validation: generation TypeScript build and changed-file ESLint pass. scripts/te
 
 ## Preserve authored room dimensions - continuation
 Reproduced with real assembler: resize to width1232/height736 followed by tile paint reset width to720. Recompilation now falls back to saved room width/height when no explicit dimension override is supplied, so painting, door recompilation and duplication retain room bounds. Extended authored-tile-persistence test verifies original and duplicated dimensions and cells; test failed before fix and passes after. World rollback regression, Godot package TypeScript and changed-file ESLint also pass. Optional native tile test skipped this run; evidence here is real scene/data assembly, not new native engine validation.
+
+
+## Persist regular enemy removal - continuation
+Reproduced actual assembler failure in generated enemy room: enemies=[] left Enemy node in scene. Room edit now derives explicit enemy presence from edited enemy list; assembler persists forceEnemy and consumes it during future recompiles. Removing last regular enemy remains removed after resize and world duplication; explicitly enabling again survives subsequent edits. Extended authored persistence test now selects a real enemy room (spawn room would mask bug), inspects scene nodes and room records, and passes after failing before fix. Godot/generation TypeScript and changed-file ESLint pass. This fixes regular enemy presence, not arbitrary multi-enemy/NPC roster fidelity or native engine acceptance; those remain to audit.

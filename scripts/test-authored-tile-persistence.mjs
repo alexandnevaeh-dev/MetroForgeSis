@@ -10,7 +10,8 @@ mkdirSync(join(project, 'data/rooms'), { recursive: true });
 for (const file of ['game_dna.json','world_graph.json','data/rooms/rooms.json']) copyFileSync(join(source,file),join(project,file));
 writeFileSync(join(project,'project.godot'),'config_version=5\n');
 const roomsPath=join(project,'data/rooms/rooms.json');
-const roomId=Object.keys(JSON.parse(readFileSync(roomsPath)).rooms)[0];
+const roomId=Object.entries(JSON.parse(readFileSync(roomsPath)).rooms).find(([, room]) => room.enemies?.some(id => id.startsWith("enemy_")))?.[0];
+assert.ok(roomId, "Fixture needs a room with a generated regular enemy");
 for (let i=0;i<10;i++) {
   const dir=join(project,`assets/tilesets/biome_${i}`); mkdirSync(dir,{recursive:true});
   writeFileSync(join(dir,'source.png'),'existence-only fixture; not a runtime texture');
@@ -42,7 +43,20 @@ for (const id of [roomId, 'authored_copy']) {
   assert.equal(record.height, dimensions.height, 'World recompilation must retain authored height');
   assert.deepEqual(record.tileCells, painted);
 }
-console.log('PASS: painted cells and dimensions survive room edits and actual world duplication');
+assert.equal(applyRoomEditAndRecompile(project, { roomId, hasEnemy: true }).success, true);
+assert.match(scene(), /\[node name="Enemy"/);
+assert.equal(applyRoomEditAndRecompile(project, { roomId, enemies: [] }).success, true);
+assert.doesNotMatch(scene(), /\[node name="Enemy"/, 'Removing the last enemy must remove its scene node');
+assert.deepEqual(room().enemies, []);
+assert.equal(applyRoomEditAndRecompile(project, { roomId, width: 1280 }).success, true);
+assert.doesNotMatch(scene(), /\[node name="Enemy"/, 'Resizing must not restore a removed enemy');
+assert.deepEqual(room().enemies, []);
+assert.equal(applyWorldEditAndRecompile(project, { type: 'duplicate_room', roomId, newRoomId: 'cleared_copy' }).success, true);
+assert.doesNotMatch(readFileSync(join(project, 'scenes/rooms/cleared_copy.tscn'), 'utf8'), /\[node name="Enemy"/);
+assert.equal(applyRoomEditAndRecompile(project, { roomId, hasEnemy: true }).success, true);
+assert.equal(applyRoomEditAndRecompile(project, { roomId, height: 752 }).success, true);
+assert.match(scene(), /\[node name="Enemy"/, 'Explicit re-enable must survive later edits');
+console.log('PASS: authored paint, dimensions and enemy removal/re-enable persist through recompilation');
 
 if (process.env.GODOT_EXECUTABLE) {
   const { spawnSync } = await import('node:child_process');

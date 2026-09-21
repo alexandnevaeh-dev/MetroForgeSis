@@ -285,6 +285,8 @@ function applyRoomEditUnchecked(
     ? (existing.entityPlacements as EntityPlacement[])
     : undefined;
 
+  const enemyPresence = patch.hasEnemy ?? (patch.enemies !== undefined ? patch.enemies.some((id) => !id.startsWith('boss_')) : undefined);
+
   let entityPlacements = patch.entityPlacements;
   if (!entityPlacements) {
     entityPlacements = mergeEntityPlacementsForIds(
@@ -319,7 +321,7 @@ function applyRoomEditUnchecked(
     ...(patch.archetype ? { archetype: patch.archetype } : {}),
     ...(patch.width ? { width: patch.width } : {}),
     ...(patch.height ? { height: patch.height } : {}),
-    ...(patch.hasEnemy !== undefined ? { forceEnemy: patch.hasEnemy } : {}),
+    ...(enemyPresence !== undefined ? { forceEnemy: enemyPresence } : {}),
     ...(patch.tileCells ? { tileCells: patch.tileCells } : {}),
     ...(patch.enemies ? { enemies: patch.enemies } : {}),
     ...(patch.npcs ? { npcs: patch.npcs } : {}),
@@ -343,7 +345,7 @@ function applyRoomEditUnchecked(
     }>
   > = {};
   roomOverrides[patch.roomId] = {
-    ...(patch.hasEnemy !== undefined ? { hasEnemy: patch.hasEnemy } : {}),
+    ...(enemyPresence !== undefined ? { hasEnemy: enemyPresence } : {}),
     ...(patch.width ? { width: patch.width } : {}),
     ...(patch.height ? { height: patch.height } : {}),
     ...(patch.tileCells ? { tileCells: patch.tileCells } : {}),

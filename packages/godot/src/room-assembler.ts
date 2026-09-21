@@ -159,6 +159,8 @@ export interface PublishedRoomRecord {
    *  room-assembler built (or, conversely, whether the door ended up requiring something the
    *  graph never asked for). */
   connections: { direction: string; targetRoomId: string; optional: boolean; requirements: string[] }[];
+  /** Explicit editor enemy presence; false survives procedural recompilation. */
+  forceEnemy?: boolean;
   enemies: string[];
   npcs: string[];
   collectibles: string[];
@@ -1774,6 +1776,7 @@ export function recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult
         {
           ...override,
           // Recompiling doors or paint must not reset Studio-authored room bounds.
+          hasEnemy: override?.hasEnemy ?? existingRecord?.forceEnemy,
           width: override?.width ?? existingRecord?.width,
           height: override?.height ?? existingRecord?.height,
           visualKit: override?.visualKit ?? visualKit,
@@ -1814,6 +1817,8 @@ export function recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult
       const scene = generateRoomScene(roomId, i, opts);
       writeFileSync(join(roomsDir, `${roomId}.tscn`), scene);
       roomsData[roomId] = buildPublishedRoomRecord(roomId, i, opts);
+      const enemyPresence = override?.hasEnemy ?? existingRecord?.forceEnemy;
+      if (enemyPresence !== undefined) roomsData[roomId]!.forceEnemy = enemyPresence;
       recompiled.push(roomId);
     } catch (err) {
       errors.push(`${roomId}: ${err instanceof Error ? err.message : String(err)}`);
