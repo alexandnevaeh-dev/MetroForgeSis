@@ -794,14 +794,15 @@ export class QAValidator {
     const required = options?.required === true;
     if (options?.godotPath && (required || options.headlessOutput)) {
       try {
-        captureGameplayScreenshots({
+        const capture = captureGameplayScreenshots({
           godotPath: options.godotPath,
           projectPath,
           headlessOutput: options.headlessOutput,
           userDataDir: options.userDataDir,
         });
-      } catch {
-        /* screenshot gate below reports missing/blank honestly */
+        if (capture.strategy === 'failed') return { gate: 'gameplay_screenshot_qa', passed: false, state: 'FAIL', message: capture.reason ?? 'Gameplay capture failed', details: { capture } };
+      } catch (error) {
+        return { gate: 'gameplay_screenshot_qa', passed: false, state: 'FAIL', message: `Gameplay capture failed: ${String(error)}` };
       }
     }
     const screenshotPath = join(projectPath, 'qa', 'screenshot_gameplay.png');

@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawnCapturedSync as spawnSync } from './process-capture.js';
 import { critiqueGameplayScreenshot } from '@metroforge/assets';
@@ -19,6 +19,7 @@ export interface GameplayCaptureTelemetry {
     exitCode: number | null;
     textureNull: boolean;
     screenshotWritten: boolean;
+    screenshotFresh?: boolean;
     decodeOk: boolean;
     blank: boolean;
     uniqueColors?: number;
@@ -200,7 +201,9 @@ export function captureGameplayScreenshots(opts: {
 
   const scene = 'res://scenes/test/RuntimeSmokeTest.tscn';
 
+  let freshHeadlessSuccess = false;
   const tryHeadless = () => {
+    const startedAt = Date.now();
     const run = runGodotSync({
       godotPath: opts.godotPath,
       projectPath: opts.projectPath,
@@ -219,9 +222,10 @@ export function captureGameplayScreenshots(opts: {
       env: isolatedUserDataEnvironment(opts.userDataDir),
     });
     const critique = recordShotCritique(screenshotPath);
+    freshHeadlessSuccess = captureAttemptPassed(run.exitCode, run.killed, screenshotPath, startedAt, critique);
     telemetry.attempts.push({
       strategy: 'headless',
-      startedAt: new Date().toISOString(),
+      startedAt: new Date(startedAt).toISOString(),
       elapsedMs: run.elapsedMs,
       exitCode: run.exitCode,
       textureNull: headlessTextureNull(run.output) || headlessTextureNull(opts.headlessOutput ?? ''),
@@ -238,39 +242,16 @@ export function captureGameplayScreenshots(opts: {
   let combinedOutput = opts.headlessOutput ?? '';
   if (!opts.headlessOutput) {
     combinedOutput = tryHeadless();
-  } else if (existsSync(screenshotPath)) {
-    const critique = recordShotCritique(screenshotPath);
-    telemetry.attempts.push({
-      strategy: 'headless',
-      startedAt: new Date().toISOString(),
-      elapsedMs: 0,
-      exitCode: 0,
-      textureNull: headlessTextureNull(combinedOutput),
-      screenshotWritten: true,
-      decodeOk: critique.decodeOk,
-      blank: critique.blank,
-      uniqueColors: critique.uniqueColors,
-      lumaStdDev: critique.lumaStdDev,
-      killed: false,
-    });
   }
 
-  if (!needsWindowedCaptureFallback({ headlessOutput: combinedOutput, screenshotPath })) {
-    const prior = existsSync(join(qaDir, 'capture_telemetry.json'))
-      ? (JSON.parse(readFileSync(join(qaDir, 'capture_telemetry.json'), 'utf-8')) as GameplayCaptureTelemetry)
-      : null;
-    telemetry.strategy =
-      prior?.strategy === 'windowed_gpu' && prior.shots?.includes('screenshot_gameplay.png')
-        ? 'windowed_gpu'
-        : telemetry.attempts.at(-1)?.strategy ?? 'headless';
-    if (prior?.attempts?.length && telemetry.attempts.length === 1 && telemetry.attempts[0]?.elapsedMs === 0) {
-      telemetry.attempts = prior.attempts;
-    }
+  if (freshHeadlessSuccess && !needsWindowedCaptureFallback({ headlessOutput: combinedOutput, screenshotPath })) {
+    telemetry.strategy = 'headless';
     telemetry.shots = collectShots(qaDir);
     writeTelemetry(qaDir, telemetry);
     return telemetry;
   }
 
+  const windowedStartedAt = Date.now();
   const windowed = runGodotSync({
     godotPath: opts.godotPath,
     projectPath: opts.projectPath,
@@ -300,7 +281,8 @@ export function captureGameplayScreenshots(opts: {
   const critique = recordShotCritique(screenshotPath);
   telemetry.attempts.push({
     strategy: 'windowed_gpu',
-    startedAt: new Date().toISOString(),
+    startedAt: new Date(windowedStartedAt).toISOString(),
+    screenshotFresh: existsSync(screenshotPath) && statSync(screenshotPath).mtimeMs >= windowedStartedAt,
     elapsedMs: windowed.elapsedMs,
     exitCode: windowed.exitCode,
     textureNull: headlessTextureNull(windowed.output),
@@ -312,11 +294,15 @@ export function captureGameplayScreenshots(opts: {
     killed: windowed.killed,
   });
 
-  if (critique.decodeOk && !critique.blank) {
+  if (captureAttemptPassed(windowed.exitCode, windowed.killed, screenshotPath, windowedStartedAt, critique)) {
     telemetry.strategy = 'windowed_gpu';
   } else {
     telemetry.strategy = 'failed';
-    telemetry.reason = critique.decodeOk
+    telemetry.reason = windowed.exitCode !== 0 || windowed.killed
+      ? 'Windowed capture process failed or timed out'
+      : !existsSync(screenshotPath) || statSync(screenshotPath).mtimeMs < windowedStartedAt
+        ? 'Windowed capture did not produce a fresh screenshot'
+        : critique.decodeOk
       ? 'windowed capture decoded but was blank / low-variance'
       : 'windowed capture did not write a decodable PNG';
   }
@@ -374,4 +360,8 @@ function writeTelemetry(qaDir: string, telemetry: GameplayCaptureTelemetry): voi
   );
   writeFileSync(join(qaDir, 'capture_telemetry.json'), JSON.stringify({ ...telemetry, shots }, null, 2));
   writeFileSync(join(qaDir, 'capture_manifest.json'), JSON.stringify(manifest, null, 2));
+}
+
+export function captureAttemptPassed(exitCode: number | null, killed: boolean, screenshotPath: string, startedAt: number, critique: { decodeOk: boolean; blank: boolean }): boolean {
+  return exitCode === 0 && !killed && critique.decodeOk && !critique.blank && existsSync(screenshotPath) && statSync(screenshotPath).mtimeMs >= startedAt;
 }
