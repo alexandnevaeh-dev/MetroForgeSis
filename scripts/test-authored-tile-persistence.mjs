@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, copyFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { applyRoomEditAndRecompile, applyWorldEditAndRecompile, regenerateRoom } from '../packages/generation/dist/project-edit-service.js';
+import { applyRoomEditAndRecompile, applyWorldEditAndRecompile, regenerateRoom, restoreRoomRecord, snapshotRoomRecord } from '../packages/generation/dist/project-edit-service.js';
 const source = process.argv[2];
 if (!source) throw new Error('Provide a generated project fixture');
 const project = mkdtempSync(join(tmpdir(), 'metroforge-authored-tiles-'));
@@ -18,6 +18,7 @@ for (let i=0;i<10;i++) {
 }
 const scene=()=>readFileSync(join(project,'scenes/rooms',`${roomId}.tscn`),'utf8');
 const room=()=>JSON.parse(readFileSync(roomsPath)).rooms[roomId];
+const proceduralSnapshot = snapshotRoomRecord(project, roomId);
 const painted=[{x:3,y:4,col:6,row:2}];
 for (const cells of [painted,[]]) {
   const result=applyRoomEditAndRecompile(project,{roomId,tileCells:cells});
@@ -71,13 +72,19 @@ for (let pass = 0; pass < 2; pass++) {
   assert.equal(applyRoomEditAndRecompile(project, { roomId, width: 1296 }).success, true);
 }
 const siblingBefore = JSON.parse(readFileSync(roomsPath)).rooms.authored_copy;
+const authoredSnapshot = snapshotRoomRecord(project, roomId);
 const regenerated = regenerateRoom(project, roomId, 'full');
 assert.equal(regenerated.success, true, regenerated.errors.join('\n'));
 assert.notEqual(room().tileCellsAuthored, true, 'Explicit regeneration must release authored paint');
 assert.notEqual(room().width, 1296, 'Explicit regeneration must restore procedural bounds');
 assert.ok(!room().entityPlacements.some(p => p.id === copyEnemy.id), 'Regeneration must replace authored instance roster');
 assert.deepEqual(JSON.parse(readFileSync(roomsPath)).rooms.authored_copy, siblingBefore, 'Other rooms must remain unchanged');
-console.log('PASS: authored persistence and explicit full regeneration of only the target room');
+assert.equal(restoreRoomRecord(project, roomId, authoredSnapshot).success, true);
+assert.equal(room().width, authoredSnapshot.width);
+assert.deepEqual(room().entityPlacements, authoredSnapshot.entityPlacements);
+assert.equal(restoreRoomRecord(project, roomId, proceduralSnapshot).success, true);
+assert.equal(room().tileCellsAuthored, proceduralSnapshot.tileCellsAuthored, 'Undo must not convert procedural tiles to authored paint');
+console.log('PASS: authored persistence, full regeneration and procedural/authored snapshot restoration');
 
 if (process.env.GODOT_EXECUTABLE) {
   const { spawnSync } = await import('node:child_process');

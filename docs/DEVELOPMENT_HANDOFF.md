@@ -255,3 +255,7 @@ Room edits reject unsupported entity kinds, empty/unsafe instance identifiers, m
 
 ## Explicit full room regeneration - continuation
 Full Regenerate Room previously sent an empty edit patch and retained authored state. It now clears only the selected stored room record inside existing rollback wrapper before real procedural recompilation, rebuilding bounds/paint/instances from world graph and game content. Ordinary edits retain authored data. Actual assembler regression proves authored flag/bounds/copied enemy reset and sibling unchanged; injected failure proves room data and scene restored. Generation TypeScript/lint and persistence/rollback tests pass. Encounter/geometry-specific regeneration semantics still need review. Git Credential Manager github list returned no account; no Unity/Unreal executables found through configured E Engines directory or PATH. Authentication/editor setup still pending, goal remains active.
+
+
+## Preserve authoring mode during undo - continuation
+Actual snapshot restore regression failed: generated tileCells became tileCellsAuthored=true because restore replayed them as a paint patch. Restore now reinstates saved room record inside rollback wrapper before recompilation, preserving procedural vs authored semantics and definition-bearing instance placements. Extended real assembler test restores authored snapshot after full regeneration, then original procedural snapshot; passes after failing before fix. Generation TypeScript/lint and rollback regression pass. Native editor undo interaction remains unverified.

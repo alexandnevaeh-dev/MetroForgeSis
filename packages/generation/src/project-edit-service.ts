@@ -235,7 +235,7 @@ function validateRoomPatch(patch: RoomEditPatch): string[] {
 export function applyRoomEditAndRecompile(
   projectPath: string,
   patch: RoomEditPatch,
-  options?: { regenerate?: boolean },
+  options?: { regenerate?: boolean; restoreRecord?: Record<string, unknown> },
 ): ProjectEditResult {
   const validationErrors = validateRoomPatch(patch);
   if (validationErrors.length) return { success: false, errors: validationErrors };
@@ -275,7 +275,7 @@ export function applyRoomEditAndRecompile(
 function applyRoomEditUnchecked(
   projectPath: string,
   patch: RoomEditPatch,
-  options?: { regenerate?: boolean },
+  options?: { regenerate?: boolean; restoreRecord?: Record<string, unknown> },
 ): ProjectEditResult {
   if (detectProjectEngine(projectPath) !== 'godot') {
     return { success: false, errors: ['This room edit requires the Godot adapter; Unity and Unreal recompilation is not implemented here.'] };
@@ -287,8 +287,9 @@ function applyRoomEditUnchecked(
     return { success: false, errors: [`Room ${patch.roomId} not found`] };
   }
 
-  if (options?.regenerate) {
-    delete roomsData[patch.roomId];
+  if (options?.regenerate || options?.restoreRecord) {
+    if (options.restoreRecord) roomsData[patch.roomId] = structuredClone(options.restoreRecord);
+    else delete roomsData[patch.roomId];
     writeFileSync(join(projectPath, 'data', 'rooms', 'rooms.json'), JSON.stringify({ rooms: roomsData }, null, 2));
     const rebuilt = new GodotProjectAssembler().recompileRooms({
       outputDir: projectPath,
@@ -300,7 +301,7 @@ function applyRoomEditUnchecked(
     });
     const errors = [...rebuilt.errors];
     if (!rebuilt.success && !errors.length) errors.push('Room regeneration failed');
-    return { success: rebuilt.success && !errors.length, errors, recompiledRooms: rebuilt.recompiled, message: `Room ${patch.roomId} regenerated` };
+    return { success: rebuilt.success && !errors.length, errors, recompiledRooms: rebuilt.recompiled, message: `Room ${patch.roomId} ${options.restoreRecord ? "restored" : "regenerated"}` };
   }
 
   const width = patch.width ?? (typeof existing.width === 'number' ? existing.width : 800);
@@ -414,24 +415,7 @@ export function restoreRoomRecord(
   roomId: string,
   snapshot: Record<string, unknown>,
 ): ProjectEditResult {
-  return applyRoomEditAndRecompile(projectPath, {
-    roomId,
-    width: typeof snapshot.width === 'number' ? snapshot.width : undefined,
-    height: typeof snapshot.height === 'number' ? snapshot.height : undefined,
-    archetype: typeof snapshot.archetype === 'string' ? snapshot.archetype : undefined,
-    hasEnemy:
-      typeof snapshot.forceEnemy === 'boolean'
-        ? snapshot.forceEnemy
-        : Array.isArray(snapshot.enemies) && (snapshot.enemies as string[]).length > 0,
-    tileCells: Array.isArray(snapshot.tileCells)
-      ? (snapshot.tileCells as RoomEditPatch['tileCells'])
-      : undefined,
-    enemies: Array.isArray(snapshot.enemies) ? (snapshot.enemies as string[]) : undefined,
-    npcs: Array.isArray(snapshot.npcs) ? (snapshot.npcs as string[]) : undefined,
-    entityPlacements: Array.isArray(snapshot.entityPlacements)
-      ? (snapshot.entityPlacements as EntityPlacement[])
-      : undefined,
-  });
+  return applyRoomEditAndRecompile(projectPath, { roomId }, { restoreRecord: snapshot });
 }
 
 export function regenerateRoom(
