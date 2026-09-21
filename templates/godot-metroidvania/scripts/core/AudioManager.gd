@@ -53,6 +53,8 @@ const SFX_ALIASES := {
 }
 
 func _ready() -> void:
+	# Dialogue and menus pause gameplay; their audio and music must remain active.
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	_ensure_buses()
 	for i in range(SFX_POOL_SIZE):
 		var player := AudioStreamPlayer.new()
