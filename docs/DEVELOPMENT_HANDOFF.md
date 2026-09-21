@@ -372,3 +372,8 @@ Extended native RuntimeSmokeTest to save after breaking a floor, clear in-memory
 ## Stable decoration on room re-entry
 
 RoomTileMap seeded architecture from runtime parent name, so two actual instances of room_000 yielded 3291913211 versus 3170656501 when Godot renamed the second @Node2D@28. Changed seed identity to owning scene filename, preserving original room-id seed. Native baseline FAIL became PASS with both seeds 3291913211. Evidence E:/Metroforge/Recovery-Audit/room-seed-baseline.log and room-seed-fixed.log. Retained fixture scripts/fixtures/room-decoration-seed-runtime.gd; full runner overlays current RoomTileMap. This proves deterministic seed across renamed instances, not visual quality approval.
+
+
+## Transition detach candidate
+
+Tested immediate remove_child before queue_free for outgoing rooms to remove stale scene groups. Native mechanics WASAPI run E:/Metroforge/Recovery-Audit/temp/metroforge-native-recompiled-U1El7Y passed 260 checks, zero failures/soft failures, but reported one retained resource in addition to ObjectDB warning. This diagnostic was absent in the prior WASAPI run; causality remains unknown. Withheld and reverted the production transition edit pending isolation. Runner now overlays current WorldManager so future comparisons use current template code. Candidate is retained only in disposable U1El7Y fixture for diagnosis.

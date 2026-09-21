@@ -16,6 +16,7 @@ cpSync(new URL('../templates/godot-metroidvania/scripts/UI/DialogueOverlay.gd', 
 cpSync(new URL('../templates/godot-metroidvania/scripts/world/WeakFloor.gd', import.meta.url), join(project, 'scripts/world/WeakFloor.gd'));
 cpSync(new URL('../templates/godot-metroidvania/scripts/test/RuntimeSmokeTest.gd', import.meta.url), join(project, 'scripts/test/RuntimeSmokeTest.gd'));
 cpSync(new URL('../templates/godot-metroidvania/scripts/world/RoomTileMap.gd', import.meta.url), join(project, 'scripts/world/RoomTileMap.gd'));
+cpSync(new URL('../templates/godot-metroidvania/scripts/world/WorldManager.gd', import.meta.url), join(project, 'scripts/world/WorldManager.gd'));
 const context = loadProjectContext(project);
 const mechanicsFixture = process.argv.includes('--mechanics-fixture');
 if (mechanicsFixture) {
