@@ -295,3 +295,7 @@ Dialogue voice now has a dedicated AudioStreamPlayer on SFX bus, separate from p
 
 ## UI volume bus routing - continuation
 play_sfx now assigns UI bus for requested ui_ sounds and SFX otherwise each time pooled slot is used. Previously every effect stayed on SFX despite separate UI setting. Native audio-bus-runtime passes UI click routing, same-slot reset to SFX for jump, and gameplay door alias remains SFX even though clip aliases ui_click. Evidence Recovery-Audit/audio-bus-runtime.log; dummy-driver routing proof, not listening/mix approval. Root certificate/resource shutdown diagnostics remain.
+
+
+## Repeatable native audio suite - continuation
+Added scripts/test-native-audio.mjs. Set GODOT_EXECUTABLE and invoke with generated game fixture path after E temp/cache environment; runner copies fixture to disposable temp, overlays current audio/dialogue scripts, runs all three GDScript fixtures with file-backed output, checks exit/pass marker/no script failures, and writes per-test logs plus audio-results.json including diagnostics. All3native tests passed exit0 in Recovery-Audit/temp/metroforge-native-audio-J3TuyZ. Certificate-store and shutdown resource warnings retained explicitly. Playback-state coverage only, no audible-mix approval or full release certification.
