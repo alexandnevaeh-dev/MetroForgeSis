@@ -457,6 +457,7 @@ export function RoomEditor() {
                     </div>
                   )}
                   <TilePaintEditor
+                    key={`${selectedPath}:${selected.id}`}
                     projectPath={selectedPath}
                     roomId={selected.id}
                     biomeId={selected.biomeId ?? 'biome_0'}

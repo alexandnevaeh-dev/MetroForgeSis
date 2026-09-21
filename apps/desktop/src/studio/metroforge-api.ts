@@ -420,7 +420,7 @@ export type MetroforgeBridge = {
   updateRoom: (
     projectPath: string,
     patch: Record<string, unknown>,
-  ) => Promise<{ success?: boolean; error?: string; message?: string }>;
+  ) => Promise<{ success?: boolean; error?: string; errors?: string[]; message?: string }>;
   regenerateRoom: (
     projectPath: string,
     roomId: string,

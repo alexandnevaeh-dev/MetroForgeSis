@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Badge, Button, EmptyState, Panel } from './ui/index.js';
 
 export interface TileCell {
@@ -134,6 +134,13 @@ export function TilePaintEditor({
   const [cells, setCells] = useState<TileCell[]>(initialCells);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const pending = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
+
 
   useEffect(() => {
     setCells(initialCells);
@@ -151,6 +158,7 @@ export function TilePaintEditor({
 
   const applyTool = useCallback(
     (x: number, y: number) => {
+      if (pending.current) return;
       setCells((prev) => {
         const without = prev.filter((c) => !(c.x === x && c.y === y));
         if (tool === 'erase') return without;
@@ -162,18 +170,24 @@ export function TilePaintEditor({
   );
 
   const save = async () => {
-    if (!window.metroforge?.updateRoom) return;
+    if (pending.current || !window.metroforge?.updateRoom) return;
+    pending.current = true;
     setBusy(true);
     setMessage(null);
-    const result = await window.metroforge.updateRoom(projectPath, {
-      roomId,
-      tileCells: cells,
-    });
-    setBusy(false);
-    if (result.error || result.success === false) setMessage(result.error ?? 'Save failed');
-    else {
-      setMessage('Tilemap saved and room recompiled');
-      onSaved?.();
+    try {
+      const result = await window.metroforge.updateRoom(projectPath, { roomId, tileCells: cells });
+      if (!mounted.current) return;
+      if (result.error || result.success === false) {
+        setMessage(result.error ?? result.errors?.join('; ') ?? 'Save failed. Your painted tiles are still here; try again.');
+      } else {
+        setMessage('Tilemap saved and room recompiled');
+        onSaved?.();
+      }
+    } catch (error) {
+      if (mounted.current) setMessage(`Could not save tilemap: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      pending.current = false;
+      if (mounted.current) setBusy(false);
     }
   };
 
@@ -219,6 +233,7 @@ export function TilePaintEditor({
                 />
                 {cell && (
                   <rect
+                    pointerEvents="none"
                     x={px + 1}
                     y={py + 1}
                     width={tileSize - 2}
@@ -239,7 +254,7 @@ export function TilePaintEditor({
           Clear
         </Button>
       </div>
-      {message && <p className="hint">{message}</p>}
+      {message && <p className="hint" role="status">{message}</p>}
     </div>
   );
 }
