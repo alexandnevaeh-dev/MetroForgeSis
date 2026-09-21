@@ -462,3 +462,8 @@ Play/restart, stop and pause/resume now share a synchronous pending guard and di
 ### Preserve inspector on transient status failures
 
 A rejected getPlaytestSession poll no longer acts as a confirmed stopped session. The preview retains the last confirmed running state and inspector identity, displays an explicit retry warning, and retries serially. A successful current poll clears the warning and applies actual session state; stale control-overlapping failures are ignored. TypeScript and desktop native bundle passed (.metroforge/desktop-build/1789968031041). Interactive rejection/recovery verification remains pending.
+
+
+### Preview punctuation repair
+
+Corrected five malformed UTF-8 punctuation sequences in launch/loading text, room-count separator and absent metadata placeholders. Explicit UTF-8 reads/writes preserve the corrected ellipsis, middle dot and em dash. Desktop TypeScript passed. Unity installer launch is still awaiting completion of the active verification/launch command; no installer process confirmed yet.

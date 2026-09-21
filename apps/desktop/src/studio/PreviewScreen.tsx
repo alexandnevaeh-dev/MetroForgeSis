@@ -160,7 +160,7 @@ function ProjectPreviewScreen() {
                 }
               }}
             >
-              {launching ? 'Launchingâ€¦' : playing ? 'Restart' : 'Play'}
+              {launching ? 'Launching…' : playing ? 'Restart' : 'Play'}
             </Button>
             <Button
               disabled={!selectedPath || !playing || controlling}
@@ -244,7 +244,7 @@ function ProjectPreviewScreen() {
 
           {loading && (
             <EmptyState
-              title="Loading previewâ€¦"
+              title="Loading preview…"
               description="Fetching world graph and asset previews."
             />
           )}
@@ -269,7 +269,7 @@ function ProjectPreviewScreen() {
                       {preview.profile ? <Badge tone="info">{preview.profile}</Badge> : null}
                       <span className="status-grow" />
                       <span className="hint">
-                        {preview.worldGraph?.nodes?.length ?? 0} rooms Â·{' '}
+                        {preview.worldGraph?.nodes?.length ?? 0} rooms ·{' '}
                         {preview.worldGraph?.edges?.length ?? 0} edges
                       </span>
                     </EditorToolbar>
@@ -352,9 +352,9 @@ function ProjectPreviewScreen() {
                 <InspectorSection title="Project">
                   <dl className="settings-dl">
                     <dt>Title</dt>
-                    <dd>{preview.title ?? 'â€”'}</dd>
+                    <dd>{preview.title ?? '—'}</dd>
                     <dt>Profile</dt>
-                    <dd>{preview.profile ?? 'â€”'}</dd>
+                    <dd>{preview.profile ?? '—'}</dd>
                     <dt>Rooms</dt>
                     <dd>{preview.worldGraph?.nodes?.length ?? 0}</dd>
                     <dt>Assets</dt>
