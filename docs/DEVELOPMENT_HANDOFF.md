@@ -267,3 +267,7 @@ Geometry scope no longer substitutes width800/height600. It clears stored paint/
 
 ## Encounter-only regeneration - continuation
 Encounter regeneration now releases explicit enemy presence and replaces combat placements with procedural defaults while retaining noncombat placements, saved NPC roster, room bounds and authored paint. It no longer simply enables one enemy without replacing copied combatants. Unknown scopes rejected. Real assembler regression verifies painted cells/authoring flag/bounds/noncombat positions preserved, copied combatant removed and generated combatant present. Rollback injected-failure test covers full/geometry/encounter. Godot/generation TypeScript and changed-file lint pass. Native/UI scoped regeneration remains unverified.
+
+
+## NPC proximity and input validation - continuation
+Native NPC harness now places player body within each NPC area, waits physics frames for actual body_entered/range detection, then submits InputEventAction interact press/release through Godot input delivery. No direct talk calls. Both original/copy open correct dialogue with shared definition and distinct authoring identity, closing resumes gameplay. Exit0 failures=[] on RTX5060; evidence Recovery-Audit/temp/metroforge-native-npcs-j8hmLX/native-npcs.log. Player motion is frozen and placement is test-controlled; this validates proximity/input/overlay chain, not navigation/controller traversal to NPC.

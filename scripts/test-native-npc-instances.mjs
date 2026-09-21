@@ -18,6 +18,25 @@ const copy = { ...original, id: `${original.id}_copy`, definitionId: original.id
 const edit = applyRoomEditAndRecompile(project, { roomId: room.id, npcs: [original.id, copy.id], entityPlacements: [...room.entityPlacements, copy] });
 assert.equal(edit.success, true, edit.errors.join('\n'));
 const script = `extends Node
+func interact_with(npc, player) -> bool:
+	player.global_position = npc.global_position
+	player.velocity = Vector2.ZERO
+	for frame in range(4):
+		await get_tree().physics_frame
+	await get_tree().process_frame
+	if not npc._player_in_range:
+		return false
+	var press = InputEventAction.new()
+	press.action = "interact"
+	press.pressed = true
+	Input.parse_input_event(press)
+	await get_tree().process_frame
+	var release = InputEventAction.new()
+	release.action = "interact"
+	release.pressed = false
+	Input.parse_input_event(release)
+	return true
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	GameManager.start_new_game()
@@ -27,6 +46,8 @@ func _ready() -> void:
 	add_child(overlay)
 	var first = room.get_node("NPC_0")
 	var second = room.get_node("NPC_1")
+	var player = room.get_node("Player")
+	player.set_physics_process(false)
 	var failures = []
 	if first.npc_id != second.npc_id or second.npc_id != ${JSON.stringify(original.id)}:
 		failures.append("shared NPC definition")
@@ -35,7 +56,8 @@ func _ready() -> void:
 	var original_dialogue = first._resolve_dialogue_id()
 	if original_dialogue.is_empty() or second._resolve_dialogue_id() != original_dialogue:
 		failures.append("shared dialogue resolution")
-	second._try_talk()
+	if not await interact_with(second, player):
+		failures.append("copy proximity detection")
 	if not overlay.is_active() or overlay._dialogue_id != original_dialogue:
 		failures.append("copy opens dialogue")
 	if overlay._context.get("npc_id", "") != first.npc_id or overlay.text_label.text.is_empty():
@@ -46,7 +68,8 @@ func _ready() -> void:
 	overlay.close_dialogue()
 	if get_tree().paused:
 		failures.append("dialogue leaves gameplay paused")
-	first._try_talk()
+	if not await interact_with(first, player):
+		failures.append("original proximity detection")
 	if not overlay.is_active() or overlay._dialogue_id != original_dialogue:
 		failures.append("original remains interactive")
 	overlay.close_dialogue()
@@ -60,4 +83,4 @@ writeFileSync(join(project, 'native-npcs.log'), result.stdout + result.stderr);
 console.log(JSON.stringify({ project, exitCode: result.status, error: result.error?.message }));
 assert.equal(result.status, 0);
 assert.match(result.stdout, /NATIVE_NPC_RESULT.*"failures":\[\]/);
-console.log('PASS: native duplicated NPC dialogue, identity and pause lifecycle');
+console.log('PASS: native NPC proximity, interact input, dialogue, identity and pause lifecycle');
