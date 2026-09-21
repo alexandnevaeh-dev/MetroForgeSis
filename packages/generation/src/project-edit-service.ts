@@ -235,6 +235,7 @@ function validateRoomPatch(patch: RoomEditPatch): string[] {
 export function applyRoomEditAndRecompile(
   projectPath: string,
   patch: RoomEditPatch,
+  options?: { regenerate?: boolean },
 ): ProjectEditResult {
   const validationErrors = validateRoomPatch(patch);
   if (validationErrors.length) return { success: false, errors: validationErrors };
@@ -250,7 +251,7 @@ export function applyRoomEditAndRecompile(
   }
   let result: ProjectEditResult;
   try {
-    result = applyRoomEditUnchecked(projectPath, patch);
+    result = applyRoomEditUnchecked(projectPath, patch, options);
   } catch (error) {
     result = { success: false, errors: [error instanceof Error ? error.message : String(error)] };
   }
@@ -274,6 +275,7 @@ export function applyRoomEditAndRecompile(
 function applyRoomEditUnchecked(
   projectPath: string,
   patch: RoomEditPatch,
+  options?: { regenerate?: boolean },
 ): ProjectEditResult {
   if (detectProjectEngine(projectPath) !== 'godot') {
     return { success: false, errors: ['This room edit requires the Godot adapter; Unity and Unreal recompilation is not implemented here.'] };
@@ -283,6 +285,22 @@ function applyRoomEditUnchecked(
   const existing = roomsData[patch.roomId] as Record<string, unknown> | undefined;
   if (!existing) {
     return { success: false, errors: [`Room ${patch.roomId} not found`] };
+  }
+
+  if (options?.regenerate) {
+    delete roomsData[patch.roomId];
+    writeFileSync(join(projectPath, 'data', 'rooms', 'rooms.json'), JSON.stringify({ rooms: roomsData }, null, 2));
+    const rebuilt = new GodotProjectAssembler().recompileRooms({
+      outputDir: projectPath,
+      gameDna: project.gameDna,
+      worldGraph: project.worldGraph,
+      gameContent: project.gameContent,
+      roomIds: project.roomIds,
+      targetRoomIds: [patch.roomId],
+    });
+    const errors = [...rebuilt.errors];
+    if (!rebuilt.success && !errors.length) errors.push('Room regeneration failed');
+    return { success: rebuilt.success && !errors.length, errors, recompiledRooms: rebuilt.recompiled, message: `Room ${patch.roomId} regenerated` };
   }
 
   const width = patch.width ?? (typeof existing.width === 'number' ? existing.width : 800);
@@ -421,6 +439,7 @@ export function regenerateRoom(
   roomId: string,
   scope: 'full' | 'geometry' | 'encounter' = 'full',
 ): ProjectEditResult {
+  if (scope === 'full') return applyRoomEditAndRecompile(projectPath, { roomId }, { regenerate: true });
   const patch: RoomEditPatch = { roomId };
   if (scope === 'encounter') patch.hasEnemy = true;
   if (scope === 'geometry') {

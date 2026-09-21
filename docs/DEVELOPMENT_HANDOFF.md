@@ -251,3 +251,7 @@ Place enemy no longer invents enemy_N from room count. It reuses the selected ro
 
 ## Entity identity validation - continuation
 Room edits reject unsupported entity kinds, empty/unsafe instance identifiers, malformed optional definitionId and repeated kind+id identities before filesystem mutation. This prevents ambiguous live selection metadata and invalid asset references from malformed placement requests. Expanded rollback test covers these inputs and verifies unchanged source bytes/no compilation. Generation TypeScript/lint, authored enemy/tile persistence and NPC persistence regressions pass. No new native runtime claim; application/game goal remains incomplete.
+
+
+## Explicit full room regeneration - continuation
+Full Regenerate Room previously sent an empty edit patch and retained authored state. It now clears only the selected stored room record inside existing rollback wrapper before real procedural recompilation, rebuilding bounds/paint/instances from world graph and game content. Ordinary edits retain authored data. Actual assembler regression proves authored flag/bounds/copied enemy reset and sibling unchanged; injected failure proves room data and scene restored. Generation TypeScript/lint and persistence/rollback tests pass. Encounter/geometry-specific regeneration semantics still need review. Git Credential Manager github list returned no account; no Unity/Unreal executables found through configured E Engines directory or PATH. Authentication/editor setup still pending, goal remains active.

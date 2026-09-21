@@ -3,7 +3,7 @@ import { mkdtempSync, mkdirSync, copyFileSync, readFileSync, writeFileSync, exis
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { GodotProjectAssembler } from '../packages/godot/dist/index.js';
-import { applyRoomEditAndRecompile } from '../packages/generation/dist/project-edit-service.js';
+import { applyRoomEditAndRecompile, regenerateRoom } from '../packages/generation/dist/project-edit-service.js';
 const source = process.argv[2];
 if (!source) throw new Error('Provide a generated fixture project');
 const project = mkdtempSync(join(tmpdir(), 'metroforge-room-rollback-'));
@@ -54,6 +54,9 @@ try {
     assert.deepEqual(readFileSync(roomsPath), originalRooms);
     assert.deepEqual(readFileSync(scenePath), originalScene);
   }
+  assert.equal(regenerateRoom(project, roomId, 'full').success, false);
+  assert.deepEqual(readFileSync(roomsPath), originalRooms);
+  assert.deepEqual(readFileSync(scenePath), originalScene);
   unlinkSync(scenePath);
   assert.equal(applyRoomEditAndRecompile(project, { roomId, width: 900 }).success, false);
   assert.equal(existsSync(scenePath), false, 'Failed creation must not leave a new scene');

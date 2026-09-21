@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, copyFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { applyRoomEditAndRecompile, applyWorldEditAndRecompile } from '../packages/generation/dist/project-edit-service.js';
+import { applyRoomEditAndRecompile, applyWorldEditAndRecompile, regenerateRoom } from '../packages/generation/dist/project-edit-service.js';
 const source = process.argv[2];
 if (!source) throw new Error('Provide a generated project fixture');
 const project = mkdtempSync(join(tmpdir(), 'metroforge-authored-tiles-'));
@@ -70,7 +70,14 @@ for (let pass = 0; pass < 2; pass++) {
   assert.equal(room().entityPlacements.find(p => p.id === copyEnemy.id).definitionId, copyEnemy.definitionId);
   assert.equal(applyRoomEditAndRecompile(project, { roomId, width: 1296 }).success, true);
 }
-console.log('PASS: authored paint, bounds, removal and multiple enemy instances survive recompilation');
+const siblingBefore = JSON.parse(readFileSync(roomsPath)).rooms.authored_copy;
+const regenerated = regenerateRoom(project, roomId, 'full');
+assert.equal(regenerated.success, true, regenerated.errors.join('\n'));
+assert.notEqual(room().tileCellsAuthored, true, 'Explicit regeneration must release authored paint');
+assert.notEqual(room().width, 1296, 'Explicit regeneration must restore procedural bounds');
+assert.ok(!room().entityPlacements.some(p => p.id === copyEnemy.id), 'Regeneration must replace authored instance roster');
+assert.deepEqual(JSON.parse(readFileSync(roomsPath)).rooms.authored_copy, siblingBefore, 'Other rooms must remain unchanged');
+console.log('PASS: authored persistence and explicit full regeneration of only the target room');
 
 if (process.env.GODOT_EXECUTABLE) {
   const { spawnSync } = await import('node:child_process');
