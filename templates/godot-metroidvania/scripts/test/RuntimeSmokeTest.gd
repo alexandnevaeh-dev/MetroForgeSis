@@ -990,11 +990,11 @@ func _check_inventory_equip_ui(world: Node) -> void:
 
 func _is_presentation_capture() -> bool:
 	## Matches GameHUD._hud_mode: presentation stills hide scrap/echo text.
-	## Functional HUD asserts stay on DEBUG (no CAPTURE env / PLAYER/RELEASE/QA_CAPTURE).
+	## Functional HUD assertions also apply to PLAYER and RELEASE modes.
 	var mode := OS.get_environment("METROFORGE_HUD_MODE")
 	if mode.is_empty() and OS.get_environment("METROFORGE_CAPTURE") == "1":
 		mode = "QA_CAPTURE"
-	return mode == "PLAYER" or mode == "RELEASE" or mode == "QA_CAPTURE" or mode == "PRESENTATION_CAPTURE"
+	return mode == "QA_CAPTURE" or mode == "PRESENTATION_CAPTURE"
 
 ## Proves the HUD's currency label actually reflects real QuestManager state, not just that the
 ## node exists — by this point in the test both a quest completion and an item pickup have
@@ -1005,6 +1005,12 @@ func _check_currency_hud(world: Node) -> void:
 	if hud == null:
 		return
 
+	var health_bar: ProgressBar = hud.get_node_or_null("HUD/MarginContainer/VBox/HealthBar")
+	_check("health_bar_visible_inside_viewport", health_bar != null and health_bar.is_visible_in_tree() and get_viewport().get_visible_rect().encloses(health_bar.get_global_rect()))
+	if health_bar != null:
+		var frame: Control = hud.get_node_or_null("HUD/HUDFrame")
+		_check("hud_frame_contains_health_bar", frame == null or not frame.visible or frame.get_global_rect().encloses(health_bar.get_global_rect()))
+
 	var currency_label: Label = hud.get_node_or_null("HUD/MarginContainer/VBox/CurrencyLabel")
 	_check("currency_label_present", currency_label != null)
 	if currency_label == null:
@@ -1013,21 +1019,23 @@ func _check_currency_hud(world: Node) -> void:
 	var collectible_label: Label = hud.get_node_or_null("HUD/MarginContainer/VBox/CollectibleLabel")
 	_check("collectible_label_present", collectible_label != null)
 
-	# Presentation captures (METROFORGE_CAPTURE / PLAYER / RELEASE / QA_CAPTURE) clear
+	# Presentation captures (METROFORGE_CAPTURE / QA_CAPTURE / PRESENTATION_CAPTURE) clear
 	# currency and collectible text so the HUD band does not fail visual QA. Keep the
-	# real scrap/echo assertions for DEBUG functional runs. Do not weaken those thresholds.
+	# real scrap/echo assertions for PLAYER, RELEASE and DEBUG runs. Do not weaken those thresholds.
 	if _is_presentation_capture():
+		_check("capture_currency_hidden", not currency_label.visible and currency_label.text.is_empty())
+		_check("capture_collectibles_hidden", collectible_label != null and not collectible_label.visible and collectible_label.text.is_empty())
 		return
 
 	var scrap: int = int(QuestManager.currency.get("scrap", 0))
-	_check("currency_hud_reflects_real_state", str(scrap) in currency_label.text)
+	_check("currency_hud_reflects_real_state", currency_label.is_visible_in_tree() and str(scrap) in currency_label.text)
 
 	if collectible_label != null:
 		var found := InventoryManager.get_collectible_found_count()
 		var total := InventoryManager.get_collectible_total_count()
 		_check(
 			"collectible_hud_reflects_real_state",
-			total > 0 and str(found) in collectible_label.text and str(total) in collectible_label.text,
+			collectible_label.is_visible_in_tree() and total > 0 and str(found) in collectible_label.text and str(total) in collectible_label.text,
 		)
 
 ## Proves the always-visible corner minimap is wired into GameHUD and reads MapManager state.

@@ -21,6 +21,18 @@ func _ready() -> void:
 	_update_abilities()
 	_style_hud()
 	_apply_hud_mode()
+	var margin := $HUD/MarginContainer as Control
+	margin.grow_vertical = Control.GROW_DIRECTION_END
+	margin.resized.connect(_fit_hud_frame)
+	_fit_hud_frame.call_deferred()
+
+## Keep the frame around the visible stack as currency and abilities appear.
+func _fit_hud_frame() -> void:
+	if hud_frame_panel == null:
+		return
+	var margin := $HUD/MarginContainer as Control
+	hud_frame_panel.position = margin.position - Vector2(8, 6)
+	hud_frame_panel.size = margin.size + Vector2(16, 12)
 
 ## Real UI-foundry textures (assets/ui/hud_frame.png, assets/ui/health_meter.png) are generated
 ## from this game's actual biome palette by generateUiPanel() in packages/assets/src/ui-foundry.ts
@@ -112,6 +124,10 @@ func _on_ability_acquired(ability_id: String) -> void:
 	_update_abilities()
 
 func _update_abilities() -> void:
+	if _is_capture_hud():
+		ability_label.text = ""
+		ability_label.visible = false
+		return
 	var raw: Array = []
 	for id in GameManager.player_abilities:
 		var sid := String(id)
@@ -151,6 +167,10 @@ func _is_presentation_hud() -> bool:
 	var mode := _hud_mode()
 	return mode == "PLAYER" or mode == "RELEASE" or mode == "QA_CAPTURE" or mode == "PRESENTATION_CAPTURE"
 
+func _is_capture_hud() -> bool:
+	var mode := _hud_mode()
+	return mode == "QA_CAPTURE" or mode == "PRESENTATION_CAPTURE"
+
 func _apply_hud_mode() -> void:
 	if not _is_presentation_hud():
 		return
@@ -160,6 +180,8 @@ func _apply_hud_mode() -> void:
 	var mini := get_node_or_null("HUD/MinimapPanel")
 	if mini:
 		mini.visible = false
+	if not _is_capture_hud():
+		return
 	# Presentation stills hide scrap/echo/ability text. Size the backing panel
 	# to the health bar only — the 276×136 frame was filling the HUD critic band.
 	if ability_label:
@@ -188,7 +210,7 @@ func _apply_hud_mode() -> void:
 func _update_currency() -> void:
 	if currency_label == null:
 		return
-	if _is_presentation_hud():
+	if _is_capture_hud():
 		currency_label.text = ""
 		currency_label.visible = false
 		return
@@ -204,7 +226,7 @@ func _update_currency() -> void:
 func _update_collectibles() -> void:
 	if collectible_label == null:
 		return
-	if _is_presentation_hud():
+	if _is_capture_hud():
 		collectible_label.text = ""
 		collectible_label.visible = false
 		return
