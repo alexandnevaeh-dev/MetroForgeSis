@@ -691,7 +691,7 @@ func _find_transition(host: Node, target_room_id: String) -> Node:
 
 func _find_transition_recursive(root: Node, target_room_id: String) -> Node:
 	for child in root.get_children():
-		if child.get("target_room_id") == target_room_id:
+		if child is Area2D and child.is_in_group("room_transition") and child.get("target_room_id") == target_room_id:
 			return child
 		var found := _find_transition_recursive(child, target_room_id)
 		if found != null:
