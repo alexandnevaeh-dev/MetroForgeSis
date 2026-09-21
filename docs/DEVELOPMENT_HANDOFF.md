@@ -317,3 +317,8 @@ Scope: renderer behavior with mocked IPC. This does not validate native Electron
 ## Collision preview refresh and failure handling
 
 RoomEditor now refreshes collision previews after rooms reload, including successful saves to the same selected room. It clears the previous overlay while loading and catches rejected preview requests into the existing empty-rect fallback. Effect cancellation prevents superseded responses from restoring old geometry. TypeScript and native desktop bundle passed; evidence .metroforge/desktop-build/1789959447293. Interactive delayed collision and rejection checks remain outstanding.
+
+
+## Collision renderer interaction verification
+
+Browser harness using production RoomEditor with mock IPC confirmed same-room saves increase collision request count (1 to 2). Injected rejection clears collision rects (1 to 0) and preserves editor operation. Fixed empty collision view to display the actual preview error; browser verified Collision preview unavailable: Injected collision failure. TypeScript passed. This verifies renderer behavior, not native IPC or collision correctness. Delayed response ordering remains untested interactively. GCM github list still returned no account; expected E:/Metroforge/Engines directory yielded no installations.

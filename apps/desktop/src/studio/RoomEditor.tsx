@@ -517,7 +517,7 @@ export function RoomEditor() {
               ) : !hasGeometry && viewMode !== 'entities' ? (
                 <EmptyViewport
                   title={`No ${viewMode} geometry`}
-                  description="Authored overlay data is empty for this room. Entity counts still appear in the inspector when present on the room record."
+                  description={viewMode === 'collision' && collision?.error ? `Collision preview unavailable: ${collision.error}` : 'Authored overlay data is empty for this room. Entity counts still appear in the inspector when present on the room record.'}
                   meta={
                     <dl className="settings-dl empty-viewport-dl">
                       <dt>Room</dt>
