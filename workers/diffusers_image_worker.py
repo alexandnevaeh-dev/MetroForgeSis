@@ -736,6 +736,7 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
         )
     elif init_image is not None and conditioning_mode:
         pipe = get_img2img_pipeline(model_id, device)
+        generation_options = {"guidance_scale": 0.0} if "turbo" in model_id.lower() else {}
         result = pipe(
             prompt=full_prompt,
             negative_prompt=negative,
@@ -745,6 +746,7 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
             height=height,
             num_inference_steps=steps,
             generator=generator,
+            **generation_options,
         )
     else:
         model_acquisition = _ensure_model_available(model_id)
