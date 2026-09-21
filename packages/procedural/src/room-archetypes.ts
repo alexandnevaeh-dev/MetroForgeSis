@@ -207,6 +207,17 @@ export function assignRoomArchetypes(options: AssignRoomArchetypesOptions): stri
     }
     archetypes.push(rng.pick([...PROCEDURAL_ARCHETYPE_POOL]));
   }
+  // Small worlds may never reach an unreserved seventh room. Reserve a checkpoint
+  // from an ordinary interior encounter without replacing progression or story roles.
+  if (!archetypes.includes('save')) {
+    const replaceable = new Set<string>(['connector', 'traversal', 'combat', 'arena', 'puzzle', 'secret', 'challenge', 'set_piece', 'treasure']);
+    for (let i = archetypes.length - 2; i > 0; i--) {
+      if (replaceable.has(archetypes[i]!)) {
+        archetypes[i] = 'save';
+        break;
+      }
+    }
+  }
   return archetypes;
 }
 

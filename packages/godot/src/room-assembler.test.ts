@@ -252,6 +252,23 @@ const mediumDna = GameDNASchema.parse({
 });
 
 describe('room archetype fidelity', () => {
+  it('emits a real SavePoint scene for a small generated world', () => {
+    const { worldGraph, roomIds } = generateWorldTopology({
+      seed: 424242, roomCount: 8, biomeCount: 1, abilities: ['dash'], bossCount: 1,
+    });
+    const ctx = prepareRoomAssemblyContext(worldGraph, undefined, roomIds);
+    const counter = { value: 0 };
+    const saveScenes = roomIds.flatMap((id, index) => {
+      const options = buildRoomAssemblyOptions(id, index, ctx, mediumDna, undefined, counter, () => false);
+      return options.hasSavePoint ? [generateRoomScene(id, index, options)] : [];
+    });
+    expect(saveScenes.length).toBeGreaterThan(0);
+    for (const scene of saveScenes) {
+      expect(scene).toContain('res://scenes/world/SavePoint.tscn');
+      expect(scene).toContain('[node name="SavePoint"');
+    }
+  });
+
   it('preserves world-graph archetypes in rooms.json without combat collapse', () => {
     const abilities = ['dash', 'double_jump', 'wall_slide'];
     const { worldGraph, roomIds } = generateWorldTopology({

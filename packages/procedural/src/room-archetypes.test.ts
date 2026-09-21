@@ -7,6 +7,17 @@ import {
 } from './room-archetypes.js';
 
 describe('assignRoomArchetypes', () => {
+  it('provides a save room in small worlds without displacing reserved roles', () => {
+    for (const seed of [1, 42, 424242]) {
+      const rooms = assignRoomArchetypes({ roomCount: 8, abilityCount: 1, npcCount: 0, biomeCount: 1, seed });
+      expect(rooms).toContain('save');
+      expect(rooms[0]).toBe('tutorial');
+      expect(rooms[7]).toBe('boss');
+      expect(rooms[6]).toBe('miniboss');
+      expect(rooms[abilityGateRoomIndex(0, 1, 8)]).toBe('ability_shrine');
+    }
+  });
+
   it('tags tutorial, boss, ability shrines, and npc rooms deterministically', () => {
     const archetypes = assignRoomArchetypes({
       roomCount: 8,

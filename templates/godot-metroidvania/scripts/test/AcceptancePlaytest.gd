@@ -332,40 +332,40 @@ func _fight_boss_natural(boss_id: String) -> bool:
 	_note("boss_fight", "Input attack / move / jump / dash only; no reset_health, facing poke, or _perform_attack")
 	await _wait_fade_idle()
 	await _shot("boss_enter")
+	var boss_room_id := String(GameManager.current_room_id)
 	var start_ms := Time.get_ticks_msec()
 	var timeout_ms := 120000
 	while Time.get_ticks_msec() - start_ms < timeout_ms:
 		if GameManager.current_state == GameManager.GameState.VICTORY or GameManager.game_complete:
 			_death_ok = true
 			break
-		if not is_instance_valid(boss):
-			_death_ok = true
-			break
 		player = _player()
-		if player == null:
-			# Death respawn — wait, then walk back if we landed at the checkpoint.
+		if player == null or not is_instance_valid(boss) or GameManager.current_room_id != boss_room_id:
+			if _death_ok:
+				break
 			await _wait_player(4.0)
-			player = _player()
-			if player == null:
+			await _wait_fade_idle()
+			if _player() == null:
 				_limit("player missing after death/respawn during boss")
 				return false
-			if GameManager.current_room_id != "room_012":
+			if GameManager.current_room_id != boss_room_id:
 				_note("boss_death_respawn", "respawned in %s — walking back with Input" % GameManager.current_room_id)
-				if not await _walk_back_to_boss():
+				if not await _walk_back_to_boss(boss_room_id):
 					_limit("could not walk back to boss after checkpoint respawn")
 					return false
-				boss = _current_room().get_node_or_null("Boss") if _current_room() else null
-				if boss == null:
-					_limit("boss missing after return from respawn")
-					return false
+			boss = _current_room().get_node_or_null("Boss") if _current_room() else null
+			player = _player()
+			if boss == null or String(boss.get("boss_id")) != boss_id or player == null:
+				_limit("expected boss/player missing after return from respawn")
+				return false
 		await _observe_boss(boss)
 		if not is_instance_valid(boss):
-			_death_ok = true
-			break
+			# Reacquire after respawn on the next iteration; freeing is not death evidence.
+			continue
 		await _boss_input_tick(player, boss)
 		if not is_instance_valid(boss):
-			_death_ok = true
-			break
+			# Reacquire after respawn on the next iteration; freeing is not death evidence.
+			continue
 		if _recording_clip == "" and _should_start_boss_clip(boss):
 			var clip := _pending_boss_clip(boss)
 			if clip != "":
@@ -390,11 +390,16 @@ func _fight_boss_natural(boss_id: String) -> bool:
 	return GameManager.current_state == GameManager.GameState.VICTORY or GameManager.game_complete
 
 
-func _walk_back_to_boss() -> bool:
+func _walk_back_to_boss(boss_room_id: String) -> bool:
 	var route := _agent._load_route()
 	var transitions: Array = route.get("transitions", [])
-	while GameManager.current_room_id != "room_012":
+	var revisited: Dictionary = {}
+	while GameManager.current_room_id != boss_room_id:
 		var current := String(GameManager.current_room_id)
+		if revisited.has(current):
+			_limit("boss return route repeated room %s" % current)
+			return false
+		revisited[current] = true
 		var next_id := ""
 		for step in transitions:
 			if String(step.get("fromRoomId", "")) == current:
