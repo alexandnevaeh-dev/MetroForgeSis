@@ -10,6 +10,7 @@ const godot = process.env.GODOT_EXECUTABLE;
 assert.ok(source && godot, 'Provide generated project and GODOT_EXECUTABLE');
 const project = mkdtempSync(join(tmpdir(), 'metroforge-native-recompiled-'));
 cpSync(source, project, { recursive:true, filter: path => !['qa','.git'].includes(basename(path)) });
+cpSync(new URL('../templates/godot-metroidvania/scripts/core/AudioManager.gd', import.meta.url), join(project, 'scripts/core/AudioManager.gd'));
 const context = loadProjectContext(project);
 const compiled = new GodotProjectAssembler().recompileRooms({ outputDir:project, gameDna:context.gameDna, worldGraph:context.worldGraph, gameContent:context.gameContent, roomIds:context.roomIds, targetRoomIds:context.roomIds });
 assert.equal(compiled.success, true, compiled.errors.join('\n'));

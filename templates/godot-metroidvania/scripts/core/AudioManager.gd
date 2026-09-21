@@ -105,6 +105,9 @@ func play_music(track_id: String, loop: bool = true) -> void:
 		return
 
 	if stream is AudioStreamWAV:
+		if loop and stream.loop_end <= stream.loop_begin:
+			stream.loop_begin = 0
+			stream.loop_end = maxi(1, roundi(stream.get_length() * stream.mix_rate))
 		(stream as AudioStreamWAV).loop_mode = (
 			AudioStreamWAV.LOOP_FORWARD if loop else AudioStreamWAV.LOOP_DISABLED
 		)
