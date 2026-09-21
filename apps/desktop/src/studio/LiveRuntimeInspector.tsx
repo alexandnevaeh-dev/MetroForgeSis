@@ -29,8 +29,10 @@ export function LiveRuntimeInspector({
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState('Inspect the running scene to select an object.');
-  const [undo, setUndo] = useState<Move | null>(null);
-  const [redo, setRedo] = useState<Move | null>(null);
+  const [undoHistory, setUndo] = useState<Move[]>([]);
+  const undo = undoHistory.at(-1);
+  const [redoHistory, setRedo] = useState<Move[]>([]);
+  const redo = redoHistory.at(-1);
   const pending = useRef(false);
   const mounted = useRef(true);
   useEffect(() => {
@@ -124,8 +126,8 @@ export function LiveRuntimeInspector({
       setObjects(items);
       setConnected(true);
       select(items.find((object) => object.nodePath === selection) ?? items[0]);
-      setUndo(null);
-      setRedo(null);
+      setUndo([]);
+      setRedo([]);
       setStatus(
         items.length
           ? `${items.length} ${items.length === 1 ? 'object' : 'objects'} available. Coordinates are relative to each object's parent.`
@@ -149,8 +151,8 @@ export function LiveRuntimeInspector({
           setConnected(false);
           setStatus('Command not confirmed. Inspect the scene again before editing.');
           setError('Unexpected runtime response. Inspect the scene before making another change.');
-          setUndo(null);
-      setRedo(null);
+          setUndo([]);
+          setRedo([]);
           return;
         }
         const updated = { ...target, x: Number(result.x), y: Number(result.y) };
@@ -159,8 +161,13 @@ export function LiveRuntimeInspector({
         );
         select(updated);
         const inverse = { ...target, x: Number(previous?.x), y: Number(previous?.y) };
-        setUndo(history === 'undo' ? null : inverse);
-        setRedo(history === 'undo' ? inverse : null);
+        if (history === 'undo') {
+          setUndo((items) => items.slice(0, -1));
+          setRedo((items) => [...items, inverse].slice(-100));
+        } else {
+          setUndo((items) => [...items, inverse].slice(-100));
+          setRedo((items) => history === 'redo' ? items.slice(0, -1) : []);
+        }
         setStatus(
           history === 'undo'
             ? 'Position restored in the running game.'
@@ -190,16 +197,16 @@ export function LiveRuntimeInspector({
               saveUnavailable: 'Source changed. Inspect again before saving this object.',
             };
       setObjects((items) => items.map(update));
-      setUndo((item) => (item ? update(item) : null));
-      setRedo((item) => (item ? update(item) : null));
+      setUndo((items) => items.map(update));
+      setRedo((items) => items.map(update));
       setStatus(
         'Placement saved for future play sessions. Undo position still affects only the running game.',
       );
     } catch (cause) {
       if (mounted.current) {
         setConnected(false);
-        setUndo(null);
-      setRedo(null);
+        setUndo([]);
+        setRedo([]);
         setObjects((items) =>
           items.map((item) => ({
             ...item,
