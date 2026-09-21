@@ -332,3 +332,8 @@ TilePaintEditor now awaits its async onSaved callback, holds the pending guard t
 ## Native gameplay revalidation after editor fixes
 
 Ran scripts/test-native-recompiled-game.mjs against the existing generated gameplay fixture with current assembler and audio/dialogue overlays. Report: E:/Metroforge/Recovery-Audit/temp/metroforge-native-recompiled-GDBxDS/native-recompiled.json. All 8 rooms compiled; native exit 0; 248 PASS, 0 FAIL, 2 SOFT_FAIL. Log confirms Vulkan 1.4.351 Forward+ on NVIDIA GeForce RTX 5060 Laptop GPU. Missing breakable-wall and shortcut fixtures leave those mechanics uncovered. Root certificate store and shutdown ObjectDB/resource diagnostics remain; missing SFX and corrupt-save warnings are exercised negative cases. This does not validate Unity/Unreal, audible mix (Dummy audio), Electron startup, or modern production visual quality.
+
+
+## Verbose native shutdown investigation
+
+Re-ran the GDBxDS native gameplay fixture with --verbose; process exited 0. Evidence: E:/Metroforge/Recovery-Audit/native-gameplay-verbose.log. Shutdown identifies res://audio/music/biome_0.wav (AudioStreamWAV) still in use, with AudioStreamPlaybackWAV and SceneTreeTimer instances also retained. This narrows the audio resource diagnostic but does not establish its root cause or prove a production memory leak. Next investigate music playback teardown separately from pending test/gameplay timers, using a baseline/candidate shutdown comparison. No runtime workaround applied.
