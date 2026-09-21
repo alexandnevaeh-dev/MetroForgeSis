@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, copyFileSync, readFileSync, writeFileSync, existsSync, unlinkSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, copyFileSync, readFileSync, writeFileSync, existsSync, unlinkSync, statSync, utimesSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { GodotProjectAssembler } from '../packages/godot/dist/index.js';
@@ -17,6 +17,8 @@ const roomId = Object.keys(JSON.parse(originalRooms).rooms)[0];
 const scenePath = join(project, 'scenes/rooms', `${roomId}.tscn`);
 const originalScene = Buffer.from('original scene sentinel\r\n');
 writeFileSync(scenePath, originalScene);
+for (const file of [roomsPath, scenePath]) utimesSync(file, 1000000000, 1000000000);
+const initialTimes = [roomsPath, scenePath].map(file => statSync(file).mtimeMs);
 const originalRecompile = GodotProjectAssembler.prototype.recompileRooms;
 try {
   GodotProjectAssembler.prototype.recompileRooms = function () { throw new Error('Validation must run before compilation'); };
@@ -40,6 +42,13 @@ try {
     assert.deepEqual(readFileSync(roomsPath), originalRooms);
     assert.deepEqual(readFileSync(scenePath), originalScene);
   }
+  assert.deepEqual([roomsPath, scenePath].map(file => statSync(file).mtimeMs), initialTimes,
+    'Invalid edits must not rewrite project files');
+  const missing = applyRoomEditAndRecompile(project, { roomId: 'room_missing_test', width: 900 });
+  assert.equal(missing.success, false);
+  assert.match(missing.errors.join(' '), /not found/);
+  assert.deepEqual([roomsPath, scenePath].map(file => statSync(file).mtimeMs), initialTimes);
+  assert.equal(existsSync(join(project, 'scenes/rooms/room_missing_test.tscn')), false);
   for (const throws of [false, true]) {
     GodotProjectAssembler.prototype.recompileRooms = function () {
       writeFileSync(scenePath, 'partial scene');

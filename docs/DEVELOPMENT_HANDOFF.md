@@ -427,3 +427,8 @@ Moved Godot adapter check before snapshot/rollback in applyRoomEditAndRecompile.
 ## Foreign-engine edit boundary regression coverage
 
 Expanded test-foreign-room-edit.mjs to cover room and world commands for Unity/Unreal via explicit engine manifest and native project fingerprints. Complete recursive file snapshot checks no files created, content changed or modification times touched. All four detection cases passed. Existing room rollback and world rollback suites also passed, including actual room duplication compilation. This does not provide native Unity/Unreal gameplay or compile acceptance.
+
+
+## Rejected Godot edit timestamp checks
+
+Expanded room rollback regression to assert modification times remain unchanged for invalid patches and a valid-shaped edit targeting a missing room. Missing-room rejection creates no scene. Suite passed alongside existing partial-write rollback and successful commit checks. Current rollback already compares original bytes before rewriting; this turn adds evidence, not a runtime behavior change.
