@@ -144,13 +144,20 @@ export function RoomEditor() {
       return;
     }
     let cancelled = false;
+    setCollision(null);
     void window.metroforge.getRoomCollision(selectedPath, selectedRoomId).then((data) => {
       if (!cancelled) setCollision(data?.error ? { ...data, rects: [] } : data);
+    }).catch((cause: unknown) => {
+      if (!cancelled) setCollision({
+        roomId: selectedRoomId,
+        rects: [],
+        error: cause instanceof Error ? cause.message : String(cause),
+      });
     });
     return () => {
       cancelled = true;
     };
-  }, [selectedPath, selectedRoomId]);
+  }, [selectedPath, selectedRoomId, rooms]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

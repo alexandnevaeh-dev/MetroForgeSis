@@ -312,3 +312,8 @@ The actual RoomEditor and StudioProvider were mounted in a browser harness with 
 Interactive checks passed: two Place enemy clicks issue one request; switching projects discards the earlier completion; switching away and back also discards it; rejected saves show their error and permit a successful retry. Desktop TypeScript check and native bundle passed (.metroforge/desktop-build/1789959362612).
 
 Scope: renderer behavior with mocked IPC. This does not validate native Electron startup, filesystem persistence, Unity, Unreal, or visual game quality. The local harness lives in .metroforge/live-inspector-harness/room-save.* on E:.
+
+
+## Collision preview refresh and failure handling
+
+RoomEditor now refreshes collision previews after rooms reload, including successful saves to the same selected room. It clears the previous overlay while loading and catches rejected preview requests into the existing empty-rect fallback. Effect cancellation prevents superseded responses from restoring old geometry. TypeScript and native desktop bundle passed; evidence .metroforge/desktop-build/1789959447293. Interactive delayed collision and rejection checks remain outstanding.
