@@ -18,6 +18,7 @@ public class PlayerActor : MonoBehaviour
     [SerializeField] private SpriteSheetPlayer animator;
 
     private Rigidbody2D _body;
+    private WraithChain _wraithChain;
     private BoxCollider2D _hurt;
     private BoxCollider2D _hit;
     private float _coyote;
@@ -29,6 +30,7 @@ public class PlayerActor : MonoBehaviour
     private float _dashTime;
     private float _dashCooldown;
     private bool _veilStep;
+    public bool IsDashing => _dashTime > 0f;
     public bool IsVeilStepping => _veilStep && _dashTime > 0f;
     private bool _grounded;
     private bool _wasGrounded;
@@ -50,6 +52,7 @@ public class PlayerActor : MonoBehaviour
         _invuln = 0.4f;
         _dashTime = 0f;
         _veilStep = false;
+        _wraithChain?.Cancel();
         _clipLock = 0f;
         animator?.Play("idle", true);
     }
@@ -57,6 +60,8 @@ public class PlayerActor : MonoBehaviour
     private void Awake()
     {
         _body = GetComponent<Rigidbody2D>();
+        _wraithChain = GetComponent<WraithChain>() ?? gameObject.AddComponent<WraithChain>();
+        _wraithChain.Initialize(this);
         _body.freezeRotation = true;
         _body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
         _body.interpolation = RigidbodyInterpolation2D.Interpolate;
@@ -147,7 +152,7 @@ public class PlayerActor : MonoBehaviour
     // It protects against damage during movement without disabling solid collisions.
     public bool TryDash(float direction)
     {
-        if (Dead || Pack == null || _body == null || _dashCooldown > 0f || _dashTime > 0f)
+        if (Dead || Pack == null || _body == null || (_wraithChain != null && _wraithChain.IsPulling) || _dashCooldown > 0f || _dashTime > 0f)
             return false;
         if (!Abilities.Contains("dash") && !Abilities.Contains("phase"))
             return false;
@@ -172,7 +177,7 @@ public class PlayerActor : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (Dead || Pack == null)
+        if (Dead || Pack == null || (_wraithChain != null && _wraithChain.IsPulling))
             return;
         var move = ReadMove();
         var run = ReadRun();
