@@ -310,6 +310,7 @@ export function RoomEditor() {
                   <TilePalettePanel
                     projectPath={selectedPath}
                     biomeId={selected.biomeId ?? 'biome_0'}
+                    tileSize={tileSize}
                     selectedTile={selectedTile}
                     onSelect={setSelectedTile}
                     interactive={viewMode === 'visual' && paintTool !== 'select'}
@@ -461,6 +462,7 @@ export function RoomEditor() {
                     projectPath={selectedPath}
                     roomId={selected.id}
                     biomeId={selected.biomeId ?? 'biome_0'}
+                    tileSize={tileSize}
                     width={selected.width ?? 800}
                     height={selected.height ?? 600}
                     initialCells={selected.tileCells ?? []}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Badge, Button, EmptyState, Panel } from './ui/index.js';
 
 export interface TileCell {
@@ -20,6 +20,32 @@ interface TilePalettePanelProps {
   interactive?: boolean;
 }
 
+function useTilesetArtwork(projectPath: string, biomeId: string) {
+  const [artwork, setArtwork] = useState<{ url: string; width: number; height: number } | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    setArtwork(null);
+    setLoaded(false);
+    async function load() {
+      try {
+        const preview = await window.metroforge?.getTilesetPreview?.(projectPath, biomeId);
+        if (!preview?.dataUrl || cancelled) return;
+        const image = new Image();
+        image.src = preview.dataUrl;
+        await image.decode();
+        if (!cancelled && image.naturalWidth > 0 && image.naturalHeight > 0) {
+          setArtwork({ url: preview.dataUrl, width: image.naturalWidth, height: image.naturalHeight });
+        }
+      } catch { /* Missing/failed artwork remains visibly unavailable. */ }
+      finally { if (!cancelled) setLoaded(true); }
+    }
+    void load();
+    return () => { cancelled = true; };
+  }, [projectPath, biomeId]);
+  return { artwork, loaded };
+}
+
 export function TilePalettePanel({
   projectPath,
   biomeId,
@@ -28,27 +54,9 @@ export function TilePalettePanel({
   onSelect,
   interactive = true,
 }: TilePalettePanelProps) {
-  const [tilesetUrl, setTilesetUrl] = useState<string | null>(null);
-  const [atlasSize, setAtlasSize] = useState(128);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    setLoaded(false);
-    setTilesetUrl(null);
-    if (!projectPath || !window.metroforge?.getTilesetPreview) return;
-    let cancelled = false;
-    window.metroforge.getTilesetPreview(projectPath, biomeId).then((preview) => {
-      if (cancelled) return;
-      if (preview?.dataUrl) setTilesetUrl(preview.dataUrl);
-      if (preview?.atlasSize) setAtlasSize(preview.atlasSize);
-      setLoaded(true);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [projectPath, biomeId]);
-
-  const paletteCols = Math.floor(atlasSize / tileSize);
+  const { artwork, loaded } = useTilesetArtwork(projectPath, biomeId);
+  const paletteCols = Math.floor((artwork?.width ?? 0) / tileSize);
+  const paletteRows = Math.floor((artwork?.height ?? 0) / tileSize);
 
   return (
     <Panel
@@ -59,7 +67,7 @@ export function TilePalettePanel({
     >
       {!loaded ? (
         <p className="hint">Loading tileset…</p>
-      ) : !tilesetUrl ? (
+      ) : !artwork ? (
         <EmptyState
           title="No tiles"
           description={`No tileset atlas for ${biomeId}. Generate or import a tileset to paint.`}
@@ -72,8 +80,9 @@ export function TilePalettePanel({
           <div
             className={interactive ? 'tile-palette' : 'tile-palette tile-palette-disabled'}
             aria-disabled={!interactive}
+            style={{ gridTemplateColumns: `repeat(${paletteCols}, ${tileSize}px)` }}
           >
-            {Array.from({ length: paletteCols * paletteCols }).map((_, i) => {
+            {Array.from({ length: paletteCols * paletteRows }).map((_, i) => {
               const col = i % paletteCols;
               const row = Math.floor(i / paletteCols);
               const active = selectedTile.col === col && selectedTile.row === row;
@@ -86,9 +95,9 @@ export function TilePalettePanel({
                   style={{
                     width: tileSize,
                     height: tileSize,
-                    backgroundImage: `url(${tilesetUrl})`,
+                    backgroundImage: `url(${artwork.url})`,
                     backgroundPosition: `-${col * tileSize}px -${row * tileSize}px`,
-                    backgroundSize: `${atlasSize}px ${atlasSize}px`,
+                    backgroundSize: `${artwork.width}px ${artwork.height}px`,
                     imageRendering: 'pixelated',
                   }}
                   onClick={() => onSelect({ col, row })}
@@ -131,6 +140,8 @@ export function TilePaintEditor({
   tool = 'paint',
   onSaved,
 }: TilePaintEditorProps) {
+  const { artwork, loaded } = useTilesetArtwork(projectPath, biomeId);
+  const atlasId = useId();
   const [cells, setCells] = useState<TileCell[]>(initialCells);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -201,6 +212,7 @@ export function TilePaintEditor({
           {tool === 'erase' ? 'remove cells' : `tile ${selectedTile.col},${selectedTile.row}`}
         </span>
       </div>
+      {!artwork && <p className="hint" role="status">{loaded ? 'Tileset artwork unavailable. Showing occupied cells.' : 'Loading tileset artwork…'}</p>}
       <div
         className="tile-canvas-wrap"
         style={{ width: width * scale, height: height * scale, overflow: 'auto' }}
@@ -211,6 +223,7 @@ export function TilePaintEditor({
           viewBox={`0 0 ${width} ${height}`}
           style={{ imageRendering: 'pixelated' }}
         >
+          {artwork && <defs><image id={atlasId} href={artwork.url} width={artwork.width} height={artwork.height} /></defs>}
           <rect x={0} y={0} width={width} height={height} fill="var(--canvas-bg, #0f172a)" />
           {Array.from({ length: cols * rows }).map((_, i) => {
             const x = i % cols;
@@ -231,15 +244,15 @@ export function TilePaintEditor({
                   onClick={() => applyTool(x, y)}
                   style={{ cursor: tool === 'erase' ? 'cell' : 'crosshair' }}
                 />
-                {cell && (
-                  <rect
+                {cell && artwork && (
+                  <svg
                     pointerEvents="none"
-                    x={px + 1}
-                    y={py + 1}
-                    width={tileSize - 2}
-                    height={tileSize - 2}
-                    fill={`hsl(${(cell.col * 17 + cell.row * 53) % 360}, 55%, 42%)`}
-                  />
+                    x={px} y={py} width={tileSize} height={tileSize}
+                    viewBox={`${cell.col * tileSize} ${cell.row * tileSize} ${tileSize} ${tileSize}`}
+                    overflow="hidden"
+                  >
+                    <use href={`#${atlasId}`} />
+                  </svg>
                 )}
               </g>
             );
