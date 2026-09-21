@@ -392,3 +392,8 @@ Current WorldManager destination validation before teardown passed native mechan
 ## AI command failure recovery
 
 CommandBar now catches executeAiCommand rejection, releases busy state in finally, and preserves typed input when execution fails. A synchronous pending guard suppresses duplicate submissions. Successful execution awaits onSuccess refresh and distinguishes applied-command/failed-refresh from execution failure. TypeScript and native desktop bundle passed (.metroforge/desktop-build/1789961112869). Interactive rejection/retry checks and cross-project response isolation remain pending; no native Electron runtime claim.
+
+
+## Visible compact command outcomes
+
+Browser checks confirmed rejected command retains input and re-enables Run, but revealed compact CSS hid all result/error messages. Compact bar now wraps status and alert text beneath controls and exposes live roles. Browser verified Injected command failure, retained input, successful retry, and separate Command applied / editor refresh failure text with mocked IPC. Cross-project response isolation remains pending.

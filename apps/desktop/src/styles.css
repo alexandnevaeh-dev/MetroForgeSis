@@ -3681,7 +3681,7 @@ select {
   margin: 0.35rem 0;
   padding: 0.28rem 0.55rem;
   min-height: 40px;
-  max-height: 44px;
+  flex-wrap: wrap;
   display: flex;
   align-items: center;
 }
@@ -3714,7 +3714,9 @@ select {
 }
 .command-bar-compact .hint,
 .command-bar-compact .result {
-  display: none;
+  flex-basis: 100%;
+  margin: 0.35rem 0 0;
+  overflow-wrap: anywhere;
 }
 
 .editor-dock {

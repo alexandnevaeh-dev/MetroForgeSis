@@ -128,8 +128,8 @@ export function CommandBar({
         </div>
       </label>
       {listening && <p className="hint">Listening… click Stop when finished.</p>}
-      {message && <p className="hint">{message}</p>}
-      {error && <p className="result error">{error}</p>}
+      {message && <p className="hint" role="status">{message}</p>}
+      {error && <p className="result error" role="alert">{error}</p>}
     </div>
   );
 }
