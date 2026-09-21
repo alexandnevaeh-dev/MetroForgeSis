@@ -504,3 +504,6 @@ Removed unconditional worker pixel-art/perspective prefixes. The project-compose
 
 ### Conditioning model location
 ControlNet/IP-Adapter generation now honors base_model_path, then DIFFUSERS_BASE_MODEL_PATH, then the existing SDXL default. Both loaders recognize local FP16 UNet snapshots. Focused production-AST checks passed for request/env/default precedence and both loader variants. Native GPU conditioning through these branches remains unverified. Reference-guided SDXL img2img trial is active separately as session 54689.
+
+### Native Unity first import and CA configuration
+Unity 6000.3.0f1 launched the animated test project on E:. First import failed Package Manager certificate verification. Restarted only the validation editor with NODE_EXTRA_CA_CERTS pointing at the existing E: Windows-trusted PEM bundle; metadata and Input System downloads succeeded. Current editor PID 19412, log E:/Metroforge/Recovery-Audit/unity-native-compile-ca.log; still importing with licensing entitlement errors and no compile success marker yet. validate-native-engines.ps1 now accepts CertificateBundle (defaults to existing NODE_EXTRA_CA_CERTS), validates its path and records it in inputs. PowerShell syntax passed; no TLS verification bypass.

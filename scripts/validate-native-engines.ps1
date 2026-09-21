@@ -3,10 +3,17 @@ param(
   [Parameter(Mandatory = $true)][string]$UnrealProject,
   [string]$UnityEditor = $env:UNITY_EDITOR,
   [string]$UnrealRoot = $env:UE_ROOT,
+  [string]$CertificateBundle = $env:NODE_EXTRA_CA_CERTS,
   [string]$StorageRoot = 'E:\Metroforge\Recovery-Audit\native-validation'
 )
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+if ($CertificateBundle) {
+  if (-not (Test-Path -LiteralPath $CertificateBundle -PathType Leaf)) {
+    throw 'CertificateBundle must name an existing PEM certificate file.'
+  }
+  $env:NODE_EXTRA_CA_CERTS = (Resolve-Path -LiteralPath $CertificateBundle).Path
+}
 $storagePath = [IO.Path]::GetFullPath($StorageRoot)
 if ([IO.Path]::GetPathRoot($storagePath) -ine 'E:\') {
   throw 'Native validation storage must be on E: for this workspace.'
@@ -41,6 +48,7 @@ if ($UnrealRoot) { $env:UE_ROOT = $UnrealRoot }
   unityProject = $env:METROFORGE_UNITY_TEST_PROJECT
   unrealProject = $env:METROFORGE_UNREAL_TEST_PROJECT
   cachePaths = $paths
+  certificateBundle = $env:NODE_EXTRA_CA_CERTS
   note = 'Native compile/play/build remain unverified unless the acceptance report proves them.'
 } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $runPath 'validation-inputs.json')
 Push-Location $repositoryRoot
