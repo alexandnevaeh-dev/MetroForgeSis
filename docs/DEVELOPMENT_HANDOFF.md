@@ -382,3 +382,8 @@ Tested immediate remove_child before queue_free for outgoing rooms to remove sta
 ## Preserve current room on failed destination load
 
 WorldManager now checks destination existence and loads its PackedScene before tearing down the active room. Native missing-room fixture reproduced destruction before the fix and confirmed the original room remains attached/visible afterward. Evidence E:/Metroforge/Recovery-Audit/missing-room-baseline.log and missing-room-fixed.log; fixture scripts/fixtures/missing-room-runtime.gd. Initial room load also succeeded in this test. Full gameplay regression after this ordering change remains pending. No claim of recovery from scene-instantiation script errors.
+
+
+## Full regression after destination preflight
+
+Current WorldManager destination validation before teardown passed native mechanics run E:/Metroforge/Recovery-Audit/temp/metroforge-native-recompiled-yLcZ9Z: WASAPI, 8 recompiled rooms, exit 0, 260 PASS, 0 FAIL, 0 SOFT_FAIL. Covers existing transition/health/save tests and targeted ground-slam/shortcut/persistence checks. No retained-resource error this run; root-certificate-store and ObjectDB warnings persist. GCM github list remains empty; Unity.exe/UnrealEditor.exe not found on PATH. E: free space approximately 1.99 TB. Application and game production readiness remain incomplete.
