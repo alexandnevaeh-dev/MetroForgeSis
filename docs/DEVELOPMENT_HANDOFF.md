@@ -467,3 +467,8 @@ A rejected getPlaytestSession poll no longer acts as a confirmed stopped session
 ### Preview punctuation repair
 
 Corrected five malformed UTF-8 punctuation sequences in launch/loading text, room-count separator and absent metadata placeholders. Explicit UTF-8 reads/writes preserve the corrected ellipsis, middle dot and em dash. Desktop TypeScript passed. Unity installer launch is still awaiting completion of the active verification/launch command; no installer process confirmed yet.
+
+
+### Native acceptance terminal stage reporting
+
+The synchronous acceptance runner now finalizes unexecuted pending stages as blocked with distinct generation-validation, native-compile or unimplemented-Unreal-runtime/package reasons. Current Unreal blockers no longer fall back to stale previous-report values. Node syntax check and controlled execution of the finalization block passed for invalid generation, compile failure and successful Unreal compilation with unimplemented downstream stages. This is runner logic evidence only; no new native engine validation occurred. Unity and Epic installers were launched; installation and licensing completion are not yet confirmed.

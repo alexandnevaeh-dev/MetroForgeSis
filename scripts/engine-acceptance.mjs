@@ -172,6 +172,22 @@ if (unrealReady && unrealGen.passed) {
   writeFileSync(join(unrealProject, 'qa', 'unreal-compile.log'), `${compile.stdout}\n${compile.stderr}`);
 }
 
+// No stage is still running after the synchronous native commands return.
+for (const [engine, stage] of Object.entries(stages)) {
+  const remaining = ['compiled', 'opened', 'playtested', 'visualCapture', 'standaloneBuild']
+    .filter((name) => stage[name] === 'pending');
+  if (remaining.length === 0) continue;
+  const reason = stage.generated === 'failed'
+    ? 'GENERATED_PROJECT_VALIDATION_FAILED'
+    : stage.compiled === 'failed'
+      ? 'NATIVE_COMPILE_FAILED'
+      : engine === 'unreal'
+        ? 'UNREAL_RUNTIME_AND_PACKAGE_STAGES_NOT_IMPLEMENTED'
+        : 'NATIVE_STAGE_NOT_EXECUTED';
+  stage.blocked.push(reason);
+  for (const name of remaining) stage[name] = 'blocked';
+}
+
 const previousPath = join(reviewDir, 'ENGINE_ACCEPTANCE.json');
 const previous = existsSync(previousPath) ? JSON.parse(readFileSync(previousPath, 'utf-8')) : {};
 
@@ -215,11 +231,9 @@ const acceptance = {
       visualCapture: stages.unreal.visualCapture === 'passed',
       standaloneBuild: stages.unreal.standaloneBuild === 'passed',
       stages: stages.unreal,
-      blocked: stages.unreal.blocked.length > 0
-        ? stages.unreal.blocked
-        : previous.engines?.unreal?.blocked ?? [],
+      blocked: stages.unreal.blocked,
       nextPrerequisite: unrealReady
-        ? 'Editors present — inspect qa logs for compile/play/capture/standalone.'
+        ? 'Inspect compile logs; Unreal runtime, capture and standalone stages still require implementation.'
         : 'Install a supported Unreal editor and its host C++ toolchain on E:, then set UE_ROOT.',
     },
   },
