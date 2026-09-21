@@ -54,9 +54,11 @@ try {
     assert.deepEqual(readFileSync(roomsPath), originalRooms);
     assert.deepEqual(readFileSync(scenePath), originalScene);
   }
-  assert.equal(regenerateRoom(project, roomId, 'full').success, false);
-  assert.deepEqual(readFileSync(roomsPath), originalRooms);
-  assert.deepEqual(readFileSync(scenePath), originalScene);
+  for (const scope of ['full', 'geometry', 'encounter']) {
+    assert.equal(regenerateRoom(project, roomId, scope).success, false);
+    assert.deepEqual(readFileSync(roomsPath), originalRooms);
+    assert.deepEqual(readFileSync(scenePath), originalScene);
+  }
   unlinkSync(scenePath);
   assert.equal(applyRoomEditAndRecompile(project, { roomId, width: 900 }).success, false);
   assert.equal(existsSync(scenePath), false, 'Failed creation must not leave a new scene');

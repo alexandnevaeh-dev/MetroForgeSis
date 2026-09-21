@@ -73,6 +73,14 @@ for (let pass = 0; pass < 2; pass++) {
 }
 const siblingBefore = JSON.parse(readFileSync(roomsPath)).rooms.authored_copy;
 const authoredSnapshot = snapshotRoomRecord(project, roomId);
+const encounter = regenerateRoom(project, roomId, 'encounter');
+assert.equal(encounter.success, true, encounter.errors.join('\n'));
+assert.deepEqual(room().tileCells, authoredSnapshot.tileCells);
+assert.equal(room().tileCellsAuthored, authoredSnapshot.tileCellsAuthored);
+assert.equal(room().width, authoredSnapshot.width);
+assert.deepEqual(room().entityPlacements.filter(p => !['enemy','boss'].includes(p.kind)), authoredSnapshot.entityPlacements.filter(p => !['enemy','boss'].includes(p.kind)));
+assert.ok(!room().entityPlacements.some(p => p.id === copyEnemy.id), 'Encounter regeneration replaces copied combatants');
+assert.ok(room().entityPlacements.some(p => p.kind === 'enemy'), 'Procedural encounter must have a combatant');
 const regenerated = regenerateRoom(project, roomId, 'full');
 assert.equal(regenerated.success, true, regenerated.errors.join('\n'));
 assert.notEqual(room().tileCellsAuthored, true, 'Explicit regeneration must release authored paint');

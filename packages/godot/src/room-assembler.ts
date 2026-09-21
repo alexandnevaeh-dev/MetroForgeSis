@@ -1713,6 +1713,8 @@ export interface RecompileRoomsInput {
   gameContent?: GameContent;
   roomIds?: string[];
   targetRoomIds: string[];
+  /** Explicitly replace combat placements while preserving other authored entities. */
+  regenerateEncounterRoomIds?: string[];
   visualKit?: 'foundry';
   authoredParallax?: boolean;
   roomOverrides?: Record<
@@ -1826,6 +1828,17 @@ export function recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult
           hasItemPickup: opts.hasItemPickup,
           itemId: opts.itemId,
         });
+      }
+      if (input.regenerateEncounterRoomIds?.includes(roomId)) {
+        const combat = defaultEntityPlacements({
+          width: opts.width, height: opts.height, tileSize: opts.tileSize,
+          hasEnemy: opts.hasEnemy, enemyIndex: opts.enemyIndex,
+          isBossRoom: opts.isBossRoom, bossId: opts.bossId,
+        }).filter((p) => p.kind === 'enemy' || p.kind === 'boss');
+        opts.entityPlacements = [
+          ...(opts.entityPlacements ?? []).filter((p) => p.kind !== 'enemy' && p.kind !== 'boss'),
+          ...combat,
+        ];
       }
       const scene = generateRoomScene(roomId, i, opts);
       writeFileSync(join(roomsDir, `${roomId}.tscn`), scene);

@@ -235,7 +235,7 @@ function validateRoomPatch(patch: RoomEditPatch): string[] {
 export function applyRoomEditAndRecompile(
   projectPath: string,
   patch: RoomEditPatch,
-  options?: { regenerate?: 'full' | 'geometry'; restoreRecord?: Record<string, unknown> },
+  options?: { regenerate?: 'full' | 'geometry' | 'encounter'; restoreRecord?: Record<string, unknown> },
 ): ProjectEditResult {
   const validationErrors = validateRoomPatch(patch);
   if (validationErrors.length) return { success: false, errors: validationErrors };
@@ -275,7 +275,7 @@ export function applyRoomEditAndRecompile(
 function applyRoomEditUnchecked(
   projectPath: string,
   patch: RoomEditPatch,
-  options?: { regenerate?: 'full' | 'geometry'; restoreRecord?: Record<string, unknown> },
+  options?: { regenerate?: 'full' | 'geometry' | 'encounter'; restoreRecord?: Record<string, unknown> },
 ): ProjectEditResult {
   if (detectProjectEngine(projectPath) !== 'godot') {
     return { success: false, errors: ['This room edit requires the Godot adapter; Unity and Unreal recompilation is not implemented here.'] };
@@ -297,6 +297,10 @@ function applyRoomEditUnchecked(
       delete geometryReset.pits;
       delete geometryReset.blueprint;
       roomsData[patch.roomId] = geometryReset;
+    } else if (options.regenerate === 'encounter') {
+      const encounterReset = { ...existing };
+      delete encounterReset.forceEnemy;
+      roomsData[patch.roomId] = encounterReset;
     } else delete roomsData[patch.roomId];
     writeFileSync(join(projectPath, 'data', 'rooms', 'rooms.json'), JSON.stringify({ rooms: roomsData }, null, 2));
     const rebuilt = new GodotProjectAssembler().recompileRooms({
@@ -306,6 +310,7 @@ function applyRoomEditUnchecked(
       gameContent: project.gameContent,
       roomIds: project.roomIds,
       targetRoomIds: [patch.roomId],
+      regenerateEncounterRoomIds: options.regenerate === 'encounter' ? [patch.roomId] : undefined,
     });
     const errors = [...rebuilt.errors];
     if (!rebuilt.success && !errors.length) errors.push('Room regeneration failed');
@@ -431,8 +436,6 @@ export function regenerateRoom(
   roomId: string,
   scope: 'full' | 'geometry' | 'encounter' = 'full',
 ): ProjectEditResult {
-  if (scope === 'full' || scope === 'geometry') return applyRoomEditAndRecompile(projectPath, { roomId }, { regenerate: scope });
-  const patch: RoomEditPatch = { roomId };
-  if (scope === 'encounter') patch.hasEnemy = true;
-  return applyRoomEditAndRecompile(projectPath, patch);
+  if (!['full', 'geometry', 'encounter'].includes(scope)) return { success: false, errors: ['Unknown regeneration scope'] };
+  return applyRoomEditAndRecompile(projectPath, { roomId }, { regenerate: scope });
 }

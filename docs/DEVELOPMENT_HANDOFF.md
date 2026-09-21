@@ -263,3 +263,7 @@ Actual snapshot restore regression failed: generated tileCells became tileCellsA
 
 ## Geometry-only regeneration - continuation
 Geometry scope no longer substitutes width800/height600. It clears stored paint/authored geometry fields inside transaction, then generates layout while retaining saved bounds, NPC membership, enemy choice and entity placements. Full regeneration still replaces complete room record. Extended real assembler checks preserve both dimensions and exact placement array while replacing authored paint; snapshot restore and rollback regressions, generation TypeScript and lint pass. Native runtime/UI geometry action remains unverified; encounter-specific regeneration still needs review.
+
+
+## Encounter-only regeneration - continuation
+Encounter regeneration now releases explicit enemy presence and replaces combat placements with procedural defaults while retaining noncombat placements, saved NPC roster, room bounds and authored paint. It no longer simply enables one enemy without replacing copied combatants. Unknown scopes rejected. Real assembler regression verifies painted cells/authoring flag/bounds/noncombat positions preserved, copied combatant removed and generated combatant present. Rollback injected-failure test covers full/geometry/encounter. Godot/generation TypeScript and changed-file lint pass. Native/UI scoped regeneration remains unverified.
