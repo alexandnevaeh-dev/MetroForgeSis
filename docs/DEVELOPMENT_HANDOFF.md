@@ -275,3 +275,7 @@ Native NPC harness now places player body within each NPC area, waits physics fr
 
 ## NPC acting sheets follow definition - continuation
 Generated NPC scenes previously overrode walk only; inherited template idle/talk/listen paths remained npc_000. Assembler now overrides extra_animation_sheets for all three acting animations using shared definitionId (or legacy id). NPC persistence regression introduces a second content definition and verifies all four generated paths reference it, never instance ID. Godot TypeScript and lint pass. This proves scene wiring; alternate-definition artwork/native visual playback still requires actual assets and runtime validation.
+
+
+## Full recompiled game integration - continuation
+Added test-native-recompiled-game.mjs to copy generated fixture to E temp, recompile every room using current assembler/context and launch windowed PLAYER-mode RuntimeSmokeTest with file-backed logs. All8rooms recompiled; native Vulkan RTX5060 run exit0,247PASS,0FAIL,3SOFT_FAIL. Soft failures: music playback after entry, absent optional breakable wall and shortcut. Root certificate error persists. Evidence Recovery-Audit/temp/metroforge-native-recompiled-pE0LBL/native-recompiled.json and .log; checkpoint screenshot inspected, HUD visible and scene still prototype quality. Original generated validation report untouched. Functional integration does not certify production visuals, desktop startup, Unity/Unreal or complete product.
