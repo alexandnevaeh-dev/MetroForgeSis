@@ -14,6 +14,7 @@ cpSync(source, project, { recursive:true, filter: path => !['qa','.git'].include
 cpSync(new URL('../templates/godot-metroidvania/scripts/core/AudioManager.gd', import.meta.url), join(project, 'scripts/core/AudioManager.gd'));
 cpSync(new URL('../templates/godot-metroidvania/scripts/UI/DialogueOverlay.gd', import.meta.url), join(project, 'scripts/UI/DialogueOverlay.gd'));
 cpSync(new URL('../templates/godot-metroidvania/scripts/world/WeakFloor.gd', import.meta.url), join(project, 'scripts/world/WeakFloor.gd'));
+cpSync(new URL('../templates/godot-metroidvania/scripts/test/RuntimeSmokeTest.gd', import.meta.url), join(project, 'scripts/test/RuntimeSmokeTest.gd'));
 const context = loadProjectContext(project);
 const mechanicsFixture = process.argv.includes('--mechanics-fixture');
 if (mechanicsFixture) {
@@ -48,7 +49,7 @@ assert.equal(counts.FAIL,0);
 assert.ok(counts.PASS > 0);
 
 if (mechanicsFixture) {
-  for (const check of ['breakable_wall_breaks_with_ability','breakable_wall_stays_broken_after_room_reentry','shortcut_leads_to_declared_room']) {
+  for (const check of ['breakable_wall_breaks_with_ability','breakable_wall_stays_broken_after_room_reentry','breakable_wall_stays_broken_after_save_load','shortcut_leads_to_declared_room']) {
     assert.ok(output.includes(`PASS: ${check}`), `Missing native mechanics evidence: ${check}`);
   }
 }

@@ -2432,6 +2432,17 @@ func _check_breakable_wall(player: Node, world: Node) -> void:
 	await get_tree().process_frame
 	_check("breakable_wall_stays_broken_after_room_reentry", reloaded_floor == null or not is_instance_valid(reloaded_floor))
 
+	# Prove disk restoration rather than relying on the still-populated session dictionary.
+	_check("broken_floor_save_written", SaveManager.save_game())
+	SaveManager._save_data["world_state"]["broken_floors"] = []
+	_check("broken_floor_save_loaded", SaveManager.load_game())
+	await world.transition_to_room(weak_floor_room_id)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var restored_floor := _find_node_in_group(world, "weak_floor")
+	_check("breakable_wall_stays_broken_after_save_load", restored_floor == null or not is_instance_valid(restored_floor))
+
+
 ## Gets the player airborne (jump, buffered if still falling from a prior setup) and then holds
 ## move_down for several physics frames — not just one — so a real is_action_just_pressed edge is
 ## reliably observed by AbilityController regardless of exactly which frame this coroutine resumes

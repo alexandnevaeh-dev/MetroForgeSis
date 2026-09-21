@@ -362,3 +362,8 @@ Added --mechanics-fixture to native recompiled-game runner. It adds optional gro
 ## Broken-floor persistence fix and native proof
 
 Trace floor-persistence-trace.log showed first key room_006:room_007 saved true, but re-entry used @Node2D@91:room_007 and read false. Godot renamed the new root while the outgoing same-named room awaited deletion. WeakFloor now derives room identity from owning scene_file_path basename, falling back to node name only for non-scene instances. Existing generated room-id save keys remain compatible. Runner overlays current WeakFloor. Native WASAPI mechanics fixture E:/Metroforge/Recovery-Audit/temp/metroforge-native-recompiled-5jS3cK: 8 rooms, exit 0, 257 PASS, 0 FAIL, 0 SOFT_FAIL. Break, re-entry persistence and shortcut traversal all pass. Certificate-store and ObjectDB diagnostics remain. This does not prove Unity/Unreal or production visual quality.
+
+
+## Broken-floor disk persistence verification
+
+Extended native RuntimeSmokeTest to save after breaking a floor, clear in-memory broken_floors, load the save and re-enter the room. Runner now overlays current smoke-test script and requires the disk-persistence assertion in mechanics mode. Native WASAPI run E:/Metroforge/Recovery-Audit/temp/metroforge-native-recompiled-mtevbg: 8 rooms, exit 0, 260 PASS, 0 FAIL, 0 SOFT_FAIL. Save write/load and floor absence after reload all passed. This exercises actual save I/O within the same native process, not an OS process restart. Existing certificate-store/ObjectDB diagnostics remain.
