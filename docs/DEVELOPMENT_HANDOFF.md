@@ -407,3 +407,8 @@ EditStatusBadge now starts CHECKING, reports UNAVAILABLE when bridge/status requ
 ## Project-scoped command sessions
 
 CommandBar now wraps an internal component keyed by projectPath. Switching projects resets command/input state; late execution responses cannot clear a new project input or invoke old refresh callbacks after unmount. Cleanup stops active speech recording, and recording/transcription continuations check mounted state. TypeScript and native bundle passed (.metroforge/desktop-build/1789961455394). Interactive delayed command and speech/project-switch checks remain pending. Existing in-flight backend commands are not cancelled and may still finish in their original project.
+
+
+## Delayed command project-switch verification
+
+Production CommandBar in browser harness with controlled executeAiCommand promise: submitted in A, switched to B, typed new project draft, resolved old command. New draft remained and no old completion appeared. Repeated B -> A -> B before resolving; returned project draft remained and Run stayed available. Both interactive cases passed. Backend mutation/IPC and actual microphone cancellation were not exercised. Harness remains on E: under .metroforge/live-inspector-harness.
