@@ -125,7 +125,7 @@ interface TilePaintEditorProps {
   selectedTile: TileCoord;
   /** Paint places the selected atlas tile; erase removes cells. */
   tool?: TilePaintTool;
-  onSaved?: () => void;
+  onSaved?: () => void | Promise<void>;
 }
 
 export function TilePaintEditor({
@@ -193,10 +193,14 @@ export function TilePaintEditor({
       const result = await window.metroforge.updateRoom(projectPath, { roomId, tileCells: cells });
       if (!mounted.current) return;
       if (result.error || result.success === false) {
-        setMessage(result.error ?? result.errors?.join('; ') ?? 'Save failed. Your painted tiles are still here; try again.');
+        setMessage(result.error || result.errors?.join('; ') || 'Save failed. Your painted tiles are still here; try again.');
       } else {
-        setMessage('Tilemap saved and room recompiled');
-        onSaved?.();
+        try {
+          await onSaved?.();
+          if (mounted.current) setMessage('Tilemap saved and room recompiled');
+        } catch (error) {
+          if (mounted.current) setMessage(`Tilemap saved, but the room preview could not refresh: ${error instanceof Error ? error.message : String(error)}`);
+        }
       }
     } catch (error) {
       if (mounted.current) setMessage(`Could not save tilemap: ${error instanceof Error ? error.message : String(error)}`);

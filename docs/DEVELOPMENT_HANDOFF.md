@@ -322,3 +322,8 @@ RoomEditor now refreshes collision previews after rooms reload, including succes
 ## Collision renderer interaction verification
 
 Browser harness using production RoomEditor with mock IPC confirmed same-room saves increase collision request count (1 to 2). Injected rejection clears collision rects (1 to 0) and preserves editor operation. Fixed empty collision view to display the actual preview error; browser verified Collision preview unavailable: Injected collision failure. TypeScript passed. This verifies renderer behavior, not native IPC or collision correctness. Delayed response ordering remains untested interactively. GCM github list still returned no account; expected E:/Metroforge/Engines directory yielded no installations.
+
+
+## Tile save refresh outcome
+
+TilePaintEditor now awaits its async onSaved callback, holds the pending guard through refresh, and distinguishes a successful save followed by a failed room refresh from a failed save. Empty backend error lists now use the fallback error text. Browser harness with production editor and mock IPC verified the exact saved-but-refresh-failed status and re-enabled Save Tilemap button after injected listRooms rejection. TypeScript and native bundle passed (.metroforge/desktop-build/1789959623196). Native persistence was not exercised by this UI check.
