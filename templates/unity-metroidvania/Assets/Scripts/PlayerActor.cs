@@ -28,6 +28,8 @@ public class PlayerActor : MonoBehaviour
     private float _invuln;
     private float _dashTime;
     private float _dashCooldown;
+    private bool _veilStep;
+    public bool IsVeilStepping => _veilStep && _dashTime > 0f;
     private bool _grounded;
     private bool _wasGrounded;
     private float _clipLock;
@@ -47,6 +49,7 @@ public class PlayerActor : MonoBehaviour
         _health = health > 0f ? health : MaxHealth;
         _invuln = 0.4f;
         _dashTime = 0f;
+        _veilStep = false;
         _clipLock = 0f;
         animator?.Play("idle", true);
     }
@@ -118,14 +121,8 @@ public class PlayerActor : MonoBehaviour
         if (attackPressed && _attackCooldown <= 0f)
             PerformAttack();
 
-        if (dashPressed && Abilities.Contains("dash") && _dashCooldown <= 0f && _dashTime <= 0f)
-        {
-            _dashTime = Pack.movement.dashDuration;
-            _dashCooldown = Pack.movement.dashCooldown;
-            var dir = animator != null && animator.FlipX ? -1f : 1f;
-            _body.linearVelocity = new Vector2(dir * Pack.movement.dashSpeed, 0f);
-            LockClip("dash", Pack.movement.dashDuration);
-        }
+        if (dashPressed)
+            TryDash(move.x != 0f ? move.x : animator != null && animator.FlipX ? -1f : 1f);
 
         if (move.x != 0f && animator != null)
             animator.FlipX = move.x < 0f;
@@ -144,6 +141,27 @@ public class PlayerActor : MonoBehaviour
                 animator?.Play("idle");
         }
         _wasGrounded = _grounded;
+    }
+
+    // Phase is the registered ability used by Ashen Covenant's Veil Step.
+    // It protects against damage during movement without disabling solid collisions.
+    public bool TryDash(float direction)
+    {
+        if (Dead || Pack == null || _body == null || _dashCooldown > 0f || _dashTime > 0f)
+            return false;
+        if (!Abilities.Contains("dash") && !Abilities.Contains("phase"))
+            return false;
+        if (float.IsNaN(direction) || float.IsInfinity(direction) || Mathf.Approximately(direction, 0f))
+            return false;
+        _veilStep = Abilities.Contains("phase");
+        _dashTime = Mathf.Max(0.01f, Pack.movement.dashDuration);
+        _dashCooldown = Mathf.Max(_dashTime, Pack.movement.dashCooldown);
+        var facing = Mathf.Sign(direction);
+        if (animator != null)
+            animator.FlipX = facing < 0f;
+        _body.linearVelocity = new Vector2(facing * Pack.movement.dashSpeed, 0f);
+        LockClip("dash", _dashTime);
+        return true;
     }
 
     private void LockClip(string clip, float seconds)
@@ -278,7 +296,7 @@ public class PlayerActor : MonoBehaviour
     public void Hurt(float amount)
     {
         MainThreadProbe.PlayerHurtMarker.Begin();
-        if (Dead || _invuln > 0f)
+        if (Dead || _invuln > 0f || IsVeilStepping)
         {
             MainThreadProbe.PlayerHurtMarker.End();
             return;
