@@ -10,6 +10,9 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "UnrealClient.h"
+#include "Dom/JsonObject.h"
+#include "Serialization/JsonSerializer.h"
+#include "Serialization/JsonWriter.h"
 
 void FMFAcceptance::Begin(AMFGameMode* ModeObj)
 {
@@ -214,26 +217,41 @@ void FMFAcceptance::WriteResult(const FString& Status, const FString& Reason, co
 {
 	if (bFinished) return;
 	bFinished = true;
-	FString Json;
-	Json += TEXT("{\n  \"engine\": \"unreal\",\n");
-	Json += FString::Printf(TEXT("  \"status\": \"%s\",\n  \"reason\": \"%s\",\n  \"detail\": \"%s\",\n  \"mode\": \"%s\",\n"), *Status, *Reason, *Detail, *Mode);
-	Json += FString::Printf(TEXT("  \"roomsVisited\": %d,\n  \"transitionMs\": %.1f,\n"), RoomsVisited.Num(), TransitionMs);
-	Json += TEXT("  \"features\": {\n");
-	bool bFirst = true;
+	const TSharedRef<FJsonObject> Result = MakeShared<FJsonObject>();
+	Result->SetStringField(TEXT("engine"), TEXT("unreal"));
+	Result->SetStringField(TEXT("status"), Status);
+	Result->SetStringField(TEXT("reason"), Reason);
+	Result->SetStringField(TEXT("detail"), Detail);
+	Result->SetStringField(TEXT("mode"), Mode);
+	Result->SetNumberField(TEXT("roomsVisited"), RoomsVisited.Num());
+	Result->SetNumberField(TEXT("transitionMs"), TransitionMs);
+	const TSharedRef<FJsonObject> FeatureResults = MakeShared<FJsonObject>();
 	for (const TPair<FString, FString>& Pair : Features)
 	{
-		if (!bFirst) Json += TEXT(",\n");
-		bFirst = false;
-		Json += FString::Printf(TEXT("    \"%s\": \"%s\""), *Pair.Key, *Pair.Value);
+		FeatureResults->SetStringField(Pair.Key, Pair.Value);
 	}
-	Json += TEXT("\n  },\n  \"notImplemented\": [");
-	for (int32 i = 0; i < NotImplemented.Num(); i++)
+	Result->SetObjectField(TEXT("features"), FeatureResults);
+	TArray<TSharedPtr<FJsonValue>> MissingFeatures;
+	for (const FString& Missing : NotImplemented)
 	{
-		if (i > 0) Json += TEXT(", ");
-		Json += FString::Printf(TEXT("\"%s\""), *NotImplemented[i].Replace(TEXT("\""), TEXT("\\\"")));
+		MissingFeatures.Add(MakeShared<FJsonValueString>(Missing));
 	}
-	Json += TEXT("],\n  \"note\": \"Automated testing does not establish animation feel or visual quality.\"\n}\n");
-	FFileHelper::SaveStringToFile(Json, *FPaths::Combine(QaDir, TEXT("acceptance-result.json")));
+	Result->SetArrayField(TEXT("notImplemented"), MissingFeatures);
+	TArray<TSharedPtr<FJsonValue>> CapturePaths;
+	for (const FString& CapturePath : Captures)
+	{
+		CapturePaths.Add(MakeShared<FJsonValueString>(FPaths::ConvertRelativePathToFull(CapturePath)));
+	}
+	Result->SetArrayField(TEXT("captures"), CapturePaths);
+	Result->SetStringField(TEXT("note"), TEXT("Automated testing does not establish animation feel or visual quality."));
+	FString Json;
+	const TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&Json);
+	if (!FJsonSerializer::Serialize(Result, Writer) ||
+		!FFileHelper::SaveStringToFile(Json, *FPaths::Combine(QaDir, TEXT("acceptance-result.json"))))
+	{
+		UE_LOG(LogTemp, Error, TEXT("FOUNDRY_ACCEPT_REPORT_WRITE_FAILED"));
+	}
+
 	UE_LOG(LogTemp, Display, TEXT("FOUNDRY_ACCEPT_RESULT status=%s reason=%s"), *Status, *Reason);
 	if (Status != TEXT("PASS"))
 	{
