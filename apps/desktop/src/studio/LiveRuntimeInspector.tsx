@@ -30,6 +30,7 @@ export function LiveRuntimeInspector({
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState('Inspect the running scene to select an object.');
   const [undo, setUndo] = useState<Move | null>(null);
+  const [redo, setRedo] = useState<Move | null>(null);
   const pending = useRef(false);
   const mounted = useRef(true);
   useEffect(() => {
@@ -124,6 +125,7 @@ export function LiveRuntimeInspector({
       setConnected(true);
       select(items.find((object) => object.nodePath === selection) ?? items[0]);
       setUndo(null);
+      setRedo(null);
       setStatus(
         items.length
           ? `${items.length} ${items.length === 1 ? 'object' : 'objects'} available. Coordinates are relative to each object's parent.`
@@ -132,7 +134,7 @@ export function LiveRuntimeInspector({
     });
   }
 
-  function move(target: RuntimeObject, nextX: number, nextY: number, restoring = false) {
+  function move(target: RuntimeObject, nextX: number, nextY: number, history: 'apply' | 'undo' | 'redo' = 'apply') {
     void request(
       'set_entity_position',
       { nodePath: target.nodePath, expectedInstanceId: target.instanceId, x: nextX, y: nextY },
@@ -148,6 +150,7 @@ export function LiveRuntimeInspector({
           setStatus('Command not confirmed. Inspect the scene again before editing.');
           setError('Unexpected runtime response. Inspect the scene before making another change.');
           setUndo(null);
+      setRedo(null);
           return;
         }
         const updated = { ...target, x: Number(result.x), y: Number(result.y) };
@@ -155,9 +158,11 @@ export function LiveRuntimeInspector({
           items.map((item) => (item.instanceId === target.instanceId ? updated : item)),
         );
         select(updated);
-        setUndo(restoring ? null : { ...target, x: Number(previous?.x), y: Number(previous?.y) });
+        const inverse = { ...target, x: Number(previous?.x), y: Number(previous?.y) };
+        setUndo(history === 'undo' ? null : inverse);
+        setRedo(history === 'undo' ? inverse : null);
         setStatus(
-          restoring
+          history === 'undo'
             ? 'Position restored in the running game.'
             : 'Position applied in the running game.',
         );
@@ -186,6 +191,7 @@ export function LiveRuntimeInspector({
             };
       setObjects((items) => items.map(update));
       setUndo((item) => (item ? update(item) : null));
+      setRedo((item) => (item ? update(item) : null));
       setStatus(
         'Placement saved for future play sessions. Undo position still affects only the running game.',
       );
@@ -193,6 +199,7 @@ export function LiveRuntimeInspector({
       if (mounted.current) {
         setConnected(false);
         setUndo(null);
+      setRedo(null);
         setObjects((items) =>
           items.map((item) => ({
             ...item,
@@ -212,7 +219,7 @@ export function LiveRuntimeInspector({
   return (
     <InspectorSection title="Live objects">
       <p className="hint">
-        Apply and Undo change the running game. Save placement keeps the position for future play
+        Apply, Undo and Redo change the running game. Save placement keeps the position for future play
         sessions. Pause moving objects for precise placement.
       </p>
       <Button size="sm" disabled={busy} onClick={inspect}>
@@ -270,9 +277,16 @@ export function LiveRuntimeInspector({
           <Button
             size="sm"
             disabled={busy || !connected || !undo}
-            onClick={() => undo && move(undo, undo.x, undo.y, true)}
+            onClick={() => undo && move(undo, undo.x, undo.y, 'undo')}
           >
             Undo position
+          </Button>
+          <Button
+            size="sm"
+            disabled={busy || !connected || !redo}
+            onClick={() => redo && move(redo, redo.x, redo.y, 'redo')}
+          >
+            Redo position
           </Button>
         </div>
         <Button

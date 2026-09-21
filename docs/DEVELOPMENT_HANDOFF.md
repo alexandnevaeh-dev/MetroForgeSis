@@ -432,3 +432,8 @@ Expanded test-foreign-room-edit.mjs to cover room and world commands for Unity/U
 ## Rejected Godot edit timestamp checks
 
 Expanded room rollback regression to assert modification times remain unchanged for invalid patches and a valid-shaped edit targeting a missing room. Missing-room rejection creates no scene. Suite passed alongside existing partial-write rollback and successful commit checks. Current rollback already compares original bytes before rewriting; this turn adds evidence, not a runtime behavior change.
+
+
+## Live position redo control
+
+Added one-step Redo position to LiveRuntimeInspector. Undo records runtime-acknowledged previous coordinates as redo target; redo creates the inverse undo entry. New apply or reinspection clears redo. Save placement refreshes inspection metadata for both history entries. TypeScript and native desktop bundle passed (.metroforge/desktop-build/1789961993693). Interactive/native apply-undo-redo verification remains pending; no claim of multi-step history.
