@@ -46,7 +46,9 @@ OPENVINO_CACHE_ROOT = os.environ.get(
 OPENVINO_CACHE_ROOT = os.path.abspath(OPENVINO_CACHE_ROOT)
 
 _pipeline = None
+_pipeline_key = None
 _img2img_pipeline = None
+_img2img_pipeline_key = None
 _controlnet_pipeline = None
 _ip_adapter_pipeline = None
 _openvino_pipelines: dict[tuple[str, str, int, int], Any] = {}
@@ -411,9 +413,12 @@ def _move_pipe(pipe, device: str = "cpu"):
 
 
 def get_pipeline(model_id: str, device: str = "cpu", local_files_only: bool = False):
-    global _pipeline
-    if _pipeline is not None:
+    global _pipeline, _pipeline_key
+    key = (model_id, device)
+    if _pipeline is not None and _pipeline_key == key:
         return _pipeline
+    _pipeline = None
+    _pipeline_key = None
 
     from diffusers import AutoPipelineForText2Image
 
@@ -428,6 +433,7 @@ def get_pipeline(model_id: str, device: str = "cpu", local_files_only: bool = Fa
         **load_options,
     )
     _pipeline = _move_pipe(pipe, device)
+    _pipeline_key = key
     return _pipeline
 
 
@@ -628,14 +634,18 @@ def _generate_openvino_image(req: dict[str, Any], full_prompt: str, width: int, 
 
 
 def get_img2img_pipeline(model_id: str, device: str = "cpu"):
-    global _img2img_pipeline
-    if _img2img_pipeline is not None:
+    global _img2img_pipeline, _img2img_pipeline_key
+    key = (model_id, device)
+    if _img2img_pipeline is not None and _img2img_pipeline_key == key:
         return _img2img_pipeline
+    _img2img_pipeline = None
+    _img2img_pipeline_key = None
 
     from diffusers import AutoPipelineForImage2Image
 
     pipe = AutoPipelineForImage2Image.from_pretrained(model_id, torch_dtype=_torch_dtype(device))
     _img2img_pipeline = _move_pipe(pipe, device)
+    _img2img_pipeline_key = key
     return _img2img_pipeline
 
 
