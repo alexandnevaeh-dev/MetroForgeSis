@@ -457,3 +457,8 @@ The preview content is keyed by selected project, resetting preview data, errors
 ### Preview control and session poll ordering
 
 Play/restart, stop and pause/resume now share a synchronous pending guard and disable conflicting controls. Session polls capture a control revision and discard results overlapping any control request; rejected polls schedule the next check normally. Successful restart clears the previous inspector session identity. TypeScript and native bundle passed (.metroforge/desktop-build/1789963021793). Browser checks with actual PreviewScreen/StudioProvider and mock IPC verified: rejected Stop retains live inspector; held running poll released after successful Stop cannot restore running controls; rejected Open editor displays alert; switching to project B clears that alert and renders B. Fixture is .metroforge/preview-control-harness on E:, server stopped after checks. These are UI checks, not native-engine tests.
+
+
+### Preserve inspector on transient status failures
+
+A rejected getPlaytestSession poll no longer acts as a confirmed stopped session. The preview retains the last confirmed running state and inspector identity, displays an explicit retry warning, and retries serially. A successful current poll clears the warning and applies actual session state; stale control-overlapping failures are ignored. TypeScript and desktop native bundle passed (.metroforge/desktop-build/1789968031041). Interactive rejection/recovery verification remains pending.

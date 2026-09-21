@@ -27,6 +27,7 @@ function ProjectPreviewScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [godotError, setGodotError] = useState<string | null>(null);
+  const [sessionError, setSessionError] = useState<string | null>(null);
   const [launching, setLaunching] = useState(false);
   const [controlling, setControlling] = useState(false);
   const controlPending = useRef(false);
@@ -86,12 +87,23 @@ function ProjectPreviewScreen() {
     let timer: number | undefined;
     const tick = async () => {
       const revision = controlRevision.current;
-      const session = await window.metroforge?.getPlaytestSession?.(selectedPath).catch(() => null);
+      let session;
+      try {
+        session = await window.metroforge?.getPlaytestSession?.(selectedPath);
+      } catch (cause) {
+        if (cancelled) return;
+        if (!controlPending.current && revision === controlRevision.current) {
+          setSessionError(`Could not refresh playtest status. Showing the last confirmed state; retrying. ${String(cause)}`);
+        }
+        timer = window.setTimeout(tick, 1500);
+        return;
+      }
       if (cancelled) return;
       if (controlPending.current || revision !== controlRevision.current) {
         timer = window.setTimeout(tick, 1500);
         return;
       }
+      setSessionError(null);
       setPlaying(Boolean(session?.running));
       setRuntimeSessionId(session?.startedAt ?? '');
       setPauseReason(session?.pauseReason ?? 'Waiting for the runtime bridge.');
@@ -219,6 +231,7 @@ function ProjectPreviewScreen() {
       {hasActiveProject && (
         <div className="preview-layout-p3">
           {godotError && <p className="result error" role="alert">{godotError}</p>}
+          {sessionError && <p className="result error" role="alert">{sessionError}</p>}
           {playing && (
             <p className="hint" role="status">
               Godot runs in an external window (not embedded). Use Live objects to inspect and move
