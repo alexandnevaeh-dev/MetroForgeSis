@@ -44,6 +44,23 @@ func _ready() -> void:
 		failures.append("render missing")
 	else:
 		picture.save_png("res://native-enemies.png")
+	var kills = []
+	EventBus.enemy_killed.connect(func(id): kills.append(id))
+	var first_health = first.get_node("HealthComponent")
+	var second_health = second.get_node("HealthComponent")
+	var first_start = first_health.current_health
+	var second_start = second_health.current_health
+	first.get_node("HurtboxComponent").receive_hit(1.0, 0.0, room.get_node("Player"))
+	if first_health.current_health != first_start - 1.0 or second_health.current_health != second_start:
+		failures.append("independent nonlethal damage")
+	first.get_node("HurtboxComponent").receive_hit(first_start + 1.0, 0.0, room.get_node("Player"))
+	await get_tree().create_timer(2.0).timeout
+	if is_instance_valid(first):
+		failures.append("defeated instance not removed")
+	if not is_instance_valid(second) or not second_health.is_alive() or second_health.current_health != second_start:
+		failures.append("surviving instance changed")
+	if kills.size() != 1 or kills[0] != ${JSON.stringify(original.id)}:
+		failures.append("kill event definition or count")
 	print("NATIVE_ENEMY_RESULT ", JSON.stringify({"failures": failures, "instances": 2}))
 	get_tree().quit(0 if failures.is_empty() else 1)
 `;
@@ -54,4 +71,4 @@ writeFileSync(join(project, 'native-enemies.log'), result.stdout + result.stderr
 console.log(JSON.stringify({ project, exitCode: result.status, error: result.error?.message }));
 assert.equal(result.status, 0);
 assert.match(result.stdout, /NATIVE_ENEMY_RESULT.*"failures":\[\]/);
-console.log('PASS: native enemy definitions, artwork, identities, positions and rendered frame');
+console.log('PASS: native enemy definitions, artwork, identities, positions, rendered frame and independent damage/death');
