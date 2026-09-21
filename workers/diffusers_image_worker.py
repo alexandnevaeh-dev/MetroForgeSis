@@ -387,10 +387,25 @@ def _resolve_backend(req: dict[str, Any]) -> str:
     return "cpu"
 
 
+def _cpu_offload_enabled(device: str) -> bool:
+    return device == "cuda" and os.environ.get("DIFFUSERS_CPU_OFFLOAD", "0").strip().lower() in {"1", "true", "yes"}
+
+
 def _move_pipe(pipe, device: str = "cpu"):
     import torch
 
     if device == "cuda" and torch.cuda.is_available():
+        if _cpu_offload_enabled(device):
+            offload = getattr(pipe, "enable_model_cpu_offload", None)
+            if not callable(offload):
+                raise RuntimeError("DIFFUSERS_CPU_OFFLOAD_UNSUPPORTED")
+            # Accelerate moves active components to CUDA; do not preload the entire model there.
+            offload()
+            for method_name in ("enable_vae_slicing", "enable_vae_tiling"):
+                method = getattr(pipe, method_name, None)
+                if callable(method):
+                    method()
+            return pipe
         return pipe.to("cuda")
     if hasattr(pipe, "to"):
         try:
@@ -407,7 +422,7 @@ def _move_pipe(pipe, device: str = "cpu"):
 
 def get_pipeline(model_id: str, device: str = "cpu", local_files_only: bool = False):
     global _pipeline, _pipeline_key
-    key = (model_id, device)
+    key = (model_id, device, _cpu_offload_enabled(device))
     if _pipeline is not None and _pipeline_key == key:
         return _pipeline
     _pipeline = None
@@ -628,7 +643,7 @@ def _generate_openvino_image(req: dict[str, Any], full_prompt: str, width: int, 
 
 def get_img2img_pipeline(model_id: str, device: str = "cpu"):
     global _img2img_pipeline, _img2img_pipeline_key
-    key = (model_id, device)
+    key = (model_id, device, _cpu_offload_enabled(device))
     if _img2img_pipeline is not None and _img2img_pipeline_key == key:
         return _img2img_pipeline
     _img2img_pipeline = None
@@ -650,7 +665,7 @@ def get_img2img_pipeline(model_id: str, device: str = "cpu"):
 
 def get_controlnet_pipeline(base_model_id: str, device: str = "cpu"):
     global _controlnet_pipeline, _controlnet_pipeline_key
-    key = (base_model_id, device)
+    key = (base_model_id, device, _cpu_offload_enabled(device))
     if _controlnet_pipeline is not None and _controlnet_pipeline_key == key:
         return _controlnet_pipeline
     _controlnet_pipeline = None
@@ -675,7 +690,7 @@ def get_controlnet_pipeline(base_model_id: str, device: str = "cpu"):
 
 def get_ip_adapter_pipeline(base_model_id: str, device: str = "cpu"):
     global _ip_adapter_pipeline, _ip_adapter_pipeline_key
-    key = (base_model_id, device)
+    key = (base_model_id, device, _cpu_offload_enabled(device))
     if _ip_adapter_pipeline is not None and _ip_adapter_pipeline_key == key:
         return _ip_adapter_pipeline
     _ip_adapter_pipeline = None
