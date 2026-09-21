@@ -387,3 +387,8 @@ WorldManager now checks destination existence and loads its PackedScene before t
 ## Full regression after destination preflight
 
 Current WorldManager destination validation before teardown passed native mechanics run E:/Metroforge/Recovery-Audit/temp/metroforge-native-recompiled-yLcZ9Z: WASAPI, 8 recompiled rooms, exit 0, 260 PASS, 0 FAIL, 0 SOFT_FAIL. Covers existing transition/health/save tests and targeted ground-slam/shortcut/persistence checks. No retained-resource error this run; root-certificate-store and ObjectDB warnings persist. GCM github list remains empty; Unity.exe/UnrealEditor.exe not found on PATH. E: free space approximately 1.99 TB. Application and game production readiness remain incomplete.
+
+
+## AI command failure recovery
+
+CommandBar now catches executeAiCommand rejection, releases busy state in finally, and preserves typed input when execution fails. A synchronous pending guard suppresses duplicate submissions. Successful execution awaits onSuccess refresh and distinguishes applied-command/failed-refresh from execution failure. TypeScript and native desktop bundle passed (.metroforge/desktop-build/1789961112869). Interactive rejection/retry checks and cross-project response isolation remain pending; no native Electron runtime claim.

@@ -5,7 +5,7 @@ interface CommandBarProps {
   projectPath: string;
   selectedRoomId?: string;
   placeholder?: string;
-  onSuccess?: (summary: string) => void;
+  onSuccess?: (summary: string) => void | Promise<void>;
   /** Compact 40–44px editor command strip. */
   compact?: boolean;
 }
@@ -24,19 +24,33 @@ export function CommandBar({
   const [error, setError] = useState<string | null>(null);
   const stopRecordingRef = useRef<(() => void) | null>(null);
 
+  const pendingCommand = useRef(false);
+
   const run = async () => {
-    if (!input.trim() || !window.metroforge?.executeAiCommand) return;
+    if (pendingCommand.current || busy || !input.trim() || !window.metroforge?.executeAiCommand) return;
+    pendingCommand.current = true;
     setBusy(true);
     setError(null);
     setMessage(null);
-    const result = await window.metroforge.executeAiCommand(projectPath, input.trim(), selectedRoomId);
-    setBusy(false);
-    if (result.success) {
-      setMessage(result.summary ?? 'Command applied');
-      onSuccess?.(result.summary ?? 'Command applied');
+    try {
+      const result = await window.metroforge.executeAiCommand(projectPath, input.trim(), selectedRoomId);
+      if (!result.success) {
+        setError(result.error || 'Command failed');
+        return;
+      }
       setInput('');
-    } else {
-      setError(result.error ?? 'Command failed');
+      const summary = result.summary ?? 'Command applied';
+      setMessage(summary);
+      try {
+        await onSuccess?.(summary);
+      } catch (cause) {
+        setError(`Command applied, but the editor could not refresh: ${cause instanceof Error ? cause.message : String(cause)}`);
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Command failed');
+    } finally {
+      pendingCommand.current = false;
+      setBusy(false);
     }
   };
 
