@@ -247,3 +247,7 @@ Added test-native-npc-instances.mjs: copies real generated project to E temp, du
 
 ## Enemy placement identity selection - continuation
 Place enemy no longer invents enemy_N from room count. It reuses the selected room/project existing regular enemy definition, preserves definitionId, and allocates an unused authored instance ID. Empty projects receive actionable error instead of unsupported placement. Duplicate action uses same collision-free ID helper. New test-entity-authoring.mjs passes copied definition reuse, empty-room fallback, boss exclusion and repeated ID collision cases. Desktop typecheck, changed-file lint and native build pass (.metroforge/desktop-build/1789956331549). Browser interaction still unverified; native Electron startup remains blocked as documented. Candidate definitions come from saved project room references, not a full content-catalog picker; catalog selection remains future work.
+
+
+## Entity identity validation - continuation
+Room edits reject unsupported entity kinds, empty/unsafe instance identifiers, malformed optional definitionId and repeated kind+id identities before filesystem mutation. This prevents ambiguous live selection metadata and invalid asset references from malformed placement requests. Expanded rollback test covers these inputs and verifies unchanged source bytes/no compilation. Generation TypeScript/lint, authored enemy/tile persistence and NPC persistence regressions pass. No new native runtime claim; application/game goal remains incomplete.

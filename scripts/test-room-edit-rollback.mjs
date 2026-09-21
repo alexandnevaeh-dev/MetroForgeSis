@@ -28,6 +28,11 @@ try {
     { roomId, tileCells: [{x:0,y:0,col:0.5,row:0}] },
     { roomId, tileCells: [{x:0,y:0,col:0,row:0},{x:0,y:0,col:1,row:0}] },
     { roomId, entityPlacements: [{x:Infinity,y:0}] },
+    { roomId, entityPlacements: [{kind:'unknown',id:'actor',x:0,y:0}] },
+    { roomId, entityPlacements: [{kind:'enemy',id:'',x:0,y:0}] },
+    { roomId, entityPlacements: [{kind:'enemy',id:'enemy_000',definitionId:'../missing',x:0,y:0}] },
+    { roomId, entityPlacements: [{kind:'enemy',id:'enemy_000',definitionId:42,x:0,y:0}] },
+    { roomId, entityPlacements: [{kind:'enemy',id:'enemy_000',x:0,y:0},{kind:'enemy',id:'enemy_000',x:32,y:0}] },
   ]) {
     const result = applyRoomEditAndRecompile(project, patch);
     assert.equal(result.success, false);

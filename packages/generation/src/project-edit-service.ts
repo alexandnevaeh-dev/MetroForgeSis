@@ -213,8 +213,19 @@ function validateRoomPatch(patch: RoomEditPatch): string[] {
   }
   if (patch.entityPlacements !== undefined) {
     if (!Array.isArray(patch.entityPlacements)) return ['Entity placements must be an array'];
+    const kinds = new Set(['player_spawn', 'enemy', 'boss', 'npc', 'ability_pickup', 'item_pickup', 'checkpoint']);
+    const identities = new Set<string>();
     for (const entity of patch.entityPlacements) {
       if (!entity || !Number.isFinite(entity.x) || !Number.isFinite(entity.y)) return ['Entity positions must be finite numbers'];
+      if (!kinds.has(entity.kind) || typeof entity.id !== 'string' || !/^[A-Za-z0-9_-]+$/.test(entity.id)) {
+        return ['Entity placements require a supported kind and valid identifier'];
+      }
+      if (entity.definitionId !== undefined && (typeof entity.definitionId !== 'string' || !/^[A-Za-z0-9_-]+$/.test(entity.definitionId))) {
+        return ['Entity definition must be a valid identifier'];
+      }
+      const identity = `${entity.kind}:${entity.id}`;
+      if (identities.has(identity)) return [`Duplicate entity identity: ${identity}`];
+      identities.add(identity);
     }
   }
   return [];
