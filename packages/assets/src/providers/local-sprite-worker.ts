@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -148,10 +148,16 @@ export class LocalSpriteWorkerProvider {
 
     return new Promise<LocalCharacterSheetResult>((resolve) => {
       // Argument array only — no shell string interpolation anywhere in this call.
-      const child = spawn(this.pythonPath, [this.workerPath], {
-        cwd: dirname(this.workerPath),
-        stdio: ['pipe', 'pipe', 'pipe'],
-      });
+      let child: ChildProcessWithoutNullStreams;
+      try {
+        child = spawn(this.pythonPath, [this.workerPath], {
+          cwd: dirname(this.workerPath),
+          stdio: ['pipe', 'pipe', 'pipe'],
+        });
+      } catch (error) {
+        resolve({ ok: false, provider: this.id, subprocessFailure: { reason: 'SPAWN_ERROR', detail: error instanceof Error ? error.message : String(error) } });
+        return;
+      }
 
       let stdout = '';
       let stderr = '';
@@ -199,6 +205,10 @@ export class LocalSpriteWorkerProvider {
         }
       });
 
+      child.stdin.on('error', (error) => {
+        child.kill('SIGTERM');
+        finish({ ok: false, provider: this.id, subprocessFailure: { reason: 'SPAWN_ERROR', detail: error.message } });
+      });
       child.stdin.write(JSON.stringify(payload));
       child.stdin.end();
     });

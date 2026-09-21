@@ -2,11 +2,11 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { join } from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import os from 'node:os';
-import dotenv from 'dotenv';
+import { loadEnvFile } from 'node:process';
 import { QAValidator } from '../packages/qa/dist/index.js';
 import { resolveGodotExecutableCanonical } from '../packages/tools/dist/index.js';
 
-dotenv.config({ path: join(process.cwd(), '.env') });
+if (existsSync(join(process.cwd(), '.env'))) loadEnvFile(join(process.cwd(), '.env'));
 
 const root = process.cwd();
 const baseSlug = process.env.METROFORGE_SMOKE_SLUG ?? 'metroforge-smoke-metroidvania';
