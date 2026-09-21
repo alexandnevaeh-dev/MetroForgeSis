@@ -259,3 +259,7 @@ Full Regenerate Room previously sent an empty edit patch and retained authored s
 
 ## Preserve authoring mode during undo - continuation
 Actual snapshot restore regression failed: generated tileCells became tileCellsAuthored=true because restore replayed them as a paint patch. Restore now reinstates saved room record inside rollback wrapper before recompilation, preserving procedural vs authored semantics and definition-bearing instance placements. Extended real assembler test restores authored snapshot after full regeneration, then original procedural snapshot; passes after failing before fix. Generation TypeScript/lint and rollback regression pass. Native editor undo interaction remains unverified.
+
+
+## Geometry-only regeneration - continuation
+Geometry scope no longer substitutes width800/height600. It clears stored paint/authored geometry fields inside transaction, then generates layout while retaining saved bounds, NPC membership, enemy choice and entity placements. Full regeneration still replaces complete room record. Extended real assembler checks preserve both dimensions and exact placement array while replacing authored paint; snapshot restore and rollback regressions, generation TypeScript and lint pass. Native runtime/UI geometry action remains unverified; encounter-specific regeneration still needs review.

@@ -82,6 +82,13 @@ assert.deepEqual(JSON.parse(readFileSync(roomsPath)).rooms.authored_copy, siblin
 assert.equal(restoreRoomRecord(project, roomId, authoredSnapshot).success, true);
 assert.equal(room().width, authoredSnapshot.width);
 assert.deepEqual(room().entityPlacements, authoredSnapshot.entityPlacements);
+const geometryOnly = regenerateRoom(project, roomId, 'geometry');
+assert.equal(geometryOnly.success, true, geometryOnly.errors.join('\n'));
+assert.equal(room().width, authoredSnapshot.width, 'Geometry regeneration must preserve authored room width');
+assert.equal(room().height, authoredSnapshot.height);
+assert.deepEqual(room().entityPlacements, authoredSnapshot.entityPlacements, 'Geometry regeneration must preserve entities');
+assert.notEqual(room().tileCellsAuthored, true);
+assert.notDeepEqual(room().tileCells, painted, 'Geometry regeneration must replace hand-painted layout');
 assert.equal(restoreRoomRecord(project, roomId, proceduralSnapshot).success, true);
 assert.equal(room().tileCellsAuthored, proceduralSnapshot.tileCellsAuthored, 'Undo must not convert procedural tiles to authored paint');
 console.log('PASS: authored persistence, full regeneration and procedural/authored snapshot restoration');

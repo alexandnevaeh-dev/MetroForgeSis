@@ -235,7 +235,7 @@ function validateRoomPatch(patch: RoomEditPatch): string[] {
 export function applyRoomEditAndRecompile(
   projectPath: string,
   patch: RoomEditPatch,
-  options?: { regenerate?: boolean; restoreRecord?: Record<string, unknown> },
+  options?: { regenerate?: 'full' | 'geometry'; restoreRecord?: Record<string, unknown> },
 ): ProjectEditResult {
   const validationErrors = validateRoomPatch(patch);
   if (validationErrors.length) return { success: false, errors: validationErrors };
@@ -275,7 +275,7 @@ export function applyRoomEditAndRecompile(
 function applyRoomEditUnchecked(
   projectPath: string,
   patch: RoomEditPatch,
-  options?: { regenerate?: boolean; restoreRecord?: Record<string, unknown> },
+  options?: { regenerate?: 'full' | 'geometry'; restoreRecord?: Record<string, unknown> },
 ): ProjectEditResult {
   if (detectProjectEngine(projectPath) !== 'godot') {
     return { success: false, errors: ['This room edit requires the Godot adapter; Unity and Unreal recompilation is not implemented here.'] };
@@ -289,7 +289,15 @@ function applyRoomEditUnchecked(
 
   if (options?.regenerate || options?.restoreRecord) {
     if (options.restoreRecord) roomsData[patch.roomId] = structuredClone(options.restoreRecord);
-    else delete roomsData[patch.roomId];
+    else if (options.regenerate === 'geometry') {
+      const geometryReset = { ...existing };
+      delete geometryReset.tileCells;
+      delete geometryReset.tileCellsAuthored;
+      delete geometryReset.platforms;
+      delete geometryReset.pits;
+      delete geometryReset.blueprint;
+      roomsData[patch.roomId] = geometryReset;
+    } else delete roomsData[patch.roomId];
     writeFileSync(join(projectPath, 'data', 'rooms', 'rooms.json'), JSON.stringify({ rooms: roomsData }, null, 2));
     const rebuilt = new GodotProjectAssembler().recompileRooms({
       outputDir: projectPath,
@@ -423,12 +431,8 @@ export function regenerateRoom(
   roomId: string,
   scope: 'full' | 'geometry' | 'encounter' = 'full',
 ): ProjectEditResult {
-  if (scope === 'full') return applyRoomEditAndRecompile(projectPath, { roomId }, { regenerate: true });
+  if (scope === 'full' || scope === 'geometry') return applyRoomEditAndRecompile(projectPath, { roomId }, { regenerate: scope });
   const patch: RoomEditPatch = { roomId };
   if (scope === 'encounter') patch.hasEnemy = true;
-  if (scope === 'geometry') {
-    patch.width = 800;
-    patch.height = 600;
-  }
   return applyRoomEditAndRecompile(projectPath, patch);
 }
