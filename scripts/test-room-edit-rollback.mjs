@@ -19,6 +19,22 @@ const originalScene = Buffer.from('original scene sentinel\r\n');
 writeFileSync(scenePath, originalScene);
 const originalRecompile = GodotProjectAssembler.prototype.recompileRooms;
 try {
+  GodotProjectAssembler.prototype.recompileRooms = function () { throw new Error('Validation must run before compilation'); };
+  for (const patch of [
+    null, { roomId, width: 0 }, { roomId, width: -1 }, { roomId, width: Infinity },
+    { roomId, height: NaN }, { roomId, height: 10.5 }, { roomId, width: '900' },
+    { roomId, hasEnemy: 'false' }, { roomId, enemies: [null] },
+    { roomId, tileCells: [{x:-1,y:0,col:0,row:0}] },
+    { roomId, tileCells: [{x:0,y:0,col:0.5,row:0}] },
+    { roomId, tileCells: [{x:0,y:0,col:0,row:0},{x:0,y:0,col:1,row:0}] },
+    { roomId, entityPlacements: [{x:Infinity,y:0}] },
+  ]) {
+    const result = applyRoomEditAndRecompile(project, patch);
+    assert.equal(result.success, false);
+    assert.doesNotMatch(result.errors.join(' '), /Validation must run/);
+    assert.deepEqual(readFileSync(roomsPath), originalRooms);
+    assert.deepEqual(readFileSync(scenePath), originalScene);
+  }
   for (const throws of [false, true]) {
     GodotProjectAssembler.prototype.recompileRooms = function () {
       writeFileSync(scenePath, 'partial scene');
@@ -46,4 +62,4 @@ try {
   assert.equal(JSON.parse(readFileSync(roomsPath)).rooms[roomId].width, 900);
   assert.equal(readFileSync(scenePath, 'utf8'), 'successful scene');
 } finally { GodotProjectAssembler.prototype.recompileRooms = originalRecompile; }
-console.log('PASS: room edit rollback on compiler error/exception, new scene cleanup, invalid ID and successful commit');
+console.log('PASS: invalid patch rejection before mutation, room edit rollback, new scene cleanup and successful commit');

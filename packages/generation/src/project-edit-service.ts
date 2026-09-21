@@ -130,14 +130,48 @@ function readRoomsFile(projectPath: string): Record<string, Record<string, unkno
   }
 }
 
+function validateRoomPatch(patch: RoomEditPatch): string[] {
+  if (!patch || typeof patch !== 'object' || typeof patch.roomId !== 'string' || !/^[A-Za-z0-9_-]+$/.test(patch.roomId)) {
+    return ['Invalid room identifier'];
+  }
+  for (const dimension of ['width', 'height'] as const) {
+    const value = patch[dimension];
+    if (value !== undefined && (!Number.isSafeInteger(value) || value <= 0)) return [`Room ${dimension} must be a positive whole number`];
+  }
+  if (patch.hasEnemy !== undefined && typeof patch.hasEnemy !== 'boolean') return ['Enemy presence must be true or false'];
+  for (const field of ['enemies', 'npcs'] as const) {
+    const ids = patch[field];
+    if (ids !== undefined && (!Array.isArray(ids) || ids.some((id) => typeof id !== 'string' || !id.trim()))) return [`Room ${field} must contain nonempty identifiers`];
+  }
+  if (patch.tileCells !== undefined) {
+    if (!Array.isArray(patch.tileCells)) return ['Painted tiles must be an array'];
+    const positions = new Set<string>();
+    for (const cell of patch.tileCells) {
+      if (!cell || ['x', 'y', 'col', 'row'].some((key) => {
+        const value = cell[key as keyof typeof cell];
+        return !Number.isSafeInteger(value) || value < 0;
+      })) return ['Tile positions and atlas coordinates must be nonnegative whole numbers'];
+      const key = `${cell.x},${cell.y}`;
+      if (positions.has(key)) return [`More than one painted tile occupies cell ${key}`];
+      positions.add(key);
+    }
+  }
+  if (patch.entityPlacements !== undefined) {
+    if (!Array.isArray(patch.entityPlacements)) return ['Entity placements must be an array'];
+    for (const entity of patch.entityPlacements) {
+      if (!entity || !Number.isFinite(entity.x) || !Number.isFinite(entity.y)) return ['Entity positions must be finite numbers'];
+    }
+  }
+  return [];
+}
+
 /** Roll back ordinary room edits when compilation or writing fails (not crash atomic). */
 export function applyRoomEditAndRecompile(
   projectPath: string,
   patch: RoomEditPatch,
 ): ProjectEditResult {
-  if (!/^[A-Za-z0-9_-]+$/.test(patch.roomId)) {
-    return { success: false, errors: ['Invalid room identifier'] };
-  }
+  const validationErrors = validateRoomPatch(patch);
+  if (validationErrors.length) return { success: false, errors: validationErrors };
   const files = [
     join(projectPath, 'data', 'rooms', 'rooms.json'),
     join(projectPath, 'scenes', 'rooms', `${patch.roomId}.tscn`),

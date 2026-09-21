@@ -165,3 +165,7 @@ Replaced synthetic hue tile markers with cropped SVG references to the actual at
 
 ## Keyboard tile authoring - continuation
 Added one roving tab stop to tile canvas, labelled SVG button cells, arrow-key navigation with bounds clamping, Enter/Space painting/erasing, busy guard reuse and token-based focus outline. Browser actual-component fixture verified Enter erase, Right navigation, Tab directly to Save, Tab back into remembered cell, Space paint and visible focus over artwork. This is browser component evidence with mocked IPC, not full Electron accessibility certification. Renderer typecheck and changed-file ESLint passed. Goal remains active; Unity install/license and Git login answers still pending.
+
+
+## Room patch validation - continuation
+Room edit boundary rejects null/unsafe room IDs, nonpositive/fractional/nonfinite dimensions, invalid boolean/list inputs, negative/fractional tile coordinates, duplicate occupied cells and nonfinite entity positions before taking write snapshots or compiling. Extended rollback test verifies 13 invalid inputs leave exact source/scene bytes unchanged and never invoke assembler. Generation TypeScript build, rollback/validation test and actual assembler authored-tile persistence test passed; native Godot subtest explicitly skipped this turn (no executable env), earlier native evidence still separate. No claim of full schema or gameplay validation.
