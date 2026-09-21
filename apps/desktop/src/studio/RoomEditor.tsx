@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { enemyDefinitionForPlacement, unusedEntityId } from './entity-authoring.js';
 import { CommandBar } from './CommandBar.js';
 import { EditStatusBadge } from './EditStatusBadge.js';
 import { TilePaintEditor, TilePalettePanel, type TileCoord } from './TilePaintEditor.js';
@@ -692,13 +693,16 @@ export function RoomEditor() {
                       <Button
                         size="sm"
                         onClick={() => {
-                          const enemyId = `enemy_${String((selected.enemies?.length ?? 0)).padStart(3, '0')}`;
+                          const definitionId = enemyDefinitionForPlacement([selected, ...rooms]);
+                          if (!definitionId) { setError('This project has no enemy definition to place. Generate an encounter first.'); return; }
+                          const enemyId = unusedEntityId(placements, 'enemy', `${definitionId}_instance`);
                           const floorY = (selected.height ?? 600) - 64;
                           const nextPlacements = [
                             ...placements,
                             {
                               kind: 'enemy',
                               id: enemyId,
+                              definitionId,
                               x: Math.round((selected.width ?? 800) * 0.55),
                               y: floorY,
                             },
@@ -715,8 +719,7 @@ export function RoomEditor() {
                         disabled={!selectedPlacement}
                         onClick={() => {
                           if (!selectedPlacement) return;
-                          let copyId = `${selectedPlacement.id}_copy`;
-                          while (placements.some((p) => p.kind === selectedPlacement.kind && p.id === copyId)) copyId += "_copy";
+                          const copyId = unusedEntityId(placements, selectedPlacement.kind, `${selectedPlacement.id}_copy`);
                           const copy: EntityPlacement = {
                             ...selectedPlacement,
                             id: copyId,

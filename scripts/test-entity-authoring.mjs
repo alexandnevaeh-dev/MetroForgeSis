@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import { enemyDefinitionForPlacement, unusedEntityId } from '../apps/desktop/src/studio/entity-authoring.ts';
+const first = {kind:'enemy',id:'enemy_001',x:100,y:200};
+const copy = {...first,id:'enemy_001_copy',definitionId:'enemy_001'};
+assert.equal(enemyDefinitionForPlacement([{entityPlacements:[copy]}]), 'enemy_001', 'Selecting a copy must reuse its content definition');
+assert.equal(enemyDefinitionForPlacement([{enemies:[]},{entityPlacements:[first]}]), 'enemy_001', 'Empty rooms can reuse an existing project enemy');
+assert.equal(enemyDefinitionForPlacement([{enemies:['boss_final']}]), undefined, 'Bosses are not regular enemy definitions');
+assert.equal(enemyDefinitionForPlacement([]), undefined);
+const occupied = [first,copy,{...copy,id:'enemy_001_copy_2'}];
+assert.equal(unusedEntityId(occupied,'enemy','enemy_001_copy'), 'enemy_001_copy_3');
+const newId=unusedEntityId([{...first,id:'enemy_001_instance'}], 'enemy', 'enemy_001_instance');
+assert.equal(newId,'enemy_001_instance_2');
+console.log('PASS: copied definition reuse, empty-room placement, boss exclusion and collision-free instance IDs');
