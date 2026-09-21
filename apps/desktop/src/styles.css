@@ -4291,3 +4291,6 @@ select {
   }
 }
 
+
+.tile-paint-focus { opacity: 0; stroke: var(--border-focus); stroke-width: 2; }
+.tile-paint-cell:focus-visible .tile-paint-focus { opacity: 1; }

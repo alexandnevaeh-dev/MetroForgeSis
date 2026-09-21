@@ -161,3 +161,7 @@ Unity signature follow-up: session70499 completed; Authenticode Valid, signer Un
 
 ## Actual artwork in tile paint canvas - continuation
 Replaced synthetic hue tile markers with cropped SVG references to the actual atlas. Shared useTilesetArtwork handles image decoding, natural rectangular dimensions, missing/rejected artwork and stale requests for palette and canvas. Palette uses true rows/columns and dynamic grid cell size; RoomEditor passes tileSize to both controls. Existing fixture source atlas is 256x192, so prior fixed128 square assumptions were incorrect. Browser actual-component harness with real embedded template PNG showed metal panel artwork; center erase through image sends [] and rejected save remains recoverable. Mock IPC in harness only, not full Electron evidence. Typecheck and changed-file ESLint passed. Existing strict UI audit issues remain. No new dependency or download.
+
+
+## Keyboard tile authoring - continuation
+Added one roving tab stop to tile canvas, labelled SVG button cells, arrow-key navigation with bounds clamping, Enter/Space painting/erasing, busy guard reuse and token-based focus outline. Browser actual-component fixture verified Enter erase, Right navigation, Tab directly to Save, Tab back into remembered cell, Space paint and visible focus over artwork. This is browser component evidence with mocked IPC, not full Electron accessibility certification. Renderer typecheck and changed-file ESLint passed. Goal remains active; Unity install/license and Git login answers still pending.

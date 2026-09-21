@@ -142,6 +142,7 @@ export function TilePaintEditor({
 }: TilePaintEditorProps) {
   const { artwork, loaded } = useTilesetArtwork(projectPath, biomeId);
   const atlasId = useId();
+  const [focusedCell, setFocusedCell] = useState({ x: 0, y: 0 });
   const [cells, setCells] = useState<TileCell[]>(initialCells);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -159,6 +160,9 @@ export function TilePaintEditor({
 
   const cols = Math.floor(width / tileSize);
   const rows = Math.floor(height / tileSize);
+  useEffect(() => {
+    setFocusedCell((cell) => ({ x: Math.max(0, Math.min(cols - 1, cell.x)), y: Math.max(0, Math.min(rows - 1, cell.y)) }));
+  }, [cols, rows]);
 
   const cellKey = (x: number, y: number) => `${x},${y}`;
   const cellMap = useMemo(() => {
@@ -212,6 +216,7 @@ export function TilePaintEditor({
           {tool === 'erase' ? 'remove cells' : `tile ${selectedTile.col},${selectedTile.row}`}
         </span>
       </div>
+      <p className="hint">Arrow keys move between cells. Enter or Space applies the selected tool.</p>
       {!artwork && <p className="hint" role="status">{loaded ? 'Tileset artwork unavailable. Showing occupied cells.' : 'Loading tileset artwork…'}</p>}
       <div
         className="tile-canvas-wrap"
@@ -232,7 +237,35 @@ export function TilePaintEditor({
             const px = x * tileSize;
             const py = y * tileSize;
             return (
-              <g key={i}>
+              <g
+                key={i}
+                className="tile-paint-cell"
+                role="button"
+                aria-label={`Cell ${x + 1}, ${y + 1}: ${cell ? 'painted' : 'empty'}. ${tool === 'erase' ? 'Erase' : 'Paint'}`}
+                aria-disabled={busy}
+                tabIndex={focusedCell.x === x && focusedCell.y === y ? 0 : -1}
+                data-tile-cell={`${x},${y}`}
+                onFocus={() => setFocusedCell({ x, y })}
+                onClick={(event) => { event.currentTarget.focus(); applyTool(x, y); }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    applyTool(x, y);
+                    return;
+                  }
+                  let nextX = x;
+                  let nextY = y;
+                  if (event.key === 'ArrowLeft') nextX--;
+                  else if (event.key === 'ArrowRight') nextX++;
+                  else if (event.key === 'ArrowUp') nextY--;
+                  else if (event.key === 'ArrowDown') nextY++;
+                  else return;
+                  event.preventDefault();
+                  nextX = Math.max(0, Math.min(cols - 1, nextX));
+                  nextY = Math.max(0, Math.min(rows - 1, nextY));
+                  event.currentTarget.ownerSVGElement?.querySelector<SVGElement>(`[data-tile-cell="${nextX},${nextY}"]`)?.focus();
+                }}
+              >
                 <rect
                   x={px}
                   y={py}
@@ -241,7 +274,6 @@ export function TilePaintEditor({
                   fill={cell ? '#475569' : '#1e293b'}
                   stroke="#334155"
                   strokeWidth={0.5}
-                  onClick={() => applyTool(x, y)}
                   style={{ cursor: tool === 'erase' ? 'cell' : 'crosshair' }}
                 />
                 {cell && artwork && (
@@ -254,6 +286,7 @@ export function TilePaintEditor({
                     <use href={`#${atlasId}`} />
                   </svg>
                 )}
+                <rect className="tile-paint-focus" pointerEvents="none" x={px + 1} y={py + 1} width={tileSize - 2} height={tileSize - 2} fill="none" />
               </g>
             );
           })}
