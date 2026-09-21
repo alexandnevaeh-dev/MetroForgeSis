@@ -48,7 +48,11 @@ public class GameBootstrap : MonoBehaviour
     private void Start()
     {
         _streamingRoot = Path.Combine(Application.streamingAssetsPath);
-        _savePath = Path.Combine(Application.persistentDataPath, "metroforge_save.json");
+        var saveRoot = System.Environment.GetEnvironmentVariable("METROFORGE_GAME_SAVE_DIR");
+        if (string.IsNullOrWhiteSpace(saveRoot))
+            saveRoot = Application.persistentDataPath;
+        Directory.CreateDirectory(saveRoot);
+        _savePath = Path.Combine(saveRoot, "metroforge_save.json");
         var jsonPath = Path.Combine(_streamingRoot, "gameplay.json");
         if (!File.Exists(jsonPath))
         {
@@ -1209,8 +1213,9 @@ public class GameBootstrap : MonoBehaviour
         var json = sb.ToString();
         try
         {
-            File.WriteAllText(Path.Combine(Application.persistentDataPath, "ui-layout.json"), json);
-            File.WriteAllText("/tmp/conduit-foundry-ui-layout.json", json);
+            var diagnosticRoot = Path.GetDirectoryName(_savePath);
+            if (!string.IsNullOrEmpty(diagnosticRoot))
+                File.WriteAllText(Path.Combine(diagnosticRoot, "ui-layout.json"), json);
         }
         catch (System.Exception)
         {
