@@ -85,7 +85,11 @@ function roomHasGeometry(room: RoomRecord, collision: RoomCollisionPreview | nul
 export function RoomEditor() {
   const { selectedPath, hasActiveProject, focusRoomId, setFocusRoomId, navigate } = useStudio();
   const activeProject = useRef(selectedPath);
-  activeProject.current = selectedPath;
+  const projectVisit = useRef(0);
+  if (activeProject.current !== selectedPath) {
+    activeProject.current = selectedPath;
+    projectVisit.current += 1;
+  }
   const mounted = useRef(true);
   const saving = useRef(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -109,8 +113,9 @@ export function RoomEditor() {
 
   const loadRooms = async (path: string) => {
     if (!window.metroforge?.listRooms) return;
+    const visit = projectVisit.current;
     const list = await window.metroforge.listRooms(path);
-    if (!mounted.current || activeProject.current !== path) return;
+    if (!mounted.current || activeProject.current !== path || projectVisit.current !== visit) return;
     setRooms(list as RoomRecord[]);
     setSelectedRoomId((prev) => {
       if (focusRoomId && list.some((room) => room.id === focusRoomId)) return focusRoomId;
@@ -123,8 +128,9 @@ export function RoomEditor() {
     setMessage(null);
     setError(null);
     setRooms([]);
+    const visit = projectVisit.current;
     if (selectedPath) void loadRooms(selectedPath).catch((cause: unknown) => {
-      if (mounted.current && activeProject.current === selectedPath) setError(cause instanceof Error ? cause.message : String(cause));
+      if (mounted.current && activeProject.current === selectedPath && projectVisit.current === visit) setError(cause instanceof Error ? cause.message : String(cause));
     });
   }, [selectedPath]);
 
@@ -185,20 +191,21 @@ export function RoomEditor() {
   const runRoomAction = async (action: () => Promise<{ success?: boolean; error?: string; errors?: string[]; message?: string }>) => {
     if (saving.current) return;
     const projectPath = selectedPath;
+    const visit = projectVisit.current;
     saving.current = true;
     setIsSaving(true);
     setError(null);
     setMessage('Saving changes…');
     try {
       const result = await action();
-      if (!mounted.current || activeProject.current !== projectPath) return;
+      if (!mounted.current || activeProject.current !== projectPath || projectVisit.current !== visit) return;
       if (result.error || result.success === false) {
         setMessage(null);
         setError(result.error || result.errors?.join('; ') || 'Action failed');
       } else setMessage(result.message ?? 'Done');
       await loadRooms(projectPath);
     } catch (cause) {
-      if (mounted.current && activeProject.current === projectPath) {
+      if (mounted.current && activeProject.current === projectPath && projectVisit.current === visit) {
         setMessage(null);
         setError(cause instanceof Error ? cause.message : String(cause));
       }

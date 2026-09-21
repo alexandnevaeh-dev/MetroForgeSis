@@ -303,3 +303,12 @@ Added scripts/test-native-audio.mjs. Set GODOT_EXECUTABLE and invoke with genera
 
 ## Room editor asynchronous save handling - continuation
 RoomEditor runRoomAction now uses synchronous ref guard to prevent overlapping actions, exposes saving feedback/aria-busy, clears pending state in finally and ignores result/error feedback after unmount or project change. loadRooms discards other-project results; project switch clears old room list and messages; initial loading errors caught. Empty error arrays fall back to readable failure text. Renderer typecheck, changed-file lint and desktop native build passed (.metroforge/desktop-build/1789958049127); interactive race verification still outstanding. Tile-paint own save path is separate. Native Electron startup blocker remains.
+
+
+## Room save project-visit race verification
+
+The actual RoomEditor and StudioProvider were mounted in a browser harness with delayed mock updateRoom responses. Before the fix, A -> B -> A allowed the earlier A save to show its completion message. A monotonically increasing project-visit counter now rejects those responses, including delayed listRooms and initial-load errors.
+
+Interactive checks passed: two Place enemy clicks issue one request; switching projects discards the earlier completion; switching away and back also discards it; rejected saves show their error and permit a successful retry. Desktop TypeScript check and native bundle passed (.metroforge/desktop-build/1789959362612).
+
+Scope: renderer behavior with mocked IPC. This does not validate native Electron startup, filesystem persistence, Unity, Unreal, or visual game quality. The local harness lives in .metroforge/live-inspector-harness/room-save.* on E:.
