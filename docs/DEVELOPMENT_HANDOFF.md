@@ -327,3 +327,8 @@ Browser harness using production RoomEditor with mock IPC confirmed same-room sa
 ## Tile save refresh outcome
 
 TilePaintEditor now awaits its async onSaved callback, holds the pending guard through refresh, and distinguishes a successful save followed by a failed room refresh from a failed save. Empty backend error lists now use the fallback error text. Browser harness with production editor and mock IPC verified the exact saved-but-refresh-failed status and re-enabled Save Tilemap button after injected listRooms rejection. TypeScript and native bundle passed (.metroforge/desktop-build/1789959623196). Native persistence was not exercised by this UI check.
+
+
+## Native gameplay revalidation after editor fixes
+
+Ran scripts/test-native-recompiled-game.mjs against the existing generated gameplay fixture with current assembler and audio/dialogue overlays. Report: E:/Metroforge/Recovery-Audit/temp/metroforge-native-recompiled-GDBxDS/native-recompiled.json. All 8 rooms compiled; native exit 0; 248 PASS, 0 FAIL, 2 SOFT_FAIL. Log confirms Vulkan 1.4.351 Forward+ on NVIDIA GeForce RTX 5060 Laptop GPU. Missing breakable-wall and shortcut fixtures leave those mechanics uncovered. Root certificate store and shutdown ObjectDB/resource diagnostics remain; missing SFX and corrupt-save warnings are exercised negative cases. This does not validate Unity/Unreal, audible mix (Dummy audio), Electron startup, or modern production visual quality.
