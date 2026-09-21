@@ -994,7 +994,7 @@ func _is_presentation_capture() -> bool:
 	var mode := OS.get_environment("METROFORGE_HUD_MODE")
 	if mode.is_empty() and OS.get_environment("METROFORGE_CAPTURE") == "1":
 		mode = "QA_CAPTURE"
-	return mode == "PLAYER" or mode == "RELEASE" or mode == "QA_CAPTURE"
+	return mode == "PLAYER" or mode == "RELEASE" or mode == "QA_CAPTURE" or mode == "PRESENTATION_CAPTURE"
 
 ## Proves the HUD's currency label actually reflects real QuestManager state, not just that the
 ## node exists — by this point in the test both a quest completion and an item pickup have
