@@ -482,3 +482,8 @@ After successful native compilation, engine-acceptance.mjs now runs the existing
 ### Unreal acceptance JSON and capture paths
 
 MFAcceptance now serializes its result through the existing Unreal Json dependency, preserving escaping for arbitrary detail text and Windows paths. It includes absolute requested capture paths and logs report serialization/write failures. Capture requests are not capture proof: the runner still checks actual fresh PNG files and requires visual review. Engine acceptance platform/evidence tests passed outside sandbox after the initial worker spawn EPERM. C++ compilation and native capture remain unverified pending Unreal installation.
+
+
+### Unity acceptance JSON portability
+
+AcceptanceDriver now emits invariant decimal timing values and escapes all JSON control characters in strings. The extracted production C# escape method was compiled and round-tripped quotes, backslashes, newline, tab and NUL through a JSON parser; invariant decimal formatting was checked under de-DE. This validates the helper only, not Unity compilation/runtime. Updated the disposable unity-animated-0pJWTi acceptance source to match.

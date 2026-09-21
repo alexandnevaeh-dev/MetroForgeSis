@@ -169,7 +169,7 @@ public class AcceptanceDriver : MonoBehaviour
         if (_game.Player != null)
         {
             var vx = _game.Player.GetComponent<Rigidbody2D>() != null ? _game.Player.GetComponent<Rigidbody2D>().linearVelocity.x : 0f;
-            Note("after_hold_d x=" + _game.Player.transform.position.x.ToString("0.0") + " vx=" + vx.ToString("0.0") + " dPressed=" + DPressed());
+            Note("after_hold_d x=" + _game.Player.transform.position.x.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + " vx=" + vx.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + " dPressed=" + DPressed());
         }
         if (_captureEnabled)
             yield return Capture("player_run");
@@ -220,7 +220,7 @@ public class AcceptanceDriver : MonoBehaviour
                 }
                 else if (Time.unscaledTime - lastProgressAt > 8f)
                 {
-                    Note("stall room=" + _game.CurrentRoomId + " x=" + px.ToString("0.0"));
+                    Note("stall room=" + _game.CurrentRoomId + " x=" + px.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture));
                     break;
                 }
             }
@@ -404,7 +404,7 @@ public class AcceptanceDriver : MonoBehaviour
             _feature["combat_one_hit"] = "passed";
         else
             _feature["combat_one_hit"] = "inconclusive";
-        Note("combat_hit_probe calls=" + calls + " unique=" + unique + " drop=" + drop.ToString("0.0") + " startHp=" + startHp.ToString("0.0") + " attackDamage=" + damage.ToString("0.0"));
+        Note("combat_hit_probe calls=" + calls + " unique=" + unique + " drop=" + drop.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + " startHp=" + startHp.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + " attackDamage=" + damage.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture));
         if (still != null)
         {
             yield return new WaitForSeconds(0.32f);
@@ -488,9 +488,9 @@ public class AcceptanceDriver : MonoBehaviour
         if (_game == null || _game.Player == null)
             return;
         var line =
-            "{\"t\":" + Time.unscaledTime.ToString("0.00") +
+            "{\"t\":" + Time.unscaledTime.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) +
             ",\"room\":\"" + Escape(_game.CurrentRoomId) +
-            "\",\"x\":" + _game.Player.transform.position.x.ToString("0.0") +
+            "\",\"x\":" + _game.Player.transform.position.x.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) +
             ",\"hp\":" + _game.Player.Health.ToString("0") +
             ",\"enemy\":" + (enemy != null ? "true" : "false") +
             ",\"enemyHp\":" + (enemy != null ? enemy.Health.ToString("0") : "0") +
@@ -708,9 +708,9 @@ public class AcceptanceDriver : MonoBehaviour
         }
         json.Append("],\n");
         json.Append("  \"roomsVisitedCount\": ").Append(_roomsVisited.Count).Append(",\n");
-        json.Append("  \"transitionMs\": ").Append(_transitionMs.ToString("0.0")).Append(",\n");
+        json.Append("  \"transitionMs\": ").Append(_transitionMs.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)).Append(",\n");
         json.Append("  \"perfFrames\": ").Append(_perfFrames).Append(",\n");
-        json.Append("  \"perfAvgMs\": ").Append(_perfFrames > 0 ? (1000f * _perfDt / _perfFrames).ToString("0.00") : "-1").Append(",\n");
+        json.Append("  \"perfAvgMs\": ").Append(_perfFrames > 0 ? (1000f * _perfDt / _perfFrames).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) : "-1").Append(",\n");
         json.Append("  \"features\": {\n");
         var first = true;
         foreach (var pair in _feature)
@@ -744,7 +744,16 @@ public class AcceptanceDriver : MonoBehaviour
 
     private static string Escape(string value)
     {
-        return (value ?? "").Replace("\\", "\\\\").Replace("\"", "\\\"");
+        var escaped = new StringBuilder();
+        foreach (var c in value ?? "")
+        {
+            if (c == '\\') escaped.Append("\\\\");
+            else if (c == '"') escaped.Append("\\\"");
+            else if (c < 0x20)
+                escaped.Append("\\u").Append(((int)c).ToString("x4", System.Globalization.CultureInfo.InvariantCulture));
+            else escaped.Append(c);
+        }
+        return escaped.ToString();
     }
 
     private static void Quit(int code)
