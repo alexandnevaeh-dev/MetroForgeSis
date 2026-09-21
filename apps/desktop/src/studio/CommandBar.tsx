@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { blobToWavBase64, startSpeechRecording } from './speech-capture.js';
 
 interface CommandBarProps {
@@ -10,7 +10,11 @@ interface CommandBarProps {
   compact?: boolean;
 }
 
-export function CommandBar({
+export function CommandBar(props: CommandBarProps) {
+  return <ProjectCommandBar key={props.projectPath} {...props} />;
+}
+
+function ProjectCommandBar({
   projectPath,
   selectedRoomId,
   placeholder = 'Try: connect room_a to room_b, add treasure room, make this room harder…',
@@ -24,6 +28,14 @@ export function CommandBar({
   const [error, setError] = useState<string | null>(null);
   const stopRecordingRef = useRef<(() => void) | null>(null);
 
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      stopRecordingRef.current?.();
+    };
+  }, []);
   const pendingCommand = useRef(false);
 
   const run = async () => {
@@ -34,6 +46,7 @@ export function CommandBar({
     setMessage(null);
     try {
       const result = await window.metroforge.executeAiCommand(projectPath, input.trim(), selectedRoomId);
+      if (!mounted.current) return;
       if (!result.success) {
         setError(result.error || 'Command failed');
         return;
@@ -44,13 +57,13 @@ export function CommandBar({
       try {
         await onSuccess?.(summary);
       } catch (cause) {
-        setError(`Command applied, but the editor could not refresh: ${cause instanceof Error ? cause.message : String(cause)}`);
+        if (mounted.current) setError(`Command applied, but the editor could not refresh: ${cause instanceof Error ? cause.message : String(cause)}`);
       }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Command failed');
+      if (mounted.current) setError(cause instanceof Error ? cause.message : 'Command failed');
     } finally {
       pendingCommand.current = false;
-      setBusy(false);
+      if (mounted.current) setBusy(false);
     }
   };
 
@@ -77,13 +90,16 @@ export function CommandBar({
       stopRecordingRef.current = recording.stop;
 
       const blob = await recording.done;
+      if (!mounted.current) return;
       setListening(false);
       stopRecordingRef.current = null;
       setBusy(true);
 
       const wavBase64 = await blobToWavBase64(blob);
+      if (!mounted.current) return;
       const transcript = await window.metroforge.transcribeSpeech(wavBase64);
-      setBusy(false);
+      if (!mounted.current) return;
+      if (mounted.current) setBusy(false);
 
       if (!transcript.success || !transcript.text?.trim()) {
         setError(transcript.error ?? 'No speech detected');
@@ -93,8 +109,9 @@ export function CommandBar({
       setInput(transcript.text.trim());
       setMessage('Voice captured — review and press Run');
     } catch (err) {
+      if (!mounted.current) return;
       setListening(false);
-      setBusy(false);
+      if (mounted.current) setBusy(false);
       stopRecordingRef.current = null;
       setError(err instanceof Error ? err.message : 'Voice capture failed');
     }

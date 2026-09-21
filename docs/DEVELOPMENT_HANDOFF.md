@@ -402,3 +402,8 @@ Browser checks confirmed rejected command retains input and re-enables Run, but 
 ## Honest edit-status polling
 
 EditStatusBadge now starts CHECKING, reports UNAVAILABLE when bridge/status requests fail, ignores responses after project change/unmount, and schedules the next poll only after completion to avoid overlapping requests. Only confirmed CLEAN receives the success style. Browser with injected rejection showed status UNAVAILABLE. TypeScript and native bundle passed (.metroforge/desktop-build/1789961349489). Delayed cross-project response behavior remains untested interactively.
+
+
+## Project-scoped command sessions
+
+CommandBar now wraps an internal component keyed by projectPath. Switching projects resets command/input state; late execution responses cannot clear a new project input or invoke old refresh callbacks after unmount. Cleanup stops active speech recording, and recording/transcription continuations check mounted state. TypeScript and native bundle passed (.metroforge/desktop-build/1789961455394). Interactive delayed command and speech/project-switch checks remain pending. Existing in-flight backend commands are not cancelled and may still finish in their original project.
