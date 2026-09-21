@@ -81,7 +81,7 @@ collision_mask = 16
 script = ExtResource("4_hitbox")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="AttackHitbox"]
-position = Vector2(30, -20)
+position = Vector2(0, -20)
 shape = SubResource("RectangleShape2D_hit")
 
 [node name="AttackTimer" type="Timer" parent="."]
