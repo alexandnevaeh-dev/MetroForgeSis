@@ -659,10 +659,14 @@ def get_controlnet_pipeline(base_model_id: str, device: str = "cpu"):
     from diffusers import ControlNetModel, StableDiffusionXLControlNetPipeline
 
     controlnet = ControlNetModel.from_pretrained(CONTROLNET_MODEL_ID, torch_dtype=_torch_dtype(device))
+    load_options = {}
+    if os.path.isfile(os.path.join(base_model_id, "unet", "diffusion_pytorch_model.fp16.safetensors")):
+        load_options["variant"] = "fp16"
     pipe = StableDiffusionXLControlNetPipeline.from_pretrained(
         base_model_id,
         controlnet=controlnet,
         torch_dtype=_torch_dtype(device),
+        **load_options,
     )
     _controlnet_pipeline = _move_pipe(pipe, device)
     _controlnet_pipeline_key = key
@@ -679,7 +683,10 @@ def get_ip_adapter_pipeline(base_model_id: str, device: str = "cpu"):
 
     from diffusers import StableDiffusionXLPipeline
 
-    pipe = StableDiffusionXLPipeline.from_pretrained(base_model_id, torch_dtype=_torch_dtype(device))
+    load_options = {}
+    if os.path.isfile(os.path.join(base_model_id, "unet", "diffusion_pytorch_model.fp16.safetensors")):
+        load_options["variant"] = "fp16"
+    pipe = StableDiffusionXLPipeline.from_pretrained(base_model_id, torch_dtype=_torch_dtype(device), **load_options)
     pipe.load_ip_adapter(
         IP_ADAPTER_REPO,
         subfolder="sdxl_models",
@@ -713,6 +720,7 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
     full_prompt = prompt
     init_image = _prepare_init_image(req, width, height)
     conditioning_mode = req.get("conditioning_mode")
+    conditioning_base_model = req.get("base_model_path") or os.environ.get("DIFFUSERS_BASE_MODEL_PATH") or SDXL_BASE_MODEL_ID
     strength = float(req.get("conditioning_strength", 0.65))
 
     if requested_backend == "openvino_gpu":
@@ -727,7 +735,7 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
     total_start = time.perf_counter()
 
     if init_image is not None and conditioning_mode == "controlnet_canny":
-        pipe = get_controlnet_pipeline(SDXL_BASE_MODEL_ID, device)
+        pipe = get_controlnet_pipeline(conditioning_base_model, device)
         control_image = _canny_control_image(init_image)
         result = pipe(
             prompt=full_prompt,
@@ -740,7 +748,7 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
             generator=generator,
         )
     elif init_image is not None and conditioning_mode == "ip_adapter":
-        pipe = get_ip_adapter_pipeline(SDXL_BASE_MODEL_ID, device)
+        pipe = get_ip_adapter_pipeline(conditioning_base_model, device)
         pipe.set_ip_adapter_scale(strength)
         result = pipe(
             prompt=full_prompt,

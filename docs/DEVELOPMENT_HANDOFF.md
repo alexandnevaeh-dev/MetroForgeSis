@@ -501,3 +501,6 @@ ControlNet and IP-Adapter caches now key by base model and device, clear prior i
 
 ### Preserve project art direction in local generation
 Removed unconditional worker pixel-art/perspective prefixes. The project-composed prompt now reaches all generation branches unchanged, aligning prompt-budget checks with execution. Production generate_image exercised through its early OpenVINO dispatch with mocked inference preserved modern, pixel-art and top-down prompts exactly; missing prompt uses neutral game asset. Syntax passed. These are source checks, not native/GPU rendering proof of this worker change. Separate SDXL CUDA concept trials completed but both need revision and are not approved animation references; images and reviews are on E:/Metroforge/Recovery-Audit/asset-refresh-20260921.
+
+### Conditioning model location
+ControlNet/IP-Adapter generation now honors base_model_path, then DIFFUSERS_BASE_MODEL_PATH, then the existing SDXL default. Both loaders recognize local FP16 UNet snapshots. Focused production-AST checks passed for request/env/default precedence and both loader variants. Native GPU conditioning through these branches remains unverified. Reference-guided SDXL img2img trial is active separately as session 54689.
