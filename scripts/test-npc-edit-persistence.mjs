@@ -38,4 +38,17 @@ const before = readFileSync(roomsPath);
 const bad = applyRoomEditAndRecompile(project, { roomId: room.id, npcs: ['missing_npc'] });
 assert.equal(bad.success, false);
 assert.deepEqual(readFileSync(roomsPath), before);
-console.log('PASS: NPC duplication, shared definitions, room duplication, removal persistence and missing-definition rollback');
+const definitionsPath = join(project, 'data/npcs/npcs.json');
+const definitions = JSON.parse(readFileSync(definitionsPath));
+const alternateId = 'npc_alternate';
+definitions.npcs.push({...definitions.npcs[0], id: alternateId});
+writeFileSync(definitionsPath, JSON.stringify(definitions));
+edit({ npcs: ['alternate_instance'], entityPlacements: [
+  ...room.entityPlacements.filter(p => p.kind !== 'npc'),
+  {...original, id:'alternate_instance', definitionId:alternateId},
+] });
+for (const animation of ['walk','idle','talk','listen']) {
+  assert.ok(scene(room.id).includes(`assets/npcs/${alternateId}_${animation}.png`), `${animation} must use the selected definition`);
+}
+assert.ok(!scene(room.id).includes('assets/npcs/alternate_instance_'));
+console.log('PASS: NPC persistence, rollback and definition-specific acting animation paths');

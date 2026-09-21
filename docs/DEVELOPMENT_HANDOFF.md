@@ -271,3 +271,7 @@ Encounter regeneration now releases explicit enemy presence and replaces combat 
 
 ## NPC proximity and input validation - continuation
 Native NPC harness now places player body within each NPC area, waits physics frames for actual body_entered/range detection, then submits InputEventAction interact press/release through Godot input delivery. No direct talk calls. Both original/copy open correct dialogue with shared definition and distinct authoring identity, closing resumes gameplay. Exit0 failures=[] on RTX5060; evidence Recovery-Audit/temp/metroforge-native-npcs-j8hmLX/native-npcs.log. Player motion is frozen and placement is test-controlled; this validates proximity/input/overlay chain, not navigation/controller traversal to NPC.
+
+
+## NPC acting sheets follow definition - continuation
+Generated NPC scenes previously overrode walk only; inherited template idle/talk/listen paths remained npc_000. Assembler now overrides extra_animation_sheets for all three acting animations using shared definitionId (or legacy id). NPC persistence regression introduces a second content definition and verifies all four generated paths reference it, never instance ID. Godot TypeScript and lint pass. This proves scene wiring; alternate-definition artwork/native visual playback still requires actual assets and runtime validation.

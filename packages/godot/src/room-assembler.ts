@@ -1645,6 +1645,11 @@ role = "${npc.role}"${npc.questIds.length > 0 ? `\nquest_ids = PackedStringArray
 
 [node name="Sprite" parent="NPC_${npcIdx}"]
 sheet_path = "assets/npcs/${npc.definitionId ?? npc.id}_walk.png"
+extra_animation_sheets = {
+"idle": "assets/npcs/${npc.definitionId ?? npc.id}_idle.png",
+"talk": "assets/npcs/${npc.definitionId ?? npc.id}_talk.png",
+"listen": "assets/npcs/${npc.definitionId ?? npc.id}_listen.png"
+}
 frame_size = Vector2i(64, 64)
 frame_count = 4
 `;
