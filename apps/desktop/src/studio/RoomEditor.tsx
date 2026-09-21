@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { enemyDefinitionForPlacement, unusedEntityId } from './entity-authoring.js';
 import { CommandBar } from './CommandBar.js';
 import { EditStatusBadge } from './EditStatusBadge.js';
@@ -84,6 +84,15 @@ function roomHasGeometry(room: RoomRecord, collision: RoomCollisionPreview | nul
 
 export function RoomEditor() {
   const { selectedPath, hasActiveProject, focusRoomId, setFocusRoomId, navigate } = useStudio();
+  const activeProject = useRef(selectedPath);
+  activeProject.current = selectedPath;
+  const mounted = useRef(true);
+  const saving = useRef(false);
+  const [isSaving, setIsSaving] = useState(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   const [rooms, setRooms] = useState<RoomRecord[]>([]);
   const [selectedRoomId, setSelectedRoomId] = useState('');
   const [query, setQuery] = useState('');
@@ -101,6 +110,7 @@ export function RoomEditor() {
   const loadRooms = async (path: string) => {
     if (!window.metroforge?.listRooms) return;
     const list = await window.metroforge.listRooms(path);
+    if (!mounted.current || activeProject.current !== path) return;
     setRooms(list as RoomRecord[]);
     setSelectedRoomId((prev) => {
       if (focusRoomId && list.some((room) => room.id === focusRoomId)) return focusRoomId;
@@ -110,7 +120,12 @@ export function RoomEditor() {
   };
 
   useEffect(() => {
-    if (selectedPath) void loadRooms(selectedPath);
+    setMessage(null);
+    setError(null);
+    setRooms([]);
+    if (selectedPath) void loadRooms(selectedPath).catch((cause: unknown) => {
+      if (mounted.current && activeProject.current === selectedPath) setError(cause instanceof Error ? cause.message : String(cause));
+    });
   }, [selectedPath]);
 
   useEffect(() => {
@@ -168,15 +183,28 @@ export function RoomEditor() {
   };
 
   const runRoomAction = async (action: () => Promise<{ success?: boolean; error?: string; errors?: string[]; message?: string }>) => {
+    if (saving.current) return;
+    const projectPath = selectedPath;
+    saving.current = true;
+    setIsSaving(true);
     setError(null);
-    setMessage(null);
+    setMessage('Saving changes…');
     try {
       const result = await action();
-      if (result.error || result.success === false) setError(result.error ?? result.errors?.join('; ') ?? 'Action failed');
-      else setMessage(result.message ?? 'Done');
-      await loadRooms(selectedPath);
+      if (!mounted.current || activeProject.current !== projectPath) return;
+      if (result.error || result.success === false) {
+        setMessage(null);
+        setError(result.error || result.errors?.join('; ') || 'Action failed');
+      } else setMessage(result.message ?? 'Done');
+      await loadRooms(projectPath);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
+      if (mounted.current && activeProject.current === projectPath) {
+        setMessage(null);
+        setError(cause instanceof Error ? cause.message : String(cause));
+      }
+    } finally {
+      saving.current = false;
+      if (mounted.current) setIsSaving(false);
     }
   };
 
@@ -185,7 +213,7 @@ export function RoomEditor() {
   const tileSize = collision?.tileSize ?? TILE;
 
   return (
-    <section className="workspace-screen room-editor-screen">
+    <section className="workspace-screen room-editor-screen" aria-busy={isSaving}>
       <ScreenHeader
         compact
         eyebrow="World"

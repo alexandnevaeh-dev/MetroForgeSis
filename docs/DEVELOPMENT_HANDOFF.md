@@ -299,3 +299,7 @@ play_sfx now assigns UI bus for requested ui_ sounds and SFX otherwise each time
 
 ## Repeatable native audio suite - continuation
 Added scripts/test-native-audio.mjs. Set GODOT_EXECUTABLE and invoke with generated game fixture path after E temp/cache environment; runner copies fixture to disposable temp, overlays current audio/dialogue scripts, runs all three GDScript fixtures with file-backed output, checks exit/pass marker/no script failures, and writes per-test logs plus audio-results.json including diagnostics. All3native tests passed exit0 in Recovery-Audit/temp/metroforge-native-audio-J3TuyZ. Certificate-store and shutdown resource warnings retained explicitly. Playback-state coverage only, no audible-mix approval or full release certification.
+
+
+## Room editor asynchronous save handling - continuation
+RoomEditor runRoomAction now uses synchronous ref guard to prevent overlapping actions, exposes saving feedback/aria-busy, clears pending state in finally and ignores result/error feedback after unmount or project change. loadRooms discards other-project results; project switch clears old room list and messages; initial loading errors caught. Empty error arrays fall back to readable failure text. Renderer typecheck, changed-file lint and desktop native build passed (.metroforge/desktop-build/1789958049127); interactive race verification still outstanding. Tile-paint own save path is separate. Native Electron startup blocker remains.
