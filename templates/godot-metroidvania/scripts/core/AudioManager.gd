@@ -93,6 +93,7 @@ func play_sfx(sfx_name: String) -> void:
 		return
 
 	var player := _next_sfx_player()
+	player.bus = BUS_UI if sfx_name.begins_with("ui_") else BUS_SFX
 	player.stream = stream
 	player.volume_db = 0.0
 	player.play()

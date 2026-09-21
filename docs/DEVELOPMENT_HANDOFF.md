@@ -291,3 +291,7 @@ AudioManager now PROCESS_MODE_ALWAYS so its shared music/SFX/voice players remai
 
 ## Dedicated dialogue voice lifecycle - continuation
 Dialogue voice now has a dedicated AudioStreamPlayer on SFX bus, separate from pooled effects. New voice stops prior clip, duplicates stream before disabling WAV looping, and overlay stops voice on line replacement and close. Native dialogue-voice-runtime fixture passes active playback during dialogue pause,12frames of SFX without voice theft, nonlooping WAV and close/line cleanup; log Recovery-Audit/dialogue-voice-runtime.log. Fixture uses existing music WAV as a deterministic voice surrogate, not speech quality evaluation. Dummy driver/root certificate/leak limits remain. Integrated runner overlays current AudioManager and DialogueOverlay templates.
+
+
+## UI volume bus routing - continuation
+play_sfx now assigns UI bus for requested ui_ sounds and SFX otherwise each time pooled slot is used. Previously every effect stayed on SFX despite separate UI setting. Native audio-bus-runtime passes UI click routing, same-slot reset to SFX for jump, and gameplay door alias remains SFX even though clip aliases ui_click. Evidence Recovery-Audit/audio-bus-runtime.log; dummy-driver routing proof, not listening/mix approval. Root certificate/resource shutdown diagnostics remain.
