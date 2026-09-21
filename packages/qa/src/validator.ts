@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, readdirSync, writeFileSync, mkdirSync, copyFileSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileCapturedSync as execFileSync, spawnCapturedSync as spawnSync } from './process-capture.js';
 import type { ValidationResult, WorldGraph } from '@metroforge/schemas';
 import {
   generateId,

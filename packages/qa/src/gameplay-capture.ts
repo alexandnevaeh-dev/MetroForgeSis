@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawnCapturedSync as spawnSync } from './process-capture.js';
 import { critiqueGameplayScreenshot } from '@metroforge/assets';
 import {
   getPlatformInfo,
