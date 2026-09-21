@@ -169,3 +169,7 @@ Added one roving tab stop to tile canvas, labelled SVG button cells, arrow-key n
 
 ## Room patch validation - continuation
 Room edit boundary rejects null/unsafe room IDs, nonpositive/fractional/nonfinite dimensions, invalid boolean/list inputs, negative/fractional tile coordinates, duplicate occupied cells and nonfinite entity positions before taking write snapshots or compiling. Extended rollback test verifies 13 invalid inputs leave exact source/scene bytes unchanged and never invoke assembler. Generation TypeScript build, rollback/validation test and actual assembler authored-tile persistence test passed; native Godot subtest explicitly skipped this turn (no executable env), earlier native evidence still separate. No claim of full schema or gameplay validation.
+
+
+## Integrated desktop rebuild - continuation
+Rebuilt current editor changes with node scripts/desktop-build.mjs --native: renderer and Electron typechecks plus native bundles passed (387.5KB JS, 69.6KB CSS, 9.1KB preload). Build evidence .metroforge/desktop-build/1789953085324 and apps/desktop/dist/build-info.json. Follow-up node scripts/smoke-desktop.mjs FAILED with exit3221225477 (0xC0000005), empty startup.log; result .metroforge/desktop-smoke/1789953088933/result.json. No Application event1000 entries in preceding3hours were available via Get-WinEvent; fault module is still unknown. No security/sandbox flags changed. Do not claim integrated application runtime acceptance from passing bundles/browser component checks. All launched test processes terminal.
