@@ -437,3 +437,8 @@ Expanded room rollback regression to assert modification times remain unchanged 
 ## Live position redo control
 
 Added one-step Redo position to LiveRuntimeInspector. Undo records runtime-acknowledged previous coordinates as redo target; redo creates the inverse undo entry. New apply or reinspection clears redo. Save placement refreshes inspection metadata for both history entries. TypeScript and native desktop bundle passed (.metroforge/desktop-build/1789961993693). Interactive/native apply-undo-redo verification remains pending; no claim of multi-step history.
+
+
+## Native live position redo verification
+
+Production LiveRuntimeInspector browser harness connected to actual headless Godot bridge. Selected Enemy at (92.25,73.5), applied X=120, Undo restored 92.25, Redo restored 120. Independent Inspect running scene confirmed X=120 and reset both history controls. Saved source stayed at (92.25,73.5); no persistence write requested. This validates browser UI -> harness transport -> native runtime acknowledgement, not native Electron shell or Unity/Unreal. Test tab and harness/native session stopped afterward.
