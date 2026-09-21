@@ -493,8 +493,9 @@ public class GameBootstrap : MonoBehaviour
                 collidersMs = (Time.realtimeSinceStartup - tCol) * 1000f;
 
                 var tCreate = Time.realtimeSinceStartup;
-                if (HasActor(room.abilityPickup) && (_player == null || !_player.Abilities.Contains(room.abilityPickup.id)))
-                    CreatePickup(room);
+                foreach (var pickup in RoomPickups(room))
+                    if (HasActor(pickup) && (_player == null || !_player.Abilities.Contains(pickup.id)))
+                        CreatePickup(room, pickup);
                 if (HasPoint(room.checkpoint))
                     CreateCheckpoint(room);
                 if (room.victory)
@@ -584,12 +585,12 @@ public class GameBootstrap : MonoBehaviour
 
     private void ClearCollectedPickup(GameplayRoom room)
     {
-        if (_activeRoomRoot == null || _player == null || !HasActor(room.abilityPickup))
-            return;
-        if (!_player.Abilities.Contains(room.abilityPickup.id))
+        if (_activeRoomRoot == null || _player == null)
             return;
         foreach (var pickup in _activeRoomRoot.GetComponentsInChildren<AbilityPickup>(true))
         {
+            if (!_player.Abilities.Contains(pickup.AbilityId))
+                continue;
             foreach (var col in pickup.GetComponentsInChildren<Collider2D>(true))
                 col.enabled = false;
             pickup.gameObject.SetActive(false);
@@ -795,9 +796,15 @@ public class GameBootstrap : MonoBehaviour
         }
     }
 
-    private void CreatePickup(GameplayRoom room)
+    private static IEnumerable<GameplayActor> RoomPickups(GameplayRoom room)
     {
-        var pickup = room.abilityPickup;
+        if (room.abilityPickups != null)
+            return room.abilityPickups;
+        return HasActor(room.abilityPickup) ? new[] { room.abilityPickup } : System.Array.Empty<GameplayActor>();
+    }
+
+    private void CreatePickup(GameplayRoom room, GameplayActor pickup)
+    {
         var go = new GameObject($"Pickup_{pickup.id}");
         go.transform.SetParent(RoomParent, false);
         go.transform.position = Coord.FromGodot(pickup.x, pickup.y, room.height);

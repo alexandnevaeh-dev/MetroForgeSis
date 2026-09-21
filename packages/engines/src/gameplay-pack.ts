@@ -265,6 +265,7 @@ export function buildGameplayPack(input: AssemblyInput): GameplayPack {
             combat: enemyDef?.combat?.type ?? 'melee',
           }
         : undefined,
+      abilityPickups: opts.abilityPickups.map((id, index) => ({ id, x: Math.min(220 + index * 48, opts.width - 40), y: floorTop - 28 })),
       abilityPickup:
         opts.abilityPickups[0] != null
           ? { id: opts.abilityPickups[0], x: 220, y: floorTop - 28 }

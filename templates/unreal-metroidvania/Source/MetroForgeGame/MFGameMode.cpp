@@ -205,11 +205,17 @@ void AMFGameMode::LoadRoom(const FString& RoomId, const FVector& Spawn, bool bAb
 		Solid->Tags.Add(*FString::Printf(TEXT("Gate_%s"), *Req));
 		RoomActors.Add(Solid);
 	}
-	if (Room->HasTypedField<EJson::Object>(TEXT("abilityPickup")))
+	TArray<TSharedPtr<FJsonValue>> Pickups;
+	if (Room->HasTypedField<EJson::Array>(TEXT("abilityPickups")))
+		Pickups = Room->GetArrayField(TEXT("abilityPickups"));
+	else if (Room->HasTypedField<EJson::Object>(TEXT("abilityPickup")))
+		Pickups.Add(MakeShared<FJsonValueObject>(Room->GetObjectField(TEXT("abilityPickup"))));
+	for (const TSharedPtr<FJsonValue>& Entry : Pickups)
 	{
-		const TSharedPtr<FJsonObject> Pickup = Room->GetObjectField(TEXT("abilityPickup"));
+		if (!Entry.IsValid() || Entry->Type != EJson::Object) continue;
+		const TSharedPtr<FJsonObject> Pickup = Entry->AsObject();
 		const FString Id = Pickup->GetStringField(TEXT("id"));
-		if (!Player || !Player->HasAbility(Id))
+		if (!Id.IsEmpty() && (!Player || !Player->HasAbility(Id)))
 		{
 			SpawnTrigger(FString::Printf(TEXT("Pickup_%s"), *Id), FromGodot(Pickup->GetNumberField(TEXT("x")), Pickup->GetNumberField(TEXT("y")), RoomHeight), FVector(12.f, 12.f, 12.f), ECC_WorldDynamic);
 		}

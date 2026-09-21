@@ -97,6 +97,7 @@ public class GameplayRoom
     public GameplayGate[] gates;
     public GameplayActor enemy;
     public GameplayActor abilityPickup;
+    public GameplayActor[] abilityPickups;
     public GameplayCheckpoint checkpoint;
     public bool victory;
     public GameplayBackgrounds backgrounds;

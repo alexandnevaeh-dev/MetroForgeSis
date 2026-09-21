@@ -11,6 +11,13 @@ const pack=JSON.parse(readFileSync(join(root,'gameplay.json'),'utf8'));
 pack.title='Ashen Covenant';
 for(const ability of pack.abilities)if(ability.id==='dash'||ability.id==='phase'){ability.id='phase';ability.name='Veil Step';}
 pack.rooms=rename(pack.rooms);
+const world=JSON.parse(readFileSync(join(root,'world_graph.json'),'utf8'));
+for(const room of pack.rooms){
+ const node=world.nodes.find(n=>n.id===room.id);
+ const grants=rename(node?.metadata?.grantsAbilities||[]);
+ room.abilityPickups=grants.map((id,index)=>({id,x:Math.min(220+index*48,room.width-40),y:room.floorTop-28}));
+ room.abilityPickup=room.abilityPickups[0];
+}
 assert.ok(pack.rooms.some(r=>r.abilityPickup?.id==='phase'));
 assert.ok(pack.rooms.some(r=>r.gates.some(g=>g.requiredAbility==='phase')));
 assert.ok(pack.sprites.some(s=>s.clip==='dash'),'Preserve animation clip names');
@@ -23,6 +30,6 @@ for(const file of ['game_dna.json','world_graph.json','data/world/world_graph.js
  }
  save(file,data);
 }
-copyFileSync('templates/unity-metroidvania/Assets/Scripts/PlayerActor.cs',join(root,'Assets/Scripts/PlayerActor.cs'));
+for(const file of ['PlayerActor.cs','GameplayData.cs','GameBootstrap.cs','AcceptanceDriver.cs'])copyFileSync('templates/unity-metroidvania/Assets/Scripts/'+file,join(root,'Assets/Scripts/'+file));
 writeFileSync(join(root,'customization-status.json'),JSON.stringify({title:'Ashen Covenant',ability:'phase',displayName:'Veil Step',runtimeTestedInIsolatedFixture:true,fullGameRuntimeValidated:false,priorGenerationProofsStale:true,pending:['new posed animation sets','new production art','Wraith Chain','Ember Seal','NPC dialogue','boss phases','full route regression'],updatedAt:new Date().toISOString()},null,2));
 console.log('Integrated Veil Step pickup and gate references; retained dash animation clips. Full-game regression pending.');

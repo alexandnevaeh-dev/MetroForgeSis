@@ -76,6 +76,7 @@ export interface GameplayRoom {
   gates: GameplayGate[];
   enemy?: GameplayActor;
   abilityPickup?: GameplayActor;
+  abilityPickups?: GameplayActor[];
   checkpoint?: { x: number; y: number };
   victory: boolean;
   backgrounds: GameplayBackgrounds;

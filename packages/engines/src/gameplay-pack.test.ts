@@ -26,7 +26,7 @@ describe('buildGameplayPack', () => {
         version: '0.1.0',
         seed: 3,
         nodes: [
-          { id: 'room_000', type: 'room', label: 'Start', metadata: { grantsAbilities: ['dash'] } },
+          { id: 'room_000', type: 'room', label: 'Start', metadata: { grantsAbilities: ['dash', 'item_reactor_key'] } },
           { id: 'room_001', type: 'room', label: 'Gate', metadata: {} },
           { id: 'room_002', type: 'room', label: 'End', metadata: { archetype: 'save' } },
         ],
@@ -51,6 +51,8 @@ describe('buildGameplayPack', () => {
     expect(pack.rooms).toHaveLength(3);
     expect(pack.startRoomId).toBe('room_000');
     expect(pack.rooms[0]?.abilityPickup?.id).toBe('dash');
+    expect(pack.rooms[0]?.abilityPickups?.map(pickup => pickup.id)).toEqual(['dash', 'item_reactor_key']);
+    expect(pack.rooms[0]?.abilityPickups?.[1]?.x).toBeGreaterThan(pack.rooms[0]?.abilityPickups?.[0]?.x ?? 0);
     expect(pack.rooms.some((room) => room.gates.length > 0)).toBe(true);
     expect(pack.rooms.some((room) => room.enemy?.id)).toBe(true);
     expect(pack.rooms.some((room) => room.checkpoint)).toBe(true);
