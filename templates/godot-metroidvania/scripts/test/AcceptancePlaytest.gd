@@ -238,11 +238,12 @@ func _interact_npc(player: Node, npc: Node2D) -> bool:
 	if get_tree().paused:
 		_limit("dialogue overlay left the tree paused after Input interact")
 	var speaker := _last_speaker
-	_npc_ok = speaker.findn("Quen") >= 0 or speaker.findn("Isley") >= 0
+	var expected_speaker := String(npc.get("npc_name")).strip_edges()
+	_npc_ok = not expected_speaker.is_empty() and speaker.strip_edges() == expected_speaker
 	if not _npc_ok and speaker.length() > 0:
-		_limit("dialogue speaker was '%s' (expected Quen Isley)" % speaker)
+		_limit("dialogue speaker was '%s' (expected '%s')" % [speaker, expected_speaker])
 	print("ACCEPTANCE_NPC speaker=%s overlay=%s" % [speaker, str(overlay != null and bool(overlay.get("visible")))])
-	_check("npc_speaker_quen_isley", _npc_ok)
+	_check("npc_speaker_matches_generated_npc", _npc_ok)
 	await _shot("npc_dialogue")
 	for _rest in 10:
 		await get_tree().process_frame
