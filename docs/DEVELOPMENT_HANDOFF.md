@@ -412,3 +412,8 @@ CommandBar now wraps an internal component keyed by projectPath. Switching proje
 ## Delayed command project-switch verification
 
 Production CommandBar in browser harness with controlled executeAiCommand promise: submitted in A, switched to B, typed new project draft, resolved old command. New draft remained and no old completion appeared. Repeated B -> A -> B before resolving; returned project draft remained and Run stayed available. Both interactive cases passed. Backend mutation/IPC and actual microphone cancellation were not exercised. Harness remains on E: under .metroforge/live-inspector-harness.
+
+
+## Speech cancellation and microphone cleanup
+
+startSpeechRecording now remembers stop requests made before getUserMedia resolves and stops returned tracks without creating a recorder. A finally block releases tracks and timeout after normal stop, recorder errors, constructor failures or start failures. scripts/test-speech-recording.mjs passed with mocked media devices: pending cancellation creates no recorder, constructor/start failures each stop tracks, and normal stop produces a blob and releases tracks. Desktop TypeScript passed. These are lifecycle tests, not actual microphone/permission UI or audible capture verification.

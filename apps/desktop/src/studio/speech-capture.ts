@@ -93,45 +93,36 @@ export function startSpeechRecording(maxMs = 8000): { stop: () => void; done: Pr
   let recorder: MediaRecorder | null = null;
   let stream: MediaStream | null = null;
   let timeout = 0;
+  let stopRequested = false;
 
   const done = (async () => {
-    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const rec = new MediaRecorder(stream);
-    recorder = rec;
-    const chunks: BlobPart[] = [];
-
-    return new Promise<Blob>((resolve, reject) => {
-      timeout = window.setTimeout(() => {
-        if (rec.state !== 'inactive') {
-          rec.stop();
-        }
-      }, maxMs);
-
-      rec.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunks.push(event.data);
-        }
-      };
-      rec.onerror = () => {
-        window.clearTimeout(timeout);
-        stream?.getTracks().forEach((track) => track.stop());
-        reject(new Error('Microphone recording failed'));
-      };
-      rec.onstop = () => {
-        window.clearTimeout(timeout);
-        stream?.getTracks().forEach((track) => track.stop());
-        resolve(new Blob(chunks, { type: rec.mimeType || 'audio/webm' }));
-      };
-
-      rec.start();
-    });
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (stopRequested) throw new Error('Recording cancelled');
+      const rec = new MediaRecorder(stream);
+      recorder = rec;
+      const chunks: BlobPart[] = [];
+      return await new Promise<Blob>((resolve, reject) => {
+        rec.ondataavailable = (event) => {
+          if (event.data.size > 0) chunks.push(event.data);
+        };
+        rec.onerror = () => reject(new Error('Microphone recording failed'));
+        rec.onstop = () => resolve(new Blob(chunks, { type: rec.mimeType || 'audio/webm' }));
+        rec.start();
+        timeout = window.setTimeout(() => {
+          if (rec.state !== 'inactive') rec.stop();
+        }, maxMs);
+      });
+    } finally {
+      window.clearTimeout(timeout);
+      stream?.getTracks().forEach((track) => track.stop());
+    }
   })();
 
   return {
     stop: () => {
-      if (recorder && recorder.state !== 'inactive') {
-        recorder.stop();
-      }
+      stopRequested = true;
+      if (recorder && recorder.state !== 'inactive') recorder.stop();
     },
     done,
   };
