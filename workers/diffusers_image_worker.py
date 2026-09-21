@@ -24,15 +24,6 @@ from typing import Any
 
 os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
 
-PROFILE_PREFIXES: dict[str, str] = {
-    "CHARACTER": "pixel art game character sprite, side view,",
-    "ENEMY": "pixel art game enemy creature, side view,",
-    "BOSS": "pixel art game boss creature, imposing,",
-    "TILE_SOURCE": "seamless pixel art game tileset texture, top-down,",
-    "ENVIRONMENT": "pixel art game environment background, parallax,",
-    "ICON": "pixel art game item icon, centered,",
-}
-
 SDXL_BASE_MODEL_ID = os.environ.get("DIFFUSERS_SDXL_BASE_MODEL_ID", "stabilityai/stable-diffusion-xl-base-1.0")
 CONTROLNET_MODEL_ID = os.environ.get("DIFFUSERS_CONTROLNET_MODEL_ID", "diffusers/controlnet-canny-sdxl-1.0")
 IP_ADAPTER_REPO = os.environ.get("DIFFUSERS_IP_ADAPTER_REPO", "h94/IP-Adapter")
@@ -701,8 +692,7 @@ def get_ip_adapter_pipeline(base_model_id: str, device: str = "cpu"):
 
 def generate_image(req: dict[str, Any]) -> dict[str, Any]:
     model_id = req.get("model_id", "stabilityai/sdxl-turbo")
-    profile = req.get("profile", "CHARACTER")
-    prompt = req.get("prompt", "pixel art game asset")
+    prompt = req.get("prompt", "game asset")
     negative = req.get("negative_prompt", "blurry, low quality, text, watermark")
     requested_backend = _resolve_backend(req)
     width = int(req.get("width", 512))
@@ -718,8 +708,9 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
             steps = min(steps, 10)
         else:
             steps = min(steps, 16)
-    prefix = PROFILE_PREFIXES.get(profile, "pixel art game asset,")
-    full_prompt = f"{prefix} {prompt}"
+    # The asset pipeline already supplies project style and framing. Preserve its
+    # exact prompt so token-budget checks and execution provenance agree.
+    full_prompt = prompt
     init_image = _prepare_init_image(req, width, height)
     conditioning_mode = req.get("conditioning_mode")
     strength = float(req.get("conditioning_strength", 0.65))

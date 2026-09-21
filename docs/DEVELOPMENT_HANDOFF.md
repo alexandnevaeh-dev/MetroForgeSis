@@ -498,3 +498,6 @@ Image-to-image loading now selects variant fp16 when the local UNet FP16 weights
 
 ### Reference-conditioning pipeline identity
 ControlNet and IP-Adapter caches now key by base model and device, clear prior identity before loading, and record identity only after successful placement. Extracted production-function checks verified same-identity reuse and model/device reload for both; syntax passed. These are mocked source checks, not new GPU inference evidence. SDXL download retry remains active as session 7686.
+
+### Preserve project art direction in local generation
+Removed unconditional worker pixel-art/perspective prefixes. The project-composed prompt now reaches all generation branches unchanged, aligning prompt-budget checks with execution. Production generate_image exercised through its early OpenVINO dispatch with mocked inference preserved modern, pixel-art and top-down prompts exactly; missing prompt uses neutral game asset. Syntax passed. These are source checks, not native/GPU rendering proof of this worker change. Separate SDXL CUDA concept trials completed but both need revision and are not approved animation references; images and reviews are on E:/Metroforge/Recovery-Audit/asset-refresh-20260921.
