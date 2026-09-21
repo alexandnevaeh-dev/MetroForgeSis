@@ -592,3 +592,7 @@ Added template WraithChain.cs + WraithAnchor.cs, PlayerActor integration and IsD
 
 ### Wraith Chain native physics checks passed
 Headless PID15308 completed WRAITH_CHAIN_VALIDATION_OK in wraith-native.log. All13 checks passed: locked, range, line of sight, attach/duplicate guards, dash exclusion, actual physics pull, arrival, cooldown, reattach, disabled anchor cancellation and mid-pull obstacle stop. Reusable tests scripts/unity-tests/WraithChainValidation*.cs. Added disabled-component guard. This validates isolated traversal mechanics only; no full-game anchor placement, unlock integration, chain VFX or posed grapple animation yet. Full Ashen Covenant PID21516 remains live on prior snapshot; do not overwrite its scripts during import/run. No GPU render active.
+
+### Wraith Chain visual compiled, visual review pending
+Added a lazily created animated LineRenderer tether with ember-to-spectral color, endpoint-preserving ripples, cancel cleanup and material destruction. Unity Roslyn wraith-compile.rsp passed exit0. Rendering has not been observed; this is a first visual implementation, not approved artwork or animation. Source only: active full-game PID21516 remains on prior snapshot. Do not overwrite active game scripts. Native mechanics results predate this visual addition.
+

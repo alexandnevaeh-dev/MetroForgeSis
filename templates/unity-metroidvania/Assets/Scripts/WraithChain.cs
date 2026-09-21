@@ -15,6 +15,50 @@ public class WraithChain : MonoBehaviour
     private float cooldown;
     private readonly RaycastHit2D[] hits = new RaycastHit2D[8];
     private ContactFilter2D filter;
+    private LineRenderer chainVisual;
+    private Material chainMaterial;
+
+    private void EnsureVisual()
+    {
+        if (chainVisual != null) return;
+        var shader = Shader.Find("Sprites/Default");
+        if (shader == null) return;
+        var visual = new GameObject("Wraith Chain Visual");
+        visual.transform.SetParent(transform, false);
+        chainVisual = visual.AddComponent<LineRenderer>();
+        chainMaterial = new Material(shader);
+        chainVisual.sharedMaterial = chainMaterial;
+        chainVisual.useWorldSpace = true;
+        chainVisual.positionCount = 9;
+        chainVisual.startWidth = 3f;
+        chainVisual.endWidth = 1.2f;
+        chainVisual.startColor = new Color(0.95f, 0.55f, 0.2f, 0.95f);
+        chainVisual.endColor = new Color(0.45f, 0.85f, 0.8f, 0.8f);
+        chainVisual.sortingOrder = 25;
+        chainVisual.enabled = false;
+    }
+
+    private void LateUpdate()
+    {
+        if (!IsPulling) return;
+        EnsureVisual();
+        if (chainVisual == null) return;
+        chainVisual.enabled = true;
+        var start = transform.position + new Vector3(0f, 24f, 0f);
+        var end = target.transform.position;
+        var perpendicular = Vector3.Cross((end - start).normalized, Vector3.forward);
+        for (var i = 0; i < chainVisual.positionCount; i++)
+        {
+            var t = i / (float)(chainVisual.positionCount - 1);
+            var ripple = Mathf.Sin(t * Mathf.PI * 6f - Time.time * 18f) * Mathf.Sin(t * Mathf.PI) * 2f;
+            chainVisual.SetPosition(i, Vector3.Lerp(start, end, t) + perpendicular * ripple);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (chainMaterial != null) Destroy(chainMaterial);
+    }
     public bool IsPulling => target != null;
 
     public void Initialize(PlayerActor player)
@@ -47,6 +91,7 @@ public class WraithChain : MonoBehaviour
     {
         target = null;
         remaining = 0f;
+        if (chainVisual != null) chainVisual.enabled = false;
     }
 
     private void OnDisable() => Cancel();
