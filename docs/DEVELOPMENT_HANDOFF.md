@@ -472,3 +472,8 @@ Corrected five malformed UTF-8 punctuation sequences in launch/loading text, roo
 ### Native acceptance terminal stage reporting
 
 The synchronous acceptance runner now finalizes unexecuted pending stages as blocked with distinct generation-validation, native-compile or unimplemented-Unreal-runtime/package reasons. Current Unreal blockers no longer fall back to stale previous-report values. Node syntax check and controlled execution of the finalization block passed for invalid generation, compile failure and successful Unreal compilation with unimplemented downstream stages. This is runner logic evidence only; no new native engine validation occurred. Unity and Epic installers were launched; installation and licensing completion are not yet confirmed.
+
+
+### Unreal runtime acceptance wiring
+
+After successful native compilation, engine-acceptance.mjs now runs the existing Unreal acceptance harness via -game -MetroForgeAcceptance -acceptanceMode=all with a 12-minute timeout and E:-project qa log. Playtest success requires exit zero, a fresh PASS report, every required feature passed and an empty notImplemented array. Fresh captures require separate visual review. Standalone packaging remains explicitly unimplemented. Node syntax and controlled runner execution passed for complete, missing-feature, nonzero-exit and stale-report cases. These are mocked runner checks; native Unreal execution remains unverified. Existing C++ acceptance reports currently omit captures and identify missing NPC/boss features, so they will not establish complete acceptance. Official command-line reference: https://dev.epicgames.com/documentation/unreal-engine/command-line-arguments-in-unreal-engine

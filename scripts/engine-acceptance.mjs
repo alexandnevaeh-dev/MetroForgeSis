@@ -170,6 +170,32 @@ if (unrealReady && unrealGen.passed) {
   stages.unreal.compiled = compile.status === 0 ? 'passed' : 'failed';
   stages.unreal.compileExit = compile.status;
   writeFileSync(join(unrealProject, 'qa', 'unreal-compile.log'), `${compile.stdout}\n${compile.stderr}`);
+  if (compile.status === 0) {
+    const playStartedAt = Date.now();
+    const play = spawnSync(env.unreal.path, [
+      join(unrealProject, 'MetroForgeGame.uproject'),
+      '-game', '-windowed', '-ResX=1280', '-ResY=720', '-unattended',
+      '-MetroForgeAcceptance', '-acceptanceMode=all',
+      `-abslog=${join(unrealProject, 'qa', 'unreal-play.log')}`,
+    ], { encoding: 'utf-8', timeout: 12 * 60 * 1000, cwd: unrealProject, windowsHide: true });
+    let playReport = null;
+    const resultPath = join(unrealProject, 'qa', 'acceptance-result.json');
+    try {
+      playReport = { data: JSON.parse(readFileSync(resultPath, 'utf-8')), modifiedAt: statSync(resultPath).mtimeMs };
+    } catch { /* Missing or malformed evidence cannot establish a playtest. */ }
+    stages.unreal.playExit = play.status;
+    stages.unreal.playError = play.error?.message ?? null;
+    stages.unreal.opened = playReport && playReport.modifiedAt >= playStartedAt ? 'passed' : 'failed';
+    const required = ['traversal', 'containment', 'combat', 'abilities', 'gates',
+      'npc_interaction', 'save_continue', 'respawn', 'boss_phases', 'victory'];
+    const complete = required.every((feature) => playReport?.data?.features?.[feature] === 'passed') &&
+      Array.isArray(playReport?.data?.notImplemented) && playReport.data.notImplemented.length === 0;
+    stages.unreal.playtested = playtestPassed(play.status, playReport, playStartedAt) && complete ? 'passed' : 'failed';
+    stages.unreal.visualCapture = freshCaptureEvidence(playReport, playStartedAt, join(unrealProject, 'qa', 'captures')) ? 'pending_review' : 'failed';
+    stages.unreal.featureResults = playReport?.data?.features ?? {};
+    stages.unreal.notImplemented = playReport?.data?.notImplemented ?? [];
+  }
+
 }
 
 // No stage is still running after the synchronous native commands return.
@@ -182,7 +208,7 @@ for (const [engine, stage] of Object.entries(stages)) {
     : stage.compiled === 'failed'
       ? 'NATIVE_COMPILE_FAILED'
       : engine === 'unreal'
-        ? 'UNREAL_RUNTIME_AND_PACKAGE_STAGES_NOT_IMPLEMENTED'
+        ? 'UNREAL_STANDALONE_STAGE_NOT_IMPLEMENTED'
         : 'NATIVE_STAGE_NOT_EXECUTED';
   stage.blocked.push(reason);
   for (const name of remaining) stage[name] = 'blocked';
@@ -233,7 +259,7 @@ const acceptance = {
       stages: stages.unreal,
       blocked: stages.unreal.blocked,
       nextPrerequisite: unrealReady
-        ? 'Inspect compile logs; Unreal runtime, capture and standalone stages still require implementation.'
+        ? 'Inspect compile logs; Unreal standalone packaging still requires implementation; inspect runtime feature and capture results.'
         : 'Install a supported Unreal editor and its host C++ toolchain on E:, then set UE_ROOT.',
     },
   },
