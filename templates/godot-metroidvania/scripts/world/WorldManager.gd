@@ -43,6 +43,17 @@ func _load_room_data() -> void:
 		file.close()
 
 func _load_room(room_id: String, spawn_side: String = "left") -> void:
+	var scene_path := "res://scenes/rooms/%s.tscn" % room_id
+	if not ResourceLoader.exists(scene_path):
+		push_warning("Room scene not found: %s" % scene_path)
+		return
+
+	var t_res := Time.get_ticks_usec()
+	var packed: PackedScene = await _ensure_packed(room_id)
+	last_transition_profile["resource_ms"] = (Time.get_ticks_usec() - t_res) / 1000.0
+	if packed == null:
+		push_warning("Room scene not found: %s" % scene_path)
+		return
 	# Capture the outgoing player's current health BEFORE tearing the room down — see the
 	# _carried_health doc comment above for why this exists. Reset unconditionally first so a
 	# stale value from an earlier transition never survives a room where the player died without
@@ -66,11 +77,6 @@ func _load_room(room_id: String, spawn_side: String = "left") -> void:
 		_current_room.queue_free()
 		_current_room = null
 
-	var scene_path := "res://scenes/rooms/%s.tscn" % room_id
-	if not ResourceLoader.exists(scene_path):
-		push_warning("Room scene not found: %s" % scene_path)
-		return
-
 	# A pending save/checkpoint restore (SaveManager.consume_pending_player_health(), consumed by
 	# the new Player's own _ready() during add_child() below) must win over ordinary carryover —
 	# check it *before* add_child() consumes the flag, so a death/load respawn always applies the
@@ -79,12 +85,6 @@ func _load_room(room_id: String, spawn_side: String = "left") -> void:
 	# a save/checkpoint load always restores the persisted value instead.
 	var used_save_restore := SaveManager.has_pending_health_restore()
 
-	var t_res := Time.get_ticks_usec()
-	var packed: PackedScene = await _ensure_packed(room_id)
-	last_transition_profile["resource_ms"] = (Time.get_ticks_usec() - t_res) / 1000.0
-	if packed == null:
-		push_warning("Room scene not found: %s" % scene_path)
-		return
 	var t_inst := Time.get_ticks_usec()
 	_current_room = packed.instantiate()
 	add_child(_current_room)

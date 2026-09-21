@@ -377,3 +377,8 @@ RoomTileMap seeded architecture from runtime parent name, so two actual instance
 ## Transition detach candidate
 
 Tested immediate remove_child before queue_free for outgoing rooms to remove stale scene groups. Native mechanics WASAPI run E:/Metroforge/Recovery-Audit/temp/metroforge-native-recompiled-U1El7Y passed 260 checks, zero failures/soft failures, but reported one retained resource in addition to ObjectDB warning. This diagnostic was absent in the prior WASAPI run; causality remains unknown. Withheld and reverted the production transition edit pending isolation. Runner now overlays current WorldManager so future comparisons use current template code. Candidate is retained only in disposable U1El7Y fixture for diagnosis.
+
+
+## Preserve current room on failed destination load
+
+WorldManager now checks destination existence and loads its PackedScene before tearing down the active room. Native missing-room fixture reproduced destruction before the fix and confirmed the original room remains attached/visible afterward. Evidence E:/Metroforge/Recovery-Audit/missing-room-baseline.log and missing-room-fixed.log; fixture scripts/fixtures/missing-room-runtime.gd. Initial room load also succeeded in this test. Full gameplay regression after this ordering change remains pending. No claim of recovery from scene-instantiation script errors.
