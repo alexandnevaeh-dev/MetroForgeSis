@@ -50,7 +50,9 @@ _pipeline_key = None
 _img2img_pipeline = None
 _img2img_pipeline_key = None
 _controlnet_pipeline = None
+_controlnet_pipeline_key = None
 _ip_adapter_pipeline = None
+_ip_adapter_pipeline_key = None
 _openvino_pipelines: dict[tuple[str, str, int, int], Any] = {}
 
 
@@ -656,9 +658,12 @@ def get_img2img_pipeline(model_id: str, device: str = "cpu"):
 
 
 def get_controlnet_pipeline(base_model_id: str, device: str = "cpu"):
-    global _controlnet_pipeline
-    if _controlnet_pipeline is not None:
+    global _controlnet_pipeline, _controlnet_pipeline_key
+    key = (base_model_id, device)
+    if _controlnet_pipeline is not None and _controlnet_pipeline_key == key:
         return _controlnet_pipeline
+    _controlnet_pipeline = None
+    _controlnet_pipeline_key = None
 
     from diffusers import ControlNetModel, StableDiffusionXLControlNetPipeline
 
@@ -669,13 +674,17 @@ def get_controlnet_pipeline(base_model_id: str, device: str = "cpu"):
         torch_dtype=_torch_dtype(device),
     )
     _controlnet_pipeline = _move_pipe(pipe, device)
+    _controlnet_pipeline_key = key
     return _controlnet_pipeline
 
 
 def get_ip_adapter_pipeline(base_model_id: str, device: str = "cpu"):
-    global _ip_adapter_pipeline
-    if _ip_adapter_pipeline is not None:
+    global _ip_adapter_pipeline, _ip_adapter_pipeline_key
+    key = (base_model_id, device)
+    if _ip_adapter_pipeline is not None and _ip_adapter_pipeline_key == key:
         return _ip_adapter_pipeline
+    _ip_adapter_pipeline = None
+    _ip_adapter_pipeline_key = None
 
     from diffusers import StableDiffusionXLPipeline
 
@@ -686,6 +695,7 @@ def get_ip_adapter_pipeline(base_model_id: str, device: str = "cpu"):
         weight_name=IP_ADAPTER_WEIGHT,
     )
     _ip_adapter_pipeline = _move_pipe(pipe, device)
+    _ip_adapter_pipeline_key = key
     return _ip_adapter_pipeline
 
 

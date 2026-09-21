@@ -495,3 +495,6 @@ Unity and Unreal acceptance now share gameplayComplete: all required feature key
 
 ### Local reference-image FP16 loading
 Image-to-image loading now selects variant fp16 when the local UNet FP16 weights exist, matching text generation. Extracted production-function checks passed for FP16 and default snapshots; Python syntax passed. SDXL download session 72260 terminated with HTTP 503 from the model CDN; model is incomplete and no SDXL render is claimed. Trial script: Recovery-Audit/work/generate-courier-sdxl.py; download plan pins revision and files on E:.
+
+### Reference-conditioning pipeline identity
+ControlNet and IP-Adapter caches now key by base model and device, clear prior identity before loading, and record identity only after successful placement. Extracted production-function checks verified same-identity reuse and model/device reload for both; syntax passed. These are mocked source checks, not new GPU inference evidence. SDXL download retry remains active as session 7686.
