@@ -55,7 +55,7 @@ export interface RoomAssemblyOptions {
   biomeTexturePath?: string;
   hasTileset: boolean;
   tileSize: number;
-  npcs: { id: string; name: string; role: string; questIds: string[]; shopId?: string }[];
+  npcs: { id: string; definitionId?: string; name: string; role: string; questIds: string[]; shopId?: string }[];
   hasItemPickup: boolean;
   itemId: string;
   itemAmount: number;
@@ -1639,12 +1639,12 @@ ${authoredMetadata(savePos)}`;
     scene += `
 [node name="NPC_${npcIdx}" parent="." instance=ExtResource("9_npc")]
 position = Vector2(${npcPos.x}, ${npcPos.y})
-${authoredMetadata(npcPos)}npc_id = "${npc.id}"
+${authoredMetadata(npcPos)}npc_id = "${npc.definitionId ?? npc.id}"
 npc_name = "${npc.name.replace(/"/g, '\\"')}"
 role = "${npc.role}"${npc.questIds.length > 0 ? `\nquest_ids = PackedStringArray(${npc.questIds.map((q) => `"${q}"`).join(', ')})` : ''}${npc.shopId ? `\nshop_id = "${npc.shopId}"` : ''}
 
 [node name="Sprite" parent="NPC_${npcIdx}"]
-sheet_path = "assets/npcs/${npc.id}_walk.png"
+sheet_path = "assets/npcs/${npc.definitionId ?? npc.id}_walk.png"
 frame_size = Vector2i(64, 64)
 frame_count = 4
 `;
@@ -1795,6 +1795,16 @@ export function recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult
         opts.tileCellsAuthored = true;
         opts.platforms = [];
         opts.pits = [];
+      }
+      // Saved NPC membership is authored state, including an intentionally empty room.
+      if (existingRecord?.npcs !== undefined) {
+        const authored = override?.entityPlacements ?? existingRecord.entityPlacements ?? [];
+        opts.npcs = existingRecord.npcs.map((id) => {
+          const definitionId = authored.find((p) => p.kind === 'npc' && p.id === id)?.definitionId ?? id;
+          const definition = input.gameContent?.npcs.find((npc) => npc.id === definitionId);
+          if (!definition) throw new Error(`NPC definition ${definitionId} not found for ${id}`);
+          return { id, definitionId, name: definition.name, role: definition.role, questIds: definition.questIds, shopId: definition.shopId };
+        });
       }
       if (override?.entityPlacements?.length) {
         opts.entityPlacements = override.entityPlacements;
