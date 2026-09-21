@@ -694,6 +694,7 @@ export function buildPublishedRoomRecord(
     ? `enemy_${opts.enemyIndex.toString().padStart(3, '0')}`
     : null;
 
+  const authoredEnemyIds = opts.entityPlacements?.filter((p) => p.kind === 'enemy').map((p) => p.id);
   return {
     id: roomId,
     index,
@@ -715,7 +716,7 @@ export function buildPublishedRoomRecord(
       optional: c.optional ?? false,
       requirements: [...c.requirements],
     })),
-    enemies: enemyId ? [enemyId] : opts.isBossRoom && opts.bossId ? [opts.bossId] : [],
+    enemies: enemyId ? (authoredEnemyIds?.length ? authoredEnemyIds : [enemyId]) : opts.isBossRoom && opts.bossId ? [opts.bossId] : [],
     npcs: opts.npcs.map((n) => n.id),
     collectibles: opts.hasItemPickup && opts.itemId ? [opts.itemId] : [],
     ...(opts.visualKit ? { visualKit: opts.visualKit } : {}),
@@ -1559,16 +1560,17 @@ position = Vector2(${playerPos.x}, ${playerPos.y})
 ${authoredMetadata(playerPos)}`;
 
   if (options.hasEnemy && !options.isBossRoom) {
-    const enemyId = `enemy_${options.enemyIndex.toString().padStart(3, '0')}`;
-    const enemyPos =
-      findPlacement(placements, 'enemy', enemyId) ??
-      findPlacement(placements, 'enemy') ?? { x: platformWidth - 150, y: floorTop };
+    const authoredEnemies = placements.filter((p) => p.kind === 'enemy');
+    const enemies = authoredEnemies.length ? authoredEnemies : [{ kind: 'enemy' as const, id: `enemy_${options.enemyIndex.toString().padStart(3, '0')}`, x: platformWidth - 150, y: floorTop }];
+    for (const [enemyIndex, enemyPos] of enemies.entries()) {
+    const enemyId = enemyPos.definitionId ?? enemyPos.id;
+    const nodeName = enemyIndex === 0 ? 'Enemy' : `Enemy_${enemyIndex}`;
     scene += `
-[node name="Enemy" parent="." instance=ExtResource("2_enemy")]
+[node name="${nodeName}" parent="." instance=ExtResource("2_enemy")]
 position = Vector2(${enemyPos.x}, ${enemyPos.y})
 ${authoredMetadata(enemyPos)}enemy_id = "${enemyId}"
 
-[node name="Sprite" parent="Enemy"]
+[node name="Sprite" parent="${nodeName}"]
 sheet_path = "assets/enemies/${enemyId}_walk.png"
 frame_size = Vector2i(64, 64)
 frame_count = 4
@@ -1576,6 +1578,7 @@ hurt_sheet_path = "assets/enemies/${enemyId}_hurt.png"
 death_sheet_path = "assets/enemies/${enemyId}_death.png"
 attack_sheet_path = "assets/enemies/${enemyId}_attack.png"
 `;
+    }
   }
 
   if (options.isBossRoom) {

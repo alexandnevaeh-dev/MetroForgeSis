@@ -37,10 +37,10 @@ type RoomRecord = {
   connections?: Array<{ direction: string; targetRoomId: string; requirements?: string[] }>;
   tileCells?: Array<{ x: number; y: number; col: number; row: number }>;
   weakFloors?: Array<{ x: number; width: number; targetRoomId: string }>;
-  entityPlacements?: Array<{ kind: string; id: string; x: number; y: number }>;
+  entityPlacements?: Array<{ kind: string; id: string; definitionId?: string; x: number; y: number }>;
 };
 
-type EntityPlacement = { kind: string; id: string; x: number; y: number };
+type EntityPlacement = { kind: string; id: string; definitionId?: string; x: number; y: number };
 
 function entityKey(p: EntityPlacement): string {
   return `${p.kind}:${p.id}`;
@@ -715,9 +715,12 @@ export function RoomEditor() {
                         disabled={!selectedPlacement}
                         onClick={() => {
                           if (!selectedPlacement) return;
+                          let copyId = `${selectedPlacement.id}_copy`;
+                          while (placements.some((p) => p.kind === selectedPlacement.kind && p.id === copyId)) copyId += "_copy";
                           const copy: EntityPlacement = {
                             ...selectedPlacement,
-                            id: `${selectedPlacement.id}_copy`,
+                            id: copyId,
+                            definitionId: selectedPlacement.definitionId ?? selectedPlacement.id,
                             x: selectedPlacement.x + 32,
                           };
                           const next = [...placements, copy];

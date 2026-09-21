@@ -56,7 +56,21 @@ assert.doesNotMatch(readFileSync(join(project, 'scenes/rooms/cleared_copy.tscn')
 assert.equal(applyRoomEditAndRecompile(project, { roomId, hasEnemy: true }).success, true);
 assert.equal(applyRoomEditAndRecompile(project, { roomId, height: 752 }).success, true);
 assert.match(scene(), /\[node name="Enemy"/, 'Explicit re-enable must survive later edits');
-console.log('PASS: authored paint, dimensions and enemy removal/re-enable persist through recompilation');
+const originalEnemy = room().entityPlacements.find(p => p.kind === 'enemy');
+assert.ok(originalEnemy);
+const copyEnemy = { ...originalEnemy, id: `${originalEnemy.id}_copy`, definitionId: originalEnemy.definitionId ?? originalEnemy.id, x: originalEnemy.x - 120 };
+const nextPlacements = [...room().entityPlacements, copyEnemy];
+assert.equal(applyRoomEditAndRecompile(project, { roomId, enemies: [originalEnemy.id, copyEnemy.id], entityPlacements: nextPlacements }).success, true);
+for (let pass = 0; pass < 2; pass++) {
+  assert.match(scene(), /\[node name="Enemy_1"/);
+  assert.ok(scene().includes(`position = Vector2(${copyEnemy.x}, ${copyEnemy.y})`));
+  assert.ok(scene().includes(`metadata/metroforge_entity_id = "${copyEnemy.id}"`));
+  assert.ok(!scene().includes(`assets/enemies/${copyEnemy.id}_`), 'Copies must reuse definition assets');
+  assert.deepEqual(room().enemies, [originalEnemy.id, copyEnemy.id]);
+  assert.equal(room().entityPlacements.find(p => p.id === copyEnemy.id).definitionId, copyEnemy.definitionId);
+  assert.equal(applyRoomEditAndRecompile(project, { roomId, width: 1296 }).success, true);
+}
+console.log('PASS: authored paint, bounds, removal and multiple enemy instances survive recompilation');
 
 if (process.env.GODOT_EXECUTABLE) {
   const { spawnSync } = await import('node:child_process');

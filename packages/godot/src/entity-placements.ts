@@ -13,6 +13,8 @@ export type EntityKind =
 export interface EntityPlacement {
   kind: EntityKind;
   id: string;
+  /** Shared content definition; id remains the unique authored instance identity. */
+  definitionId?: string;
   x: number;
   y: number;
 }
@@ -125,6 +127,7 @@ export function resolveEntityPlacements(
     const valid = authored.filter(isEntityPlacement).map((p) => ({
       kind: p.kind as EntityKind,
       id: p.id,
+      ...(p.definitionId ? { definitionId: p.definitionId } : {}),
       x: p.x,
       y: p.y,
     }));
