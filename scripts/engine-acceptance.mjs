@@ -90,6 +90,10 @@ function runUnrealCompile(editorPath) {
   const plan = nativeBuildPlan(process.platform, editorPath, unrealProject);
   mkdirSync(join(unrealProject, 'qa'), { recursive: true });
   if (process.platform === 'win32') {
+    const sourceDir = join(dirname(plan.command), '..', '..', 'Source');
+    if (!existsSync(plan.command) || !existsSync(sourceDir)) {
+      return { status: 1, stderr: 'Unreal installation is incomplete: Build.bat and Engine/Source are required. Finish installation or verify the engine in Epic Games Launcher.' };
+    }
     // cmd is required for Epic's batch entry point. Reject shell metacharacters
     // in paths rather than accepting an injectable command line.
     if ([plan.command, ...plan.args].some((value) => /["%\r\n&|<>^!]/.test(value))) {
