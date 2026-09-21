@@ -352,3 +352,8 @@ Minimal native scene using production AudioManager played biome_0 for 0.5s, asse
 ## Full WASAPI gameplay comparison
 
 METROFORGE_TEST_AUDIO_DRIVER=WASAPI full native runner completed on NVIDIA RTX 5060 Vulkan Forward+: 8 rooms, exit 0, 248 PASS, 0 FAIL, 2 SOFT_FAIL. Evidence E:/Metroforge/Recovery-Audit/temp/metroforge-native-recompiled-Bp3EIa/native-recompiled.json and .log. Unlike Dummy baseline, no resources-still-in-use error occurred. ObjectDB shutdown warning and root-certificate-store error remain. Audible mix quality was not evaluated. Runner now includes diagnostic lines and signal in JSON and rejects captured process errors or SCRIPT ERROR/Parse Error output; syntax checked, new guard not yet exercised by a fresh full run.
+
+
+## Targeted mechanics regression fixture
+
+Added --mechanics-fixture to native recompiled-game runner. It adds optional ground_slam down-edge and horizontal shortcut to a disposable copy, recompiles all rooms and requires explicit break/persistence/shortcut assertions. Run E:/Metroforge/Recovery-Audit/temp/metroforge-native-recompiled-4GWYat: WASAPI, 8 rooms, exit 1, 256 PASS, 1 FAIL, 0 SOFT_FAIL. Floor collision and breaking with ability pass; shortcut traversal passes. breakable_wall_stays_broken_after_room_reentry FAILS. Current fixture WeakFloor matches production template and uses parent node name plus target as key; root cause not established. This is an intentionally failing regression test, not a green release gate. Next instrument floor keys/state and reentry transition timing. New diagnostics/error guards executed during this run.
