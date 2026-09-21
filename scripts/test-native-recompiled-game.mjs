@@ -21,10 +21,14 @@ const result = spawnCapturedSync(godot, ['--path',project,'--audio-driver',audio
 const output = result.stdout + result.stderr;
 writeFileSync(join(project,'native-recompiled.log'),output);
 const counts = Object.fromEntries(['PASS','FAIL','SOFT_FAIL'].map(key => [key,(output.match(new RegExp(`^${key}:`,'gm')) ?? []).length]));
-const report = {project, audioDriver, rooms:compiled.recompiled.length, exitCode:result.status, error:result.error?.message, counts};
+const diagnostics = output.split(/\r?\n/).filter(line => /^(ERROR:|WARNING:|SCRIPT ERROR|Parse Error)/.test(line));
+const scriptErrors = diagnostics.filter(line => /SCRIPT ERROR|Parse Error/.test(line));
+const report = {project, audioDriver, rooms:compiled.recompiled.length, exitCode:result.status, error:result.error?.message, signal:result.signal, diagnostics, counts};
 writeFileSync(join(project,'native-recompiled.json'),JSON.stringify(report,null,2));
 console.log(JSON.stringify(report));
 assert.equal(result.status,0);
+assert.equal(result.error,undefined);
+assert.equal(scriptErrors.length,0,scriptErrors.join('\n'));
 assert.match(output,/SMOKE_TEST_RESULTS_END/);
 assert.equal(counts.FAIL,0);
 assert.ok(counts.PASS > 0);

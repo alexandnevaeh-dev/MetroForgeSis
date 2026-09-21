@@ -347,3 +347,8 @@ In the disposable GDBxDS fixture only, added AudioManager._exit_tree to stop poo
 ## Music lifecycle driver isolation
 
 Minimal native scene using production AudioManager played biome_0 for 0.5s, asserted playing, stopped, cleared its stream and waited two frames. Dummy audio reproduced retained AudioStreamWAV/PlaybackWAV; WASAPI exited cleanly without those diagnostics. WASAPI log confirms active stereo 48kHz output. Evidence: E:/Metroforge/Recovery-Audit/music-lifecycle.log and music-lifecycle-wasapi.log. This narrows the resource warning to driver-dependent behavior in this reproduction; full-game timers remain a separate issue. Native gameplay runner now accepts METROFORGE_TEST_AUDIO_DRIVER (default Dummy) and records the selected driver, enabling full WASAPI comparison. Audible quality is not assessed.
+
+
+## Full WASAPI gameplay comparison
+
+METROFORGE_TEST_AUDIO_DRIVER=WASAPI full native runner completed on NVIDIA RTX 5060 Vulkan Forward+: 8 rooms, exit 0, 248 PASS, 0 FAIL, 2 SOFT_FAIL. Evidence E:/Metroforge/Recovery-Audit/temp/metroforge-native-recompiled-Bp3EIa/native-recompiled.json and .log. Unlike Dummy baseline, no resources-still-in-use error occurred. ObjectDB shutdown warning and root-certificate-store error remain. Audible mix quality was not evaluated. Runner now includes diagnostic lines and signal in JSON and rejects captured process errors or SCRIPT ERROR/Parse Error output; syntax checked, new guard not yet exercised by a fresh full run.
