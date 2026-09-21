@@ -265,7 +265,7 @@ func _execute_transition(_world: Node, host: Node, from_room: String, to_room: S
 		_fail_stage = "no_player_after_boss"
 		return false
 
-	var transition := _find_transition(host, to_room)
+	var transition := _find_transition(host, to_room, requirements)
 	if transition == null:
 		_fail_stage = "no_transition"
 		return false
@@ -683,17 +683,24 @@ func _current_room(host: Node) -> Node:
 			return child
 	return null
 
-func _find_transition(host: Node, target_room_id: String) -> Node:
+func _find_transition(host: Node, target_room_id: String, requirements: Array = []) -> Node:
 	var room := _current_room(host)
 	if room == null:
 		return null
-	return _find_transition_recursive(room, target_room_id)
+	return _find_transition_recursive(room, target_room_id, requirements)
 
-func _find_transition_recursive(root: Node, target_room_id: String) -> Node:
+func _find_transition_recursive(root: Node, target_room_id: String, requirements: Array) -> Node:
 	for child in root.get_children():
 		if child is Area2D and child.is_in_group("room_transition") and child.get("target_room_id") == target_room_id:
-			return child
-		var found := _find_transition_recursive(child, target_room_id)
+			# Parallel exits may share a destination but represent different ability gates.
+			var gate_requirements: PackedStringArray = child.get("required_abilities")
+			var matches := gate_requirements.size() == requirements.size()
+			for ability in requirements:
+				if not gate_requirements.has(String(ability)):
+					matches = false
+			if matches:
+				return child
+		var found := _find_transition_recursive(child, target_room_id, requirements)
 		if found != null:
 			return found
 	return null
