@@ -579,7 +579,6 @@ public class AcceptanceDriver : MonoBehaviour
             }
         }
         foreach (var key in previousKeys) _held.Add(key);
-        ApplyKeys(false);
         Note("grapple_input pull=" + observedPull + " motion=" + observedMotion);
         if (observedPull && observedMotion)
         {
@@ -589,6 +588,20 @@ public class AcceptanceDriver : MonoBehaviour
     }
     }
 
+    public static bool NeedsGapJump(PlayerActor player, float direction)
+    {
+        if (player == null || player.Dead || direction == 0f || float.IsNaN(direction) || float.IsInfinity(direction)) return false;
+        var feet = (Vector2)player.transform.position;
+        bool Supported(Vector2 point)
+        {
+            foreach (var hit in Physics2D.RaycastAll(point + Vector2.up * 4f, Vector2.down, 12f))
+                if (!hit.collider.isTrigger && hit.collider.GetComponentInParent<PlayerActor>() == null &&
+                    hit.collider.GetComponentInParent<EnemyActor>() == null) return true;
+            return false;
+        }
+        return Supported(feet) && !Supported(feet + Vector2.right * Mathf.Sign(direction) * 40f);
+    }
+
     private IEnumerator Hold(KeyCode key, float seconds)
     {
         _held.Add(key);
@@ -596,11 +609,9 @@ public class AcceptanceDriver : MonoBehaviour
         while (Time.unscaledTime < until && Time.unscaledTime < _deadline)
         {
             yield return VerifyGrappleActivation();
-            ApplyKeys(false);
             yield return null;
         }
         _held.Remove(key);
-        ApplyKeys(false);
     }
 
     private void Pulse(KeyCode key)
@@ -614,8 +625,22 @@ public class AcceptanceDriver : MonoBehaviour
         ApplyKeys(false);
     }
 
+    public static void ConfigureAcceptanceInput()
+    {
+#if ENABLE_INPUT_SYSTEM
+        // Clone settings so test-only focus routing cannot dirty the project's input asset.
+        InputSystem.settings = UnityEngine.Object.Instantiate(InputSystem.settings);
+        InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
+#if UNITY_EDITOR
+        InputSystem.settings.editorInputBehaviorInPlayMode = InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
+#endif
+        InputSystem.settings.updateMode = InputSettings.UpdateMode.ProcessEventsManually;
+#endif
+    }
+
     private void EnsureKeyboard()
     {
+        ConfigureAcceptanceInput();
 #if ENABLE_INPUT_SYSTEM
         foreach (var device in InputSystem.devices.ToArray())
         {
@@ -856,6 +881,9 @@ public class AcceptanceDriver : MonoBehaviour
     {
         if (_mode == "catalog" || _mode == "motion" || _mode == "hitch" || _mode == "combatstall" || _mode == "roomtransition")
             return;
+        var direction = (_held.Contains(KeyCode.D) ? 1f : 0f) - (_held.Contains(KeyCode.A) ? 1f : 0f);
+        if (_pulse == KeyCode.None && _game != null && NeedsGapJump(_game.Player, direction))
+            Pulse(KeyCode.Space);
         ApplyKeys(false);
         _pulse = KeyCode.None;
         if (_finished)
