@@ -670,3 +670,7 @@ Customization now grants ember_seal in room003, records it as enabled combat abi
 ### Full-game diagnostic retry with current abilities
 Watchdog now self-starts from EditorApplication.update when armed and playing, covering missed EnteredPlayMode registration across domain reload; Editor compilation passed. Identified and deliberately stopped owned incomplete PID22224 after repeated first-input-only result, preserving chain-lesson-playtest.log; this is not a pass. Applied latest customization/runtime including Ember Seal and grapple input coverage. Started graphics-enabled batch Unity PID24796, batch-full-playtest.log, separate E: batch-full-save; full600s runtime limit plus30s Editor watchdog. Do not restart while live without new diagnostic evidence. Captures will overwrite qa names; use current log/timestamps to distinguish freshness.
 
+
+### Full run advancing; early grapple coverage corrected in source
+PID24796 progressed through at least room016 with real watchdog frames/time advancing; graphics-enabled batch avoids prior first-input-only behavior. Current run had no grapple attempt because initial Hold(D,12) can traverse lesson before main ability loop. Extracted VerifyGrappleActivation and invoke during Hold loops too; restores prior held keys after probe. Runtime compile passed. Not copied into active game; native coverage validation pending. This is an acceptance coverage correction, not a gameplay success claim.
+

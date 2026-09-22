@@ -279,34 +279,7 @@ public class AcceptanceDriver : MonoBehaviour
             }
             if (AllConfiguredAbilitiesUnlocked())
                 _feature["abilities"] = "passed";
-            if (_feature.TryGetValue("grapple_activation", out var grappleResult) && grappleResult == "pending" &&
-                _game.Player.Abilities.Contains("grapple") && !_game.Player.IsDashing &&
-                _game.CurrentRoom?.grappleAnchors != null && _game.CurrentRoom.grappleAnchors.Length > 0 &&
-                _grappleRoomsAttempted.Add(_game.CurrentRoomId))
-            {
-                _held.Clear();
-                var start = _game.Player.transform.position;
-                Pulse(KeyCode.L);
-                var observedPull = false;
-                var observedMotion = false;
-                var until = Time.unscaledTime + 0.3f;
-                while (Time.unscaledTime < until)
-                {
-                    yield return null;
-                    var chain = _game.Player.GetComponent<WraithChain>();
-                    if (chain != null && chain.IsPulling)
-                    {
-                        observedPull = true;
-                        observedMotion |= Vector3.Distance(start, _game.Player.transform.position) > 8f;
-                    }
-                }
-                Note("grapple_input pull=" + observedPull + " motion=" + observedMotion);
-                if (observedPull && observedMotion)
-                {
-                    _feature["grapple_activation"] = "passed";
-                    if (_captureEnabled) yield return Capture("player_grapple");
-                }
-            }
+            yield return VerifyGrappleActivation();
             if (_game.Player.Abilities.Contains("dash") || _game.Player.Abilities.Contains("phase"))
             {
                 Pulse(KeyCode.K);
@@ -570,12 +543,48 @@ public class AcceptanceDriver : MonoBehaviour
         return actor != null && !string.IsNullOrEmpty(actor.id);
     }
 
+    private IEnumerator VerifyGrappleActivation()
+    {
+    if (_feature.TryGetValue("grapple_activation", out var grappleResult) && grappleResult == "pending" &&
+        _game.Player.Abilities.Contains("grapple") && !_game.Player.IsDashing &&
+        _game.CurrentRoom?.grappleAnchors != null && _game.CurrentRoom.grappleAnchors.Length > 0 &&
+        _grappleRoomsAttempted.Add(_game.CurrentRoomId))
+    {
+        var previousKeys = new List<KeyCode>(_held);
+        _held.Clear();
+        var start = _game.Player.transform.position;
+        Pulse(KeyCode.L);
+        var observedPull = false;
+        var observedMotion = false;
+        var until = Time.unscaledTime + 0.3f;
+        while (Time.unscaledTime < until)
+        {
+            yield return null;
+            var chain = _game.Player.GetComponent<WraithChain>();
+            if (chain != null && chain.IsPulling)
+            {
+                observedPull = true;
+                observedMotion |= Vector3.Distance(start, _game.Player.transform.position) > 8f;
+            }
+        }
+        foreach (var key in previousKeys) _held.Add(key);
+        ApplyKeys(false);
+        Note("grapple_input pull=" + observedPull + " motion=" + observedMotion);
+        if (observedPull && observedMotion)
+        {
+            _feature["grapple_activation"] = "passed";
+            if (_captureEnabled) yield return Capture("player_grapple");
+        }
+    }
+    }
+
     private IEnumerator Hold(KeyCode key, float seconds)
     {
         _held.Add(key);
         var until = Time.unscaledTime + seconds;
         while (Time.unscaledTime < until && Time.unscaledTime < _deadline)
         {
+            yield return VerifyGrappleActivation();
             ApplyKeys(false);
             yield return null;
         }
