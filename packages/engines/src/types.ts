@@ -77,6 +77,8 @@ export interface GameplayRoom {
   enemy?: GameplayActor;
   abilityPickup?: GameplayActor;
   abilityPickups?: GameplayActor[];
+  /** Authored grapple anchor positions in room coordinates. */
+  grappleAnchors?: Array<{ x: number; y: number }>;
   checkpoint?: { x: number; y: number };
   victory: boolean;
   backgrounds: GameplayBackgrounds;

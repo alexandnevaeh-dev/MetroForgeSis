@@ -500,6 +500,9 @@ public class GameBootstrap : MonoBehaviour
                 foreach (var pickup in RoomPickups(room))
                     if (HasActor(pickup) && (_player == null || !_player.Abilities.Contains(pickup.id)))
                         CreatePickup(room, pickup);
+                if (room.grappleAnchors != null)
+                    foreach (var anchor in room.grappleAnchors)
+                        CreateGrappleAnchor(room, anchor);
                 if (HasPoint(room.checkpoint))
                     CreateCheckpoint(room);
                 if (room.victory)
@@ -667,6 +670,18 @@ public class GameBootstrap : MonoBehaviour
         _player.transform.position = feet;
         _player.GetComponent<Rigidbody2D>().linearVelocity = Vector2.zero;
         _player.GetComponent<SpriteSheetPlayer>().Play("idle", true);
+    }
+
+    private void CreateGrappleAnchor(GameplayRoom room, GameplayCheckpoint point)
+    {
+        if (point == null || float.IsNaN(point.x) || float.IsInfinity(point.x) ||
+            float.IsNaN(point.y) || float.IsInfinity(point.y) ||
+            point.x < 0 || point.x > room.width || point.y < 0 || point.y > room.height)
+            return;
+        var go = new GameObject("WraithAnchor");
+        go.transform.SetParent(RoomParent, false);
+        go.transform.position = Coord.FromGodot(point.x, point.y, room.height);
+        go.AddComponent<WraithAnchor>();
     }
 
     private void CreateSolid(GameplayRect rect, GameplayRoom room)

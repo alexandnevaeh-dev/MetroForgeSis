@@ -12,6 +12,16 @@ pack.title='Ashen Covenant';
 for(const ability of pack.abilities)if(ability.id==='dash'||ability.id==='phase'){ability.id='phase';ability.name='Veil Step';}
 pack.rooms=rename(pack.rooms);
 const world=JSON.parse(readFileSync(join(root,'world_graph.json'),'utf8'));
+// First traversal lesson: keep the existing route open while introducing chain control.
+const chainRoom=world.nodes.find(n=>n.id==='room_001');
+assert.ok(chainRoom,'Wraith Chain lesson room must exist');
+chainRoom.metadata ??= {};
+chainRoom.metadata.grantsAbilities=[...new Set([...(chainRoom.metadata.grantsAbilities||[]),'grapple'])];
+if(!pack.abilities.some(a=>a.id==='grapple'))pack.abilities.push({id:'grapple',name:'Wraith Chain'});
+const lesson=pack.rooms.find(r=>r.id==='room_001');
+assert.ok(lesson && lesson.width===960 && lesson.floorTop===864,'Review anchor placement when lesson geometry changes');
+lesson.grappleAnchors=[{x:200,y:730},{x:400,y:730}];
+
 for(const room of pack.rooms){
  const node=world.nodes.find(n=>n.id===room.id);
  const grants=rename(node?.metadata?.grantsAbilities||[]);
@@ -24,6 +34,11 @@ assert.ok(pack.sprites.some(s=>s.clip==='dash'),'Preserve animation clip names')
 for(const file of ['gameplay.json','Assets/StreamingAssets/gameplay.json'])save(file,pack);
 for(const file of ['game_dna.json','world_graph.json','data/world/world_graph.json','progression_graph.json']){
  const data=rename(JSON.parse(readFileSync(join(root,file),'utf8')));
+ if(file==='world_graph.json'||file==='data/world/world_graph.json'){
+  const lesson=data.nodes.find(n=>n.id==='room_001');
+  assert.ok(lesson); lesson.metadata ??= {};
+  lesson.metadata.grantsAbilities=[...new Set([...(lesson.metadata.grantsAbilities||[]),'grapple'])];
+ }
  if(file==='game_dna.json'){
   data.identity.title='Ashen Covenant'; data.narrative.protagonist='The Emberbound Knight';
   for(const ability of data.abilities)if(ability.id==='phase')ability.name='Veil Step';
@@ -31,5 +46,5 @@ for(const file of ['game_dna.json','world_graph.json','data/world/world_graph.js
  save(file,data);
 }
 for(const file of ['PlayerActor.cs','WraithChain.cs','WraithAnchor.cs','GameplayData.cs','GameBootstrap.cs','AcceptanceDriver.cs'])copyFileSync('templates/unity-metroidvania/Assets/Scripts/'+file,join(root,'Assets/Scripts/'+file));
-writeFileSync(join(root,'customization-status.json'),JSON.stringify({title:'Ashen Covenant',ability:'phase',displayName:'Veil Step',runtimeTestedInIsolatedFixture:true,fullGameRuntimeValidated:false,priorGenerationProofsStale:true,pending:['new posed animation sets','new production art','Wraith Chain','Ember Seal','NPC dialogue','boss phases','full route regression'],updatedAt:new Date().toISOString()},null,2));
+writeFileSync(join(root,'customization-status.json'),JSON.stringify({title:'Ashen Covenant',ability:'phase',displayName:'Veil Step',runtimeTestedInIsolatedFixture:true,fullGameRuntimeValidated:false,priorGenerationProofsStale:true,grappleLessonNativeValidated:false,pending:['Wraith Chain lesson placement and unlock validation','new posed animation sets','new production art','Wraith Chain','Ember Seal','NPC dialogue','boss phases','full route regression'],updatedAt:new Date().toISOString()},null,2));
 console.log('Integrated Veil Step pickup and gate references; retained dash animation clips. Full-game regression pending.');

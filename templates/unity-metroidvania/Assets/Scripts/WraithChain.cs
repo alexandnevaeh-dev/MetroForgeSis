@@ -40,7 +40,7 @@ public class WraithChain : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (!IsPulling) return;
+        if (!IsPulling) { Cancel(); return; }
         EnsureVisual();
         if (chainVisual == null) return;
         chainVisual.enabled = true;

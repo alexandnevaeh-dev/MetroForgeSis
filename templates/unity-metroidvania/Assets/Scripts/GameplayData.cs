@@ -98,6 +98,7 @@ public class GameplayRoom
     public GameplayActor enemy;
     public GameplayActor abilityPickup;
     public GameplayActor[] abilityPickups;
+    public GameplayCheckpoint[] grappleAnchors;
     public GameplayCheckpoint checkpoint;
     public bool victory;
     public GameplayBackgrounds backgrounds;
