@@ -674,3 +674,11 @@ Watchdog now self-starts from EditorApplication.update when armed and playing, c
 ### Full run advancing; early grapple coverage corrected in source
 PID24796 progressed through at least room016 with real watchdog frames/time advancing; graphics-enabled batch avoids prior first-input-only behavior. Current run had no grapple attempt because initial Hold(D,12) can traverse lesson before main ability loop. Extracted VerifyGrappleActivation and invoke during Hold loops too; restores prior held keys after probe. Runtime compile passed. Not copied into active game; native coverage validation pending. This is an acceptance coverage correction, not a gameplay success claim.
 
+
+### Real room018 escape found; recovery fix compiled
+Live batch PID24796 remains in room018 while progression-runtime.jsonl recorded x9705..9817 in room width960, enemyHP22, no deaths. Room has floor gap x560..592; fall escape is plausible but telemetry lacked y, so do not assert exact cause. This is gameplay containment failure despite earlier weak check. Added GameBootstrap bounds/nonfinite recovery through PlayerActor.Defeat -> existing checkpoint/death handling, with doorway margins128 and top256. Defeat bypasses combat invulnerability, cancels active abilities, dispatches once while Dead. Acceptance now explicitly fails escaped coordinates with tolerance. Runtime Roslyn compile passed; changes uncommitted, NOT native-validated or applied to active game. Highest next priority: native fall/bounds recovery at checkpoint plus transition-margin regression, then full route retry. Do not claim containment fixed from compilation alone.
+
+
+### Native room recovery regression passed
+PID23364 completed ROOM_RECOVERY_VALIDATION_OK with all9 checks: bootstrap, actual physics fall crossing lower bound despite combat invulnerability, health restored, checkpoint position, save file, doorway margin tolerated, horizontal escape recovery/checkpoint, single death dispatch. Diagnostic initial placements, not normal-input route proof. room-recovery-native.log on E:. Acceptance now logs y and counts OnDied events (instant respawn previously hid deaths); runtime Roslyn compile passed. Fullgame PID24796 remains on old snapshot and already demonstrated escape, so no fullroute pass claimed.
+

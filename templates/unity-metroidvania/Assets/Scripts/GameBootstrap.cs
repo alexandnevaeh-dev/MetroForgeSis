@@ -339,6 +339,13 @@ public class GameBootstrap : MonoBehaviour
         if (_player == null || _room == null || _camera == null)
             return;
         var pos = _player.transform.position;
+        // Permit doorway transitions, but recover falls below the authored room shell.
+        if (float.IsNaN(pos.x) || float.IsNaN(pos.y) || float.IsInfinity(pos.x) || float.IsInfinity(pos.y) ||
+            pos.x < -128f || pos.x > _room.width + 128f || pos.y < -128f || pos.y > _room.height + 256f)
+        {
+            _player.Defeat();
+            pos = _player.transform.position;
+        }
         var halfH = _camera.orthographicSize;
         var halfW = halfH * _camera.aspect;
         var x = Mathf.Clamp(pos.x, halfW, Mathf.Max(halfW, _room.width - halfW));

@@ -313,14 +313,22 @@ public class PlayerActor : MonoBehaviour
         _health -= amount;
         _invuln = Pack.combat.invulnerableSeconds;
         LockClip("hurt", 0.22f);
-        if (_health <= 0f)
-        {
-            Dead = true;
-            _clipLock = 2f;
-            animator?.Play("death", true);
-            OnDied?.Invoke();
-        }
+        if (_health <= 0f) Defeat();
         MainThreadProbe.PlayerHurtMarker.End();
+    }
+
+    // Environmental defeat bypasses temporary combat invulnerability.
+    public void Defeat()
+    {
+        if (Dead) return;
+        Dead = true;
+        _health = 0f;
+        _dashTime = 0f;
+        _wraithChain?.Cancel();
+        _emberSeal?.Cancel();
+        _clipLock = 2f;
+        animator?.Play("death", true);
+        OnDied?.Invoke();
     }
 
     private static Vector2 ReadMove()

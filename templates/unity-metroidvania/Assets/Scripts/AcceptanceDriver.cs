@@ -220,11 +220,23 @@ public class AcceptanceDriver : MonoBehaviour
         var combatFollowUp = false;
         var invulnHeld = false;
         var deaths = 0;
+        _game.Player.OnDied += () => deaths++;
         var diagPath = Path.Combine(_qaDir, "progression-runtime.jsonl");
         File.WriteAllText(diagPath, "");
         while (Time.unscaledTime < _deadline && _game.Player != null)
         {
             TrackRoom();
+            var location = _game.Player.transform.position;
+            var roomBounds = _game.CurrentRoom;
+            if (roomBounds != null && (float.IsNaN(location.x) || float.IsNaN(location.y) ||
+                float.IsInfinity(location.x) || float.IsInfinity(location.y) ||
+                location.x < -160f || location.x > roomBounds.width + 160f ||
+                location.y < -160f || location.y > roomBounds.height + 288f))
+            {
+                _feature["containment"] = "failed";
+                Fail("escaped_room_bounds", "Player escaped " + roomBounds.id + " at " + location);
+                yield break;
+            }
             var enemy = UnityEngine.Object.FindFirstObjectByType<EnemyActor>();
             AppendDiag(diagPath, deaths, enemy);
             if (_game.Player != null)
@@ -307,8 +319,6 @@ public class AcceptanceDriver : MonoBehaviour
                     yield return Capture("victory");
                 break;
             }
-            if (_game.Player.Dead)
-                deaths++;
             var living = UnityEngine.Object.FindFirstObjectByType<EnemyActor>();
             if (living == null || _feature["combat_kill"] == "passed")
             {
@@ -518,6 +528,7 @@ public class AcceptanceDriver : MonoBehaviour
             "{\"t\":" + Time.unscaledTime.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) +
             ",\"room\":\"" + Escape(_game.CurrentRoomId) +
             "\",\"x\":" + _game.Player.transform.position.x.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) +
+            ",\"y\":" + _game.Player.transform.position.y.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) +
             ",\"hp\":" + _game.Player.Health.ToString("0") +
             ",\"enemy\":" + (enemy != null ? "true" : "false") +
             ",\"enemyHp\":" + (enemy != null ? enemy.Health.ToString("0") : "0") +
