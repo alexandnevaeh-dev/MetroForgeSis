@@ -19,10 +19,15 @@ public class EmberSealValidationDriver : MonoBehaviour {
   var occluded=Enemy("Occluded",new Vector2(-50,10));
   var wall=new GameObject("Wall").AddComponent<BoxCollider2D>();wall.size=new Vector2(8,100);wall.transform.position=new Vector2(-25,24);
   Physics2D.SyncTransforms();Check(seal.BeginCharge(),"charge_after_cancel");yield return new WaitForSeconds(.85f);
+  var ring=player.transform.Find("Ember Seal Range").GetComponent<LineRenderer>();
+  Check(ring.enabled&&Mathf.Abs(Vector3.Distance(ring.GetPosition(0),player.transform.position+new Vector3(0,24))-150)<1,"charged_ring_matches_damage_radius");
   Check(seal.ReleaseCharge(),"charged_release");Check(seal.LastBurstHits==1,"one_unique_target");
   Check(Mathf.Approximately(close.Health,140),"full_charge_damage_once");
   Check(far.Health==200,"outside_radius_untouched");Check(occluded.Health==200,"wall_blocks_damage");
-  Check(!seal.BeginCharge(),"cooldown_blocks_repeat");yield return new WaitForSeconds(3.1f);
+  Check(!seal.BeginCharge(),"cooldown_blocks_repeat");
+  yield return null;Check(ring.enabled,"release_flash_visible");
+  yield return new WaitForSeconds(.3f);Check(!ring.enabled,"release_flash_expires");
+  yield return new WaitForSeconds(3.1f);
   Check(seal.BeginCharge(),"cooldown_expires");player.Revive();Check(!seal.IsCharging,"revive_cancels_charge");
   Debug.Log("EMBER_SEAL_VALIDATION_OK");EditorApplication.Exit(0);
  }

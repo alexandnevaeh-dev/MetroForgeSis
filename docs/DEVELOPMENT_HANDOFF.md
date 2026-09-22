@@ -648,3 +648,13 @@ Added EmberSeal component and PlayerActor lifecycle integration; Q charge/releas
 ### Ember Seal native checks passed
 Isolated headless Unity PID3728 completed EMBER_SEAL_VALIDATION_OK: all12 checks passed (unlock, charge, tap cancel, charged release, unique target, exact damage, range, walls, cooldown, cooldown expiry, revive cancel). Direct component/physics tests, not keyboard/fullgame/visual evidence. Known UnityEditor.Search.SearchDatabase exception remains in log; no game-code exception attributed. ember-native.log saved on E:. Updated Wraith native regression launched PID24268, log wraith-updated-native.log; preserve process. Visible full game PID22224 unchanged.
 
+
+Updated grapple PID24268 is terminal; wraith-updated-native.log reports WRAITH_CHAIN_VALIDATION_OK including all4 new targeting/destroyed-anchor cases (17 total checks). This establishes isolated native physics/lifecycle behavior, not rendered VFX quality or full lesson traversal.
+
+
+### Ember Seal feedback native test launched
+Added cached charge radius ring and quarter-second release flash, actual burst center/radius retained while player moves, cancel/disable hides ring and material cleanup on destroy. Runtime Roslyn compile passed. Regression adds max-charge ring radius, visible release flash and expiry assertions. Native PID3484 runs ember-feedback-native.log on isolated fixture. These are native geometry/lifecycle assertions; no visual screenshot quality approval yet. Source currently uncommitted. Full game PID22224 remains separate and untouched.
+
+
+PID3484 terminal: EMBER_SEAL_VALIDATION_OK, all15 native checks passed including ring radius and flash lifecycle. Rendered appearance remains unreviewed.
+
