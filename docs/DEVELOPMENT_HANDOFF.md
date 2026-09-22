@@ -662,3 +662,7 @@ PID3484 terminal: EMBER_SEAL_VALIDATION_OK, all15 native checks passed including
 ### Ember Seal actual NVIDIA render captured
 Graphics-enabled isolated Unity PID14588 completed EMBER_SEAL_VALIDATION_OK, including capture device checks. Log ember-render-native.log identifies NVIDIA GeForce RTX5060Laptop. Captures effect-captures/ember-charge.png and ember-release.png reviewed: correct orange range ring and brighter/thicker release ring on dark background, but basic indicators only, not production VFX or game screenshot. Capture fixture contains invisible combat actors, intentionally isolates effect. Optional METROFORGE_CAPTURE_DIR controls capture; no WaitForEndOfFrame dependency. Default view_image sandbox failed; images read through authorized E: file access and displayed. No GPU image generation occurred.
 
+
+### Ember Seal unlock integration staged
+Customization now grants ember_seal in room003, records it as enabled combat ability in DNA/runtime and optional progression node, and retains existing route. Applied twice to isolated chain-customization-check. Full GameDNASchema and ProgressionGraphSchema passed; each grapple/ember_seal ability and pickup occurs once; gameplay root/StreamingAssets JSON equal. Not applied to live PID22224. Native pickup reachability and actual charged combat in generated room remain unverified. Full game process still alive but no further acceptance output beyond spawn/apply_d; no watchdog result yet, do not infer pass.
+

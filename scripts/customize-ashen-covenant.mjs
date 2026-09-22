@@ -21,6 +21,11 @@ if(!pack.abilities.some(a=>a.id==='grapple'))pack.abilities.push({id:'grapple',n
 const lesson=pack.rooms.find(r=>r.id==='room_001');
 assert.ok(lesson && lesson.width===960 && lesson.floorTop===864,'Review anchor placement when lesson geometry changes');
 lesson.grappleAnchors=[{x:200,y:730},{x:400,y:730}];
+const sealRoom=world.nodes.find(n=>n.id==='room_003');
+assert.ok(sealRoom,'Ember Seal combat lesson room must exist');
+sealRoom.metadata ??= {};
+sealRoom.metadata.grantsAbilities=[...new Set([...(sealRoom.metadata.grantsAbilities||[]),'ember_seal'])];
+if(!pack.abilities.some(a=>a.id==='ember_seal'))pack.abilities.push({id:'ember_seal',name:'Ember Seal'});
 
 for(const room of pack.rooms){
  const node=world.nodes.find(n=>n.id===room.id);
@@ -38,15 +43,24 @@ for(const file of ['game_dna.json','world_graph.json','data/world/world_graph.js
   const lesson=data.nodes.find(n=>n.id==='room_001');
   assert.ok(lesson); lesson.metadata ??= {};
   lesson.metadata.grantsAbilities=[...new Set([...(lesson.metadata.grantsAbilities||[]),'grapple'])];
+  const combatLesson=data.nodes.find(n=>n.id==='room_003');
+  assert.ok(combatLesson); combatLesson.metadata ??= {};
+  combatLesson.metadata.grantsAbilities=[...new Set([...(combatLesson.metadata.grantsAbilities||[]),'ember_seal'])];
  }
  if(file==='progression_graph.json'){
-  data.abilities=[...new Set([...data.abilities,'grapple'])];
+  data.abilities=[...new Set([...data.abilities,'grapple','ember_seal'])];
+  if(!data.nodes.some(n=>n.id==='ability_ember_seal'))
+   data.nodes.push({id:'ability_ember_seal',type:'ability',label:'Ember Seal',required:false});
+  if(!data.edges.some(e=>e.from===data.startNodeId&&e.to==='ability_ember_seal'))
+   data.edges.push({from:data.startNodeId,to:'ability_ember_seal',requires:[]});
   if(!data.nodes.some(n=>n.id==='ability_grapple'))
    data.nodes.push({id:'ability_grapple',type:'ability',label:'Wraith Chain',required:false});
   if(!data.edges.some(e=>e.from===data.startNodeId&&e.to==='ability_grapple'))
    data.edges.push({from:data.startNodeId,to:'ability_grapple',requires:[]});
  }
  if(file==='game_dna.json'){
+  if(!data.abilities.some(a=>a.id==='ember_seal'))
+   data.abilities.push({id:'ember_seal',name:'Ember Seal',category:'combat',enabled:true});
   if(!data.abilities.some(a=>a.id==='grapple'))
    data.abilities.push({id:'grapple',name:'Wraith Chain',category:'movement',enabled:true});
   data.identity.title='Ashen Covenant'; data.narrative.protagonist='The Emberbound Knight';
