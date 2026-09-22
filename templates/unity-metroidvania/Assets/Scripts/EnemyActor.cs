@@ -93,7 +93,20 @@ public class EnemyActor : MonoBehaviour
             _body.linearVelocity = Vector2.zero;
             return;
         }
-        _body.linearVelocity = new Vector2(_dir * WalkSpeed, _body.linearVelocity.y);
+        var speed = _dir * WalkSpeed;
+        var feet = _body.position;
+        // Ground chasers stop before a drop, but retain gravity while airborne.
+        var lookAhead = 16f + Mathf.Abs(speed) * Time.fixedDeltaTime;
+        if (HasFloor(feet) && !HasFloor(feet + Vector2.right * _dir * lookAhead)) speed = 0f;
+        _body.linearVelocity = new Vector2(speed, _body.linearVelocity.y);
+    }
+
+    private bool HasFloor(Vector2 feet)
+    {
+        foreach (var hit in Physics2D.RaycastAll(feet + Vector2.up * 4f, Vector2.down, 12f))
+            if (!hit.collider.isTrigger && hit.collider.GetComponentInParent<EnemyActor>() == null &&
+                hit.collider.GetComponentInParent<PlayerActor>() == null) return true;
+        return false;
     }
 
     public void Hurt(float amount)
