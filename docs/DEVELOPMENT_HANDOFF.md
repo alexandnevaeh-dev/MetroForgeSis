@@ -658,3 +658,7 @@ Added cached charge radius ring and quarter-second release flash, actual burst c
 
 PID3484 terminal: EMBER_SEAL_VALIDATION_OK, all15 native checks passed including ring radius and flash lifecycle. Rendered appearance remains unreviewed.
 
+
+### Ember Seal actual NVIDIA render captured
+Graphics-enabled isolated Unity PID14588 completed EMBER_SEAL_VALIDATION_OK, including capture device checks. Log ember-render-native.log identifies NVIDIA GeForce RTX5060Laptop. Captures effect-captures/ember-charge.png and ember-release.png reviewed: correct orange range ring and brighter/thicker release ring on dark background, but basic indicators only, not production VFX or game screenshot. Capture fixture contains invisible combat actors, intentionally isolates effect. Optional METROFORGE_CAPTURE_DIR controls capture; no WaitForEndOfFrame dependency. Default view_image sandbox failed; images read through authorized E: file access and displayed. No GPU image generation occurred.
+
