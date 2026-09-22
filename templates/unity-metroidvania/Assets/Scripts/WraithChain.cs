@@ -69,7 +69,7 @@ public class WraithChain : MonoBehaviour
         filter.SetLayerMask(Physics2D.DefaultRaycastLayers);
     }
 
-    public bool TryAttach(WraithAnchor anchor)
+    private bool CanAttach(WraithAnchor anchor)
     {
         if (!isActiveAndEnabled || owner == null || owner.Dead || owner.IsDashing || !owner.Abilities.Contains("grapple") ||
             anchor == null || !anchor.isActiveAndEnabled || IsPulling || cooldown > 0f)
@@ -81,6 +81,12 @@ public class WraithChain : MonoBehaviour
         foreach (var hit in Physics2D.RaycastAll(origin, delta.normalized, delta.magnitude - 12f))
             if (hit.collider != null && !hit.collider.isTrigger && hit.rigidbody != body)
                 return false;
+        return true;
+    }
+
+    public bool TryAttach(WraithAnchor anchor)
+    {
+        if (!CanAttach(anchor)) return false;
         target = anchor;
         remaining = maximumPullSeconds;
         cooldown = maximumPullSeconds + 0.3f;
@@ -106,14 +112,20 @@ public class WraithChain : MonoBehaviour
 #endif
         if (!pressed) return;
         if (IsPulling) { Cancel(); return; }
+        TryAttachNearest();
+    }
+
+    public bool TryAttachNearest()
+    {
+        if (body == null) return false;
         WraithAnchor nearest = null;
         var best = range * range;
         foreach (var anchor in FindObjectsByType<WraithAnchor>(FindObjectsSortMode.None))
         {
             var distance = ((Vector2)anchor.transform.position - body.position - new Vector2(0f, 24f)).sqrMagnitude;
-            if (distance < best) { nearest = anchor; best = distance; }
+            if (distance <= best && CanAttach(anchor)) { nearest = anchor; best = distance; }
         }
-        if (nearest != null) TryAttach(nearest);
+        return nearest != null && TryAttach(nearest);
     }
 
     private void FixedUpdate()

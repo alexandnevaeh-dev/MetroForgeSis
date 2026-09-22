@@ -29,6 +29,19 @@ public class WraithChainValidationDriver : MonoBehaviour {
   Check(chain.TryAttach(anchor),"attach_before_obstacle");
   wall=new GameObject("MovingWall").AddComponent<BoxCollider2D>();wall.size=new Vector2(20,300);wall.transform.position=new Vector3(80,100);Physics2D.SyncTransforms();
   yield return new WaitForSeconds(.3f);Check(!chain.IsPulling&&body.position.x<80,"new_obstacle_stops_pull");
+  yield return new WaitForSeconds(1.6f);
+  body.position=Vector2.zero;body.linearVelocity=Vector2.zero;
+  anchor.transform.position=new Vector3(120,24);
+  wall.transform.position=new Vector3(60,24);wall.size=new Vector2(20,60);
+  var reachable=new GameObject("ReachableAnchor").AddComponent<WraithAnchor>();
+  reachable.transform.position=new Vector3(0,224);Physics2D.SyncTransforms();
+  Check(chain.TryAttachNearest(),"blocked_nearest_does_not_hide_reachable_anchor");
+  yield return new WaitForSeconds(.1f);
+  Check(body.position.y>0&&Mathf.Abs(body.position.x)<2,"selected_reachable_anchor_direction");
+  Destroy(reachable.gameObject);yield return null;yield return null;
+  Check(!chain.IsPulling,"destroyed_anchor_releases_chain");
+  var tether=player.transform.Find("Wraith Chain Visual");
+  Check(tether==null||!tether.GetComponent<LineRenderer>().enabled,"destroyed_anchor_hides_tether");
   Debug.Log("WRAITH_CHAIN_VALIDATION_OK");EditorApplication.Exit(0);
  }
 }

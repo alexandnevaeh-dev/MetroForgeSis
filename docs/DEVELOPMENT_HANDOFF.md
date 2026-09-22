@@ -620,3 +620,11 @@ Read-only default launcher refused restricted-token setup; escalated authorized 
 ### Unreal native build terminal and anchor source preservation
 Session5483 completed exit1: Win64 SDK not found, required minimum10.0.19041.0. No native Unreal C++ compilation passed. Windows Kits Installed Roots / standard Include directory returned no installed SDK. UBT also wrote C:/Users/alexa/AppData/Local/UnrealBuildTool/Trace.uba (4.4KB); installed source unconditionally derives this from Unreal.EngineProgramSavedDirectory. Cache env alone does not satisfy all-E storage. Need supported program saved-directory override or isolated configuration before further native runs. Wraith anchor runtime C# compile and engine TypeScript checks passed; customization idempotence fixture passed, actual lesson reachability still pending.
 
+
+### Updated Unity lesson native run launched
+Inspected UE5.8 EpicGames.Build/Unreal.cs GetUserSettingDirectory: Windows uses Environment.GetFolderPath LocalApplicationData, no env override in method. No registry/junction changes made. Applied current customization and Editor watchdog to Ashen game after prior process terminal. Visible Unity PID22224 launched, log ashen-covenant/chain-lesson-playtest.log, E: chain-lesson-save and GI/UPM/Bee caches. This run includes Wraith anchor data/markers and grapple pickup; existing acceptance driver does not inject L, so its success cannot prove grappling traversal. Need dedicated lesson input validation. Newgame full route, anchors, darkfantasy art and animations still not approved. Global Unity preference writes may still use C:; E-only storage is not fully satisfied.
+
+
+### Reachable grapple selection fix
+WraithChain shares CanAttach guards between explicit attachment and TryAttachNearest. Selection ignores blocked/disabled/unavailable anchors before choosing nearest, so a blocked near anchor cannot mask a reachable farther anchor. Runtime Roslyn compilation session91857 exit0. Added four regression checks to WraithChainValidationDriver: blocked-nearest fallback, actual pull direction, destroyed-target release, hidden tether after destruction. New cases not yet compiled/run natively; existing13 native passes predate changes. Live game PID22224 still importing with CPU advancing; source fix not applied to active project.
+
