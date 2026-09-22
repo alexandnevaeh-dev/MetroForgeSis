@@ -18,12 +18,7 @@ public static class MetroForgeAcceptance
         {
             if (state == PlayModeStateChange.EnteredPlayMode && SessionState.GetBool(WatchKey, false))
             {
-                started = EditorApplication.timeSinceStartup;
-                lastReport = started;
-                timeout = 210;
-                foreach (var arg in System.Environment.GetCommandLineArgs())
-                    if (arg.StartsWith("-acceptanceTimeout=") && double.TryParse(arg.Substring(19), out var seconds))
-                        timeout = System.Math.Clamp(seconds, 15, 600) + 30;
+                StartWatch();
             }
             if (state == PlayModeStateChange.ExitingPlayMode)
             {
@@ -34,9 +29,22 @@ public static class MetroForgeAcceptance
         EditorApplication.update += Watch;
     }
 
+    private static void StartWatch()
+    {
+        if (started > 0) return;
+        started = EditorApplication.timeSinceStartup;
+        lastReport = started - 10;
+        timeout = 210;
+        foreach (var arg in System.Environment.GetCommandLineArgs())
+            if (arg.StartsWith("-acceptanceTimeout=") && double.TryParse(arg.Substring(19), out var seconds))
+                timeout = System.Math.Clamp(seconds, 15, 600) + 30;
+    }
+
     private static void Watch()
     {
-        if (started <= 0 || !EditorApplication.isPlaying) return;
+        if (!EditorApplication.isPlaying || !SessionState.GetBool(WatchKey, false)) return;
+        // Domain reload can initialize this class after EnteredPlayMode was dispatched.
+        StartWatch();
         var elapsed = EditorApplication.timeSinceStartup - started;
         if (EditorApplication.timeSinceStartup - lastReport >= 10)
         {

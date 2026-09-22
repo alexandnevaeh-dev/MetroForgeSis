@@ -666,3 +666,7 @@ Graphics-enabled isolated Unity PID14588 completed EMBER_SEAL_VALIDATION_OK, inc
 ### Ember Seal unlock integration staged
 Customization now grants ember_seal in room003, records it as enabled combat ability in DNA/runtime and optional progression node, and retains existing route. Applied twice to isolated chain-customization-check. Full GameDNASchema and ProgressionGraphSchema passed; each grapple/ember_seal ability and pickup occurs once; gameplay root/StreamingAssets JSON equal. Not applied to live PID22224. Native pickup reachability and actual charged combat in generated room remain unverified. Full game process still alive but no further acceptance output beyond spawn/apply_d; no watchdog result yet, do not infer pass.
 
+
+### Full-game diagnostic retry with current abilities
+Watchdog now self-starts from EditorApplication.update when armed and playing, covering missed EnteredPlayMode registration across domain reload; Editor compilation passed. Identified and deliberately stopped owned incomplete PID22224 after repeated first-input-only result, preserving chain-lesson-playtest.log; this is not a pass. Applied latest customization/runtime including Ember Seal and grapple input coverage. Started graphics-enabled batch Unity PID24796, batch-full-playtest.log, separate E: batch-full-save; full600s runtime limit plus30s Editor watchdog. Do not restart while live without new diagnostic evidence. Captures will overwrite qa names; use current log/timestamps to distinguish freshness.
+
