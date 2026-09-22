@@ -269,6 +269,7 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
 
   // ---- Pit: a real gap in the main floor the player must jump or dash across. ----
   const pitEligible =
+    !connections.some((c) => c.direction === 'up') &&
     !hasWeakFloorGap &&
     hasHorizontalReachAbility &&
     (archetype === 'challenge' ||
@@ -525,6 +526,44 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
   if (archetype === 'miniboss') {
     const midCol = Math.max(3, Math.floor(cols * 0.38));
     placePlatform(cells, platforms, tileSize, midCol, 6, platMaxRow);
+  }
+
+  // A ceiling opening needs a complete ascent regardless of the room's archetype.
+  // Keep solid platforms in alternating columns so the player can jump beside their
+  // undersides. Reusing the archetype's decorative platforms can obstruct this shaft.
+  if (upDoor) {
+    const riseRows = Math.floor((jumpApexPx(stats) * 0.82) / tileSize);
+    const minimumRows = Math.ceil(PLAYER_CLEARANCE_PX / tileSize) + 1;
+    const platformCols = Math.max(2, Math.ceil(48 / tileSize));
+    const gapCols = Math.max(2, Math.ceil(32 / tileSize));
+    const centerCol = Math.floor(cols / 2);
+    const leftCol = centerCol - Math.ceil(gapCols / 2) - platformCols;
+    const rightCol = centerCol + Math.floor(gapCols / 2);
+    if (riseRows < minimumRows || 2 * riseRows * tileSize - tileSize - 48 < stats.jumpHeight ||
+        leftCol < Math.floor(cols * 0.4) || rightCol + platformCols > Math.floor(cols * 0.6) + 1) {
+      throw new Error('Ceiling exit needs more jump height or room width for a clear ascent');
+    }
+    const rise = riseRows * tileSize;
+    const jumpVelocity = Math.sqrt(2 * stats.gravity * stats.jumpHeight);
+    const landingTime = (jumpVelocity + Math.sqrt(jumpVelocity ** 2 - 2 * stats.gravity * rise)) / stats.gravity;
+    const centerDistance = (platformCols + gapCols) * tileSize;
+    if (!Number.isFinite(landingTime) || centerDistance > stats.walkSpeed * landingTime * 0.8) {
+      throw new Error('Ceiling ascent exceeds configured horizontal jump reach');
+    }
+    const occupied = new Set<string>();
+    for (const platform of platforms) {
+      for (let col = platform.x / tileSize; col < (platform.x + platform.width) / tileSize; col++) {
+        occupied.add(`${col},${platform.y / tileSize}`);
+      }
+    }
+    for (let i = cells.length - 1; i >= 0; i--) {
+      if (occupied.has(`${cells[i]!.x},${cells[i]!.y}`)) cells.splice(i, 1);
+    }
+    platforms.length = 0;
+    let side = 0;
+    for (let row = floorRow - riseRows; row >= 2; row -= riseRows) {
+      placePlatform(cells, platforms, tileSize, side++ % 2 === 0 ? leftCol : rightCol, platformCols, row);
+    }
   }
 
   const composed = composePlayableVisuals({

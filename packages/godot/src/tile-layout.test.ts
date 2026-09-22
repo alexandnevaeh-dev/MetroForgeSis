@@ -357,3 +357,46 @@ describe('buildRoomShellColliders', () => {
     expect(left.width + right.width).toBeLessThan(width);
   });
 });
+
+
+describe('ceiling exit ascent', () => {
+  it('connects a tall ability gate room to its ceiling with clear alternating ledges', () => {
+    const input = { ...BASE, height: 780, archetype: 'ability_gate', connections: [{ direction: 'up' as const, requirements: [] }] };
+    const { platforms, pits } = buildRoomTileCells(input);
+    expect(pits).toHaveLength(0);
+    expect(platforms.length).toBeGreaterThan(5);
+    let previousY = floorTopPx(input.height, input.tileSize);
+    for (const [index, platform] of platforms.entries()) {
+      const rise = previousY - platform.y;
+      expect(rise).toBeLessThanOrEqual(DEFAULT_MOVEMENT_STATS.jumpHeight * 0.82);
+      expect(2 * rise - platform.height - 48).toBeGreaterThanOrEqual(DEFAULT_MOVEMENT_STATS.jumpHeight);
+      expect(rise - platform.height).toBeGreaterThanOrEqual(64);
+      if (index > 0) {
+        const prior = platforms[index - 1]!;
+        expect(platform.x + platform.width <= prior.x || prior.x + prior.width <= platform.x).toBe(true);
+      }
+      previousY = platform.y;
+    }
+    expect(previousY - 32).toBeLessThan(DEFAULT_MOVEMENT_STATS.jumpHeight);
+  });
+
+  it.each([640, 720, 800, 960])('keeps upper ledges inside the ceiling opening at width %i', (width) => {
+    const { platforms } = buildRoomTileCells({ ...BASE, width, height: 780,
+      connections: [{ direction: 'up', requirements: [] }] });
+    const cols = width / BASE.tileSize;
+    for (const platform of platforms) {
+      expect(platform.x).toBeGreaterThanOrEqual(Math.floor(cols * 0.4) * BASE.tileSize);
+      expect(platform.x + platform.width).toBeLessThanOrEqual((Math.floor(cols * 0.6) + 1) * BASE.tileSize);
+    }
+  });
+
+  it('rejects narrow ceiling openings instead of placing ledges under the solid ceiling', () => {
+    expect(() => buildRoomTileCells({ ...BASE, width: 480,
+      connections: [{ direction: 'up', requirements: [] }] })).toThrow(/Ceiling exit/);
+  });
+
+  it('rejects an ascent whose configured jump cannot clear the player body', () => {
+    expect(() => buildRoomTileCells({ ...BASE, connections: [{ direction: 'up', requirements: [] }],
+      movement: { ...DEFAULT_MOVEMENT_STATS, jumpHeight: 40 } })).toThrow(/Ceiling exit/);
+  });
+});
