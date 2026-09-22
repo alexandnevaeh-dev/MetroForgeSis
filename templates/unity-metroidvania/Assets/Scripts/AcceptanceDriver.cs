@@ -38,6 +38,7 @@ public class AcceptanceDriver : MonoBehaviour
     private readonly HashSet<string> _roomsVisited = new HashSet<string>();
     private readonly List<string> _events = new List<string>();
     private readonly List<string> _captures = new List<string>();
+    private readonly HashSet<string> _grappleRoomsAttempted = new HashSet<string>();
     private readonly HashSet<string> _capturedIds = new HashSet<string>();
     private readonly List<string> _notImplemented = new List<string>();
     private readonly Dictionary<string, string> _feature = new Dictionary<string, string>();
@@ -164,6 +165,8 @@ public class AcceptanceDriver : MonoBehaviour
             yield break;
         }
 
+        foreach (var ability in _game.Pack.abilities)
+            if (ability.id == "grapple") _feature["grapple_activation"] = "pending";
         EnsureKeyboard();
         _lastRoom = _game.CurrentRoomId;
         _lastRoomChangeAt = Time.unscaledTime;
@@ -276,6 +279,34 @@ public class AcceptanceDriver : MonoBehaviour
             }
             if (AllConfiguredAbilitiesUnlocked())
                 _feature["abilities"] = "passed";
+            if (_feature.TryGetValue("grapple_activation", out var grappleResult) && grappleResult == "pending" &&
+                _game.Player.Abilities.Contains("grapple") && !_game.Player.IsDashing &&
+                _game.CurrentRoom?.grappleAnchors != null && _game.CurrentRoom.grappleAnchors.Length > 0 &&
+                _grappleRoomsAttempted.Add(_game.CurrentRoomId))
+            {
+                _held.Clear();
+                var start = _game.Player.transform.position;
+                Pulse(KeyCode.L);
+                var observedPull = false;
+                var observedMotion = false;
+                var until = Time.unscaledTime + 0.3f;
+                while (Time.unscaledTime < until)
+                {
+                    yield return null;
+                    var chain = _game.Player.GetComponent<WraithChain>();
+                    if (chain != null && chain.IsPulling)
+                    {
+                        observedPull = true;
+                        observedMotion |= Vector3.Distance(start, _game.Player.transform.position) > 8f;
+                    }
+                }
+                Note("grapple_input pull=" + observedPull + " motion=" + observedMotion);
+                if (observedPull && observedMotion)
+                {
+                    _feature["grapple_activation"] = "passed";
+                    if (_captureEnabled) yield return Capture("player_grapple");
+                }
+            }
             if (_game.Player.Abilities.Contains("dash") || _game.Player.Abilities.Contains("phase"))
             {
                 Pulse(KeyCode.K);
@@ -317,6 +348,8 @@ public class AcceptanceDriver : MonoBehaviour
             }
         }
 
+        if (_feature.TryGetValue("grapple_activation", out var grappleStatus) && grappleStatus == "pending")
+            _feature["grapple_activation"] = "inconclusive";
         FinalizeTraversal();
         if (combatKilled)
             _feature["combat_kill"] = "passed";
@@ -628,6 +661,7 @@ public class AcceptanceDriver : MonoBehaviour
             case KeyCode.J: return UnityEngine.InputSystem.Key.J;
             case KeyCode.Z: return UnityEngine.InputSystem.Key.Z;
             case KeyCode.K: return UnityEngine.InputSystem.Key.K;
+            case KeyCode.L: return UnityEngine.InputSystem.Key.L;
             case KeyCode.LeftShift: return UnityEngine.InputSystem.Key.LeftShift;
             default: return UnityEngine.InputSystem.Key.None;
         }

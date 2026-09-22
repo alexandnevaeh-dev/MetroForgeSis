@@ -628,3 +628,7 @@ Inspected UE5.8 EpicGames.Build/Unreal.cs GetUserSettingDirectory: Windows uses 
 ### Reachable grapple selection fix
 WraithChain shares CanAttach guards between explicit attachment and TryAttachNearest. Selection ignores blocked/disabled/unavailable anchors before choosing nearest, so a blocked near anchor cannot mask a reachable farther anchor. Runtime Roslyn compilation session91857 exit0. Added four regression checks to WraithChainValidationDriver: blocked-nearest fallback, actual pull direction, destroyed-target release, hidden tether after destruction. New cases not yet compiled/run natively; existing13 native passes predate changes. Live game PID22224 still importing with CPU advancing; source fix not applied to active project.
 
+
+### Grapple input coverage prepared
+AcceptanceDriver now maps L and attempts grapple in authored anchor rooms after unlock, with movement keys cleared. It separately records grapple_activation only after observing IsPulling and displacement during pull; records inconclusive when unobserved, never equates this with completed traversal/landing. Captures player_grapple when observed. Runtime Roslyn compile passed exit0; native run pending, NOT copied into active PID22224. Current GPU free7603MiB but system free RAM about2.9GiB while Unity imports; resource pressure is a possible contributor to prior OOM, not proven cause. No render retry launched.
+
