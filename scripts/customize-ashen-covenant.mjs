@@ -1,7 +1,13 @@
 import {readFileSync,writeFileSync,copyFileSync,mkdirSync,existsSync} from 'node:fs';
-import {join,resolve} from 'node:path';
+import {join,resolve,dirname} from 'node:path';
+import {fileURLToPath} from 'node:url';
 import assert from 'node:assert/strict';
-const root=resolve(process.argv[2]||'GeneratedGames/ashen-covenant-sideview-unity');
+const repository=resolve(dirname(fileURLToPath(import.meta.url)),'..');
+const root=resolve(process.argv[2]||join(repository,'GeneratedGames/ashen-covenant-sideview-unity'));
+const runtimeFiles=['PlayerActor.cs','EnemyActor.cs','EmberSeal.cs','WraithChain.cs','WraithAnchor.cs','GameplayData.cs','GameBootstrap.cs','AcceptanceDriver.cs'];
+const runtimeDirectory=join(repository,'templates/unity-metroidvania/Assets/Scripts');
+// Check inputs before modifying the generated project's data.
+for(const file of runtimeFiles)assert.ok(existsSync(join(runtimeDirectory,file)),`Missing runtime template: ${file}`);
 const meta=JSON.parse(readFileSync(join(root,'project.json'),'utf8'));
 assert.equal(meta.slug,'ashen-covenant-sideview-unity'); assert.equal(meta.engine,'unity');
 const backup=join(root,'.metroforge','before-veil-step'); mkdirSync(backup,{recursive:true});
@@ -68,6 +74,6 @@ for(const file of ['game_dna.json','world_graph.json','data/world/world_graph.js
  }
  save(file,data);
 }
-for(const file of ['PlayerActor.cs','EnemyActor.cs','EmberSeal.cs','WraithChain.cs','WraithAnchor.cs','GameplayData.cs','GameBootstrap.cs','AcceptanceDriver.cs'])copyFileSync('templates/unity-metroidvania/Assets/Scripts/'+file,join(root,'Assets/Scripts/'+file));
+for(const file of runtimeFiles)copyFileSync(join(runtimeDirectory,file),join(root,'Assets/Scripts/'+file));
 writeFileSync(join(root,'customization-status.json'),JSON.stringify({title:'Ashen Covenant',ability:'phase',displayName:'Veil Step',runtimeTestedInIsolatedFixture:true,fullGameRuntimeValidated:false,priorGenerationProofsStale:true,grappleLessonNativeValidated:false,pending:['Wraith Chain lesson placement and unlock validation','new posed animation sets','new production art','Wraith Chain','Ember Seal','NPC dialogue','boss phases','full route regression'],updatedAt:new Date().toISOString()},null,2));
 console.log('Integrated Veil Step pickup and gate references; retained dash animation clips. Full-game regression pending.');
