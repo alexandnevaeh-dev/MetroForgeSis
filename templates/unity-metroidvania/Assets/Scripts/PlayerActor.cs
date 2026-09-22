@@ -35,6 +35,7 @@ public class PlayerActor : MonoBehaviour
     public bool IsVeilStepping => _veilStep && _dashTime > 0f;
     private bool _grounded;
     private bool _wasGrounded;
+    private bool _airJumpUsed;
     private float _clipLock;
     private float _health = 100f;
     private readonly HashSet<EnemyActor> _hitThisSwing = new HashSet<EnemyActor>();
@@ -49,6 +50,9 @@ public class PlayerActor : MonoBehaviour
     public void Revive(float health = -1f)
     {
         Dead = false;
+        _airJumpUsed = false;
+        _jumpBuffer = 0f;
+        _coyote = 0f;
         _health = health > 0f ? health : MaxHealth;
         _invuln = 0.4f;
         _dashTime = 0f;
@@ -191,10 +195,14 @@ public class PlayerActor : MonoBehaviour
             ? _body.linearVelocity.x
             : Mathf.MoveTowards(_body.linearVelocity.x, target, accel * Time.fixedDeltaTime);
         var vy = Mathf.Max(-Pack.movement.maxFallSpeed, _body.linearVelocity.y);
-        if (_jumpBuffer > 0f && _coyote > 0f)
+        var groundJump = _coyote > 0f;
+        var airJump = !_grounded && !_airJumpUsed && Abilities.Contains("double_jump");
+        if (_jumpBuffer > 0f && (groundJump || airJump))
         {
             var jumpV = Mathf.Sqrt(2f * Pack.movement.gravity * Pack.movement.jumpHeight);
             vy = jumpV;
+            if (!groundJump) _airJumpUsed = true;
+            _grounded = false;
             _jumpBuffer = 0f;
             _coyote = 0f;
             LockClip("jump_start", 0.12f);
@@ -263,8 +271,11 @@ public class PlayerActor : MonoBehaviour
     {
         foreach (var contact in collision.contacts)
         {
-            if (contact.normal.y > 0.5f)
+            if (contact.normal.y > 0.5f && _body.linearVelocity.y <= 0.1f)
+            {
                 _grounded = true;
+                _airJumpUsed = false;
+            }
         }
     }
 
