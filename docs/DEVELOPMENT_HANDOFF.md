@@ -682,3 +682,11 @@ Live batch PID24796 remains in room018 while progression-runtime.jsonl recorded 
 ### Native room recovery regression passed
 PID23364 completed ROOM_RECOVERY_VALIDATION_OK with all9 checks: bootstrap, actual physics fall crossing lower bound despite combat invulnerability, health restored, checkpoint position, save file, doorway margin tolerated, horizontal escape recovery/checkpoint, single death dispatch. Diagnostic initial placements, not normal-input route proof. room-recovery-native.log on E:. Acceptance now logs y and counts OnDied events (instant respawn previously hid deaths); runtime Roslyn compile passed. Fullgame PID24796 remains on old snapshot and already demonstrated escape, so no fullroute pass claimed.
 
+
+### Full-route timeout archived; recovery rerun active
+PID24796 terminal with acceptance-result.json FAIL timeout600s at room018. Its containment=passed field is invalidated by recorded x far beyond bounds; do not cite that field as proof. Copied entire qa to Recovery-Audit/ashen-covenant/before-recovery-full-route without overwrite, preserving captures. Applied latest runtime/customization including recovery and early grapple probe. Graphics-enabled batch PID25960 active; recovery-full-playtest.log, separate recovery-full-save. Await actual native route result; no restart based on observation timeout.
+
+
+### Stationary enemy and attack-height native regression passed
+EnemyActor now ConfigureMovement(stationary) anchors static body, keeps idle pose outside attacks, mobile modes retain dynamic movement. GameBootstrap calls configured movement; customization copies EnemyActor. Attack checks 2D center distance instead of x alone. Native PID21892 terminal ENEMY_MOVEMENT_VALIDATION_OK, all6 checks passed: anchored/stays put, no vertical-gap hit, nearby damage, mobile movement, switching stops. Log enemy-movement-native.log. Source not applied to active full run. PID25960 progression at room018 shows respawns (deaths23), y40 and bounded x, demonstrating recovery but repeated floor-gap falls. Next: input-only gap jumping in acceptance and enemy edge avoidance, not deleting gaps or warping across them. Fullroute remains incomplete.
+

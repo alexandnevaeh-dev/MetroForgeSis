@@ -17,6 +17,7 @@ public class EnemyActor : MonoBehaviour
     private float _attackCooldown;
     private float _clipLock;
     private bool _dead;
+    private bool stationary;
     private PlayerActor _player;
 
     private void Awake()
@@ -27,6 +28,13 @@ public class EnemyActor : MonoBehaviour
         var box = GetComponent<BoxCollider2D>();
         box.size = new Vector2(28f, 28f);
         box.offset = new Vector2(0f, 14f);
+    }
+
+    public void ConfigureMovement(string movement)
+    {
+        stationary = string.Equals(movement, "stationary", System.StringComparison.OrdinalIgnoreCase);
+        _body.linearVelocity = Vector2.zero;
+        _body.bodyType = stationary ? RigidbodyType2D.Static : RigidbodyType2D.Dynamic;
     }
 
     public void Bind(PlayerActor player)
@@ -59,7 +67,9 @@ public class EnemyActor : MonoBehaviour
         }
 
         var delta = _player.transform.position.x - transform.position.x;
-        if (Mathf.Abs(delta) < 42f && _attackCooldown <= 0f)
+        var attackOffset = (Vector2)_player.transform.position + new Vector2(0, 24) -
+            ((Vector2)transform.position + new Vector2(0, 14));
+        if (attackOffset.sqrMagnitude < 42f * 42f && _attackCooldown <= 0f)
         {
             _attackCooldown = 0.8f;
             _clipLock = 0.4f;
@@ -72,11 +82,12 @@ public class EnemyActor : MonoBehaviour
         if (_animator != null)
             _animator.FlipX = _dir < 0f;
         if (_clipLock <= 0f)
-            _animator?.Play("walk");
+            _animator?.Play(stationary ? "idle" : "walk");
     }
 
     private void FixedUpdate()
     {
+        if (stationary) return;
         if (_dead)
         {
             _body.linearVelocity = Vector2.zero;

@@ -939,6 +939,7 @@ public class GameBootstrap : MonoBehaviour
         sheet.LoadClips(Pack.sprites, spec.id, _streamingRoot);
         var enemy = go.AddComponent<EnemyActor>();
         enemy.EnemyId = spec.id;
+        enemy.ConfigureMovement(spec.movement);
         enemy.Health = spec.health > 0 ? spec.health : 30f;
         enemy.Damage = spec.damage > 0 ? spec.damage : 8f;
         enemy.Bind(_player);
