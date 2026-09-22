@@ -39,7 +39,16 @@ for(const file of ['game_dna.json','world_graph.json','data/world/world_graph.js
   assert.ok(lesson); lesson.metadata ??= {};
   lesson.metadata.grantsAbilities=[...new Set([...(lesson.metadata.grantsAbilities||[]),'grapple'])];
  }
+ if(file==='progression_graph.json'){
+  data.abilities=[...new Set([...data.abilities,'grapple'])];
+  if(!data.nodes.some(n=>n.id==='ability_grapple'))
+   data.nodes.push({id:'ability_grapple',type:'ability',label:'Wraith Chain',required:false});
+  if(!data.edges.some(e=>e.from===data.startNodeId&&e.to==='ability_grapple'))
+   data.edges.push({from:data.startNodeId,to:'ability_grapple',requires:[]});
+ }
  if(file==='game_dna.json'){
+  if(!data.abilities.some(a=>a.id==='grapple'))
+   data.abilities.push({id:'grapple',name:'Wraith Chain',category:'movement',enabled:true});
   data.identity.title='Ashen Covenant'; data.narrative.protagonist='The Emberbound Knight';
   for(const ability of data.abilities)if(ability.id==='phase')ability.name='Veil Step';
  }

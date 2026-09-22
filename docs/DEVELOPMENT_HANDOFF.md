@@ -632,3 +632,11 @@ WraithChain shares CanAttach guards between explicit attachment and TryAttachNea
 ### Grapple input coverage prepared
 AcceptanceDriver now maps L and attempts grapple in authored anchor rooms after unlock, with movement keys cleared. It separately records grapple_activation only after observing IsPulling and displacement during pull; records inconclusive when unobserved, never equates this with completed traversal/landing. Captures player_grapple when observed. Runtime Roslyn compile passed exit0; native run pending, NOT copied into active PID22224. Current GPU free7603MiB but system free RAM about2.9GiB while Unity imports; resource pressure is a possible contributor to prior OOM, not proven cause. No render retry launched.
 
+
+### Official SDK installer staged; storage preference pending
+Downloaded official Microsoft SDK26100 installer from download.microsoft.com to Recovery-Audit/installers/windows-sdk-26100/winsdksetup.exe. Authenticode Valid, Microsoft Corporation signer. Not executed/installed. Official Microsoft installation-location guidance warns some tools/SDKs use system drive regardless of selected location. Asked user asynchronously whether mandatory C: files are permitted; default remains strict E-only until explicit reply. Current C free~8.6GiB, E free~1.58TiB. No permission to change registry/folder locations inferred. Unity PID22224 has reached spawn capture and input application, no final result yet.
+
+
+### Wraith Chain canonical metadata synchronized
+Customization now adds enabled movement ability grapple to game_dna and an optional Wraith Chain ability node plus start edge to progression_graph. Existing critical route unchanged because lesson currently introduces optional traversal. Ran customization twice on chain-customization-check fixture; production ProgressionGraphSchema parsed successfully, exact single entries asserted across DNA, progression ability/node/edge, and both world graphs. Active game PID22224 not modified. Native reachability/activation still pending. SDK storage permission unanswered; do not install.
+
