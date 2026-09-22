@@ -2,6 +2,7 @@ import {readFileSync,writeFileSync,copyFileSync,mkdirSync,existsSync} from 'node
 import {join,resolve,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import assert from 'node:assert/strict';
+import {buildRoomTileCells,floorTopPx} from '../packages/godot/dist/tile-layout.js';
 const repository=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const root=resolve(process.argv[2]||join(repository,'GeneratedGames/ashen-covenant-sideview-unity'));
 const runtimeFiles=['PlayerActor.cs','EnemyActor.cs','EmberSeal.cs','WraithChain.cs','WraithAnchor.cs','GameplayData.cs','GameBootstrap.cs','AcceptanceDriver.cs'];
@@ -17,6 +18,16 @@ const pack=JSON.parse(readFileSync(join(root,'gameplay.json'),'utf8'));
 pack.title='Ashen Covenant';
 for(const ability of pack.abilities)if(ability.id==='dash'||ability.id==='phase'){ability.id='phase';ability.name='Veil Step';}
 pack.rooms=rename(pack.rooms);
+// Reuse the shared generator for ceiling routes; keep authored doors, gates and entities.
+for(const room of pack.rooms.filter(r=>r.doors?.some(d=>d.direction==='up'))){
+ const layout=buildRoomTileCells({width:room.width,height:room.height,tileSize:room.tileSize,
+  archetype:room.archetype,connections:room.doors,movement:pack.movement,seed:9212040});
+ assert.equal(room.floorTop,floorTopPx(room.height,room.tileSize),'Review nonstandard floor before ascent migration');
+ room.solids=room.solids.filter(s=>!/^Platform_/.test(s.name)&&!/^FloorSeg/.test(s.name));
+ room.solids.push({name:'FloorSeg1',x:0,y:room.floorTop,width:room.width,height:room.tileSize*2},
+  ...layout.platforms.map((platform,index)=>({name:`Platform_${index}`,...platform})));
+}
+
 const world=JSON.parse(readFileSync(join(root,'world_graph.json'),'utf8'));
 // First traversal lesson: keep the existing route open while introducing chain control.
 const chainRoom=world.nodes.find(n=>n.id==='room_001');
