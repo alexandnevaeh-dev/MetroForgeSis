@@ -640,3 +640,11 @@ Downloaded official Microsoft SDK26100 installer from download.microsoft.com to 
 ### Wraith Chain canonical metadata synchronized
 Customization now adds enabled movement ability grapple to game_dna and an optional Wraith Chain ability node plus start edge to progression_graph. Existing critical route unchanged because lesson currently introduces optional traversal. Ran customization twice on chain-customization-check fixture; production ProgressionGraphSchema parsed successfully, exact single entries asserted across DNA, progression ability/node/edge, and both world graphs. Active game PID22224 not modified. Native reachability/activation still pending. SDK storage permission unanswered; do not install.
 
+
+### Ember Seal runtime first implementation
+Added EmberSeal component and PlayerActor lifecycle integration; Q charge/release, ember_seal unlock guard, 0.2s minimum hold, 0.8s full charge, 3s cooldown, scaled20-60damage/60-150radius, walls block, unique targets once, dash/grapple/death/disable/revive cancel channel, melee blocked while charging. Unity Roslyn ember-compile.rsp passed exit0. New EmberSealValidation/Driver native cases prepared but not yet compiled/run. No VFX/poses/unlock placement yet, not applied to active game. Changes uncommitted pending native validation. Earlier wraith-compile.rsp now needs EmberSeal source too because PlayerActor references it; use ember-compile.rsp.
+
+
+### Ember Seal native checks passed
+Isolated headless Unity PID3728 completed EMBER_SEAL_VALIDATION_OK: all12 checks passed (unlock, charge, tap cancel, charged release, unique target, exact damage, range, walls, cooldown, cooldown expiry, revive cancel). Direct component/physics tests, not keyboard/fullgame/visual evidence. Known UnityEditor.Search.SearchDatabase exception remains in log; no game-code exception attributed. ember-native.log saved on E:. Updated Wraith native regression launched PID24268, log wraith-updated-native.log; preserve process. Visible full game PID22224 unchanged.
+

@@ -19,6 +19,7 @@ public class PlayerActor : MonoBehaviour
 
     private Rigidbody2D _body;
     private WraithChain _wraithChain;
+    private EmberSeal _emberSeal;
     private BoxCollider2D _hurt;
     private BoxCollider2D _hit;
     private float _coyote;
@@ -53,6 +54,7 @@ public class PlayerActor : MonoBehaviour
         _dashTime = 0f;
         _veilStep = false;
         _wraithChain?.Cancel();
+        _emberSeal?.Cancel();
         _clipLock = 0f;
         animator?.Play("idle", true);
     }
@@ -62,6 +64,8 @@ public class PlayerActor : MonoBehaviour
         _body = GetComponent<Rigidbody2D>();
         _wraithChain = GetComponent<WraithChain>() ?? gameObject.AddComponent<WraithChain>();
         _wraithChain.Initialize(this);
+        _emberSeal = GetComponent<EmberSeal>() ?? gameObject.AddComponent<EmberSeal>();
+        _emberSeal.Initialize(this);
         _body.freezeRotation = true;
         _body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
         _body.interpolation = RigidbodyInterpolation2D.Interpolate;
@@ -123,7 +127,7 @@ public class PlayerActor : MonoBehaviour
             _dashTime -= Time.deltaTime;
         _clipLock = Mathf.Max(0f, _clipLock - Time.deltaTime);
 
-        if (attackPressed && _attackCooldown <= 0f)
+        if (attackPressed && _attackCooldown <= 0f && !_emberSeal.IsCharging)
             PerformAttack();
 
         if (dashPressed)

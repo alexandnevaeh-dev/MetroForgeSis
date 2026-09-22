@@ -54,6 +54,6 @@ for(const file of ['game_dna.json','world_graph.json','data/world/world_graph.js
  }
  save(file,data);
 }
-for(const file of ['PlayerActor.cs','WraithChain.cs','WraithAnchor.cs','GameplayData.cs','GameBootstrap.cs','AcceptanceDriver.cs'])copyFileSync('templates/unity-metroidvania/Assets/Scripts/'+file,join(root,'Assets/Scripts/'+file));
+for(const file of ['PlayerActor.cs','EmberSeal.cs','WraithChain.cs','WraithAnchor.cs','GameplayData.cs','GameBootstrap.cs','AcceptanceDriver.cs'])copyFileSync('templates/unity-metroidvania/Assets/Scripts/'+file,join(root,'Assets/Scripts/'+file));
 writeFileSync(join(root,'customization-status.json'),JSON.stringify({title:'Ashen Covenant',ability:'phase',displayName:'Veil Step',runtimeTestedInIsolatedFixture:true,fullGameRuntimeValidated:false,priorGenerationProofsStale:true,grappleLessonNativeValidated:false,pending:['Wraith Chain lesson placement and unlock validation','new posed animation sets','new production art','Wraith Chain','Ember Seal','NPC dialogue','boss phases','full route regression'],updatedAt:new Date().toISOString()},null,2));
 console.log('Integrated Veil Step pickup and gate references; retained dash animation clips. Full-game regression pending.');
