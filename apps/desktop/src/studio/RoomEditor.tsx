@@ -106,6 +106,7 @@ export function RoomEditor() {
   const [viewMode, setViewMode] = useState<ViewModeId>('visual');
   const [collision, setCollision] = useState<RoomCollisionPreview | null>(null);
   const [zoom, setZoom] = useState(100);
+  const [fitRoom, setFitRoom] = useState(false);
   const [selectedTile, setSelectedTile] = useState<TileCoord>({ col: 0, row: 2 });
   const [paintTool, setPaintTool] = useState<PaintTool>('paint');
   const [gridSnap, setGridSnap] = useState(true);
@@ -378,7 +379,7 @@ export function RoomEditor() {
                   >
                     Snap {gridSnap ? 'On' : 'Off'}
                   </Button>
-                  <EditorZoomControls zoom={zoom} onZoomChange={setZoom} onFit={() => setZoom(100)} />
+                  <EditorZoomControls zoom={zoom} onZoomChange={(value) => { setFitRoom(false); setZoom(value); }} onFit={() => { setFitRoom(true); setZoom(100); }} />
                   <Button
                     variant="primary"
                     size="sm"
@@ -506,7 +507,7 @@ export function RoomEditor() {
                       className="room-canvas-zoom"
                       style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top left' }}
                     >
-                      <RoomCanvasPreview room={selected} layer={viewMode} collision={collision} fill />
+                      <RoomCanvasPreview room={selected} layer={viewMode} collision={collision} fill fit={fitRoom} />
                     </div>
                   )}
                   <TilePaintEditor
@@ -549,6 +550,7 @@ export function RoomEditor() {
                         layer={viewMode}
                         collision={collision}
                         fill
+                        fit={fitRoom}
                         selectedEntityKey={selectedEntityKey}
                         onSelectEntity={setSelectedEntityKey}
                         onMoveEntity={(key, x, y) => {
@@ -900,6 +902,7 @@ function RoomCanvasPreview({
   collision,
   mini = false,
   fill = false,
+  fit = false,
   selectedEntityKey = null,
   onSelectEntity,
   onMoveEntity,
@@ -913,6 +916,7 @@ function RoomCanvasPreview({
   collision?: RoomCollisionPreview | null;
   mini?: boolean;
   fill?: boolean;
+  fit?: boolean;
   selectedEntityKey?: string | null;
   onSelectEntity?: (key: string | null) => void;
   onMoveEntity?: (key: string, x: number, y: number) => void;
@@ -955,10 +959,10 @@ function RoomCanvasPreview({
       <div className={`room-canvas-wrap${fill ? ' room-canvas-fill' : ''} room-canvas-pixelated`}>
         <svg
           className="room-canvas"
-          width={w * scale}
-          height={h * scale}
+          width={fit ? "100%" : w * scale}
+          height={fit ? undefined : h * scale}
           viewBox={`0 0 ${w} ${h}`}
-          style={{ imageRendering: 'pixelated' }}
+          style={{ imageRendering: 'pixelated', ...(fit ? { aspectRatio: w / h, display: 'block' } : {}) }}
           onMouseMove={(e) => {
             if (!dragEntityKey || !onMoveEntity) return;
             const { x, y } = clientToRoom(e.currentTarget, e.clientX, e.clientY);
@@ -1021,10 +1025,10 @@ function RoomCanvasPreview({
     <div className={`room-canvas-wrap${fill ? ' room-canvas-fill' : ''} room-canvas-pixelated`}>
       <svg
         className="room-canvas"
-        width={w * scale}
-        height={h * scale}
+        width={fit ? "100%" : w * scale}
+        height={fit ? undefined : h * scale}
         viewBox={`0 0 ${w} ${h}`}
-        style={{ imageRendering: 'pixelated' }}
+        style={{ imageRendering: 'pixelated', ...(fit ? { aspectRatio: w / h, display: 'block' } : {}) }}
       >
         <rect className="room-floor" x={0} y={0} width={w} height={h} />
         {hasPaint && (
