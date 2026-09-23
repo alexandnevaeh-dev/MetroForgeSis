@@ -12,7 +12,7 @@ const req=createRequire(root+'/apps/desktop/package.json');
  delete env.ELECTRON_RUN_AS_NODE;delete env.METROFORGE_DESKTOP_SMOKE;
  const app=await req('playwright')._electron.launch({executablePath:req('electron'),args:[root+'/apps/desktop'],cwd:out,env});
  try{
-  const page=await app.firstWindow();
+  const page=await app.firstWindow();page.setDefaultTimeout(15000);
   await page.waitForFunction(()=>Boolean(window.metroforge?.createEditableLoot));
   await page.evaluate(p=>sessionStorage.setItem('metroforge.activeProjectPath',p),project.replaceAll('/','\\'));
   await page.reload();
@@ -27,12 +27,31 @@ const req=createRequire(root+'/apps/desktop/package.json');
   await page.locator('aside.sidebar button.nav-item').first().click();await open();
   await page.getByText('Unsaved loot draft restored.',{exact:true}).waitFor();
   assert.equal(await page.getByLabel('Loot table name',{exact:true}).inputValue(),'UI crypt equipment');
+  const rootCatalog=project+'/data/loot/loot_tables.json';
+  const beforeConflict=fs.readFileSync(rootCatalog,'utf8');
+  fs.writeFileSync(rootCatalog,beforeConflict+'\n');
+  await page.getByRole('button',{name:'Create loot table',exact:true}).click();
+  await page.getByRole('status').filter({hasText:'changed; reload before saving'}).waitFor();
+  assert.equal(await page.getByLabel('Loot table name',{exact:true}).inputValue(),'UI crypt equipment');
+  assert.equal(await page.getByLabel('Drop 1 chance',{exact:true}).inputValue(),'0.45');
+  assert.equal(fs.readFileSync(rootCatalog,'utf8'),beforeConflict+'\n');
+  // Restore the fixture's original revision to verify a retry of the retained draft.
+  fs.writeFileSync(rootCatalog,beforeConflict);
   await page.getByRole('button',{name:'Create loot table',exact:true}).click();
   await page.getByText('Saved project and Unity runtime definitions. Restart Play Mode to load changes; rebuild exported players.',{exact:true}).waitFor();
   const uiId=await page.getByLabel('Loot table',{exact:true}).inputValue();
   await page.reload();await open();await page.getByLabel('Loot table',{exact:true}).selectOption(uiId);
   assert.equal(await page.getByLabel('Drop 1 chance',{exact:true}).inputValue(),'0.45');
   await page.screenshot({path:out+'/created-table.png',fullPage:true});
+  const beforeDiscard=fs.readFileSync(rootCatalog,'utf8');
+  await page.getByRole('button',{name:'New loot table',exact:true}).click();
+  await page.getByLabel('Loot table name',{exact:true}).fill('Discard me');
+  await page.getByRole('button',{name:'Discard loot changes',exact:true}).click();
+  assert.equal(await page.getByRole('button',{name:'Create loot table',exact:true}).count(),0);
+  await page.locator('aside.sidebar button.nav-item').first().click();await open();
+  assert.equal(await page.getByRole('button',{name:'Create loot table',exact:true}).count(),0);
+  assert.equal(fs.readFileSync(rootCatalog,'utf8'),beforeDiscard);
+
   const evidence=await page.evaluate(async project=>{
    const api=window.metroforge;
    const before=await api.readEditableLoot(project);
@@ -54,7 +73,7 @@ const req=createRequire(root+'/apps/desktop/package.json');
   await page.reload();await page.waitForFunction(()=>Boolean(window.metroforge?.readEditableLoot));
   const reopened=await page.evaluate(project=>window.metroforge.readEditableLoot(project),project);
   assert.deepEqual(reopened.tables,evidence.after.tables);
-  fs.writeFileSync(out+'/result.json',JSON.stringify({passed:true,project,scope:'Native Electron renderer/preload/IPC creation, duplicate/stale rejection, backup, disk/runtime equality and reload; UI create/name validation/navigation draft/save/reload also passed; no gameplay validation'},null,2));
+  fs.writeFileSync(out+'/result.json',JSON.stringify({passed:true,project,scope:'Native Electron renderer/preload/IPC creation, duplicate/stale rejection, backup, disk/runtime equality and reload; UI create/name validation/navigation draft/save/reload, stale-save draft retention/retry and discard also passed; no gameplay validation'},null,2));
   console.log('PASS native loot creation API:',out);
  }finally{
   const cleanup=setTimeout(()=>app.process().kill(),5000);
