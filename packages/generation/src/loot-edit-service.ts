@@ -13,12 +13,22 @@ function snapshot(project: string) {
   const mirrorText = existsSync(mirror) ? readFileSync(mirror, 'utf8') : null;
   if (mirrorText !== null && JSON.stringify(JSON.parse(mirrorText)) !== JSON.stringify(JSON.parse(original)))
     throw new Error('Loot runtime copies differ; reconcile them before editing');
+  const referenceMirrors = [
+    ['items/items.json', itemText],
+    ['enemies/enemies.json', enemyText],
+  ].map(([relative, source]) => {
+    const runtimeFile = join(project, 'Assets', 'StreamingAssets', 'data', relative!);
+    const runtimeText = existsSync(runtimeFile) ? readFileSync(runtimeFile, 'utf8') : null;
+    if (runtimeText !== null && JSON.stringify(JSON.parse(runtimeText)) !== JSON.stringify(JSON.parse(source!)))
+      throw new Error(`Loot referenced runtime catalog differs: ${relative}; reconcile before editing`);
+    return runtimeText;
+  });
   const data = JSON.parse(original);
   const items = JSON.parse(itemText).items;
   const enemies = JSON.parse(enemyText).enemies;
   if (!Array.isArray(data.tables) || !Array.isArray(items) || !Array.isArray(enemies))
     throw new Error('Project loot, item or enemy catalog is invalid');
-  return { file, original, mirror, mirrorText, data, items, enemies, revision: digest(JSON.stringify([original, itemText, enemyText, mirrorText])) };
+  return { file, original, mirror, mirrorText, data, items, enemies, revision: digest(JSON.stringify([original, itemText, enemyText, mirrorText, referenceMirrors])) };
 }
 export function readEditableLoot(project: string) {
   const state = snapshot(project);

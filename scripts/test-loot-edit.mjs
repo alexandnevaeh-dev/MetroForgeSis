@@ -43,3 +43,21 @@ writeFileSync(runtime,JSON.stringify({tables:[]}));
 assert.throws(()=>readEditableLoot(dir),/copies differ/);
 assert.equal(readFileSync(file,'utf8'),mirrorBefore);
 console.log('PASS Unity loot mirror save, restart, stale runtime revision and divergent-copy protection');
+
+// Runtime references must agree with the editor, and participate in stale-edit detection.
+writeFileSync(runtime, mirrorBefore);
+for (const relative of ['items/items.json', 'enemies/enemies.json']) {
+  const target=dir+'/Assets/StreamingAssets/data/'+relative;
+  mkdirSync(target.slice(0,target.lastIndexOf('/')),{recursive:true});
+  const source=readFileSync(dir+'/data/'+relative,'utf8');
+  writeFileSync(target,source);
+  const state=readEditableLoot(dir);
+  writeFileSync(target,source+'\n');
+  assert.throws(()=>saveEditableLoot(dir,edited,state.revision),/changed/);
+  writeFileSync(target,relative.startsWith('items')?'{"items":[]}':'{"enemies":[]}');
+  assert.throws(()=>readEditableLoot(dir),/referenced runtime catalog differs/);
+  assert.equal(readFileSync(file,'utf8'),mirrorBefore);
+  assert.equal(readFileSync(runtime,'utf8'),mirrorBefore);
+  writeFileSync(target,source);
+}
+console.log('PASS runtime item/enemy reference parity and concurrent-change protection');
