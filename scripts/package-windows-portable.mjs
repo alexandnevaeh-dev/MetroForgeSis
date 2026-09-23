@@ -40,7 +40,7 @@ for(const [name,{source}] of packages){
 const resources=join(output,'resources/metroforge');mkdirSync(resources,{recursive:true});
 cpSync(join(root,'templates'),join(resources,'templates'),{recursive:true,filter});
 mkdirSync(join(resources,'workers'),{recursive:true});
-for(const name of ['diffusers_image_worker.py','diffusers_audio_worker.py','local_sprite_worker.py','openvino_direct_server.py','u2net_model.py','requirements-diffusers.txt'])cpSync(join(root,'workers',name),join(resources,'workers',name));
+for(const name of ['diffusers_image_worker.py','diffusers_audio_worker.py','local_sprite_worker.py','openvino_direct_server.py','u2net_model.py','foreground_isolation.py','requirements-diffusers.txt'])cpSync(join(root,'workers',name),join(resources,'workers',name));
 mkdirSync(join(resources,'config'),{recursive:true});
 for(const name of ['models.catalog.json','reference-profiles.json'])cpSync(join(root,'config',name),join(resources,'config',name));
 writeFileSync(join(output,'staging-report.json'),JSON.stringify({scope:'Development portable build; not a release acceptance',output,dependencies:[...packages].map(([name,p])=>({name,version:p.version})),excluded:['credentials','generated games','models','engine caches'],remaining:['standalone launch','generation and editing','native engine validation','visual approval']},null,2));

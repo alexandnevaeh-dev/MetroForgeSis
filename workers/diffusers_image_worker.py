@@ -914,6 +914,16 @@ def main() -> None:
         except Exception as exc:
             write_response({"ok": False, "error": str(exc), "provider": "diffusers"})
         return
+    if action == "segment_foreground":
+        try:
+            from foreground_isolation import segment_foreground
+            image = req.get("image_base64")
+            if not image:
+                raise ValueError("SEGMENT_FOREGROUND_MISSING_IMAGE")
+            write_response(segment_foreground(base64.b64decode(image, validate=True)))
+        except Exception as exc:
+            write_response({"ok": False, "error": str(exc), "provider": "diffusers"})
+        return
     if action == "prepare":
         try:
             write_response(prepare_openvino_model(req))
