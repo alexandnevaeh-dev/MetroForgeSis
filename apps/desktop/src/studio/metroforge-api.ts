@@ -158,6 +158,7 @@ export type DesktopConfig = {
 };
 
 export type ProjectPreview = {
+  engine?: 'godot' | 'unity' | 'unreal' | null;
   title?: string;
   profile?: string;
   error?: string;

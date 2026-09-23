@@ -27,6 +27,8 @@ function ProjectPreviewScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [godotError, setGodotError] = useState<string | null>(null);
+  const [launchMessage, setLaunchMessage] = useState<string | null>(null);
+  const supportsLiveControls = preview?.engine === 'godot';
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [launching, setLaunching] = useState(false);
   const [controlling, setControlling] = useState(false);
@@ -82,7 +84,7 @@ function ProjectPreviewScreen() {
   useEffect(() => {
     setPlaying(false);
     setRuntimeSessionId('');
-    if (!selectedPath || !window.metroforge?.getPlaytestSession) return;
+    if (!selectedPath || !supportsLiveControls || !window.metroforge?.getPlaytestSession) return;
     let cancelled = false;
     let timer: number | undefined;
     const tick = async () => {
@@ -122,7 +124,7 @@ function ProjectPreviewScreen() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [selectedPath]);
+  }, [selectedPath, supportsLiveControls]);
 
   const selectedAsset = preview?.assetPreviews?.find((a) => a.id === selectedAssetId);
 
@@ -132,25 +134,28 @@ function ProjectPreviewScreen() {
         compact
         eyebrow="Crucible Play"
         title="Playtest"
-        description="This launches the real Godot runtime for the selected project. The map below is topology, not a fake in-app game."
+        description="Launch the selected game in its engine. The map below shows room connections."
         actions={
           <div className="row preview-header-actions">
             <ProjectSelect />
             <Button
               variant="primary"
-              disabled={!selectedPath || controlling}
+              disabled={!selectedPath || !preview?.engine || controlling}
               onClick={async () => {
                 setGodotError(null);
-                if (!selectedPath || !window.metroforge?.playInGodot) return;
+                if (!selectedPath || !window.metroforge?.playProject) return;
                 if (!beginControl()) return;
                 setLaunching(true);
+                setLaunchMessage(null);
                 try {
-                  const r = await window.metroforge.playInGodot(selectedPath);
+                  const r = await window.metroforge.playProject(selectedPath);
                   if (!r.success) setGodotError(r.message);
-                  else {
+                  else if (supportsLiveControls) {
                     setPlaying(true);
                     setRuntimeSessionId('');
                     setPaused(false);
+                  } else {
+                    setLaunchMessage(r.message);
                   }
                 } catch (err) {
                   setGodotError(String(err));
@@ -163,7 +168,7 @@ function ProjectPreviewScreen() {
               {launching ? 'Launching…' : playing ? 'Restart' : 'Play'}
             </Button>
             <Button
-              disabled={!selectedPath || !playing || controlling}
+              disabled={!selectedPath || !supportsLiveControls || !playing || controlling}
               onClick={async () => {
                 if (!selectedPath || !beginControl()) return;
                 setGodotError(null);
@@ -186,7 +191,7 @@ function ProjectPreviewScreen() {
               Stop
             </Button>
             <Button
-              disabled={!selectedPath || !playing || controlling}
+              disabled={!selectedPath || !supportsLiveControls || !playing || controlling}
               title={pauseReason}
               onClick={async () => {
                 if (!selectedPath || !window.metroforge?.playtestCommand) return;
@@ -207,7 +212,7 @@ function ProjectPreviewScreen() {
               {paused ? 'Resume' : 'Pause'}
             </Button>
             <Button
-              disabled={!selectedPath}
+              disabled={!selectedPath || !supportsLiveControls}
               onClick={async () => {
                 setGodotError(null);
                 if (!selectedPath || !window.metroforge?.openInGodot) return;
@@ -219,7 +224,7 @@ function ProjectPreviewScreen() {
                 }
               }}
             >
-              Open editor
+              Open Godot editor
             </Button>
             <Button onClick={() => navigate('World')}>World Editor</Button>
             <Button onClick={() => navigate('Assets')}>Asset Gallery</Button>
@@ -231,6 +236,8 @@ function ProjectPreviewScreen() {
       {hasActiveProject && (
         <div className="preview-layout-p3">
           {godotError && <p className="result error" role="alert">{godotError}</p>}
+          {launchMessage && <p className="hint" role="status">{launchMessage}</p>}
+          {preview?.engine === 'unity' && <p className="hint">Unity opens in a separate editor window. Use its Play, Pause, and Stop controls. Save room edits and restart Play Mode to apply changes; live object inspection here is not connected to Unity yet.</p>}
           {sessionError && <p className="result error" role="alert">{sessionError}</p>}
           {playing && (
             <p className="hint" role="status">
