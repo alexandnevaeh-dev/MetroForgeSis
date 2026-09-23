@@ -4346,3 +4346,13 @@ select {
 .room-background-parallax { display: flex; align-items: center; gap: var(--space-2); }
 .room-background-parallax .mf-input { width: 80px; }
 .room-background-settings .hint { margin: var(--space-2) 0 0; }
+
+.unity-room-geometry { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: var(--space-2); }
+.unity-room-geometry > .row,
+.unity-room-geometry > p,
+.unity-room-geometry > details,
+.unity-room-geometry > fieldset { flex-shrink: 0; }
+.unity-room-geometry > p { margin: 0; }
+.unity-room-geometry > .room-canvas { flex: 1 1 180px; min-height: 160px; height: 0; display: block; }
+.room-background-disclosure > summary { cursor: pointer; color: var(--text-secondary); padding: var(--space-2) 0; }
+.room-background-disclosure[open] > summary { color: var(--text-primary); }

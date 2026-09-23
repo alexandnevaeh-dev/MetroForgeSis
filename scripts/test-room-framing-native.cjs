@@ -16,6 +16,7 @@ const root=path.resolve(__dirname,'..'),req=createRequire(root+'/apps/desktop/pa
   await open();
   await page.locator('image[data-room-background="far"]').waitFor({state:'attached'});
   assert.ok(await page.locator('image[data-room-background="far"]').evaluate(async element=>{const img=new Image();img.src=element.getAttribute('href');await img.decode();return img.naturalWidth>0;}));
+  await page.getByText('Distant background settings',{exact:true}).click();
   const control=page.getByLabel('Frame background to camera',{exact:true});await control.check();
   await page.getByLabel('Background parallax',{exact:true}).fill('0.25');
   await page.locator('.unity-room-geometry').getByRole('button',{name:'Undo room edit',exact:true}).click();assert.equal(await page.getByLabel('Background parallax',{exact:true}).inputValue(),'0.1');
@@ -26,8 +27,9 @@ const root=path.resolve(__dirname,'..'),req=createRequire(root+'/apps/desktop/pa
   const saved=JSON.parse(fs.readFileSync(project+'/gameplay.json','utf8'));const room=saved.rooms.find(r=>r.backgrounds?.farCameraRelative);
   assert.ok(room);assert.equal(room.backgrounds.farParallax,0.25);
   assert.equal(fs.readFileSync(project+'/gameplay.json','utf8'),fs.readFileSync(project+'/Assets/StreamingAssets/gameplay.json','utf8'));
+  await page.getByText('Distant background settings',{exact:true}).click();
   await page.screenshot({path:out+'/room-framing.png',fullPage:true});
-  await page.reload();await open();assert.equal(await control.isChecked(),true);assert.equal(await page.getByLabel('Background parallax',{exact:true}).inputValue(),'0.25');
+  await page.reload();await open();await page.getByText('Distant background settings',{exact:true}).click();assert.equal(await control.isChecked(),true);assert.equal(await page.getByLabel('Background parallax',{exact:true}).inputValue(),'0.25');
   fs.writeFileSync(out+'/result.json',JSON.stringify({passed:true,project,scope:'Native room framing controls, shared geometry/history, save/reload and runtime mirror; no live Unity preview'},null,2));console.log('PASS room framing UI:',out);
  }finally{const timer=setTimeout(()=>app.process().kill(),5000);try{await app.close();}finally{clearTimeout(timer);}}
 })().catch(error=>{console.error(error);process.exitCode=1;});

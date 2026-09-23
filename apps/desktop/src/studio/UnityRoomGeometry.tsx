@@ -45,13 +45,13 @@ export function UnityRoomGeometry({projectPath,roomId,width,height}: {projectPat
   </div>
   <p className="hint">{state?.dirty?'Unsaved room changes · retained while switching rooms.':'Unity room geometry'} · Select a solid to edit its position and size. Runtime restart required.</p>
   {error&&<p role="alert">{error}</p>}{notice&&<p role="status">{notice}</p>}
-  {framing&&<fieldset className="room-background-settings" disabled={saving}><legend>Distant background</legend><div className="room-background-fields">
+  {framing&&<details className="room-background-disclosure"><summary>Distant background settings</summary><fieldset className="room-background-settings" disabled={saving}><legend>Distant background</legend><div className="room-background-fields">
    <label className="room-background-toggle"><Input type="checkbox" aria-label="Frame background to camera" checked={framing.properties.farCameraRelative===true} onChange={e=>edit([{type:'property',objectId:framingId,key:'farCameraRelative',value:e.target.checked}])}/>Frame background to camera</label>
    <label className="room-background-parallax">Parallax amount<Input aria-label="Background parallax" type="number" min={0} max={1} step={0.05} disabled={framing.properties.farCameraRelative!==true} value={Number(framing.properties.farParallax)} onChange={e=>{const value=e.currentTarget.valueAsNumber;if(Number.isFinite(value)&&value>=0&&value<=1)edit([{type:'property',objectId:framingId,key:'farParallax',value}]);}}/></label>
    </div><p className="hint">0 follows the camera; 1 allows the most drift. Save and restart Unity to preview the background.</p>
-  </fieldset>}
+  </fieldset></details>}
   {backgroundStatus&&<p className="hint" role="status">{backgroundStatus}</p>}
-  <svg className="room-canvas" viewBox={`0 0 ${width} ${height}`} style={{width:'100%',maxHeight:560}} aria-label="Unity room geometry">
+  <svg className="room-canvas" viewBox={`0 0 ${width} ${height}`} style={{width:'100%'}} aria-label="Unity room geometry">
    <rect width={width} height={height} fill="#171c24" />
    {backgroundUrl&&<image data-room-background="far" href={backgroundUrl} x={-width*0.01} y={-height*0.01} width={width*1.02} height={height*1.02} preserveAspectRatio="xMidYMid slice" pointerEvents="none" />}
    {solids?.map(o=><rect key={o.id} role="button" tabIndex={0} aria-label={`Select ${o.properties.name??'solid'} ${o.id}`} x={o.x} y={o.y} width={Number(o.properties.width)} height={Number(o.properties.height)} fill={selected===o.id?'#70b5e8':'#6a5746'} stroke={selected===o.id?'#d9f0ff':'#bd8756'} strokeWidth={2} onClick={()=>setSelected(o.id)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSelected(o.id);}}}/>)}
