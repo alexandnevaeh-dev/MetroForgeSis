@@ -70,7 +70,7 @@ public class SpriteSheetPlayer : MonoBehaviour
                 frames = trimmed;
             }
             _clips[clip.clip] = frames;
-            _fps[clip.clip] = clip.fps > 0 ? clip.fps : 8f;
+            _fps[clip.clip] = ValidFps(clip.fps);
             _loop[clip.clip] = clip.loop;
         }
         var ms = (Time.realtimeSinceStartup - t0) * 1000f;
@@ -92,7 +92,7 @@ public class SpriteSheetPlayer : MonoBehaviour
             && _loop.TryGetValue(_current, out var previousLoop) && previousLoop
             && _loop.TryGetValue(clip, out var nextLoop) && nextLoop;
         if (preserveGait)
-            phase = (_frame + _elapsed * Mathf.Max(1f, _fps[_current])) / _clips[_current].Length;
+            phase = (_frame + _elapsed * ValidFps(_fps[_current])) / _clips[_current].Length;
         _current = clip;
         _elapsed = 0f;
         _frame = 0;
@@ -100,7 +100,7 @@ public class SpriteSheetPlayer : MonoBehaviour
         {
             var position = Mathf.Repeat(phase, 1f) * _clips[clip].Length;
             _frame = Mathf.FloorToInt(position);
-            _elapsed = (position - _frame) / Mathf.Max(1f, _fps[clip]);
+            _elapsed = (position - _frame) / ValidFps(_fps[clip]);
         }
         ApplyFrame();
     }
@@ -119,19 +119,28 @@ public class SpriteSheetPlayer : MonoBehaviour
         return requested;
     }
 
-    private void Update()
+    private static float ValidFps(float fps) =>
+        fps > 0f && !float.IsNaN(fps) && !float.IsInfinity(fps) ? fps : 8f;
+
+    private void Update() => Advance(Time.deltaTime);
+
+    private void Advance(float deltaTime)
     {
         if (string.IsNullOrEmpty(_current) || !_clips.TryGetValue(_current, out var frames) || frames.Length <= 1)
             return;
-        var fps = _fps.TryGetValue(_current, out var value) ? value : 8f;
-        _elapsed += Time.deltaTime * _playbackSpeed;
-        var frameTime = 1f / Mathf.Max(1f, fps);
-        while (_elapsed >= frameTime)
+        if (deltaTime < 0f || float.IsNaN(deltaTime) || float.IsInfinity(deltaTime))
+            return;
+        var fps = ValidFps(_fps.TryGetValue(_current, out var value) ? value : 8f);
+        // Constant-time advancement also handles long frames and very fast authored clips.
+        double frameTime = 1.0 / fps;
+        double elapsed = _elapsed + (double)deltaTime * _playbackSpeed;
+        double advanced = System.Math.Floor(elapsed / frameTime);
+        _elapsed = (float)(elapsed % frameTime);
+        if (advanced >= 1)
         {
-            _elapsed -= frameTime;
-            _frame++;
-            if (_frame >= frames.Length)
-                _frame = _loop.TryGetValue(_current, out var loop) && loop ? 0 : frames.Length - 1;
+            bool loop = _loop.TryGetValue(_current, out var looping) && looping;
+            _frame = loop ? (int)((_frame + advanced % frames.Length) % frames.Length)
+                : (int)System.Math.Min(frames.Length - 1, _frame + advanced);
         }
         ApplyFrame();
     }
