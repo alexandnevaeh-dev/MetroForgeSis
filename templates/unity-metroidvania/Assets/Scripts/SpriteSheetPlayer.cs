@@ -111,6 +111,7 @@ public class SpriteSheetPlayer : MonoBehaviour
     {
         if (requested == "run" && _clips.ContainsKey("walk")) return "walk";
         if (requested == "walk" && _clips.ContainsKey("run")) return "run";
+        if (requested == "wall_slide" && _clips.ContainsKey("fall")) return "fall";
         if (requested == "jump_start" && _clips.ContainsKey("jump")) return "jump";
         if (requested == "land" && _clips.ContainsKey("idle")) return "idle";
         if (_clips.ContainsKey("idle")) return "idle";

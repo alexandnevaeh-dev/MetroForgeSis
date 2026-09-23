@@ -197,7 +197,7 @@ public class PlayerActor : MonoBehaviour
         if (_clipLock <= 0f)
         {
             if (!_grounded)
-                animator?.Play(_body.linearVelocity.y > 20f ? "jump" : "fall");
+                animator?.Play(IsWallSliding ? "wall_slide" : _body.linearVelocity.y > 20f ? "jump" : "fall");
             else if (Mathf.Abs(_body.linearVelocity.x) > 20f)
                 animator?.Play(run ? "run" : "walk");
             else
