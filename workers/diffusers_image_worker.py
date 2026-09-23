@@ -759,7 +759,9 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
     dtype = _torch_dtype(device)
     total_start = time.perf_counter()
 
+    applied_conditioning = None
     if init_image is not None and conditioning_mode == "controlnet_canny":
+        applied_conditioning = "controlnet_canny"
         pipe = get_controlnet_pipeline(conditioning_base_model, device)
         control_image = _canny_control_image(init_image)
         _assert_prompt_budget(pipe, full_prompt, negative)
@@ -774,6 +776,7 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
             generator=generator,
         )
     elif init_image is not None and conditioning_mode == "ip_adapter":
+        applied_conditioning = "ip_adapter"
         pipe = get_ip_adapter_pipeline(conditioning_base_model, device)
         pipe.set_ip_adapter_scale(strength)
         _assert_prompt_budget(pipe, full_prompt, negative)
@@ -787,6 +790,7 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
             generator=generator,
         )
     elif init_image is not None and conditioning_mode:
+        applied_conditioning = "img2img"
         pipe = get_img2img_pipeline(model_id, device)
         generation_options = {"guidance_scale": 0.0} if "turbo" in model_id.lower() else {}
         _assert_prompt_budget(pipe, full_prompt, negative)
@@ -835,6 +839,8 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
         "model_id": model_id,
         "seed": seed,
         "conditioning_mode": conditioning_mode,
+        "effectiveConditioningMode": applied_conditioning,
+        "effectiveConditioningStrength": strength if applied_conditioning else None,
         "compute_backend": compute_backend,
         "device": device,
         "offload_strategy": _offload_strategy(device),

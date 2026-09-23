@@ -56,6 +56,8 @@ interface WorkerResponse {
   negative?: PromptSideBudget;
   anyOverflow?: boolean;
   promptBudget?: { positive: PromptSideBudget; negative: PromptSideBudget; anyOverflow: boolean; tokenizerClass?: string };
+  effectiveConditioningMode?: string | null;
+  effectiveConditioningStrength?: number | null;
   effectivePrompt?: string;
   effectiveNegativePrompt?: string;
   effectiveSteps?: number;
@@ -345,6 +347,8 @@ export class DiffusersProvider implements ImageGenerator {
         // worker — provenance should reflect what ran, not just what was requested, and a caller
         // that wants to reject a requested/effective discrepancy can compare these against the
         // request fields above without re-deriving them.
+        effectiveConditioningMode: res.effectiveConditioningMode,
+        effectiveConditioningStrength: res.effectiveConditioningStrength,
         effectivePrompt: res.effectivePrompt,
         effectiveNegativePrompt: res.effectiveNegativePrompt,
         effectiveSteps: res.effectiveSteps,
