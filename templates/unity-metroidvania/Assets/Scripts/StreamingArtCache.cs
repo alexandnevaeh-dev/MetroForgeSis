@@ -12,6 +12,8 @@ public static class StreamingArtCache
     private static readonly Dictionary<string, Sprite> Sprites = new Dictionary<string, Sprite>();
     private static readonly Dictionary<string, Sprite[]> Sheets = new Dictionary<string, Sprite[]>();
 
+    private static string AssetKey(string root, string rel) => Path.GetFullPath(Path.Combine(root, rel.Replace('/', Path.DirectorySeparatorChar))).Replace('\\', '/');
+
     public static float LastPreloadMs { get; private set; }
     public static int LastPreloadCount { get; private set; }
     public static int HitCount { get; private set; }
@@ -22,7 +24,7 @@ public static class StreamingArtCache
     {
         if (string.IsNullOrEmpty(rel))
             return null;
-        var key = rel.Replace('\\', '/') + "|" + filter + "|" + wrap;
+        var key = AssetKey(streamingRoot, rel) + "|" + filter + "|" + wrap;
         if (Textures.TryGetValue(key, out var cached) && cached != null)
         {
             HitCount++;
@@ -54,7 +56,7 @@ public static class StreamingArtCache
 
     public static Sprite GetSprite(string streamingRoot, string rel, Vector2 pivot, float ppu, FilterMode filter)
     {
-        var key = rel.Replace('\\', '/') + "|s|" + pivot.x + "," + pivot.y + "|" + ppu + "|" + filter;
+        var key = AssetKey(streamingRoot, rel) + "|s|" + pivot.x + "," + pivot.y + "|" + ppu + "|" + filter;
         if (Sprites.TryGetValue(key, out var cached) && cached != null)
             return cached;
         var tex = GetTexture(streamingRoot, rel, filter, TextureWrapMode.Clamp);
@@ -67,7 +69,7 @@ public static class StreamingArtCache
 
     public static Sprite GetSliced(string streamingRoot, string rel, Vector4 border)
     {
-        var key = rel.Replace('\\', '/') + "|9|" + border.x + "," + border.y + "," + border.z + "," + border.w;
+        var key = AssetKey(streamingRoot, rel) + "|9|" + border.x + "," + border.y + "," + border.z + "," + border.w;
         if (Sprites.TryGetValue(key, out var cached) && cached != null)
             return cached;
         var tex = GetTexture(streamingRoot, rel, FilterMode.Point, TextureWrapMode.Clamp);
@@ -88,7 +90,7 @@ public static class StreamingArtCache
     public static Sprite[] GetSheet(string streamingRoot, string rel, int frameWidth, int frameHeight, Vector2 pivot, FilterMode filter, float pixelsPerUnit = 1f)
     {
         var ppu = float.IsNaN(pixelsPerUnit) || float.IsInfinity(pixelsPerUnit) || pixelsPerUnit <= 0f ? 1f : pixelsPerUnit;
-        var key = ppu.ToString(System.Globalization.CultureInfo.InvariantCulture) + "|" + rel.Replace('\\', '/') + "|sheet|" + frameWidth + "x" + frameHeight + "|" + pivot.x + "," + pivot.y + "|" + filter;
+        var key = ppu.ToString(System.Globalization.CultureInfo.InvariantCulture) + "|" + AssetKey(streamingRoot, rel) + "|sheet|" + frameWidth + "x" + frameHeight + "|" + pivot.x + "," + pivot.y + "|" + filter;
         if (Sheets.TryGetValue(key, out var cached) && cached != null)
             return cached;
         var tex = GetTexture(streamingRoot, rel, filter, TextureWrapMode.Clamp);

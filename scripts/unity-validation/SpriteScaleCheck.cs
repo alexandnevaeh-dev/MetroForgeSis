@@ -20,6 +20,14 @@ public static class SpriteScaleCheck {
   Require(!ReferenceEquals(legacy,detailed),"Cache aliases different scales");
   Require(ReferenceEquals(detailed,StreamingArtCache.GetSheet(root,rel,64,64,pivot,FilterMode.Point,4)),"Scale cache miss");
   foreach(var value in new[]{0f,-1f,float.NaN,float.PositiveInfinity})Require(ReferenceEquals(legacy,StreamingArtCache.GetSheet(root,rel,64,64,pivot,FilterMode.Point,value)),"Invalid scale did not fall back");
+  var otherRoot=Path.Combine(Application.dataPath,"../sprite-scale-other-project");Directory.CreateDirectory(Path.Combine(otherRoot,"assets"));
+  var otherTexture=new Texture2D(256,64,TextureFormat.RGBA32,false);File.WriteAllBytes(Path.Combine(otherRoot,rel),otherTexture.EncodeToPNG());
+  var other=StreamingArtCache.GetSheet(otherRoot,rel,64,64,pivot,FilterMode.Point);
+  Require(other.Length==4&&!ReferenceEquals(other[0].texture,legacy[0].texture),"Cross-project sheet cache contamination");
+  Require(ReferenceEquals(legacy,StreamingArtCache.GetSheet(Path.Combine(root,"."),rel,64,64,pivot,FilterMode.Point)),"Equivalent root missed cache");
+  Require(StreamingArtCache.GetSprite(root,rel,pivot,1,FilterMode.Point).rect.width==128&&StreamingArtCache.GetSprite(otherRoot,rel,pivot,1,FilterMode.Point).rect.width==256,"Cross-project sprite contamination");
+  Require(StreamingArtCache.GetSliced(root,rel,Vector4.zero).rect.width==128&&StreamingArtCache.GetSliced(otherRoot,rel,Vector4.zero).rect.width==256,"Cross-project sliced contamination");
+  UnityEngine.Object.DestroyImmediate(otherTexture);
   var go=new GameObject("Scaled clip check");var renderer=go.AddComponent<SpriteRenderer>();var player=go.AddComponent<SpriteSheetPlayer>();go.SendMessage("Awake");
   player.LoadClips(new[]{new GameplaySpriteClip{ownerId="player",clip="idle",relativePath=rel,frameWidth=64,frameHeight=64,frameCount=2,pivotX=.5f,pivotY=0,pixelsPerUnit=4}},"player",root);
   player.Play("idle",true);Require(renderer.sprite!=null&&renderer.sprite.pixelsPerUnit==4,"Clip metadata not applied");
