@@ -1,3 +1,4 @@
+import { useState, useRef } from 'react';
 import type {
   ButtonHTMLAttributes,
   CSSProperties,
@@ -545,7 +546,7 @@ export function EditorWorkspace({
   className?: string;
 }) {
   const variantClass =
-    variant === 'world' ? 'world-workspace' : variant === 'dungeon' ? 'dungeon-workspace' : '';
+    variant === 'world'  ? 'world-workspace' : variant === 'dungeon' ? 'dungeon-workspace' : '';
   return (
     <div className={['editor-workspace', variantClass, className].filter(Boolean).join(' ')}>
       {children}
@@ -641,6 +642,37 @@ export function EditorWorkbench({
   variant?: 'default' | 'world' | 'dungeon' | 'preview';
   className?: string;
 }) {
+  const root = useRef<HTMLDivElement>(null);
+  const storageKey = `metroforge.editor-panes.${variant}.${className}`;
+  const [panes, setPanes] = useState<[number, number]>(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) ?? 'null');
+      if (Array.isArray(saved) && saved.length === 2 && saved.every(Number.isFinite))
+        return [Math.min(380, Math.max(180, saved[0])), Math.min(420, Math.max(220, saved[1]))];
+    } catch { /* Defaults remain usable when browser storage is unavailable. */ }
+    return [220, 300];
+  });
+  const drag = useRef<{side: number; x: number; width: number} | null>(null);
+  const resize = (side: number, value: number) => {
+    setPanes(current => {
+      const next: [number, number] = [...current];
+      const available = (root.current?.clientWidth ?? 1000) - current[1 - side]! - 300;
+      next[side] = Math.max(side === 0 ? 180 : 220, Math.min(side === 0 ? 380 : 420, available, value));
+      try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch { /* Optional preference. */ }
+      return next;
+    });
+  };
+  const separator = (side: number) => (
+    <div role="separator" aria-orientation="vertical" tabIndex={0}
+      aria-label={side === 0 ? 'Resize scene browser' : 'Resize inspector'}
+      aria-valuemin={side === 0 ? 180 : 220} aria-valuemax={side === 0 ? 380 : 420} aria-valuenow={panes[side]}
+      className={`editor-pane-divider editor-pane-divider-${side}`}
+      onPointerDown={event => { drag.current = {side, x: event.clientX, width: panes[side]!}; event.currentTarget.setPointerCapture(event.pointerId); }}
+      onPointerMove={event => { const active = drag.current; if(active?.side === side) resize(side, active.width + (event.clientX - active.x) * (side === 0 ? 1 : -1)); }}
+      onPointerUp={() => { drag.current = null; }} onPointerCancel={() => { drag.current = null; }}
+      onDoubleClick={() => resize(side, side === 0 ? 220 : 300)}
+      onKeyDown={event => { if(event.key === 'ArrowLeft' || event.key === 'ArrowRight') {event.preventDefault(); resize(side, panes[side]! + (event.key === 'ArrowRight' ? 16 : -16) * (side === 0 ? 1 : -1));} }} />
+  );
   const variantClass =
     variant === 'world'
       ? 'world-workspace'
@@ -650,8 +682,10 @@ export function EditorWorkbench({
           ? 'preview-workspace'
           : '';
   return (
-    <div className={['editor-workspace', 'editor-workbench', variantClass, className].filter(Boolean).join(' ')}>
+    <div ref={root} style={{'--editor-left-width': `${panes[0]}px`, '--editor-right-width': `${panes[1]}px`} as CSSProperties}
+      className={['editor-workspace', 'editor-workbench', variant === 'default' ? 'editor-workbench-resizable' : '', variantClass, className].filter(Boolean).join(' ')}>
       {children}
+      {variant === 'default' && <>{separator(0)}{separator(1)}</>}
     </div>
   );
 }

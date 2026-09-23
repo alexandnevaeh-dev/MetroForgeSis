@@ -370,7 +370,7 @@ export function GenerationStudio() {
   ).map((id) => ({ id, label: id }));
 
   return (
-    <section className="workspace-screen studio-layout">
+    <section className="workspace-screen studio-layout" data-generating={generating}>
       <ScreenHeader
         eyebrow="Create"
         title="Generation Studio"
@@ -491,7 +491,7 @@ export function GenerationStudio() {
           <div className="progress-meta">
             <span>{runningPhase ? phaseLabel(runningPhase.phase) : generating ? 'Running' : 'Idle'}</span>
           </div>
-          <div className="progress-bar-wrap" aria-label="Overall generation progress">
+          <div className="progress-bar-wrap" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={liveProgress} aria-label="Overall generation progress">
             <div className="progress-bar" style={{ width: `${liveProgress}%` }} />
           </div>
           {degradedPhases.length > 0 && (

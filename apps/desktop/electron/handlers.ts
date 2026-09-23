@@ -1609,7 +1609,7 @@ export function registerIpcHandlers(cwd: string): void {
   });
 
   ipcMain.handle('list-rooms', async (_event, projectPath: string) => {
-    assertProjectPath(projectPath, cwd);
+    assertReadableProjectPath(projectPath, cwd);
     const project = loadProjectContext(projectPath);
     return project.roomIds.map((id) => ({
       id,
@@ -1686,13 +1686,13 @@ export function registerIpcHandlers(cwd: string): void {
   }));
 
   ipcMain.handle('get-world-graph', async (_event, projectPath: string) => {
-    assertProjectPath(projectPath, cwd);
+    assertReadableProjectPath(projectPath, cwd);
     const raw = JSON.parse(readFileSync(join(projectPath, 'world_graph.json'), 'utf-8'));
     return WorldGraphSchema.parse(raw);
   });
 
   ipcMain.handle('get-overworld-map', async (_event, projectPath: string) => {
-    assertProjectPath(projectPath, cwd);
+    assertReadableProjectPath(projectPath, cwd);
     const overworld = readTopDownOverworld(projectPath);
     if (!overworld) return { error: 'No top-down overworld data for this project' };
 
@@ -1790,7 +1790,23 @@ export function registerIpcHandlers(cwd: string): void {
   });
 
   ipcMain.handle('get-room-collision', async (_event, projectPath: string, roomId: string) => {
-    assertProjectPath(projectPath, cwd);
+    assertReadableProjectPath(projectPath, cwd);
+    if (detectProjectEngine(projectPath) === 'unity') {
+      const packPath = join(projectPath, 'Assets', 'StreamingAssets', 'gameplay.json');
+      if (!existsSync(packPath)) return { error: 'Unity gameplay geometry has not been exported' };
+      const pack = JSON.parse(readFileSync(packPath, 'utf-8'));
+      const room = pack.rooms?.find((entry: { id: string }) => entry.id === roomId);
+      if (!room) return { error: `No exported Unity room: ${roomId}` };
+      const tileSize = room.tileSize ?? pack.tileSize ?? 16;
+      return {
+        roomId, tileSize,
+        widthTiles: Math.ceil(room.width / tileSize),
+        heightTiles: Math.ceil(room.height / tileSize),
+        rects: (room.solids ?? []).map((solid: { x: number; y: number; width: number; height: number }) => ({
+          x: solid.x, y: solid.y, w: solid.width, h: solid.height,
+        })),
+      };
+    }
     const overworld = readTopDownOverworld(projectPath);
     const area = overworld?.areas.find((a) => a.id === roomId);
     if (!area) return { error: `No collision data for room: ${roomId}` };
@@ -1968,7 +1984,7 @@ export function registerIpcHandlers(cwd: string): void {
   });
 
   ipcMain.handle('get-edit-history', async (_event, projectPath: string) => {
-    assertProjectPath(projectPath, cwd);
+    assertReadableProjectPath(projectPath, cwd);
     return {
       canUndo: canUndoWorld(projectPath) || canUndoRoom(projectPath),
       canRedo: canRedoWorld(projectPath) || canRedoRoom(projectPath),
@@ -1980,7 +1996,7 @@ export function registerIpcHandlers(cwd: string): void {
   });
 
   ipcMain.handle('get-edit-status', async (_event, projectPath: string) => {
-    assertProjectPath(projectPath, cwd);
+    assertReadableProjectPath(projectPath, cwd);
     return getProjectEditStatus(projectPath);
   });
 
@@ -2012,7 +2028,7 @@ export function registerIpcHandlers(cwd: string): void {
   });
 
   ipcMain.handle('list-project-checkpoints', async (_event, projectPath: string) => {
-    assertProjectPath(projectPath, cwd);
+    assertReadableProjectPath(projectPath, cwd);
     return listProjectCheckpoints(projectPath);
   });
 

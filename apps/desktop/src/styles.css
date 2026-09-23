@@ -4296,3 +4296,34 @@ select {
 
 .tile-paint-focus { opacity: 0; stroke: var(--border-focus); stroke-width: 2; }
 .tile-paint-cell:focus-visible .tile-paint-focus { opacity: 1; }
+
+/* Shared room-editor pane resizing. Smaller windows retain the existing responsive layout. */
+.editor-pane-divider { display: none; }
+@media (min-width: 1400px) {
+  .editor-workbench-resizable { position: relative; grid-template-columns: var(--editor-left-width, 220px) minmax(0, 1fr) var(--editor-right-width, 300px); }
+  .editor-workbench-resizable > .editor-pane-divider { display: block; position: absolute; top: 0; bottom: 0; width: 8px; z-index: 5; cursor: col-resize; touch-action: none; }
+  .editor-pane-divider-0 { left: calc(var(--editor-left-width) + 0.225rem - 4px); }
+  .editor-pane-divider-1 { right: calc(var(--editor-right-width) + 0.225rem - 4px); }
+  .editor-pane-divider:hover, .editor-pane-divider:focus-visible { background: var(--forge-info); outline: 1px solid var(--forge-border-focus); }
+}
+
+/* Generation atmosphere stays outside the room editing viewport. */
+.studio-generate-bar {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background-image: linear-gradient(110deg, var(--bg-panel) 48%, transparent),
+    repeating-linear-gradient(135deg, transparent 0 38px, rgba(112,181,232,.06) 39px 40px);
+}
+.studio-layout .phase-tree-item { transition: border-color 180ms ease, background-color 180ms ease; }
+.studio-layout .progress-bar { transition: width 400ms ease; position: relative; overflow: hidden; }
+.studio-layout[data-generating="true"] .progress-bar::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,.45), transparent);
+  animation: mf-generation-scan 1800ms linear infinite;
+}
+@keyframes mf-generation-scan { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) {
+  .studio-layout .progress-bar, .studio-layout .phase-tree-item { transition: none; }
+  .studio-layout[data-generating="true"] .progress-bar::after { animation: none; display: none; }
+}

@@ -46,6 +46,7 @@ export function WorldEditor() {
   const [overworld, setOverworld] = useState<OverworldMapPreview | null>(null);
   const [selectedId, setSelectedId] = useState('');
   const [view, setView] = useState<'progression' | 'graph' | 'spatial'>('progression');
+  const [interaction, setInteraction] = useState<'rooms' | 'layout'>('rooms');
   const [dockTab, setDockTab] = useState<DockTab>('structure');
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -234,7 +235,7 @@ export function WorldEditor() {
         compact
         eyebrow="World"
         title="World Editor"
-        description="Canonical WorldGraph · add, duplicate, remove, connect. Drag in Spatial to move. Ctrl+Z / Ctrl+Shift+Z."
+        description="Select a room to open its visual editor. Switch to Map layout to select, connect, or rearrange nodes. Ctrl+Z / Ctrl+Shift+Z."
         actions={
           <>
             <ProjectSelect />
@@ -252,6 +253,15 @@ export function WorldEditor() {
             onSuccess={() => loadGraph(selectedPath)}
           />
 
+          <ViewModeTabs
+            label="Map interaction"
+            items={[
+              { id: 'rooms', label: 'Edit rooms' },
+              { id: 'layout', label: 'Map layout' },
+            ]}
+            value={interaction}
+            onChange={(id) => setInteraction(id as 'rooms' | 'layout')}
+          />
           <ViewModeTabs
             label="World view mode"
             items={[
@@ -307,9 +317,12 @@ export function WorldEditor() {
                   setSelectedId(id);
                   setConnectFrom(id);
                   setDisconnectFrom(id);
+                  if (interaction === 'rooms' && worldGraph?.nodes?.some((node) => node.id === id)) {
+                    openRoom(id);
+                  }
                 }}
                 onActivate={openRoom}
-                onMove={view === 'spatial' ? handleMove : undefined}
+                onMove={interaction === 'layout' && view === 'spatial' ? handleMove : undefined}
               />
             </EditorViewport>
 

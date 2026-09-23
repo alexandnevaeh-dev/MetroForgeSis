@@ -917,7 +917,7 @@ function RoomCanvasPreview({
   const scale = mini ? 0.18 : fill ? 0.55 : 0.35;
   const showTiles = layer === 'visual' || layer === 'collision';
   const showNav = layer === 'visual' || layer === 'navigation' || layer === 'progression';
-  const authoredRects = layer === 'collision' ? collision?.rects ?? [] : [];
+  const authoredRects = showTiles ? collision?.rects ?? [] : [];
   const tileCells = room.tileCells ?? [];
   const hasPaint = tileCells.length > 0 || authoredRects.length > 0;
   const placements = room.entityPlacements ?? [];
