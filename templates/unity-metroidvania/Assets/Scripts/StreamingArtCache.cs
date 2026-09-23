@@ -96,16 +96,20 @@ public static class StreamingArtCache
         var tex = GetTexture(streamingRoot, rel, filter, TextureWrapMode.Clamp);
         if (tex == null)
             return null;
-        var count = Mathf.Max(1, tex.width / Mathf.Max(1, frameWidth));
-        var frames = new Sprite[count];
-        for (var i = 0; i < count; i++)
+        var width = Mathf.Clamp(frameWidth, 1, tex.width);
+        var height = Mathf.Clamp(frameHeight, 1, tex.height);
+        var columns = Mathf.Max(1, tex.width / width);
+        var rows = Mathf.Max(1, tex.height / height);
+        var frames = new Sprite[columns * rows];
+        // Source image order: left to right, then top to bottom.
+        // Horizontal strips retain their original order.
+        for (var row = 0; row < rows; row++)
         {
-            var rect = new Rect(i * frameWidth, tex.height - frameHeight, frameWidth, frameHeight);
-            if (rect.xMax > tex.width)
-                rect.width = tex.width - rect.x;
-            if (rect.y < 0f)
-                rect.y = 0f;
-            frames[i] = Sprite.Create(tex, rect, pivot, ppu, 0, SpriteMeshType.FullRect);
+            for (var column = 0; column < columns; column++)
+            {
+                var rect = new Rect(column * width, tex.height - (row + 1) * height, width, height);
+                frames[row * columns + column] = Sprite.Create(tex, rect, pivot, ppu, 0, SpriteMeshType.FullRect);
+            }
         }
         Sheets[key] = frames;
         return frames;
