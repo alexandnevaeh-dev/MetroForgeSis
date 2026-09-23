@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, copyFileSync, constants } from 'node:fs';
+import { existsSync, mkdirSync, copyFileSync, constants, statSync } from 'node:fs';
 import { getResourceRoot } from '@metroforge/shared';
-import { join } from 'node:path';
+import { join, isAbsolute, basename } from 'node:path';
 import { resolveUnityEditor } from '@metroforge/tools';
 
 /** Launch acknowledgment only: successful spawn is not a gameplay readiness result. */
@@ -11,9 +11,22 @@ export async function launchUnityPreview(projectPath: string, editorPath?: strin
     return { success: false, message: 'This Unity project needs the current preview template. Save your edits and refresh the project template first.' };
   }
   if (existsSync(join(projectPath, 'Temp/UnityLockfile'))) {
-    return { success: false, message: 'This project is already open in Unity. Use MetroForge > Play Generated Game in that editor.' };
+    return { success: false, message: 'A Unity project lock is present. If this project is open, use MetroForge > Play Generated Game in that editor.' };
   }
-  const editor = resolveUnityEditor({ envPath: editorPath || process.env.UNITY_EDITOR || process.env.UNITY_PATH });
+  const configured = (editorPath || process.env.UNITY_EDITOR || process.env.UNITY_PATH)?.trim();
+  if (configured) {
+    try {
+      if (!isAbsolute(configured) || !statSync(configured).isFile()) {
+        return { success: false, message: 'The Unity editor path must point to an existing executable file. Update Settings > Paths.' };
+      }
+      if (/^unity hub(?:\.exe)?$/i.test(basename(configured))) {
+        return { success: false, message: 'This path points to Unity Hub. Choose the installed Unity editor executable in Settings > Paths.' };
+      }
+    } catch {
+      return { success: false, message: 'The configured Unity editor file could not be found or read. Update Settings > Paths.' };
+    }
+  }
+  const editor = resolveUnityEditor({ envPath: configured });
   if (!editor.path) return { success: false, message: 'Choose your Unity editor executable in Settings > Paths and save settings.' };
   return new Promise((resolve) => {
     const child = spawn(editor.path!, ['-projectPath', projectPath, '-executeMethod', 'MetroForgePreview.Play',

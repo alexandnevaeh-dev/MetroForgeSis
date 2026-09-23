@@ -86,6 +86,16 @@ const root=path.resolve(__dirname,'..'),req=createRequire(root+'/apps/desktop/pa
   const repeated=await page.evaluate(p=>window.metroforge.refreshProjectTemplate(p),project);
   assert.equal(repeated.success,true);assert.deepEqual(repeated.copied,[]);
   assert.equal(fs.readFileSync(entry,'utf8'),authored);
+  for (const [badPath,expected] of [
+    [out+'/missing-Unity.exe','could not be found or read'],
+    [out,'existing executable file'],
+    ['Unity.exe','existing executable file']
+  ]) {
+    await page.evaluate(p=>window.metroforge.setAppSettings({'app.unityEditor':p}),badPath);
+    const failed=await page.evaluate(p=>window.metroforge.playProject(p),project);
+    assert.equal(failed.success,false);assert.ok(failed.message.includes(expected),failed.message);
+  }
+  await page.evaluate(p=>window.metroforge.setAppSettings({'app.unityEditor':p}),unityPath);
   fs.writeFileSync(out+'/result.json',JSON.stringify({passed:true,project,stage,scope:'Native room framing, save/reload/runtime mirror, Unity preview missing-template routing and outside-root launch rejection; no live Unity preview'},null,2));console.log('PASS room framing UI:',out);
  }finally{const timer=setTimeout(()=>app.process().kill(),5000);try{await app.close();}finally{clearTimeout(timer);}}
 })().catch(error=>{console.error(error);process.exitCode=1;});
