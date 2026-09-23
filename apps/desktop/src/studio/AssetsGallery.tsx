@@ -1,7 +1,8 @@
+import { previewFrameAtTime } from './animation-clock.js';
 import { AnimationPreview } from './AnimationPreview.js';
 import { LootDefinitionEditor } from './LootDefinitionEditor.js';
 import { ItemDefinitionEditor } from './ItemDefinitionEditor.js';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { AssetRecord } from './types.js';
 import { categorizeAssetPath, GALLERY_CATEGORIES } from './types.js';
 import { TilesetPreview, AudioPreview } from './MediaPreviews.js';
@@ -20,6 +21,7 @@ export function AssetsGallery() {
   const [selected, setSelected] = useState<AssetRecord | null>(null);
   const [animPlaying, setAnimPlaying] = useState(() => !window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [animFrame, setAnimFrame] = useState(0);
+  const lastAnimation = useRef<AssetRecord | null>(null);
   const [loading, setLoading] = useState(false);
   const [usages, setUsages] = useState<Array<{ type: string; id: string; detail?: string }> | null>(
     null,
@@ -93,11 +95,19 @@ export function AssetsGallery() {
   useEffect(() => {
     if (!selected?.isAnimation || !animPlaying || !selected.frameCount) return;
     const frames = selected.frameCount;
-    const id = window.setInterval(() => setAnimFrame((f) => (f + 1) % frames), 1000 / Math.min(120, Math.max(1, selected.fps ?? 8)));
-    return () => window.clearInterval(id);
+    const startFrame = lastAnimation.current === selected ? animFrame : 0;
+    lastAnimation.current = selected;
+    const startTime = performance.now();
+    let handle = 0;
+    const tick = (now: number) => {
+      setAnimFrame(previewFrameAtTime(startFrame, now - startTime, frames, selected.fps));
+      handle = window.requestAnimationFrame(tick);
+    };
+    handle = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(handle);
   }, [selected, animPlaying]);
 
-  useEffect(() => { setAnimFrame(0); }, [selected?.id, selected?.dataUrl]);
+  useEffect(() => { setAnimFrame(0); lastAnimation.current = selected; }, [selected?.id, selected?.dataUrl]);
 
   const classified = useMemo(
     () => assets.map((asset) => ({ ...asset, category: categorizeAssetPath(asset.path) || asset.category })),
