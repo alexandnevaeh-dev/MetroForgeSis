@@ -1,5 +1,6 @@
-import type { GameDNA, Enemy, Boss, Quest, Item, NPC, Dialogue, Shop } from '@metroforge/schemas';
+import type { GameDNA, Enemy, Boss, Quest, Item, NPC, Dialogue, Shop, LootTable } from '@metroforge/schemas';
 import {
+  validateLootCatalog,
   EnemySchema,
   BossSchema,
   QuestSchema,
@@ -20,6 +21,7 @@ export interface GameContent {
   npcs: NPC[];
   dialogues: Dialogue[];
   shops: Shop[];
+  lootTables?: LootTable[];
 }
 
 const ENEMY_NAMES = ['Scrap Drone', 'Rust Crawler', 'Arc Wisp', 'Gear Mite', 'Void Sentinel'];
@@ -614,6 +616,14 @@ export function generateGameContent(
       effects: [{ type: 'attack', value: 8 }],
     }),
     ItemSchema.parse({
+      id: 'warden_mail',
+      name: 'Warden Mail',
+      description: 'Weathered armor. Reduces incoming damage while equipped.',
+      category: 'armor',
+      value: 100,
+      effects: [{ type: 'armor', value: 25 }],
+    }),
+    ItemSchema.parse({
       id: 'warden_seal',
       name: 'Warden Seal',
       description: 'Proof of a completed trial.',
@@ -638,5 +648,18 @@ export function generateGameContent(
     }
   }
 
-  return { enemies, bosses, quests, items, npcs, dialogues, shops };
+  // Explicit utility/equipment drops: never include progression keys, quest items,
+  // permanent stat relics or top-down dungeon tools in repeatable enemy loot.
+  const lootTables = validateLootCatalog(enemies.map((enemy) => ({
+    id: `loot_${enemy.id}`,
+    name: `${enemy.name} drops`,
+    entries: [
+      { itemId: 'health_vial', chance: 0.15, minQuantity: 1, maxQuantity: 1 },
+      { itemId: 'upgrade_shard', chance: 0.3, minQuantity: 1, maxQuantity: 2 },
+      { itemId: 'warden_mail', chance: 0.03, minQuantity: 1, maxQuantity: 1 },
+    ],
+  })), items);
+  for (const enemy of enemies) enemy.lootTableId = `loot_${enemy.id}`;
+
+  return { enemies, bosses, quests, items, npcs, dialogues, shops, lootTables };
 }

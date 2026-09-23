@@ -356,3 +356,49 @@ export const ShopSchema = z.object({
 });
 
 export type Shop = z.infer<typeof ShopSchema>;
+
+/** Each entry rolls independently per defeated source; chance is a fraction, not a weight. */
+export const LootEntrySchema = z.object({
+  itemId: z.string().min(1),
+  chance: z.number().finite().min(0).max(1),
+  minQuantity: z.number().int().min(1).max(1000000),
+  maxQuantity: z.number().int().min(1).max(1000000),
+}).superRefine((entry, ctx) => {
+  if (entry.maxQuantity < entry.minQuantity)
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['maxQuantity'], message: 'Maximum quantity must be at least the minimum' });
+});
+export const LootTableSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  entries: z.array(LootEntrySchema).max(1000),
+}).superRefine((table, ctx) => {
+  const ids = new Set<string>();
+  table.entries.forEach((entry, index) => {
+    if (ids.has(entry.itemId)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['entries', index, 'itemId'], message: 'Duplicate item in loot table' });
+    ids.add(entry.itemId);
+  });
+});
+export type LootTable = z.infer<typeof LootTableSchema>;
+
+/** Validate authored loot links before writing an engine project. */
+export function validateLootCatalog(
+  tables: readonly LootTable[],
+  items: readonly { id: string }[],
+  sources: readonly { id: string; lootTableId?: string }[] = [],
+): LootTable[] {
+  const parsed = tables.map(table => LootTableSchema.parse(table));
+  const itemIds = new Set(items.map(item => item.id));
+  const tableIds = new Set<string>();
+  for (const table of parsed) {
+    if (tableIds.has(table.id)) throw new Error(`Duplicate loot table: ${table.id}`);
+    tableIds.add(table.id);
+    for (const entry of table.entries) {
+      if (!itemIds.has(entry.itemId)) throw new Error(`Loot table ${table.id} references unknown item: ${entry.itemId}`);
+    }
+  }
+  for (const source of sources) {
+    if (source.lootTableId && !tableIds.has(source.lootTableId))
+      throw new Error(`Loot source ${source.id} references unknown table: ${source.lootTableId}`);
+  }
+  return parsed;
+}

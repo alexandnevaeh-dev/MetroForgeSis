@@ -1,6 +1,7 @@
 import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { AssemblyInput } from '@metroforge/godot';
+import { validateLootCatalog } from '@metroforge/schemas';
 import { buildMovementJson } from '@metroforge/shared';
 import { buildGameplayPack } from './gameplay-pack.js';
 import type { GameplayPack } from './types.js';
@@ -9,7 +10,10 @@ export function writeSharedProjectData(
   input: AssemblyInput,
   pack: GameplayPack = buildGameplayPack(input),
 ): GameplayPack {
+  const tables = validateLootCatalog(input.gameContent?.lootTables ?? [], input.gameContent?.items ?? [], input.gameContent?.enemies ?? []);
   mkdirSync(input.outputDir, { recursive: true });
+  mkdirSync(join(input.outputDir, 'data', 'loot'), { recursive: true });
+  writeFileSync(join(input.outputDir, 'data', 'loot', 'loot_tables.json'), JSON.stringify({ tables }, null, 2));
   writeFileSync(join(input.outputDir, 'gameplay.json'), JSON.stringify(pack, null, 2));
   writeFileSync(join(input.outputDir, 'game_dna.json'), JSON.stringify(input.gameDna, null, 2));
   writeFileSync(join(input.outputDir, 'world_graph.json'), JSON.stringify(input.worldGraph, null, 2));

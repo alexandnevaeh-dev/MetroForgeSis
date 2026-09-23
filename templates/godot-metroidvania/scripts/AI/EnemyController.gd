@@ -470,6 +470,9 @@ func _on_hit_received(damage: float, knockback: Vector2) -> void:
 		_hurt_timer = HURT_FLASH_DURATION
 
 func _on_died() -> void:
+	contact_hitbox.deactivate()
+	if not is_minion:
+		preload("res://scripts/core/LootSpawner.gd").spawn_for_enemy.call_deferred(get_parent(), global_position, _load_enemy_definition(enemy_id))
 	set_physics_process(false)
 	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("death"):
 		sprite.play("death")

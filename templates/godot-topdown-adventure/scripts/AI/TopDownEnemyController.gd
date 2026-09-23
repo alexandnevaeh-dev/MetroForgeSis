@@ -265,6 +265,10 @@ func _on_hit(damage: float, kb: Vector2) -> void:
 const DEATH_ANIMATION_DURATION_SEC := 0.35
 
 func _on_died() -> void:
+	if _state == CombatState.DEAD:
+		return
+	if not is_boss:
+		preload("res://scripts/core/LootSpawner.gd").spawn_for_enemy.call_deferred(get_parent(), global_position, _load_enemy_definition(enemy_id))
 	_state = CombatState.DEAD
 	attack_hitbox.deactivate()
 	set_physics_process(false)

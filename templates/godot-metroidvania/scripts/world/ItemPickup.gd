@@ -5,14 +5,17 @@ extends Area2D
 @export var item_id: String = "scrap"
 ## Currency pickups use this stack size; equipment and keys always grant 1.
 @export var amount: int = 1
+var _claimed: bool = false
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 
 func _on_body_entered(body: Node2D) -> void:
-	if not body.is_in_group("player"):
+	if _claimed or not body.is_in_group("player"):
 		return
 
+	# queue_free is deferred; claim before callbacks can re-enter inventory.
+	_claimed = true
 	if not InventoryManager.grant_item(item_id, amount):
 		push_warning("ItemPickup: unknown item_id '%s'" % item_id)
 		queue_free()

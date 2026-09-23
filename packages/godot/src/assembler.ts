@@ -1,6 +1,7 @@
 import { cpSync, mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync, rmSync } from 'node:fs';
 import { join, dirname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { validateLootCatalog } from '@metroforge/schemas';
 import type { GameDNA, ProgressionGraph, StyleBible, WorldGraph } from '@metroforge/schemas';
 import type { GameContent, TopDownOverworld } from '@metroforge/procedural';
 import {
@@ -147,6 +148,7 @@ export class GodotProjectAssembler {
     }
 
     try {
+      const lootTables = validateLootCatalog(input.gameContent?.lootTables ?? [], input.gameContent?.items ?? [], input.gameContent?.enemies ?? []);
       const priorManifest = readExistingGenerationManifest(input.outputDir);
       cpSync(templatePath, input.outputDir, {
         recursive: true,
@@ -380,6 +382,8 @@ export class GodotProjectAssembler {
 
       if (input.gameContent) {
         const dataDir = join(input.outputDir, 'data');
+        mkdirSync(join(dataDir, 'loot'), { recursive: true });
+        writeFileSync(join(dataDir, 'loot', 'loot_tables.json'), JSON.stringify({ tables: lootTables }, null, 2));
         mkdirSync(join(dataDir, 'enemies'), { recursive: true });
         mkdirSync(join(dataDir, 'bosses'), { recursive: true });
         mkdirSync(join(dataDir, 'quests'), { recursive: true });

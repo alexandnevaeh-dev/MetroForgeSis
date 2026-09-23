@@ -1,3 +1,4 @@
+import { LootDefinitionEditor } from './LootDefinitionEditor.js';
 import { ItemDefinitionEditor } from './ItemDefinitionEditor.js';
 import { useEffect, useMemo, useState } from 'react';
 import type { AssetRecord } from './types.js';
@@ -137,6 +138,7 @@ export function AssetsGallery() {
         actions={<ProjectSelect />}
       />
       <NoProjectHint />
+      {hasActiveProject && <LootDefinitionEditor key={`loot-${selectedPath}`} projectPath={selectedPath} />}
       {hasActiveProject && <ItemDefinitionEditor key={selectedPath} projectPath={selectedPath} />}
 
       {hasActiveProject && (

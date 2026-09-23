@@ -6,6 +6,8 @@ import { getVersionString } from '@metroforge/core';
 import { loadConfig, resolveGeneratedGamesPath, isPathWithinRoot, type GameArchetype, parseProviderEnabledMap, isProviderEnabledSettingKey } from '@metroforge/shared';
 import {
   GenerationPipeline,
+  readEditableLoot,
+  saveEditableLoot,
   readEditableItems,
   saveEditableItem,
   computeOverallProgress,
@@ -1789,6 +1791,16 @@ export function registerIpcHandlers(cwd: string): void {
       miniBossId,
       bossId,
     };
+  });
+
+  ipcMain.handle('read-editable-loot', async (_event, projectPath: string) => {
+    assertReadableProjectPath(projectPath, cwd);
+    return { ...readEditableLoot(projectPath), runtimeSupported: detectProjectEngine(projectPath) === 'godot' };
+  });
+  ipcMain.handle('save-editable-loot', async (_event, projectPath: string, table: unknown, revision: string) => {
+    assertReadableProjectPath(projectPath, cwd);
+    if (JSON.stringify(table).length > 500000) throw new Error('Loot edit is too large');
+    return { ...saveEditableLoot(projectPath, table, revision), runtimeSupported: detectProjectEngine(projectPath) === 'godot' };
   });
 
   ipcMain.handle('read-editable-items', async (_event, projectPath: string) => {

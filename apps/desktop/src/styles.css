@@ -4327,3 +4327,11 @@ select {
   .studio-layout .progress-bar, .studio-layout .phase-tree-item { transition: none; }
   .studio-layout[data-generating="true"] .progress-bar::after { animation: none; display: none; }
 }
+
+/* Compact authored drop controls keep quantities readable beside their item. */
+.loot-editor > fieldset { border: 0; padding: 12px 0 0; min-width: 0; }
+.loot-editor .loot-entry { display: grid; grid-template-columns: minmax(150px, 2fr) repeat(3, minmax(85px, 1fr)); gap: 12px; border: 1px solid #414b58; border-radius: 8px; margin: 14px 0; padding: 12px; min-width: 0; }
+.loot-editor .loot-entry legend { padding: 0 6px; color: #96a3b5; }
+.loot-editor label { display: grid; gap: 6px; min-width: 0; }
+.loot-editor .loot-entry button { justify-self: start; grid-column: 1 / -1; }
+@media (max-width: 1000px) { .loot-editor .loot-entry { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

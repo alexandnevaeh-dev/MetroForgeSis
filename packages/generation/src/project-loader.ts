@@ -65,6 +65,7 @@ function loadGameContent(projectPath: string): GameContent {
     npcs: readNamed('data/npcs/npcs.json', 'npcs'),
     dialogues: readNamed('data/dialogues/dialogues.json', 'dialogues'),
     shops: readNamed('data/shops/shops.json', 'shops'),
+    lootTables: readNamed('data/loot/loot_tables.json', 'tables'),
   };
 }
 

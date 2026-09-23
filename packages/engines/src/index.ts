@@ -9,3 +9,4 @@ export { LiveEditSession } from './live-edit-session.js';
 export type { EditableObject, EditableValue, LiveEditOperation, LiveEditTransaction, LiveEditReceipt } from './live-edit-session.js';
 export { roomSolidObjects, withRoomSolids } from './room-solid-edit.js';
 export { readUnityRoomEdit, saveUnityRoomEdit } from './unity-room-edit-store.js';
+export { rollLoot, type LootDrop } from './loot.js';
