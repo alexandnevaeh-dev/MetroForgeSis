@@ -194,15 +194,6 @@ public class PlayerActor : MonoBehaviour
         if (!_wasGrounded && _grounded && _clipLock <= 0f)
             LockClip("land", 0.15f);
 
-        if (animator != null)
-        {
-            var gaitSpeed = run ? Pack.movement.runSpeed : Pack.movement.walkSpeed;
-            animator.PlaybackSpeed = _clipLock <= 0f && _grounded
-                && Mathf.Abs(_body.linearVelocity.x) > 20f
-                ? Mathf.Clamp(Mathf.Abs(_body.linearVelocity.x) / Mathf.Max(1f, gaitSpeed), 0.1f, 1.5f)
-                : 1f;
-        }
-
         if (_clipLock <= 0f)
         {
             if (!_grounded)
@@ -212,6 +203,16 @@ public class PlayerActor : MonoBehaviour
             else
                 animator?.Play("idle");
         }
+        if (animator != null)
+        {
+            var gaitSpeed = animator.CurrentClip == "run" ? Pack.movement.runSpeed : Pack.movement.walkSpeed;
+            animator.PlaybackSpeed = _clipLock <= 0f && _grounded
+                && (animator.CurrentClip == "walk" || animator.CurrentClip == "run")
+                && Mathf.Abs(_body.linearVelocity.x) > 20f
+                ? Mathf.Clamp(Mathf.Abs(_body.linearVelocity.x) / Mathf.Max(1f, gaitSpeed), 0.1f, 1.5f)
+                : 1f;
+        }
+
         _wasGrounded = _grounded;
     }
 
