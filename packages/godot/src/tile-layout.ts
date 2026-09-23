@@ -335,7 +335,21 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
   cells.push(cell(0, floorRow, 'outside_bl'));
   cells.push(cell(cols - 1, floorRow, 'outside_br'));
 
-  if (archetype === 'tutorial') {
+  if (archetype === 'tutorial' && width >= 1280) {
+    // Repeat locally reachable stair bays instead of scaling jump gaps with the hall.
+    // Broad upper balconies and an uninterrupted floor give separate exploration
+    // and combat lanes; each bay can be entered from the ground without an ability.
+    const climb = climbRows(platMaxRow, 3, jumpStep);
+    const stride = Math.max(3, Math.floor(80 / tileSize));
+    const bayStep = Math.max(stride * 6, Math.floor(512 / tileSize));
+    const start = Math.max(4, Math.floor(160 / tileSize));
+    const balconyLength = Math.max(5, Math.floor(160 / tileSize));
+    for (let base = start; base + stride * 2 + balconyLength < cols - 2; base += bayStep) {
+      placePlatform(cells, platforms, tileSize, base, 3, climb[0] ?? platMaxRow);
+      placePlatform(cells, platforms, tileSize, base + stride, 3, climb[1] ?? climb[0] ?? platMaxRow);
+      placePlatform(cells, platforms, tileSize, base + stride * 2, balconyLength, climb[2] ?? climb[1] ?? platMaxRow);
+    }
+  } else if (archetype === 'tutorial') {
     // Three low steps (kept — tile-layout-archetypes.test.ts pins uniquePlatformHeights>1 and
     // platformCount>=3 here to distinguish the tutorial staircase from combat's flat islands),
     // but pulled tighter to the entrance and shorter than before so most of the room stays open

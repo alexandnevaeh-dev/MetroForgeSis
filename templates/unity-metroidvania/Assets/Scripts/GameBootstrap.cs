@@ -736,8 +736,14 @@ public class GameBootstrap : MonoBehaviour
         else
         {
             sr.color = new Color(0.22f, 0.2f, 0.18f, 0.35f);
-            sr.sprite = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 4f);
-            go.transform.localScale = new Vector3(rect.width, rect.height, 1f);
+            // Keep physics in authored world units even when a texture is missing.
+            // Scaling this GameObject would multiply the already-sized BoxCollider2D.
+            var fallbackTexture = Texture2D.whiteTexture;
+            sr.sprite = Sprite.Create(fallbackTexture,
+                new Rect(0, 0, fallbackTexture.width, fallbackTexture.height),
+                new Vector2(0.5f, 0.5f), fallbackTexture.width, 0, SpriteMeshType.FullRect);
+            sr.drawMode = SpriteDrawMode.Sliced;
+            sr.size = new Vector2(rect.width, rect.height);
         }
     }
 

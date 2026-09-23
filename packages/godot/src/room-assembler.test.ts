@@ -833,3 +833,30 @@ describe('generateRoomScene shell colliders', () => {
     expect(v3Platform).toBeTruthy();
   });
 
+
+// These limits express the requested multi-screen castle scale at the Unity
+// camera's 240-unit vertical view, rather than duplicating every preset value.
+describe('multi-screen castle room sizing', () => {
+  function assemble(archetype: string, dimensions?: { width: number; height: number }) {
+    const ctx = {
+      roomIds: ['room_000'], roomConnections: new Map([['room_000', []]]),
+      worldGraphNodesById: new Map([['room_000', { id: 'room_000', type: 'room', label: 'Castle', metadata: { archetype } }]]),
+      npcsByRoom: new Map(), bossesByRoom: new Map(),
+    } as import('../src/room-assembler.js').RoomAssemblyContext;
+    return buildRoomAssemblyOptions('room_000', 0, ctx, mediumDna, undefined, { value: 0 }, () => false, dimensions);
+  }
+  it.each(['tutorial', 'combat', 'connector', 'traversal', 'set_piece'])('gives %s at least three camera widths and vertical exploration space', archetype => {
+    const room = assemble(archetype);
+    expect(room.width).toBeGreaterThanOrEqual(3 * 240 * 16 / 9);
+    expect(room.height).toBeGreaterThanOrEqual(3 * 240);
+    expect(room.width % 16).toBe(0);
+    expect(room.height % 16).toBe(0);
+  });
+  it('keeps rest stops smaller than grand traversal halls', () => {
+    expect(assemble('save').width).toBeLessThan(assemble('traversal').width / 2);
+  });
+  it('preserves explicit editor-authored room dimensions', () => {
+    const room = assemble('traversal', { width: 720, height: 520 });
+    expect([room.width, room.height]).toEqual([720, 520]);
+  });
+});

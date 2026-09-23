@@ -109,3 +109,18 @@ describe('archetype geometry is distinct', () => {
     expect(layoutsTooSimilar(ma, ma, a.platforms, a.platforms, a.pits, a.pits)).toBe(true);
   });
 });
+
+it('fills long entrance halls with repeated reachable stair bays and broad balconies', () => {
+  const layout = buildRoomTileCells({ width: 1600, height: 768, tileSize: 16, seed: 11, archetype: 'tutorial' });
+  expect(layout.platforms.length).toBeGreaterThanOrEqual(9);
+  expect(Math.max(...layout.platforms.map(p => p.x + p.width))).toBeGreaterThan(1400);
+  for (let i = 0; i < layout.platforms.length; i += 3) {
+    const bay = layout.platforms.slice(i, i + 3);
+    expect(bay).toHaveLength(3);
+    expect(bay[2]!.width).toBeGreaterThanOrEqual(160);
+    for (let j = 1; j < bay.length; j++) {
+      expect(bay[j]!.x - (bay[j - 1]!.x + bay[j - 1]!.width)).toBeLessThanOrEqual(48);
+      expect(bay[j - 1]!.y - bay[j]!.y).toBeLessThanOrEqual(96);
+    }
+  }
+});

@@ -541,27 +541,28 @@ export function pickRoomPickupItem(
   return pool[roomIndex % pool.length]!;
 }
 
+// Multi-screen castle rooms: retain intimate rest stops while giving traversal and
+// set pieces room for galleries, encounter spacing, and vertical return routes.
+// Explicit editor dimensions always win; existing authored rooms are not resized.
 function defaultRoomWidth(worldGraphArchetype: string | undefined, override?: number): number {
   if (override !== undefined) return override;
-  if (worldGraphArchetype === 'set_piece' || worldGraphArchetype === 'traversal') return 960;
-  if (worldGraphArchetype === 'boss' || worldGraphArchetype === 'arena' || worldGraphArchetype === 'miniboss') return 960;
-  if (worldGraphArchetype === 'combat') return 880;
-  if (worldGraphArchetype === 'tutorial') return 720;
-  if (worldGraphArchetype === 'npc' || worldGraphArchetype === 'shop') return 720;
-  if (worldGraphArchetype === 'save') return 680;
-  return 800;
+  if (worldGraphArchetype === 'set_piece' || worldGraphArchetype === 'traversal') return 2560;
+  if (worldGraphArchetype === 'boss' || worldGraphArchetype === 'arena' || worldGraphArchetype === 'miniboss') return 1920;
+  if (worldGraphArchetype === 'combat') return 1920;
+  if (worldGraphArchetype === 'tutorial') return 1600;
+  if (worldGraphArchetype === 'npc' || worldGraphArchetype === 'shop') return 1280;
+  if (worldGraphArchetype === 'save' || worldGraphArchetype === 'secret') return 960;
+  return 1600;
 }
 
 function defaultRoomHeight(worldGraphArchetype: string | undefined, override?: number): number {
   if (override !== undefined) return override;
-  if (worldGraphArchetype === 'challenge' || worldGraphArchetype === 'traversal') return 900;
-  if (worldGraphArchetype === 'ability_gate' || worldGraphArchetype === 'ability_shrine') return 780;
-  if (worldGraphArchetype === 'set_piece' || worldGraphArchetype === 'boss' || worldGraphArchetype === 'miniboss') return 720;
-  if (worldGraphArchetype === 'combat') return 640;
-  if (worldGraphArchetype === 'tutorial') return 520;
-  if (worldGraphArchetype === 'npc' || worldGraphArchetype === 'shop') return 560;
-  if (worldGraphArchetype === 'save') return 500;
-  return 600;
+  if (worldGraphArchetype === 'challenge' || worldGraphArchetype === 'traversal') return 1280;
+  if (worldGraphArchetype === 'ability_gate' || worldGraphArchetype === 'ability_shrine') return 1024;
+  if (worldGraphArchetype === 'set_piece' || worldGraphArchetype === 'boss' || worldGraphArchetype === 'miniboss') return 960;
+  if (worldGraphArchetype === 'combat' || worldGraphArchetype === 'tutorial') return 768;
+  if (worldGraphArchetype === 'npc' || worldGraphArchetype === 'shop' || worldGraphArchetype === 'save' || worldGraphArchetype === 'secret') return 640;
+  return 768;
 }
 
 export function buildRoomAssemblyOptions(
