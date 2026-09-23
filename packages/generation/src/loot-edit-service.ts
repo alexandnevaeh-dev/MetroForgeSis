@@ -9,12 +9,16 @@ function snapshot(project: string) {
   const itemText = readFileSync(join(project, 'data', 'items', 'items.json'), 'utf8');
   const enemyFile = join(project, 'data', 'enemies', 'enemies.json');
   const enemyText = existsSync(enemyFile) ? readFileSync(enemyFile, 'utf8') : '{"enemies":[]}';
+  const mirror = join(project, 'Assets', 'StreamingAssets', 'data', 'loot', 'loot_tables.json');
+  const mirrorText = existsSync(mirror) ? readFileSync(mirror, 'utf8') : null;
+  if (mirrorText !== null && JSON.stringify(JSON.parse(mirrorText)) !== JSON.stringify(JSON.parse(original)))
+    throw new Error('Loot runtime copies differ; reconcile them before editing');
   const data = JSON.parse(original);
   const items = JSON.parse(itemText).items;
   const enemies = JSON.parse(enemyText).enemies;
   if (!Array.isArray(data.tables) || !Array.isArray(items) || !Array.isArray(enemies))
     throw new Error('Project loot, item or enemy catalog is invalid');
-  return { file, original, data, items, enemies, revision: digest(JSON.stringify([original, itemText, enemyText])) };
+  return { file, original, mirror, mirrorText, data, items, enemies, revision: digest(JSON.stringify([original, itemText, enemyText, mirrorText])) };
 }
 export function readEditableLoot(project: string) {
   const state = snapshot(project);
@@ -40,11 +44,23 @@ export function saveEditableLoot(project: string, table: unknown, revision: stri
   mkdirSync(backupDir, { recursive: true });
   const backup = join(backupDir, `${id}.json`);
   writeFileSync(backup, state.original, { flag: 'wx' });
-  const staged = `${state.file}.${id}.tmp`;
+  const files = state.mirrorText === null ? [state.file] : [state.file, state.mirror];
+  const originals = state.mirrorText === null ? [state.original] : [state.original, state.mirrorText];
+  if (state.mirrorText !== null) writeFileSync(join(backupDir, `${id}.runtime.json`), state.mirrorText, { flag: 'wx' });
+  const staged = files.map(file => `${file}.${id}.tmp`);
+  const replaced: number[] = [];
   try {
-    writeFileSync(staged, output, { flag: 'wx' });
+    staged.forEach(file => writeFileSync(file, output, { flag: 'wx' }));
     if (snapshot(project).revision !== revision) throw new Error('Loot or referenced catalog changed while saving');
-    renameSync(staged, state.file);
-  } finally { if (existsSync(staged)) unlinkSync(staged); }
-  return { revision: snapshot(project).revision, backup, restartRequired: true as const };
+    files.forEach((file, index) => { renameSync(staged[index]!, file); replaced.push(index); });
+  } catch (error) {
+    const rollbackErrors: string[] = [];
+    for (const index of replaced) {
+      try { writeFileSync(files[index]!, originals[index]!); }
+      catch (rollback) { rollbackErrors.push(String(rollback)); }
+    }
+    if (rollbackErrors.length) throw new Error(`Save failed: ${String(error)}; restore backups at ${backupDir}: ${rollbackErrors.join('; ')}`);
+    throw error;
+  } finally { staged.forEach(file => { if (existsSync(file)) unlinkSync(file); }); }
+  return { revision: snapshot(project).revision, backup, runtimeSynchronized: state.mirrorText !== null, restartRequired: true as const };
 }

@@ -13,3 +13,17 @@ assert.throws(()=>saveEditableItem(dir,{...armor,maxStack:-1},saved.revision));
 assert.throws(()=>saveEditableItem(dir,{...armor,id:'missing'},saved.revision),/exactly one/);
 assert.equal(readEditableItems(dir).revision,saved.revision);
 console.log('PASS item edit persistence, backups, unknown-field preservation, stale and invalid edits');
+
+const root=dir+'/data/items/items.json';
+const mirror=dir+'/Assets/StreamingAssets/data/items/items.json';
+mkdirSync(dir+'/Assets/StreamingAssets/data/items',{recursive:true});writeFileSync(mirror,readFileSync(root,'utf8'));
+const mirrored=readEditableItems(dir);
+const synced=saveEditableItem(dir,{...armor,effects:[{type:'armor',value:75}]},mirrored.revision);
+assert.equal(synced.runtimeSynchronized,true);assert.equal(synced.restartRequired,true);
+assert.equal(readFileSync(mirror,'utf8'),readFileSync(root,'utf8'));
+assert.equal(JSON.parse(readFileSync(synced.backup+'.runtime.json','utf8')).items[0].effects[0].value,60);
+const before=readFileSync(root,'utf8');writeFileSync(mirror,before+'\n');
+assert.throws(()=>saveEditableItem(dir,armor,synced.revision),/changed/);
+writeFileSync(mirror,JSON.stringify({items:[]}));assert.throws(()=>readEditableItems(dir),/copies differ/);
+assert.equal(readFileSync(root,'utf8'),before);
+console.log('PASS item runtime mirror, backup, restart and runtime conflict protection');
