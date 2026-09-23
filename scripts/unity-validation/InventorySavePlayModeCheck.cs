@@ -30,6 +30,7 @@ public static class InventorySavePlayModeCheck
     Require(game.Player!=null,"Player missing");
     Require(game.Player.Inventory.Grant("warden_mail",3),"Armor missing");
     Require(game.Player.Inventory.Grant("forged_blade",2),"Weapon missing");
+    Require(game.Player.Inventory.Grant("heart_relic",2),"Health relic missing");
     game.Player.Inventory.Unequip("armor");game.ReturnToTitle();
     Require(game.Player==null,"Title did not destroy player");Require(File.Exists(game.SavePath),"Save absent");stage=2;
    }else if(stage==2){Require(game.TryClickTitleContinue(),"Saved Continue unavailable");stage=3;}
@@ -38,7 +39,15 @@ public static class InventorySavePlayModeCheck
     Require(game.Player.Inventory.Count("forged_blade")==2,"Weapon ownership lost");
     Require(game.Player.Inventory.Equipped("armor")=="","Intentionally empty armor slot changed");
     Require(game.Player.Inventory.Equipped("weapon")=="forged_blade","Weapon slot lost");
+    Require(game.Player.Inventory.Count("heart_relic")==2,"Relic ownership lost");
+    var savedMaximum=game.Player.MaxHealth;
+    Require(Mathf.Approximately(savedMaximum,game.Pack.combat.maxHealth+50),"Restored health bonus missing");
+    game.Player.Inventory.Grant("heart_relic",1);
+    Require(Mathf.Approximately(game.Player.MaxHealth,savedMaximum+25),"Additional relic capacity missing");
+    game.Player.Revive();
     game.Player.Inventory.Grant("warden_mail",1);game.ReloadFromSaveFile();
+    Require(Mathf.Approximately(game.Player.MaxHealth,savedMaximum),"Reload retained unsaved health bonus");
+    Require(game.Player.Health<=game.Player.MaxHealth,"Reload health exceeds restored capacity");
     Require(game.Player.Inventory.Count("warden_mail")==3,"Reload did not replace inventory");
     Require(game.Player.Inventory.Equipped("armor")=="","Reload reequipped empty slot");
     File.WriteAllText(Path.Combine(Application.dataPath,"../inventory-save-playmode-result.json"),"{\"passed\":true,\"scope\":\"Actual title Continue, save file, player recreation and reload; programmatic UI callbacks, no visual QA\"}");

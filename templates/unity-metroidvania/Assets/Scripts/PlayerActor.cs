@@ -65,7 +65,14 @@ public class PlayerActor : MonoBehaviour
     public float ArmorRating => Mathf.Max(0f, Inventory.Effect("armor"));
     public float AttackDamage => Mathf.Max(0f, Pack.combat.attackDamage + Inventory.Effect("attack"));
     public float Health => _health;
-    public float MaxHealth => Pack != null && Pack.combat != null && Pack.combat.maxHealth > 0f ? Pack.combat.maxHealth : 100f;
+    public float MaxHealth {
+        get {
+            var baseHealth = Pack != null && Pack.combat != null && Pack.combat.maxHealth > 0f
+                && !float.IsInfinity(Pack.combat.maxHealth) ? Pack.combat.maxHealth : 100f;
+            return (float)System.Math.Max(1d, System.Math.Min(float.MaxValue, (double)baseHealth + Inventory.Effect("max_health")));
+        }
+    }
+    private void ClampHealthToInventory() { _health = Mathf.Clamp(_health, 0f, MaxHealth); }
     public bool Dead { get; private set; }
     public string CurrentClip => animator != null ? animator.CurrentClip : "";
 
@@ -76,7 +83,7 @@ public class PlayerActor : MonoBehaviour
         _airJumpUsed = false;
         _jumpBuffer = 0f;
         _coyote = 0f;
-        _health = health > 0f ? health : MaxHealth;
+        _health = health > 0f && !float.IsInfinity(health) ? Mathf.Min(health, MaxHealth) : MaxHealth;
         _invuln = 0.4f;
         _dashTime = 0f;
         _veilStep = false;
@@ -112,6 +119,8 @@ public class PlayerActor : MonoBehaviour
 
     public void Configure(GameplayPack pack, SpriteSheetPlayer sheet)
     {
+        Inventory.Changed -= ClampHealthToInventory;
+        Inventory = new GameplayInventory(null);
         Pack = pack;
         var catalogPath = System.IO.Path.Combine(Application.streamingAssetsPath, "data", "items", "items.json");
         if (System.IO.File.Exists(catalogPath))
@@ -119,6 +128,7 @@ public class PlayerActor : MonoBehaviour
             var catalog = JsonUtility.FromJson<InventoryCatalog>(System.IO.File.ReadAllText(catalogPath));
             Inventory = new GameplayInventory(catalog != null ? catalog.items : null);
         }
+        Inventory.Changed += ClampHealthToInventory;
         animator = sheet;
         Physics2D.gravity = new Vector2(0f, -pack.movement.gravity);
         _health = MaxHealth;

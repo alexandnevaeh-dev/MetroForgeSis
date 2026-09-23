@@ -12,6 +12,7 @@ using System.Collections.Generic;
 /// <summary>Runtime ownership and equipment rules, independent of scene lifecycle.</summary>
 public sealed class GameplayInventory
 {
+    public event Action Changed;
     private readonly Dictionary<string, InventoryItem> definitions = new Dictionary<string, InventoryItem>();
     private readonly Dictionary<string, int> counts = new Dictionary<string, int>();
     private readonly Dictionary<string, string> equipped = new Dictionary<string, string>();
@@ -38,6 +39,7 @@ public sealed class GameplayInventory
         if (total > int.MaxValue) return false;
         counts[id] = (int)total;
         if (IsSlot(item.category) && string.IsNullOrEmpty(Equipped(item.category))) equipped[item.category] = id;
+        Changed?.Invoke();
         return true;
     }
     public bool TryConsumeHealing(string id, float missingHealth, out float healed)
@@ -56,18 +58,21 @@ public sealed class GameplayInventory
         healed = (float)Math.Min(healing, missingHealth);
         var remaining = Count(id) - 1;
         if (remaining == 0) counts.Remove(id); else counts[id] = remaining;
+        Changed?.Invoke();
         return true;
     }
     public bool Equip(string id)
     {
         if (id == null || Count(id) <= 0 || !definitions.TryGetValue(id, out var item) || !IsSlot(item.category)) return false;
         equipped[item.category] = id;
+        Changed?.Invoke();
         return true;
     }
     public bool Unequip(string slot)
     {
         if (!IsSlot(slot)) return false;
         equipped[slot] = "";
+        Changed?.Invoke();
         return true;
     }
     public float Effect(string type)
@@ -118,6 +123,7 @@ public sealed class GameplayInventory
         counts.Clear(); equipped.Clear();
         foreach (var entry in restoredCounts) counts.Add(entry.Key,entry.Value);
         foreach (var entry in restoredSlots) equipped.Add(entry.Key,entry.Value);
+        Changed?.Invoke();
     }
     private static bool IsSlot(string category) => category == "weapon" || category == "armor" || category == "charm";
 }
