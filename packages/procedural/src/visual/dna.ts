@@ -64,6 +64,7 @@ export function generateVisualDNA(input: {
   const sideView = gameDna.archetype !== 'TOP_DOWN_ACTION_ADVENTURE';
   const dna: VisualDNA = {
     version: VISUAL_DNA_VERSION,
+    projection: sideView ? 'side-view' : 'top-down',
     gameId: gameDna.identity.title,
     styleFingerprint: '',
     artStyle: painted ? { ...template.artStyle, id: `${template.artStyle.id}-painted`, label: styleBible.renderingStyle, renderingFamily: 'hand-painted', edgeTreatment: styleBible.outlineRules } : template.artStyle,
@@ -150,7 +151,7 @@ export function generateVisualDNA(input: {
       'unrelated asset collage',
     ],
     promptAnchors: [
-      ...template.promptAnchors,
+      ...template.promptAnchors.filter((anchor) => sideView || !/side[ -]view/i.test(anchor)),
       gameDna.identity.visualStyle,
       gameDna.identity.tone,
       sideView ? 'orthographic side view' : 'top-down orthographic',

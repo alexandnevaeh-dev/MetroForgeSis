@@ -46,6 +46,7 @@ export function generateArtBible(gameDna: GameDNA, seed: number): ArtBible {
   const palette = STYLE_PALETTES[bucket]!;
   const painted = isPaintedStyle(gameDna.identity.visualStyle);
   const medium = painted ? 'hand-painted' : 'pixel art';
+  const perspective = gameDna.archetype === 'TOP_DOWN_ACTION_ADVENTURE' ? 'top-down' : 'side view';
 
   return {
     version: '0.1.0',
@@ -77,8 +78,8 @@ export function generateArtBible(gameDna: GameDNA, seed: number): ArtBible {
       '3d render',
     ],
     promptPrefixes: {
-      CHARACTER: `${medium} game character sprite, side view, ${gameDna.identity.visualStyle},`,
-      ENEMY: `${medium} game enemy creature, side view, ${gameDna.identity.visualStyle},`,
+      CHARACTER: `${medium} game character sprite, ${perspective}, ${gameDna.identity.visualStyle},`,
+      ENEMY: `${medium} game enemy creature, ${perspective}, ${gameDna.identity.visualStyle},`,
       BOSS: `${medium} game boss creature, imposing, ${gameDna.identity.visualStyle},`,
       TILE_SOURCE:  `seamless ${medium} tileset texture, ${gameDna.identity.visualStyle},`,
       ENVIRONMENT: `${medium} parallax background, ${gameDna.identity.visualStyle},`,
@@ -208,10 +209,10 @@ export function generateCharacterVisualDNA(gameDna: GameDNA, art: ArtBible): Cha
     clothing: `${gameDna.identity.visualStyle} fitted explorer kit, no costume swaps between frames`,
     equipment: 'single visible weapon and belt pouches, same across all poses',
     faceHair: `${gameDna.narrative.protagonist} face, consistent hair mass`,
-    weapon: gameDna.combat.meleeEnabled ? 'one-handed side-view melee blade, sheathed or in-hand consistently' : 'holstered tool',
+    weapon: gameDna.combat.meleeEnabled ? 'one-handed melee blade, sheathed or in-hand consistently' : 'holstered tool',
     spriteWidth: 64,
     spriteHeight: 64,
-    orientation: 'side view, facing right in source',
+    orientation: gameDna.archetype === 'TOP_DOWN_ACTION_ADVENTURE' ? 'top-down, consistent directional facing' : 'side view, facing right in source',
     lighting: painted ? 'upper-left key, controlled painted edge light' : 'upper-left key, 1px dark outline',
     outline: art.uiGuidelines.iconStyle,
     anchor: 'feet-center',

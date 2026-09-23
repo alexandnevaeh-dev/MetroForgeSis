@@ -7,7 +7,7 @@ import type {
   VisualPromptCompileResult,
 } from '@metroforge/schemas';
 
-export const VISUAL_PROMPT_COMPILER_VERSION = 2 as const;
+export const VISUAL_PROMPT_COMPILER_VERSION = 3 as const;
 
 export interface CompileVisualPromptInput {
   visualDNA: VisualDNA;
@@ -47,14 +47,14 @@ function biomeLine(biome?: BiomeVisualDNA): string {
     .join(', ');
 }
 
-function categoryLocks(category: VisualCategory, transparent: boolean, animationState?: string): string {
+function categoryLocks(category: VisualCategory, transparent: boolean, animationState?: string, topDown = false): string {
   const transparency = transparent ? 'transparent background, isolated, no scene backdrop' : 'full-frame composition, no letterboxing';
   switch (category) {
     case 'player':
     case 'npc':
     case 'enemy':
     case 'boss':
-      return `${transparency}, single character, side view facing right, ${animationPoseGuidance(animationState)}`;
+      return `${transparency}, single character, ${topDown ? 'top-down orthographic view, consistent directional facing' : 'side view facing right'}, ${animationPoseGuidance(animationState)}`;
     case 'portrait':
       return 'bust portrait, face readable, matching costume and palette, no text';
     case 'tileset':
@@ -78,7 +78,9 @@ export function compileVisualPrompt(input: CompileVisualPromptInput): VisualProm
   const { visualDNA, biomeVisualDNA, category, subject, role, technicalSpec } = input;
   const variantSeed = input.variantSeed ?? visualDNA.seed;
   const styleFingerprint = biomeVisualDNA?.styleFingerprint ?? visualDNA.styleFingerprint;
-  const anchors = [...visualDNA.promptAnchors, ...(biomeVisualDNA?.promptAnchors ?? [])];
+  const topDown = visualDNA.projection === 'top-down' || (visualDNA.projection === undefined && visualDNA.promptAnchors.includes('top-down orthographic'));
+  const anchors = [...visualDNA.promptAnchors, ...(biomeVisualDNA?.promptAnchors ?? [])]
+    .filter((anchor) => !topDown || !/side[ -]view/i.test(anchor));
   const prompt = [
     visualDNA.artStyle.label,
     visualDNA.renderingStyle,
@@ -93,7 +95,7 @@ export function compileVisualPrompt(input: CompileVisualPromptInput): VisualProm
     role ? `gameplay role: ${role}` : '',
     input.animationState ? `animation state: ${input.animationState}` : '',
     input.identityReference ? `identity lock: ${input.identityReference}` : '',
-    categoryLocks(category, technicalSpec.transparentBackground, input.animationState),
+    categoryLocks(category, technicalSpec.transparentBackground, input.animationState, topDown),
     `${technicalSpec.width}x${technicalSpec.height}`,
     anchors.join(', '),
     subject,

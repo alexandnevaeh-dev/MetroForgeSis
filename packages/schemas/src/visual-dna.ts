@@ -189,6 +189,7 @@ export const ArtStyleDefinitionSchema = z.object({
 export type ArtStyleDefinition = z.infer<typeof ArtStyleDefinitionSchema>;
 
 export const VisualDNASchema = z.object({
+  projection: z.enum(['side-view', 'top-down']).optional(),
   version: z.literal(VISUAL_DNA_VERSION),
   gameId: z.string().optional(),
   styleFingerprint: z.string(),

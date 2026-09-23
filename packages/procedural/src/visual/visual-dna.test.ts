@@ -180,7 +180,7 @@ describe('action-pose visual generation contract', () => {
     expect(jump.prompt).toContain('warden-approved-v1');
     expect(jump.technicalConstraints).toMatchObject({ width: 256, height: 384, transparentBackground: true });
     expect(jump.promptHash).not.toBe(idle.promptHash);
-    expect(jump.compilerVersion).toBe(2);
+    expect(jump.compilerVersion).toBe(3);
   });
 });
 
@@ -211,5 +211,23 @@ describe('painted medium across generation stages', () => {
     expect(art.promptPrefixes.CHARACTER).toContain('pixel art');
     expect(style).toMatchObject({ pixelFiltering: 'nearest', nearestNeighbor: true, pixelSnap: true });
     expect(visual.artStyle.id).toBe('gothic-ruin');
+  });
+});
+
+
+describe('top-down visual perspective', () => {
+  it('keeps top-down character direction through bibles and current or legacy VisualDNA', () => {
+    const game = { ...dna, archetype: 'TOP_DOWN_ACTION_ADVENTURE' as const };
+    const art = generateArtBible(game, 42);
+    const style = generateStyleBible(game, art);
+    const visual = generateVisualDNA({ gameDna: game, artBible: art, styleBible: style });
+    expect(art.promptPrefixes.CHARACTER).toContain('top-down');
+    expect(generateCharacterVisualDNA(game, art).orientation).toContain('top-down');
+    for (const source of [visual, { ...visual, projection: undefined }]) {
+      const result = compileVisualPrompt({ visualDNA: source, category: 'player', subject: 'warden',
+        technicalSpec: { width: 64, height: 64, transparentBackground: true } });
+      expect(result.prompt).toContain('top-down orthographic');
+      expect(result.prompt).not.toMatch(/side[ -]view|facing right/);
+    }
   });
 });
