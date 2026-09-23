@@ -10,3 +10,5 @@ export type { EditableObject, EditableValue, LiveEditOperation, LiveEditTransact
 export { roomSolidObjects, withRoomSolids } from './room-solid-edit.js';
 export { readUnityRoomEdit, saveUnityRoomEdit } from './unity-room-edit-store.js';
 export { rollLoot, type LootDrop } from './loot.js';
+
+export type { UnityBackgroundFraming } from './unity-room-edit-store.js';

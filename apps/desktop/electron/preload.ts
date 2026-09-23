@@ -40,8 +40,8 @@ contextBridge.exposeInMainWorld('metroforge', {
   readEditableItems: (projectPath: string) => ipcRenderer.invoke('read-editable-items', projectPath),
   saveEditableItem: (projectPath: string, item: unknown, revision: string) => ipcRenderer.invoke('save-editable-item', projectPath, item, revision),
   readUnityRoomEdit: (projectPath: string, roomId: string) => ipcRenderer.invoke('read-unity-room-edit', projectPath, roomId),
-  saveUnityRoomEdit: (projectPath: string, roomId: string, objects: import('@metroforge/engines').EditableObject[], fingerprints: string[]) =>
-    ipcRenderer.invoke('save-unity-room-edit', projectPath, roomId, objects, fingerprints),
+  saveUnityRoomEdit: (projectPath: string, roomId: string, objects: import('@metroforge/engines').EditableObject[], fingerprints: string[], backgroundFraming?: import('@metroforge/engines').UnityBackgroundFraming) =>
+    ipcRenderer.invoke('save-unity-room-edit', projectPath, roomId, objects, fingerprints, backgroundFraming),
   getRoomCollision: (projectPath: string, roomId: string) =>
     ipcRenderer.invoke('get-room-collision', projectPath, roomId),
   listProjects: () => ipcRenderer.invoke('list-projects'),
