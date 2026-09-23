@@ -119,6 +119,9 @@ function collectSprites(input: AssemblyInput, enemyIds: string[]): GameplaySprit
     'hurt',
     'death',
     'dash',
+    'wall_slide',
+    'wall_jump',
+    'swim',
   ];
   for (const clip of playerClips) {
     const rel = `assets/characters/player_${clip}.png`;

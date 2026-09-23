@@ -66,19 +66,23 @@ describe('buildGameplayPack', () => {
 
 // Inspect the exported pack, not just a layout helper: sidecar dimensions must survive assembly.
 describe('authored animation layouts', () => {
-  function packWithSheet(spec: Record<string, unknown>, width = 1024, height = 768) {
+  function packWithSheet(spec: Record<string, unknown>, width = 1024, height = 768, clip = 'walk') {
     const outputDir = mkdtempSync(join(tmpdir(), 'metroforge-grid-'));
     mkdirSync(join(outputDir, 'assets/characters'), { recursive: true });
-    writeFileSync(join(outputDir, 'assets/characters/player_animations.json'), JSON.stringify({ walk: spec }));
+    writeFileSync(join(outputDir, 'assets/characters/player_animations.json'), JSON.stringify({ [clip]: spec }));
     const png = Buffer.alloc(24);
     png.set([0x89, 0x50, 0x4e, 0x47]);
     png.writeUInt32BE(width, 16); png.writeUInt32BE(height, 20);
     return buildGameplayPack({ outputDir, gameDna: dna,
       worldGraph: { version: '0.1.0', seed: 3, nodes: [], edges: [], regions: [] },
       progressionGraph: { version: '0.1.0', seed: 3, startNodeId: 'room_000', endNodeId: 'room_000', nodes: [], edges: [], abilities: [], criticalPath: [] },
-      roomIds: [], textureFiles: new Map([['assets/characters/player_walk.png', png]]),
-    }).sprites.find(sprite => sprite.clip === 'walk');
+      roomIds: [], textureFiles: new Map([[`assets/characters/player_${clip}.png`, png]]),
+    }).sprites.find(sprite => sprite.clip === clip);
   }
+  it.each(['wall_slide', 'wall_jump', 'swim'])('exports traversal clip %s with authored layout and timing', clip => {
+    expect(packWithSheet({ frameCount: 8, frameWidth: 256, frameHeight: 384, fps: 12, loop: false }, 1024, 768, clip))
+      .toMatchObject({ ownerId: 'player', clip, relativePath: `assets/characters/player_${clip}.png`, frameCount: 8, frameWidth: 256, frameHeight: 384, fps: 12, loop: false });
+  });
   it('preserves two-row frame dimensions and slow authored timing', () => {
     expect(packWithSheet({ frameCount: 8, frameWidth: 256, frameHeight: 384, fps: .5, loop: false }))
       .toMatchObject({ frameCount: 8, frameWidth: 256, frameHeight: 384, fps: .5, loop: false });
