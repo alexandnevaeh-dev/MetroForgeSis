@@ -160,3 +160,24 @@ describe('VisualDNA', () => {
     expect(art.palette.some((c) => c.hex === '#101018')).toBe(true);
   });
 });
+
+
+describe('action-pose visual generation contract', () => {
+  it('keeps jump frames airborne-compatible and preserves prompt identity and geometry', () => {
+    const art = generateArtBible(dna, 42);
+    const style = generateStyleBible(dna, art);
+    const visual = generateVisualDNA({ gameDna: dna, artBible: art, styleBible: style });
+    const input = { visualDNA: visual, category: 'player' as const, subject: 'tide warden',
+      technicalSpec: { width: 256, height: 384, transparentBackground: true }, identityReference: 'warden-approved-v1' };
+    const idle = compileVisualPrompt({ ...input, animationState: 'idle' });
+    const jump = compileVisualPrompt({ ...input, animationState: 'jump' });
+    expect(idle.prompt).toContain('balanced stance');
+    expect(jump.prompt).not.toContain('feet planted');
+    expect(jump.prompt).not.toContain('balanced stance');
+    expect(jump.prompt).toContain('articulated shoulders elbows hips knees and head');
+    expect(jump.prompt).toContain('warden-approved-v1');
+    expect(jump.technicalConstraints).toMatchObject({ width: 256, height: 384, transparentBackground: true });
+    expect(jump.promptHash).not.toBe(idle.promptHash);
+    expect(jump.compilerVersion).toBe(2);
+  });
+});

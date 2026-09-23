@@ -72,6 +72,7 @@ export {
   generateBiomeVisualDNA,
   generateAllBiomeVisualDNA,
   compileVisualPrompt,
+  animationPoseGuidance,
   VISUAL_PROMPT_COMPILER_VERSION,
   generateEnvironmentKit,
   environmentKitScaleFor,

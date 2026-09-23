@@ -1,5 +1,5 @@
 import type { BiomeVisualDNA, VisualCategory, VisualDNA } from '@metroforge/schemas';
-import { compileVisualPrompt } from '@metroforge/procedural';
+import { compileVisualPrompt, animationPoseGuidance } from '@metroforge/procedural';
 import { sanitizeImagePromptText } from '../sanitize-image-prompt.js';
 import type { AssetReplacementPlan, VisualAssetFamily } from './types.js';
 
@@ -85,7 +85,7 @@ export function buildReplacementPrompt(plan: AssetReplacementPlan, context: Prom
     return sanitizeImagePromptText(compiled.prompt);
   }
 
-  const style = context.gameStyleLabel ? `${context.gameStyleLabel} pixel art` : 'polished modern-Metroidvania pixel art';
+  const style = context.gameStyleLabel?.trim() || 'polished original 2D game art';
   const tone = context.tone ? `, ${context.tone} tone` : '';
   const biome = context.biomeVisualDNA
     ? `, ${context.biomeVisualDNA.displayName} biome, ${context.biomeVisualDNA.atmosphere}`
@@ -95,7 +95,9 @@ export function buildReplacementPrompt(plan: AssetReplacementPlan, context: Prom
     plan.role,
     tone,
     biome,
-    FAMILY_CONSTRAINTS[plan.family],
+    plan.animationState && plan.animationState !== 'idle'
+      ? FAMILY_CONSTRAINTS[plan.family].replace('feet planted on canvas bottom', animationPoseGuidance(plan.animationState))
+      : FAMILY_CONSTRAINTS[plan.family],
     transparencyClause(plan.transparentBackground),
     preserve.length ? preserve.join(', ') : '',
     dims,

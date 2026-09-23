@@ -13,6 +13,7 @@ import {
   type GenerationProfile,
 } from '@metroforge/shared';
 import type { ProviderHealth, TextGenerationRequest } from '../types.js';
+import { buildGenreDesignBrief } from './genre-design-brief.js';
 
 /**
  * The minimal shape generateGameDNA actually needs — deliberately narrower than the full
@@ -135,7 +136,7 @@ export async function generateGameDNA(
   "seed": ${input.seed},
   "profile": "${input.profile}"
 }`,
-      prompt: `Create Game DNA for: ${input.prompt}`,
+      prompt: `Create Game DNA for: ${input.prompt}\n\n${buildGenreDesignBrief(resolveGameArchetype(input.archetype ?? inferGameArchetypeFromPrompt(input.prompt)))}`,
       jsonMode: true,
       temperature: 0.7,
     });

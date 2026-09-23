@@ -82,3 +82,19 @@ describe('buildReplacementPrompt (fallback template, no VisualDNA)', () => {
     expect(prompt).toContain('Drowned Citadel');
   });
 });
+
+
+describe('research-informed rendering and motion constraints', () => {
+  it('preserves an explicit painted medium instead of appending pixel art', () => {
+    const prompt = buildReplacementPrompt(plan(), { gameStyleLabel: 'hand-painted dark fantasy' });
+    expect(prompt).toContain('hand-painted dark fantasy');
+    expect(prompt).not.toContain('pixel art');
+  });
+  it('allows airborne poses while retaining identity and output geometry', () => {
+    const prompt = buildReplacementPrompt(plan({ animationState: 'jump' }));
+    expect(prompt).not.toContain('feet planted');
+    expect(prompt).toContain('articulated shoulders');
+    expect(prompt).toContain('preserve the original silhouette');
+    expect(prompt).toContain('64x64');
+  });
+});

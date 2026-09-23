@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { animationPoseGuidance } from './animation-direction.js';
 import type {
   BiomeVisualDNA,
   VisualCategory,
@@ -6,7 +7,7 @@ import type {
   VisualPromptCompileResult,
 } from '@metroforge/schemas';
 
-export const VISUAL_PROMPT_COMPILER_VERSION = 1 as const;
+export const VISUAL_PROMPT_COMPILER_VERSION = 2 as const;
 
 export interface CompileVisualPromptInput {
   visualDNA: VisualDNA;
@@ -46,28 +47,28 @@ function biomeLine(biome?: BiomeVisualDNA): string {
     .join(', ');
 }
 
-function categoryLocks(category: VisualCategory, transparent: boolean): string {
+function categoryLocks(category: VisualCategory, transparent: boolean, animationState?: string): string {
   const transparency = transparent ? 'transparent background, isolated, no scene backdrop' : 'full-frame composition, no letterboxing';
   switch (category) {
     case 'player':
     case 'npc':
     case 'enemy':
     case 'boss':
-      return `${transparency}, single character, side view facing right, feet planted on canvas bottom`;
+      return `${transparency}, single character, side view facing right, ${animationPoseGuidance(animationState)}`;
     case 'portrait':
       return 'bust portrait, face readable, matching costume and palette, no text';
     case 'tileset':
     case 'terrain':
-      return 'tileable material, orthographic, no characters, no UI';
+      return 'tileable material, orthographic, readable collision edges, quieter interior texture, no characters, no UI';
     case 'background':
     case 'parallax':
-      return 'environment only, no characters, no UI, no logos';
+      return 'environment only, layered depth, subdued detail behind playable space, distinct architectural landmark, no characters, no UI, no logos';
     case 'ui':
     case 'hud':
     case 'icon':
-      return 'UI asset, no baked readable text, no photographs';
+      return 'UI asset, distinct silhouette at small size, consistent material and light direction, no baked readable text, no photographs';
     case 'vfx':
-      return 'isolated VFX sprite, transparent background, no characters';
+      return 'isolated VFX sprite, readable effect boundary, restrained glow preserving target visibility, transparent background, no characters';
     default:
       return transparency;
   }
@@ -90,7 +91,7 @@ export function compileVisualPrompt(input: CompileVisualPromptInput): VisualProm
     role ? `gameplay role: ${role}` : '',
     input.animationState ? `animation state: ${input.animationState}` : '',
     input.identityReference ? `identity lock: ${input.identityReference}` : '',
-    categoryLocks(category, technicalSpec.transparentBackground),
+    categoryLocks(category, technicalSpec.transparentBackground, input.animationState),
     `${technicalSpec.width}x${technicalSpec.height}`,
     anchors.join(', '),
     subject,

@@ -11,3 +11,5 @@ export type { BiomeKit, BiomeKitSurfaceSet } from './biome-kit.js';
 export { generateRoomStorytelling } from './storytelling.js';
 export { buildDeterministicBiomeLightingProfile, lightingDirectiveForRoom } from './lighting.js';
 export type { BiomeLightingProfile, RoomLightingDirective } from './lighting.js';
+
+export { animationPoseGuidance } from './animation-direction.js';
