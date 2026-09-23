@@ -1,3 +1,4 @@
+import { launchUnityPreview } from './unity-preview.js';
 import { ipcMain, shell } from 'electron';
 import { detectProjectEngine, readUnityRoomEdit, saveUnityRoomEdit, type EditableObject } from '@metroforge/engines';
 import { readdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -1095,6 +1096,19 @@ export function registerIpcHandlers(cwd: string): void {
       preference: prefs[APP_SETTING_KEYS.godotExecutable] ?? null,
       envPath: config.godotExecutable,
       projectPath,
+    });
+  });
+
+  ipcMain.handle('play-project', async (_event, projectPath: string) => {
+    assertReadableProjectPath(projectPath, cwd);
+    const engine = detectProjectEngine(projectPath);
+    if (engine === 'unity') return launchUnityPreview(projectPath);
+    if (engine !== 'godot') return { success: false, message: 'Gameplay preview for this engine is not available yet.' };
+    const config = loadConfig();
+    const prefs = await loadAppPreferences(config.dataDir || join(cwd, '.metroforge'));
+    return startPlaytest(projectPath, {
+      preference: prefs[APP_SETTING_KEYS.godotExecutable] ?? null,
+      envPath: config.godotExecutable,
     });
   });
 

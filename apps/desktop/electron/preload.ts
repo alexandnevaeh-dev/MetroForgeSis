@@ -75,6 +75,8 @@ contextBridge.exposeInMainWorld('metroforge', {
     ipcRenderer.invoke('reveal-project-folder', projectPath),
   openInGodot: (projectPath: string) =>
     ipcRenderer.invoke('open-in-godot', projectPath) as Promise<{ success: boolean; message: string }>,
+  playProject: (projectPath: string) =>
+    ipcRenderer.invoke('play-project', projectPath) as Promise<{ success: boolean; message: string }>,
   playInGodot: (projectPath: string) =>
     ipcRenderer.invoke('play-in-godot', projectPath) as Promise<{ success: boolean; message: string }>,
   stopPlaytest: (projectPath: string) =>

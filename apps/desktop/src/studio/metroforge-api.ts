@@ -278,6 +278,7 @@ export type MetroforgeBridge = {
   getProjectPreview: (projectPath: string) => Promise<ProjectPreview>;
   getProjectDashboard: (projectPath: string) => Promise<Record<string, unknown>>;
   openInGodot: (projectPath: string) => Promise<{ success: boolean; message: string }>;
+  playProject: (projectPath: string) => Promise<{ success: boolean; message: string }>;
   playInGodot: (projectPath: string) => Promise<{ success: boolean; message: string }>;
   stopPlaytest: (projectPath: string) => Promise<{ success: boolean; message: string }>;
   getPlaytestSession: (projectPath: string) => Promise<{

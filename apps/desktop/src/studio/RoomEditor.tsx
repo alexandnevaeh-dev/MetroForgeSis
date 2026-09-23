@@ -386,8 +386,14 @@ export function RoomEditor() {
                     onClick={async () => {
                       setError(null);
                       if (!selectedPath) return;
-                      const r = await window.metroforge!.playInGodot!(selectedPath);
-                      if (!r.success) setError(r.message);
+                      setMessage(null);
+                      try {
+                        const r = await window.metroforge!.playProject(selectedPath);
+                        if (!r.success) setError(r.message);
+                        else setMessage(r.message);
+                      } catch (cause) {
+                        setError(cause instanceof Error ? cause.message : String(cause));
+                      }
                     }}
                   >
                     Play Preview
