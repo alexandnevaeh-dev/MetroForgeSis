@@ -1312,7 +1312,7 @@ export function registerIpcHandlers(cwd: string): void {
   });
 
   ipcMain.handle('get-asset-preview', async (_event, projectPath: string, relPath: string) => {
-    assertProjectPath(projectPath, cwd);
+    assertReadableProjectPath(projectPath, cwd);
     return { dataUrl: loadAssetThumbnail(projectPath, relPath) };
   });
 

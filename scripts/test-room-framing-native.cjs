@@ -3,6 +3,10 @@ const root=path.resolve(__dirname,'..'),req=createRequire(root+'/apps/desktop/pa
 (async()=>{
  const out=fs.mkdtempSync('E:/Metroforge/Recovery-Audit/room-framing-ui-'),project=out+'/projects/unity';
  fs.cpSync('E:/Metroforge/Recovery-Audit/portable-assembly-sJcA1z/unity',project,{recursive:true});
+ const background='assets/room-preview-test.png';
+ fs.mkdirSync(project+'/Assets/StreamingAssets/assets',{recursive:true});
+ fs.copyFileSync('E:/Metroforge/Recovery-Audit/ashen-covenant/assets/abbey-distant-layer-v1.png',project+'/Assets/StreamingAssets/'+background);
+ for(const file of ['gameplay.json','Assets/StreamingAssets/gameplay.json']){const pack=JSON.parse(fs.readFileSync(project+'/'+file,'utf8'));pack.rooms[0].backgrounds={...pack.rooms[0].backgrounds,far:background};fs.writeFileSync(project+'/'+file,JSON.stringify(pack,null,2));}
  const env={...process.env,METROFORGE_DATA_DIR:out+'/data',METROFORGE_GENERATED_GAMES_DIR:out+'/projects',VITE_DEV_SERVER_URL:''};delete env.ELECTRON_RUN_AS_NODE;delete env.METROFORGE_DESKTOP_SMOKE;
  const app=await req('playwright')._electron.launch({executablePath:req('electron'),args:[root+'/apps/desktop'],cwd:out,env});
  try{
@@ -10,6 +14,8 @@ const root=path.resolve(__dirname,'..'),req=createRequire(root+'/apps/desktop/pa
   await page.evaluate(p=>sessionStorage.setItem('metroforge.activeProjectPath',p),project.replaceAll('/','\\'));await page.reload();
   const open=async()=>{await page.locator('aside.sidebar button.nav-item').filter({hasText:'Rooms'}).click();await page.getByRole('listbox',{name:'Rooms',exact:true}).getByRole('option').first().click();};
   await open();
+  await page.locator('image[data-room-background="far"]').waitFor({state:'attached'});
+  assert.ok(await page.locator('image[data-room-background="far"]').evaluate(async element=>{const img=new Image();img.src=element.getAttribute('href');await img.decode();return img.naturalWidth>0;}));
   const control=page.getByLabel('Frame background to camera',{exact:true});await control.check();
   await page.getByLabel('Background parallax',{exact:true}).fill('0.25');
   await page.locator('.unity-room-geometry').getByRole('button',{name:'Undo room edit',exact:true}).click();assert.equal(await page.getByLabel('Background parallax',{exact:true}).inputValue(),'0.1');

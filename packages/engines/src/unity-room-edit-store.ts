@@ -15,7 +15,7 @@ export function readUnityRoomEdit(project: string, roomId: string) {
     throw new Error('Gameplay copies differ; reconcile them before editing');
   const objects = roomSolidObjects(pack, roomId);
   const background = pack.rooms.find(room => room.id === roomId)!.backgrounds;
-  return { objects, backgroundFraming: { farCameraRelative: background?.farCameraRelative ?? false,
+  return { objects, farBackground: background?.far, backgroundFraming: { farCameraRelative: background?.farCameraRelative ?? false,
     farParallax: background?.farParallax ?? 0.1 }, fingerprints: originals.map(hash) };
 }
 
