@@ -21,6 +21,7 @@ public class GameplaySpriteClip
     public int frameHeight;
     public int frameCount;
     public float pixelsPerUnit = 1f;
+    public bool smoothFiltering;
     public float fps;
     public bool loop;
     public float pivotX;

@@ -44,7 +44,7 @@ public class SpriteSheetPlayer : MonoBehaviour
             var fw = Mathf.Max(1, clip.frameWidth);
             var fh = Mathf.Max(1, clip.frameHeight);
             var pivot = new Vector2(clip.pivotX, clip.pivotY);
-            var frames = StreamingArtCache.GetSheet(streamingRoot, clip.relativePath, fw, fh, pivot, FilterMode.Point, clip.pixelsPerUnit);
+            var frames = StreamingArtCache.GetSheet(streamingRoot, clip.relativePath, fw, fh, pivot, clip.smoothFiltering ? FilterMode.Bilinear : FilterMode.Point, clip.pixelsPerUnit);
             if (frames == null || frames.Length == 0)
                 continue;
             var needed = Mathf.Max(1, clip.frameCount);

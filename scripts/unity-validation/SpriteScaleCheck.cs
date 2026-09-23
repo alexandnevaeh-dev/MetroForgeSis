@@ -29,8 +29,10 @@ public static class SpriteScaleCheck {
   Require(StreamingArtCache.GetSliced(root,rel,Vector4.zero).rect.width==128&&StreamingArtCache.GetSliced(otherRoot,rel,Vector4.zero).rect.width==256,"Cross-project sliced contamination");
   UnityEngine.Object.DestroyImmediate(otherTexture);
   var go=new GameObject("Scaled clip check");var renderer=go.AddComponent<SpriteRenderer>();var player=go.AddComponent<SpriteSheetPlayer>();go.SendMessage("Awake");
-  player.LoadClips(new[]{new GameplaySpriteClip{ownerId="player",clip="idle",relativePath=rel,frameWidth=64,frameHeight=64,frameCount=2,pivotX=.5f,pivotY=0,pixelsPerUnit=4}},"player",root);
+  player.LoadClips(new[]{new GameplaySpriteClip{ownerId="player",clip="idle",relativePath=rel,frameWidth=64,frameHeight=64,frameCount=2,pivotX=.5f,pivotY=0,pixelsPerUnit=4,smoothFiltering=true}},"player",root);
   player.Play("idle",true);Require(renderer.sprite!=null&&renderer.sprite.pixelsPerUnit==4,"Clip metadata not applied");
+  Require(renderer.sprite.texture.filterMode==FilterMode.Bilinear,"Smooth filtering metadata ignored");
+  Require(legacy[0].texture.filterMode==FilterMode.Point&&!ReferenceEquals(renderer.sprite.texture,legacy[0].texture),"Smooth filtering changed legacy texture");
   UnityEngine.Object.DestroyImmediate(go);UnityEngine.Object.DestroyImmediate(texture);
   File.WriteAllText(Path.Combine(Application.dataPath,"../sprite-scale-result.json"),"{\"passed\":true,\"scope\":\"Native sprite scale, legacy default, cache separation, invalid fallback, foot pivot and clip metadata\"}");
   Debug.Log("UNITY_SPRITE_SCALE_PASS");EditorApplication.Exit(0);

@@ -17,6 +17,8 @@ export interface GameplaySpriteClip {
   frameCount: number;
   /** Unity sprite pixels per world unit; omitted or invalid values use 1. */
   pixelsPerUnit?: number;
+  /** Unity bilinear filtering for painted sprites; defaults to point filtering. */
+  smoothFiltering?: boolean;
   fps: number;
   loop: boolean;
   /** Normalized pivot. Characters use bottom-center (0.5, 0). */
