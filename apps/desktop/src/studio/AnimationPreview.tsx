@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { AssetRecord } from './types.js';
-import { Button } from './ui/index.js';
+import { Button, Input } from './ui/index.js';
 
 export function animationFrameRect(
   width: number, height: number, count: number, frame: number,
@@ -16,8 +16,8 @@ export function animationFrameRect(
   return { x: (index % columns) * w, y: Math.floor(index / columns) * h, width: w, height: h };
 }
 
-export function AnimationPreview({ asset, frame, playing, onToggle, onStep }: {
-  asset: AssetRecord; frame: number; playing: boolean; onToggle: () => void; onStep: () => void;
+export function AnimationPreview({ asset, frame, playing, onToggle, onStep, onSeek }: {
+  asset: AssetRecord; frame: number; playing: boolean; onToggle: () => void; onStep: () => void; onSeek: (frame: number) => void;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
@@ -50,6 +50,7 @@ export function AnimationPreview({ asset, frame, playing, onToggle, onStep }: {
     <div className="row">
       <Button type="button" onClick={onToggle}>{playing ? 'Pause' : 'Play'}</Button>
       <Button type="button" onClick={onStep}>Frame step</Button>
+      <label>Frame<Input type="range" min={0} max={count - 1} step={1} value={frame % count} aria-label="Animation frame" aria-valuetext={`Frame ${frame % count + 1} of ${count}`} onChange={(event) => onSeek(Number(event.currentTarget.value))} /></label>
       <span>Frame {frame % count + 1}/{count}</span>
     </div>
   </div>;

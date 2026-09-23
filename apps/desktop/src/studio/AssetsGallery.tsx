@@ -236,6 +236,7 @@ export function AssetsGallery() {
                   asset={selected}
                   frame={animFrame}
                   playing={animPlaying}
+                  onSeek={(frame) => { setAnimPlaying(false); setAnimFrame(frame); }}
                   onToggle={() => setAnimPlaying((p) => !p)}
                   onStep={() => { setAnimPlaying(false); setAnimFrame((f) => (f + 1) % Math.max(1, selected.frameCount ?? 1)); }}
                 />
