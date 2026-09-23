@@ -1,3 +1,4 @@
+import { latestPhases } from './latest-phases.js';
 import { resolveAssetAnimation } from './asset-animation.js';
 import { launchUnityPreview, prepareUnityPreview } from './unity-preview.js';
 import { ipcMain, shell } from 'electron';
@@ -1218,13 +1219,13 @@ export function registerIpcHandlers(cwd: string): void {
   ipcMain.handle('get-generation-state', async (_event, projectPath: string) => {
     assertProjectPath(projectPath, cwd);
     const events = generationEventStore.read(projectPath);
-    let phases = events
+    let phases = latestPhases(events
       .filter((e) => e.type === 'PhaseStarted' || e.type === 'PhaseCompleted')
       .map((e) => ({
         phase: 'phase' in e ? e.phase : '',
         status: 'status' in e ? e.status : 'PENDING',
         message: 'message' in e ? e.message : undefined,
-      }));
+      })));
 
     if (phases.length === 0) {
       try {
