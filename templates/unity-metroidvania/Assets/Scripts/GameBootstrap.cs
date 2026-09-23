@@ -41,6 +41,7 @@ public class GameBootstrap : MonoBehaviour
     private Vector2 _spawn;
     private bool _onTitle;
     private bool _loadingRoom;
+    private bool _restoringSave;
     private float _ignoreDoorsUntil;
     private float _layoutAt;
     private string _layoutSig;
@@ -171,9 +172,7 @@ public class GameBootstrap : MonoBehaviour
                 var save = JsonUtility.FromJson<SaveBlob>(File.ReadAllText(_savePath));
                 if (save != null && _rooms.ContainsKey(save.roomId))
                 {
-                    LoadRoom(save.roomId, new Vector2(save.x, save.y), true);
-                    ApplySavedAbilities(save.abilities);
-                    Victory = save.victory;
+                    RestoreSave(save);
                     return;
                 }
             }
@@ -249,16 +248,25 @@ public class GameBootstrap : MonoBehaviour
         var save = JsonUtility.FromJson<SaveBlob>(File.ReadAllText(_savePath));
         if (save == null || !_rooms.ContainsKey(save.roomId))
             return;
-        LoadRoom(save.roomId, new Vector2(save.x, save.y), true);
-        if (_player != null && !string.IsNullOrEmpty(save.abilities))
+        RestoreSave(save);
+    }
+
+    private void RestoreSave(SaveBlob save)
+    {
+        _restoringSave = true;
+        try
         {
-            foreach (var id in save.abilities.Split(','))
+            LoadRoom(save.roomId, new Vector2(save.x, save.y), true);
+            if (_player != null)
             {
-                if (!string.IsNullOrEmpty(id))
-                    _player.GrantAbility(id);
+                _player.Inventory.Restore(save.inventory);
+                _player.Abilities.Clear();
+                ApplySavedAbilities(save.abilities);
             }
+            Victory = save.victory;
         }
-        Victory = save.victory;
+        finally { _restoringSave = false; }
+        WriteSave();
     }
 
     private void BuildHud()
@@ -1252,7 +1260,7 @@ public class GameBootstrap : MonoBehaviour
 
     private void WriteSave()
     {
-        if (_player == null || _room == null)
+        if (_restoringSave || _player == null || _room == null)
             return;
         MainThreadProbe.SaveMarker.Begin();
         var t0 = Time.realtimeSinceStartup;
@@ -1263,6 +1271,7 @@ public class GameBootstrap : MonoBehaviour
             y = _player.transform.position.y,
             abilities = string.Join(",", _player.Abilities),
             victory = Victory,
+            inventory = _player.Inventory.Capture(),
         };
         File.WriteAllText(_savePath, JsonUtility.ToJson(blob));
         LastWriteSaveMs = (Time.realtimeSinceStartup - t0) * 1000f;
@@ -1279,5 +1288,6 @@ public class GameBootstrap : MonoBehaviour
         public float y;
         public string abilities;
         public bool victory;
+        public InventorySave inventory;
     }
 }

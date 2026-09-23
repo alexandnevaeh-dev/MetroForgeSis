@@ -101,6 +101,15 @@ DefaultImporter:
         JSON.stringify(pack, null, 2),
       );
 
+      // Runtime catalogs must ship in players, not only beside the editor project.
+      for (const relative of ['items/items.json', 'loot/loot_tables.json', 'enemies/enemies.json']) {
+        const source = join(input.outputDir, 'data', relative);
+        if (!existsSync(source)) continue;
+        const target = join(input.outputDir, 'Assets', 'StreamingAssets', 'data', relative);
+        mkdirSync(dirname(target), { recursive: true });
+        cpSync(source, target);
+      }
+
       const spriteMeta = (rel: string) =>
         pngSpriteMeta(unityGuid(`art:${rel}`), 1, {
           filterMode: rel.includes('/backgrounds/') ? 1 : 0,

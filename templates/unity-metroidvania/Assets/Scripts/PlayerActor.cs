@@ -44,6 +44,9 @@ public class PlayerActor : MonoBehaviour
     public readonly HashSet<string> Abilities = new HashSet<string>();
     public int LastSwingUniqueHits { get; private set; }
 
+    public GameplayInventory Inventory { get; private set; } = new GameplayInventory(null);
+    public float ArmorRating => Mathf.Max(0f, Inventory.Effect("armor"));
+    public float AttackDamage => Mathf.Max(0f, Pack.combat.attackDamage + Inventory.Effect("attack"));
     public float Health => _health;
     public float MaxHealth => Pack != null && Pack.combat != null && Pack.combat.maxHealth > 0f ? Pack.combat.maxHealth : 100f;
     public bool Dead { get; private set; }
@@ -93,6 +96,12 @@ public class PlayerActor : MonoBehaviour
     public void Configure(GameplayPack pack, SpriteSheetPlayer sheet)
     {
         Pack = pack;
+        var catalogPath = System.IO.Path.Combine(Application.streamingAssetsPath, "data", "items", "items.json");
+        if (System.IO.File.Exists(catalogPath))
+        {
+            var catalog = JsonUtility.FromJson<InventoryCatalog>(System.IO.File.ReadAllText(catalogPath));
+            Inventory = new GameplayInventory(catalog != null ? catalog.items : null);
+        }
         animator = sheet;
         Physics2D.gravity = new Vector2(0f, -pack.movement.gravity);
         _health = MaxHealth;
@@ -275,7 +284,7 @@ public class PlayerActor : MonoBehaviour
             return;
         if (!_hitThisSwing.Add(enemy))
             return;
-        enemy.Hurt(Pack.combat.attackDamage);
+        enemy.Hurt(AttackDamage);
         LastSwingUniqueHits = _hitThisSwing.Count;
     }
 
@@ -335,12 +344,12 @@ public class PlayerActor : MonoBehaviour
     public void Hurt(float amount)
     {
         MainThreadProbe.PlayerHurtMarker.Begin();
-        if (Dead || _invuln > 0f || IsVeilStepping)
+        if (Dead || _invuln > 0f || IsVeilStepping || amount <= 0f || float.IsNaN(amount) || float.IsInfinity(amount))
         {
             MainThreadProbe.PlayerHurtMarker.End();
             return;
         }
-        _health -= amount;
+        _health -= amount * (100f / (100f + ArmorRating));
         _invuln = Pack.combat.invulnerableSeconds;
         LockClip("hurt", 0.22f);
         if (_health <= 0f) Defeat();
