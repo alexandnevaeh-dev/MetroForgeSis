@@ -19,3 +19,24 @@ describe('genre study reaches the actual DNA provider request', () => {
     if (archetype === 'TOP_DOWN_ACTION_ADVENTURE') expect(request?.prompt).not.toContain('varied long halls and vertical chambers');
   });
 });
+
+
+describe('offline rendering medium', () => {
+  it.each([
+    ['hand-painted gothic abbey', 'hand-painted 2D illustration'],
+    ['painterly dark fantasy', 'hand-painted 2D illustration'],
+    ['gothic pixel art', 'HD pixel art'],
+    ['a castle with painted doors', 'HD pixel art'],
+    ['not hand-painted; gothic pixel art', 'HD pixel art'],
+  ])('preserves intent for %s without a provider', async (prompt, style) => {
+    const result = await generateGameDNA({ prompt, seed: 42, profile: 'TINY_TEST' }, null);
+    expect(result.source).toBe('deterministic');
+    expect(result.dna.identity.visualStyle).toBe(style);
+  });
+  it('retains painted direction when the provider fails', async () => {
+    const result = await generateGameDNA({ prompt: 'hand-painted gothic abbey', seed: 42, profile: 'TINY_TEST' },
+      { health: 'healthy', generateText: async () => { throw new Error('offline'); } });
+    expect(result.source).toBe('deterministic');
+    expect(result.dna.identity.visualStyle).toBe('hand-painted 2D illustration');
+  });
+});

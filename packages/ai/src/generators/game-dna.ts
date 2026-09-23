@@ -34,6 +34,16 @@ export interface GameDNAInput {
   archetype?: GameArchetype;
 }
 
+/** Recognize explicit rendering-medium phrases only; generic fantasy/painted objects do not
+ * change legacy defaults. A conflicting explicit pixel-art request keeps pixel mode.
+ */
+function fallbackVisualStyle(prompt: string): string {
+  const positive = prompt.replace(/\b(?:no|not|without)\s+(?:hand[ -]?painted|painterly|pixel\s+art)\b/gi, '');
+  if (/\bpixel\s+art\b/i.test(positive)) return 'HD pixel art';
+  if (/\b(?:hand[ -]?painted|painterly)\b/i.test(positive)) return 'hand-painted 2D illustration';
+  return 'HD pixel art';
+}
+
 export function createDeterministicGameDNA(input: GameDNAInput): GameDNA {
   const defaults = PROFILE_DEFAULTS[input.profile];
   const archetype = resolveGameArchetype(input.archetype ?? inferGameArchetypeFromPrompt(input.prompt));
@@ -49,7 +59,7 @@ export function createDeterministicGameDNA(input: GameDNAInput): GameDNA {
       genre: topDown ? 'Action-Adventure' : 'Metroidvania',
       subgenre: 'Action-Adventure',
       tone: 'dark',
-      visualStyle: 'HD pixel art',
+      visualStyle: fallbackVisualStyle(input.prompt),
     },
     technical: {
       resolution: { width: 1920, height: 1080 },
