@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 
 [Serializable] public class InventoryEffect { public string type; public float value; }
-[Serializable] public class InventoryItem { public string id; public string name; public string category; public InventoryEffect[] effects; }
+[Serializable] public class InventoryItem { public string id; public string name; public string category; public int maxStack = 1; public InventoryEffect[] effects; }
 [Serializable] public class InventoryCatalog { public InventoryItem[] items; }
 
 [Serializable] public class InventoryCount { public string id; public int count; }
@@ -31,6 +31,16 @@ public sealed class GameplayInventory
     public string Name(string id) => id != null && definitions.TryGetValue(id, out var item) ? item.name ?? id : id ?? "";
     public string Category(string id) => id != null && definitions.TryGetValue(id, out var item) ? item.category : "";
     public int Count(string id) => id != null && counts.TryGetValue(id, out var count) ? count : 0;
+    // Compact stacks are derived from ownership, preserving old saves and all quantities.
+    public int StackLimit(string id) => id != null && definitions.TryGetValue(id, out var item) ? Math.Max(1, item.maxStack) : 0;
+    public int StackCount(string id) {
+        var count = Count(id); var limit = StackLimit(id);
+        return count == 0 || limit == 0 ? 0 : (int)(((long)count + limit - 1) / limit);
+    }
+    public int StackQuantity(string id, int index) {
+        if (index < 0 || index >= StackCount(id)) return 0;
+        return (int)Math.Min(StackLimit(id), (long)Count(id) - (long)index * StackLimit(id));
+    }
     public string Equipped(string slot) => slot != null && equipped.TryGetValue(slot, out var id) ? id : "";
     public bool Grant(string id, int amount)
     {

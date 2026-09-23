@@ -51,7 +51,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
   for(int i=0;i<6;i++){
    int index=page*6+i;labels[i].transform.parent.gameObject.SetActive(index<owned.Length);if(index>=owned.Length)continue;
    var entry=owned[index];string category=inventory.Category(entry.id);bool equipment=category=="weapon"||category=="armor"||category=="charm";
-   labels[i].text=Display(entry.id)+"  ×"+entry.count;actionLabels[i].text=equipment?(inventory.Equipped(category)==entry.id?"Unequip":"Equip"):category=="consumable"?"Use":"Stored";
+   labels[i].text=Display(entry.id)+"  ×"+entry.count+"  ("+inventory.StackCount(entry.id)+" stacks, "+inventory.StackLimit(entry.id)+" per stack)";actionLabels[i].text=equipment?(inventory.Equipped(category)==entry.id?"Unequip":"Equip"):category=="consumable"?"Use":"Stored";
    actions[i].interactable=equipment||category=="consumable";
   }
   if(owned.Length==0)summary.text+="\nNo items collected yet.";

@@ -28,6 +28,10 @@ public static class InventoryCaptureCheck
    if(stage==0){if(game.Pack==null||!game.OnTitleScreen)return;Require(game.TryClickTitleContinue(),"Initial Continue unavailable");stage=1;}
    else if(stage==1){
     game.Player.Inventory.Grant("warden_mail",3);game.Player.Inventory.Grant("forged_blade",2);game.Player.Inventory.Grant("health_vial",2);
+    var catalog=JsonUtility.FromJson<InventoryCatalog>(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"data/items/items.json")));
+    var armorDefinition=Array.Find(catalog.items,item=>item.id=="warden_mail");
+    Require(game.Player.Inventory.StackLimit("warden_mail")==Math.Max(1,armorDefinition.maxStack),"Authored stack limit was not loaded");
+    Require(game.Player.Inventory.StackCount("warden_mail")== (3L+Math.Max(1,armorDefinition.maxStack)-1)/Math.Max(1,armorDefinition.maxStack),"Armor stack count incorrect");
     var panel=game.GetComponentInChildren<InventoryPanelUI>();
     if(panel==null)panel=UnityEngine.Object.FindFirstObjectByType<InventoryPanelUI>();
     Require(panel!=null,"Inventory UI missing");

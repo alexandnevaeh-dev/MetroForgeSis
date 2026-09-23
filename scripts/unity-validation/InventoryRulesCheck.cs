@@ -24,6 +24,15 @@ class InventoryRulesCheck {
   Check(!consumables.TryConsumeHealing("vial",float.NaN,out healed));Check(consumables.Count("vial")==1);
   Check(consumables.TryConsumeHealing("vial",40,out healed));Check(healed==30&&consumables.Count("vial")==0);
   Check(!consumables.TryConsumeHealing("vial",40,out healed));Check(consumables.Capture().items.Length==0);
+  var stackItem=new InventoryItem{id="stack",category="material",maxStack=5};
+  var stacks=new GameplayInventory(new[]{stackItem});Check(stacks.Grant("stack",12));
+  Check(stacks.StackCount("stack")==3&&stacks.StackQuantity("stack",0)==5&&stacks.StackQuantity("stack",2)==2);
+  Check(stacks.StackQuantity("stack",3)==0&&stacks.StackQuantity("stack",-1)==0&&stacks.StackCount("missing")==0);
+  var stackSave=stacks.Capture();
+  var resized=new GameplayInventory(new[]{new InventoryItem{id="stack",category="material",maxStack=4}});resized.Restore(stackSave);
+  Check(resized.Count("stack")==12&&resized.StackCount("stack")==3&&resized.StackQuantity("stack",2)==4);
+  var huge=new GameplayInventory(new[]{new InventoryItem{id="huge",maxStack=int.MaxValue}});Check(huge.Grant("huge",int.MaxValue));
+  Check(huge.StackCount("huge")==1&&huge.StackQuantity("huge",0)==int.MaxValue);
   Console.WriteLine("UNITY_INVENTORY_RULES_PASS");
  }
 }
