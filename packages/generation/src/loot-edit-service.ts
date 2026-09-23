@@ -36,17 +36,26 @@ export function readEditableLoot(project: string) {
 }
 /** Edit one existing table, preserving identity, metadata and other authored tables. */
 export function saveEditableLoot(project: string, table: unknown, revision: string) {
+  return writeEditableLoot(project, table, revision, false);
+}
+/** Create a distinct drop table without replacing any authored definition. */
+export function createEditableLoot(project: string, table: unknown, revision: string) {
+  return writeEditableLoot(project, table, revision, true);
+}
+function writeEditableLoot(project: string, table: unknown, revision: string, create: boolean) {
   const validated = LootTableSchema.parse(table);
   const state = snapshot(project);
   if (state.revision !== revision) throw new Error('Loot or referenced catalog changed; reload before saving');
   const matches = state.data.tables.filter((entry: { id?: string }) => entry.id === validated.id);
-  if (matches.length !== 1) throw new Error('Loot table must identify exactly one existing definition');
-  const existing = matches[0];
+  if (create ? matches.length !== 0 : matches.length !== 1)
+    throw new Error(create ? 'Loot table ID already exists' : 'Loot table must identify exactly one existing definition');
+  const existing = matches[0] ?? {};
   const entries = validated.entries.map(entry => ({
     ...(Array.isArray(existing.entries) ? existing.entries.find((old: { itemId?: string }) => old.itemId === entry.itemId) : {}),
     ...entry,
   }));
-  state.data.tables = state.data.tables.map((entry: { id?: string }) => entry.id === validated.id ? { ...entry, ...validated, entries } : entry);
+  if (create) state.data.tables.push({ ...validated, entries });
+  else state.data.tables = state.data.tables.map((entry: { id?: string }) => entry.id === validated.id ? { ...entry, ...validated, entries } : entry);
   validateLootCatalog(state.data.tables, state.items, state.enemies);
   const output = JSON.stringify(state.data, null, 2);
   const id = randomUUID();

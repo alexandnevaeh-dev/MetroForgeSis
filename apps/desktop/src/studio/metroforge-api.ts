@@ -267,6 +267,7 @@ export type MetroforgeBridge = {
   getDungeonGraph: (projectPath: string, dungeonId?: string) => Promise<DungeonGraphPreview>;
   readEditableLoot: (projectPath: string) => Promise<{ tables: Record<string, unknown>[]; items: Record<string, unknown>[]; revision: string; runtimeSupported: boolean }>;
   saveEditableLoot: (projectPath: string, table: unknown, revision: string) => Promise<{ revision: string; backup: string; restartRequired: true; runtimeSynchronized: boolean; runtimeSupported: boolean }>;
+  createEditableLoot: (projectPath: string, table: unknown, revision: string) => Promise<{ revision: string; backup: string; restartRequired: true; runtimeSynchronized: boolean; runtimeSupported: boolean }>;
   readEditableItems: (projectPath: string) => Promise<{ items: Record<string, unknown>[]; revision: string; runtimeSupported: boolean }>;
   saveEditableItem: (projectPath: string, item: unknown, revision: string) => Promise<{ revision: string; backup: string; restartRequired: true; runtimeSynchronized: boolean; runtimeSupported: boolean }>;
   readUnityRoomEdit: (projectPath: string, roomId: string) => Promise<{ objects: import('@metroforge/engines').EditableObject[]; fingerprints: string[] }>;

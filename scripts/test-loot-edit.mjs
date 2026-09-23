@@ -1,6 +1,6 @@
 import {mkdtempSync,mkdirSync,writeFileSync,readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
-import {readEditableLoot,saveEditableLoot} from '../packages/generation/dist/loot-edit-service.js';
+import {readEditableLoot,saveEditableLoot,createEditableLoot} from '../packages/generation/dist/loot-edit-service.js';
 const dir=mkdtempSync('E:/Metroforge/Recovery-Audit/loot-edit-');
 for(const folder of ['loot','items','enemies']) mkdirSync(`${dir}/data/${folder}`,{recursive:true});
 const table={id:'abbey',name:'Abbey',custom:'keep',entries:[{itemId:'plate',chance:0.1,minQuantity:1,maxQuantity:1,customEffect:'keep'}]};
@@ -61,3 +61,18 @@ for (const relative of ['items/items.json', 'enemies/enemies.json']) {
   writeFileSync(target,source);
 }
 console.log('PASS runtime item/enemy reference parity and concurrent-change protection');
+
+const beforeCreate=readEditableLoot(dir);
+const added={id:'crypt_rare',name:'Crypt rare equipment',entries:[{itemId:'plate',chance:0.25,minQuantity:1,maxQuantity:2}]};
+const created=createEditableLoot(dir,added,beforeCreate.revision);
+assert.equal(created.runtimeSynchronized,true);
+assert.deepEqual(readEditableLoot(dir).tables.at(-1),added);
+assert.deepEqual(readEditableLoot(dir).tables.slice(0,-1),beforeCreate.tables);
+assert.equal(readFileSync(file,'utf8'),readFileSync(runtime,'utf8'));
+assert.deepEqual(JSON.parse(readFileSync(created.backup,'utf8')).tables,beforeCreate.tables);
+assert.throws(()=>createEditableLoot(dir,added,created.revision),/already exists/);
+assert.throws(()=>createEditableLoot(dir,{...added,id:'stale'},beforeCreate.revision),/changed/);
+const stable=readFileSync(file,'utf8');
+assert.throws(()=>createEditableLoot(dir,{...added,id:'invalid',entries:[{...added.entries[0],itemId:'missing'}]},created.revision),/unknown item/);
+assert.equal(readFileSync(file,'utf8'),stable);
+console.log('PASS loot creation, mirror, preservation, backup, duplicate and stale/invalid rejection');

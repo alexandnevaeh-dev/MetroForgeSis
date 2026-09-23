@@ -148,4 +148,4 @@ export type { DialogueVoiceResult, SynthesizeDialogueVoicesOptions } from './dia
 export * from './asset-qa.js';
 export * from './asset-qa-command.js';
 export { readEditableItems, saveEditableItem } from './item-edit-service.js';
-export { readEditableLoot, saveEditableLoot } from './loot-edit-service.js';
+export { readEditableLoot, saveEditableLoot, createEditableLoot } from './loot-edit-service.js';
