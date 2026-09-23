@@ -20,3 +20,9 @@ MetroForge application:
 4. Build long rooms from coherent architectural bays with landmarks and elevation changes. Do not stretch a single background over a long room.
 
 This is reference analysis, not new MetroForge gameplay or proof of its animation quality. Other user-supplied footage sources remain queued; channel names alone do not identify verified clips.
+
+## Decoded presentation timestamp follow-up
+
+A requestVideoFrameCallback capture at quarter-speed initially began at119.200s and skipped one presented callback. That attempt is preserved as presented-frames-startup-gap.json. Repeating with pre-roll from118s captured45presented pictures across119.000-119.983333s with consecutive presentedFrames counters. Media-time deltas ranged from0.016666s to0.150s. Thus this browser presentation trace is not a uniform60-picture-per-second sequence. Consecutive presentation counters alone do not prove all original emulator frames were encoded or decoded. Use recorded timestamps, not screenshot index/60, for visible-time observations. No game input latency, active-hitbox duration or authored sprite cadence can be inferred from this trace alone.
+
+Evidence: E:/Metroforge/Recovery-Audit/animation-reference-v1/presented-frames.json, continuity.json, presented-motion-119s.png and extract-presented.cjs. This improves the auditability of the reference study without changing MetroForge gameplay or approving its animation.
