@@ -4,7 +4,9 @@ import { Button, Input } from './ui/index.js';
 type Draft = { session: LiveEditSession; fingerprints: string[]; farBackground?: string };
 // Retain unsaved room work when navigating between rooms during this app session.
 const drafts = new Map<string, Draft>();
-export function UnityRoomGeometry({projectPath,roomId,width,height}: {projectPath:string;roomId:string;width:number;height:number}) {
+export function UnityRoomGeometry({projectPath,roomId,width,height,zoom=100}: {projectPath:string;roomId:string;width:number;height:number;zoom?:number}) {
+ const scale=Number.isFinite(zoom)?Math.max(0.25,Math.min(4,zoom/100)):1;
+ const viewWidth=width/scale,viewHeight=height/scale;
  const framingId=`${roomId}:background-framing`;
  const key=JSON.stringify([projectPath,roomId]);
  const [draft,setDraft]=useState<Draft|null>(null);
@@ -51,7 +53,7 @@ export function UnityRoomGeometry({projectPath,roomId,width,height}: {projectPat
    </div><p className="hint">0 follows the camera; 1 allows the most drift. Save and restart Unity to preview the background.</p>
   </fieldset></details>}
   {backgroundStatus&&<p className="hint" role="status">{backgroundStatus}</p>}
-  <svg className="room-canvas" viewBox={`0 0 ${width} ${height}`} style={{width:'100%'}} aria-label="Unity room geometry">
+  <svg className="room-canvas" viewBox={`${(width-viewWidth)/2} ${(height-viewHeight)/2} ${viewWidth} ${viewHeight}`} style={{width:'100%'}} aria-label="Unity room geometry">
    <rect width={width} height={height} fill="#171c24" />
    {backgroundUrl&&<image data-room-background="far" href={backgroundUrl} x={-width*0.01} y={-height*0.01} width={width*1.02} height={height*1.02} preserveAspectRatio="xMidYMid slice" pointerEvents="none" />}
    {solids?.map(o=><rect key={o.id} role="button" tabIndex={0} aria-label={`Select ${o.properties.name??'solid'} ${o.id}`} x={o.x} y={o.y} width={Number(o.properties.width)} height={Number(o.properties.height)} fill={selected===o.id?'#70b5e8':'#6a5746'} stroke={selected===o.id?'#d9f0ff':'#bd8756'} strokeWidth={2} onClick={()=>setSelected(o.id)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSelected(o.id);}}}/>)}

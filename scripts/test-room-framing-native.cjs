@@ -28,6 +28,12 @@ const root=path.resolve(__dirname,'..'),req=createRequire(root+'/apps/desktop/pa
   assert.ok(room);assert.equal(room.backgrounds.farParallax,0.25);
   assert.equal(fs.readFileSync(project+'/gameplay.json','utf8'),fs.readFileSync(project+'/Assets/StreamingAssets/gameplay.json','utf8'));
   await page.getByText('Distant background settings',{exact:true}).click();
+  const canvas=page.getByLabel('Unity room geometry',{exact:true});
+  const fitted=await canvas.getAttribute('viewBox');
+  await page.getByRole('button',{name:'Zoom in',exact:true}).click();
+  const magnified=await canvas.getAttribute('viewBox');assert.notEqual(magnified,fitted);
+  assert.ok(Number(magnified.split(' ')[2])<Number(fitted.split(' ')[2]));
+  await page.getByRole('button',{name:'Fit',exact:true}).click();assert.equal(await canvas.getAttribute('viewBox'),fitted);
   await page.screenshot({path:out+'/room-framing.png',fullPage:true});
   await page.reload();await open();await page.getByText('Distant background settings',{exact:true}).click();assert.equal(await control.isChecked(),true);assert.equal(await page.getByLabel('Background parallax',{exact:true}).inputValue(),'0.25');
   fs.writeFileSync(out+'/result.json',JSON.stringify({passed:true,project,scope:'Native room framing controls, shared geometry/history, save/reload and runtime mirror; no live Unity preview'},null,2));console.log('PASS room framing UI:',out);
