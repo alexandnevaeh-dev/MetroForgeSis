@@ -14,6 +14,25 @@ const req=createRequire(root+'/apps/desktop/package.json');
  try{
   const page=await app.firstWindow();
   await page.waitForFunction(()=>Boolean(window.metroforge?.createEditableLoot));
+  await page.evaluate(p=>sessionStorage.setItem('metroforge.activeProjectPath',p),project.replaceAll('/','\\'));
+  await page.reload();
+  const open=async()=>{await page.locator('aside.sidebar button.nav-item').filter({hasText:'Assets'}).click();await page.getByText('Enemy loot and drop quantities',{exact:true}).click();};
+  await open();
+  await page.getByRole('button',{name:'New loot table',exact:true}).click();
+  await page.getByLabel('Loot table name',{exact:true}).fill('');
+  assert.equal(await page.getByRole('button',{name:'Create loot table',exact:true}).isDisabled(),true);
+  await page.getByLabel('Loot table name',{exact:true}).fill('UI crypt equipment');
+  await page.getByRole('button',{name:'Add drop',exact:true}).click();
+  await page.getByLabel('Drop 1 chance',{exact:true}).fill('0.45');
+  await page.locator('aside.sidebar button.nav-item').first().click();await open();
+  await page.getByText('Unsaved loot draft restored.',{exact:true}).waitFor();
+  assert.equal(await page.getByLabel('Loot table name',{exact:true}).inputValue(),'UI crypt equipment');
+  await page.getByRole('button',{name:'Create loot table',exact:true}).click();
+  await page.getByText('Saved project and Unity runtime definitions. Restart Play Mode to load changes; rebuild exported players.',{exact:true}).waitFor();
+  const uiId=await page.getByLabel('Loot table',{exact:true}).inputValue();
+  await page.reload();await open();await page.getByLabel('Loot table',{exact:true}).selectOption(uiId);
+  assert.equal(await page.getByLabel('Drop 1 chance',{exact:true}).inputValue(),'0.45');
+  await page.screenshot({path:out+'/created-table.png',fullPage:true});
   const evidence=await page.evaluate(async project=>{
    const api=window.metroforge;
    const before=await api.readEditableLoot(project);
@@ -35,7 +54,7 @@ const req=createRequire(root+'/apps/desktop/package.json');
   await page.reload();await page.waitForFunction(()=>Boolean(window.metroforge?.readEditableLoot));
   const reopened=await page.evaluate(project=>window.metroforge.readEditableLoot(project),project);
   assert.deepEqual(reopened.tables,evidence.after.tables);
-  fs.writeFileSync(out+'/result.json',JSON.stringify({passed:true,project,scope:'Native Electron renderer/preload/IPC creation, duplicate/stale rejection, backup, disk/runtime equality and reload; no UI creation control or gameplay validation'},null,2));
+  fs.writeFileSync(out+'/result.json',JSON.stringify({passed:true,project,scope:'Native Electron renderer/preload/IPC creation, duplicate/stale rejection, backup, disk/runtime equality and reload; UI create/name validation/navigation draft/save/reload also passed; no gameplay validation'},null,2));
   console.log('PASS native loot creation API:',out);
  }finally{
   const cleanup=setTimeout(()=>app.process().kill(),5000);
