@@ -44,4 +44,5 @@ for(const name of ['diffusers_image_worker.py','diffusers_audio_worker.py','loca
 mkdirSync(join(resources,'config'),{recursive:true});
 for(const name of ['models.catalog.json','reference-profiles.json'])cpSync(join(root,'config',name),join(resources,'config',name));
 writeFileSync(join(output,'staging-report.json'),JSON.stringify({scope:'Development portable build; not a release acceptance',output,dependencies:[...packages].map(([name,p])=>({name,version:p.version})),excluded:['credentials','generated games','models','engine caches'],remaining:['standalone launch','generation and editing','native engine validation','visual approval']},null,2));
+cpSync(join(root,'scripts/Launch-MetroForge.cmd'),join(output,'Launch-MetroForge.cmd'));
 console.log(`STAGED: ${output}`);
