@@ -36,6 +36,8 @@ public class PlayerActor : MonoBehaviour
     private bool _grounded;
     private bool _wasGrounded;
     private bool _airJumpUsed;
+    private readonly ContactPoint2D[] _wallContacts = new ContactPoint2D[8];
+    public bool IsWallSliding { get; private set; }
     private float _clipLock;
     private float _health = 100f;
     private readonly HashSet<EnemyActor> _hitThisSwing = new HashSet<EnemyActor>();
@@ -50,6 +52,7 @@ public class PlayerActor : MonoBehaviour
     public void Revive(float health = -1f)
     {
         Dead = false;
+        IsWallSliding = false;
         _airJumpUsed = false;
         _jumpBuffer = 0f;
         _coyote = 0f;
@@ -185,6 +188,7 @@ public class PlayerActor : MonoBehaviour
 
     private void FixedUpdate()
     {
+        IsWallSliding = false;
         if (Dead || Pack == null || (_wraithChain != null && _wraithChain.IsPulling))
             return;
         var move = ReadMove();
@@ -206,6 +210,21 @@ public class PlayerActor : MonoBehaviour
             _jumpBuffer = 0f;
             _coyote = 0f;
             LockClip("jump_start", 0.12f);
+        }
+        if (!_grounded && vy < 0f && _dashTime <= 0f && Mathf.Abs(move.x) > 0.1f && Abilities.Contains("wall_slide"))
+        {
+            var count = _body.GetContacts(_wallContacts);
+            for (var i = 0; i < count; i++)
+            {
+                var normal = _wallContacts[i].normal;
+                if (Mathf.Abs(normal.x) > 0.8f && normal.x * move.x < 0f)
+                {
+                    // Counter the coming gravity step so actual descent remains capped.
+                    vy = Mathf.Max(vy, -90f + Pack.movement.gravity * Time.fixedDeltaTime);
+                    IsWallSliding = true;
+                    break;
+                }
+            }
         }
         _body.linearVelocity = new Vector2(vx, vy);
     }
@@ -333,6 +352,7 @@ public class PlayerActor : MonoBehaviour
     {
         if (Dead) return;
         Dead = true;
+        IsWallSliding = false;
         _health = 0f;
         _dashTime = 0f;
         _wraithChain?.Cancel();
