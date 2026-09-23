@@ -53,7 +53,7 @@ export type GodotResolveInfo = {
 export type ConcurrencyLane = {
   active: number;
   max: number;
-  /** @deprecated Prefer max — kept for older IPC payloads. */
+  /** @deprecated Prefer max â€” kept for older IPC payloads. */
   limit?: number;
 };
 
@@ -89,7 +89,7 @@ export type AssetListItem = {
   seed?: number;
 };
 
-/** Canonical IPC → renderer shape for generateAsset (single or variant). No buffer. */
+/** Canonical IPC â†’ renderer shape for generateAsset (single or variant). No buffer. */
 export type GeneratedAssetRef = {
   id?: string;
   path: string;
@@ -124,6 +124,7 @@ export type DesktopConfig = {
   defaultMode: string;
   defaultProfile: string;
   godotExecutable: string | null;
+  unityEditor: string | null;
   godotResolve?: GodotResolveInfo;
   ollamaBaseUrl: string;
   repoRoot: string;

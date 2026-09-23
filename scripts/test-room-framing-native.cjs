@@ -68,6 +68,11 @@ const root=path.resolve(__dirname,'..'),req=createRequire(root+'/apps/desktop/pa
   }));
   if(layout.viewport<=1366) assert.ok(layout.main/layout.width>0.9,JSON.stringify(layout));
   await page.screenshot({path:out+'/unity-playtest-controls.png',fullPage:true});
+  const unityPath='E:/Metroforge/Programs/Editor/Unity.exe';
+  await page.evaluate(p=>window.metroforge.setAppSettings({'app.unityEditor':p}),unityPath);
+  await page.reload();
+  const savedUnity=await page.evaluate(()=>window.metroforge.getConfig());
+  assert.equal(savedUnity.unityEditor,unityPath);
   const runtimeBefore=fs.readFileSync(project+'/Assets/StreamingAssets/gameplay.json','utf8');
   const sceneBefore=fs.readFileSync(project+'/Assets/Scenes/World.unity','utf8');
   const repaired=await page.evaluate(p=>window.metroforge.refreshProjectTemplate(p),project);

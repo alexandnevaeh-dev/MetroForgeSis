@@ -10,6 +10,7 @@ export const APP_SETTING_KEYS = {
   defaultProfile: 'app.defaultProfile',
   defaultMode: 'app.defaultMode',
   godotExecutable: 'app.godotExecutable',
+  unityEditor: 'app.unityEditor',
   concurrencyImage: 'app.concurrency.image',
   concurrencyLlm: 'app.concurrency.llm',
   concurrencyAudio: 'app.concurrency.audio',

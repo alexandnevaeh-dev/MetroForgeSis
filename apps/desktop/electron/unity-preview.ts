@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { resolveUnityEditor } from '@metroforge/tools';
 
 /** Launch acknowledgment only: successful spawn is not a gameplay readiness result. */
-export async function launchUnityPreview(projectPath: string): Promise<{ success: boolean; message: string }> {
+export async function launchUnityPreview(projectPath: string, editorPath?: string | null): Promise<{ success: boolean; message: string }> {
   if (!existsSync(join(projectPath, 'Assets/Editor/MetroForgePreview.cs')) ||
       !existsSync(join(projectPath, 'Assets/Scenes/World.unity'))) {
     return { success: false, message: 'This Unity project needs the current preview template. Save your edits and refresh the project template first.' };
@@ -13,8 +13,8 @@ export async function launchUnityPreview(projectPath: string): Promise<{ success
   if (existsSync(join(projectPath, 'Temp/UnityLockfile'))) {
     return { success: false, message: 'This project is already open in Unity. Use MetroForge > Play Generated Game in that editor.' };
   }
-  const editor = resolveUnityEditor({ envPath: process.env.UNITY_EDITOR ?? process.env.UNITY_PATH });
-  if (!editor.path) return { success: false, message: 'Set UNITY_EDITOR to your installed Unity editor executable, then restart MetroForge.' };
+  const editor = resolveUnityEditor({ envPath: editorPath || process.env.UNITY_EDITOR || process.env.UNITY_PATH });
+  if (!editor.path) return { success: false, message: 'Choose your Unity editor executable in Settings > Paths and save settings.' };
   return new Promise((resolve) => {
     const child = spawn(editor.path!, ['-projectPath', projectPath, '-executeMethod', 'MetroForgePreview.Play',
       '-logFile', join(projectPath, 'metroforge-preview.log')], {

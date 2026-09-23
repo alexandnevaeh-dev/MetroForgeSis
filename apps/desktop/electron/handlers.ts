@@ -263,7 +263,7 @@ async function textBootstrapConfig(
   };
 }
 
-/** Gallery taxonomy — kept identical to apps/desktop/src/studio/types.ts's categorizeAssetPath
+/** Gallery taxonomy â€” kept identical to apps/desktop/src/studio/types.ts's categorizeAssetPath
  *  so the renderer's own re-classification (a defensive fallback for when it can't reach this
  *  handler's category, per docs/CURSOR_BACKEND_REQUIREMENTS.md #6) always agrees with the
  *  backend-assigned category instead of silently overriding it. */
@@ -336,7 +336,7 @@ function readWorldGraphEdgesFrom(
   }
 }
 
-/** 'dungeon_000_r2' -> 'dungeon_000' — the dungeon-level id groups multiple per-room area ids
+/** 'dungeon_000_r2' -> 'dungeon_000' â€” the dungeon-level id groups multiple per-room area ids
  *  produced by generateTopDownWorld (packages/procedural/src/topdown/world.ts). */
 function dungeonIdFromAreaId(areaId: string): string {
   return areaId.replace(/_r\d+$/, '');
@@ -366,7 +366,7 @@ export function registerIpcHandlers(cwd: string): void {
   const dataDir = config.dataDir || join(cwd, '.metroforge');
   void applyStoredConcurrency(dataDir);
 
-  /** Canonical Godot path for Settings / Doctor / Preview / Play / QA / export — prefs beat env. */
+  /** Canonical Godot path for Settings / Doctor / Preview / Play / QA / export â€” prefs beat env. */
   async function resolveCanonicalGodot(
     projectPath?: string | null,
   ): Promise<GodotResolveResult> {
@@ -496,6 +496,7 @@ export function registerIpcHandlers(cwd: string): void {
       defaultMode,
       defaultProfile,
       godotExecutable,
+      unityEditor: prefs[APP_SETTING_KEYS.unityEditor]?.trim() || config.unityEditor,
       godotResolve: {
         path: godotResolved.path,
         source: godotResolved.source,
@@ -569,10 +570,10 @@ export function registerIpcHandlers(cwd: string): void {
           name: t.name,
           status: godotResolved.version ? 'PASS' : godotResolved.path ? 'WARN' : 'WARN',
           message: godotResolved.version
-            ? `${godotResolved.version} · ${godotResolved.sourceLabel} · ${godotResolved.path}`
+            ? `${godotResolved.version} Â· ${godotResolved.sourceLabel} Â· ${godotResolved.path}`
             : godotResolved.path
               ? `Configured but --version failed (${godotResolved.sourceLabel}): ${godotResolved.path}`
-              : 'Not detected — set Settings Godot path or GODOT_EXECUTABLE',
+              : 'Not detected â€” set Settings Godot path or GODOT_EXECUTABLE',
         };
       }
       return {
@@ -760,7 +761,7 @@ export function registerIpcHandlers(cwd: string): void {
     );
 
     // IMAGE_GENERATION (and siblings) are routed via ImageProviderRegistry, not text
-    // GenerationRouter — reconcile live image providers + catalog image models so the
+    // GenerationRouter â€” reconcile live image providers + catalog image models so the
     // Routing Inspector does not show an empty candidate list.
     const imageCapabilities = new Set([
       'IMAGE_GENERATION',
@@ -816,7 +817,7 @@ export function registerIpcHandlers(cwd: string): void {
         });
         continue;
       }
-      reasons.push(`provider health: ${live.status} — ${live.reason}`);
+      reasons.push(`provider health: ${live.status} â€” ${live.reason}`);
       if (live.healthy) {
         catalogCandidates.push({
           modelId: entry.id,
@@ -888,7 +889,7 @@ export function registerIpcHandlers(cwd: string): void {
         id: 'stability',
         local: false,
         configured: Boolean(process.env.STABILITY_API_KEY),
-        hint: 'Set STABILITY_API_KEY (paid — excluded from FREE_ONLY)',
+        hint: 'Set STABILITY_API_KEY (paid â€” excluded from FREE_ONLY)',
       },
       {
         id: 'replicate',
@@ -906,8 +907,8 @@ export function registerIpcHandlers(cwd: string): void {
         reasons: [
           `capability: ${capability}`,
           expected.local ? 'local runtime' : 'remote/hosted (local VRAM N/A)',
-          `not configured — ${expected.hint}`,
-          'health: UNAVAILABLE — provider not registered',
+          `not configured â€” ${expected.hint}`,
+          'health: UNAVAILABLE â€” provider not registered',
         ],
       });
       seenProviderIds.add(expected.id);
@@ -955,7 +956,7 @@ export function registerIpcHandlers(cwd: string): void {
         ramMb: hw.totalRamMb,
         vramMb: hw.vramMb,
         note: imageTrace.degradedFallback
-          ? 'No healthy image provider — procedural PLACEHOLDER fallback would be DEGRADED, not SUCCESS'
+          ? 'No healthy image provider â€” procedural PLACEHOLDER fallback would be DEGRADED, not SUCCESS'
           : 'Remote image providers are not filtered by local VRAM',
       },
       degradedFallback: imageTrace.degradedFallback,
@@ -1102,10 +1103,10 @@ export function registerIpcHandlers(cwd: string): void {
   ipcMain.handle('play-project', async (_event, projectPath: string) => {
     assertReadableProjectPath(projectPath, cwd);
     const engine = detectProjectEngine(projectPath);
-    if (engine === 'unity') return launchUnityPreview(projectPath);
-    if (engine !== 'godot') return { success: false, message: 'Gameplay preview for this engine is not available yet.' };
     const config = loadConfig();
     const prefs = await loadAppPreferences(config.dataDir || join(cwd, '.metroforge'));
+    if (engine === 'unity') return launchUnityPreview(projectPath, prefs[APP_SETTING_KEYS.unityEditor]?.trim() || config.unityEditor);
+    if (engine !== 'godot') return { success: false, message: 'Gameplay preview for this engine is not available yet.' };
     return startPlaytest(projectPath, {
       preference: prefs[APP_SETTING_KEYS.godotExecutable] ?? null,
       envPath: config.godotExecutable,
@@ -1467,7 +1468,7 @@ export function registerIpcHandlers(cwd: string): void {
     if (!modelPath) {
       return {
         success: false,
-        error: 'Whisper model not found — install ggml-base.en.bin under models/speech/whisper-base/ or set WHISPER_MODEL_PATH',
+        error: 'Whisper model not found â€” install ggml-base.en.bin under models/speech/whisper-base/ or set WHISPER_MODEL_PATH',
       };
     }
 
@@ -1475,7 +1476,7 @@ export function registerIpcHandlers(cwd: string): void {
     if (!(await provider.checkHealth())) {
       return {
         success: false,
-        error: 'Whisper CLI unavailable — install whisper.cpp (whisper-cli) or set WHISPER_BINARY',
+        error: 'Whisper CLI unavailable â€” install whisper.cpp (whisper-cli) or set WHISPER_BINARY',
       };
     }
 
@@ -1513,7 +1514,7 @@ export function registerIpcHandlers(cwd: string): void {
             ragContext = await queryProjectMemory(projectPath, input, embedder, 5);
           }
         } catch {
-          // RAG is optional — fall back to room-id context only.
+          // RAG is optional â€” fall back to room-id context only.
         }
         const { generationRouter } = await bootstrapProviders(
           await textBootstrapConfig(dataDir, 'LOCAL_ONLY', config.ollamaBaseUrl),
@@ -1540,7 +1541,7 @@ export function registerIpcHandlers(cwd: string): void {
       if (!parsed) {
         return {
           success: false,
-          error: 'Could not parse command — try "connect room_a to room_b" or "add treasure room"',
+          error: 'Could not parse command â€” try "connect room_a to room_b" or "add treasure room"',
         };
       }
 
