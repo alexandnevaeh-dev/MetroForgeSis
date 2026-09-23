@@ -5,12 +5,15 @@ const assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'..');
 const req=createRequire(root+'/apps/desktop/package.json');
 (async()=>{
+ const stage=process.argv[3]?path.resolve(process.argv[3]):null;
  const out=fs.mkdtempSync('E:/Metroforge/Recovery-Audit/loot-create-native-');
  const project=out+'/projects/unity';
  fs.cpSync(process.argv[2]||'E:/Metroforge/Recovery-Audit/portable-assembly-sJcA1z/unity',project,{recursive:true});
  const env={...process.env,METROFORGE_DATA_DIR:out+'/app-data',METROFORGE_GENERATED_GAMES_DIR:out+'/projects',VITE_DEV_SERVER_URL:''};
  delete env.ELECTRON_RUN_AS_NODE;delete env.METROFORGE_DESKTOP_SMOKE;
- const app=await req('playwright')._electron.launch({executablePath:req('electron'),args:[root+'/apps/desktop'],cwd:out,env});
+ delete env.METROFORGE_RESOURCE_ROOT;delete env.METROFORGE_ENV_FILE;
+ if(stage)env.METROFORGE_WORKSPACE_DIR=out;
+ const app=await req('playwright')._electron.launch({executablePath:stage?path.join(stage,'MetroForge.exe'):req('electron'),args:stage?[]:[root+'/apps/desktop'],cwd:out,env});
  try{
   const page=await app.firstWindow();page.setDefaultTimeout(15000);
   await page.waitForFunction(()=>Boolean(window.metroforge?.createEditableLoot));
@@ -104,7 +107,7 @@ const req=createRequire(root+'/apps/desktop/package.json');
   assert.equal(assignment.staleRejected,true);
   assert.equal(assignment.saved.runtimeSynchronized,true);assert.ok(fs.existsSync(assignment.saved.backup));
   assert.equal(fs.readFileSync(project+'/data/enemies/enemies.json','utf8'),fs.readFileSync(project+'/Assets/StreamingAssets/data/enemies/enemies.json','utf8'));
-  fs.writeFileSync(out+'/result.json',JSON.stringify({passed:true,project,scope:'Native Electron renderer/preload/IPC creation, duplicate/stale rejection, backup, disk/runtime equality and reload; UI create/name validation/navigation draft/save/reload, stale-save draft retention/retry and discard also passed; enemy assignment/clear/reload UI and stale IPC checks passed; no gameplay validation'},null,2));
+  fs.writeFileSync(out+'/result.json',JSON.stringify({passed:true,project,stage,scope:'Native Electron renderer/preload/IPC creation, duplicate/stale rejection, backup, disk/runtime equality and reload; UI create/name validation/navigation draft/save/reload, stale-save draft retention/retry and discard also passed; enemy assignment/clear/reload UI and stale IPC checks passed; no gameplay validation'},null,2));
   console.log('PASS native loot creation API:',out);
  }finally{
   const cleanup=setTimeout(()=>app.process().kill(),5000);
