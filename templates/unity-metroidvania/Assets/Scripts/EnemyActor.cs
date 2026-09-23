@@ -5,6 +5,7 @@ using UnityEngine;
 public class EnemyActor : MonoBehaviour
 {
     public string EnemyId;
+    public System.Action<EnemyActor> OnDefeated;
     public float Health = 30f;
     public float Damage = 8f;
     public float WalkSpeed = 40f;
@@ -55,6 +56,7 @@ public class EnemyActor : MonoBehaviour
 
     private void Update()
     {
+        if (Time.timeScale <= 0f) return;
         if (_dead)
             return;
         _attackCooldown = Mathf.Max(0f, _attackCooldown - Time.deltaTime);
@@ -111,7 +113,7 @@ public class EnemyActor : MonoBehaviour
 
     public void Hurt(float amount)
     {
-        if (_dead)
+        if (_dead || amount <= 0f || float.IsNaN(amount) || float.IsInfinity(amount))
             return;
         MainThreadProbe.EnemyHurtMarker.Begin();
         HurtCallCount++;
@@ -121,6 +123,7 @@ public class EnemyActor : MonoBehaviour
         if (Health <= 0f)
         {
             _dead = true;
+            OnDefeated?.Invoke(this);
             _clipLock = 2f;
             _animator?.Play("death", true);
             Destroy(gameObject, 0.6f);

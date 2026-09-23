@@ -71,7 +71,7 @@ public class WraithChain : MonoBehaviour
 
     private bool CanAttach(WraithAnchor anchor)
     {
-        if (!isActiveAndEnabled || owner == null || owner.Dead || owner.IsDashing || !owner.Abilities.Contains("grapple") ||
+        if (!isActiveAndEnabled || owner == null || owner.Dead || owner.InputBlocked || owner.IsDashing || !owner.Abilities.Contains("grapple") ||
             anchor == null || !anchor.isActiveAndEnabled || IsPulling || cooldown > 0f)
             return false;
         var origin = body.position + new Vector2(0f, 24f);
@@ -105,7 +105,7 @@ public class WraithChain : MonoBehaviour
     private void Update()
     {
         cooldown = Mathf.Max(0f, cooldown - Time.deltaTime);
-        if (owner == null || owner.Dead) { Cancel(); return; }
+        if (owner == null || owner.Dead || owner.InputBlocked) { Cancel(); return; }
         var pressed = Input.GetKeyDown(KeyCode.L);
 #if ENABLE_INPUT_SYSTEM
         pressed |= Keyboard.current != null && Keyboard.current.lKey.wasPressedThisFrame;

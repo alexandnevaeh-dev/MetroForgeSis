@@ -22,7 +22,7 @@ public class EmberSeal : MonoBehaviour
     public int LastBurstHits { get; private set; }
 
     public void Initialize(PlayerActor player) => owner = player;
-    private bool CanChannel() => isActiveAndEnabled && owner != null && !owner.Dead &&
+    private bool CanChannel() => isActiveAndEnabled && owner != null && !owner.Dead && !owner.InputBlocked &&
         owner.Abilities.Contains("ember_seal") && !owner.IsDashing &&
         !(owner.GetComponent<WraithChain>()?.IsPulling ?? false);
 

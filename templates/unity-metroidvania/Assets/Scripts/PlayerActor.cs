@@ -9,10 +9,26 @@ using UnityEngine.InputSystem;
 public class PlayerActor : MonoBehaviour
 {
     public GameplayPack Pack;
+    private bool _inputBlocked;
+    public bool InputBlocked
+    {
+        get => _inputBlocked;
+        set
+        {
+            _inputBlocked = value;
+            if (!value) return;
+            _wraithChain?.Cancel();
+            _emberSeal?.Cancel();
+            _dashTime = 0f;
+            _veilStep = false;
+            if (_hit != null) _hit.enabled = false;
+        }
+    }
     public System.Action OnDied;
     public System.Action<string> OnAbilityUnlocked;
     public System.Action OnVictoryReached;
     public System.Action OnCheckpoint;
+    public System.Action OnInventoryChanged;
     public System.Action<Collider2D> OnCheckpointHit;
 
     [SerializeField] private SpriteSheetPlayer animator;
@@ -40,6 +56,7 @@ public class PlayerActor : MonoBehaviour
     public bool IsWallSliding { get; private set; }
     private float _clipLock;
     private float _health = 100f;
+    private bool _healHeld;
     private readonly HashSet<EnemyActor> _hitThisSwing = new HashSet<EnemyActor>();
     public readonly HashSet<string> Abilities = new HashSet<string>();
     public int LastSwingUniqueHits { get; private set; }
@@ -108,6 +125,14 @@ public class PlayerActor : MonoBehaviour
         Dead = false;
     }
 
+    public bool UseConsumable(string itemId)
+    {
+        if (Dead || !Inventory.TryConsumeHealing(itemId, Mathf.Max(0f, MaxHealth - _health), out var healed)) return false;
+        _health = Mathf.Min(MaxHealth, _health + healed);
+        OnInventoryChanged?.Invoke();
+        return true;
+    }
+
     public void GrantAbility(string id)
     {
         if (string.IsNullOrEmpty(id) || !Abilities.Add(id))
@@ -117,13 +142,16 @@ public class PlayerActor : MonoBehaviour
 
     private void Update()
     {
-        if (Dead || Pack == null)
+        if (Dead || Pack == null || InputBlocked)
             return;
         var move = ReadMove();
         var jumpPressed = ReadButton("jump");
         var attackPressed = ReadButton("attack");
         var dashPressed = ReadButton("dash");
         var run = ReadRun();
+        var healHeld = ReadHealHeld();
+        if (healHeld && !_healHeld) UseConsumable("health_vial");
+        _healHeld = healHeld;
 
         if (_grounded)
             _coyote = Pack.movement.coyoteTime;
@@ -172,7 +200,7 @@ public class PlayerActor : MonoBehaviour
     // It protects against damage during movement without disabling solid collisions.
     public bool TryDash(float direction)
     {
-        if (Dead || Pack == null || _body == null || (_wraithChain != null && _wraithChain.IsPulling) || _dashCooldown > 0f || _dashTime > 0f)
+        if (Dead || InputBlocked || Pack == null || _body == null || (_wraithChain != null && _wraithChain.IsPulling) || _dashCooldown > 0f || _dashTime > 0f)
             return false;
         if (!Abilities.Contains("dash") && !Abilities.Contains("phase"))
             return false;
@@ -396,6 +424,14 @@ public class PlayerActor : MonoBehaviour
             return true;
 #endif
         return Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+    }
+
+    private static bool ReadHealHeld()
+    {
+#if ENABLE_INPUT_SYSTEM
+        if (Keyboard.current != null && Keyboard.current.hKey.isPressed) return true;
+#endif
+        return Input.GetKey(KeyCode.H);
     }
 
     private static bool ReadButton(string name)

@@ -32,6 +32,8 @@ public class GameBootstrap : MonoBehaviour
     public bool LastTransitionCached { get; private set; }
     private Transform RoomParent => _activeRoomRoot != null ? _activeRoomRoot : _worldRoot;
     private PlayerActor _player;
+    private LootRuntime _loot;
+    private InventoryPanelUI _inventoryPanel;
     private Camera _camera;
     private Text _hud;
     private Button _titleReturnBtn;
@@ -60,6 +62,8 @@ public class GameBootstrap : MonoBehaviour
             Debug.LogError("Missing StreamingAssets/gameplay.json");
             return;
         }
+        try { _loot = new LootRuntime(_streamingRoot); }
+        catch (System.Exception error) { Debug.LogError("Loot catalog failed validation: " + error.Message); }
         Pack = JsonUtility.FromJson<GameplayPack>(File.ReadAllText(jsonPath));
         if (Pack.combat != null && Pack.combat.maxHealth <= 0f)
             Pack.combat.maxHealth = 100f;
@@ -337,6 +341,8 @@ public class GameBootstrap : MonoBehaviour
         titleLabelRt.offsetMin = Vector2.zero;
         titleLabelRt.offsetMax = Vector2.zero;
         titleBtnGo.SetActive(false);
+        _inventoryPanel = canvas.AddComponent<InventoryPanelUI>();
+        _inventoryPanel.Initialize(this, WriteSave);
     }
 
     private void Update()
@@ -364,7 +370,7 @@ public class GameBootstrap : MonoBehaviour
             var abilities = string.Join(",", _player.Abilities);
             _hud.text = Victory
                 ? "VICTORY"
-                : $"{Pack.title}\nRoom {_room.id}  HP {_player.Health:0}\nAbilities: {(string.IsNullOrEmpty(abilities) ? "-" : abilities)}\nEsc: Title";
+                : $"{Pack.title}\nRoom {_room.id}  HP {_player.Health:0}\nAbilities: {(string.IsNullOrEmpty(abilities) ? "-" : abilities)}\nH: Heal ({_player.Inventory.Count("health_vial")})  I: Inventory  Esc: Title";
         }
     }
 
@@ -374,6 +380,7 @@ public class GameBootstrap : MonoBehaviour
             return;
         if (GetComponent<AcceptanceDriver>() != null)
             return;
+        _inventoryPanel?.Close();
         WriteSave();
         OpenTitleScreen();
     }
@@ -676,6 +683,7 @@ public class GameBootstrap : MonoBehaviour
             };
             _player.OnAbilityUnlocked += _ => RefreshGates();
             _player.OnCheckpointHit += HandleCheckpoint;
+            _player.OnInventoryChanged += WriteSave;
             _player.OnVictoryReached += () =>
             {
                 Victory = true;
@@ -947,6 +955,7 @@ public class GameBootstrap : MonoBehaviour
         sheet.LoadClips(Pack.sprites, spec.id, _streamingRoot);
         var enemy = go.AddComponent<EnemyActor>();
         enemy.EnemyId = spec.id;
+        enemy.OnDefeated = defeated => _loot?.Spawn(defeated, WriteSave);
         enemy.ConfigureMovement(spec.movement);
         enemy.Health = spec.health > 0 ? spec.health : 30f;
         enemy.Damage = spec.damage > 0 ? spec.damage : 8f;

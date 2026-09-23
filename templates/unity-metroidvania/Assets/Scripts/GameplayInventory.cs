@@ -27,6 +27,8 @@ public sealed class GameplayInventory
             definitions.Add(item.id, item);
         }
     }
+    public string Name(string id) => id != null && definitions.TryGetValue(id, out var item) ? item.name ?? id : id ?? "";
+    public string Category(string id) => id != null && definitions.TryGetValue(id, out var item) ? item.category : "";
     public int Count(string id) => id != null && counts.TryGetValue(id, out var count) ? count : 0;
     public string Equipped(string slot) => slot != null && equipped.TryGetValue(slot, out var id) ? id : "";
     public bool Grant(string id, int amount)
@@ -36,6 +38,24 @@ public sealed class GameplayInventory
         if (total > int.MaxValue) return false;
         counts[id] = (int)total;
         if (IsSlot(item.category) && string.IsNullOrEmpty(Equipped(item.category))) equipped[item.category] = id;
+        return true;
+    }
+    public bool TryConsumeHealing(string id, float missingHealth, out float healed)
+    {
+        healed = 0f;
+        if (id == null || missingHealth <= 0f || float.IsNaN(missingHealth) || float.IsInfinity(missingHealth)
+            || Count(id) <= 0 || !definitions.TryGetValue(id, out var item) || item.category != "consumable") return false;
+        double healing = 0;
+        foreach (var effect in item.effects ?? Array.Empty<InventoryEffect>())
+        {
+            // Do not consume mixed-effect items until every authored effect is supported.
+            if (effect.type != "heal" || effect.value < 0f) return false;
+            healing += effect.value;
+        }
+        if (healing <= 0) return false;
+        healed = (float)Math.Min(healing, missingHealth);
+        var remaining = Count(id) - 1;
+        if (remaining == 0) counts.Remove(id); else counts[id] = remaining;
         return true;
     }
     public bool Equip(string id)

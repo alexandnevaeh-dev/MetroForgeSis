@@ -17,6 +17,13 @@ class InventoryRulesCheck {
   bool invalidSave=false;try { restored.Restore(new InventorySave{items=new[]{new InventoryCount{id="mail",count=-1}}}); }catch(ArgumentException){invalidSave=true;}
   Check(invalidSave);Check(restored.Count("mail")==3);
   restored.Restore(null);Check(restored.Count("mail")==0);Check(restored.Effect("attack")==0);
+  var vial=new InventoryItem{id="vial",category="consumable",effects=new[]{new InventoryEffect{type="heal",value=30}}};
+  var consumables=new GameplayInventory(new[]{vial});Check(consumables.Grant("vial",2));
+  float healed;Check(!consumables.TryConsumeHealing("vial",0,out healed));Check(consumables.Count("vial")==2);
+  Check(consumables.TryConsumeHealing("vial",10,out healed));Check(healed==10&&consumables.Count("vial")==1);
+  Check(!consumables.TryConsumeHealing("vial",float.NaN,out healed));Check(consumables.Count("vial")==1);
+  Check(consumables.TryConsumeHealing("vial",40,out healed));Check(healed==30&&consumables.Count("vial")==0);
+  Check(!consumables.TryConsumeHealing("vial",40,out healed));Check(consumables.Capture().items.Length==0);
   Console.WriteLine("UNITY_INVENTORY_RULES_PASS");
  }
 }
