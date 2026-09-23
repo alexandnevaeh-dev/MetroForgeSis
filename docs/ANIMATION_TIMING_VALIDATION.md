@@ -14,3 +14,4 @@ Grounded locomotion playback follows horizontal speed divided by the selected au
 The runtime harness remains in the isolated review project. The reusable phase regression is included in Assets/Editor/MetroForgeAnimationValidation.cs.
 
 These results verify timing behavior only. They do not prove foot planting, animation anatomy, artwork quality, Windows build integration or Unreal behavior. The existing castle art review still uses a static character override. New artwork must be reviewed as a loop and during actual gameplay before replacing it.
+The PlayMode log also contains the previously observed UnityEditor.Search.SearchDatabase startup ArgumentOutOfRangeException. Its stack is in editor indexing; the controller scenario subsequently passed. This is not a clean-console claim.
