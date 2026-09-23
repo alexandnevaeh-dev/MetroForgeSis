@@ -1,4 +1,5 @@
-import { app, BrowserWindow, dialog } from 'electron';
+import { app, BrowserWindow, dialog, net } from 'electron';
+import { createNvidiaDesktopFetch } from './provider-fetch.js';
 import { existsSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -99,6 +100,7 @@ startDesktopSmoke((success) => app.exit(success ? 0 : 1));
 app
   .whenReady()
   .then(async () => {
+    globalThis.fetch = createNvidiaDesktopFetch(net.fetch.bind(net) as typeof globalThis.fetch, globalThis.fetch.bind(globalThis));
     const { registerIpcHandlers } = await import('./handlers.js');
     registerIpcHandlers(workspaceRoot);
     createWindow();
