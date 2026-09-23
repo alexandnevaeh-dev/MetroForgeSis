@@ -85,9 +85,10 @@ public static class StreamingArtCache
         return sprite;
     }
 
-    public static Sprite[] GetSheet(string streamingRoot, string rel, int frameWidth, int frameHeight, Vector2 pivot, FilterMode filter)
+    public static Sprite[] GetSheet(string streamingRoot, string rel, int frameWidth, int frameHeight, Vector2 pivot, FilterMode filter, float pixelsPerUnit = 1f)
     {
-        var key = rel.Replace('\\', '/') + "|sheet|" + frameWidth + "x" + frameHeight + "|" + pivot.x + "," + pivot.y + "|" + filter;
+        var ppu = float.IsNaN(pixelsPerUnit) || float.IsInfinity(pixelsPerUnit) || pixelsPerUnit <= 0f ? 1f : pixelsPerUnit;
+        var key = ppu.ToString(System.Globalization.CultureInfo.InvariantCulture) + "|" + rel.Replace('\\', '/') + "|sheet|" + frameWidth + "x" + frameHeight + "|" + pivot.x + "," + pivot.y + "|" + filter;
         if (Sheets.TryGetValue(key, out var cached) && cached != null)
             return cached;
         var tex = GetTexture(streamingRoot, rel, filter, TextureWrapMode.Clamp);
@@ -102,7 +103,7 @@ public static class StreamingArtCache
                 rect.width = tex.width - rect.x;
             if (rect.y < 0f)
                 rect.y = 0f;
-            frames[i] = Sprite.Create(tex, rect, pivot, 1f, 0, SpriteMeshType.FullRect);
+            frames[i] = Sprite.Create(tex, rect, pivot, ppu, 0, SpriteMeshType.FullRect);
         }
         Sheets[key] = frames;
         return frames;

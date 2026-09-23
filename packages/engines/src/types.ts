@@ -15,6 +15,8 @@ export interface GameplaySpriteClip {
   frameWidth: number;
   frameHeight: number;
   frameCount: number;
+  /** Unity sprite pixels per world unit; omitted or invalid values use 1. */
+  pixelsPerUnit?: number;
   fps: number;
   loop: boolean;
   /** Normalized pivot. Characters use bottom-center (0.5, 0). */
