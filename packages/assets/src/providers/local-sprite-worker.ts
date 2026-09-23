@@ -1,7 +1,7 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { getResourceRoot } from '@metroforge/shared';
 
 /**
  * Node <-> Python subprocess bridge for workers/local_sprite_worker.py — a free, fully local,
@@ -82,9 +82,6 @@ export interface LocalSpriteWorkerConfig {
   timeoutMs?: number;
 }
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-/** workers/ lives at the repo root, three levels up from packages/assets/src/providers/. */
-const DEFAULT_WORKER_PATH = join(__dirname, '..', '..', '..', '..', 'workers', 'local_sprite_worker.py');
 const DEFAULT_TIMEOUT_MS = 10_000;
 
 export class LocalSpriteWorkerProvider {
@@ -95,7 +92,7 @@ export class LocalSpriteWorkerProvider {
 
   constructor(config: LocalSpriteWorkerConfig = {}) {
     this.pythonPath = config.pythonPath ?? process.env.DIFFUSERS_PYTHON ?? 'python3';
-    this.workerPath = config.workerPath ?? DEFAULT_WORKER_PATH;
+    this.workerPath = config.workerPath ?? join(getResourceRoot(), 'workers', 'local_sprite_worker.py');
     this.timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   }
 

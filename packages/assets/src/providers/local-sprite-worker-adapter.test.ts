@@ -6,7 +6,7 @@ import { EventEmitter } from 'node:events';
 class FakeChildProcess extends EventEmitter {
   stdout = new EventEmitter();
   stderr = new EventEmitter();
-  stdin = { write: vi.fn(), end: vi.fn() };
+  stdin = Object.assign(new EventEmitter(), { write: vi.fn(), end: vi.fn() });
   killed = false;
   kill = vi.fn((_signal?: string) => { this.killed = true; });
 }

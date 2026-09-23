@@ -1,3 +1,4 @@
+import { join, resolve } from 'node:path';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EventEmitter } from 'node:events';
 
@@ -8,7 +9,7 @@ import { EventEmitter } from 'node:events';
 class FakeChildProcess extends EventEmitter {
   stdout = new EventEmitter();
   stderr = new EventEmitter();
-  stdin = { write: vi.fn(), end: vi.fn() };
+  stdin = Object.assign(new EventEmitter(), { write: vi.fn(), end: vi.fn() });
   killed = false;
   kill = vi.fn((_signal?: string) => { this.killed = true; });
 }
@@ -31,6 +32,22 @@ describe('LocalSpriteWorkerProvider — mocked subprocess boundary', () => {
     spawnMock.mockClear();
   });
 
+  it('uses the packaged resource root for the default worker', async () => {
+    const prior = process.env.METROFORGE_RESOURCE_ROOT;
+    const root = resolve('E:/Metroforge/packaged-resources');
+    process.env.METROFORGE_RESOURCE_ROOT = root;
+    try {
+      const { LocalSpriteWorkerProvider } = await import('./local-sprite-worker.js');
+      const pending = new LocalSpriteWorkerProvider({ pythonPath: 'configured-python' }).getCapabilities();
+      expect(spawnMock).toHaveBeenCalledWith('configured-python', [join(root, 'workers', 'local_sprite_worker.py')], expect.any(Object));
+      fakeChild.stdout.emit('data', Buffer.from(JSON.stringify({ ok: true })));
+      fakeChild.emit('close', 0);
+      expect((await pending).ok).toBe(true);
+    } finally {
+      if (prior === undefined) delete process.env.METROFORGE_RESOURCE_ROOT;
+      else process.env.METROFORGE_RESOURCE_ROOT = prior;
+    }
+  });
   it('spawns python via an argument array, never a shell string, and writes the request as JSON to stdin', async () => {
     const { LocalSpriteWorkerProvider } = await import('./local-sprite-worker.js');
     const provider = new LocalSpriteWorkerProvider({ pythonPath: 'python3', workerPath: '/fake/worker.py' });
