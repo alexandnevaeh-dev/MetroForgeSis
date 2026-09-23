@@ -724,7 +724,7 @@ export function RoomEditor() {
                           void runRoomAction(() => window.metroforge!.undoRoomEdit!(selectedPath));
                         }}
                       >
-                        Undo room edit
+                        Undo saved room change
                       </Button>
                       <Button
                         size="sm"
@@ -733,7 +733,7 @@ export function RoomEditor() {
                           void runRoomAction(() => window.metroforge!.redoRoomEdit(selectedPath));
                         }}
                       >
-                        Redo room edit
+                        Redo saved room change
                       </Button>
                       <Button
                         size="sm"
