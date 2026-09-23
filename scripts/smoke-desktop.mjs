@@ -48,7 +48,7 @@ writeFileSync(
       exitCode: result.status,
       signal: result.signal,
       error: result.error?.message,
-      scope: 'Native production renderer load and normal version IPC reaching main',
+      scope: process.env.METROFORGE_DESKTOP_SMOKE_PROJECT ? 'Native renderer, version IPC, project library and read-only preview IPC' : 'Native production renderer load and normal version IPC reaching main',
       logPath,
     },
     null,

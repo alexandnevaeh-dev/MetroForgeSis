@@ -12,15 +12,17 @@ export function startDesktopSmoke(done: (success: boolean) => void): void {
   );
 }
 
-export function observeDesktopSmoke(event: 'renderer-loaded' | 'version-ipc'): void {
+export function observeDesktopSmoke(event: 'renderer-loaded' | 'version-ipc' | 'project-preview'): void {
   if (!finish) return;
   observed.add(event);
-  if (observed.size === 2) {
+  if (observed.has('renderer-loaded') && observed.has('version-ipc') &&
+      (!process.env.METROFORGE_DESKTOP_SMOKE_PROJECT || observed.has('project-preview'))) {
     if (deadline) clearTimeout(deadline);
     const done = finish;
     finish = undefined;
     console.log(
-      'DESKTOP_SMOKE_PASS: production renderer loaded and normal version IPC reached main',
+      'DESKTOP_SMOKE_PASS: production renderer loaded and normal version IPC reached main' +
+      (observed.has('project-preview') ? '; project listing and preview IPC verified' : ''),
     );
     setTimeout(() => done(true), 100);
   }

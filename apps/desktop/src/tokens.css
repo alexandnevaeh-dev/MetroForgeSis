@@ -4,25 +4,25 @@
  */
 :root {
   /* ── Surfaces ── */
-  --forge-bg-app: #120e0c;
-  --forge-bg-sidebar: #16110e;
-  --forge-bg-surface: #1a1410;
-  --forge-bg-panel: #211a15;
-  --forge-bg-raised: #2a211a;
-  --forge-bg-hover: #33281f;
-  --forge-bg-input: #140f0c;
-  --forge-bg-accent-tint: #3a2214;
+  --forge-bg-app: #171a20;
+  --forge-bg-sidebar: #1d2128;
+  --forge-bg-surface: #20252d;
+  --forge-bg-panel: #252b34;
+  --forge-bg-raised: #2d3540;
+  --forge-bg-hover: #35404d;
+  --forge-bg-input: #15191f;
+  --forge-bg-accent-tint: #34302b;
 
   /* ── Borders ── */
-  --forge-border-subtle: #2c221c;
-  --forge-border: #3d2e24;
-  --forge-border-strong: #5a4334;
+  --forge-border-subtle: #303741;
+  --forge-border: #424c59;
+  --forge-border-strong: #637184;
   --forge-border-focus: #e07a3a;
 
   /* ── Text ── */
-  --forge-text: #f4e6d4;
-  --forge-text-secondary: #c4aa90;
-  --forge-text-muted: #8a7260;
+  --forge-text: #edf1f7;
+  --forge-text-secondary: #bbc5d2;
+  --forge-text-muted: #96a3b5;
   --forge-text-inverse: #1a1008;
 
   /* ── Accents: molten orange + copper ── */
@@ -32,7 +32,7 @@
   --forge-accent-pressed: #c45c22;
   --forge-accent-soft: rgba(224, 112, 48, 0.16);
   --forge-accent-soft-strong: rgba(255, 138, 61, 0.24);
-  --forge-nav-active-bg: rgba(224, 112, 48, 0.28);
+  --forge-nav-active-bg: rgba(112, 181, 232, 0.13);
   --forge-nav-active-fg: #fff4e8;
   --forge-copper: #c47a48;
   --forge-ember: #ffb070;
@@ -44,9 +44,9 @@
   --forge-warn-soft: rgba(212, 160, 23, 0.14);
   --forge-fail: #e06c75;
   --forge-fail-soft: rgba(224, 108, 117, 0.14);
-  --forge-info: #d4925a;
+  --forge-info: #70b5e8;
   --forge-info-soft: rgba(212, 146, 90, 0.14);
-  --forge-pending: #8a7260;
+  --forge-pending: #96a3b5;
   --forge-running: #ff8a3d;
 
   /* ── Spacing (4–32) ── */
@@ -87,7 +87,7 @@
   --forge-fs-page: 1.05rem;
   --forge-fs-section: 0.88rem;
   --forge-fs-panel: 0.72rem;
-  --forge-fs-body: 0.78rem;
+  --forge-fs-body: 0.8125rem;
   --forge-fs-body-secondary: 0.74rem;
   --forge-fs-label: 0.68rem;
   --forge-fs-caption: 0.64rem;
@@ -99,7 +99,7 @@
 
   /* ── Shell metrics ── */
   --forge-topbar-h: 44px;
-  --forge-sidebar-w: 216px;
+  --forge-sidebar-w: 188px;
   --forge-sidebar-w-collapsed: 52px;
   --forge-status-h: 26px;
   --forge-inspector-w: 280px;

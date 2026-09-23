@@ -47,7 +47,27 @@ function createWindow(): void {
     },
   });
 
-  win.webContents.once('did-finish-load', () => observeDesktopSmoke('renderer-loaded'));
+  win.webContents.once('did-finish-load', async () => {
+    observeDesktopSmoke('renderer-loaded');
+    const project = process.env.METROFORGE_DESKTOP_SMOKE_PROJECT;
+    if (process.env.METROFORGE_DESKTOP_SMOKE !== '1' || !project) return;
+    try {
+      const result = await win.webContents.executeJavaScript(`(async () => {
+        const path = ${JSON.stringify(project)};
+        const projects = await window.metroforge.listProjects();
+        const listed = projects.find(project => project.path.toLowerCase() === path.toLowerCase());
+        if (!listed) throw new Error('Expected project missing from library');
+        const preview = await window.metroforge.getProjectPreview(path);
+        if (preview.error || !preview.title || preview.engine !== listed.engine || !preview.worldGraph?.nodes?.length)
+          throw new Error('Project preview metadata incomplete');
+        const dashboard = await window.metroforge.getProjectDashboard(path);
+        if (!dashboard.title || dashboard.roomCount < 1) throw new Error('Project dashboard missing rooms');
+        return {engine: preview.engine, rooms: preview.worldGraph.nodes.length, dashboardRooms: dashboard.roomCount};
+      })()`);
+      console.log('DESKTOP_PROJECT_PREVIEW', result);
+      observeDesktopSmoke('project-preview');
+    } catch (error) { failDesktopSmoke(error instanceof Error ? error.message : String(error)); }
+  });
   win.webContents.on('preload-error', (_event, _path, error) => failDesktopSmoke(error.message));
   win.webContents.on('render-process-gone', (_event, details) => failDesktopSmoke(details.reason));
 

@@ -1,4 +1,5 @@
 import { ipcMain, shell } from 'electron';
+import { detectProjectEngine } from '@metroforge/engines';
 import { readdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve as resolvePath, basename } from 'node:path';
 import { getVersionString } from '@metroforge/core';
@@ -332,6 +333,14 @@ function readWorldGraphEdgesFrom(
  *  produced by generateTopDownWorld (packages/procedural/src/topdown/world.ts). */
 function dungeonIdFromAreaId(areaId: string): string {
   return areaId.replace(/_r\d+$/, '');
+}
+
+function assertReadableProjectPath(projectPath: string, repoRoot: string): void {
+  const base = resolveGeneratedGamesPath(loadConfig(), repoRoot);
+  if (!isPathWithinRoot(resolvePath(base), resolvePath(projectPath))) {
+    throw new Error('Project path outside generated games directory');
+  }
+  if (!detectProjectEngine(projectPath)) throw new Error('Unrecognized engine project');
 }
 
 function assertProjectPath(projectPath: string, repoRoot: string): void {
@@ -947,10 +956,7 @@ export function registerIpcHandlers(cwd: string): void {
   });
 
   ipcMain.handle('get-project-preview', async (_event, projectPath: string) => {
-    assertProjectPath(projectPath, cwd);
-    if (!existsSync(join(projectPath, 'project.godot'))) {
-      return { error: 'Not a Godot project (project.godot missing)' };
-    }
+    assertReadableProjectPath(projectPath, cwd);
 
     let title = projectPath.split(/[/\\]/).pop() ?? projectPath;
     let profile: string | undefined;
@@ -1039,7 +1045,7 @@ export function registerIpcHandlers(cwd: string): void {
       visualQa = null;
     }
 
-    return { title, profile, manifest, worldGraph, assetPreviews, visualDNA, visualReview, visualQa };
+    return { title, profile, engine: detectProjectEngine(projectPath), manifest, worldGraph, assetPreviews, visualDNA, visualReview, visualQa };
   });
 
   ipcMain.handle('list-projects', () => {
@@ -1048,10 +1054,10 @@ export function registerIpcHandlers(cwd: string): void {
     if (!existsSync(base)) return [];
 
     return readdirSync(base, { withFileTypes: true })
-      .filter((d) => d.isDirectory() && existsSync(join(base, d.name, 'project.godot')))
+      .filter((d) => d.isDirectory() && detectProjectEngine(join(base, d.name)) !== null)
       .map((d) => {
         const projectPath = join(base, d.name);
-        const meta: Record<string, unknown> = { slug: d.name, path: projectPath };
+        const meta: Record<string, unknown> = { slug: d.name, path: projectPath, engine: detectProjectEngine(projectPath) };
         try {
           const dna = JSON.parse(readFileSync(join(projectPath, 'game_dna.json'), 'utf-8'));
           meta.title = dna.identity?.title;
@@ -1565,7 +1571,7 @@ export function registerIpcHandlers(cwd: string): void {
   );
 
   ipcMain.handle('get-project-dashboard', async (_event, projectPath: string) => {
-    assertProjectPath(projectPath, cwd);
+    assertReadableProjectPath(projectPath, cwd);
     const project = loadProjectContext(projectPath);
     const events = generationEventStore.read(projectPath, 100);
     const graph = buildDependencyGraph(project);

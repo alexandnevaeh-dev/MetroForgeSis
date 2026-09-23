@@ -56,6 +56,8 @@ public class AcceptanceDriver : MonoBehaviour
     private bool _captureEnabled;
     private bool _loggedHold;
     private bool _finished;
+    private bool _ascending;
+    private float _ascentTargetX;
 
     public static bool RequestedFromCommandLine()
     {
@@ -236,6 +238,18 @@ public class AcceptanceDriver : MonoBehaviour
                 _feature["containment"] = "failed";
                 Fail("escaped_room_bounds", "Player escaped " + roomBounds.id + " at " + location);
                 yield break;
+            }
+            if (_game.CurrentRoom != null && _game.CurrentRoom.victory && !_game.Victory)
+            {
+                yield return NavigateVictory();
+                if (_finished) yield break;
+            }
+            var ascentDoor = RequiredAscentDoor();
+            if (ascentDoor != null)
+            {
+                yield return NavigateAscent(ascentDoor);
+                if (_finished) yield break;
+                continue;
             }
             var enemy = UnityEngine.Object.FindFirstObjectByType<EnemyActor>();
             AppendDiag(diagPath, deaths, enemy);
@@ -532,6 +546,8 @@ public class AcceptanceDriver : MonoBehaviour
             ",\"hp\":" + _game.Player.Health.ToString("0") +
             ",\"enemy\":" + (enemy != null ? "true" : "false") +
             ",\"enemyHp\":" + (enemy != null ? enemy.Health.ToString("0") : "0") +
+            ",\"enemyX\":" + (enemy != null ? enemy.transform.position.x.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) : "null") +
+            ",\"enemyY\":" + (enemy != null ? enemy.transform.position.y.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) : "null") +
             ",\"deaths\":" + deaths +
             ",\"rooms\":" + _roomsVisited.Count + "}\n";
         File.AppendAllText(path, line);
@@ -600,6 +616,104 @@ public class AcceptanceDriver : MonoBehaviour
             return false;
         }
         return Supported(feet) && !Supported(feet + Vector2.right * Mathf.Sign(direction) * 40f);
+    }
+
+    private IEnumerator NavigateVictory()
+    {
+        var roomId = _game.CurrentRoomId;
+        var trigger = GameObject.FindGameObjectWithTag("Victory");
+        if (trigger == null) { Fail("victory_trigger_missing", roomId); yield break; }
+        ReleaseAll();
+        _ascending = true; // Steer on the floor; suppress random gap-jump pulses.
+        _ascentTargetX = trigger.transform.position.x;
+        var until = Mathf.Min(_deadline, Time.unscaledTime + 8f);
+        while (!_game.Victory && _game.CurrentRoomId == roomId && Time.unscaledTime < until) yield return null;
+        _ascending = false;
+        ReleaseAll();
+        if (!_game.Victory) Fail("victory_trigger_not_reached", roomId);
+    }
+
+    private GameplayDoor RequiredAscentDoor()
+    {
+        var room = _game.CurrentRoom;
+        if (room?.doors == null) return null;
+        GameplayDoor upward = null;
+        foreach (var door in room.doors)
+        {
+            if (door == null || door.optional || _roomsVisited.Contains(door.targetRoomId)) continue;
+            if (door.direction == "right") return null;
+            if (door.direction == "up") upward = door;
+        }
+        return upward;
+    }
+
+    private IEnumerator NavigateAscent(GameplayDoor door)
+    {
+        var room = _game.CurrentRoom;
+        foreach (var requirement in door.requirements ?? Array.Empty<string>())
+        {
+            if (_game.Player.Abilities.Contains(requirement)) continue;
+            GameplayActor pickup = null;
+            foreach (var candidate in room.abilityPickups ?? Array.Empty<GameplayActor>())
+                if (candidate.id == requirement) { pickup = candidate; break; }
+            if (pickup == null && room.abilityPickup?.id == requirement) pickup = room.abilityPickup;
+            if (pickup != null)
+            {
+                // Walk to the authored pickup and require the real trigger to grant it.
+                ReleaseAll(); _ascending = true; _ascentTargetX = pickup.x;
+                var pickupDeadline = Mathf.Min(_deadline, Time.unscaledTime + 6f);
+                while (_game.CurrentRoomId == room.id && !_game.Player.Abilities.Contains(requirement) &&
+                    Time.unscaledTime < pickupDeadline) yield return null;
+                _ascending = false; ReleaseAll();
+            }
+            if (!_game.Player.Abilities.Contains(requirement))
+            { Fail("ascent_ability_missing", requirement + " in " + room.id); yield break; }
+        }
+        var ledges = new List<GameplayRect>();
+        foreach (var solid in room.solids ?? Array.Empty<GameplayRect>())
+            if (solid.name != null && solid.name.StartsWith("Platform_")) ledges.Add(solid);
+        ledges.Sort((a,b) => b.y.CompareTo(a.y));
+        if (ledges.Count == 0) { Fail("ascent_route_missing", room.id); yield break; }
+        ReleaseAll();
+        _ascending = true;
+        _ascentTargetX = ledges[0].x - 56f;
+        var until = Mathf.Min(_deadline, Time.unscaledTime + 6f);
+        while (_game.CurrentRoomId == room.id && Time.unscaledTime < until &&
+            Mathf.Abs(_game.Player.transform.position.x - _ascentTargetX) > 4f) yield return null;
+        yield return new WaitForSeconds(.15f);
+        foreach (var ledge in ledges)
+        {
+            if (_game.CurrentRoomId != room.id) break;
+            _ascentTargetX = ledge.x + ledge.width / 2;
+            Pulse(KeyCode.Space);
+            yield return new WaitForSeconds(.15f);
+            until = Mathf.Min(_deadline, Time.unscaledTime + 4f);
+            var landed = false;
+            while (_game.CurrentRoomId == room.id && Time.unscaledTime < until)
+            {
+                var body = _game.Player.GetComponent<Rigidbody2D>();
+                if (Mathf.Abs(body.position.y - (room.height - ledge.y)) < 2f &&
+                    Mathf.Abs(body.linearVelocity.y) < 1f && body.position.x > ledge.x && body.position.x < ledge.x + ledge.width)
+                { landed = true; break; }
+                yield return null;
+            }
+            if (_game.CurrentRoomId != room.id) break;
+            if (!landed) { _ascending = false; ReleaseAll(); Fail("ascent_landing_failed", room.id + " " + ledge.name); yield break; }
+            yield return new WaitForSeconds(.1f);
+        }
+        if (_game.CurrentRoomId == room.id)
+        {
+            _ascentTargetX = door.x + door.width / 2;
+            Pulse(KeyCode.Space);
+            until = Mathf.Min(_deadline, Time.unscaledTime + 3f);
+            while (_game.CurrentRoomId == room.id && Time.unscaledTime < until) yield return null;
+        }
+        _ascending = false;
+        ReleaseAll();
+        if (_game.CurrentRoomId != door.targetRoomId)
+        { Fail("ascent_transition_failed", room.id + " -> " + door.targetRoomId); yield break; }
+        Note("ascent_transition " + room.id + " -> " + door.targetRoomId);
+        if (_captureEnabled) yield return Capture("ascent_" + room.id);
     }
 
     private IEnumerator Hold(KeyCode key, float seconds)
@@ -879,10 +993,19 @@ public class AcceptanceDriver : MonoBehaviour
 
     private void Update()
     {
+        if (!_finished && _game?.Pack != null && !string.IsNullOrEmpty(_qaDir)) TrackRoom();
+        if (_ascending && _game?.Player != null)
+        {
+            _held.Remove(KeyCode.A); _held.Remove(KeyCode.D);
+            var dx = _ascentTargetX - _game.Player.transform.position.x;
+            if (dx > 3f) _held.Add(KeyCode.D);
+            if (dx < -3f) _held.Add(KeyCode.A);
+        }
+
         if (_mode == "catalog" || _mode == "motion" || _mode == "hitch" || _mode == "combatstall" || _mode == "roomtransition")
             return;
         var direction = (_held.Contains(KeyCode.D) ? 1f : 0f) - (_held.Contains(KeyCode.A) ? 1f : 0f);
-        if (_pulse == KeyCode.None && _game != null && NeedsGapJump(_game.Player, direction))
+        if (!_ascending && _pulse == KeyCode.None && _game != null && NeedsGapJump(_game.Player, direction))
             Pulse(KeyCode.Space);
         ApplyKeys(false);
         _pulse = KeyCode.None;

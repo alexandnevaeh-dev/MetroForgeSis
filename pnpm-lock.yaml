@@ -96,6 +96,9 @@ importers:
       '@metroforge/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@metroforge/engines':
+        specifier: workspace:*
+        version: link:../../packages/engines
       '@metroforge/generation':
         specifier: workspace:*
         version: link:../../packages/generation

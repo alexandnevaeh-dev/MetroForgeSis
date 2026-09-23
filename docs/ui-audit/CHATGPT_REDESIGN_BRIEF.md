@@ -272,3 +272,7 @@ pnpm dev:desktop
 ```
 
 Open `docs/ui-audit/index.html` in a browser to review all layout schematics in one place.
+
+## September 22: professional editor direction
+User requests Unreal/Unity/Godot familiarity, integrated visual map/asset editing and stronger aesthetics. Windows desktop product surface. Runtime tokens remain canonical: graphite workspace #171a20, panels #252b34, raised controls #2d3540, text #edf1f7, secondary labels #96a3b5, information #70b5e8; retain restrained orange actions. Segoe UI and Cascadia Code/Consolas remain local fonts.
+Target: project/assets browser and scene hierarchy, central viewport, property inspector, docked output. Extend existing EditorWorkbench/WorldEditor/RoomEditor/AssetsGallery. Real selection, transforms, snapping, tile/entity edits, undo/redo and persistence; unsupported live changes require explicit restart feedback. First palette/contrast/width pass is implemented; adjustable panes and broader editor workflows remain pending. Do not claim palette changes complete this redesign.
