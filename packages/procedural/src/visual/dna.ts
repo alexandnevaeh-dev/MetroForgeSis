@@ -1,3 +1,4 @@
+import { isPaintedStyle } from './rendering-medium.js';
 import type {
   ArtBible,
   GameDNA,
@@ -59,12 +60,13 @@ export function generateVisualDNA(input: {
     ...m,
     forbidden: template.forbidden.slice(0, 2),
   }));
+  const painted = isPaintedStyle(styleBible.renderingStyle);
   const sideView = gameDna.archetype !== 'TOP_DOWN_ACTION_ADVENTURE';
   const dna: VisualDNA = {
     version: VISUAL_DNA_VERSION,
     gameId: gameDna.identity.title,
     styleFingerprint: '',
-    artStyle: template.artStyle,
+    artStyle: painted ? { ...template.artStyle, id: `${template.artStyle.id}-painted`, label: styleBible.renderingStyle, renderingFamily: 'hand-painted', edgeTreatment: styleBible.outlineRules } : template.artStyle,
     renderingStyle: styleBible.renderingStyle || artBible.visualStyle,
     resolution: {
       referenceWidth: styleBible.internalRenderResolution?.width ?? 640,
@@ -155,6 +157,13 @@ export function generateVisualDNA(input: {
     ],
     seed: gameDna.seed,
   };
+  if (painted) {
+    for (const character of [dna.characters, dna.enemies, dna.bosses]) {
+      character.proportions = 'consistent authored anatomy, articulated limbs, stable canvas anchor';
+      character.outline = styleBible.outlineRules;
+    }
+    dna.ui.iconStyle = artBible.uiGuidelines.iconStyle;
+  }
   dna.styleFingerprint = fingerprintFromVisualDNA(dna);
   return dna;
 }

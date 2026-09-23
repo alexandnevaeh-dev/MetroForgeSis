@@ -82,7 +82,9 @@ export function compileVisualPrompt(input: CompileVisualPromptInput): VisualProm
   const prompt = [
     visualDNA.artStyle.label,
     visualDNA.renderingStyle,
-    `${visualDNA.resolution.tileSize}px pixel density`,
+    visualDNA.artStyle.renderingFamily === 'hand-painted' || visualDNA.artStyle.renderingFamily === 'painterly'
+      ? 'painted texture with clear gameplay edges'
+      : `${visualDNA.resolution.tileSize}px pixel density`,
     paletteLine(visualDNA, biomeVisualDNA),
     visualDNA.lighting.direction,
     visualDNA.lighting.contrast,

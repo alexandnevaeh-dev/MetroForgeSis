@@ -8,6 +8,7 @@ import type {
 } from '@metroforge/schemas';
 import type { GenerationProfile } from '@metroforge/shared';
 import { PROFILE_DEFAULTS, slugify, tileSizeForProfile } from '@metroforge/shared';
+import { isPaintedStyle } from './visual/rendering-medium.js';
 import { SeededRNG } from './rng.js';
 import { styleCueText } from './visual/style-registry.js';
 
@@ -43,6 +44,8 @@ function inferStyleBucket(visualStyle: string): keyof typeof STYLE_PALETTES {
 export function generateArtBible(gameDna: GameDNA, seed: number): ArtBible {
   const bucket = inferStyleBucket(styleCueText(gameDna) || gameDna.identity.visualStyle);
   const palette = STYLE_PALETTES[bucket]!;
+  const painted = isPaintedStyle(gameDna.identity.visualStyle);
+  const medium = painted ? 'hand-painted' : 'pixel art';
 
   return {
     version: '0.1.0',
@@ -57,13 +60,13 @@ export function generateArtBible(gameDna: GameDNA, seed: number): ArtBible {
     },
     environmentGuidelines: {
       tileStyle: `${gameDna.identity.visualStyle}, ${gameDna.technical.tileSize}px grid, modular autotiles`,
-      lighting: bucket === 'dark' ? 'key light from upper-left, hard 1px rims' : 'soft ambient fill, key from upper-left',
+      lighting: painted ? 'upper-left key, soft painted rim light, readable contact edges' : bucket === 'dark' ? 'key light from upper-left, hard 1px rims' : 'soft ambient fill, key from upper-left',
       parallax: '3 layered backgrounds (far, mid, near) plus optional foreground silhouette; no stretching',
     },
     uiGuidelines: {
-      fontStyle: 'pixel or condensed sans',
+      fontStyle: painted ? 'readable condensed sans' : 'pixel or condensed sans',
       hudTheme: bucket === 'mechanical' ? 'brass and cyan accents' : 'high contrast minimal',
-      iconStyle: '16px centered icons with 1px outline',
+      iconStyle: painted ? 'painted icons with clear silhouette and restrained edge accents' : '16px centered icons with 1px outline',
     },
     negativePrompts: [
       'blurry',
@@ -74,11 +77,11 @@ export function generateArtBible(gameDna: GameDNA, seed: number): ArtBible {
       '3d render',
     ],
     promptPrefixes: {
-      CHARACTER: `pixel art game character sprite, side view, ${gameDna.identity.visualStyle},`,
-      ENEMY: `pixel art game enemy creature, side view, ${gameDna.identity.visualStyle},`,
-      BOSS: `pixel art game boss creature, imposing, ${gameDna.identity.visualStyle},`,
-      TILE_SOURCE: `seamless pixel art tileset texture, ${gameDna.identity.visualStyle},`,
-      ENVIRONMENT: `pixel art parallax background, ${gameDna.identity.visualStyle},`,
+      CHARACTER: `${medium} game character sprite, side view, ${gameDna.identity.visualStyle},`,
+      ENEMY: `${medium} game enemy creature, side view, ${gameDna.identity.visualStyle},`,
+      BOSS: `${medium} game boss creature, imposing, ${gameDna.identity.visualStyle},`,
+      TILE_SOURCE:  `seamless ${medium} tileset texture, ${gameDna.identity.visualStyle},`,
+      ENVIRONMENT: `${medium} parallax background, ${gameDna.identity.visualStyle},`,
     },
   };
 }
@@ -141,6 +144,7 @@ export function generateDesignBible(
 export function generateStyleBible(gameDna: GameDNA, art: ArtBible): StyleBible {
   const sideView = gameDna.archetype !== 'TOP_DOWN_ACTION_ADVENTURE';
   const tileSize = gameDna.technical.tileSize || tileSizeForProfile(gameDna.profile);
+  const painted = isPaintedStyle(art.visualStyle);
   const visualSlice = gameDna.profile === 'VISUAL_VERTICAL_SLICE';
   const cameraZoom = visualSlice ? 3 : 2;
   return {
@@ -148,7 +152,7 @@ export function generateStyleBible(gameDna: GameDNA, art: ArtBible): StyleBible 
     renderingStyle: art.visualStyle,
     pixelResolution: tileSize,
     palette: art.palette,
-    outlineRules: '1px dark outline on characters and collidable tiles; no extra outlines on far BG',
+    outlineRules: painted ? 'controlled painted edges on actors and collision surfaces, soft far-background edges' : '1px dark outline on characters and collidable tiles; no extra outlines on far BG',
     lighting: art.environmentGuidelines.lighting,
     materials: art.environmentGuidelines.tileStyle,
     characterScale: `${tileSize * 2}px player height on ${tileSize}px grid`,
@@ -169,7 +173,7 @@ export function generateStyleBible(gameDna: GameDNA, art: ArtBible): StyleBible 
     enemyScaleRange: [48, 80],
     bossScaleRange: [96, 160],
     maximumPaletteSize: Math.max(8, art.palette.length),
-    shadingRules: 'flat base fills, one shadow step, one highlight step; no painterly gradients on gameplay sprites',
+    shadingRules: painted ? 'painted volume with coherent material shading, quiet texture and readable silhouettes' : 'flat base fills, one shadow step, one highlight step; no painterly gradients on gameplay sprites',
     highlightRules: 'single specular catch from upper-left on metal/glass; never on far parallax',
     lightingDirection: 'upper-left',
     lightingContrast: visualSlice ? 'medium-high, readable silhouettes' : art.environmentGuidelines.lighting,
@@ -182,9 +186,9 @@ export function generateStyleBible(gameDna: GameDNA, art: ArtBible): StyleBible 
     cameraZoom,
     cameraLookAhead: 40,
     cameraDeadZone: 0.14,
-    pixelFiltering: 'nearest',
-    nearestNeighbor: true,
-    pixelSnap: true,
+    pixelFiltering: painted ? 'linear' : 'nearest',
+    nearestNeighbor: !painted,
+    pixelSnap: !painted,
     contrast: 'readable midtones, avoid crushed blacks covering the player',
     saturation: 'controlled, biome-locked',
     cameraScale: `${cameraZoom}x integer zoom`,
@@ -195,10 +199,11 @@ export function generateStyleBible(gameDna: GameDNA, art: ArtBible): StyleBible 
 
 export function generateCharacterVisualDNA(gameDna: GameDNA, art: ArtBible): CharacterVisualDNA {
   const tile = gameDna.technical.tileSize || 32;
+  const painted = isPaintedStyle(art.visualStyle);
   return {
     id: 'player',
     silhouette: `readable two-tile (${tile * 2}px) humanoid, distinct head/weapon mass`,
-    bodyProportions: 'head ~1/3 of sprite, torso compact, feet planted on canvas bottom',
+    bodyProportions: painted ? 'consistent authored anatomy, articulated limbs, stable feet-center canvas anchor' : 'head ~1/3 of sprite, torso compact, feet planted on canvas bottom',
     palette: art.palette.map((p) => p.hex),
     clothing: `${gameDna.identity.visualStyle} fitted explorer kit, no costume swaps between frames`,
     equipment: 'single visible weapon and belt pouches, same across all poses',
@@ -207,7 +212,7 @@ export function generateCharacterVisualDNA(gameDna: GameDNA, art: ArtBible): Cha
     spriteWidth: 64,
     spriteHeight: 64,
     orientation: 'side view, facing right in source',
-    lighting: 'upper-left key, 1px dark outline',
+    lighting: painted ? 'upper-left key, controlled painted edge light' : 'upper-left key, 1px dark outline',
     outline: art.uiGuidelines.iconStyle,
     anchor: 'feet-center',
     prompt: art.characterGuidelines.player,

@@ -1,3 +1,4 @@
+import { isPaintedStyle } from './visual/rendering-medium.js';
 import type { StyleBible } from '@metroforge/schemas';
 
 /** Machine-readable visual contract consumed by every image-generation prompt. */
@@ -98,7 +99,7 @@ export function buildVisualStyleContract(styleBible: StyleBible | undefined): Vi
   };
   contract.promptFragment = [
     artStyle,
-    `${pixelDensity}px pixel density`,
+    isPaintedStyle(artStyle) ? 'painted texture with clear gameplay edges' : `${pixelDensity}px pixel density`,
     `palette ${palette.join(' ')}`.trim(),
     outline,
     `${lighting} lighting`,

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { GameDNA } from '@metroforge/schemas';
 import {
   generateArtBible,
+  generateCharacterVisualDNA,
+  buildVisualStyleContract,
   generateStyleBible,
   generateVisualDNA,
   generateAllBiomeVisualDNA,
@@ -179,5 +181,35 @@ describe('action-pose visual generation contract', () => {
     expect(jump.technicalConstraints).toMatchObject({ width: 256, height: 384, transparentBackground: true });
     expect(jump.promptHash).not.toBe(idle.promptHash);
     expect(jump.compilerVersion).toBe(2);
+  });
+});
+
+
+describe('painted medium across generation stages', () => {
+  it('preserves explicit painted gothic art from bible through final prompts', () => {
+    const paintedDna = { ...dna, identity: { ...dna.identity, visualStyle: 'hand-painted gothic abbey' } };
+    const art = generateArtBible(paintedDna, 42);
+    const style = generateStyleBible(paintedDna, art);
+    const character = generateCharacterVisualDNA(paintedDna, art);
+    const visual = generateVisualDNA({ gameDna: paintedDna, artBible: art, styleBible: style });
+    const prompt = compileVisualPrompt({ visualDNA: visual, category: 'player', subject: 'abbey warden', animationState: 'run',
+      technicalSpec: { width: 256, height: 384, transparentBackground: true } });
+    const combined = [Object.values(art.promptPrefixes).join(' '), style.outlineRules, style.shadingRules,
+      character.lighting, character.bodyProportions, visual.artStyle.label, visual.characters.outline,
+      buildVisualStyleContract(style).promptFragment, prompt.prompt].join(' ');
+    expect(combined).not.toMatch(/pixel art|1px|pixel density|no painterly/i);
+    expect(visual.artStyle.renderingFamily).toBe('hand-painted');
+    expect(style).toMatchObject({ pixelFiltering: 'linear', nearestNeighbor: false, pixelSnap: false });
+    expect(prompt.technicalConstraints.pixelArt).toBe(false);
+    expect(prompt.prompt).toContain('stronger arm drive');
+  });
+  it('retains legacy pixel settings for explicitly pixel artwork', () => {
+    const pixelDna = { ...dna, identity: { ...dna.identity, visualStyle: 'gothic pixel art' } };
+    const art = generateArtBible(pixelDna, 42);
+    const style = generateStyleBible(pixelDna, art);
+    const visual = generateVisualDNA({ gameDna: pixelDna, artBible: art, styleBible: style });
+    expect(art.promptPrefixes.CHARACTER).toContain('pixel art');
+    expect(style).toMatchObject({ pixelFiltering: 'nearest', nearestNeighbor: true, pixelSnap: true });
+    expect(visual.artStyle.id).toBe('gothic-ruin');
   });
 });
