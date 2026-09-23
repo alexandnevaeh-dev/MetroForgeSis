@@ -18,6 +18,13 @@ const root=path.resolve(__dirname,'..'),req=createRequire(root+'/apps/desktop/pa
   await page.locator('image[data-room-background="far"]').waitFor({state:'attached'});
   assert.ok(await page.locator('image[data-room-background="far"]').evaluate(async element=>{const img=new Image();img.src=element.getAttribute('href');await img.decode();return img.naturalWidth>0;}));
   await page.getByText('Distant background settings',{exact:true}).click();
+  const previewGuards=await page.evaluate(async p=>{
+   const traversal=await window.metroforge.getAssetPreview(p,'../outside.png');
+   let outsideRejected=false;
+   try{await window.metroforge.getAssetPreview('E:/Metroforge/MetroForge-Recovered','assets/outside.png');}catch{outsideRejected=true;}
+   return {traversalBlocked:!traversal.dataUrl,outsideRejected};
+  },project);
+  assert.deepEqual(previewGuards,{traversalBlocked:true,outsideRejected:true});
   const control=page.getByLabel('Frame background to camera',{exact:true});await control.check();
   await page.getByLabel('Background parallax',{exact:true}).fill('0.25');
   await page.locator('.unity-room-geometry').getByRole('button',{name:'Undo room edit',exact:true}).click();assert.equal(await page.getByLabel('Background parallax',{exact:true}).inputValue(),'0.1');
