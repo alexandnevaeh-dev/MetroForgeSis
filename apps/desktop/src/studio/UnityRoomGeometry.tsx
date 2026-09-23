@@ -34,10 +34,10 @@ export function UnityRoomGeometry({projectPath,roomId,width,height}: {projectPat
   </div>
   <p className="hint">{state?.dirty?'Unsaved room changes · retained while switching rooms.':'Unity room geometry'} · Select a solid to edit its position and size. Runtime restart required.</p>
   {error&&<p role="alert">{error}</p>}{notice&&<p role="status">{notice}</p>}
-  {framing&&<fieldset disabled={saving}><legend>Distant background</legend>
-   <label><Input type="checkbox" aria-label="Frame background to camera" checked={framing.properties.farCameraRelative===true} onChange={e=>edit([{type:'property',objectId:framingId,key:'farCameraRelative',value:e.target.checked}])}/>Frame background to camera</label>
-   <label>Parallax amount<Input aria-label="Background parallax" type="number" min={0} max={1} step={0.05} disabled={framing.properties.farCameraRelative!==true} value={Number(framing.properties.farParallax)} onChange={e=>{const value=e.currentTarget.valueAsNumber;if(Number.isFinite(value)&&value>=0&&value<=1)edit([{type:'property',objectId:framingId,key:'farParallax',value}]);}}/></label>
-   <p className="hint">0 follows the camera; higher values add relative movement within the image edges. Restart Unity after saving. The geometry preview does not render this background.</p>
+  {framing&&<fieldset className="room-background-settings" disabled={saving}><legend>Distant background</legend><div className="room-background-fields">
+   <label className="room-background-toggle"><Input type="checkbox" aria-label="Frame background to camera" checked={framing.properties.farCameraRelative===true} onChange={e=>edit([{type:'property',objectId:framingId,key:'farCameraRelative',value:e.target.checked}])}/>Frame background to camera</label>
+   <label className="room-background-parallax">Parallax amount<Input aria-label="Background parallax" type="number" min={0} max={1} step={0.05} disabled={framing.properties.farCameraRelative!==true} value={Number(framing.properties.farParallax)} onChange={e=>{const value=e.currentTarget.valueAsNumber;if(Number.isFinite(value)&&value>=0&&value<=1)edit([{type:'property',objectId:framingId,key:'farParallax',value}]);}}/></label>
+   </div><p className="hint">0 follows the camera; 1 allows the most drift. Save and restart Unity to preview the background.</p>
   </fieldset>}
   <svg className="room-canvas" viewBox={`0 0 ${width} ${height}`} style={{width:'100%',maxHeight:560}} aria-label="Unity room geometry">
    <rect width={width} height={height} fill="#171c24" />

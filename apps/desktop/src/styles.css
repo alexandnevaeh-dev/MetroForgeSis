@@ -4335,3 +4335,14 @@ select {
 .loot-editor label { display: grid; gap: 6px; min-width: 0; }
 .loot-editor .loot-entry button { justify-self: start; grid-column: 1 / -1; }
 @media (max-width: 1000px) { .loot-editor .loot-entry { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Room framing uses the existing input primitive with compact inspector layout. */
+.unity-room-geometry > .row { flex-wrap: wrap; }
+.room-background-settings { min-width: 0; margin: var(--space-3) 0; padding: var(--space-3); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); }
+.room-background-settings legend { padding: 0 var(--space-2); color: var(--text-secondary); }
+.room-background-fields { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3) var(--space-5); }
+.room-background-toggle { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; }
+.room-background-toggle .mf-input[type='checkbox'] { width: 16px; height: 16px; min-height: 0; padding: 0; margin: 0; flex: 0 0 16px; accent-color: var(--forge-accent); }
+.room-background-parallax { display: flex; align-items: center; gap: var(--space-2); }
+.room-background-parallax .mf-input { width: 80px; }
+.room-background-settings .hint { margin: var(--space-2) 0 0; }
