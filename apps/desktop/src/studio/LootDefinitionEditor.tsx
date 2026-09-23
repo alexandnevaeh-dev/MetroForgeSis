@@ -1,23 +1,35 @@
 import { useEffect, useState } from 'react';
 import type { LootTable } from '@metroforge/schemas';
-import { Button } from './ui/index.js';
+import { Button, Select } from './ui/index.js';
 type LootDraft = { selected: LootTable; revision: string; isNew?: boolean; past: LootTable[]; future: LootTable[] };
 const drafts = new Map<string, LootDraft>();
 export function LootDefinitionEditor({projectPath}:{projectPath:string}) {
  const [tables,setTables]=useState<LootTable[]>([]),[items,setItems]=useState<Record<string,unknown>[]>([]);
  const [selected,setSelected]=useState<LootTable|null>(null),[revision,setRevision]=useState('');
+ const [sources,setSources]=useState<Record<string,unknown>[]>([]),[sourceId,setSourceId]=useState('');
+ const source=sources.find(enemy=>enemy.id===sourceId);
  const [isNew,setIsNew]=useState(false);
  const [message,setMessage]=useState(''),[busy,setBusy]=useState(false),[supported,setSupported]=useState(false);
  const [past,setPast]=useState<LootTable[]>([]),[future,setFuture]=useState<LootTable[]>([]);
  const baseline=tables.find(t=>t.id===selected?.id);
  const dirty=Boolean(selected&&JSON.stringify(selected)!==JSON.stringify(baseline));
- useEffect(()=>{let alive=true;window.metroforge!.readEditableLoot(projectPath).then(data=>{if(alive){setTables(data.tables as unknown as LootTable[]);setItems(data.items);setRevision(data.revision);setSupported(data.runtimeSupported);const draft=drafts.get(projectPath);if(draft){setSelected(structuredClone(draft.selected));setIsNew(Boolean(draft.isNew));setRevision(draft.revision);setPast(structuredClone(draft.past));setFuture(structuredClone(draft.future));setMessage('Unsaved loot draft restored.');}}}).catch(error=>{if(alive)setMessage(String(error));});return()=>{alive=false;};},[projectPath]);
+ useEffect(()=>{let alive=true;window.metroforge!.readEditableLoot(projectPath).then(data=>{if(alive){setTables(data.tables as unknown as LootTable[]);setItems(data.items);setSources(data.sources);setRevision(data.revision);setSupported(data.runtimeSupported);const draft=drafts.get(projectPath);if(draft){setSelected(structuredClone(draft.selected));setIsNew(Boolean(draft.isNew));setRevision(draft.revision);setPast(structuredClone(draft.past));setFuture(structuredClone(draft.future));setMessage('Unsaved loot draft restored.');}}}).catch(error=>{if(alive)setMessage(String(error));});return()=>{alive=false;};},[projectPath]);
  useEffect(()=>{const guard=(e:BeforeUnloadEvent)=>{if(dirty){e.preventDefault();e.returnValue='';}};window.addEventListener('beforeunload',guard);return()=>window.removeEventListener('beforeunload',guard);},[dirty]);
  useEffect(()=>{if(selected&&dirty)drafts.set(projectPath,{selected:structuredClone(selected),revision,isNew,past:structuredClone(past),future:structuredClone(future)});else if(selected)drafts.delete(projectPath);},[projectPath,selected,dirty,revision,isNew,past,future]);
  const change=(next:LootTable)=>{if(selected)setPast(history=>[...history,structuredClone(selected)].slice(-100));setFuture([]);setSelected(next);};
  const undo=()=>{if(!selected||!past.length)return;setFuture(history=>[structuredClone(selected),...history]);setSelected(structuredClone(past[past.length-1]!));setPast(past.slice(0,-1));};
  const redo=()=>{if(!selected||!future.length)return;setPast(history=>[...history,structuredClone(selected)]);setSelected(structuredClone(future[0]!));setFuture(future.slice(1));};
  const save=async()=>{if(!selected)return;setBusy(true);try{const result=await (isNew?window.metroforge!.createEditableLoot:window.metroforge!.saveEditableLoot)(projectPath,selected,revision);setRevision(result.revision);setPast([]);setFuture([]);drafts.delete(projectPath);setTables(current=>isNew?[...current,structuredClone(selected)]:current.map(t=>t.id===selected.id?structuredClone(selected):t));setIsNew(false);setMessage(result.runtimeSynchronized?'Saved project and Unity runtime definitions. Restart Play Mode to load changes; rebuild exported players.':result.runtimeSupported?'Saved. Restart the game to load drops.':'Saved project definitions only. Runtime synchronization is unavailable for this project.');}catch(error){setMessage(String(error));}finally{setBusy(false);}};
+ const assign=async(tableId:string|null)=>{
+  if(!source||dirty||busy)return;
+  setBusy(true);
+  try{
+   const result=await window.metroforge!.saveEditableLootSource(projectPath,sourceId,tableId,revision);
+   setRevision(result.revision);
+   setSources(current=>current.map(enemy=>{if(enemy.id!==sourceId)return enemy;const next={...enemy};if(tableId===null)delete next.lootTableId;else next.lootTableId=tableId;return next;}));
+   setMessage(result.runtimeSynchronized?'Enemy drops saved to project and Unity runtime. Restart Play Mode; rebuild exported players.':result.runtimeSupported?'Enemy drops saved. Restart the game to load changes.':'Enemy drops saved to project only. Runtime synchronization is unavailable.');
+  }catch(error){setMessage(String(error));}finally{setBusy(false);}
+ };
  return <details className="panel loot-editor"><summary>Enemy loot and drop quantities</summary>
   <p className="hint">Each item rolls independently. {supported?'Godot loads changes on restart.':'Save feedback confirms whether runtime definitions were synchronized.'}</p>
   <Button disabled={busy||dirty||!revision} onClick={()=>{setIsNew(true);setSelected({id:`loot_${crypto.randomUUID()}`,name:'New drop table',entries:[]});setPast([]);setFuture([]);setMessage('New table draft. Add drops and save; enemy assignment is separate.');}}>New loot table</Button>
@@ -37,6 +49,14 @@ export function LootDefinitionEditor({projectPath}:{projectPath:string}) {
    <Button disabled={!dirty||!selected.name.trim()} onClick={()=>void save()}>{isNew?'Create loot table':'Save loot table'}</Button>
    {dirty&&<p role="status">Unsaved changes retained across screens in this session. Save or discard before selecting another table.</p>}
   </fieldset>}
+  <fieldset disabled={busy||dirty}><legend>Enemy drop assignment</legend>
+   <label>Enemy<Select aria-label="Loot source enemy" value={sourceId} onChange={e=>setSourceId(e.target.value)}><option value="">Select an enemy</option>{sources.map(enemy=><option key={String(enemy.id)} value={String(enemy.id)}>{String(enemy.name??enemy.id)}</option>)}</Select></label>
+   {source&&<p>Current drops: {tables.find(table=>table.id===source.lootTableId)?.name??(source.lootTableId?String(source.lootTableId):'None')}</p>}
+   <Button disabled={!source||!selected||isNew||source.lootTableId===selected.id} onClick={()=>selected&&void assign(selected.id)}>Assign selected loot table</Button>
+   <Button disabled={!source?.lootTableId} onClick={()=>void assign(null)}>Clear enemy drops</Button>
+   <p className="hint">These actions save immediately for every spawn of this enemy type. Save or discard table edits first. Clearing drops keeps the table available.</p>
+   {!sources.length&&<p>No enemy definitions are available in this project.</p>}
+  </fieldset>
   {message&&<p role="status">{message}</p>}
  </details>;
 }
