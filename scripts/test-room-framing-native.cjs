@@ -1,4 +1,5 @@
 const {createRequire}=require('node:module');const fs=require('node:fs');const path=require('node:path');const assert=require('node:assert/strict');
+const stage=process.argv[2]?path.resolve(process.argv[2]):null;
 const root=path.resolve(__dirname,'..'),req=createRequire(root+'/apps/desktop/package.json');
 (async()=>{
  const out=fs.mkdtempSync('E:/Metroforge/Recovery-Audit/room-framing-ui-'),project=out+'/projects/unity';
@@ -8,7 +9,7 @@ const root=path.resolve(__dirname,'..'),req=createRequire(root+'/apps/desktop/pa
  fs.copyFileSync('E:/Metroforge/Recovery-Audit/ashen-covenant/assets/abbey-distant-layer-v1.png',project+'/Assets/StreamingAssets/'+background);
  for(const file of ['gameplay.json','Assets/StreamingAssets/gameplay.json']){const pack=JSON.parse(fs.readFileSync(project+'/'+file,'utf8'));pack.rooms[0].backgrounds={...pack.rooms[0].backgrounds,far:background};fs.writeFileSync(project+'/'+file,JSON.stringify(pack,null,2));}
  const env={...process.env,METROFORGE_DATA_DIR:out+'/data',METROFORGE_GENERATED_GAMES_DIR:out+'/projects',VITE_DEV_SERVER_URL:''};delete env.ELECTRON_RUN_AS_NODE;delete env.METROFORGE_DESKTOP_SMOKE;
- const app=await req('playwright')._electron.launch({executablePath:req('electron'),args:[root+'/apps/desktop'],cwd:out,env});
+ const app=await req('playwright')._electron.launch({executablePath:stage?path.join(stage,'MetroForge.exe'):req('electron'),args:stage?[]:[root+'/apps/desktop'],cwd:out,env});
  try{
   const page=await app.firstWindow();page.setDefaultTimeout(15000);
   await page.evaluate(p=>sessionStorage.setItem('metroforge.activeProjectPath',p),project.replaceAll('/','\\'));await page.reload();
@@ -36,6 +37,6 @@ const root=path.resolve(__dirname,'..'),req=createRequire(root+'/apps/desktop/pa
   await page.getByRole('button',{name:'Fit',exact:true}).click();assert.equal(await canvas.getAttribute('viewBox'),fitted);
   await page.screenshot({path:out+'/room-framing.png',fullPage:true});
   await page.reload();await open();await page.getByText('Distant background settings',{exact:true}).click();assert.equal(await control.isChecked(),true);assert.equal(await page.getByLabel('Background parallax',{exact:true}).inputValue(),'0.25');
-  fs.writeFileSync(out+'/result.json',JSON.stringify({passed:true,project,scope:'Native room framing controls, shared geometry/history, save/reload and runtime mirror; no live Unity preview'},null,2));console.log('PASS room framing UI:',out);
+  fs.writeFileSync(out+'/result.json',JSON.stringify({passed:true,project,stage,scope:'Native room framing controls, shared geometry/history, save/reload and runtime mirror; no live Unity preview'},null,2));console.log('PASS room framing UI:',out);
  }finally{const timer=setTimeout(()=>app.process().kill(),5000);try{await app.close();}finally{clearTimeout(timer);}}
 })().catch(error=>{console.error(error);process.exitCode=1;});
