@@ -1,6 +1,6 @@
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { getResourceRoot } from '@metroforge/shared';
 import type { AssemblyInput, AssemblyResult } from '@metroforge/godot';
 import {
   buildGameplayPack,
@@ -12,8 +12,6 @@ import { folderMeta, pngSpriteMeta, scriptMeta, unityGuid } from './meta.js';
 import { unityProjectSettings } from './project-files.js';
 import { worldSceneYaml } from './scene.js';
 
-const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
-const TEMPLATE_DIR = join(REPO_ROOT, 'templates', 'unity-metroidvania');
 
 function writeWithMeta(path: string, contents: string | Buffer, meta: string): void {
   mkdirSync(dirname(path), { recursive: true });
@@ -26,6 +24,8 @@ export class UnityProjectAssembler {
     const errors: string[] = [];
     const warnings: string[] = [];
     try {
+      const REPO_ROOT = getResourceRoot();
+      const TEMPLATE_DIR = join(REPO_ROOT, 'templates', 'unity-metroidvania');
       if (!existsSync(TEMPLATE_DIR)) {
         return {
           success: false,

@@ -1,6 +1,6 @@
 import { cpSync, existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { getResourceRoot } from '@metroforge/shared';
 import type { AssemblyInput, AssemblyResult } from '@metroforge/godot';
 import {
   buildGameplayPack,
@@ -9,8 +9,6 @@ import {
   type EngineAssemblyResult,
 } from '@metroforge/engines';
 
-const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
-const TEMPLATE_DIR = join(REPO_ROOT, 'templates', 'unreal-metroidvania');
 
 function copyDir(src: string, dest: string): void {
   mkdirSync(dest, { recursive: true });
@@ -27,6 +25,8 @@ export class UnrealProjectAssembler {
     const errors: string[] = [];
     const warnings: string[] = [];
     try {
+      const REPO_ROOT = getResourceRoot();
+      const TEMPLATE_DIR = join(REPO_ROOT, 'templates', 'unreal-metroidvania');
       if (!existsSync(TEMPLATE_DIR)) {
         return {
           success: false,

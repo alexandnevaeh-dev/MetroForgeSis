@@ -12,3 +12,5 @@ export * from './archetypes.js';
 export * from './asset-maturity.js';
 export * from './provider-toggles.js';
 export * from './visual-slice.js';
+
+export * from './resources.js';

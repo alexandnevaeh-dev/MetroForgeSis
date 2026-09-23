@@ -16,7 +16,7 @@ export function getRepoRoot(): string {
 // rather than process.cwd() — so `.env` is found regardless of which directory `metroforge`
 // is invoked from. Never overrides variables already set in the shell environment (dotenv's
 // default), so explicit env vars always win over the file.
-loadDotenv({ path: join(REPO_ROOT, '.env') });
+loadDotenv({ path: process.env.METROFORGE_ENV_FILE || join(REPO_ROOT, '.env') });
 
 export interface AppConfig {
   appName: string;

@@ -1,6 +1,6 @@
 import { cpSync, mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync, rmSync } from 'node:fs';
 import { join, dirname, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { getResourceRoot } from '@metroforge/shared';
 import { validateLootCatalog } from '@metroforge/schemas';
 import type { GameDNA, ProgressionGraph, StyleBible, WorldGraph } from '@metroforge/schemas';
 import type { GameContent, TopDownOverworld } from '@metroforge/procedural';
@@ -38,8 +38,6 @@ import { writePixelArtImport } from './godot-import.js';
 import { loadExternalVisualPack, type ExternalVisualPackId } from './external-visual-pack.js';
 import { expandFoundryTextureAliases } from './foundry-visual-pack.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = join(__dirname, '..', '..', '..');
 
 export interface AssetManifestEntry {
   id: string;
@@ -650,7 +648,7 @@ export class GodotProjectAssembler {
 
 export function getTemplatePath(archetype?: string): string {
   const plugin = getGameArchetypePlugin(resolveGameArchetype(archetype));
-  return join(REPO_ROOT, plugin.runtimeTemplate);
+  return join(getResourceRoot(), plugin.runtimeTemplate);
 }
 
 type CharacterBucket = 'player' | 'boss' | 'enemy';
@@ -684,7 +682,7 @@ const CHARACTER_SCENE_BY_BUCKET: Record<CharacterBucket, string> = {
 export function patchCharacterFrameSizeForExternalPack(outputDir: string, packId: ExternalVisualPackId): void {
   let pack;
   try {
-    pack = loadExternalVisualPack(REPO_ROOT, packId);
+    pack = loadExternalVisualPack(getResourceRoot(), packId);
   } catch {
     return; // Pack failed to load — external-pack asset copying already surfaces this failure loudly elsewhere.
   }

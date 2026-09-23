@@ -2,9 +2,22 @@ import { app, BrowserWindow, dialog } from 'electron';
 import { existsSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { configureDesktopPaths, configurePortableStorage } from './startup-paths.js';
 import { startDesktopSmoke, observeDesktopSmoke, failDesktopSmoke } from './desktop-smoke.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+const workspaceRoot = configureDesktopPaths({
+  packaged: app.isPackaged,
+  executable: app.getPath('exe'),
+  resources: process.resourcesPath,
+  developmentRoot: join(__dirname, '..', '..', '..'),
+}, process.env);
+
+if (app.isPackaged) {
+  for (const directory of configurePortableStorage(process.env)) mkdirSync(directory, { recursive: true });
+  app.setPath('temp', process.env.TEMP!);
+}
 
 // Set Electron's own Chromium storage before ready; APPDATA alone does not
 // relocate Windows known-folder paths used by every Electron subsystem.
@@ -18,11 +31,6 @@ if (desktopData) {
   app.setAppLogsPath(join(desktopData, 'electron', 'logs'));
 }
 
-
-/** Monorepo root — Electron's cwd is apps/desktop when launched via vite. */
-function resolveRepoRoot(): string {
-  return join(__dirname, '..', '..', '..');
-}
 
 function resolvePreloadPath(): string {
   const cjs = join(__dirname, 'preload.cjs');
@@ -92,7 +100,7 @@ app
   .whenReady()
   .then(async () => {
     const { registerIpcHandlers } = await import('./handlers.js');
-    registerIpcHandlers(resolveRepoRoot());
+    registerIpcHandlers(workspaceRoot);
     createWindow();
   })
   .catch((error: unknown) => {

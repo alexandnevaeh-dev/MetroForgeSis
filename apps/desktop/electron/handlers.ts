@@ -672,7 +672,7 @@ export function registerIpcHandlers(cwd: string): void {
       );
     }
     if (filter?.installed) entries = entries.filter((m) => m.installed);
-    const downloadManager = new ModelDownloadManager(join(cwd, 'models'));
+    const downloadManager = new ModelDownloadManager(join(dataDir, 'models'));
     return entries.map((entry) => ({
       ...entry,
       installed: entry.installed || downloadManager.isInstalled(entry),
@@ -685,13 +685,13 @@ export function registerIpcHandlers(cwd: string): void {
       return { success: false, error: 'Model id is required' };
     }
 
-    const catalog = new ModelCatalogService(join(cwd, '.metroforge'));
+    const catalog = new ModelCatalogService(dataDir);
     const model = catalog.get(modelId);
     if (!model) {
       return { success: false, error: `Model not found: ${modelId}` };
     }
 
-    const modelsDir = join(cwd, 'models');
+    const modelsDir = join(dataDir, 'models');
     const downloadManager = new ModelDownloadManager(modelsDir);
     const plan = downloadManager.planDownload(model);
     if (!plan.adapter) {
@@ -725,7 +725,7 @@ export function registerIpcHandlers(cwd: string): void {
   ipcMain.handle('scout-models', async (_event, opts?: { benchmark?: boolean }) => {
     const config = loadConfig();
     const { ModelScout } = await import('@metroforge/ai');
-    const scout = new ModelScout(join(cwd, '.metroforge'));
+    const scout = new ModelScout(config.dataDir || join(cwd, '.metroforge'));
     return scout.refresh({
       sources: ['ollama', 'local'],
       runBenchmarks: opts?.benchmark,

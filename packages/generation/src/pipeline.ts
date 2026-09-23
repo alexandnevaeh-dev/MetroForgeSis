@@ -5,6 +5,7 @@ import {
   createLogger,
   generateId,
   loadConfig,
+  getResourceRoot,
   PRODUCT,
   PROFILE_DEFAULTS,
   resolveGeneratedGamesPath,
@@ -1069,7 +1070,7 @@ export class GenerationPipeline {
     if (options.externalVisualPack) {
       const pack = loadExternalVisualPack(cwd, options.externalVisualPack);
       for (const asset of pack.assets) {
-        const sourcePath = join(cwd, 'test-packs', pack.id, asset.source);
+        const sourcePath = join(getResourceRoot(), 'test-packs', pack.id, asset.source);
         const buffer = readFileSync(sourcePath);
         textureFiles.set(asset.destination, buffer);
         const prior = assetMetadata.findIndex((entry) => entry.path === asset.destination);
@@ -1096,7 +1097,7 @@ export class GenerationPipeline {
         else assetMetadata.push(replacement);
       }
 
-      const playerAnimationMetadata = join(cwd, 'test-packs', pack.id, 'characters', 'player', 'player_animations.json');
+      const playerAnimationMetadata = join(getResourceRoot(), 'test-packs', pack.id, 'characters', 'player', 'player_animations.json');
       if (existsSync(playerAnimationMetadata)) {
         textureFiles.set('assets/characters/player_animations.json', readFileSync(playerAnimationMetadata));
       }
@@ -1104,7 +1105,7 @@ export class GenerationPipeline {
         const sourceDir = asset.source.substring(0, asset.source.lastIndexOf('/'));
         const sourceStem = asset.source.substring(asset.source.lastIndexOf('/') + 1).replace(/_(walk|attack|hurt|death|idle|talk|gesture)\.png$/, '');
         const destinationDir = asset.destination.substring(0, asset.destination.lastIndexOf('/'));
-        const sidecar = join(cwd, 'test-packs', pack.id, sourceDir, `${sourceStem}_animations.json`);
+        const sidecar = join(getResourceRoot(), 'test-packs', pack.id, sourceDir, `${sourceStem}_animations.json`);
         if (existsSync(sidecar)) textureFiles.set(`${destinationDir}/${sourceStem}_animations.json`, readFileSync(sidecar));
       }
       warnings.push(`EXTERNAL_VISUAL_PACK_ACTIVE: ${pack.id} (${pack.assets.length} authored assets)`);

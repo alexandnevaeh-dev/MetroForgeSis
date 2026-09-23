@@ -1,20 +1,17 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { getResourceRoot, getRepoRoot, loadConfig } from '@metroforge/shared';
 import type { ModelEntry, ModelCatalog, ModelCapability, HardwareProfile } from '@metroforge/schemas';
 import { ModelCatalogSchema, ModelEntrySchema } from '@metroforge/schemas';
 import { LicenseRouter } from './license-router.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = join(__dirname, '..', '..', '..');
-const BUILTIN_CATALOG = join(REPO_ROOT, 'config', 'models.catalog.json');
 
 export class ModelCatalogService {
   private catalog: ModelCatalog;
   private userCatalogPath: string;
 
   constructor(dataDir?: string) {
-    this.userCatalogPath = join(dataDir ?? join(REPO_ROOT, '.metroforge'), 'models.catalog.json');
+    this.userCatalogPath = join(dataDir ?? (loadConfig().dataDir || join(getRepoRoot(), '.metroforge')), 'models.catalog.json');
     this.catalog = this.load();
   }
 
@@ -26,8 +23,9 @@ export class ModelCatalogService {
         // fall through to builtin
       }
     }
-    if (existsSync(BUILTIN_CATALOG)) {
-      return ModelCatalogSchema.parse(JSON.parse(readFileSync(BUILTIN_CATALOG, 'utf-8')));
+    const builtinCatalog = join(getResourceRoot(), 'config', 'models.catalog.json');
+    if (existsSync(builtinCatalog)) {
+      return ModelCatalogSchema.parse(JSON.parse(readFileSync(builtinCatalog, 'utf-8')));
     }
     return { version: '0.0.0', updatedAt: new Date().toISOString(), models: [] };
   }
