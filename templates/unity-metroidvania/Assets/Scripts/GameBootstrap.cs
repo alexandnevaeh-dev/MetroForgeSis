@@ -1069,6 +1069,8 @@ public class GameBootstrap : MonoBehaviour
         sr.sprite = sprite;
         sr.sortingOrder = sorting;
         sr.color = tint;
+        if (layer == "far" && room.backgrounds.farCameraRelative)
+            go.AddComponent<CameraBackgroundLayer>().Configure(_camera, new Vector2(room.width * 0.5f, room.height * 0.5f), room.backgrounds.farParallax);
         if (layer == "near" && biome != "biome_2")
         {
             var right = Instantiate(go, RoomParent);

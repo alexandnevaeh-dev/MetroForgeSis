@@ -12,7 +12,7 @@ using UnityEngine;
   if(SessionState.GetInt(Key,0)==0)return;
   if(state==PlayModeStateChange.EnteredEditMode){int code=SessionState.GetInt(Key,3)==2?0:1;SessionState.SetInt(Key,0);EditorApplication.Exit(code);return;}
   if(state!=PlayModeStateChange.EnteredPlayMode)return;
-  var camera=new GameObject("Main Camera");camera.tag="MainCamera";camera.AddComponent<Camera>();
+  var camera=new GameObject("Main Camera");camera.tag="MainCamera";camera.AddComponent<Camera>().aspect=1280f/720f;
   game=new GameObject("Actual gameplay background review").AddComponent<GameBootstrap>();
   stage=0;deadline=EditorApplication.timeSinceStartup+90;EditorApplication.update+=Tick;
  }
@@ -23,6 +23,8 @@ using UnityEngine;
    var rel=Environment.GetEnvironmentVariable("METROFORGE_CANDIDATE_BACKGROUND");
    if(string.IsNullOrEmpty(rel)||Path.IsPathRooted(rel)||rel.Contains("..")||!File.Exists(Path.Combine(Application.streamingAssetsPath,rel)))throw new Exception("Supply an imported relative candidate background path");
    var room=Array.Find(game.Pack.rooms,r=>r.id==game.Pack.startRoomId);
+   room.backgrounds.farCameraRelative=true;
+   room.backgrounds.farParallax=0.1f;
    room.backgrounds.far=rel; // In-memory candidate only; authored room files remain untouched.
    if(!game.TryClickTitleContinue())throw new Exception("Could not enter actual game");
    stage=1;next=EditorApplication.timeSinceStartup+2;return;

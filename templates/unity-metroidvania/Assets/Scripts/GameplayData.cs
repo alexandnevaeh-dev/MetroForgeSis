@@ -66,6 +66,8 @@ public class GameplayActor
 [Serializable]
 public class GameplayBackgrounds
 {
+    public bool farCameraRelative;
+    public float farParallax = 0.1f;
     public string far;
     public string mid;
     public string near;
