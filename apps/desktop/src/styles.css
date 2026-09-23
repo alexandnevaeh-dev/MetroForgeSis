@@ -2683,10 +2683,10 @@ textarea {
     grid-template-columns: 180px minmax(0, 1fr) 220px;
     grid-template-rows: minmax(220px, 1fr) 180px;
   }
-  .editor-workspace:not(.world-workspace) {
+  .editor-workspace:not(.world-workspace):not(.preview-workspace) {
     grid-template-columns: 180px minmax(0, 1fr);
   }
-  .editor-workspace:not(.world-workspace) .editor-inspector {
+  .editor-workspace:not(.world-workspace):not(.preview-workspace) .editor-inspector {
     grid-column: 1 / -1;
   }
   .editor-workspace.world-workspace {
@@ -3550,10 +3550,10 @@ textarea {
 }
 
 @media (max-width: 1366px) {
-  .editor-workspace:not(.world-workspace) {
+  .editor-workspace:not(.world-workspace):not(.preview-workspace) {
     grid-template-columns: 180px minmax(0, 1fr);
   }
-  .editor-workspace:not(.world-workspace) .editor-inspector {
+  .editor-workspace:not(.world-workspace):not(.preview-workspace) .editor-inspector {
     grid-column: 1 / -1;
     max-height: 280px;
   }

@@ -61,6 +61,12 @@ const root=path.resolve(__dirname,'..'),req=createRequire(root+'/apps/desktop/pa
   await page.getByRole('button',{name:'Play',exact:true}).click();
   await page.getByText('This Unity project needs the current preview template. Save your edits and refresh the project template first.',{exact:true}).waitFor();
   assert.equal(await page.getByRole('button',{name:'Restart',exact:true}).count(),0);
+  const layout=await page.locator('.preview-workspace').evaluate(el=>({
+    width:el.getBoundingClientRect().width,
+    main:el.querySelector('.preview-main-column').getBoundingClientRect().width,
+    viewport:window.innerWidth
+  }));
+  if(layout.viewport<=1366) assert.ok(layout.main/layout.width>0.9,JSON.stringify(layout));
   await page.screenshot({path:out+'/unity-playtest-controls.png',fullPage:true});
   fs.writeFileSync(out+'/result.json',JSON.stringify({passed:true,project,stage,scope:'Native room framing, save/reload/runtime mirror, Unity preview missing-template routing and outside-root launch rejection; no live Unity preview'},null,2));console.log('PASS room framing UI:',out);
  }finally{const timer=setTimeout(()=>app.process().kill(),5000);try{await app.close();}finally{clearTimeout(timer);}}
