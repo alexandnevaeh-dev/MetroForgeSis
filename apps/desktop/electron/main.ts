@@ -1,10 +1,23 @@
 import { app, BrowserWindow, dialog } from 'electron';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { startDesktopSmoke, observeDesktopSmoke, failDesktopSmoke } from './desktop-smoke.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// Set Electron's own Chromium storage before ready; APPDATA alone does not
+// relocate Windows known-folder paths used by every Electron subsystem.
+const desktopData = process.env.METROFORGE_DATA_DIR;
+if (desktopData) {
+  for (const name of ['userData', 'sessionData', 'crashDumps'] as const) {
+    const directory = join(desktopData, 'electron', name);
+    mkdirSync(directory, { recursive: true });
+    app.setPath(name, directory);
+  }
+  app.setAppLogsPath(join(desktopData, 'electron', 'logs'));
+}
+
 
 /** Monorepo root — Electron's cwd is apps/desktop when launched via vite. */
 function resolveRepoRoot(): string {
