@@ -33,6 +33,11 @@ contextBridge.exposeInMainWorld('metroforge', {
   getOverworldMap: (projectPath: string) => ipcRenderer.invoke('get-overworld-map', projectPath),
   getDungeonGraph: (projectPath: string, dungeonId?: string) =>
     ipcRenderer.invoke('get-dungeon-graph', projectPath, dungeonId),
+  readEditableItems: (projectPath: string) => ipcRenderer.invoke('read-editable-items', projectPath),
+  saveEditableItem: (projectPath: string, item: unknown, revision: string) => ipcRenderer.invoke('save-editable-item', projectPath, item, revision),
+  readUnityRoomEdit: (projectPath: string, roomId: string) => ipcRenderer.invoke('read-unity-room-edit', projectPath, roomId),
+  saveUnityRoomEdit: (projectPath: string, roomId: string, objects: import('@metroforge/engines').EditableObject[], fingerprints: string[]) =>
+    ipcRenderer.invoke('save-unity-room-edit', projectPath, roomId, objects, fingerprints),
   getRoomCollision: (projectPath: string, roomId: string) =>
     ipcRenderer.invoke('get-room-collision', projectPath, roomId),
   listProjects: () => ipcRenderer.invoke('list-projects'),

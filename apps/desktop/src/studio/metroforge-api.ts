@@ -11,6 +11,7 @@ export type LivePlacementInspection = {
 };
 
 export type StudioProject = {
+  engine?: 'godot' | 'unity' | 'unreal';
   slug: string;
   path: string;
   title?: string;
@@ -264,6 +265,10 @@ export type MetroforgeBridge = {
   explainModelRouting: (capability: string) => Promise<ModelRoutingExplanation>;
   getOverworldMap: (projectPath: string) => Promise<OverworldMapPreview>;
   getDungeonGraph: (projectPath: string, dungeonId?: string) => Promise<DungeonGraphPreview>;
+  readEditableItems: (projectPath: string) => Promise<{ items: Record<string, unknown>[]; revision: string; runtimeSupported: boolean }>;
+  saveEditableItem: (projectPath: string, item: unknown, revision: string) => Promise<{ revision: string; backup: string; restartRequired: true; runtimeSupported: boolean }>;
+  readUnityRoomEdit: (projectPath: string, roomId: string) => Promise<{ objects: import('@metroforge/engines').EditableObject[]; fingerprints: string[] }>;
+  saveUnityRoomEdit: (projectPath: string, roomId: string, objects: import('@metroforge/engines').EditableObject[], fingerprints: string[]) => Promise<{ fingerprints: string[]; backup: string; restartRequired: true }>;
   getRoomCollision: (projectPath: string, roomId: string) => Promise<RoomCollisionPreview>;
   listProjects: () => Promise<StudioProject[]>;
   getProjectPreview: (projectPath: string) => Promise<ProjectPreview>;

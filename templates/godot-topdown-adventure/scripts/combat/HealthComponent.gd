@@ -13,6 +13,8 @@ signal damaged(amount: float)
 @export var death_sfx_id: String = "death"
 var current_health: float = 100.0
 var invulnerable: bool = false
+## Armor rating: 100 halves incoming damage; diminishing returns prevent immunity.
+var armor_rating: float = 0.0
 
 func _ready() -> void:
 	current_health = max_health
@@ -20,8 +22,10 @@ func _ready() -> void:
 	died.connect(_on_died)
 
 func take_damage(amount: float) -> void:
-	if invulnerable or amount <= 0:
+	if invulnerable or not is_finite(amount) or amount <= 0 or current_health <= 0:
 		return
+	var rating := maxf(0.0, armor_rating) if is_finite(armor_rating) else 0.0
+	amount *= 100.0 / (100.0 + rating)
 	current_health = max(0, current_health - amount)
 	damaged.emit(amount)
 	health_changed.emit(current_health, max_health)

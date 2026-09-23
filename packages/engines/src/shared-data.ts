@@ -54,6 +54,13 @@ export function writeSharedProjectData(
   }
   writeFileSync(join(input.outputDir, 'data', 'rooms', 'rooms.json'), JSON.stringify({ rooms }, null, 2));
 
+  // Keep authored equipment available to the desktop catalog for every exported engine.
+  mkdirSync(join(input.outputDir, 'data', 'items'), { recursive: true });
+  writeFileSync(
+    join(input.outputDir, 'data', 'items', 'items.json'),
+    JSON.stringify({ items: input.gameContent?.items ?? [] }, null, 2),
+  );
+
   if (input.gameContent) {
     mkdirSync(join(input.outputDir, 'data', 'enemies'), { recursive: true });
     writeFileSync(

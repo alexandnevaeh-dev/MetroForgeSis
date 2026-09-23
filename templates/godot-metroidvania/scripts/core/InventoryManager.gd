@@ -6,7 +6,7 @@ extends Node
 const ITEMS_PATH := "res://data/items/items.json"
 const BASE_MAX_HEALTH := 100.0
 const BASE_ATTACK := 10.0
-const EQUIP_SLOTS := ["weapon", "charm"]
+const EQUIP_SLOTS := ["weapon", "charm", "armor"]
 
 var _item_defs: Dictionary = {}
 var _collected_counts: Dictionary = {}
@@ -113,7 +113,8 @@ func restore_save_data(data: Dictionary) -> void:
 
 func _ensure_default_loadout() -> void:
 	for slot in EQUIP_SLOTS:
-		if not get_equipped(slot).is_empty():
+		if _equipped.has(slot):
+			# Explicit empty slots are intentional; only migrate missing legacy slots.
 			continue
 		for item_id in _collected_counts.keys():
 			if int(_collected_counts[item_id]) <= 0:
@@ -181,6 +182,7 @@ func apply_stat_bonuses(heal_on_increase: bool = false, player: Node = null) -> 
 	var bonus_atk := _sum_effect("attack")
 
 	if health:
+		health.armor_rating = maxf(0.0, _sum_effect("armor"))
 		var new_max := BASE_MAX_HEALTH + bonus_hp
 		var old_max: float = health.max_health
 		health.max_health = new_max
@@ -217,5 +219,5 @@ func _sum_effect(effect_type: String) -> float:
 			continue
 		for effect in def.get("effects", []):
 			if effect.get("type", "") == effect_type:
-				total += float(effect.get("value", 0)) * count
+				total += float(effect.get("value", 0)) * (1 if category in EQUIP_SLOTS else count)
 	return total

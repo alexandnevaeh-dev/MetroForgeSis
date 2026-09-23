@@ -7,3 +7,5 @@ export { readPngSize } from './png-size.js';
 export { writeSharedProjectData } from './shared-data.js';
 export { LiveEditSession } from './live-edit-session.js';
 export type { EditableObject, EditableValue, LiveEditOperation, LiveEditTransaction, LiveEditReceipt } from './live-edit-session.js';
+export { roomSolidObjects, withRoomSolids } from './room-solid-edit.js';
+export { readUnityRoomEdit, saveUnityRoomEdit } from './unity-room-edit-store.js';

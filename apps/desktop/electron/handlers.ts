@@ -1,11 +1,13 @@
 import { ipcMain, shell } from 'electron';
-import { detectProjectEngine } from '@metroforge/engines';
+import { detectProjectEngine, readUnityRoomEdit, saveUnityRoomEdit, type EditableObject } from '@metroforge/engines';
 import { readdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve as resolvePath, basename } from 'node:path';
 import { getVersionString } from '@metroforge/core';
 import { loadConfig, resolveGeneratedGamesPath, isPathWithinRoot, type GameArchetype, parseProviderEnabledMap, isProviderEnabledSettingKey } from '@metroforge/shared';
 import {
   GenerationPipeline,
+  readEditableItems,
+  saveEditableItem,
   computeOverallProgress,
   generateManualAsset,
   loadProjectContext,
@@ -1787,6 +1789,31 @@ export function registerIpcHandlers(cwd: string): void {
       miniBossId,
       bossId,
     };
+  });
+
+  ipcMain.handle('read-editable-items', async (_event, projectPath: string) => {
+    assertReadableProjectPath(projectPath, cwd);
+    return { ...readEditableItems(projectPath), runtimeSupported: detectProjectEngine(projectPath) === 'godot' };
+  });
+  ipcMain.handle('save-editable-item', async (_event, projectPath: string, item: unknown, revision: string) => {
+    assertReadableProjectPath(projectPath, cwd);
+    const result = saveEditableItem(projectPath, item, revision);
+    return { ...result, runtimeSupported: detectProjectEngine(projectPath) === 'godot' };
+  });
+
+  ipcMain.handle('read-unity-room-edit', async (_event, projectPath: string, roomId: string) => {
+    assertReadableProjectPath(projectPath, cwd);
+    if (detectProjectEngine(projectPath) !== 'unity') throw new Error('Unity room editing requires a Unity project');
+    return readUnityRoomEdit(projectPath, roomId);
+  });
+
+  ipcMain.handle('save-unity-room-edit', async (_event, projectPath: string, roomId: string, objects: EditableObject[], fingerprints: string[]) => {
+    assertReadableProjectPath(projectPath, cwd);
+    if (detectProjectEngine(projectPath) !== 'unity') throw new Error('Unity room editing requires a Unity project');
+    if (!Array.isArray(objects) || objects.length > 10000 || !Array.isArray(fingerprints) ||
+        fingerprints.length !== 2 || fingerprints.some(value => typeof value !== 'string'))
+      throw new Error('Invalid room edit request');
+    return saveUnityRoomEdit(projectPath, roomId, objects, fingerprints);
   });
 
   ipcMain.handle('get-room-collision', async (_event, projectPath: string, roomId: string) => {

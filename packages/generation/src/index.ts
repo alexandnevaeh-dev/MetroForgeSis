@@ -147,3 +147,4 @@ export {
 export type { DialogueVoiceResult, SynthesizeDialogueVoicesOptions } from './dialogue-voice.js';
 export * from './asset-qa.js';
 export * from './asset-qa-command.js';
+export { readEditableItems, saveEditableItem } from './item-edit-service.js';

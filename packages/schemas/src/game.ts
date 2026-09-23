@@ -292,6 +292,7 @@ export const ItemSchema = z.object({
   description: z.string(),
   category: z.enum([
     'weapon',
+    'armor',
     'relic',
     'charm',
     'currency',

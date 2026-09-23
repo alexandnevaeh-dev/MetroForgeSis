@@ -1,0 +1,15 @@
+import {mkdtempSync,mkdirSync,writeFileSync,readFileSync} from 'node:fs';
+import assert from 'node:assert/strict';
+import {readEditableItems,saveEditableItem} from '../packages/generation/dist/item-edit-service.js';
+const dir=mkdtempSync('E:/Metroforge/Recovery-Audit/item-edit-');mkdirSync(dir+'/data/items',{recursive:true});
+const armor={id:'plate',name:'Ash Plate',description:'Armor',category:'armor',effects:[{type:'armor',value:30}],customVisual:'plate.png'};
+writeFileSync(dir+'/data/items/items.json',JSON.stringify({version:2,items:[armor,{...armor,id:'other'}]}));
+const opened=readEditableItems(dir);const saved=saveEditableItem(dir,{...armor,name:'Heavy Ash Plate',effects:[{type:'armor',value:60}]},opened.revision);
+const data=JSON.parse(readFileSync(dir+'/data/items/items.json','utf8'));
+assert.equal(data.items[0].effects[0].value,60);assert.equal(data.items[0].customVisual,'plate.png');assert.deepEqual(data.items[1],{...armor,id:'other'});assert.equal(data.version,2);
+assert.equal(JSON.parse(readFileSync(saved.backup,'utf8')).items[0].name,'Ash Plate');
+assert.throws(()=>saveEditableItem(dir,armor,opened.revision),/changed/);
+assert.throws(()=>saveEditableItem(dir,{...armor,maxStack:-1},saved.revision));
+assert.throws(()=>saveEditableItem(dir,{...armor,id:'missing'},saved.revision),/exactly one/);
+assert.equal(readEditableItems(dir).revision,saved.revision);
+console.log('PASS item edit persistence, backups, unknown-field preservation, stale and invalid edits');

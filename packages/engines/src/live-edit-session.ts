@@ -8,6 +8,8 @@ export interface EditableObject {
   properties: Record<string, EditableValue>;
 }
 export type LiveEditOperation =
+  | { type: 'add'; object: EditableObject }
+  | { type: 'remove'; objectId: string }
   | { type: 'move'; objectId: string; x: number; y: number }
   | { type: 'property'; objectId: string; key: string; value: EditableValue }
   | { type: 'remove-property'; objectId: string; key: string };
@@ -86,9 +88,25 @@ export class LiveEditSession {
     const inverse: LiveEditOperation[] = [];
     for (const operation of operations) {
       if (!operation || typeof operation !== 'object') throw new Error('Invalid edit operation');
+      if (operation.type === 'add') {
+        const added = operation.object;
+        if (!added || typeof added.id !== 'string' || !added.id ||
+            typeof added.roomId !== 'string' || !added.roomId || next.has(added.id) ||
+            !Number.isFinite(added.x) || !Number.isFinite(added.y) ||
+            !added.properties || typeof added.properties !== 'object' || Array.isArray(added.properties) ||
+            Object.entries(added.properties).some(([key, value]) => !validKey(key) || !validValue(value))) {
+          throw new Error('Invalid or duplicate editable object');
+        }
+        next.set(added.id, structuredClone(added));
+        inverse.unshift({ type: 'remove', objectId: added.id });
+        continue;
+      }
       const object = next.get(operation.objectId);
       if (!object) throw new Error(`Unknown object: ${operation.objectId}`);
-      if (operation.type === 'move') {
+      if (operation.type === 'remove') {
+        inverse.unshift({ type: 'add', object: structuredClone(object) });
+        next.delete(object.id);
+      } else if (operation.type === 'move') {
         if (!Number.isFinite(operation.x) || !Number.isFinite(operation.y)) throw new Error('Position must be finite');
         inverse.unshift({ type: 'move', objectId: object.id, x: object.x, y: object.y });
         object.x = operation.x;

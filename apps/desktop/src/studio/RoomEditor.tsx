@@ -1,3 +1,4 @@
+import { UnityRoomGeometry } from './UnityRoomGeometry.js';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { enemyDefinitionForPlacement, unusedEntityId } from './entity-authoring.js';
 import { CommandBar } from './CommandBar.js';
@@ -83,7 +84,7 @@ function roomHasGeometry(room: RoomRecord, collision: RoomCollisionPreview | nul
 }
 
 export function RoomEditor() {
-  const { selectedPath, hasActiveProject, focusRoomId, setFocusRoomId, navigate } = useStudio();
+  const { selectedPath, selectedProject, hasActiveProject, focusRoomId, setFocusRoomId, navigate } = useStudio();
   const activeProject = useRef(selectedPath);
   const projectVisit = useRef(0);
   if (activeProject.current !== selectedPath) {
@@ -453,6 +454,8 @@ export function RoomEditor() {
                 <pre className="panel room-debug-json mono" role="region" aria-label="Room debug JSON">
                   {JSON.stringify(selected, null, 2)}
                 </pre>
+              ) : viewMode === 'visual' && selectedProject?.engine === 'unity' ? (
+                <UnityRoomGeometry key={`${selectedPath}:${selected.id}`} projectPath={selectedPath} roomId={selected.id} width={selected.width ?? 800} height={selected.height ?? 600} />
               ) : viewMode === 'visual' ? (
                 <>
                   {!hasGeometry && (

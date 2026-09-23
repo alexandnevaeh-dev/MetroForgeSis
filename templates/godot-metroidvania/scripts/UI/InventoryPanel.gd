@@ -1,8 +1,8 @@
 extends Control
-## Pause-menu inventory: lists owned items and lets the player equip/unequip weapons and charms.
+## Pause-menu inventory: lists owned items and lets the player equip/unequip weapons, armor and charms.
 
 const ROW_HEIGHT := 18.0
-const LIST_START_Y := 88.0
+const LIST_START_Y := 106.0
 
 var _item_rows: Array = []
 
@@ -33,6 +33,10 @@ func _gui_input(event: InputEvent) -> void:
 		InventoryManager.unequip_slot("charm")
 		accept_event()
 		return
+	if y >= 70.0 and y < 88.0:
+		InventoryManager.unequip_slot("armor")
+		accept_event()
+		return
 	for i in range(_item_rows.size()):
 		var top := LIST_START_Y + i * ROW_HEIGHT
 		if y >= top and y < top + ROW_HEIGHT:
@@ -52,10 +56,11 @@ func _rebuild_item_rows() -> void:
 func _draw() -> void:
 	_rebuild_item_rows()
 	var font := ThemeDB.fallback_font
-	draw_string(font, Vector2(8, 16), "Loadout (click a weapon/charm to equip)", HORIZONTAL_ALIGNMENT_LEFT, -1, 13)
+	draw_string(font, Vector2(8, 16), "Loadout (click equipment to equip)", HORIZONTAL_ALIGNMENT_LEFT, -1, 13)
 	draw_string(font, Vector2(8, 34), "Weapon: %s" % _slot_label("weapon"), HORIZONTAL_ALIGNMENT_LEFT, -1, 14)
 	draw_string(font, Vector2(8, 52), "Charm: %s" % _slot_label("charm"), HORIZONTAL_ALIGNMENT_LEFT, -1, 14)
-	draw_string(font, Vector2(8, 70), "Items", HORIZONTAL_ALIGNMENT_LEFT, -1, 13)
+	draw_string(font, Vector2(8, 70), "Armor: %s" % _slot_label("armor"), HORIZONTAL_ALIGNMENT_LEFT, -1, 14)
+	draw_string(font, Vector2(8, 88), "Items", HORIZONTAL_ALIGNMENT_LEFT, -1, 13)
 
 	var entries: Array = InventoryManager.get_display_entries()
 	if entries.is_empty():

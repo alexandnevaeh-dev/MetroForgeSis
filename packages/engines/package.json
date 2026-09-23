@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./live-edit-session": {
+      "types": "./dist/live-edit-session.d.ts",
+      "import": "./dist/live-edit-session.js"
     }
   },
   "scripts": {
