@@ -1,6 +1,6 @@
 import {mkdtempSync,mkdirSync,writeFileSync,readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
-import {readEditableLoot,saveEditableLoot,createEditableLoot} from '../packages/generation/dist/loot-edit-service.js';
+import {readEditableLoot,saveEditableLoot,createEditableLoot,saveEditableLootSource} from '../packages/generation/dist/loot-edit-service.js';
 const dir=mkdtempSync('E:/Metroforge/Recovery-Audit/loot-edit-');
 for(const folder of ['loot','items','enemies']) mkdirSync(`${dir}/data/${folder}`,{recursive:true});
 const table={id:'abbey',name:'Abbey',custom:'keep',entries:[{itemId:'plate',chance:0.1,minQuantity:1,maxQuantity:1,customEffect:'keep'}]};
@@ -76,3 +76,20 @@ const stable=readFileSync(file,'utf8');
 assert.throws(()=>createEditableLoot(dir,{...added,id:'invalid',entries:[{...added.entries[0],itemId:'missing'}]},created.revision),/unknown item/);
 assert.equal(readFileSync(file,'utf8'),stable);
 console.log('PASS loot creation, mirror, preservation, backup, duplicate and stale/invalid rejection');
+
+const assignmentState=readEditableLoot(dir);
+assert.equal(assignmentState.sources[0].id,'guard');
+const assigned=saveEditableLootSource(dir,'guard','crypt_rare',assignmentState.revision);
+assert.equal(readEditableLoot(dir).sources[0].lootTableId,'crypt_rare');
+const enemyFile=dir+'/data/enemies/enemies.json';
+const enemyRuntime=dir+'/Assets/StreamingAssets/data/enemies/enemies.json';
+assert.equal(readFileSync(enemyFile,'utf8'),readFileSync(enemyRuntime,'utf8'));
+assert.equal(JSON.parse(readFileSync(assigned.backup,'utf8')).enemies[0].lootTableId,'abbey');
+assert.throws(()=>saveEditableLootSource(dir,'guard','missing',assigned.revision),/unknown table/);
+assert.throws(()=>saveEditableLootSource(dir,'missing','abbey',assigned.revision),/existing enemy/);
+assert.throws(()=>saveEditableLootSource(dir,'guard',null,assignmentState.revision),/changed/);
+const clearedSource=saveEditableLootSource(dir,'guard',null,assigned.revision);
+assert.equal(readEditableLoot(dir).sources[0].lootTableId,undefined);
+assert.equal(clearedSource.runtimeSynchronized,true);
+assert.equal(readFileSync(enemyFile,'utf8'),readFileSync(enemyRuntime,'utf8'));
+console.log('PASS enemy loot assignment, clear, runtime sync, backup and invalid/stale protection');

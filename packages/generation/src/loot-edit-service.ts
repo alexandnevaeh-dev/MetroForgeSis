@@ -28,11 +28,11 @@ function snapshot(project: string) {
   const enemies = JSON.parse(enemyText).enemies;
   if (!Array.isArray(data.tables) || !Array.isArray(items) || !Array.isArray(enemies))
     throw new Error('Project loot, item or enemy catalog is invalid');
-  return { file, original, mirror, mirrorText, data, items, enemies, revision: digest(JSON.stringify([original, itemText, enemyText, mirrorText, referenceMirrors])) };
+  return { file, original, mirror, mirrorText, data, items, enemies, enemyFile, enemyText, enemyMirrorText: referenceMirrors[1] ?? null, revision: digest(JSON.stringify([original, itemText, enemyText, mirrorText, referenceMirrors])) };
 }
 export function readEditableLoot(project: string) {
   const state = snapshot(project);
-  return { tables: state.data.tables as Record<string, unknown>[], items: state.items as Record<string, unknown>[], revision: state.revision };
+  return { tables: state.data.tables as Record<string, unknown>[], items: state.items as Record<string, unknown>[], sources: state.enemies as Record<string, unknown>[], revision: state.revision };
 }
 /** Edit one existing table, preserving identity, metadata and other authored tables. */
 export function saveEditableLoot(project: string, table: unknown, revision: string) {
@@ -57,7 +57,30 @@ function writeEditableLoot(project: string, table: unknown, revision: string, cr
   if (create) state.data.tables.push({ ...validated, entries });
   else state.data.tables = state.data.tables.map((entry: { id?: string }) => entry.id === validated.id ? { ...entry, ...validated, entries } : entry);
   validateLootCatalog(state.data.tables, state.items, state.enemies);
-  const output = JSON.stringify(state.data, null, 2);
+  return persistCatalog(project, state, JSON.stringify(state.data, null, 2), revision);
+}
+/** Set or clear one enemy's drop table; unrelated enemy properties are preserved. */
+export function saveEditableLootSource(project: string, sourceId: string, tableId: string | null, revision: string) {
+  const state = snapshot(project);
+  if (state.revision !== revision) throw new Error('Loot or referenced catalog changed; reload before saving');
+  if (typeof sourceId !== 'string' || !sourceId || (tableId !== null && (typeof tableId !== 'string' || !tableId)))
+    throw new Error('Choose an enemy and a valid loot table, or clear its assignment');
+  const matches = state.enemies.filter((enemy: { id?: string }) => enemy.id === sourceId);
+  if (matches.length !== 1) throw new Error('Loot source must identify exactly one existing enemy');
+  const catalog = JSON.parse(state.enemyText);
+  catalog.enemies = state.enemies.map((enemy: { id?: string; lootTableId?: string }) => {
+    if (enemy.id !== sourceId) return enemy;
+    const edited = { ...enemy };
+    if (tableId === null) delete edited.lootTableId;
+    else edited.lootTableId = tableId;
+    return edited;
+  });
+  validateLootCatalog(state.data.tables, state.items, catalog.enemies);
+  return persistCatalog(project, { ...state, file: state.enemyFile, original: state.enemyText,
+    mirror: join(project, 'Assets', 'StreamingAssets', 'data', 'enemies', 'enemies.json'),
+    mirrorText: state.enemyMirrorText }, JSON.stringify(catalog, null, 2), revision);
+}
+function persistCatalog(project: string, state: ReturnType<typeof snapshot>, output: string, revision: string) {
   const id = randomUUID();
   const backupDir = join(project, '.metroforge', 'loot-edit-backups');
   mkdirSync(backupDir, { recursive: true });
