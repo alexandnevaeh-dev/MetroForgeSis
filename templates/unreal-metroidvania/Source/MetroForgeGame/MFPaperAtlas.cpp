@@ -54,12 +54,19 @@ void FMFPaperAtlas::LoadPngSheet(UObject* Outer, const FString& AbsPath, const F
 	const int32 Count = FMath::Max(1, FrameCount);
 	const int32 FW = FMath::Max(1, FrameWidth);
 	const int32 FH = FMath::Max(1, FrameHeight);
+	const int32 Columns = Texture->GetSizeX() / FW;
+	const int32 Rows = Texture->GetSizeY() / FH;
+	if (FrameWidth <= 0 || FrameHeight <= 0 || FrameCount <= 0 || Columns < 1 || Rows < 1 || static_cast<int64>(Count) > static_cast<int64>(Columns) * Rows)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Invalid animation frame layout for %s"), *AbsPath);
+		return;
+	}
 	for (int32 i = 0; i < Count; i++)
 	{
 		UPaperSprite* Sprite = NewObject<UPaperSprite>(Outer);
 		FSpriteAssetInitParameters Params;
 		Params.Texture = Texture;
-		Params.Offset = FIntPoint(i * FW, 0);
+		Params.Offset = FIntPoint((i % Columns) * FW, (i / Columns) * FH);
 		Params.Dimension = FIntPoint(FW, FH);
 		Params.PixelsPerUnrealUnit = 1.f;
 		Sprite->InitializeSprite(Params);

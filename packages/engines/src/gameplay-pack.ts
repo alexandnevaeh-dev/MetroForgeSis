@@ -30,6 +30,8 @@ const COMBAT = {
 } as const;
 
 interface ClipSpec {
+  frameWidth?: number;
+  frameHeight?: number;
   frameCount: number;
   fps: number;
   loop: boolean;
@@ -42,6 +44,8 @@ function loadClipSpecs(jsonPath: string): Record<string, ClipSpec> {
     const out: Record<string, ClipSpec> = {};
     for (const [clip, spec] of Object.entries(parsed)) {
       out[clip] = {
+        frameWidth: spec.frameWidth,
+        frameHeight: spec.frameHeight,
         frameCount: Number(spec.frameCount) || 1,
         fps: Number(spec.fps) || 8,
         loop: spec.loop !== false,
@@ -74,9 +78,16 @@ function clipFromSheet(
   const size = readPngSize(buf);
   if (!size) return null;
   const spec = specs[clip];
-  const frameHeight = size.height;
+  const authoredLayout = spec?.frameWidth !== undefined || spec?.frameHeight !== undefined;
+  const frameHeight = spec?.frameHeight ?? size.height;
   const guessedCount = spec?.frameCount ?? Math.max(1, Math.round(size.width / frameHeight));
-  const frameWidth = Math.max(1, Math.round(size.width / guessedCount));
+  const frameWidth = spec?.frameWidth ?? Math.max(1, Math.round(size.width / guessedCount));
+  if (authoredLayout && (
+    ![frameWidth, frameHeight, guessedCount].every(value => Number.isInteger(value) && value > 0)
+    || guessedCount > Math.floor(size.width / frameWidth) * Math.floor(size.height / frameHeight)
+  )) {
+    throw new Error(`Invalid animation frame layout for ${rel}: ${frameWidth}x${frameHeight}, ${guessedCount} frames in ${size.width}x${size.height}`);
+  }
   return {
     ownerId,
     clip,

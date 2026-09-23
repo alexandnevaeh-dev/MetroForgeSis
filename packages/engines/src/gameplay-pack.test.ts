@@ -1,3 +1,6 @@
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { describe, expect, it } from 'vitest';
 import type { GameDNA, ProgressionGraph, WorldGraph } from '@metroforge/schemas';
 import { buildGameplayPack } from './gameplay-pack.js';
@@ -58,5 +61,37 @@ describe('buildGameplayPack', () => {
     expect(pack.rooms.some((room) => room.checkpoint)).toBe(true);
     expect(pack.rooms.some((room) => room.victory)).toBe(true);
     expect(pack.rooms[0]?.solids.length).toBeGreaterThan(0);
+  });
+});
+
+// Inspect the exported pack, not just a layout helper: sidecar dimensions must survive assembly.
+describe('authored animation layouts', () => {
+  function packWithSheet(spec: Record<string, unknown>, width = 1024, height = 768) {
+    const outputDir = mkdtempSync(join(tmpdir(), 'metroforge-grid-'));
+    mkdirSync(join(outputDir, 'assets/characters'), { recursive: true });
+    writeFileSync(join(outputDir, 'assets/characters/player_animations.json'), JSON.stringify({ walk: spec }));
+    const png = Buffer.alloc(24);
+    png.set([0x89, 0x50, 0x4e, 0x47]);
+    png.writeUInt32BE(width, 16); png.writeUInt32BE(height, 20);
+    return buildGameplayPack({ outputDir, gameDna: dna,
+      worldGraph: { version: '0.1.0', seed: 3, nodes: [], edges: [], regions: [] },
+      progressionGraph: { version: '0.1.0', seed: 3, startNodeId: 'room_000', endNodeId: 'room_000', nodes: [], edges: [], abilities: [], criticalPath: [] },
+      roomIds: [], textureFiles: new Map([['assets/characters/player_walk.png', png]]),
+    }).sprites.find(sprite => sprite.clip === 'walk');
+  }
+  it('preserves two-row frame dimensions and slow authored timing', () => {
+    expect(packWithSheet({ frameCount: 8, frameWidth: 256, frameHeight: 384, fps: .5, loop: false }))
+      .toMatchObject({ frameCount: 8, frameWidth: 256, frameHeight: 384, fps: .5, loop: false });
+  });
+  it('keeps legacy horizontal strips without explicit dimensions', () => {
+    expect(packWithSheet({ frameCount: 8, fps: 10 }, 2048, 384))
+      .toMatchObject({ frameWidth: 256, frameHeight: 384, frameCount: 8 });
+  });
+  it.each([
+    { frameCount: 9, frameWidth: 256, frameHeight: 384 },
+    { frameCount: 8, frameWidth: 0, frameHeight: 384 },
+    { frameCount: 8, frameWidth: 256, frameHeight: -1 },
+  ])('rejects invalid authored geometry: %j', spec => {
+    expect(() => packWithSheet(spec)).toThrow('Invalid animation frame layout');
   });
 });
