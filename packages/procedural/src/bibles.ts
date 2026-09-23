@@ -180,7 +180,7 @@ export function generateStyleBible(gameDna: GameDNA, art: ArtBible): StyleBible 
     backgroundLayerCount: 3,
     parallaxRules: 'far 0.15x, mid 0.4x, near 0.75x; no single stretched plate across rooms',
     animationFPS: 10,
-    animationFrameRules: '4–8 unique posed frames per action; never scale/rotate/squash one still',
+    animationFrameRules: 'use each authored clip frame count and timing; full-body key poses with anticipation, contact and recovery; never substitute whole-image transforms for articulated motion',
     VFXScaleRules: 'hit sparks ≤ 24px; combat VFX never cover the player silhouette',
     UIResolution: { width: 640, height: 360 },
     cameraZoom,

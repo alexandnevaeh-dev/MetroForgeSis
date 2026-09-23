@@ -90,3 +90,5 @@ Known remaining gaps: default gothic VisualDNA/style-bible selection still conta
 ## Validation recorded for this integration
 
 Procedural, assets and AI packages compile. Four focused suites pass: 24 tests covering actual provider request guidance, visual prompt determinism, state-specific animation direction, and fallback style/pose behavior. The first compile exposed a missing public export; that export was corrected before the successful rerun. These are source-level generation checks. No newly rendered asset, gameplay footage, Unity/Unreal run or NVIDIA generation was produced by this study pass. The prior portable-grid-export-v1 package predates this integration.
+
+Expanded reference list: [26-game comparison and animation study targets](METROIDVANIA_REFERENCE_MATRIX.md).
