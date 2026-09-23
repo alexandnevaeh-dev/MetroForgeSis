@@ -843,19 +843,50 @@ public class AcceptanceDriver : MonoBehaviour
         var h = cam.pixelHeight;
         var rt = RenderTexture.GetTemporary(w, h, 24, RenderTextureFormat.ARGB32);
         var prev = cam.targetTexture;
-        cam.targetTexture = rt;
-        cam.Render();
         var prevActive = RenderTexture.active;
-        RenderTexture.active = rt;
-        var tex = new Texture2D(w, h, TextureFormat.RGB24, false);
-        tex.ReadPixels(new Rect(0, 0, w, h), 0, 0);
-        tex.Apply();
-        RenderTexture.active = prevActive;
-        cam.targetTexture = prev;
-        RenderTexture.ReleaseTemporary(rt);
-        Directory.CreateDirectory(Path.GetDirectoryName(dest) ?? _qaDir);
-        File.WriteAllBytes(dest, tex.EncodeToPNG());
-        Destroy(tex);
+        var hud = GameObject.Find("HUD")?.GetComponent<Canvas>();
+        var oldMode = hud != null ? hud.renderMode : RenderMode.ScreenSpaceOverlay;
+        var oldCamera = hud != null ? hud.worldCamera : null;
+        var oldDistance = hud != null ? hud.planeDistance : 1f;
+        var oldOrder = hud != null ? hud.sortingOrder : 0;
+        var oldOverride = hud != null && hud.overrideSorting;
+        Texture2D tex = null;
+        try
+        {
+            cam.targetTexture = rt;
+            if (hud != null && oldMode == RenderMode.ScreenSpaceOverlay)
+            {
+                hud.renderMode = RenderMode.ScreenSpaceCamera;
+                hud.worldCamera = cam;
+                hud.planeDistance = Mathf.Clamp(1f, cam.nearClipPlane + 0.01f, cam.farClipPlane - 0.01f);
+                hud.overrideSorting = true;
+                hud.sortingOrder = 32760;
+                Canvas.ForceUpdateCanvases();
+            }
+            cam.Render();
+            RenderTexture.active = rt;
+            tex = new Texture2D(w, h, TextureFormat.RGB24, false);
+            tex.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+            tex.Apply();
+            Directory.CreateDirectory(Path.GetDirectoryName(dest) ?? _qaDir);
+            File.WriteAllBytes(dest, tex.EncodeToPNG());
+        }
+        finally
+        {
+            RenderTexture.active = prevActive;
+            cam.targetTexture = prev;
+            if (hud != null)
+            {
+                hud.renderMode = oldMode;
+                hud.worldCamera = oldCamera;
+                hud.planeDistance = oldDistance;
+                hud.overrideSorting = oldOverride;
+                hud.sortingOrder = oldOrder;
+                Canvas.ForceUpdateCanvases();
+            }
+            RenderTexture.ReleaseTemporary(rt);
+            if (tex != null) Destroy(tex);
+        }
         _captures.Add(dest);
         Note("capture " + name);
     }
