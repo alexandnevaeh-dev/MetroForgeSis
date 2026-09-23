@@ -391,17 +391,27 @@ def _cpu_offload_enabled(device: str) -> bool:
     return device == "cuda" and os.environ.get("DIFFUSERS_CPU_OFFLOAD", "0").strip().lower() in {"1", "true", "yes"}
 
 
+def _offload_strategy(device: str) -> str:
+    if not _cpu_offload_enabled(device):
+        return "none"
+    strategy = os.environ.get("DIFFUSERS_OFFLOAD_STRATEGY", "model").strip().lower()
+    if strategy not in {"model", "sequential"}:
+        raise ValueError("DIFFUSERS_OFFLOAD_STRATEGY must be model or sequential")
+    return strategy
+
+
 def _move_pipe(pipe, device: str = "cpu"):
     import torch
 
     if device == "cuda" and torch.cuda.is_available():
         if _cpu_offload_enabled(device):
-            offload = getattr(pipe, "enable_model_cpu_offload", None)
+            strategy = _offload_strategy(device)
+            offload = getattr(pipe, "enable_sequential_cpu_offload" if strategy == "sequential" else "enable_model_cpu_offload", None)
             if not callable(offload):
                 raise RuntimeError("DIFFUSERS_CPU_OFFLOAD_UNSUPPORTED")
             # Accelerate moves active components to CUDA; do not preload the entire model there.
             offload()
-            for method_name in ("enable_vae_slicing", "enable_vae_tiling"):
+            for method_name in ("enable_attention_slicing", "enable_vae_slicing", "enable_vae_tiling"):
                 method = getattr(pipe, method_name, None)
                 if callable(method):
                     method()
@@ -422,7 +432,7 @@ def _move_pipe(pipe, device: str = "cpu"):
 
 def get_pipeline(model_id: str, device: str = "cpu", local_files_only: bool = False):
     global _pipeline, _pipeline_key
-    key = (model_id, device, _cpu_offload_enabled(device))
+    key = (model_id, device, _offload_strategy(device))
     if _pipeline is not None and _pipeline_key == key:
         return _pipeline
     _pipeline = None
@@ -643,7 +653,7 @@ def _generate_openvino_image(req: dict[str, Any], full_prompt: str, width: int, 
 
 def get_img2img_pipeline(model_id: str, device: str = "cpu"):
     global _img2img_pipeline, _img2img_pipeline_key
-    key = (model_id, device, _cpu_offload_enabled(device))
+    key = (model_id, device, _offload_strategy(device))
     if _img2img_pipeline is not None and _img2img_pipeline_key == key:
         return _img2img_pipeline
     _img2img_pipeline = None
@@ -665,7 +675,7 @@ def get_img2img_pipeline(model_id: str, device: str = "cpu"):
 
 def get_controlnet_pipeline(base_model_id: str, device: str = "cpu"):
     global _controlnet_pipeline, _controlnet_pipeline_key
-    key = (base_model_id, device, _cpu_offload_enabled(device))
+    key = (base_model_id, device, _offload_strategy(device))
     if _controlnet_pipeline is not None and _controlnet_pipeline_key == key:
         return _controlnet_pipeline
     _controlnet_pipeline = None
@@ -690,7 +700,7 @@ def get_controlnet_pipeline(base_model_id: str, device: str = "cpu"):
 
 def get_ip_adapter_pipeline(base_model_id: str, device: str = "cpu"):
     global _ip_adapter_pipeline, _ip_adapter_pipeline_key
-    key = (base_model_id, device, _cpu_offload_enabled(device))
+    key = (base_model_id, device, _offload_strategy(device))
     if _ip_adapter_pipeline is not None and _ip_adapter_pipeline_key == key:
         return _ip_adapter_pipeline
     _ip_adapter_pipeline = None
@@ -827,11 +837,20 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
         "conditioning_mode": conditioning_mode,
         "compute_backend": compute_backend,
         "device": device,
+        "offload_strategy": _offload_strategy(device),
         "dtype": str(dtype).replace("torch.", ""),
         "steps": steps,
         "width": width,
         "height": height,
         "effective_prompt": full_prompt,
+        "effectivePrompt": full_prompt,
+        "effectiveNegativePrompt": negative,
+        "effectiveSteps": max(steps, 20) if init_image is not None and conditioning_mode == "controlnet_canny" else steps,
+        "effectiveGuidance": getattr(pipe, "guidance_scale", None),
+        "effectiveWidth": image.width,
+        "effectiveHeight": image.height,
+        "execution_path": "diffusers_torch_" + device,
+        "timings": {"totalMs": total_ms},
         "model_acquisition": model_acquisition if init_image is None and not conditioning_mode else None,
         "pipeline_load_ms": pipeline_load_ms if init_image is None and not conditioning_mode else None,
         "inference_ms": inference_ms if init_image is None and not conditioning_mode else None,

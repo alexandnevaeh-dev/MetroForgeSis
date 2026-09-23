@@ -42,6 +42,7 @@ def handle_generate(req):
         "model_id": req.get("model_id", "stub-model"),
         "seed": req.get("seed", 0),
         "device": "stub",
+        "offload_strategy": "stub_no_gpu",
         "image_base64": base64.b64encode(TINY_PNG).decode("ascii"),
         "execution_path": "stub_test_worker",
         "timings": {"loadSeconds": 0, "generationSeconds": 0},

@@ -29,6 +29,7 @@ interface WorkerResponse {
   model_id?: string;
   seed?: number;
   device?: string;
+  offload_strategy?: string;
   image_base64?: string;
   cuda?: boolean;
   runtime?: Record<string, unknown>;
@@ -324,6 +325,7 @@ export class DiffusersProvider implements ImageGenerator {
       executionMetadata: {
         computeBackend: backend,
         actualDevice: res.device,
+        offloadStrategy: res.offload_strategy,
         executionPath: res.execution_path,
         timings: res.timings,
         workerReused: res.workerReused,
