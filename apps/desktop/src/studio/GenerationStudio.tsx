@@ -1,3 +1,4 @@
+import { playGeneratedProject } from './godot-actions.js';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatActivityMessage, phaseLabel, GENERATION_PHASES } from './format.js';
 import { WorldMapPreview } from './WorldMapPreview.js';
@@ -335,8 +336,7 @@ export function GenerationStudio() {
   const handlePartialPreview = async () => {
     if (!reviewPaused?.projectPath) return;
     setGodotError(null);
-    const result = await window.metroforge?.playInGodot?.(reviewPaused.projectPath);
-    if (result && !result.success) setGodotError(result.message);
+    setGodotError(await playGeneratedProject(reviewPaused.projectPath));
   };
 
   const phaseRows = GENERATION_PHASES.map((phase) => {
@@ -623,9 +623,8 @@ export function GenerationStudio() {
               disabled={!selectedPath}
               onClick={async () => {
                 setGodotError(null);
-                if (!selectedPath || !window.metroforge?.playInGodot) return;
-                const r = await window.metroforge.playInGodot(selectedPath);
-                if (!r.success) setGodotError(r.message);
+                if (!selectedPath) return;
+                setGodotError(await playGeneratedProject(selectedPath));
               }}
             >
               Play

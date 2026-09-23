@@ -15,6 +15,15 @@ const root=path.resolve(__dirname,'..'),req=createRequire(root+'/apps/desktop/pa
   await page.evaluate(p=>sessionStorage.setItem('metroforge.activeProjectPath',p),project.replaceAll('/','\\'));await page.reload();
   const open=async()=>{await page.locator('aside.sidebar button.nav-item').filter({hasText:'Rooms'}).click();await page.getByRole('listbox',{name:'Rooms',exact:true}).getByRole('option').first().click();};
   await open();
+  // This older fixture deliberately lacks the new Unity preview entry point.
+  assert.equal(fs.existsSync(project+'/Assets/Editor/MetroForgePreview.cs'),false);
+  await page.getByRole('button',{name:'Play Preview',exact:true}).click();
+  await page.getByText('This Unity project needs the current preview template. Save your edits and refresh the project template first.',{exact:true}).waitFor();
+  const outsideLaunchRejected=await page.evaluate(async()=>{
+    try { await window.metroforge.playProject('E:/Metroforge/MetroForge-Recovered'); return false; }
+    catch { return true; }
+  });
+  assert.equal(outsideLaunchRejected,true);
   await page.locator('image[data-room-background="far"]').waitFor({state:'attached'});
   assert.ok(await page.locator('image[data-room-background="far"]').evaluate(async element=>{const img=new Image();img.src=element.getAttribute('href');await img.decode();return img.naturalWidth>0;}));
   await page.getByText('Distant background settings',{exact:true}).click();
@@ -44,6 +53,6 @@ const root=path.resolve(__dirname,'..'),req=createRequire(root+'/apps/desktop/pa
   await page.getByRole('button',{name:'Fit',exact:true}).click();assert.equal(await canvas.getAttribute('viewBox'),fitted);
   await page.screenshot({path:out+'/room-framing.png',fullPage:true});
   await page.reload();await open();await page.getByText('Distant background settings',{exact:true}).click();assert.equal(await control.isChecked(),true);assert.equal(await page.getByLabel('Background parallax',{exact:true}).inputValue(),'0.25');
-  fs.writeFileSync(out+'/result.json',JSON.stringify({passed:true,project,stage,scope:'Native room framing controls, shared geometry/history, save/reload and runtime mirror; no live Unity preview'},null,2));console.log('PASS room framing UI:',out);
+  fs.writeFileSync(out+'/result.json',JSON.stringify({passed:true,project,stage,scope:'Native room framing, save/reload/runtime mirror, Unity preview missing-template routing and outside-root launch rejection; no live Unity preview'},null,2));console.log('PASS room framing UI:',out);
  }finally{const timer=setTimeout(()=>app.process().kill(),5000);try{await app.close();}finally{clearTimeout(timer);}}
 })().catch(error=>{console.error(error);process.exitCode=1;});

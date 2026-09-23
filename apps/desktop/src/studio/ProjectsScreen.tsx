@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ScreenHeader } from './ScreenHeader.js';
 import { useStudio } from './StudioContext.js';
-import { openProjectInGodot, playProjectInGodot } from './godot-actions.js';
+import { openProjectInGodot, playGeneratedProject } from './godot-actions.js';
 import { Badge, Button, EmptyState, Input, Panel } from './ui/index.js';
 
 export function ProjectsScreen() {
@@ -103,10 +103,10 @@ export function ProjectsScreen() {
                   <Button
                     onClick={async () => {
                       setGodotActionError(null);
-                      setGodotActionError(await playProjectInGodot(p.path));
+                      setGodotActionError(await playGeneratedProject(p.path));
                     }}
                   >
-                    Play (F5)
+                    Play
                   </Button>
                   <Button
                     onClick={async () => {

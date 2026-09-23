@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { ScreenHeader } from './ScreenHeader.js';
 import { useStudio } from './StudioContext.js';
 import { GENERATION_MODES, GENERATION_PROFILES } from './generation-options.js';
-import { openProjectInGodot, playProjectInGodot } from './godot-actions.js';
+import { openProjectInGodot, playGeneratedProject } from './godot-actions.js';
 import { Badge, Button, EmptyState, Input, Panel, Select } from './ui/index.js';
 
 function phaseTone(status: string): 'default' | 'accent' | 'success' | 'warning' | 'danger' | 'muted' {
@@ -293,11 +293,11 @@ export function CreateScreen({ bridgeReady }: { bridgeReady: boolean | null }) {
                   onClick={async () => {
                     setGodotActionError(null);
                     if (result.outputPath) {
-                      setGodotActionError(await playProjectInGodot(result.outputPath));
+                      setGodotActionError(await playGeneratedProject(result.outputPath));
                     }
                   }}
                 >
-                  Play (F5)
+                  Play
                 </Button>
               </div>
             </>

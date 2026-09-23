@@ -3,7 +3,7 @@ import { ScreenHeader } from './ScreenHeader.js';
 import { ProjectSelect } from './ProjectSelect.js';
 import { NoProjectHint } from './NoProjectHint.js';
 import { useStudio } from './StudioContext.js';
-import { openProjectInGodot, playProjectInGodot } from './godot-actions.js';
+import { openProjectInGodot, playGeneratedProject } from './godot-actions.js';
 import { AssetProductionGatePanel } from './AssetProductionGatePanel.js';
 import { AllowPlaceholdersControl } from './AllowPlaceholdersControl.js';
 import { ProjectReadinessSummary } from './ProjectReadinessSummary.js';
@@ -264,10 +264,10 @@ export function ExportScreen() {
                   disabled={!selectedPath}
                   onClick={async () => {
                     setGodotError(null);
-                    if (selectedPath) setGodotError(await playProjectInGodot(selectedPath));
+                    if (selectedPath) setGodotError(await playGeneratedProject(selectedPath));
                   }}
                 >
-                  Play (F5)
+                  Play
                 </Button>
                 <Button
                   disabled={!selectedPath}

@@ -1,3 +1,4 @@
+import { playGeneratedProject } from './godot-actions.js';
 import { useEffect, useState } from 'react';
 import { ScreenHeader } from './ScreenHeader.js';
 import { ProjectSelect } from './ProjectSelect.js';
@@ -426,8 +427,7 @@ export function ProjectDashboard() {
                     onClick={async () => {
                       setGodotError(null);
                       if (!selectedPath) return;
-                      const r = await window.metroforge!.playInGodot!(selectedPath);
-                      if (!r.success) setGodotError(r.message);
+                      setGodotError(await playGeneratedProject(selectedPath));
                     }}
                   >
                     Preview
