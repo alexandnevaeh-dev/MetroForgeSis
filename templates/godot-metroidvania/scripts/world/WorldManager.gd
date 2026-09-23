@@ -31,7 +31,7 @@ func _ready() -> void:
 	# is even loaded) sets GameManager.current_room_id to the checkpoint room. A fresh game
 	# leaves it empty, so this correctly falls back to start_room_id.
 	var resume_room_id := GameManager.current_room_id if GameManager.current_room_id != "" else start_room_id
-	await _load_room(resume_room_id, "left")
+	await _load_room(resume_room_id, "authored" if GameManager.current_room_id == "" else "left")
 
 func _load_room_data() -> void:
 	var path := "res://data/rooms/rooms.json"
@@ -261,6 +261,10 @@ func _current_floor_y(player: Node2D) -> float:
 
 
 func _position_player_for_spawn(player: Node2D, spawn_side: String) -> void:
+	# A new game starts at the designer-authored scene placement.
+	# Door transitions and checkpoint restoration retain their entry rules.
+	if spawn_side == "authored":
+		return
 	var floor_y := _current_floor_y(player)
 	var room_width := _current_room_width()
 	match spawn_side:

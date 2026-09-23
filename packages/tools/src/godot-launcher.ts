@@ -1,3 +1,4 @@
+import { prepareGodotGame } from './godot-prepare.js';
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -105,6 +106,11 @@ export async function launchGodotGame(
     };
   }
 
+  try {
+    await prepareGodotGame(resolve.path, projectPath);
+  } catch (error) {
+    return { success: false, message: error instanceof Error ? error.message : String(error), resolve };
+  }
   const proc = spawn(resolve.path, ['--path', projectPath], {
     detached: true,
     stdio: 'ignore',

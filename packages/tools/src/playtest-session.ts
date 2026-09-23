@@ -1,3 +1,4 @@
+import { prepareGodotGame } from './godot-prepare.js';
 import { randomBytes } from 'node:crypto';
 import { createServer, type Server, type Socket } from 'node:net';
 import { spawn, type ChildProcess } from 'node:child_process';
@@ -61,6 +62,7 @@ type SessionEntry = {
 };
 
 const sessions = new Map<string, SessionEntry>();
+const pendingStarts = new Map<string, AbortController>();
 
 const ALLOWED_COMMANDS = new Set([
   'ping',
@@ -275,11 +277,15 @@ async function cleanupSession(projectPath: string): Promise<void> {
   await new Promise<void>((resolve) => {
     entry.server.close(() => resolve());
   });
-  sessions.delete(projectPath);
-  clearSessionFile(projectPath);
+  if (sessions.get(projectPath) === entry) {
+    sessions.delete(projectPath);
+    clearSessionFile(projectPath);
+  }
 }
 
 export function stopPlaytest(projectPath: string): { success: boolean; message: string } {
+  pendingStarts.get(projectPath)?.abort();
+  pendingStarts.delete(projectPath);
   const entry = sessions.get(projectPath);
   if (!entry) {
     clearSessionFile(projectPath);
@@ -332,12 +338,12 @@ export async function sendPlaytestCommand(
   });
 }
 
-export async function startPlaytest(
+async function startPreparedPlaytest(
   projectPath: string,
   options: ResolveGodotOptions & { godotPath?: string | null; headless?: boolean } = {},
+  signal?: AbortSignal,
 ): Promise<LaunchGodotResult & { session?: PlaytestSession }> {
   assertGodotProject(projectPath);
-  stopPlaytest(projectPath);
   const resolve = resolveGodotForProject({
     preference: options.preference ?? options.godotPath,
     projectOverride: options.projectOverride,
@@ -353,9 +359,19 @@ export async function startPlaytest(
     };
   }
 
+  try {
+    await prepareGodotGame(resolve.path, projectPath, signal);
+  } catch (error) {
+    return { success: false, message: error instanceof Error ? error.message : String(error), resolve };
+  }
+  if (signal?.aborted) return { success: false, message: 'Preview launch cancelled', resolve };
   const token = randomBytes(24).toString('hex');
   const { server, port, clients, authenticated } = await startBridgeServer(projectPath);
 
+  if (signal?.aborted) {
+    server.close();
+    return { success: false, message: 'Preview launch cancelled', resolve };
+  }
   const proc = spawn(
     resolve.path,
     [...(options.headless ? ['--headless'] : []), '--path', projectPath],
@@ -416,4 +432,18 @@ export async function startPlaytest(
       liveEdit: LIVE_EDIT,
     },
   };
+}
+
+export async function startPlaytest(
+  projectPath: string,
+  options: ResolveGodotOptions & { godotPath?: string | null; headless?: boolean } = {},
+): Promise<LaunchGodotResult & { session?: PlaytestSession }> {
+  stopPlaytest(projectPath);
+  const controller = new AbortController();
+  pendingStarts.set(projectPath, controller);
+  try {
+    return await startPreparedPlaytest(projectPath, options, controller.signal);
+  } finally {
+    if (pendingStarts.get(projectPath) === controller) pendingStarts.delete(projectPath);
+  }
 }
