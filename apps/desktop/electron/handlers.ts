@@ -9,6 +9,7 @@ import {
   readEditableLoot,
   saveEditableLoot,
   createEditableLoot,
+  saveEditableLootSource,
   readEditableItems,
   saveEditableItem,
   computeOverallProgress,
@@ -1807,6 +1808,13 @@ export function registerIpcHandlers(cwd: string): void {
     assertReadableProjectPath(projectPath, cwd);
     if (JSON.stringify(table).length > 500000) throw new Error('Loot edit is too large');
     return { ...createEditableLoot(projectPath, table, revision), runtimeSupported: detectProjectEngine(projectPath) === 'godot' };
+  });
+
+  ipcMain.handle('save-editable-loot-source', async (_event, projectPath: string, sourceId: string, tableId: string | null, revision: string) => {
+    assertReadableProjectPath(projectPath, cwd);
+    if (typeof sourceId !== 'string' || sourceId.length > 1000 || (tableId !== null && (typeof tableId !== 'string' || tableId.length > 1000)))
+      throw new Error('Invalid loot assignment');
+    return { ...saveEditableLootSource(projectPath, sourceId, tableId, revision), runtimeSupported: detectProjectEngine(projectPath) === 'godot' };
   });
 
   ipcMain.handle('read-editable-items', async (_event, projectPath: string) => {

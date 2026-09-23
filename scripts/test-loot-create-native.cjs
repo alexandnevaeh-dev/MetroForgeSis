@@ -73,7 +73,27 @@ const req=createRequire(root+'/apps/desktop/package.json');
   await page.reload();await page.waitForFunction(()=>Boolean(window.metroforge?.readEditableLoot));
   const reopened=await page.evaluate(project=>window.metroforge.readEditableLoot(project),project);
   assert.deepEqual(reopened.tables,evidence.after.tables);
-  fs.writeFileSync(out+'/result.json',JSON.stringify({passed:true,project,scope:'Native Electron renderer/preload/IPC creation, duplicate/stale rejection, backup, disk/runtime equality and reload; UI create/name validation/navigation draft/save/reload, stale-save draft retention/retry and discard also passed; no gameplay validation'},null,2));
+  const assignment=await page.evaluate(async project=>{
+   const api=window.metroforge;
+   const before=await api.readEditableLoot(project);
+   const source=before.sources[0];
+   if(!source)throw Error('Fixture requires an enemy');
+   const saved=await api.saveEditableLootSource(project,String(source.id),'native_created_drop',before.revision);
+   const assigned=await api.readEditableLoot(project);
+   let staleRejected=false;
+   try{await api.saveEditableLootSource(project,String(source.id),null,before.revision);}catch(e){staleRejected=String(e).includes('changed');}
+   const cleared=await api.saveEditableLootSource(project,String(source.id),null,assigned.revision);
+   const after=await api.readEditableLoot(project);
+   return {source,assigned:assigned.sources[0],after:after.sources[0],saved,cleared,staleRejected};
+  },project);
+  assert.equal(assignment.assigned.lootTableId,'native_created_drop');
+  assert.equal(assignment.after.lootTableId,undefined);
+  const expected={...assignment.source};delete expected.lootTableId;
+  assert.deepEqual(assignment.after,expected);
+  assert.equal(assignment.staleRejected,true);
+  assert.equal(assignment.saved.runtimeSynchronized,true);assert.ok(fs.existsSync(assignment.saved.backup));
+  assert.equal(fs.readFileSync(project+'/data/enemies/enemies.json','utf8'),fs.readFileSync(project+'/Assets/StreamingAssets/data/enemies/enemies.json','utf8'));
+  fs.writeFileSync(out+'/result.json',JSON.stringify({passed:true,project,scope:'Native Electron renderer/preload/IPC creation, duplicate/stale rejection, backup, disk/runtime equality and reload; UI create/name validation/navigation draft/save/reload, stale-save draft retention/retry and discard also passed; enemy assignment/clear/stale IPC checks passed; no gameplay validation'},null,2));
   console.log('PASS native loot creation API:',out);
  }finally{
   const cleanup=setTimeout(()=>app.process().kill(),5000);
