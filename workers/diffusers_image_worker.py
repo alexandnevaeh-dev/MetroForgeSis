@@ -752,6 +752,7 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
     if init_image is not None and conditioning_mode == "controlnet_canny":
         pipe = get_controlnet_pipeline(conditioning_base_model, device)
         control_image = _canny_control_image(init_image)
+        _assert_prompt_budget(pipe, full_prompt, negative)
         result = pipe(
             prompt=full_prompt,
             negative_prompt=negative,
@@ -765,6 +766,7 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
     elif init_image is not None and conditioning_mode == "ip_adapter":
         pipe = get_ip_adapter_pipeline(conditioning_base_model, device)
         pipe.set_ip_adapter_scale(strength)
+        _assert_prompt_budget(pipe, full_prompt, negative)
         result = pipe(
             prompt=full_prompt,
             negative_prompt=negative,
@@ -777,6 +779,7 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
     elif init_image is not None and conditioning_mode:
         pipe = get_img2img_pipeline(model_id, device)
         generation_options = {"guidance_scale": 0.0} if "turbo" in model_id.lower() else {}
+        _assert_prompt_budget(pipe, full_prompt, negative)
         result = pipe(
             prompt=full_prompt,
             negative_prompt=negative,
@@ -790,12 +793,16 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
         )
     else:
         model_acquisition = _ensure_model_available(model_id)
+        budget = check_prompt({"model_id": model_id, "prompt": full_prompt, "negative_prompt": negative})
+        if budget["anyOverflow"]:
+            raise ValueError("Prompt exceeds model token budget: " + json.dumps(budget))
         pipeline_start = time.perf_counter()
         pipe = get_pipeline(model_id, device, local_files_only=True)
         pipeline_load_ms = int((time.perf_counter() - pipeline_start) * 1000)
         inference_start = time.perf_counter()
         # Distilled Turbo models require classifier-free guidance to be disabled.
         generation_options = {"guidance_scale": 0.0} if "turbo" in model_id.lower() else {}
+        _assert_prompt_budget(pipe, full_prompt, negative)
         result = pipe(
             prompt=full_prompt,
             negative_prompt=negative,
@@ -834,11 +841,59 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _prompt_budget(tokenizers, prompt: str, negative: str) -> dict:
+    if not tokenizers:
+        raise ValueError("Model has no supported text tokenizer for budget validation")
+    def side(text):
+        checks = []
+        for tokenizer in tokenizers:
+            limit = int(tokenizer.model_max_length)
+            if limit <= 0 or limit > 1000000:
+                raise ValueError("Tokenizer does not declare a bounded context length")
+            count = len(tokenizer(text, truncation=False, add_special_tokens=True)["input_ids"])
+            checks.append((count, limit))
+        count, limit = max(checks, key=lambda pair: pair[0] - pair[1])
+        return {"text": text, "tokenCount": count, "maxTokens": limit,
+                "overflow": count > limit, "overflowBy": max(0, count - limit)}
+    positive, negative_side = side(prompt), side(negative)
+    return {"ok": True, "tokenizerClass": ",".join(type(t).__name__ for t in tokenizers),
+            "positive": positive, "negative": negative_side,
+            "anyOverflow": positive["overflow"] or negative_side["overflow"]}
+
+
+def check_prompt(req: dict) -> dict:
+    from transformers import AutoTokenizer
+    model = req.get("model_id", "stabilityai/sdxl-turbo")
+    path = Path(model)
+    if not path.is_dir():
+        from huggingface_hub import snapshot_download
+        path = Path(snapshot_download(model, local_files_only=True))
+    index = json.loads((path / "model_index.json").read_text(encoding="utf-8"))
+    names = [name for name, entry in index.items()
+             if name.startswith("tokenizer") and isinstance(entry, list) and entry[-1]]
+    tokenizers = [AutoTokenizer.from_pretrained(str(path / name), local_files_only=True) for name in names]
+    return {**_prompt_budget(tokenizers, req.get("prompt", ""), req.get("negative_prompt", "")), "modelPath": str(path)}
+
+
+def _assert_prompt_budget(pipe, prompt: str, negative: str) -> None:
+    tokenizers = [getattr(pipe, name) for name in ("tokenizer", "tokenizer_2", "tokenizer_3")
+                  if getattr(pipe, name, None) is not None]
+    result = _prompt_budget(tokenizers, prompt, negative)
+    if result["anyOverflow"]:
+        raise ValueError("Prompt exceeds model token budget: " + json.dumps(result))
+
+
 def main() -> None:
     req = read_request()
     action = req.get("action", "health")
     if action == "health":
         write_response(health_check(req))
+        return
+    if action == "check_prompt":
+        try:
+            write_response(check_prompt(req))
+        except Exception as exc:
+            write_response({"ok": False, "error": str(exc), "provider": "diffusers"})
         return
     if action == "prepare":
         try:

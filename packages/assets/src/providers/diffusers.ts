@@ -1,10 +1,9 @@
 import { execFileSync, spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { join } from 'node:path';
 import { createInterface } from 'node:readline';
-import { fileURLToPath } from 'node:url';
 import type { ImageGenRequest, ImageGenResult, ImageGenerator } from '../types/image-gen.js';
-import { GenerationCancelledError, throwIfCancelled } from '@metroforge/shared';
+import { GenerationCancelledError, throwIfCancelled, getResourceRoot, getRepoRoot } from '@metroforge/shared';
 import { conditioningPayload } from '../image-conditioning.js';
 export type { ImageGenRequest, ImageGenResult };
 
@@ -103,12 +102,8 @@ export interface SegmentForegroundResult {
   occupancy?: number;
 }
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const REPOSITORY_ROOT = join(__dirname, '..', '..', '..', '..');
-const DEFAULT_WORKER = join(REPOSITORY_ROOT, 'workers', 'diffusers_image_worker.py');
-const OPENVINO_SERVER = join(REPOSITORY_ROOT, 'workers', 'openvino_direct_server.py');
 const DEFAULT_VENV_PYTHON = join(
-  REPOSITORY_ROOT,
+  getRepoRoot(),
   '.venv-diffusers',
   process.platform === 'win32' ? 'Scripts' : 'bin',
   process.platform === 'win32' ? 'python.exe' : 'python',
@@ -155,8 +150,8 @@ export class DiffusersProvider implements ImageGenerator {
 
   constructor(config: DiffusersConfig = {}) {
     this.enabled = config.enabled ?? true;
-    this.pythonPath = config.pythonPath ?? (existsSync(DEFAULT_VENV_PYTHON) ? DEFAULT_VENV_PYTHON : process.platform === 'win32' ? 'python' : 'python3');
-    this.workerPath = config.workerPath ?? DEFAULT_WORKER;
+    this.pythonPath = config.pythonPath ?? process.env.DIFFUSERS_PYTHON ?? (existsSync(DEFAULT_VENV_PYTHON) ? DEFAULT_VENV_PYTHON : process.platform === 'win32' ? 'python' : 'python3');
+    this.workerPath = config.workerPath ?? join(getResourceRoot(), 'workers', 'diffusers_image_worker.py');
     this.modelId = config.modelId ?? process.env.DIFFUSERS_MODEL_ID ?? 'stabilityai/sdxl-turbo';
     this.baseModelPath = config.baseModelPath ?? process.env.DIFFUSERS_BASE_MODEL_PATH;
     this.ipAdapterRepo = config.ipAdapterRepo ?? process.env.DIFFUSERS_IP_ADAPTER_REPO;
@@ -475,7 +470,7 @@ export class DiffusersProvider implements ImageGenerator {
 
   private getOpenVinoServer() {
     if (this.openvinoServer && !this.openvinoServer.killed) return this.openvinoServer;
-    const server = spawn(this.pythonPath, [OPENVINO_SERVER], { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
+    const server = spawn(this.pythonPath, [join(getResourceRoot(), 'workers', 'openvino_direct_server.py')], { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
     const lines = createInterface({ input: server.stdout! });
     lines.on('line', (line) => {
       const pending = this.openvinoPending;
