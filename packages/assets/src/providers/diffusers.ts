@@ -66,6 +66,8 @@ interface WorkerResponse {
   model?: string;
   modelVersion?: string;
   occupancy?: number;
+
+  inferenceSeconds?: number;
 }
 
 /** One side (positive or negative) of a prompt-budget check result. */
@@ -101,6 +103,8 @@ export interface SegmentForegroundResult {
    *  clear single-subject region at all (very low occupancy suggests the source image lacks a
    *  segmentable foreground object, e.g. a diffuse scene rather than a single recognizable thing). */
   occupancy?: number;
+  device?: string;
+  inferenceSeconds?: number;
 }
 
 const DEFAULT_VENV_PYTHON = join(
@@ -267,6 +271,8 @@ export class DiffusersProvider implements ImageGenerator {
         model: res.model as string | undefined,
         modelVersion: res.modelVersion as string | undefined,
         occupancy: res.occupancy as number | undefined,
+        device: res.device,
+        inferenceSeconds: res.inferenceSeconds,
       };
     } catch (error) {
       return { ok: false, error: error instanceof Error ? error.message : String(error) };
