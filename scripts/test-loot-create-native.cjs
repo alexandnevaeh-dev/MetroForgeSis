@@ -66,6 +66,25 @@ const req=createRequire(root+'/apps/desktop/package.json');
   assert.equal(await page.getByRole('button',{name:'Create loot table',exact:true}).count(),0);
   assert.equal(fs.readFileSync(rootCatalog,'utf8'),beforeDiscard);
 
+  // A real external change stays on disk; recover by discarding the draft then reloading.
+  await page.getByLabel('Loot table',{exact:true}).selectOption(uiId);
+  await page.getByLabel('Loot table name',{exact:true}).fill('Unsaved conflict name');
+  assert.equal(await page.getByRole('button',{name:'Reload loot catalogs',exact:true}).isDisabled(),true);
+  const external=JSON.parse(fs.readFileSync(rootCatalog,'utf8'));
+  external.tables.find(table=>table.id===uiId).name='External revised name';
+  const externalText=JSON.stringify(external,null,2);
+  fs.writeFileSync(rootCatalog,externalText);
+  fs.writeFileSync(project+'/Assets/StreamingAssets/data/loot/loot_tables.json',externalText);
+  await page.getByRole('button',{name:'Save loot table',exact:true}).click();
+  await page.getByRole('status').filter({hasText:'changed; reload before saving'}).waitFor();
+  await page.getByRole('button',{name:'Discard loot changes',exact:true}).click();
+  await page.getByRole('button',{name:'Reload loot catalogs',exact:true}).click();
+  await page.getByText('Loot catalogs reloaded from disk.',{exact:true}).waitFor();
+  assert.equal(await page.getByLabel('Loot table name',{exact:true}).inputValue(),'External revised name');
+  await page.getByLabel('Drop 1 chance',{exact:true}).fill('0.55');
+  await page.getByRole('button',{name:'Save loot table',exact:true}).click();
+  await page.getByText('Saved project and Unity runtime definitions. Restart Play Mode to load changes; rebuild exported players.',{exact:true}).waitFor();
+  assert.equal(JSON.parse(fs.readFileSync(rootCatalog,'utf8')).tables.find(table=>table.id===uiId).entries[0].chance,0.55);
   const evidence=await page.evaluate(async project=>{
    const api=window.metroforge;
    const before=await api.readEditableLoot(project);
@@ -107,7 +126,7 @@ const req=createRequire(root+'/apps/desktop/package.json');
   assert.equal(assignment.staleRejected,true);
   assert.equal(assignment.saved.runtimeSynchronized,true);assert.ok(fs.existsSync(assignment.saved.backup));
   assert.equal(fs.readFileSync(project+'/data/enemies/enemies.json','utf8'),fs.readFileSync(project+'/Assets/StreamingAssets/data/enemies/enemies.json','utf8'));
-  fs.writeFileSync(out+'/result.json',JSON.stringify({passed:true,project,stage,scope:'Native Electron renderer/preload/IPC creation, duplicate/stale rejection, backup, disk/runtime equality and reload; UI create/name validation/navigation draft/save/reload, stale-save draft retention/retry and discard also passed; enemy assignment/clear/reload UI and stale IPC checks passed; no gameplay validation'},null,2));
+  fs.writeFileSync(out+'/result.json',JSON.stringify({passed:true,project,stage,scope:'Native Electron renderer/preload/IPC creation, duplicate/stale rejection, backup, disk/runtime equality and reload; UI create/name validation/navigation draft/save/reload, stale-save draft retention/retry and discard also passed; enemy assignment/clear/reload UI and stale IPC checks passed; explicit external-change discard/reload/re-save passed; no gameplay validation'},null,2));
   console.log('PASS native loot creation API:',out);
  }finally{
   const cleanup=setTimeout(()=>app.process().kill(),5000);

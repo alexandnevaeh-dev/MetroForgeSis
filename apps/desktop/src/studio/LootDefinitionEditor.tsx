@@ -20,6 +20,18 @@ export function LootDefinitionEditor({projectPath}:{projectPath:string}) {
  const undo=()=>{if(!selected||!past.length)return;setFuture(history=>[structuredClone(selected),...history]);setSelected(structuredClone(past[past.length-1]!));setPast(past.slice(0,-1));};
  const redo=()=>{if(!selected||!future.length)return;setPast(history=>[...history,structuredClone(selected)]);setSelected(structuredClone(future[0]!));setFuture(future.slice(1));};
  const save=async()=>{if(!selected)return;setBusy(true);try{const result=await (isNew?window.metroforge!.createEditableLoot:window.metroforge!.saveEditableLoot)(projectPath,selected,revision);setRevision(result.revision);setPast([]);setFuture([]);drafts.delete(projectPath);setTables(current=>isNew?[...current,structuredClone(selected)]:current.map(t=>t.id===selected.id?structuredClone(selected):t));setIsNew(false);setMessage(result.runtimeSynchronized?'Saved project and Unity runtime definitions. Restart Play Mode to load changes; rebuild exported players.':result.runtimeSupported?'Saved. Restart the game to load drops.':'Saved project definitions only. Runtime synchronization is unavailable for this project.');}catch(error){setMessage(String(error));}finally{setBusy(false);}};
+ const reload=async()=>{
+  if(dirty||busy)return;
+  setBusy(true);
+  try{
+   const data=await window.metroforge!.readEditableLoot(projectPath);
+   const latest=data.tables as unknown as LootTable[];
+   setTables(latest);setItems(data.items);setSources(data.sources);setRevision(data.revision);setSupported(data.runtimeSupported);
+   setSelected(structuredClone(latest.find(table=>table.id===selected?.id)??null));
+   if(!data.sources.some(enemy=>enemy.id===sourceId))setSourceId('');
+   setIsNew(false);setPast([]);setFuture([]);drafts.delete(projectPath);setMessage('Loot catalogs reloaded from disk.');
+  }catch(error){setMessage(String(error));}finally{setBusy(false);}
+ };
  const assign=async(tableId:string|null)=>{
   if(!source||dirty||busy)return;
   setBusy(true);
@@ -33,6 +45,8 @@ export function LootDefinitionEditor({projectPath}:{projectPath:string}) {
  return <details className="panel loot-editor"><summary>Enemy loot and drop quantities</summary>
   <p className="hint">Each item rolls independently. {supported?'Godot loads changes on restart.':'Save feedback confirms whether runtime definitions were synchronized.'}</p>
   <Button disabled={busy||dirty||!revision} onClick={()=>{setIsNew(true);setSelected({id:`loot_${crypto.randomUUID()}`,name:'New drop table',entries:[]});setPast([]);setFuture([]);setMessage('New table draft. Add drops and save; enemy assignment is separate.');}}>New loot table</Button>
+  <Button disabled={busy||dirty} onClick={()=>void reload()}>Reload loot catalogs</Button>
+  {dirty&&<p className="hint">Save or discard your table draft before reloading catalogs.</p>}
   <label>Drop table<select aria-label="Loot table" disabled={busy||dirty} value={selected?.id??''} onChange={e=>{setIsNew(false);setSelected(structuredClone(tables.find(t=>t.id===e.target.value)??null));setPast([]);setFuture([]);setMessage('');}}><option value="">Select a drop table</option>{isNew&&selected&&<option value={selected.id}>{selected.name} (unsaved)</option>}{tables.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
   {selected&&<fieldset disabled={busy}><legend>{selected.id}</legend>
    <label>Name<input aria-label="Loot table name" aria-invalid={!selected.name.trim()} aria-describedby={!selected.name.trim()?'loot-name-error':undefined} value={selected.name} onChange={e=>change({...selected,name:e.target.value})}/></label>
