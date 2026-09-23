@@ -1,4 +1,4 @@
-import { launchUnityPreview } from './unity-preview.js';
+import { launchUnityPreview, prepareUnityPreview } from './unity-preview.js';
 import { ipcMain, shell } from 'electron';
 import { detectProjectEngine, readUnityRoomEdit, saveUnityRoomEdit, type EditableObject } from '@metroforge/engines';
 import { readdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -2143,6 +2143,8 @@ export function registerIpcHandlers(cwd: string): void {
   ipcMain.handle(
     'refresh-project-template',
     async (_event, projectPath: string) => {
+      assertReadableProjectPath(projectPath, cwd);
+      if (detectProjectEngine(projectPath) === 'unity') return prepareUnityPreview(projectPath);
       assertProjectPath(projectPath, cwd);
       return refreshProjectTemplate(projectPath);
     },

@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync, copyFileSync, constants } from 'node:fs';
+import { getResourceRoot } from '@metroforge/shared';
 import { join } from 'node:path';
 import { resolveUnityEditor } from '@metroforge/tools';
 
@@ -25,4 +26,28 @@ export async function launchUnityPreview(projectPath: string): Promise<{ success
       resolve({ success: true, message: 'Unity launch requested. Compilation and Play Mode appear in the Unity window; save room edits before restarting preview.' });
     });
   });
+}
+
+/** Add only the missing preview entry point; never refresh authored Unity runtime files. */
+export function prepareUnityPreview(projectPath: string) {
+  const result = { success: false, copied: [] as string[], removed: [] as string[], errors: [] as string[] };
+  const relative = 'Assets/Editor/MetroForgePreview.cs';
+  try {
+    if (!existsSync(join(projectPath, 'Assets/Scenes/World.unity')) ||
+        !existsSync(join(projectPath, 'Assets/Scripts/AcceptanceDriver.cs'))) {
+      throw new Error('Unity preview repair requires a generated World scene and AcceptanceDriver. No files were changed.');
+    }
+    if (existsSync(join(projectPath, 'Temp/UnityLockfile'))) {
+      throw new Error('A Unity project lock is present. Close this project in Unity before preparing preview.');
+    }
+    if (!existsSync(join(projectPath, relative))) {
+      const source = join(getResourceRoot(), 'templates/unity-metroidvania', relative);
+      if (!existsSync(source)) throw new Error('The installed application is missing the Unity preview template.');
+      mkdirSync(join(projectPath, 'Assets/Editor'), { recursive: true });
+      copyFileSync(source, join(projectPath, relative), constants.COPYFILE_EXCL);
+      result.copied.push(relative);
+    }
+    result.success = true;
+  } catch (error) { result.errors.push(error instanceof Error ? error.message : String(error)); }
+  return result;
 }

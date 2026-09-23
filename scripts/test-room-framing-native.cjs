@@ -68,6 +68,19 @@ const root=path.resolve(__dirname,'..'),req=createRequire(root+'/apps/desktop/pa
   }));
   if(layout.viewport<=1366) assert.ok(layout.main/layout.width>0.9,JSON.stringify(layout));
   await page.screenshot({path:out+'/unity-playtest-controls.png',fullPage:true});
+  const runtimeBefore=fs.readFileSync(project+'/Assets/StreamingAssets/gameplay.json','utf8');
+  const sceneBefore=fs.readFileSync(project+'/Assets/Scenes/World.unity','utf8');
+  const repaired=await page.evaluate(p=>window.metroforge.refreshProjectTemplate(p),project);
+  assert.equal(repaired.success,true,JSON.stringify(repaired));
+  assert.deepEqual(repaired.copied,['Assets/Editor/MetroForgePreview.cs']);
+  assert.equal(fs.readFileSync(project+'/Assets/StreamingAssets/gameplay.json','utf8'),runtimeBefore);
+  assert.equal(fs.readFileSync(project+'/Assets/Scenes/World.unity','utf8'),sceneBefore);
+  const entry=project+'/Assets/Editor/MetroForgePreview.cs';
+  fs.appendFileSync(entry,'\n// Authored customization must survive refresh.\n');
+  const authored=fs.readFileSync(entry,'utf8');
+  const repeated=await page.evaluate(p=>window.metroforge.refreshProjectTemplate(p),project);
+  assert.equal(repeated.success,true);assert.deepEqual(repeated.copied,[]);
+  assert.equal(fs.readFileSync(entry,'utf8'),authored);
   fs.writeFileSync(out+'/result.json',JSON.stringify({passed:true,project,stage,scope:'Native room framing, save/reload/runtime mirror, Unity preview missing-template routing and outside-root launch rejection; no live Unity preview'},null,2));console.log('PASS room framing UI:',out);
  }finally{const timer=setTimeout(()=>app.process().kill(),5000);try{await app.close();}finally{clearTimeout(timer);}}
 })().catch(error=>{console.error(error);process.exitCode=1;});
