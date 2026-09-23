@@ -39,7 +39,8 @@ export class GenerationQueue {
       createdAt: new Date().toISOString(),
     };
     this.jobs.unshift(entry);
-    void this.pump();
+    // Let callers register response handlers before execution begins.
+    queueMicrotask(() => { void this.pump(); });
     return entry;
   }
 

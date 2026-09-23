@@ -2,6 +2,17 @@ import { describe, expect, it } from 'vitest';
 import { GenerationQueue } from './generation-queue.js';
 
 describe('GenerationQueue', () => {
+  it('lets the caller register a response before executing a new job', async () => {
+    const queue = new GenerationQueue();
+    const responses = new Map<string, () => void>();
+    let resolved = false;
+    queue.setExecutor(async job => { responses.get(job.id)?.(); });
+    const job = queue.enqueue({ type: 'generate_game', label: 'fresh game', payload: {} });
+    responses.set(job.id, () => { resolved = true; });
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(resolved).toBe(true);
+    expect(queue.get(job.id)?.status).toBe('completed');
+  });
   it('cancels a queued job', async () => {
     const queue = new GenerationQueue();
     let ran = false;
