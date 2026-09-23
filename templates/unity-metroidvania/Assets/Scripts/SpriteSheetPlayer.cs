@@ -16,6 +16,15 @@ public class SpriteSheetPlayer : MonoBehaviour
 
     public string CurrentClip => _current;
 
+    // Locomotion can follow physical speed without retiming attacks or jump anticipation.
+    private float _playbackSpeed = 1f;
+    public float PlaybackSpeed
+    {
+        get => _playbackSpeed;
+        set => _playbackSpeed = float.IsNaN(value) || float.IsInfinity(value)
+            ? 1f : Mathf.Clamp(value, 0f, 3f);
+    }
+
     public bool FlipX
     {
         get => !_facingRight;
@@ -37,6 +46,11 @@ public class SpriteSheetPlayer : MonoBehaviour
     {
         var t0 = Time.realtimeSinceStartup;
         _clips.Clear();
+        _fps.Clear();
+        _loop.Clear();
+        _current = null;
+        _elapsed = 0f;
+        _frame = 0;
         foreach (var clip in clips)
         {
             if (clip == null || clip.ownerId != ownerId || string.IsNullOrEmpty(clip.relativePath))
@@ -70,11 +84,28 @@ public class SpriteSheetPlayer : MonoBehaviour
             clip = FallbackClip(clip);
         if (clip == _current && !restart)
             return;
+        // Preserve the contact phase between looping walk/run cycles.
+        // Explicit restarts and action clips still begin at frame zero.
+        var phase = 0f;
+        var preserveGait = !restart && IsGait(_current) && IsGait(clip)
+            && _clips.ContainsKey(_current)
+            && _loop.TryGetValue(_current, out var previousLoop) && previousLoop
+            && _loop.TryGetValue(clip, out var nextLoop) && nextLoop;
+        if (preserveGait)
+            phase = (_frame + _elapsed * Mathf.Max(1f, _fps[_current])) / _clips[_current].Length;
         _current = clip;
         _elapsed = 0f;
         _frame = 0;
+        if (preserveGait)
+        {
+            var position = Mathf.Repeat(phase, 1f) * _clips[clip].Length;
+            _frame = Mathf.FloorToInt(position);
+            _elapsed = (position - _frame) / Mathf.Max(1f, _fps[clip]);
+        }
         ApplyFrame();
     }
+
+    private static bool IsGait(string clip) => clip == "walk" || clip == "run";
 
     private string FallbackClip(string requested)
     {
@@ -93,7 +124,7 @@ public class SpriteSheetPlayer : MonoBehaviour
         if (string.IsNullOrEmpty(_current) || !_clips.TryGetValue(_current, out var frames) || frames.Length <= 1)
             return;
         var fps = _fps.TryGetValue(_current, out var value) ? value : 8f;
-        _elapsed += Time.deltaTime;
+        _elapsed += Time.deltaTime * _playbackSpeed;
         var frameTime = 1f / Mathf.Max(1f, fps);
         while (_elapsed >= frameTime)
         {
