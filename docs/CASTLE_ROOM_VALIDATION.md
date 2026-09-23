@@ -20,3 +20,7 @@ Run the reusable regression in an isolated generated Unity project containing th
 ```
 
 Result: `qa/solid-fallback-result.json` under that project. Native compilation and geometry checks do not establish visual approval, animation quality, complete gameplay, Unreal support or a finished application.
+
+## Expanded ascent follow-up
+
+Puzzle and shrine/gate stair gaps now remain local instead of growing with room width. 83 focused layout/assembly tests and TypeScript compilation pass. Tests cover 800/1600/2560-unit widths and 16/32-unit tiles. Native Unity PlayMode at width2560 and tile32 passed the floor route plus all three puzzle landings and both shrine landings, with real PlayerActor keyboard input. Ability-gate uses the same approach layout but gate interaction itself was not part of this check. The existing Unity SearchDatabase startup exception still appears separately.

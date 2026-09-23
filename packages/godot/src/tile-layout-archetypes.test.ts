@@ -124,3 +124,17 @@ it('fills long entrance halls with repeated reachable stair bays and broad balco
     }
   }
 });
+
+it.each(['puzzle', 'ability_shrine', 'ability_gate'])('keeps %s ascent gaps local when rooms expand', archetype => {
+  for (const width of [800, 1600, 2560]) for (const tileSize of [16, 32]) {
+    const layout = buildRoomTileCells({ width, height: 1024, tileSize, seed: 21, archetype });
+    expect(layout.platforms.length).toBeGreaterThanOrEqual(2);
+    for (let i = 1; i < layout.platforms.length; i++) {
+      const previous = layout.platforms[i - 1]!;
+      const next = layout.platforms[i]!;
+      expect(next.x - (previous.x + previous.width)).toBeLessThanOrEqual(32);
+      expect(next.x + next.width).toBeLessThan(width - tileSize);
+      expect(previous.y - next.y).toBeLessThanOrEqual(96);
+    }
+  }
+});

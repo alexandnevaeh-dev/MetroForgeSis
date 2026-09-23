@@ -453,8 +453,10 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
       (r) => r === 'double_jump' || r === 'air_dash' || r === 'grapple' || r === 'wall_jump' || r === 'wall_slide',
     );
     const gx = rng.int(Math.floor(cols * 0.4), Math.floor(cols * 0.68));
-    const approachCol = Math.max(2, Math.floor(cols * 0.18));
-    const altarCol = Math.min(cols - 6, Math.max(approachCol + 6, Math.floor(cols * 0.52)));
+    const earliestApproach = Math.max(2, Math.floor(cols * 0.18));
+    const altarCol = Math.min(cols - 6, Math.max(earliestApproach + 6, Math.floor(cols * 0.52)));
+    // Keep the pickup approach local instead of stretching its jump with room width.
+    const approachCol = Math.max(earliestApproach, altarCol - 4 - Math.max(1, Math.ceil(32 / tileSize)));
     const climb = climbRows(platMaxRow, 2, jumpStep);
     placePlatform(cells, platforms, tileSize, approachCol, 4, climb[0] ?? platMaxRow);
     placePlatform(cells, platforms, tileSize, altarCol, 4, climb[1] ?? platMaxRow);
@@ -499,10 +501,14 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
 
   if (archetype === 'puzzle') {
     const climb = climbRows(platMaxRow, 3, jumpStep);
-    placePlatform(cells, platforms, tileSize, Math.max(2, Math.floor(cols * 0.18)), 4, climb[0] ?? platMaxRow);
-    placePlatform(cells, platforms, tileSize, Math.max(2, Math.floor(cols * 0.42)), 3, climb[1] ?? platMaxRow);
+    const lowCol = Math.max(2, Math.floor(cols * 0.32));
+    const gapCols = Math.max(1, Math.ceil(32 / tileSize));
+    const midCol = lowCol + 4 + gapCols;
+    const highCol = midCol + 3 + gapCols;
+    placePlatform(cells, platforms, tileSize, lowCol, 4, climb[0] ?? platMaxRow);
+    placePlatform(cells, platforms, tileSize, midCol, 3, climb[1] ?? platMaxRow);
     if (climb[2] !== undefined) {
-      placePlatform(cells, platforms, tileSize, Math.max(2, Math.floor(cols * 0.62)), 3, climb[2]);
+      placePlatform(cells, platforms, tileSize, highCol, 3, climb[2]);
     }
   }
 
