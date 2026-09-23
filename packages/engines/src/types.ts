@@ -54,6 +54,8 @@ export interface GameplayActor {
 }
 
 export interface GameplayBackgrounds {
+  farCameraRelative?: boolean;
+  farParallax?: number;
   far?: string;
   mid?: string;
   near?: string;

@@ -24,3 +24,20 @@ test('invalid edit leaves both copies untouched',()=>{
  assert.throws(()=>saveUnityRoomEdit(dir,'room_0',state.objects,state.fingerprints),/Invalid/);
  assert.deepEqual(readUnityRoomEdit(dir,'room_0').fingerprints,state.fingerprints);
 });
+
+test('background framing shares room save, mirrors, backups and validation',()=>{
+ const dir=make(),state=readUnityRoomEdit(dir,'room_0');
+ assert.deepEqual(state.backgroundFraming,{farCameraRelative:false,farParallax:0.1});
+ const result=saveUnityRoomEdit(dir,'room_0',state.objects,state.fingerprints,{farCameraRelative:true,farParallax:0.25});
+ const next=readUnityRoomEdit(dir,'room_0');
+ assert.deepEqual(next.backgroundFraming,{farCameraRelative:true,farParallax:0.25});
+ assert.deepEqual(next.objects,state.objects);
+ assert.equal(readFileSync(join(dir,'gameplay.json'),'utf8'),readFileSync(join(dir,'Assets/StreamingAssets/gameplay.json'),'utf8'));
+ assert.equal(JSON.parse(readFileSync(join(result.backup,'0.json'),'utf8')).rooms[0].backgrounds,undefined);
+ for(const framing of [{farCameraRelative:true,farParallax:2},{farCameraRelative:'yes',farParallax:0.1},{farCameraRelative:true,farParallax:NaN},{farCameraRelative:true,farParallax:0.1,far:'unrequested.png'}])
+  assert.throws(()=>saveUnityRoomEdit(dir,'room_0',next.objects,next.fingerprints,framing),/Invalid background/);
+ assert.deepEqual(readUnityRoomEdit(dir,'room_0').fingerprints,next.fingerprints);
+ const legacy=saveUnityRoomEdit(dir,'room_0',next.objects,next.fingerprints);
+ assert.deepEqual(readUnityRoomEdit(dir,'room_0').backgroundFraming,next.backgroundFraming);
+ assert.equal(legacy.restartRequired,true);
+});
