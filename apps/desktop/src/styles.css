@@ -2005,11 +2005,14 @@ textarea {
 }
 
 .anim-viewport {
-  width: 128px;
-  height: 32px;
+  width: min(100%, 320px);
   overflow: hidden;
   background: var(--bg-root);
-  image-rendering: pixelated;
+}
+.anim-viewport canvas {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 .zoom-preview {

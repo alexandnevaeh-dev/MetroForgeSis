@@ -1,3 +1,4 @@
+import { AnimationPreview } from './AnimationPreview.js';
 import { LootDefinitionEditor } from './LootDefinitionEditor.js';
 import { ItemDefinitionEditor } from './ItemDefinitionEditor.js';
 import { useEffect, useMemo, useState } from 'react';
@@ -17,7 +18,7 @@ export function AssetsGallery() {
   const [category, setCategory] = useState('All');
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<AssetRecord | null>(null);
-  const [animPlaying, setAnimPlaying] = useState(true);
+  const [animPlaying, setAnimPlaying] = useState(() => !window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [animFrame, setAnimFrame] = useState(0);
   const [loading, setLoading] = useState(false);
   const [usages, setUsages] = useState<Array<{ type: string; id: string; detail?: string }> | null>(
@@ -90,11 +91,13 @@ export function AssetsGallery() {
   }, [selectedPath, selected?.id, compareVersion, history]);
 
   useEffect(() => {
-    if (!selected?.isAnimation || !animPlaying) return;
-    const frames = selected.frameCount ?? 4;
-    const id = window.setInterval(() => setAnimFrame((f) => (f + 1) % frames), 180);
+    if (!selected?.isAnimation || !animPlaying || !selected.frameCount) return;
+    const frames = selected.frameCount;
+    const id = window.setInterval(() => setAnimFrame((f) => (f + 1) % frames), 1000 / Math.min(120, Math.max(1, selected.fps ?? 8)));
     return () => window.clearInterval(id);
   }, [selected, animPlaying]);
+
+  useEffect(() => { setAnimFrame(0); }, [selected?.id, selected?.dataUrl]);
 
   const classified = useMemo(
     () => assets.map((asset) => ({ ...asset, category: categorizeAssetPath(asset.path) || asset.category })),
@@ -219,11 +222,12 @@ export function AssetsGallery() {
             <div className="asset-inspector-preview">
               {selected.isAnimation && selected.dataUrl ? (
                 <AnimationPreview
+                  key={selected.id}
                   asset={selected}
                   frame={animFrame}
                   playing={animPlaying}
                   onToggle={() => setAnimPlaying((p) => !p)}
-                  onStep={() => setAnimFrame((f) => (f + 1) % (selected.frameCount ?? 4))}
+                  onStep={() => { setAnimPlaying(false); setAnimFrame((f) => (f + 1) % Math.max(1, selected.frameCount ?? 1)); }}
                 />
               ) : selected.dataUrl ? (
                 <button type="button" className="zoom-preview" onClick={() => setZoomOpen(true)}>
@@ -379,41 +383,6 @@ export function AssetsGallery() {
         </>
       )}
     </section>
-  );
-}
-
-function AnimationPreview({
-  asset,
-  frame,
-  playing,
-  onToggle,
-  onStep,
-}: {
-  asset: AssetRecord;
-  frame: number;
-  playing: boolean;
-  onToggle: () => void;
-  onStep: () => void;
-}) {
-  const frames = asset.frameCount ?? 4;
-  const clipStyle = {
-    width: '128px',
-    height: '32px',
-    objectFit: 'contain' as const,
-    objectPosition: `-${frame * 32}px 0`,
-  };
-
-  return (
-    <div className="anim-preview">
-      <div className="anim-viewport">
-        <img src={asset.dataUrl} alt={asset.id} style={clipStyle} />
-      </div>
-      <div className="row">
-        <button type="button" onClick={onToggle}>{playing ? 'Pause' : 'Play'}</button>
-        <button type="button" onClick={onStep}>Frame Step</button>
-        <span>Frame {frame + 1}/{frames}</span>
-      </div>
-    </div>
   );
 }
 

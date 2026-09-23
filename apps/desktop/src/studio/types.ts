@@ -40,6 +40,10 @@ export type AssetRecord = {
   dataUrl?: string;
   isAnimation?: boolean;
   frameCount?: number;
+  frameWidth?: number;
+  frameHeight?: number;
+  fps?: number;
+  loop?: boolean;
 };
 
 export type ActivityFilter =

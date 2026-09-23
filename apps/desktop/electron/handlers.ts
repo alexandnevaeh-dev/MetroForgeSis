@@ -1,3 +1,4 @@
+import { resolveAssetAnimation } from './asset-animation.js';
 import { launchUnityPreview, prepareUnityPreview } from './unity-preview.js';
 import { ipcMain, shell } from 'electron';
 import { detectProjectEngine, readUnityRoomEdit, saveUnityRoomEdit, type EditableObject } from '@metroforge/engines';
@@ -1263,7 +1264,7 @@ export function registerIpcHandlers(cwd: string): void {
     const artifacts = readManifestAssets(projectPath);
     const results = artifacts.map((artifact) => {
       const path = String(artifact.path ?? '');
-      const isAnimation = path.includes('_walk') || path.includes('_attack') || path.includes('_hurt');
+
       const meta =
         artifact.metadata && typeof artifact.metadata === 'object'
           ? (artifact.metadata as Record<string, unknown>)
@@ -1287,8 +1288,8 @@ export function registerIpcHandlers(cwd: string): void {
         prompt: artifact.prompt as string | undefined,
         seed: artifact.seed as number | undefined,
         dataUrl: loadAssetThumbnail(projectPath, path),
-        isAnimation,
-        frameCount: isAnimation ? (path.includes('boss') ? 3 : 4) : undefined,
+        ...resolveAssetAnimation(path, { ...artifact, ...meta }, (sidecarPath) =>
+          JSON.parse(readFileSync(safeProjectRelativePath(projectPath, sidecarPath), 'utf-8'))),
       };
     });
 
