@@ -45,6 +45,14 @@ export function UnityRoomGeometry({projectPath,roomId,width,height,zoom=100,grid
  const token=()=>({projectId:projectPath,sessionId:draft!.session.sessionId,baseRevision:draft!.session.snapshot().revision});
  const edit=(operations:LiveEditOperation[])=>{if(!draft||saving)return;try{draft.session.commit({...token(),operations});setError('');setNotice('');refresh(n=>n+1);}catch(e){setError(String(e));}};
  const history=(redo:boolean)=>{if(!draft)return;try{if(redo)draft.session.redo(token());else draft.session.undo(token());refresh(n=>n+1);setNotice('');}catch(e){setError(String(e));}};
+ const reload=async()=>{
+  setSaving(true);setError('');setNotice('');
+  try{
+   const data=await window.metroforge!.readUnityRoomEdit(projectPath,roomId);
+   const next:Draft={session:new LiveEditSession(projectPath,crypto.randomUUID(),[...data.objects,{id:framingId,roomId,x:0,y:0,properties:{...data.backgroundFraming}}],new Set(['width','height','name','farCameraRelative','farParallax'])),fingerprints:data.fingerprints,farBackground:data.farBackground};
+   drafts.set(key,next);setDraft(next);setSelected('');cancelDrag();setNotice('Reloaded saved room. Previous draft and undo history discarded.');
+  }catch(e){setError(String(e));}finally{setSaving(false);}
+ };
  const save=async()=>{if(!draft||!state)return;setSaving(true);setError('');try{const result=await window.metroforge!.saveUnityRoomEdit(projectPath,roomId,solids!,draft.fingerprints,{farCameraRelative:framing?.properties.farCameraRelative===true,farParallax:Number(framing?.properties.farParallax??0.1)});draft.fingerprints=result.fingerprints;draft.session.markSaved(state.revision);setNotice('Saved. Restart the Unity game to apply room changes.');refresh(n=>n+1);}catch(e){setError(String(e));}finally{setSaving(false);}};
  return <div className="unity-room-geometry">
   <div className="row">
@@ -53,6 +61,7 @@ export function UnityRoomGeometry({projectPath,roomId,width,height,zoom=100,grid
    <Button disabled={!state?.canUndo||saving} onClick={()=>history(false)}>Undo room edit</Button>
    <Button disabled={!state?.canRedo||saving} onClick={()=>history(true)}>Redo room edit</Button>
    <Button disabled={!state?.dirty||saving} onClick={()=>void save()}>{saving?'Saving…':'Save room'}</Button>
+   <Button disabled={saving} onClick={()=>void reload()}>{state?.dirty?'Discard draft and reload room':'Reload saved room'}</Button>
   </div>
   <p className="hint">{state?.dirty?'Unsaved room changes · retained while switching rooms.':'Unity room geometry'} · Drag a solid to move it, or edit its position and size below. Escape cancels a drag. Runtime restart required.</p>
   {error&&<p role="alert">{error}</p>}{notice&&<p role="status">{notice}</p>}
