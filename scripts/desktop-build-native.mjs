@@ -26,7 +26,7 @@ function run(executable, args) {
 // some Windows environments deny. No source transforms or typechecks are skipped.
 const tsc = join(root, 'node_modules', 'typescript', 'bin', 'tsc');
 run(process.execPath, [tsc, '-p', join(desktop, 'tsconfig.json'), '--noEmit']);
-run(process.execPath, [tsc, '-p', join(desktop, 'tsconfig.electron.json')]);
+run(process.execPath, [tsc, '--build', join(desktop, 'tsconfig.electron.json'), '--force']);
 run(binary, [
   'src/main.tsx',
   '--bundle',
