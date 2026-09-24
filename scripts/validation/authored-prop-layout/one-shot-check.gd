@@ -20,6 +20,8 @@ func _initialize() -> void:
 	controller._update_sprite()
 	assert(not sprite.is_playing(), "Completed attack restarted")
 	assert(sprite.frame==1, "Attack final pose lost")
+	controller._play_facing_animation("attack", true)
+	assert(sprite.is_playing() and sprite.frame==0, "Consecutive attack did not restart")
 	controller._attack_state=controller.AttackState.READY
 	controller._stun_time=0.1
 	sprite.animation="hurt"

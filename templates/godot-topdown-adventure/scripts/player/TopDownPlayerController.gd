@@ -104,7 +104,7 @@ func _update_sprite() -> void:
 		action = "walk"
 	_play_facing_animation(action)
 
-func _play_facing_animation(action: String) -> void:
+func _play_facing_animation(action: String, restart: bool = false) -> void:
 	if sprite == null or sprite.sprite_frames == null:
 		return
 	var target := StringName(action)
@@ -114,11 +114,11 @@ func _play_facing_animation(action: String) -> void:
 		return
 	var previous_action := String(sprite.animation).get_slice("_", 0)
 	# Finish the current attack/hurt pose even if facing changes during recovery.
-	if action in ["attack", "hurt", "death"] and previous_action == action:
+	if not restart and action in ["attack", "hurt", "death"] and previous_action == action:
 		return
 	var directional := String(target) != action
 	sprite.flip_h = false if directional else facing.x < -0.01
-	if sprite.animation == target:
+	if sprite.animation == target and not restart:
 		return
 	var phase := 0.0
 	var preserve_phase := action == "walk" and previous_action == "walk"
@@ -126,6 +126,8 @@ func _play_facing_animation(action: String) -> void:
 		var old_count := sprite.sprite_frames.get_frame_count(sprite.animation)
 		if old_count > 0:
 			phase = (float(sprite.frame) + sprite.frame_progress) / float(old_count)
+	if restart:
+		sprite.stop()
 	sprite.play(target)
 	if preserve_phase:
 		var position := phase * sprite.sprite_frames.get_frame_count(target)
@@ -154,6 +156,7 @@ func _start_attack() -> void:
 	_attack_cooldown = ATTACK_STARTUP + ATTACK_ACTIVE + ATTACK_RECOVERY
 	_attack_state = AttackState.STARTUP
 	_attack_time = ATTACK_STARTUP
+	_play_facing_animation("attack", true)
 	AudioManager.play_sfx("attack")
 
 func _update_attack_state(delta: float) -> void:
