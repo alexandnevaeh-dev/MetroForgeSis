@@ -4,6 +4,13 @@ import { Button, Input } from './ui/index.js';
 type Draft = { session: LiveEditSession; fingerprints: string[]; farBackground?: string };
 // Retain unsaved room work when navigating between rooms during this app session.
 const drafts = new Map<string, Draft>();
+// Drafts outlive the mounted room editor, so close protection must as well.
+const protectRoomDrafts=(event:BeforeUnloadEvent)=>{
+ if([...drafts.values()].some(draft=>draft.session.snapshot().dirty)){
+  event.preventDefault();event.returnValue='';
+ }
+};
+if(typeof window!=='undefined')window.addEventListener('beforeunload',protectRoomDrafts);
 export function UnityRoomGeometry({projectPath,roomId,width,height,zoom=100,gridSnap=false,tileSize=16}: {projectPath:string;roomId:string;width:number;height:number;zoom?:number;gridSnap?:boolean;tileSize?:number}) {
  const scale=Number.isFinite(zoom)?Math.max(0.25,Math.min(4,zoom/100)):1;
  const snapStep=gridSnap&&Number.isFinite(tileSize)&&tileSize>0?tileSize:1;

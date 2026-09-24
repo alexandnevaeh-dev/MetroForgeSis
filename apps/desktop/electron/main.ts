@@ -56,6 +56,21 @@ function createWindow(): void {
     },
   });
 
+  win.webContents.on('will-prevent-unload', (event) => {
+    const choice = dialog.showMessageBoxSync(win, {
+      type: 'warning',
+      title: 'Unsaved changes',
+      message: 'Discard unsaved changes?',
+      detail: 'Room and asset edits that have not been saved will be lost.',
+      buttons: ['Keep editing', 'Discard and leave'],
+      defaultId: 0,
+      cancelId: 0,
+      noLink: true,
+    });
+    // Electron uses preventDefault here to allow the originally blocked unload.
+    if (choice === 1) event.preventDefault();
+  });
+
   win.webContents.once('did-finish-load', async () => {
     observeDesktopSmoke('renderer-loaded');
     const project = process.env.METROFORGE_DESKTOP_SMOKE_PROJECT;
