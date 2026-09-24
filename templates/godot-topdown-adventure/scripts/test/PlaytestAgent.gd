@@ -8,17 +8,9 @@ class_name PlaytestAgent
 ## (both axes), not a single horizontal axis. Supports persona-specific timeouts and emits
 ## structured telemetry for balance analysis, matching the side-view version's contract.
 ##
-## Root-cause note (see docs/debug/TOPDOWN_PLAYTEST_REPAIR.md): the overworld's per-cell random
-## water/wall scatter (packages/procedural/src/topdown/world.ts) used to place obstacles fully
-## independently of POI positions and player paths — a POI could generate on top of a blocked
-## tile, and two randomly-scattered obstacles could end up diagonally touching, pinching a path
-## to zero real width. A real headless run confirmed the greedy straight-line walk below got
-## permanently wedged at exactly such a spot (position and velocity frozen for the rest of the
-## walk timeout). That's now fixed at the generation layer (every POI gets guaranteed-walkable
-## clearance, and a de-pinch pass removes diagonal-only blocked patterns), but the bot below also
-## gained bounded stuck-detection/unstick logic as defense-in-depth — the same terrain shape that
-## wedged a bot with no recovery logic can still cost a real player time, and a competent player
-## sidesteps around a minor obstacle rather than standing still walking into it forever.
+## Walk routes use the actual player's swept collision shape and bounded grid search.
+## Inputs still drive traversal; no teleportation or collision disabling is used.
+## A failed search or timed-out walk remains a failed playtest leg.
 
 const ROUTE_PATH := "res://playtest_route.json"
 const MOVEMENT_CONFIG_PATH := "res://data/player/movement.json"
@@ -469,97 +461,85 @@ func _walk_timeout_for(from: Vector2, target: Vector2) -> float:
 	var travel_time := dist / _expected_walk_speed_px
 	return max(_walk_timeout_sec, travel_time + TRANSITION_TIMEOUT_ALLOWANCE_SEC)
 
-# --- Phase 15: bounded unstick strategy ---------------------------------------------------------
-const STUCK_CHECK_INTERVAL_SEC := 0.4
-const STUCK_PROGRESS_THRESHOLD_PX := 6.0
-const MAX_UNSTICK_ATTEMPTS_PER_WALK := 4
-const UNSTICK_HOLD_SEC := 0.25
+## Bounded breadth-first search using the actual player's swept collision shape.
+## No terrain-only shortcuts: authored props and solid doors also participate.
+func _plan_walk(body: CharacterBody2D, target: Vector2) -> Array[Vector2]:
+	var origin := body.global_position
+	var queue: Array[Vector2i] = [Vector2i.ZERO]
+	var parents := {Vector2i.ZERO: Vector2i.ZERO}
+	var cursor := 0
+	var end := Vector2i.ZERO
+	var found := false
+	while cursor < queue.size() and cursor < 8192:
+		var cell := queue[cursor]
+		cursor += 1
+		var position := origin + Vector2(cell) * 4.0
+		if position.distance_to(target) < 10.0:
+			end = cell
+			found = true
+			break
+		for direction in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+			var next: Vector2i = cell + direction
+			if parents.has(next): continue
+			var from := body.global_transform
+			from.origin = position
+			if body.test_move(from, Vector2(direction) * 4.0): continue
+			parents[next] = cell
+			queue.append(next)
+	var path: Array[Vector2] = []
+	if not found: return path
+	while end != Vector2i.ZERO:
+		path.push_front(origin + Vector2(end) * 4.0)
+		end = parents[end]
+	path.append(target)
+	return path
 
-## Free-roam 2D walk (both axes at once), unlike the side-view template's horizontal-only
-## version — a top-down world has no floor/corridor constraint forcing single-axis movement.
-## Detects being stuck (position not meaningfully progressing over a short window) and tries a
-## perpendicular sidestep before resuming the direct approach — bounded, and never a teleport: if
-## the bounded attempts don't free the body, this returns false honestly rather than silently
-## treating the leg as complete.
 func _walk_player_to(host: Node, player: Node, target: Vector2, timeout_sec: float = -1.0) -> bool:
-	if not (player is CharacterBody2D):
-		return false
+	if not (player is CharacterBody2D): return false
 	var body := player as CharacterBody2D
 	if timeout_sec < 0.0:
 		timeout_sec = _walk_timeout_for(body.global_position, target)
-
+	var path := _plan_walk(body, target)
+	if path.is_empty():
+		_release_movement_input()
+		return false
 	var elapsed := 0.0
-	var stuck_timer := 0.0
-	var last_check_pos := body.global_position
-	var unstick_hold := 0.0
-	var unstick_sign := 1.0
-	var local_unstick_attempts := 0
-
+	var waypoint := 0
 	while elapsed < timeout_sec:
 		if not is_instance_valid(body):
-			# The player instance is recreated on every load_area() call — walking into this
-			# target can itself trigger an area transition (a portal/door has no arrival
-			# tolerance of its own), freeing the old instance before this loop's distance check
-			# would fire. That's the caller's success signal to interpret, not a failure here —
-			# just stop cleanly instead of touching the freed reference again.
-			return false
-		var delta := host.get_physics_process_delta_time()
-		elapsed += delta
-		stuck_timer += delta
+			_release_movement_input()
+			return false # Caller checks whether the portal replaced the player.
 		if body.global_position.distance_to(target) < 12.0:
 			_release_movement_input()
 			return true
-
-		if unstick_hold > 0.0:
-			unstick_hold -= delta
-			await host.get_tree().physics_frame
-			continue
-
-		if stuck_timer >= STUCK_CHECK_INTERVAL_SEC:
-			var progressed := body.global_position.distance_to(last_check_pos)
-			stuck_timer = 0.0
-			last_check_pos = body.global_position
-			if progressed < STUCK_PROGRESS_THRESHOLD_PX:
-				local_unstick_attempts += 1
-				_unstick_attempts += 1
-				if local_unstick_attempts > MAX_UNSTICK_ATTEMPTS_PER_WALK:
-					_release_movement_input()
-					return false
-				# Alternate sides each attempt so a pinch that only opens on one side still gets
-				# a fair try, without looping forever on a side that never works.
-				unstick_sign = -unstick_sign
-				_step_perpendicular(body, target, unstick_sign)
-				unstick_hold = UNSTICK_HOLD_SEC
-				await host.get_tree().physics_frame
-				continue
-
+		while waypoint < path.size() - 1 and body.global_position.distance_to(path[waypoint]) < 2.5:
+			waypoint += 1
 		used_input_simulation = true
-		_step_toward(body, target)
+		_step_toward(body, path[waypoint], 1.0)
+		elapsed += host.get_physics_process_delta_time()
 		await host.get_tree().physics_frame
-
 	_release_movement_input()
 	_timeouts_exceeded += 1
-	print("PLAYTEST_TIMEOUT: walk_to target=%s exceeded %dms budget (unstick_attempts=%d)" % [target, int(timeout_sec * 1000.0), local_unstick_attempts])
-	return target.distance_to(body.global_position) < 24.0
+	return false
 
 ## One frame's worth of directional input toward `target`, factored out of _walk_player_to so
 ## the boss fight's frame-reactive approach/retreat can drive movement without that function's
 ## own multi-frame blocking loop swallowing telegraph-state changes mid-walk.
-func _step_toward(body: CharacterBody2D, target: Vector2) -> void:
+func _step_toward(body: CharacterBody2D, target: Vector2, deadzone: float = 4.0) -> void:
 	var offset := target - body.global_position
-	if offset.x > 4.0:
+	if offset.x > deadzone:
 		Input.action_press("move_right")
 		Input.action_release("move_left")
-	elif offset.x < -4.0:
+	elif offset.x < -deadzone:
 		Input.action_press("move_left")
 		Input.action_release("move_right")
 	else:
 		Input.action_release("move_left")
 		Input.action_release("move_right")
-	if offset.y > 4.0:
+	if offset.y > deadzone:
 		Input.action_press("move_down")
 		Input.action_release("move_up")
-	elif offset.y < -4.0:
+	elif offset.y < -deadzone:
 		Input.action_press("move_up")
 		Input.action_release("move_down")
 	else:
