@@ -1,3 +1,4 @@
+import { parseTerrainPresentation } from './terrain-presentation.js';
 import { readBackgroundFraming } from './background-framing.js';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -121,6 +122,14 @@ function clipFromSheet(
 }
 
 function collectSprites(input: AssemblyInput, enemyIds: string[]): GameplaySpriteClip[] {
+  for (const [path, settings] of input.textureFiles ?? []) {
+    if (!/^assets\/tilesets\/biome_\d+\/(floor|wall)\.presentation\.json$/.test(path)) continue;
+    const pngPath = path.replace('.presentation.json', '.png');
+    const png = textureBuffer(input, pngPath);
+    const size = png ? readPngSize(png) : null;
+    if (!size) throw new Error(`Terrain image is missing or invalid: ${pngPath}`);
+    parseTerrainPresentation(JSON.parse(settings.toString('utf8')), size);
+  }
   const sprites: GameplaySpriteClip[] = [];
   const playerSpecs = loadClipSpecs(join(input.outputDir, 'assets/characters/player_animations.json'), input.textureFiles?.get('assets/characters/player_animations.json'));
   const playerClips = [

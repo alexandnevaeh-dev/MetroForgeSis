@@ -134,3 +134,23 @@ it('exports authored checkpoint art without changing checkpoint gameplay geometr
   expect(pack.rooms).toEqual(baseline.rooms);
   expect(baseline.sprites.some(sprite => sprite.ownerId === 'checkpoint')).toBe(false);
 });
+
+it('checks terrain edits against the image before exporting gameplay', () => {
+  const png = Buffer.alloc(24); png.set([0x89,0x50,0x4e,0x47]); png.writeUInt32BE(64,16); png.writeUInt32BE(64,20);
+  const textures = new Map<string, Buffer>();
+  const input = {
+    outputDir: mkdtempSync(join(tmpdir(),'terrain-export-')), gameDna:dna,
+    worldGraph:{version:'0.1.0' as const,seed:3,nodes:[],edges:[],regions:[]},
+    progressionGraph:{version:'0.1.0' as const,seed:3,startNodeId:'room_000',endNodeId:'room_000',nodes:[],edges:[],abilities:[],criticalPath:[]},
+    roomIds:[],textureFiles:textures,
+  };
+  const settings='assets/tilesets/biome_0/floor.presentation.json';
+  textures.set(settings,Buffer.from(JSON.stringify({width:64,height:64})));
+  expect(()=>buildGameplayPack(input)).toThrow('Terrain image is missing');
+  textures.set('assets/tilesets/biome_0/floor.png',png);
+  expect(()=>buildGameplayPack(input)).not.toThrow();
+  textures.set(settings,Buffer.from(JSON.stringify({width:65,height:64})));
+  expect(()=>buildGameplayPack(input)).toThrow('Terrain crop or scale');
+  textures.set(settings,Buffer.from(JSON.stringify({width:64,height:64,tintR:2})));
+  expect(()=>buildGameplayPack(input)).toThrow('Terrain tint');
+});
