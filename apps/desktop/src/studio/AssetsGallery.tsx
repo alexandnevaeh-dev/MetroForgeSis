@@ -32,6 +32,9 @@ export function AssetsGallery() {
   const [compareVersion, setCompareVersion] = useState<number | null>(null);
   const [compareUrl, setCompareUrl] = useState<string | null>(null);
   const [zoomOpen, setZoomOpen] = useState(false);
+  const [restoreStatus, setRestoreStatus] = useState('');
+  const [restoring, setRestoring] = useState(false);
+  useEffect(() => { setRestoreStatus(''); }, [selectedPath, selected?.id]);
   const [backfillBusy, setBackfillBusy] = useState(false);
   const [backfillMessage, setBackfillMessage] = useState<string | null>(null);
 
@@ -312,23 +315,36 @@ export function AssetsGallery() {
                 <>
                   <dt>Version History</dt>
                   <dd className="version-list">
+                    {restoreStatus && <p role="status">{restoreStatus}</p>}
                     {history.map((v) => (
                       <div key={v.version} className="row">
                         <button
                           type="button"
                           className="tab"
+                          disabled={restoring}
                           onClick={async () => {
-                            if (!selectedPath || !selected) return;
-                            const result = await window.metroforge?.restoreAssetVersion?.(
-                              selectedPath,
-                              selected.id,
-                              v.version,
-                            );
-                            if (result?.success) {
-                              const list = await window.metroforge!.listAssets(selectedPath);
-                              setAssets(list);
-                              const refreshed = list.find((a) => a.id === selected.id);
-                              if (refreshed) setSelected(refreshed);
+                            if (!selectedPath || !selected || restoring) return;
+                            setRestoring(true);
+                            setRestoreStatus('Restoring artwork…');
+                            try {
+                              const result = await window.metroforge?.restoreAssetVersion?.(selectedPath, selected.id, v.version);
+                              if (!result?.success) {
+                                setRestoreStatus(result?.error ?? 'Artwork could not be restored.');
+                                return;
+                              }
+                              setRestoreStatus('Artwork restored. Restart any open game preview to load the restored image.');
+                              try {
+                                const list = await window.metroforge!.listAssets(selectedPath);
+                                setAssets(list);
+                                const refreshed = list.find((a) => a.id === selected.id);
+                                if (refreshed) setSelected(refreshed);
+                              } catch {
+                                setRestoreStatus('Artwork restored, but the gallery could not refresh. Reopen the gallery and restart any open game preview.');
+                              }
+                            } catch (error) {
+                              setRestoreStatus(`Artwork restore failed: ${error instanceof Error ? error.message : String(error)}`);
+                            } finally {
+                              setRestoring(false);
                             }
                           }}
                         >
