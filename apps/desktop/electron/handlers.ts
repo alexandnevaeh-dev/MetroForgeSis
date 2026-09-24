@@ -1261,7 +1261,7 @@ export function registerIpcHandlers(cwd: string): void {
   });
 
   ipcMain.handle('list-assets', async (_event, projectPath: string) => {
-    assertProjectPath(projectPath, cwd);
+    assertReadableProjectPath(projectPath, cwd);
     const artifacts = readManifestAssets(projectPath);
     const results = artifacts.map((artifact) => {
       const path = String(artifact.path ?? '');
@@ -1449,14 +1449,14 @@ export function registerIpcHandlers(cwd: string): void {
   ipcMain.handle('get-concurrency-status', async () => workerPool.getStatus());
 
   ipcMain.handle('get-asset-history', async (_event, projectPath: string, assetId: string) => {
-    assertProjectPath(projectPath, cwd);
+    assertReadableProjectPath(projectPath, cwd);
     return listAssetHistory(projectPath, assetId);
   });
 
   ipcMain.handle(
     'restore-asset-version',
     async (_event, projectPath: string, assetId: string, version: number) => {
-      assertProjectPath(projectPath, cwd);
+      assertReadableProjectPath(projectPath, cwd);
       return restoreAssetVersion(projectPath, assetId, version);
     },
   );
@@ -1669,7 +1669,7 @@ export function registerIpcHandlers(cwd: string): void {
   );
 
   ipcMain.handle('get-asset-usages', async (_event, projectPath: string, assetId: string) => {
-    assertProjectPath(projectPath, cwd);
+    assertReadableProjectPath(projectPath, cwd);
     const project = loadProjectContext(projectPath);
     const graph = buildDependencyGraph(project);
     return findAssetUsages(graph, assetId);
