@@ -56,6 +56,8 @@ public static class StreamingArtCache
 
     public static Sprite GetSprite(string streamingRoot, string rel, Vector2 pivot, float ppu, FilterMode filter)
     {
+        // Missing JSON scale fields deserialize as zero; preserve the legacy one-pixel world scale.
+        if (float.IsNaN(ppu) || float.IsInfinity(ppu) || ppu <= 0f) ppu = 1f;
         var key = AssetKey(streamingRoot, rel) + "|s|" + pivot.x + "," + pivot.y + "|" + ppu + "|" + filter;
         if (Sprites.TryGetValue(key, out var cached) && cached != null)
             return cached;
