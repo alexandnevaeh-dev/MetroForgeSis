@@ -30,6 +30,10 @@ const COMBAT = {
 } as const;
 
 interface ClipSpec {
+  pixelsPerUnit?: number;
+  smoothFiltering?: boolean;
+  pivotX?: number;
+  pivotY?: number;
   frameWidth?: number;
   frameHeight?: number;
   frameCount: number;
@@ -37,13 +41,17 @@ interface ClipSpec {
   loop: boolean;
 }
 
-function loadClipSpecs(jsonPath: string): Record<string, ClipSpec> {
-  if (!existsSync(jsonPath)) return {};
+function loadClipSpecs(jsonPath: string, supplied?: Buffer): Record<string, ClipSpec> {
+  if (!supplied && !existsSync(jsonPath)) return {};
   try {
-    const parsed = JSON.parse(readFileSync(jsonPath, 'utf-8')) as Record<string, Partial<ClipSpec>>;
+    const parsed = JSON.parse(supplied ? supplied.toString('utf-8') : readFileSync(jsonPath, 'utf-8')) as Record<string, Partial<ClipSpec>>;
     const out: Record<string, ClipSpec> = {};
     for (const [clip, spec] of Object.entries(parsed)) {
       out[clip] = {
+        pixelsPerUnit: spec.pixelsPerUnit,
+        smoothFiltering: spec.smoothFiltering,
+        pivotX: spec.pivotX,
+        pivotY: spec.pivotY,
         frameWidth: spec.frameWidth,
         frameHeight: spec.frameHeight,
         frameCount: Number(spec.frameCount) || 1,
@@ -78,6 +86,13 @@ function clipFromSheet(
   const size = readPngSize(buf);
   if (!size) return null;
   const spec = specs[clip];
+  if (spec?.pixelsPerUnit !== undefined && (!Number.isFinite(spec.pixelsPerUnit) || spec.pixelsPerUnit <= 0))
+    throw new Error(`Invalid animation scale for ${rel}`);
+  for (const pivot of [spec?.pivotX, spec?.pivotY])
+    if (pivot !== undefined && (!Number.isFinite(pivot) || pivot < 0 || pivot > 1))
+      throw new Error(`Invalid animation pivot for ${rel}`);
+  if (spec?.smoothFiltering !== undefined && typeof spec.smoothFiltering !== 'boolean')
+    throw new Error(`Invalid animation filtering for ${rel}`);
   const authoredLayout = spec?.frameWidth !== undefined || spec?.frameHeight !== undefined;
   const frameHeight = spec?.frameHeight ?? size.height;
   const guessedCount = spec?.frameCount ?? Math.max(1, Math.round(size.width / frameHeight));
@@ -97,14 +112,16 @@ function clipFromSheet(
     frameCount: guessedCount,
     fps: spec?.fps ?? 8,
     loop: spec?.loop ?? true,
-    pivotX: 0.5,
-    pivotY,
+    pivotX: spec?.pivotX ?? 0.5,
+    pivotY: spec?.pivotY ?? pivotY,
+    pixelsPerUnit: spec?.pixelsPerUnit,
+    smoothFiltering: spec?.smoothFiltering,
   };
 }
 
 function collectSprites(input: AssemblyInput, enemyIds: string[]): GameplaySpriteClip[] {
   const sprites: GameplaySpriteClip[] = [];
-  const playerSpecs = loadClipSpecs(join(input.outputDir, 'assets/characters/player_animations.json'));
+  const playerSpecs = loadClipSpecs(join(input.outputDir, 'assets/characters/player_animations.json'), input.textureFiles?.get('assets/characters/player_animations.json'));
   const playerClips = [
     'idle',
     'walk',
@@ -141,7 +158,7 @@ function collectSprites(input: AssemblyInput, enemyIds: string[]): GameplaySprit
   }
 
   for (const enemyId of enemyIds) {
-    const specs = loadClipSpecs(join(input.outputDir, `assets/enemies/${enemyId}_animations.json`));
+    const specs = loadClipSpecs(join(input.outputDir, `assets/enemies/${enemyId}_animations.json`), input.textureFiles?.get(`assets/enemies/${enemyId}_animations.json`));
     for (const clip of ['idle', 'walk', 'attack', 'hurt', 'death']) {
       const sprite = clipFromSheet(enemyId, clip, `assets/enemies/${enemyId}_${clip}.png`, input, specs, 0);
       if (sprite) sprites.push(sprite);

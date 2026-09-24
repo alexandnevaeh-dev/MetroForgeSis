@@ -80,5 +80,23 @@ export function writeSharedProjectData(
       if (!existsSync(dest)) writeFileSync(dest, buffer);
     }
   }
+  // Direct engine exports may not pass through the asset-generation pipeline.
+  // Preserve its richer provenance/history whenever that manifest already exists.
+  const libraryPath = join(input.outputDir, 'generation_manifest.json');
+  if (input.textureFiles?.size && !existsSync(libraryPath)) {
+    const artifacts = [...input.textureFiles.keys()]
+      .filter(path => path.toLowerCase().endsWith('.png'))
+      .map(path => {
+        const clip = pack.sprites.find(sprite => sprite.relativePath === path);
+        return {
+          id: path.replace(/\\/g, '/').replace(/\.png$/i, ''),
+          path,
+          sourceType: 'assembly-input',
+          productionReady: false,
+          metadata: clip ? { ...clip } : {},
+        };
+      });
+    writeFileSync(libraryPath, JSON.stringify({ artifacts, assetHistory: {} }, null, 2));
+  }
   return pack;
 }

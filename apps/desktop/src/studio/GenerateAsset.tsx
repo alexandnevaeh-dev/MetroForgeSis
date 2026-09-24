@@ -1,3 +1,4 @@
+import { registeredAssetId } from './asset-identity.js';
 import { useEffect, useState } from 'react';
 import { ScreenHeader } from './ScreenHeader.js';
 import { ProjectSelect } from './ProjectSelect.js';
@@ -27,6 +28,7 @@ const ASSET_TYPES = [
 type VariantResult = {
   success: boolean;
   assetPath?: string;
+  assetId?: string;
   provider?: string;
   fallbackGenerated?: boolean;
   critiquePassed?: boolean;
@@ -38,6 +40,7 @@ function toVariantResult(success: boolean, asset?: GeneratedAssetRef, errors?: s
   return {
     success,
     assetPath: asset?.path,
+    assetId: asset?.id,
     provider: asset?.provider,
     fallbackGenerated: asset?.fallbackGenerated,
     critiquePassed: asset?.critiquePassed,
@@ -79,9 +82,18 @@ export function GenerateAssetScreen() {
     if (generatorPrefill.assetId) setSelectedAssetId(generatorPrefill.assetId);
   }, [generatorPrefill]);
 
-  const inspectAsset = async (assetPath: string) => {
+  const inspectAsset = async (assetPath: string, assetId?: string) => {
     if (!selectedPath) return;
-    const id = assetPath.split('/').pop()?.replace(/\.[^.]+$/, '') ?? assetPath;
+    const list = assetId ? undefined : await window.metroforge?.listAssets?.(selectedPath);
+    const id = assetId ?? registeredAssetId(assetPath, list ?? []);
+    if (!id) {
+      setSelectedAssetId(null);
+      setHistory([]);
+      setUsages([]);
+      setPreviewUrl(null);
+      setRestoreStatus('Asset is not registered in this project. Reload the library before replacing or restoring it.');
+      return;
+    }
     setSelectedAssetId(id);
     const preview = await window.metroforge?.getAssetPreview?.(selectedPath, assetPath);
     setPreviewUrl(preview?.dataUrl ?? null);
@@ -114,7 +126,7 @@ export function GenerateAssetScreen() {
     const list = flattenGenerateResponse(response);
     setVariantResults(list);
     const first = list.find((v) => v.success && v.assetPath);
-    if (first?.assetPath) await inspectAsset(first.assetPath);
+    if (first?.assetPath) await inspectAsset(first.assetPath, first.assetId);
   };
 
   const restoreVersion = async (version: number) => {
@@ -128,7 +140,7 @@ export function GenerateAssetScreen() {
       }
       const list = await window.metroforge?.listAssets?.(selectedPath);
       const found = list?.find((asset) => asset.id === selectedAssetId);
-      if (found?.path) await inspectAsset(found.path);
+      if (found?.path) await inspectAsset(found.path, found.id);
       setRestoreStatus('Artwork restored. Restart any open game preview to load the restored image.');
     } catch (error) {
       setRestoreStatus(`Artwork restore failed: ${error instanceof Error ? error.message : String(error)}`);

@@ -66,22 +66,33 @@ describe('buildGameplayPack', () => {
 
 // Inspect the exported pack, not just a layout helper: sidecar dimensions must survive assembly.
 describe('authored animation layouts', () => {
-  function packWithSheet(spec: Record<string, unknown>, width = 1024, height = 768, clip = 'walk') {
+  function packWithSheet(spec: Record<string, unknown>, width = 1024, height = 768, clip = 'walk', supplied = false) {
     const outputDir = mkdtempSync(join(tmpdir(), 'metroforge-grid-'));
     mkdirSync(join(outputDir, 'assets/characters'), { recursive: true });
-    writeFileSync(join(outputDir, 'assets/characters/player_animations.json'), JSON.stringify({ [clip]: spec }));
+    if (!supplied) writeFileSync(join(outputDir, 'assets/characters/player_animations.json'), JSON.stringify({ [clip]: spec }));
     const png = Buffer.alloc(24);
     png.set([0x89, 0x50, 0x4e, 0x47]);
     png.writeUInt32BE(width, 16); png.writeUInt32BE(height, 20);
     return buildGameplayPack({ outputDir, gameDna: dna,
       worldGraph: { version: '0.1.0', seed: 3, nodes: [], edges: [], regions: [] },
       progressionGraph: { version: '0.1.0', seed: 3, startNodeId: 'room_000', endNodeId: 'room_000', nodes: [], edges: [], abilities: [], criticalPath: [] },
-      roomIds: [], textureFiles: new Map([[`assets/characters/player_${clip}.png`, png]]),
+      roomIds: [], textureFiles: new Map([[`assets/characters/player_${clip}.png`, png], ...(supplied ? [["assets/characters/player_animations.json", Buffer.from(JSON.stringify({ [clip]: spec }))] as [string, Buffer]] : [])]),
     }).sprites.find(sprite => sprite.clip === clip);
   }
   it.each(['wall_slide', 'wall_jump', 'swim'])('exports traversal clip %s with authored layout and timing', clip => {
     expect(packWithSheet({ frameCount: 8, frameWidth: 256, frameHeight: 384, fps: 12, loop: false }, 1024, 768, clip))
       .toMatchObject({ ownerId: 'player', clip, relativePath: `assets/characters/player_${clip}.png`, frameCount: 8, frameWidth: 256, frameHeight: 384, fps: 12, loop: false });
+  });
+  it('preserves painted scale, anchor and filtering', () => {
+    expect(packWithSheet({frameCount:40,frameWidth:256,frameHeight:384,fps:32,pixelsPerUnit:7,pivotX:120/256,pivotY:20/384,smoothFiltering:true},2048,1920,'walk',true))
+      .toMatchObject({pixelsPerUnit:7,pivotX:120/256,pivotY:20/384,smoothFiltering:true});
+  });
+  it.each([{pixelsPerUnit:0},{pixelsPerUnit:-1},{pivotX:2},{pivotY:-0.1},{smoothFiltering:'yes'}])('rejects invalid presentation settings %j', settings => {
+    expect(()=>packWithSheet({frameCount:8,...settings})).toThrow('Invalid animation');
+  });
+  it('reads supplied settings before a fresh export has written the sidecar', () => {
+    expect(packWithSheet({ frameCount: 40, frameWidth: 256, frameHeight: 384, fps: 32, loop: true }, 2048, 1920, 'walk', true))
+      .toMatchObject({ frameCount: 40, frameWidth: 256, frameHeight: 384, fps: 32, loop: true });
   });
   it('preserves two-row frame dimensions and slow authored timing', () => {
     expect(packWithSheet({ frameCount: 8, frameWidth: 256, frameHeight: 384, fps: .5, loop: false }))
