@@ -154,7 +154,7 @@ func _facing_name(dir: Vector2) -> String:
 	return best
 
 func _start_attack() -> void:
-	_attack_direction = cardinal_facing()
+	_attack_direction = facing.normalized() if not facing.is_zero_approx() else Vector2.DOWN
 	_attack_cooldown = ATTACK_STARTUP + ATTACK_ACTIVE + ATTACK_RECOVERY
 	_attack_state = AttackState.STARTUP
 	_attack_time = ATTACK_STARTUP
@@ -171,6 +171,7 @@ func _update_attack_state(delta: float) -> void:
 		AttackState.STARTUP:
 			var hit_dir := _attack_direction
 			attack_hitbox.position = hit_dir * 22.0
+			attack_hitbox.rotation = hit_dir.angle()
 			attack_hitbox.activate()
 			_attack_state = AttackState.ACTIVE
 			_attack_time = ATTACK_ACTIVE
