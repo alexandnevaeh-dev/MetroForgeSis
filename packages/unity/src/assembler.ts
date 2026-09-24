@@ -8,7 +8,7 @@ import {
   writeSharedProjectData,
   type EngineAssemblyResult,
 } from '@metroforge/engines';
-import { folderMeta, pngSpriteMeta, scriptMeta, unityGuid } from './meta.js';
+import { folderMeta, pngTextureLimit, pngSpriteMeta, scriptMeta, unityGuid } from './meta.js';
 import { unityProjectSettings } from './project-files.js';
 import { worldSceneYaml } from './scene.js';
 
@@ -110,9 +110,10 @@ DefaultImporter:
         cpSync(source, target);
       }
 
-      const spriteMeta = (rel: string) =>
+      const spriteMeta = (rel: string, buffer: Buffer) =>
         pngSpriteMeta(unityGuid(`art:${rel}`), 1, {
           filterMode: rel.includes('/backgrounds/') ? 1 : 0,
+          maxTextureSize: pngTextureLimit(buffer),
           spriteMeshType: 0,
           spriteExtrude: 0,
         });
@@ -122,7 +123,8 @@ DefaultImporter:
         mkdirSync(dirname(streamDest), { recursive: true });
         writeFileSync(streamDest, buffer);
         const artDest = join(input.outputDir, 'Assets', 'Art', rel);
-        writeWithMeta(artDest, buffer, spriteMeta(rel));
+        if (rel.endsWith('.png')) writeWithMeta(artDest, buffer, spriteMeta(rel, buffer));
+        else { mkdirSync(dirname(artDest), { recursive: true }); writeFileSync(artDest, buffer); }
       };
 
       if (input.textureFiles) {
@@ -148,7 +150,7 @@ DefaultImporter:
                 writeWithMeta(
                   join(input.outputDir, 'Assets', 'Art', rel),
                   readFileSync(next),
-                  spriteMeta(rel),
+                  spriteMeta(rel, readFileSync(next)),
                 );
               }
             }

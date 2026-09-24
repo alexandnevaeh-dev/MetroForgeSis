@@ -37,11 +37,22 @@ DefaultImporter:
   );
 }
 
+export function pngTextureLimit(png: Buffer): number {
+  if (png.length < 24 || png.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a'
+      || png.toString('ascii', 12, 16) !== 'IHDR') throw new Error('Invalid PNG header');
+  const width = png.readUInt32BE(16);
+  const height = png.readUInt32BE(20);
+  const largest = Math.max(width, height);
+  if (!width || !height || largest > 16384) throw new Error('Unity sprite dimensions must be between 1 and 16384 pixels');
+  return Math.max(2048, 2 ** Math.ceil(Math.log2(largest)));
+}
+
 export function pngSpriteMeta(
   guid: string,
   pixelsPerUnit = 1,
-  options: { filterMode?: number; spriteMeshType?: number; spriteExtrude?: number } = {},
+  options: { filterMode?: number; spriteMeshType?: number; spriteExtrude?: number; maxTextureSize?: number } = {},
 ): string {
+  const maxTextureSize = options.maxTextureSize ?? 2048;
   const filterMode = options.filterMode ?? 0;
   const spriteMeshType = options.spriteMeshType ?? 0;
   const spriteExtrude = options.spriteExtrude ?? 0;
@@ -78,7 +89,7 @@ TextureImporter:
   cubemapConvolution: 0
   seamlessCubemap: 0
   textureFormat: 1
-  maxTextureSize: 2048
+  maxTextureSize: ${maxTextureSize}
   textureSettings:
     serializedVersion: 2
     filterMode: ${filterMode}
@@ -116,7 +127,7 @@ TextureImporter:
   platformSettings:
   - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 2048
+    maxTextureSize: ${maxTextureSize}
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 0

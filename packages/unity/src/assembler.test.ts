@@ -1,8 +1,9 @@
-import { mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { describe, expect, it } from 'vitest';
 import type { GameDNA, ProgressionGraph, WorldGraph } from '@metroforge/schemas';
+import { pngTextureLimit } from './meta.js';
 import { UnityProjectAssembler } from './assembler.js';
 
 const dna: GameDNA = {
@@ -48,14 +49,25 @@ describe('UnityProjectAssembler', () => {
       abilities: ['dash'],
       criticalPath: roomIds,
     };
+    // Header-only fixture tests metadata generation; native Unity validation uses a real PNG.
+    const widePng = Buffer.alloc(24);
+    Buffer.from('89504e470d0a1a0a', 'hex').copy(widePng);
+    widePng.write('IHDR', 12);
+    widePng.writeUInt32BE(3072, 16);
+    widePng.writeUInt32BE(256, 20);
     const result = new UnityProjectAssembler().assemble({
       outputDir,
+      textureFiles: new Map([['assets/characters/walk.png', widePng], ['assets/characters/walk.json', Buffer.from('{}')]]),
       gameDna: dna,
       worldGraph,
       progressionGraph,
       roomIds,
     });
     expect(result.success).toBe(true);
+    const importedMeta = readFileSync(join(outputDir, 'Assets/Art/assets/characters/walk.png.meta'), 'utf-8');
+    expect(importedMeta.match(/maxTextureSize: 4096/g)).toHaveLength(2);
+    expect(readFileSync(join(outputDir, 'Assets/StreamingAssets/assets/characters/walk.png'))).toEqual(widePng);
+    expect(existsSync(join(outputDir, 'Assets/Art/assets/characters/walk.json.meta'))).toBe(false);
     const pack = JSON.parse(readFileSync(join(outputDir, 'gameplay.json'), 'utf-8')) as {
       rooms: Array<{
         abilityPickup?: { id: string };
@@ -96,5 +108,23 @@ describe('UnityProjectAssembler', () => {
     rmSync(join(outputDir, 'project.godot'), { force: true });
     expect(() => readFileSync(join(outputDir, 'project.godot'))).toThrow();
     rmSync(outputDir, { recursive: true, force: true });
+  });
+});
+
+describe('PNG texture limits', () => {
+  it('preserves wide or tall sheets and rejects unsupported dimensions', () => {
+    const header = Buffer.alloc(24);
+    Buffer.from('89504e470d0a1a0a', 'hex').copy(header);
+    header.write('IHDR', 12);
+    for (const [width, height, limit] of [[64,64,2048],[2048,256,2048],[256,3072,4096],[8192,256,8192],[16384,256,16384]]) {
+      header.writeUInt32BE(width,16); header.writeUInt32BE(height,20);
+      expect(pngTextureLimit(header)).toBe(limit);
+    }
+    header.writeUInt32BE(16385,16);
+    expect(() => pngTextureLimit(header)).toThrow();
+    header.writeUInt32BE(0,16);
+    expect(() => pngTextureLimit(header)).toThrow();
+    expect(() => pngTextureLimit(Buffer.alloc(24))).toThrow();
+    expect(() => pngTextureLimit(Buffer.alloc(4))).toThrow();
   });
 });
