@@ -30,6 +30,59 @@ extends AnimatedSprite2D
 ## exported, so every non-boss actor (correctly sized already) is unaffected.
 @export var reference_pose_path: String = ""
 
+## Optional authored strips: {"walk": {"N": "assets/characters/player_walk_N.png", ...}}.
+## Eight exact facing names are supported; missing entries retain the legacy animation.
+## Strips share frame_size, but their frame count is derived independently.
+@export var directional_sheets: Dictionary = {}
+@export_range(1.0, 60.0) var directional_fps: float = 10.0
+const FACINGS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
+
+func resolve_animation(action: String, direction: String) -> StringName:
+	var directional := action + "_" + direction
+	if sprite_frames and sprite_frames.has_animation(directional):
+		return StringName(directional)
+	return StringName(action)
+
+func _load_directional_frames(frames: SpriteFrames) -> void:
+	for action in ["idle", "walk", "attack", "hurt", "death"]:
+		var sheets = directional_sheets.get(action, {})
+		if not sheets is Dictionary:
+			push_warning("Directional animation must map facings to paths: " + action)
+			continue
+		for direction in FACINGS:
+			var path = sheets.get(direction, "")
+			if not path is String or path.is_empty():
+				continue
+			var resource_path: String = path if path.begins_with("res://") else "res://" + path
+			if not ResourceLoader.exists(resource_path):
+				push_warning("Missing directional strip: " + resource_path)
+				continue
+			var texture = load(resource_path)
+			if not texture is Texture2D or frame_size.x <= 0 or frame_size.y <= 0:
+				continue
+			if texture.get_height() != frame_size.y or texture.get_width() % frame_size.x != 0:
+				push_warning("Directional strip dimensions do not match frame_size: " + resource_path)
+				continue
+			var name: String = action + "_" + direction
+			frames.add_animation(name)
+			frames.set_animation_loop(name, action in ["idle", "walk"])
+			frames.set_animation_speed(name, directional_fps)
+			@warning_ignore("integer_division")
+			var count: int = texture.get_width() / frame_size.x
+			for index in range(count):
+				var atlas := AtlasTexture.new()
+				atlas.atlas = texture
+				atlas.region = Rect2(index * frame_size.x, 0, frame_size.x, frame_size.y)
+				frames.add_frame(name, atlas)
+	# A directional walk's first pose is preferable to a sideways generic idle.
+	for direction in FACINGS:
+		var walk: String = "walk_" + direction
+		var idle: String = "idle_" + direction
+		if frames.has_animation(walk) and not frames.has_animation(idle):
+			frames.add_animation(idle)
+			frames.add_frame(idle, frames.get_frame_texture(walk, 0))
+
+
 func _ready() -> void:
 	_build_frames()
 	play("walk")
@@ -89,6 +142,7 @@ func _build_frames() -> void:
 		frames.set_animation_loop("death", false)
 		_load_animation_frames(frames, "death", death_sheet_path, false)
 
+	_load_directional_frames(frames)
 	sprite_frames = frames
 	# `centered = false` with a large 2D offset (frame_size.x/2, frame_size.y) is mathematically
 	# the same bottom-center anchor as `centered = true` with offset (0, -frame_size.y/2) — but at

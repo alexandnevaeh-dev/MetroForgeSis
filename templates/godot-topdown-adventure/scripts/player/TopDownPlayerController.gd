@@ -93,35 +93,43 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	_update_sprite()
 
-## Genre-parity fix: TopDownPlayerController never called sprite.play() at all — only
-## AnimatedAssetSprite.gd's own _ready() ever played anything (a single "walk" call, once, for the
-## rest of the scene's life). The player's real, already-generated idle/walk/attack/hurt sheets
-## existed on disk and were loaded into sprite_frames but never selected — every top-down player
-## rendered as a permanently-looping walk-cycle regardless of standing still, attacking, or being
-## hit. Mirrors the exact pattern BossController.gd (this same template) already gets right.
+## Directional strips are optional; existing generated characters keep their generic clips.
 func _update_sprite() -> void:
+	var action := "idle"
+	if _attack_state != AttackState.READY:
+		action = "attack"
+	elif _stun_time > 0.0:
+		action = "hurt"
+	elif velocity.length() > 1.0:
+		action = "walk"
+	_play_facing_animation(action)
+
+func _play_facing_animation(action: String) -> void:
 	if sprite == null or sprite.sprite_frames == null:
 		return
-	if abs(facing.x) > 0.01:
-		sprite.flip_h = facing.x < 0.0
-	# Guard every non-looping play() call against re-triggering while already mid-playback — attack
-	# and hurt are both loop=false (AnimatedAssetSprite.gd); calling play() again every physics
-	# frame (60/sec) while the state persists would restart from frame 0 every tick instead of
-	# letting the clip actually play through, exactly the mistake BossController.gd's own
-	# `sprite.animation == "attack" and sprite.is_playing()` guard exists to avoid.
-	match _attack_state:
-		AttackState.STARTUP, AttackState.ACTIVE, AttackState.RECOVERY:
-			if sprite.sprite_frames.has_animation("attack") and not (sprite.animation == "attack" and sprite.is_playing()):
-				sprite.play("attack")
-		_:
-			if _stun_time > 0.0 and sprite.sprite_frames.has_animation("hurt"):
-				if not (sprite.animation == "hurt" and sprite.is_playing()):
-					sprite.play("hurt")
-			elif velocity.length() > 1.0:
-				if sprite.animation != "walk":
-					sprite.play("walk")
-			elif sprite.sprite_frames.has_animation("idle") and sprite.animation != "idle":
-				sprite.play("idle")
+	var target := StringName(action)
+	if sprite.has_method("resolve_animation"):
+		target = sprite.call("resolve_animation", action, facing_name)
+	if not sprite.sprite_frames.has_animation(target):
+		return
+	var previous_action := String(sprite.animation).get_slice("_", 0)
+	# Finish the current attack/hurt pose even if facing changes during recovery.
+	if action in ["attack", "hurt", "death"] and previous_action == action:
+		return
+	var directional := String(target) != action
+	sprite.flip_h = false if directional else facing.x < -0.01
+	if sprite.animation == target:
+		return
+	var phase := 0.0
+	var preserve_phase := action == "walk" and previous_action == "walk"
+	if preserve_phase:
+		var old_count := sprite.sprite_frames.get_frame_count(sprite.animation)
+		if old_count > 0:
+			phase = (float(sprite.frame) + sprite.frame_progress) / float(old_count)
+	sprite.play(target)
+	if preserve_phase:
+		var position := phase * sprite.sprite_frames.get_frame_count(target)
+		sprite.set_frame_and_progress(int(position), position - floor(position))
 
 func cardinal_facing() -> Vector2:
 	if abs(facing.x) >= abs(facing.y):
@@ -219,8 +227,7 @@ func _on_died() -> void:
 	# overwrite "death" back to "idle"/"walk" on the very next physics tick via _update_sprite() —
 	# stopping it here is safe because respawn always frees this instance and instantiates a fresh
 	# Player (OverworldManager._ensure_player() / SaveManager.load_game()), never reuses it.
-	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("death"):
-		sprite.play("death")
+	_play_facing_animation("death")
 	set_physics_process(false)
 	EventBus.player_died.emit()
 
