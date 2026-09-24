@@ -47,4 +47,10 @@ describe('setProjectAllowPlaceholders', () => {
     expect(set.success).toBe(true);
     expect(JSON.parse(readFileSync(join(dir, 'project.json'), 'utf-8')).allowPlaceholders).toBe(true);
   });
-});
+  it.each(['{broken', 'null', '[]', '"not an object"'])('preserves invalid existing metadata: %s', contents => {
+    const path = join(dir, 'project.json');
+    writeFileSync(path, contents);
+    const before = readFileSync(path);
+    expect(setProjectAllowPlaceholders(dir, true).success).toBe(false);
+    expect(readFileSync(path)).toEqual(before);
+  });});

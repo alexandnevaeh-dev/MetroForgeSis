@@ -2201,14 +2201,14 @@ export function registerIpcHandlers(cwd: string): void {
   );
 
   ipcMain.handle('get-project-allow-placeholders', async (_event, projectPath: string) => {
-    assertProjectPath(projectPath, cwd);
+    assertReadableProjectPath(projectPath, cwd);
     return getProjectAllowPlaceholders(projectPath);
   });
 
   ipcMain.handle(
     'set-project-allow-placeholders',
     async (_event, projectPath: string, allowPlaceholders: boolean) => {
-      assertProjectPath(projectPath, cwd);
+      assertReadableProjectPath(projectPath, cwd);
       return setProjectAllowPlaceholders(projectPath, allowPlaceholders === true);
     },
   );

@@ -52,7 +52,11 @@ export function setProjectAllowPlaceholders(
   allowPlaceholders: boolean,
 ): ProjectMetaResult {
   const path = projectJsonPath(projectPath);
-  const existing = readProjectMeta(projectPath) ?? {};
+  const parsed = readProjectMeta(projectPath);
+  if (existsSync(path) && !parsed) {
+    return {success:false,projectPath,meta:{},allowPlaceholders:false,errors:['project.json is unreadable; existing contents were preserved']};
+  }
+  const existing = parsed ?? {};
   if (!existsSync(path) && Object.keys(existing).length === 0) {
     // Create a minimal project.json so prototypes can opt in without regenerating.
     if (!existsSync(projectPath)) {
