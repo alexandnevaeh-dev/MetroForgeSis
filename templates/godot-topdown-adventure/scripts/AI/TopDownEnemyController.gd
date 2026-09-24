@@ -225,6 +225,7 @@ func _process_combat_state(delta: float) -> void:
 		return
 	match _state:
 		CombatState.WINDUP:
+			AudioManager.play_sfx("boss_attack" if is_boss else "enemy_attack")
 			if _combat_type == "projectile":
 				# A ranged enemy fires and moves straight to RECOVERY — there's no melee hitbox
 				# window to hold open, and leaving one active anyway (at a bogus melee-range
