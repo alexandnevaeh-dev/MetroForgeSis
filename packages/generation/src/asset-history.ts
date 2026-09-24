@@ -90,7 +90,26 @@ export function restoreAssetVersion(
   const targetFull = join(projectPath, record.path);
   if (!existsSync(backupFull)) return { success: false, error: 'Backup file missing' };
 
+  // Unity loads the exported copy, not the asset shown in the library.
+  const runtimeFull = join(projectPath, 'Assets', 'StreamingAssets', record.path);
+  const hasRuntimeCopy = existsSync(runtimeFull);
+  if (hasRuntimeCopy && (!existsSync(targetFull) ||
+      !readFileSync(targetFull).equals(readFileSync(runtimeFull)))) {
+    return { success: false, error: 'Asset runtime copies differ; reconcile them before restoring' };
+  }
+  const previous = existsSync(targetFull) ? readFileSync(targetFull) : null;
   mkdirSync(dirname(targetFull), { recursive: true });
   copyFileSync(backupFull, targetFull);
+  if (hasRuntimeCopy) {
+    try {
+      copyFileSync(backupFull, runtimeFull);
+    } catch (error) {
+      if (previous) {
+        writeFileSync(targetFull, previous);
+        writeFileSync(runtimeFull, previous);
+      }
+      return { success: false, error: String(error) };
+    }
+  }
   return { success: true, path: record.path };
 }

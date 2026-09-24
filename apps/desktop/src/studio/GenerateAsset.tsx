@@ -66,6 +66,7 @@ export function GenerateAssetScreen() {
   const [variantResults, setVariantResults] = useState<VariantResult[]>([]);
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [restoreStatus, setRestoreStatus] = useState('');
   const [history, setHistory] = useState<
     Array<{ version: number; timestamp: string; prompt?: string; provider?: string; backupPath?: string }>
   >([]);
@@ -118,11 +119,20 @@ export function GenerateAssetScreen() {
 
   const restoreVersion = async (version: number) => {
     if (!selectedPath || !selectedAssetId) return;
-    const result = await window.metroforge?.restoreAssetVersion?.(selectedPath, selectedAssetId, version);
-    if (!result?.success) return;
-    const list = await window.metroforge?.listAssets?.(selectedPath);
-    const found = list?.find((asset) => asset.id === selectedAssetId);
-    if (found?.path) await inspectAsset(found.path);
+    setRestoreStatus('Restoring artwork…');
+    try {
+      const result = await window.metroforge?.restoreAssetVersion?.(selectedPath, selectedAssetId, version);
+      if (!result?.success) {
+        setRestoreStatus(result?.error ?? 'Artwork could not be restored.');
+        return;
+      }
+      const list = await window.metroforge?.listAssets?.(selectedPath);
+      const found = list?.find((asset) => asset.id === selectedAssetId);
+      if (found?.path) await inspectAsset(found.path);
+      setRestoreStatus('Artwork restored. Restart any open game preview to load the restored image.');
+    } catch (error) {
+      setRestoreStatus(`Artwork restore failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
   };
 
   return (
@@ -236,6 +246,7 @@ export function GenerateAssetScreen() {
 
         <aside className="panel">
           <h3>Inspector</h3>
+          {restoreStatus && <p role="status">{restoreStatus}</p>}
           <dl className="settings-dl">
             <dt>Asset id</dt>
             <dd>{selectedAssetId ?? '—'}</dd>
