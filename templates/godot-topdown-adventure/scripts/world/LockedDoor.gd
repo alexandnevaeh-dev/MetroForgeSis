@@ -16,6 +16,8 @@ const GENERATED_TEXTURE_PATH := "res://assets/generated/gate/interactive_ability
 @export var door_id: String = ""
 @export var target_area_id: String = ""
 
+signal opened(method: String)
+
 var unlocked: bool = false
 
 var _area: Area2D
@@ -59,15 +61,16 @@ func interact(_player: Node) -> void:
 		return
 	if key_id != "" and InventoryManager.get_owned_count(key_id) <= 0:
 		return
-	unlock()
+	unlock("key" if not key_id.is_empty() else "interaction")
 
 ## Real alternate open path — called directly by a paired FloorSwitch.gd, independent of whether
 ## the player has the key. Public so it also works when this door is unlocked programmatically
 ## (e.g. a future puzzle chain), not only via interact().
-func unlock() -> void:
+func unlock(method: String = "script") -> void:
 	if unlocked:
 		return
 	unlocked = true
+	opened.emit(method)
 	set_collision_layer_value(1, false)
 	modulate = Color(0.5, 0.9, 0.6, 1.0)
 	AudioManager.play_sfx("pickup")

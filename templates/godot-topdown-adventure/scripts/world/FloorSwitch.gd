@@ -49,4 +49,4 @@ func _on_body_entered(body: Node2D) -> void:
 		tween.parallel().tween_property(_sprite, "scale:y", _sprite.scale.y * 0.6, 0.15)
 	for door in get_tree().get_nodes_in_group("locked_door"):
 		if door is LockedDoor and door.door_id == opens_door_id:
-			door.unlock()
+			door.unlock("floor_switch")

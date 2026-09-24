@@ -235,6 +235,16 @@ func _execute_transition(world: Node, host: Node, from_area: String, to_area: St
 		return false
 
 	_enemy_encounters += _count_enemies(host)
+	# Observe actual openings, including switches encountered during pickup walks.
+	diag["openedGates"] = []
+	for door in host.get_tree().get_nodes_in_group("locked_door"):
+		if door is LockedDoor:
+			if door.target_area_id == to_area:
+				diag["requiredItem"] = door.key_id
+			door.opened.connect(func(method: String):
+				_gates_opened += 1
+				diag["openedGates"].append({"doorId": door.door_id, "method": method})
+			, CONNECT_ONE_SHOT)
 
 	if _collect_all_pickups:
 		await _collect_area_pickups(host, player)
@@ -262,8 +272,7 @@ func _execute_transition(world: Node, host: Node, from_area: String, to_area: St
 		diag["requiredItem"] = str(portal.get("key_id"))
 		portal.interact(player)
 		await host.get_tree().physics_frame
-		if portal.get("unlocked") == true:
-			_gates_opened += 1
+
 
 	# Walking toward the portal can itself complete the transition mid-flight — touching its
 	# Area2D fires AreaPortal/LockedDoor's own body_entered handler immediately, before
@@ -461,18 +470,26 @@ func _walk_timeout_for(from: Vector2, target: Vector2) -> float:
 	var travel_time := dist / _expected_walk_speed_px
 	return max(_walk_timeout_sec, travel_time + TRANSITION_TIMEOUT_ALLOWANCE_SEC)
 
-## Bounded breadth-first search using the actual player's swept collision shape.
+## Bounded A-star search using the actual player's swept collision shape.
 ## No terrain-only shortcuts: authored props and solid doors also participate.
 func _plan_walk(body: CharacterBody2D, target: Vector2) -> Array[Vector2]:
 	var origin := body.global_position
 	var queue: Array[Vector2i] = [Vector2i.ZERO]
 	var parents := {Vector2i.ZERO: Vector2i.ZERO}
-	var cursor := 0
+	var costs := {Vector2i.ZERO: 0.0}
+	var goal := (target - origin) / 4.0
+	var expanded := 0
 	var end := Vector2i.ZERO
 	var found := false
-	while cursor < queue.size() and cursor < 8192:
-		var cell := queue[cursor]
-		cursor += 1
+	while not queue.is_empty() and expanded < 8192:
+		queue.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+			var ha: float = absf(goal.x-a.x)+absf(goal.y-a.y)
+			var hb: float = absf(goal.x-b.x)+absf(goal.y-b.y)
+			var fa: float = costs[a]+ha
+			var fb: float = costs[b]+hb
+			return fa > fb if not is_equal_approx(fa,fb) else ha > hb)
+		var cell: Vector2i = queue.pop_back()
+		expanded += 1
 		var position := origin + Vector2(cell) * 4.0
 		if position.distance_to(target) < 10.0:
 			end = cell
@@ -480,12 +497,14 @@ func _plan_walk(body: CharacterBody2D, target: Vector2) -> Array[Vector2]:
 			break
 		for direction in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
 			var next: Vector2i = cell + direction
-			if parents.has(next): continue
+			var cost: float = costs[cell] + 1.0
+			if costs.has(next) and costs[next] <= cost: continue
 			var from := body.global_transform
 			from.origin = position
 			if body.test_move(from, Vector2(direction) * 4.0): continue
 			parents[next] = cell
-			queue.append(next)
+			costs[next] = cost
+			if not queue.has(next): queue.append(next)
 	var path: Array[Vector2] = []
 	if not found: return path
 	while end != Vector2i.ZERO:

@@ -1,7 +1,17 @@
-# Top-down playtest navigation evidence
+# Top-down navigation validation
 
-The input-driven bot now plans bounded four-pixel grid routes using the real CharacterBody2D swept shape. Solid terrain, props and doors participate. Movement still uses input actions; this does not move the player directly or alter the world. Failed searches and timed-out movement fail the leg.
+The playtest bot uses bounded A-star search on a four-pixel grid. Each edge checks the actual CharacterBody2D swept collision shape. Terrain, props and closed doors remain solid. The bot follows waypoints with movement inputs; it does not teleport or change collisions.
 
-Verified September 24, 2026 on the isolated packaged v27 top-down generation (seed92427): native Godot4.6 headless playthrough passed8/8 checks,4/4 transitions,key acquisition/gate opening,final boss and victory. Native Vulkan rendering on RTX5060 repeated the victory and captured ten screenshots. A separate enclosed-body fixture rejects an unreachable target without moving the body.
+## Native evidence — September 24, 2026
 
-Limits: one generated seed and persona; search capped8192 expanded cells, so long detours may exhaust it. Dynamic obstacles are not replanned mid-walk. This is functional test evidence, not artwork/animation approval, full generation acceptance or Unity/Unreal parity. Portablev27 still contains the earlier bot until explicitly repackaged. Test blocked-route-check.tscn under an isolated current top-down template; require BLOCKED_ROUTE_REJECTED=true.
+- Open 1,000-pixel route: the previous breadth-first search exhausted its 8,192-cell budget; A-star found 249 waypoints in 112 ms.
+- Enclosed-body fixture: unreachable target rejected without moving the body.
+- Seed 92427, victory_rusher: Godot 4.6 passed eight checks and all four area transitions, reaching the final boss and victory.
+- Door telemetry observes actual LockedDoor opening events before pickup collection begins. The latest run recorded one floor_switch opening and retained the required key ID. It no longer incorrectly reports zero openings when a switch opens the door before direct interaction.
+- An earlier rendered run on Vulkan / RTX 5060 captured ten screenshots through victory.
+
+## Limits
+
+One seed and persona have been exercised. Search remains capped at 8,192 expanded cells; dynamic obstacles are not replanned mid-walk. The boss harness resets health before its boss test and calls the attack helper, so this is not an untouched player playthrough. Missing attack audio remains. These results do not approve artwork, animation, full generation, or Unity/Unreal parity. Portable v27 still bundles the earlier bot.
+
+Run blocked-route-check.tscn and long-route-check.tscn from the validation fixtures in an isolated current top-down project. Require BLOCKED_ROUTE_REJECTED=true and reachable=true respectively.
