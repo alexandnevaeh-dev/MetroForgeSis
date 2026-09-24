@@ -1068,7 +1068,7 @@ export class GenerationPipeline {
       foundryLicense: a.foundryLicense,
     }));
     if (options.externalVisualPack) {
-      const pack = loadExternalVisualPack(cwd, options.externalVisualPack);
+      const pack = loadExternalVisualPack(getResourceRoot(), options.externalVisualPack);
       for (const asset of pack.assets) {
         const sourcePath = join(getResourceRoot(), 'test-packs', pack.id, asset.source);
         const buffer = readFileSync(sourcePath);
@@ -1808,6 +1808,12 @@ export class GenerationPipeline {
     createProjectCheckpoint(outputPath, 'before_export');
     if (options.skipExport) {
       report('export', 'SKIPPED', 'EXPORT_SKIPPED: skipExport');
+    } else if (requestedEngine !== 'godot') {
+      // The project assembler emitted native engine source, not a standalone player.
+      // exportProject below is Godot-only and must never receive Unity/Unreal projects.
+      const message = `${requestedEngine.toUpperCase()}_NATIVE_BUILD_PENDING: source project assembled; native compile, playtest and standalone packaging still required`;
+      warnings.push(message);
+      report('export', 'WARN', message);
     } else {
       try {
         const exportResult = exportProject({
