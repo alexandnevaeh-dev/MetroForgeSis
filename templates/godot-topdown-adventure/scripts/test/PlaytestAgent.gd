@@ -1,7 +1,7 @@
 extends RefCounted
 class_name PlaytestAgent
 ## Input-simulating bot that follows `playtest_route.json` through the live top-down world.
-## Adapted from the side-view template's version: no per-room child scenes here — every area's
+## Adapted from the side-view template's version: no per-room child scenes here â€” every area's
 ## content lives under OverworldManager.get_current_entities(), transitions are AreaPortal/
 ## LockedDoor nodes keyed by `target_area_id` (not RoomTransition's `target_room_id`), pickups
 ## are interact-based ChestPickup (not walk-over AbilityPickup), and movement is free-roam 2D
@@ -78,11 +78,11 @@ func run(world: Node, host: Node) -> Dictionary:
 
 	return _finish(true, route, boss_fight_ms)
 
-## Builds the final outcome dictionary — always, on every exit path (success or failure), so
+## Builds the final outcome dictionary â€” always, on every exit path (success or failure), so
 ## PlaytestRunner.gd always has telemetry to write to playtest_telemetry.json even for a run that
 ## never got anywhere near victory. Before this fix, telemetry only existed on full success (see
 ## the old `run()`'s early `return {"ok": false, "reason": ...}` returns with no "telemetry" key
-## at all) — a route failing on its very first step produced zero diagnostic output.
+## at all) â€” a route failing on its very first step produced zero diagnostic output.
 func _finish(ok: bool, route: Dictionary, boss_fight_ms: int, from_area: String = "", to_area: String = "") -> Dictionary:
 	var result := {
 		"ok": ok,
@@ -101,7 +101,7 @@ func _finish(ok: bool, route: Dictionary, boss_fight_ms: int, from_area: String 
 ## The persona's own bossAttackTimeoutSec (12-14s) is tuned for the side-view template's melee
 ## pacing and shared by both archetypes today. A top-down boss actively wanders/kites (see
 ## TopDownEnemyController.gd), so each attack cycle spends most of its walk budget re-chasing a
-## moving target — measured at ~2.2s/cycle even against a stationary-looking TINY_TEST boss —
+## moving target â€” measured at ~2.2s/cycle even against a stationary-looking TINY_TEST boss â€”
 ## and 12s (~5 cycles) isn't enough to land the ~20 hits a 200 HP boss needs. Floor it higher
 ## here rather than change the shared persona data side-view already relies on.
 const MIN_BOSS_ATTACK_TIMEOUT_SEC := 55.0
@@ -120,7 +120,7 @@ func _apply_persona(persona: Variant) -> void:
 
 ## Reads the project's real walk speed so distance-aware timeouts (Phase 14 / _walk_timeout_for)
 ## reflect how fast this specific generated game's player actually moves, rather than a hardcoded
-## guess. Best-effort — falls back to the template's own default (see PlayerMovementConfig.gd)
+## guess. Best-effort â€” falls back to the template's own default (see PlayerMovementConfig.gd)
 ## if the file is missing or malformed.
 func _load_expected_speed() -> void:
 	if not FileAccess.file_exists(MOVEMENT_CONFIG_PATH):
@@ -250,7 +250,7 @@ func _execute_transition(world: Node, host: Node, from_area: String, to_area: St
 		await _collect_area_pickups(host, player)
 
 	# An incidental pickup-walk can itself carry the player across a portal boundary (AreaPortal
-	# triggers on physical contact, no arrival tolerance) — check before searching for one.
+	# triggers on physical contact, no arrival tolerance) â€” check before searching for one.
 	if GameManager.current_room_id == to_area:
 		diag["result"] = "PASS"
 		diag["playerPositionEnd"] = _pos_str(player)
@@ -274,19 +274,17 @@ func _execute_transition(world: Node, host: Node, from_area: String, to_area: St
 		await host.get_tree().physics_frame
 
 
-	# Walking toward the portal can itself complete the transition mid-flight — touching its
+	# Walking toward the portal can itself complete the transition mid-flight â€” touching its
 	# Area2D fires AreaPortal/LockedDoor's own body_entered handler immediately, before
 	# _walk_player_to's distance-based "arrival" check would ever run, and that handler frees the
-	# old area's player instance. So the walk call's own return value isn't the success signal —
-	# a freed player reference there is the *expected* shape of success, not a bug — only the
+	# old area's player instance. So the walk call's own return value isn't the success signal â€”
+	# a freed player reference there is the *expected* shape of success, not a bug â€” only the
 	# resulting room id is. Ignore what _walk_player_to returns and re-check state directly.
 	var walk_timeout := _walk_timeout_for(player.global_position, portal.global_position)
 	diag["timeoutMs"] = int(walk_timeout * 1000.0)
 	await _walk_player_to(host, player, portal.global_position, walk_timeout)
-	await host.get_tree().physics_frame
-	await host.get_tree().physics_frame
-
-	var final_ok := GameManager.current_room_id == to_area
+	var final_ok := await _await_area_ready(world, host, to_area)
+	diag["currentArea"] = GameManager.current_room_id
 	diag["result"] = "PASS" if final_ok else "FAIL"
 	if not final_ok:
 		diag["failureReason"] = "walk_timeout_or_blocked"
@@ -296,6 +294,16 @@ func _execute_transition(world: Node, host: Node, from_area: String, to_area: St
 	diag["playerPositionEnd"] = _pos_str(player) if is_instance_valid(player) else "freed"
 	_record_step(diag, step_start_ms)
 	return final_ok
+
+func _await_area_ready(world: Node, host: Node, area_id: String) -> bool:
+	# Area loading yields a process frame; several physics frames can precede that frame.
+	# Wait only for an already-running transition, never extend a blocked movement attempt.
+	var deadline := Time.get_ticks_msec() + 1000
+	while world.has_method("is_transitioning") and world.is_transitioning():
+		if Time.get_ticks_msec() >= deadline:
+			return false
+		await host.get_tree().process_frame
+	return GameManager.current_room_id == area_id
 
 func _record_step(diag: Dictionary, step_start_ms: int) -> void:
 	diag["elapsedMs"] = Time.get_ticks_msec() - step_start_ms
@@ -320,7 +328,7 @@ func _collect_area_pickups(host: Node, player: Node) -> void:
 	var entities := _current_entities(host)
 	if entities == null:
 		return
-	# Chests only here — locked doors/gates are handled at their own transition step (see
+	# Chests only here â€” locked doors/gates are handled at their own transition step (see
 	# _execute_transition), since walking to every interactable indiscriminately could waste the
 	# walk-timeout budget on objects unrelated to this leg of the route.
 	for child in entities.get_children():
@@ -328,7 +336,7 @@ func _collect_area_pickups(host: Node, player: Node) -> void:
 			continue
 		var reached := await _walk_player_to(host, player, child.global_position)
 		# Only grant the pickup if the walk actually got the player into real interact range
-		# (matching TopDownPlayerController._try_interact()'s own 36px group-distance check) —
+		# (matching TopDownPlayerController._try_interact()'s own 36px group-distance check) â€”
 		# calling interact() unconditionally regardless of whether the bot ever got there would
 		# be exactly the kind of shortcut Phase 21 rules out ("no false green"). A route step
 		# whose only prerequisite is a required chest (e.g. a dungeon key) will correctly fail
@@ -363,7 +371,7 @@ func _defeat_final_boss(host: Node, boss_id: String) -> bool:
 
 	# Route-following incidentally walks the player through/near regular enemies on the way to
 	# the arena (this bot doesn't dodge them either), so it can arrive with chip damage already
-	# taken — a real player would typically rest at the dungeon's SavePoint first, but the route
+	# taken â€” a real player would typically rest at the dungeon's SavePoint first, but the route
 	# only visits pickups on each leg's *origin* room, never the boss room itself (nothing
 	# transitions *from* it). Reset to full here so this gate proves "is the boss itself
 	# beatable within its timeout," not "did the bot happen to arrive undamaged."
@@ -375,7 +383,7 @@ func _defeat_final_boss(host: Node, boss_id: String) -> bool:
 	# Real wall-clock time, not accumulated physics delta: each iteration below nests its own
 	# multi-step waits (_walk_player_to's up-to-2s internal loop, a 0.15s attack-recovery timer),
 	# so crediting only one physics frame's delta per outer iteration under-counted real elapsed
-	# time by roughly two orders of magnitude — the 12s budget was never actually enforced, the
+	# time by roughly two orders of magnitude â€” the 12s budget was never actually enforced, the
 	# loop could run for minutes of real time before its own counter agreed 12s had passed, and
 	# the QA runner's outer process timeout would kill Godot first, discarding all output.
 	var start_ms := Time.get_ticks_msec()
@@ -383,12 +391,12 @@ func _defeat_final_boss(host: Node, boss_id: String) -> bool:
 	while Time.get_ticks_msec() - start_ms < timeout_ms:
 		# Checked before the boss-validity branch below: on player death, GameManager respawns
 		# at the last checkpoint via load_area(), which queue_free()s every child of the *current*
-		# room — including the still-alive boss. That would otherwise satisfy the "boss reference
+		# room â€” including the still-alive boss. That would otherwise satisfy the "boss reference
 		# went away" check just below and get misread as a win instead of the loss it actually is.
 		if not is_instance_valid(player) or (is_instance_valid(player_health) and not player_health.is_alive()):
 			break
 		if not is_instance_valid(boss) or not is_instance_valid(boss_health):
-			# HealthComponent's death handling frees the boss on defeat — a freed reference here
+			# HealthComponent's death handling frees the boss on defeat â€” a freed reference here
 			# (once the player-death case above is ruled out) is the win condition, not a bug.
 			boss_defeated = true
 			break
@@ -416,15 +424,15 @@ func _defeat_final_boss(host: Node, boss_id: String) -> bool:
 			await host.get_tree().physics_frame
 			continue
 
-		# In range and the boss isn't winding up — safe to commit to a swing. Call the player's
+		# In range and the boss isn't winding up â€” safe to commit to a swing. Call the player's
 		# own attack, not a direct hitbox poke: TopDownPlayerController's _start_attack() positions
-		# AttackHitbox toward cardinal_facing() (whichever direction the player last moved) —
+		# AttackHitbox toward cardinal_facing() (whichever direction the player last moved) â€”
 		# attacking is directional in a free-roam world, so activating the hitbox without that
 		# positioning step would swing at empty space next to the boss.
 		_release_movement_input()
 		used_input_simulation = true
 		# Holding "dash" through the swing exploits this boss's "dash_through" weakness tag (see
-		# bosses.json / BossController._on_hit_received's WEAKNESS_DAMAGE_MULTIPLIER) — a real
+		# bosses.json / BossController._on_hit_received's WEAKNESS_DAMAGE_MULTIPLIER) â€” a real
 		# player reading their own boss's weakness data would fight the same way, and without it
 		# the fight is a straight, close-to-even HP race the player (100 HP) statistically loses
 		# against a 200 HP boss even with clean dodging.
@@ -445,9 +453,9 @@ func _defeat_final_boss(host: Node, boss_id: String) -> bool:
 
 	# BossController._on_died() now plays a real death animation (DEATH_ANIMATION_DURATION_SEC,
 	# ~0.7s) before emitting EventBus.boss_defeated / GameManager.current_state actually becoming
-	# VICTORY — `boss_health.current_health <= 0.0` above (or the boss reference going away) is
+	# VICTORY â€” `boss_health.current_health <= 0.0` above (or the boss reference going away) is
 	# true well before that. Without waiting here, a caller checking victory state immediately
-	# after this returns would see it not-yet-true and misreport a real win as a failure — this
+	# after this returns would see it not-yet-true and misreport a real win as a failure â€” this
 	# genuinely changed how long "defeated" takes to become "victory," not just a test artifact.
 	if boss_defeated and GameManager.current_state != GameManager.GameState.VICTORY:
 		var victory_wait_start := Time.get_ticks_msec()
@@ -458,7 +466,7 @@ func _defeat_final_boss(host: Node, boss_id: String) -> bool:
 
 # --- Phase 14: distance-aware walk timeout -----------------------------------------------------
 # A flat per-persona walk timeout (8-12s) works for short hops but not for a long diagonal
-# crossing of a larger overworld — and a flat timeout that's simply raised across the board is
+# crossing of a larger overworld â€” and a flat timeout that's simply raised across the board is
 # exactly the "increase every timeout arbitrarily" shortcut Phase 21 rules out. Instead, floor the
 # persona's own budget but extend it, transparently, by how far this *specific* walk actually is:
 # real travel time at the project's own walk speed, plus a fixed allowance for the unstick
@@ -565,7 +573,7 @@ func _step_toward(body: CharacterBody2D, target: Vector2, deadzone: float = 4.0)
 		Input.action_release("move_up")
 		Input.action_release("move_down")
 
-## Steps at 90 degrees to the current target direction instead of straight at it — a small
+## Steps at 90 degrees to the current target direction instead of straight at it â€” a small
 ## deterministic sidestep to break out of a corner/diagonal pinch the direct approach can't cross,
 ## without any pathfinding system. `sign` picks left vs. right so alternating attempts try both
 ## sides of the obstacle.
@@ -583,7 +591,7 @@ func _release_movement_input() -> void:
 	Input.action_release("move_up")
 	Input.action_release("move_down")
 
-## The manager attached to World.tscn — OverworldManager.gd in this template — exposes its
+## The manager attached to World.tscn â€” OverworldManager.gd in this template â€” exposes its
 ## currently-loaded area's content via get_current_entities().
 func _current_entities(host: Node) -> Node2D:
 	var world_manager := host.get_tree().get_first_node_in_group("world_manager")

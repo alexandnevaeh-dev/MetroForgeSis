@@ -23,6 +23,7 @@ script = ExtResource("5_sprite")
 sheet_path = "assets/bosses/boss_final_walk.png"
 frame_size = Vector2i(128, 128)
 frame_count = 3
+world_frame_height = 72.0
 hurt_sheet_path = "assets/bosses/boss_final_hurt.png"
 attack_sheet_path = "assets/bosses/boss_final_attack.png"
 death_sheet_path = "assets/bosses/boss_final_death.png"

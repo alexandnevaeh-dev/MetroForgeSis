@@ -11,11 +11,11 @@ const ITEM_PICKUP_SCENE := preload("res://scenes/world/ItemPickup.tscn")
 ## Real per-cell terrain (area.tiles, values 0..3 matching TILE_GRASS/DIRT/WATER/WALL in
 ## packages/procedural/src/topdown/world.ts) and a real generated tileset atlas
 ## (assets/tilesets/<biome>/source.png + terrain.json) both existed on disk and were fully
-## unused — _build_ground() below used to draw one flat ColorRect per area regardless of this
+## unused â€” _build_ground() below used to draw one flat ColorRect per area regardless of this
 ## data, and _build_collision() drew a second, separate flat-color rect over every wall/water
 ## cell, so none of the 200+ generated environment tile assets ever reached the screen. The
 ## overworld.json schema has no per-area biome field for top-down worlds (only worldGraph's
-## single region, always "biome_0" — see packages/procedural/src/topdown/world.ts), so every
+## single region, always "biome_0" â€” see packages/procedural/src/topdown/world.ts), so every
 ## area uses biome_0's tileset, matching what the generator actually produces.
 const TILE_GRASS := 0
 const TILE_DIRT := 1
@@ -23,12 +23,12 @@ const TILE_WATER := 2
 const TILE_WALL := 3
 const DEFAULT_BIOME_ID := "biome_0"
 
-## Real generated environment props (assets/props/<biome>/<biome>_prop_<N>.png — always written by
+## Real generated environment props (assets/props/<biome>/<biome>_prop_<N>.png â€” always written by
 ## the asset pipeline, and the metroforge-research-facility pack overrides indices 0-3 with real
-## authored designs) existed on disk but nothing in this template ever placed them in a room —
+## authored designs) existed on disk but nothing in this template ever placed them in a room â€”
 ## the exact same class of "generated and ignored" gap chest/portal/checkpoint art had before an
 ## earlier phase of this milestone. Sparse, wall-adjacent, POI-clearance-respecting placement
-## added below; still genuinely decorative — collision keeps a prop from being walked through,
+## added below; still genuinely decorative â€” collision keeps a prop from being walked through,
 ## but placement never reduces a room to fewer than its already-guaranteed-clear routes.
 const PROP_MIN_DISTANCE_FROM_POI_CELLS := 2
 const PROP_MAX_PER_ROOM := 2
@@ -36,7 +36,7 @@ const PROP_FILE_COUNT_TO_TRY := 12
 ## A plain untyped array literal (`[Vector2i(...), ...]`) iterates as Variant in GDScript's strict
 ## typing mode, which broke `:=` inference on every loop variable derived from it below (a real
 ## parse-error regression this exact project's strict-typing settings turn into a hard failure,
-## not just a warning) — a typed constant sidesteps that entirely.
+## not just a warning) â€” a typed constant sidesteps that entirely.
 const WALL_ADJACENCY_OFFSETS: Array[Vector2i] = [Vector2i(0, -1), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(1, 0)]
 ## role -> Vector2i atlas cell, cached per biome so repeated room loads don't re-parse terrain.json.
 var _terrain_role_cache: Dictionary = {}
@@ -50,12 +50,12 @@ var _entities: Node2D
 var _player: Node2D
 var _transitioning := false
 
-## load_area() frees every child of _area_root — including the current Player — and
+## load_area() frees every child of _area_root â€” including the current Player â€” and
 ## _ensure_player() below always instantiates a fresh one for the new area, so HealthComponent's
 ## own _ready() (current_health = max_health) silently reset the player to full health on every
 ## ordinary room transition, with no way to tell that apart from a real heal. Carrying the
 ## outgoing player's live health across a normal transition (while still letting a real
-## save-file/death-driven restore — SaveManager.has_pending_health_restore() — take precedence
+## save-file/death-driven restore â€” SaveManager.has_pending_health_restore() â€” take precedence
 ## when one is actually pending) fixes that without touching the death/respawn or save/load paths,
 ## which already carry health correctly via SaveManager.consume_pending_player_health().
 var _carried_health: float = -1.0
@@ -82,6 +82,9 @@ func _load_overworld() -> void:
 		_overworld = json.data
 	file.close()
 
+func is_transitioning() -> bool:
+	return _transitioning
+
 func transition_to_room(room_id: String, _spawn_side: String = "left") -> void:
 	load_area(room_id)
 
@@ -101,7 +104,7 @@ func load_area(area_id: String) -> void:
 	var area := _find_area(area_id)
 	if area.is_empty():
 		_transitioning = false
-		# Never applied — don't let it misapply to whatever transition succeeds next.
+		# Never applied â€” don't let it misapply to whatever transition succeeds next.
 		_carried_health = -1.0
 		_carried_max_health = -1.0
 		return
@@ -131,7 +134,7 @@ func load_area(area_id: String) -> void:
 
 	_transitioning = false
 
-## Public accessor for PlaytestAgent.gd / other external inspectors — _entities is otherwise
+## Public accessor for PlaytestAgent.gd / other external inspectors â€” _entities is otherwise
 ## just GDScript's underscore-convention-private, not engine-enforced, but a real method here
 ## keeps callers from reaching into the manager's internals directly.
 func get_current_entities() -> Node2D:
@@ -151,7 +154,7 @@ func _build_ground(area: Dictionary) -> void:
 	var tile_set := _get_biome_tileset(DEFAULT_BIOME_ID, tile_size)
 	if tile_set == null or tiles.size() < h:
 		# No generated tileset/terrain data available (e.g. an older project or a biome whose
-		# assets failed to generate) — fall back to the flat placeholder rather than crash or
+		# assets failed to generate) â€” fall back to the flat placeholder rather than crash or
 		# leave the room invisible.
 		var ground := ColorRect.new()
 		ground.color = Color(0.22, 0.38, 0.22, 1) if String(area.get("kind", "")) == "overworld" else Color(0.28, 0.24, 0.2, 1)
@@ -174,7 +177,7 @@ func _build_ground(area: Dictionary) -> void:
 			var coords: Vector2i = roles.get(role, roles.get("ground", Vector2i.ZERO))
 			layer.set_cell(Vector2i(x, y), 0, coords)
 
-## Deterministically hashed material variety per cell — a real biome-provided terrain.json (e.g.
+## Deterministically hashed material variety per cell â€” a real biome-provided terrain.json (e.g.
 ## metroforge-research-facility-v2's) can declare extra ground/wall sub-roles (ground_grate,
 ## ground_cable, ground_hazard, ground_stain, ground_dirty, wall_accent) beyond the four this
 ## template originally ever requested; when present, cells deterministically roll one of them
@@ -197,7 +200,7 @@ func _ground_role_for_cell(value: int, x: int, y: int, roles: Dictionary) -> Str
 			var wall_variants := _available_roles(WALL_VARIANT_ROLES, roles)
 			if wall_variants.is_empty():
 				return "wall"
-			# ~1 in 6 wall cells picks an accent variant — frequent enough to read as real
+			# ~1 in 6 wall cells picks an accent variant â€” frequent enough to read as real
 			# architectural detail, rare enough that it doesn't overwhelm the plain wall band.
 			if _cell_hash(x, y, 7) == 0:
 				return wall_variants[_cell_hash(x, y, 11) % wall_variants.size()]
@@ -209,7 +212,7 @@ func _ground_role_for_cell(value: int, x: int, y: int, roles: Dictionary) -> Str
 			# original, pre-v2 behavior) meant every TILE_DIRT floor tile showed the exact same
 			# "ground_wear" (cracked) cell. This branch's own weighting was tuned twice against
 			# real screenshots this pass: this file's own prior comment claimed "the overworld is
-			# TILE_GRASS" — that was never actually verified, and was wrong. A real gameplay
+			# TILE_GRASS" â€” that was never actually verified, and was wrong. A real gameplay
 			# screenshot after the first two tuning attempts still showed a diagonal crack line on
 			# nearly every visible overworld tile, which only happens if the overworld itself is
 			# substantially TILE_DIRT and hitting *this* branch, not the "_"/open-floor one below.
@@ -233,7 +236,7 @@ func _ground_role_for_cell(value: int, x: int, y: int, roles: Dictionary) -> Str
 			# A real, visible over-saturation regression was found and fixed here: ~1 in 5 sounds
 			# sparse in isolation, but the overworld's real camera shows hundreds of tiles at once
 			# (unlike an enclosed dungeon room), so 1-in-5 rendered as a near-uniform maze of
-			# hazard-stripe/grate/stain cells covering most of the visible floor — confirmed
+			# hazard-stripe/grate/stain cells covering most of the visible floor â€” confirmed
 			# directly by inspecting the actual gameplay screenshot, not assumed from the ratio
 			# alone. 1 in 15 reads as real, scattered, deliberate detail at overworld scale while
 			# staying visible at all.
@@ -242,7 +245,7 @@ func _ground_role_for_cell(value: int, x: int, y: int, roles: Dictionary) -> Str
 			return "ground"
 
 ## Small deterministic hash (same area always produces the same tile layout on every generation/
-## replay — no per-run flicker) — not cryptographic, just spatially well-mixed enough that a
+## replay â€” no per-run flicker) â€” not cryptographic, just spatially well-mixed enough that a
 ## simple x%N/y%N wouldn't be (which would produce visible repeating stripes at period N).
 func _cell_hash(x: int, y: int, modulo: int) -> int:
 	var h_val := (x * 374761393 + y * 668265263 + int(_current_area_id.hash()))
@@ -306,19 +309,19 @@ func _build_collision(area: Dictionary) -> void:
 		node.shape = shape
 		node.position = Vector2(float(rect.get("x", 0)), float(rect.get("y", 0))) + shape.size * 0.5
 		body.add_child(node)
-		# The wall/water tile art painted by _build_ground() above already renders these cells —
+		# The wall/water tile art painted by _build_ground() above already renders these cells â€”
 		# no separate placeholder visual needed here anymore (it used to draw a second, flat-color
 		# ColorRect on top of every collision rect, duplicating and fighting with the real tile art).
 
 ## Places sparse, deterministic decoration using whatever real prop art exists for this room's
-## biome. Never touches area.tiles/collisionRects (the real walkable grid — clearWalkableFootprint
+## biome. Never touches area.tiles/collisionRects (the real walkable grid â€” clearWalkableFootprint
 ## in packages/procedural/src/topdown/world.ts already guarantees every POI/door/route stays
 ## clear); this only *adds* an optional, avoidable obstacle on top of already-open floor cells,
 ## and only ones flush against a real wall (reads as placed furniture/architecture, never as
 ## debris blocking an open room).
 ##
 ## Deliberately skipped for the overworld: real-input testing this pass (TestScenarios.gd, the
-## asset-quality-overhaul milestone) reproduced a consistent — not random — navigation failure at
+## asset-quality-overhaul milestone) reproduced a consistent â€” not random â€” navigation failure at
 ## the identical overworld->dungeon_000_r0 hop on every one of 3 separate real-input runs against
 ## the same generated project, always specifically on the post-respawn traversal, never the first,
 ## pre-death one. The overworld's own hand-placed POI layout (spawn/chest/save/npc/enemy/portal)
@@ -407,7 +410,7 @@ func _spawn_props(area: Dictionary) -> void:
 	if candidates.is_empty():
 		return
 
-	# Deterministic per-room seed — the same generated project always places props the same way
+	# Deterministic per-room seed â€” the same generated project always places props the same way
 	# (no flicker between two runs of the identical output), without needing a dedicated RNG
 	# thread through from the generator itself.
 	var rng := RandomNumberGenerator.new()
@@ -427,8 +430,8 @@ func _spawn_props(area: Dictionary) -> void:
 
 ## One decorative prop instance: a bottom-anchored sprite (same centered=true/negative-offset
 ## convention AnimatedAssetSprite.gd uses, so props sit on the ground the same way characters do)
-## plus a real but deliberately small StaticBody2D footprint — roughly the base of the sprite, not
-## its full silhouette — so a tall prop blocks only the tile it actually stands on.
+## plus a real but deliberately small StaticBody2D footprint â€” roughly the base of the sprite, not
+## its full silhouette â€” so a tall prop blocks only the tile it actually stands on.
 func _place_prop(path: String, ground_anchor_pos: Vector2, tile_size: int, authored_layout: Dictionary = {}) -> void:
 	var tex: Texture2D = load(path)
 	if tex == null:
@@ -490,9 +493,9 @@ func _place_prop(path: String, ground_anchor_pos: Vector2, tile_size: int, autho
 
 ## `ItemPickup.gd`/`ItemPickup.tscn` was a real, complete scene (Area2D + collision + grant_item()
 ## + pickup SFX/VFX + queue_free() on collection) that nothing in this template ever instantiated
-## — confirmed by direct search of every _spawn_pois()-style call site before this fix; copying its
+## â€” confirmed by direct search of every _spawn_pois()-style call site before this fix; copying its
 ## generated icon files into the project alone would not have made this true. Places one health
-## pickup (grants the always-real "health_vial" consumable — a real heal, not a placeholder) and
+## pickup (grants the always-real "health_vial" consumable â€” a real heal, not a placeholder) and
 ## one progression pickup (grants the always-real "scrap" currency) per non-boss dungeon room,
 ## on open floor cleared the same way _spawn_props() clears its own candidates. Deliberately
 ## dungeon-only (not the overworld, which already has its own hand-placed chest/save/npc/enemy
@@ -584,7 +587,7 @@ func _spawn_pois(area: Dictionary) -> void:
 				var enemy := ENEMY_SCENE.instantiate()
 				enemy.position = pos
 				# Real data/enemies/enemies.json stats/combat-type (melee vs projectile, etc.) are
-				# keyed by this id — TopDownEnemyController._apply_enemy_data() reads it in its own
+				# keyed by this id â€” TopDownEnemyController._apply_enemy_data() reads it in its own
 				# _ready(), which only fires once this node actually enters the tree, so it must be
 				# set before add_child(), not after.
 				if poi.get("metadata", {}).has("enemyId"):
@@ -629,7 +632,7 @@ func _spawn_pois(area: Dictionary) -> void:
 func _lock_arena_exits(boss: Node, exits: Array) -> void:
 	# Freshly-instantiated exits set monitoring = true in their own _ready() (AreaPortal.gd/
 	# LockedDoor.gd), and add_child() defers _ready() on a node whose parent is already inside
-	# the tree — it runs *after* this function's caller (_spawn_pois), not before. Locking here
+	# the tree â€” it runs *after* this function's caller (_spawn_pois), not before. Locking here
 	# synchronously would just get silently overwritten a moment later; wait a frame so every
 	# exit's own _ready() has already run before this applies the lock on top of it.
 	await get_tree().process_frame
@@ -644,7 +647,7 @@ func _lock_arena_exits(boss: Node, exits: Array) -> void:
 		health.died.connect(func():
 			# died fires from inside HurtboxComponent's own area_entered handling (the killing
 			# blow's signal chain), and Godot rejects monitoring/monitorable writes made while
-			# still inside an Area2D's in/out signal callback — set_deferred applies them right
+			# still inside an Area2D's in/out signal callback â€” set_deferred applies them right
 			# after physics processing finishes instead of raising "blocked during in/out signal".
 			for exit in exits:
 				if is_instance_valid(exit) and exit is Area2D:
@@ -655,12 +658,12 @@ func _lock_arena_exits(boss: Node, exits: Array) -> void:
 func _ensure_player(pos: Vector2) -> void:
 	if _player and is_instance_valid(_player):
 		_player.position = pos
-		# Not a real recreation (e.g. a second "spawn" POI in the same area) — nothing to apply
+		# Not a real recreation (e.g. a second "spawn" POI in the same area) â€” nothing to apply
 		# carried health to, and leaving it set would misapply it to a later, unrelated transition.
 		_carried_health = -1.0
 		_carried_max_health = -1.0
 		return
-	# Must be read before add_child() below — that's what runs the new Player's own _ready(),
+	# Must be read before add_child() below â€” that's what runs the new Player's own _ready(),
 	# which is what actually consumes SaveManager's pending-restore flag. Reading it after would
 	# always see it already cleared, regardless of which case this was.
 	var use_carried_health := _carried_health >= 0.0 and not SaveManager.has_pending_health_restore()
