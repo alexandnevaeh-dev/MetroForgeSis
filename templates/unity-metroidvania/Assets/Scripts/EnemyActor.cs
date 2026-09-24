@@ -17,6 +17,9 @@ public class EnemyActor : MonoBehaviour
     private float _dir = -1f;
     private float _attackCooldown;
     private float _clipLock;
+    private float _attackWindup;
+    private bool _attackPending;
+    public bool WindingUp => _attackPending;
     private bool _dead;
     private bool stationary;
     private PlayerActor _player;
@@ -49,6 +52,8 @@ public class EnemyActor : MonoBehaviour
         Health = health;
         _clipLock = 0f;
         _attackCooldown = 0f;
+        _attackPending = false;
+        _attackWindup = 0f;
         _animator?.Play("idle", true);
         if (_body != null)
             _body.linearVelocity = Vector2.zero;
@@ -63,6 +68,7 @@ public class EnemyActor : MonoBehaviour
         _clipLock = Mathf.Max(0f, _clipLock - Time.deltaTime);
         if (_player == null || _player.Dead)
         {
+            _attackPending = false;
             if (_clipLock <= 0f)
                 _animator?.Play("idle");
             return;
@@ -71,12 +77,27 @@ public class EnemyActor : MonoBehaviour
         var delta = _player.transform.position.x - transform.position.x;
         var attackOffset = (Vector2)_player.transform.position + new Vector2(0, 24) -
             ((Vector2)transform.position + new Vector2(0, 14));
-        if (attackOffset.sqrMagnitude < 42f * 42f && _attackCooldown <= 0f)
+        if (_attackPending)
+        {
+            _attackWindup = Mathf.Max(0f, _attackWindup - Time.deltaTime);
+            if (_attackWindup <= 0f)
+            {
+                _attackPending = false;
+                // Recheck at impact so moving out of reach avoids the committed swing.
+                if (attackOffset.sqrMagnitude < 42f * 42f && delta * _dir >= -4f)
+                    _player.Hurt(Damage);
+            }
+            return;
+        }
+        if (attackOffset.sqrMagnitude < 42f * 42f && _attackCooldown <= 0f && _clipLock <= 0f)
         {
             _attackCooldown = 0.8f;
-            _clipLock = 0.4f;
+            _clipLock = 0.45f;
+            _attackPending = true;
+            _attackWindup = 0.24f;
+            _dir = delta >= 0f ? 1f : -1f;
+            if (_animator != null) _animator.FlipX = _dir < 0f;
             _animator?.Play("attack", true);
-            _player.Hurt(Damage);
             return;
         }
 
@@ -87,6 +108,8 @@ public class EnemyActor : MonoBehaviour
             _animator?.Play(stationary ? "idle" : "walk");
     }
 
+    private void OnDisable() { _attackPending = false; }
+
     private void FixedUpdate()
     {
         if (stationary) return;
@@ -95,7 +118,7 @@ public class EnemyActor : MonoBehaviour
             _body.linearVelocity = Vector2.zero;
             return;
         }
-        var speed = _dir * WalkSpeed;
+        var speed = (_attackPending || _clipLock > 0f || _player == null || _player.Dead) ? 0f : _dir * WalkSpeed;
         var feet = _body.position;
         // Ground chasers stop before a drop, but retain gravity while airborne.
         var lookAhead = 16f + Mathf.Abs(speed) * Time.fixedDeltaTime;
@@ -118,6 +141,7 @@ public class EnemyActor : MonoBehaviour
         MainThreadProbe.EnemyHurtMarker.Begin();
         HurtCallCount++;
         Health -= amount;
+        _attackPending = false;
         _clipLock = 0.25f;
         _animator?.Play("hurt", true);
         if (Health <= 0f)
