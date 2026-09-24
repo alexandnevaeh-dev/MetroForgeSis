@@ -36,3 +36,15 @@ AssetsGallery owns canonical floor/wall selection; TerrainPresentationEditor use
 Terrain form refinement uses shared PropertyRow with explicit label/control IDs and a shared Checkbox primitive in studio/ui/index.tsx. Checkbox geometry is owned globally in styles.css; terrain fieldset removes native border and uses inherited tokens. Typecheck passed; v8 packaged visual verification pending.
 
 Terrain draft Undo/Redo retains up to 100 steps per asset in the session. Save and Discard clear history; these controls do not undo an already saved file. Packaged v9 verified undo/redo and history clearing after save. Navigation retention is implemented but not yet verified through UI.
+
+## Top-down room editing additions
+
+# MetroForge UI workflow contract
+
+RoomEditor is the existing room list/detail owner. Selected project and room determine the edit target. Top-down area records come from overworld.json, and prop changes use the existing updateRoom command with propPlacements. Reloading an area or restarting preview is required; do not imply live updates.
+
+Canonical controls: shared Input and native-backed Select for scalar fields and selection; shared Button and InspectorSection for actions/grouping. Existing RoomEditor runRoomAction owns pending, success/error messages and refresh. The app stylesheet owns scrolling and focus styles. Runtime tokens remain in tokens.css.
+
+Prop changes are explicit saves, not autosaves. Preserve layers and collision metadata when changing position/scale. Removal is reversible through the same saved-room history. Block duplicate submissions while pending. Keep invalid drafts visible with an inline explanation. Record history only for successful writes. Failed saves preserve data and report the error. Project/room switches must not apply stale responses to the newly selected target.
+
+Unsupported top-down actions must not silently mutate side-view files. Asset addition and visual direct manipulation remain outstanding. Do not show an empty rendered scene as proof that an area is empty.

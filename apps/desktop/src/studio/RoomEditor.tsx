@@ -1,3 +1,6 @@
+import { TopDownPropPicker } from './TopDownPropPicker.js';
+import { TopDownPropViewport } from './TopDownPropViewport.js';
+import { TopDownPropInspector, type TopDownEditorProp } from './TopDownPropInspector.js';
 import { UnityRoomGeometry } from './UnityRoomGeometry.js';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { enemyDefinitionForPlacement, unusedEntityId } from './entity-authoring.js';
@@ -26,6 +29,10 @@ import {
 } from './ui/index.js';
 
 type RoomRecord = {
+  editingMode?: 'topdown';
+  tileSize?: number;
+  tiles?: number[][];
+  propPlacements?: TopDownEditorProp[];
   id: string;
   index?: number;
   archetype?: string;
@@ -108,8 +115,10 @@ export function RoomEditor() {
   const [zoom, setZoom] = useState(100);
   const [fitRoom, setFitRoom] = useState(false);
   const [selectedTile, setSelectedTile] = useState<TileCoord>({ col: 0, row: 2 });
-  const [paintTool, setPaintTool] = useState<PaintTool>('paint');
+  const [terrainMaterial,setTerrainMaterial]=useState(1);
+  const [paintTool, setPaintTool] = useState<PaintTool>('select');
   const [gridSnap, setGridSnap] = useState(true);
+  const [selectedPropId, setSelectedPropId] = useState('');
   const [selectedEntityKey, setSelectedEntityKey] = useState<string | null>(null);
   const [dragEntityKey, setDragEntityKey] = useState<string | null>(null);
 
@@ -181,6 +190,11 @@ export function RoomEditor() {
   }, [rooms, query]);
 
   const selected = rooms.find((r) => r.id === selectedRoomId) ?? filtered[0];
+  useEffect(() => {
+    if (selected?.editingMode === 'topdown' && viewMode !== 'visual' && viewMode !== 'debug') setViewMode('visual');
+  }, [selected?.editingMode, viewMode]);
+  useEffect(() => { setSelectedPropId(''); }, [selectedPath, selected?.id]);
+  const activePropId = selected?.propPlacements?.some(prop => prop.id === selectedPropId) ? selectedPropId : selected?.propPlacements?.[0]?.id;
   const hasGeometry = selected ? roomHasGeometry(selected, collision) : false;
   const placements: EntityPlacement[] = selected?.entityPlacements ?? [];
   const selectedPlacement = placements.find((p) => entityKey(p) === selectedEntityKey) ?? null;
@@ -224,9 +238,9 @@ export function RoomEditor() {
     }
   };
 
-  const widthTiles = selected ? Math.round((selected.width ?? 800) / TILE) : 0;
-  const heightTiles = selected ? Math.round((selected.height ?? 600) / TILE) : 0;
-  const tileSize = collision?.tileSize ?? TILE;
+  const widthTiles = selected ? Math.round((selected.width ?? 800) / (selected.tileSize ?? TILE)) : 0;
+  const heightTiles = selected ? Math.round((selected.height ?? 600) / (selected.tileSize ?? TILE)) : 0;
+  const tileSize = selected?.tileSize ?? collision?.tileSize ?? TILE;
 
   return (
     <section className="workspace-screen room-editor-screen" aria-busy={isSaving}>
@@ -255,7 +269,7 @@ export function RoomEditor() {
 
           <ViewModeTabs
             label="Room view mode"
-            items={VIEW_MODES.map((item) => ({ id: item.id, label: item.label }))}
+            items={VIEW_MODES.filter(item => selected?.editingMode !== 'topdown' || ['visual', 'debug'].includes(item.id)).map((item) => ({ id: item.id, label: item.label }))}
             value={viewMode}
             onChange={(id) => setViewMode(id as ViewModeId)}
           />
@@ -304,7 +318,7 @@ export function RoomEditor() {
 
               <Panel level={1} title="Layers">
                 <ul className="layer-list">
-                  {OVERLAY_LAYERS.map((item) => (
+                  {OVERLAY_LAYERS.filter(item => selected?.editingMode !== 'topdown' || ['visual', 'debug'].includes(item.id)).map((item) => (
                     <li key={item.id}>
                       <button
                         type="button"
@@ -312,7 +326,7 @@ export function RoomEditor() {
                         onClick={() => setViewMode(item.id)}
                         aria-pressed={viewMode === item.id}
                       >
-                        <span>{item.label}</span>
+                        <span>{selected?.editingMode === 'topdown' && item.id === 'visual' ? 'Props' : item.label}</span>
                         <span className="layer-vis" aria-hidden="true">
                           {viewMode === item.id ? '●' : '○'}
                         </span>
@@ -339,18 +353,19 @@ export function RoomEditor() {
                         if (tool.id !== 'select') setViewMode('visual');
                       }}
                       title={tool.hint}
-                      disabled={tool.id !== 'select' && viewMode !== 'visual' && paintTool !== tool.id}
+                      disabled={isSaving || (tool.id !== 'select' && viewMode !== 'visual' && paintTool !== tool.id)}
                     >
                       {tool.label}
                     </EditorToolButton>
                   ))}
                 </div>
                 <p className="hint type-caption" style={{ marginTop: '0.35rem' }}>
-                  Paint/Erase apply on Visual via TilePaintEditor → tileCells → rooms.json → Godot.
+                  {selected?.editingMode === 'topdown' ? 'Paint terrain; erase restores grass. Release to save, Escape cancels. Arrow keys move the brush; Enter or Space paints.' : 'Paint or erase tiles in Visual mode.'}
                 </p>
               </Panel>
 
-              {selected && (
+              {selected?.editingMode === 'topdown' && <Panel title="Terrain material">{['Grass','Dirt','Water','Wall'].map((name,value)=><Button key={name} size="sm" aria-pressed={terrainMaterial===value} disabled={isSaving} onClick={()=>{setTerrainMaterial(value);setPaintTool('paint');setViewMode('visual')}}>{name}</Button>)}</Panel>}
+              {selected && selected.editingMode !== 'topdown' && (
                 <div className="tile-palette-dock-slot">
                   <TilePalettePanel
                     projectPath={selectedPath}
@@ -373,6 +388,7 @@ export function RoomEditor() {
                   <span className="status-grow" />
                   <Button
                     size="sm"
+                    disabled={selected?.editingMode === 'topdown'}
                     aria-pressed={gridSnap}
                     onClick={() => setGridSnap((v) => !v)}
                     title="Grid snap preference (paint uses tile grid)"
@@ -461,6 +477,8 @@ export function RoomEditor() {
                 <pre className="panel room-debug-json mono" role="region" aria-label="Room debug JSON">
                   {JSON.stringify(selected, null, 2)}
                 </pre>
+              ) : selected.editingMode === 'topdown' ? (
+                <TopDownPropViewport key={`${selectedPath}:${selected.id}`} projectPath={selectedPath} areaId={selected.id} terrainBrush={paintTool==='select'?undefined:paintTool==='erase'?0:terrainMaterial} onPaint={terrainTiles=>{void runRoomAction(()=>window.metroforge!.updateRoom(selectedPath,{roomId:selected.id,terrainTiles}));}} tiles={selected.tiles} tileSize={tileSize} width={selected.width ?? 0} height={selected.height ?? 0} props={selected.propPlacements} zoom={zoom} fit={fitRoom} selectedId={activePropId} onSelect={setSelectedPropId} busy={isSaving} onMove={(id,x,y) => { void runRoomAction(() => window.metroforge!.updateRoom(selectedPath, {roomId:selected.id,propPlacements:(selected.propPlacements ?? []).map(prop => prop.id===id ? {...prop,x,y} : prop)})); }} />
               ) : viewMode === 'visual' && selectedProject?.engine === 'unity' ? (
                 <UnityRoomGeometry key={`${selectedPath}:${selected.id}`} projectPath={selectedPath} roomId={selected.id} width={selected.width ?? 800} height={selected.height ?? 600} zoom={zoom} gridSnap={gridSnap} tileSize={tileSize} />
               ) : viewMode === 'visual' ? (
@@ -595,7 +613,14 @@ export function RoomEditor() {
             </EditorViewport>
 
             <aside className="room-detail panel editor-inspector">
-              {selected ? (
+              {selected?.editingMode === 'topdown' ? (
+                <><TopDownPropPicker key={`${selectedPath}:${selected.id}:picker`} projectPath={selectedPath} props={selected.propPlacements} width={selected.width ?? 0} height={selected.height ?? 0} busy={isSaving} onSave={props => { void runRoomAction(() => window.metroforge!.updateRoom(selectedPath, {roomId:selected.id,propPlacements:props})); }} />
+                <TopDownPropInspector key={`${selectedPath}:${selected.id}:${JSON.stringify(selected.propPlacements)}`}
+                  props={selected.propPlacements} busy={isSaving} selectedId={activePropId} onSelect={setSelectedPropId}
+                  onSave={props => { void runRoomAction(() => window.metroforge!.updateRoom(selectedPath, {roomId:selected.id,propPlacements:props})); }}
+                  onUndo={() => { void runRoomAction(() => window.metroforge!.undoRoomEdit(selectedPath)); }}
+                  onRedo={() => { void runRoomAction(() => window.metroforge!.redoRoomEdit(selectedPath)); }} /></>
+              ) : selected ? (
                 <>
                   <InspectorSection title="Preview">
                     {hasGeometry ? (

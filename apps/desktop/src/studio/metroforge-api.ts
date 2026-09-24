@@ -71,6 +71,8 @@ export type GenerationPhaseState = {
 };
 
 export type AssetListItem = {
+  propAsset?: { image: string; layout: Record<string, unknown> };
+  propAssetError?: string;
   id: string;
   path: string;
   category: string;
@@ -393,6 +395,8 @@ export type MetroforgeBridge = {
     mode: string;
     seed: number;
     generationControl?: string;
+    externalVisualPack?: 'ashen-painted-locomotion-v1';
+    targetEngine?: 'unity';
     archetype?: string;
   }) => Promise<{
     success: boolean;
@@ -419,7 +423,7 @@ export type MetroforgeBridge = {
   getTilesetPreview: (
     projectPath: string,
     biomeId: string,
-  ) => Promise<{ dataUrl?: string; cells?: unknown; atlasSize?: number; tileSize?: number }>;
+  ) => Promise<{ dataUrl?: string; cells?: unknown; atlasSize?: number; tileSize?: number; roles?: Record<string,[number,number]> }>;
   getAudioPreview: (projectPath: string, relPath: string) => Promise<{ dataUrl?: string }>;
   generateAsset: (request: {
     projectPath: string;

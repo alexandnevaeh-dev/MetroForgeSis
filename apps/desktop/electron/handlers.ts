@@ -1,3 +1,6 @@
+import { readTopDownTerrain } from './topdown-terrain.js';
+import { resolvePropAsset } from './prop-asset.js';
+import { topDownRoomRecords } from './topdown-room-records.js';
 import { latestPhases } from './latest-phases.js';
 import { resolveAssetAnimation } from './asset-animation.js';
 import { launchUnityPreview, prepareUnityPreview } from './unity-preview.js';
@@ -394,6 +397,8 @@ export function registerIpcHandlers(cwd: string): void {
         seed: number;
         generationControl?: GenerationControlMode;
         archetype?: GameArchetype;
+        externalVisualPack?: 'ashen-painted-locomotion-v1';
+        targetEngine?: 'unity';
       };
       try {
         const prefs = await loadAppPreferences(dataDir);
@@ -1165,6 +1170,8 @@ export function registerIpcHandlers(cwd: string): void {
         title: string;
         prompt?: string;
         archetype?: GameArchetype;
+        externalVisualPack?: 'ashen-painted-locomotion-v1';
+        targetEngine?: 'unity';
         profile?: GenerationProfile;
         mode?: GenerationMode;
         seed?: number;
@@ -1202,6 +1209,8 @@ export function registerIpcHandlers(cwd: string): void {
         seed: number;
         generationControl?: GenerationControlMode;
         archetype?: GameArchetype;
+        externalVisualPack?: 'ashen-painted-locomotion-v1';
+        targetEngine?: 'unity';
       },
     ) =>
       new Promise((resolve) => {
@@ -1276,6 +1285,7 @@ export function registerIpcHandlers(cwd: string): void {
         id: String(artifact.id ?? path),
         path,
         category: categorizeAssetPath(path),
+        ...resolvePropAsset(projectPath, path),
         provider: artifact.provider as string | undefined,
         modelId: artifact.modelId as string | undefined,
         fallbackGenerated: artifact.fallbackGenerated as boolean | undefined,
@@ -1635,6 +1645,11 @@ export function registerIpcHandlers(cwd: string): void {
 
   ipcMain.handle('list-rooms', async (_event, projectPath: string) => {
     assertReadableProjectPath(projectPath, cwd);
+    if (existsSync(join(projectPath, 'data', 'world', 'overworld.json'))) {
+      const overworld = readTopDownOverworld(projectPath);
+      if (!overworld) throw new Error('Cannot read top-down area data');
+      return topDownRoomRecords(overworld);
+    }
     const project = loadProjectContext(projectPath);
     return project.roomIds.map((id) => ({
       id,
@@ -1651,13 +1666,14 @@ export function registerIpcHandlers(cwd: string): void {
     ) => {
       assertProjectPath(projectPath, cwd);
       const previous = snapshotRoomRecord(projectPath, patch.roomId);
-      if (previous) {
-        recordRoomEdit(projectPath, patch.roomId, previous, `Edit room ${patch.roomId}`);
-      }
+
       markProjectDirty(projectPath, `Edit room ${patch.roomId}`);
       markProjectCompiling(projectPath, 'Recompiling room');
       const result = applyRoomEditAndRecompile(projectPath, patch);
-      if (result.success) markProjectClean(projectPath);
+      if (result.success) {
+        if (previous) recordRoomEdit(projectPath, patch.roomId, previous, `Edit room ${patch.roomId}`);
+        markProjectClean(projectPath);
+      }
       return result;
     },
   );
@@ -1679,6 +1695,11 @@ export function registerIpcHandlers(cwd: string): void {
 
   ipcMain.handle('get-tileset-preview', async (_event, projectPath: string, biomeId: string) => {
     assertProjectPath(projectPath, cwd);
+    if (existsSync(join(projectPath,'data','world','overworld.json'))) {
+      if(biomeId!=='biome_0')throw new Error('Top-down runtime currently uses biome_0');
+      const terrain=readTopDownTerrain(projectPath);
+      return {...terrain,dataUrl:loadAssetThumbnail(projectPath,'assets/tilesets/biome_0/source.png')};
+    }
     const project = loadProjectContext(projectPath);
     const biomeIndex = biomeId.replace('biome_', '');
     const relPath = `assets/tilesets/biome_${biomeIndex}/source.png`;

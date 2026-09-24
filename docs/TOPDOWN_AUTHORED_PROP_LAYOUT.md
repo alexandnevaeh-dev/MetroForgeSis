@@ -23,3 +23,7 @@ Runtime helper and OverworldManager asset loading are implemented. Each layer re
 `TopDownArea.propPlacements` is optional. Omission retains legacy automatic scatter; an explicit array replaces scatter in both overworld and dungeon areas, and `[]` means no props. Each record is `{id, image, x, y, layout}` where image is a `res://` project texture path, x/y are finite ground-anchor coordinates, and layout is the authored contract above. Runtime nodes retain `placement_id` metadata. Duplicate IDs and malformed/missing resources are skipped with warnings. The collection is limited to 512 records. Existing area loading rebuilds these nodes on room entry.
 
 Native integration checks round-trip an area through JSON on disk, restore its layered prop and position, reject duplicates and honor an empty list. This does not prove desktop save/edit controls or collision-clearance authoring. The editor must still expose and persist these records.
+
+## Asset placement metadata
+
+An authored prop image at `assets/.../name.png` may have a sibling `name.prop.json` containing the layout contract. `readTopDownPropAsset` returns no placement candidate when metadata is absent. When present, it validates the layout, project containment, PNG headers, dimensions and every referenced sibling layer. This is technical placement eligibility, not visual approval or proof that arbitrary placement preserves navigation. Existing manifest maturity remains separate. The desktop asset picker still needs wiring to this reader.

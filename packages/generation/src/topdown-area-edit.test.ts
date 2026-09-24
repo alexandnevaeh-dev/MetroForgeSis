@@ -1,0 +1,32 @@
+import { it, expect } from 'vitest';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { applyRoomEditAndRecompile, snapshotRoomRecord, restoreRoomRecord } from './project-edit-service.js';
+
+it('routes top-down prop edits and history to the actual area file', () => {
+  const root = mkdtempSync(join(tmpdir(), 'topdown-service-'));
+  mkdirSync(join(root, 'data/world'), { recursive: true });
+  writeFileSync(join(root, 'project.godot'), '[application]\nconfig/name="test"\n');
+  const file = join(root, 'data/world/overworld.json');
+  writeFileSync(file, JSON.stringify({areas:[{id:'room_1',tiles:[[1]],custom:'keep'},{id:'room_2'}]}));
+  const before = snapshotRoomRecord(root, 'room_1')!;
+  expect(before.id).toBe('room_1');
+  const save = applyRoomEditAndRecompile(root, {roomId:'room_1',propPlacements:[]});
+  expect(save.success).toBe(true);
+  expect(save.recompiledRooms).toEqual([]);
+  expect(snapshotRoomRecord(root,'room_1')?.propPlacements).toEqual([]);
+  const after = snapshotRoomRecord(root,'room_1')!;
+  expect(restoreRoomRecord(root,'room_1',before).success).toBe(true);
+  expect(Object.hasOwn(snapshotRoomRecord(root,'room_1')!, 'propPlacements')).toBe(false);
+  expect(restoreRoomRecord(root,'room_1',after).success).toBe(true);
+  const bytes = readFileSync(file,'utf8');
+  expect(applyRoomEditAndRecompile(root,{roomId:'room_1',width:900}).success).toBe(false);
+  expect(applyRoomEditAndRecompile(root,{roomId:'missing',propPlacements:[]}).success).toBe(false);
+  expect(applyRoomEditAndRecompile(root,{roomId:'room_1',propPlacements:[{id:'invalid'}]}).success).toBe(false);
+  expect(readFileSync(file,'utf8')).toBe(bytes);
+  expect(JSON.parse(bytes).areas[0].custom).toBe('keep');
+  expect(JSON.parse(bytes).areas[1]).toEqual({id:'room_2'});
+  expect(existsSync(join(root,'data/rooms/rooms.json'))).toBe(false);
+  expect(existsSync(join(root,'scenes/rooms/room_1.tscn'))).toBe(false);
+});

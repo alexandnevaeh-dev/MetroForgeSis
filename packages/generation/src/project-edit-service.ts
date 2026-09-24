@@ -1,3 +1,4 @@
+import { snapshotTopDownArea, saveTopDownProps, saveTopDownTerrain, restoreTopDownProps } from './topdown-area-edit.js';
 import { writeFileSync, mkdirSync, readFileSync, existsSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { GodotProjectAssembler, mergeEntityPlacementsForIds, type EntityPlacement } from '@metroforge/godot';
@@ -170,6 +171,8 @@ export interface RoomEditPatch {
   enemies?: string[];
   npcs?: string[];
   entityPlacements?: EntityPlacement[];
+  propPlacements?: unknown[];
+  terrainTiles?: number[][];
 }
 
 function readRoomsFile(projectPath: string): Record<string, Record<string, unknown>> {
@@ -241,6 +244,23 @@ export function applyRoomEditAndRecompile(
     return { success: false, errors: ['This room edit requires the Godot adapter; Unity and Unreal recompilation is not implemented here.'] };
   }
   const validationErrors = validateRoomPatch(patch);
+  if (validationErrors.length) return { success: false, errors: validationErrors };
+  if (existsSync(join(projectPath, 'data', 'world', 'overworld.json'))) {
+    if (options?.regenerate || Object.keys(patch).some(key => !['roomId', 'propPlacements', 'terrainTiles'].includes(key))) {
+      return { success: false, errors: ['This top-down area edit supports props and terrain grids. Other room edits require the top-down adapter.'] };
+    }
+    try {
+      if (options?.restoreRecord) restoreTopDownProps(projectPath, patch.roomId, options.restoreRecord);
+      else if (patch.terrainTiles !== undefined && patch.propPlacements !== undefined) return {success:false,errors:['Save terrain and props as separate edits']};
+      else if (patch.terrainTiles !== undefined) saveTopDownTerrain(projectPath, patch.roomId, patch.terrainTiles);
+      else if (patch.propPlacements !== undefined) saveTopDownProps(projectPath, patch.roomId, patch.propPlacements);
+      else return { success: false, errors: ['No top-down changes supplied'] };
+      return { success: true, errors: [], recompiledRooms: [], message: `Area ${patch.roomId} saved. Reload the area or restart preview to apply.` };
+    } catch (error) {
+      return { success: false, errors: [error instanceof Error ? error.message : String(error)] };
+    }
+  }
+  if (patch.propPlacements !== undefined || patch.terrainTiles !== undefined) return { success: false, errors: ['Authored prop placement requires a top-down area project'] };
   if (validationErrors.length) return { success: false, errors: validationErrors };
   const files = [
     join(projectPath, 'data', 'rooms', 'rooms.json'),
@@ -418,6 +438,9 @@ export function snapshotRoomRecord(
   projectPath: string,
   roomId: string,
 ): Record<string, unknown> | null {
+  if (existsSync(join(projectPath, 'data', 'world', 'overworld.json'))) {
+    try { return snapshotTopDownArea(projectPath, roomId); } catch { return null; }
+  }
   const rooms = readRoomsFile(projectPath);
   const room = rooms[roomId];
   return room ? structuredClone(room) : null;
