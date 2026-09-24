@@ -34,3 +34,5 @@ AssetsGallery owns canonical floor/wall selection; TerrainPresentationEditor use
 
 
 Terrain form refinement uses shared PropertyRow with explicit label/control IDs and a shared Checkbox primitive in studio/ui/index.tsx. Checkbox geometry is owned globally in styles.css; terrain fieldset removes native border and uses inherited tokens. Typecheck passed; v8 packaged visual verification pending.
+
+Terrain draft Undo/Redo retains up to 100 steps per asset in the session. Save and Discard clear history; these controls do not undo an already saved file. Packaged v9 verified undo/redo and history clearing after save. Navigation retention is implemented but not yet verified through UI.
