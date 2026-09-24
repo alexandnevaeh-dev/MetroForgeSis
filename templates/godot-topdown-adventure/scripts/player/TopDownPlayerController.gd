@@ -159,7 +159,7 @@ func _start_attack() -> void:
 	_attack_state = AttackState.STARTUP
 	_attack_time = ATTACK_STARTUP
 	_play_facing_animation("attack", true)
-	AudioManager.play_sfx("attack")
+	AudioManager.play_sfx("player_attack")
 
 func _update_attack_state(delta: float) -> void:
 	if _attack_state == AttackState.READY:
