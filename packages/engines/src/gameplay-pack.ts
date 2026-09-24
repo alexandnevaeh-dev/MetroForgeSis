@@ -1,3 +1,4 @@
+import { readBackgroundFraming } from './background-framing.js';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { AssemblyInput } from '@metroforge/godot';
@@ -304,6 +305,7 @@ export function buildGameplayPack(input: AssemblyInput): GameplayPack {
       checkpoint: opts.hasSavePoint || i === 0 ? { x: 150, y: floorTop } : undefined,
       victory: roomId === victoryRoomId,
       backgrounds: {
+        ...readBackgroundFraming(input, opts.biomeIndex),
         far: textureExists(`assets/backgrounds/biome_${opts.biomeIndex}/far.png`)
           ? `assets/backgrounds/biome_${opts.biomeIndex}/far.png`
           : undefined,
