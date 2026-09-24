@@ -253,7 +253,7 @@ export function AssetsGallery() {
               )}
             </div>
             <h3 className="asset-inspector-title">{selected.id}</h3>
-            {selectedPath && /^assets\/tilesets\/biome_\d+\/(floor|wall)\.png$/.test(selected.path) && <TerrainPresentationEditor key={JSON.stringify([selectedPath,selected.path])} projectPath={selectedPath} asset={selected.path} dataUrl={selected.dataUrl} />}
+            {selectedPath && /^assets\/tilesets\/biome_\d+\/(floor|wall)(\.coping)?\.png$/.test(selected.path) && <TerrainPresentationEditor key={JSON.stringify([selectedPath,selected.path])} projectPath={selectedPath} asset={selected.path} dataUrl={selected.dataUrl} />}
             <dl className="settings-dl asset-inspector-dl">
               <dt>Path</dt>
               <dd>

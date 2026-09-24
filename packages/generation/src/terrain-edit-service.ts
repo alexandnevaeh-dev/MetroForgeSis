@@ -4,7 +4,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { parseTerrainPresentation } from '@metroforge/engines';
 const hash = (value: string | Buffer) => createHash('sha256').update(value).digest('hex');
 function snapshot(project: string, asset: string) {
-  if (!/^assets\/tilesets\/biome_\d+\/(floor|wall)\.png$/.test(asset)) throw new Error('Select a canonical floor or wall image');
+  if (!/^assets\/tilesets\/biome_\d+\/(floor|wall)(\.coping)?\.png$/.test(asset)) throw new Error('Select a canonical floor, wall, or coping image');
   const root = realpathSync(project);
   const contained = (path: string) => {
     const target = realpathSync(existsSync(path) ? path : dirname(path));

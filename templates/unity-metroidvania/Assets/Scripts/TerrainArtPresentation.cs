@@ -18,7 +18,18 @@ public static class TerrainArtPresentation
     private static readonly Dictionary<string, Color> Tints = new Dictionary<string, Color>();
     private static bool Finite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
 
+    // Optional sibling floor.coping.png + floor.coping.presentation.json uses the
+    // same editable crop/scale/tint contract as the main terrain image.
     public static bool Apply(string root, string relativePng, Transform solid, GameplayRect rect, SpriteRenderer fallback)
+    {
+        if (!ApplyLayer(root, relativePng, solid, rect, fallback, false)) return false;
+        var coping = Path.ChangeExtension(relativePng, ".coping.png");
+        if (File.Exists(Path.Combine(root, coping)) && File.Exists(Path.Combine(root, Path.ChangeExtension(coping, ".presentation.json"))))
+            ApplyLayer(root, coping, solid, rect, fallback, true);
+        return true;
+    }
+
+    private static bool ApplyLayer(string root, string relativePng, Transform solid, GameplayRect rect, SpriteRenderer fallback, bool coping)
     {
         var path = Path.GetFullPath(Path.Combine(root, relativePng));
         if (!Cache.TryGetValue(path, out var sprite))
@@ -50,16 +61,16 @@ public static class TerrainArtPresentation
             }
         }
         if (sprite == null) return false;
-        var face = new GameObject("TerrainArt");
+        var face = new GameObject(coping ? "TerrainCoping" : "TerrainArt");
         face.transform.SetParent(solid, false);
         face.transform.localPosition = new Vector3(0, rect.height * .5f, 0);
         var renderer = face.AddComponent<SpriteRenderer>();
-        renderer.sortingOrder = fallback.sortingOrder;
+        renderer.sortingOrder = fallback.sortingOrder + (coping ? 1 : 0);
         renderer.sprite = sprite;
         renderer.color = Tints[path];
         renderer.drawMode = SpriteDrawMode.Tiled;
         renderer.tileMode = SpriteTileMode.Continuous;
-        renderer.size = new Vector2(rect.width, rect.height);
+        renderer.size = new Vector2(rect.width, coping ? Mathf.Min(rect.height, sprite.rect.height / sprite.pixelsPerUnit) : rect.height);
         fallback.enabled = false;
         return true;
     }
