@@ -411,7 +411,26 @@ func _place_prop(path: String, ground_anchor_pos: Vector2, tile_size: int, autho
 		return
 	if not authored_layout.is_empty():
 		var layout_script = preload("res://scripts/world/AuthoredPropLayout.gd")
-		var authored: Node2D = layout_script.create(tex, authored_layout)
+		if not layout_script.validate(authored_layout, tex.get_size()).is_empty():
+			push_warning("Invalid authored prop layout: " + path)
+			return
+		var layer_textures := {}
+		for layer: Dictionary in authored_layout.get("layers", []):
+			var image_name: Variant = layer.get("image")
+			# Layers are sibling project resources, never arbitrary external paths.
+			if not image_name is String or image_name.is_empty() or image_name in [".", ".."] or image_name.contains("/") or image_name.contains("\\") or image_name.contains(":"):
+				push_warning("Invalid prop layer image name: " + path)
+				return
+			var layer_path := path.get_base_dir().path_join(image_name)
+			if not ResourceLoader.exists(layer_path, "Texture2D"):
+				push_warning("Missing prop layer texture: " + layer_path)
+				return
+			var layer_texture := ResourceLoader.load(layer_path, "Texture2D") as Texture2D
+			if layer_texture == null:
+				push_warning("Unreadable prop layer texture: " + layer_path)
+				return
+			layer_textures[layer.id] = layer_texture
+		var authored: Node2D = layout_script.create(tex, authored_layout, layer_textures)
 		if authored == null:
 			push_warning("Invalid authored prop layout: " + path)
 			return

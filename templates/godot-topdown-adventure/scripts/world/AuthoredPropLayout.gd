@@ -33,19 +33,52 @@ static func validate(data: Dictionary, image_size: Vector2) -> String:
 			return "Empty collision rectangle"
 		if abs(float(rect.x)) + float(rect.width) > image_size.x * 2 or abs(float(rect.y)) + float(rect.height) > image_size.y * 2:
 			return "Collision rectangle exceeds layout bounds"
+	if data.has("layers"):
+		var layers: Variant = data.layers
+		if not layers is Array or layers.is_empty() or layers.size() > 32:
+			return "Invalid drawing layers"
+		var ids := {}
+		for layer: Variant in layers:
+			if not layer is Dictionary or not layer.get("id") is String or layer.id.is_empty():
+				return "Invalid layer identifier"
+			if ids.has(layer.id):
+				return "Duplicate layer identifier"
+			ids[layer.id] = true
+			if not _number(layer.get("sortY")) or abs(float(layer.sortY)) > image_size.y * 2:
+				return "Invalid layer ground position"
 	return ""
 
-static func create(texture: Texture2D, data: Dictionary) -> Node2D:
+static func create(texture: Texture2D, data: Dictionary, layer_textures: Dictionary = {}) -> Node2D:
 	if texture == null or not validate(data, texture.get_size()).is_empty():
 		return null
+	# Validate the complete set before allocating nodes; never silently flatten a broken asset.
+	for layer: Dictionary in data.get("layers", []):
+		var candidate: Variant = layer_textures.get(layer.id)
+		if not candidate is Texture2D or candidate.get_size() != texture.get_size():
+			return null
 	var prop := Node2D.new()
 	prop.scale = Vector2.ONE * float(data.displayScale)
-	var sprite := Sprite2D.new()
-	sprite.name = "Artwork"
-	sprite.texture = texture
-	sprite.centered = false
-	sprite.position = -Vector2(float(data.anchorPx[0]), float(data.anchorPx[1]))
-	prop.add_child(sprite)
+	var anchor := Vector2(float(data.anchorPx[0]), float(data.anchorPx[1]))
+	if data.has("layers"):
+		prop.y_sort_enabled = true
+		prop.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		for layer: Dictionary in data.layers:
+			var part := Node2D.new()
+			part.position.y = float(layer.sortY)
+			part.set_meta("layer_id", layer.id)
+			var sprite := Sprite2D.new()
+			sprite.texture = layer_textures[layer.id]
+			sprite.centered = false
+			sprite.position = -anchor - part.position
+			part.add_child(sprite)
+			prop.add_child(part)
+	else:
+		var sprite := Sprite2D.new()
+		sprite.name = "Artwork"
+		sprite.texture = texture
+		sprite.centered = false
+		sprite.position = -anchor
+		prop.add_child(sprite)
 	if not data.collisionRectsPx.is_empty():
 		var body := StaticBody2D.new()
 		body.name = "Footprints"

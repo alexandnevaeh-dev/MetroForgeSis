@@ -33,6 +33,20 @@ func run() -> void:
 	layout.displayScale = -1
 	manager.call("_place_prop", "res://icon.svg", Vector2(200, 200), 16, layout)
 	check(entities.get_child_count() == 2, "Invalid authored layout fell back to an unsafe prop")
+	layout.displayScale = 0.25
+	layout.layers = [{"id":"front", "sortY":24, "image":"icon.svg"}]
+	manager.call("_place_prop", "res://icon.svg", Vector2(300, 300), 16, layout)
+	check(entities.get_child_count() == 3, "Layered prop missing through manager")
+	if entities.get_child_count() == 3:
+		var layered: Node2D = entities.get_child(2)
+		check(layered.y_sort_enabled, "Layer sorting disabled")
+		check(layered.get_child(0).get_meta("layer_id") == "front", "Layer identity lost")
+		check(layered.get_child(0).position.y == 24, "Layer depth lost")
+		check(layered.get_node("Footprints").get_child_count() == 2, "Layered footprints missing")
+	for invalid_name in ["missing-layer.png", "../icon.svg", "C:\\icon.svg", ""]:
+		layout.layers[0].image = invalid_name
+		manager.call("_place_prop", "res://icon.svg", Vector2.ZERO, 16, layout)
+		check(entities.get_child_count() == 3, "Invalid layer reference admitted: " + invalid_name)
 	manager.free()
 	entities.free()
 	var result := {"passed": failures.is_empty(), "failures": failures, "scope": "Actual OverworldManager legacy and authored prop placement, invalid layout rejection; template import passed separately. No desktop editing or doorway occlusion test."}
