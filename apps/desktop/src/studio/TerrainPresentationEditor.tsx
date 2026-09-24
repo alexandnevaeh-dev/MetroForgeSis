@@ -1,3 +1,4 @@
+import { TerrainAppearancePreview } from './TerrainAppearancePreview.js';
 import { useEffect, useState, useId } from 'react';
 import type { TerrainPresentation } from '@metroforge/engines';
 import { Button, Input, InspectorSection, PropertyRow, Checkbox } from './ui/index.js';
@@ -6,7 +7,7 @@ const drafts = new Map<string, {settings:TerrainPresentation; revision:string}>(
 type History = {past: TerrainPresentation[]; future: TerrainPresentation[]};
 const histories = new Map<string, History>();
 const fields = [['x','Crop left'],['y','Crop bottom'],['width','Crop width'],['height','Crop height'],['pixelsPerUnit','Pixels per unit'],['borderLeft','Left border'],['borderRight','Right border'],['borderTop','Top border'],['borderBottom','Bottom border'],['tintR','Red tint'],['tintG','Green tint'],['tintB','Blue tint']] as const;
-export function TerrainPresentationEditor({projectPath,asset}:{projectPath:string;asset:string}) {
+export function TerrainPresentationEditor({projectPath,asset,dataUrl}:{projectPath:string;asset:string;dataUrl?:string}) {
  const id=useId();
  const key=JSON.stringify([projectPath,asset]);
  const [snapshot,setSnapshot]=useState<Snapshot|null>(null);
@@ -38,7 +39,7 @@ export function TerrainPresentationEditor({projectPath,asset}:{projectPath:strin
   <p className="hint">Crop coordinates start at the image’s bottom-left. Appearance changes require a preview restart.</p>
   {!snapshot&&!error&&<p role="status">Loading terrain settings…</p>}
   {draft&&snapshot&&<fieldset className="terrain-appearance-fields" disabled={busy}>
-   <legend>{snapshot.image.width} × {snapshot.image.height} source image</legend>
+   <legend>{snapshot.image.width} × {snapshot.image.height} source image</legend><TerrainAppearancePreview dataUrl={dataUrl} settings={draft} />
    {fields.map(([field,label])=><PropertyRow key={field} label={<label htmlFor={`${id}-${field}`}>{label}</label>}><Input id={`${id}-${field}`} aria-label={label} type="number" min={field==='pixelsPerUnit'?0.001:0} max={field.startsWith('tint')?1:undefined} step={field.startsWith('tint')?0.01:'any'} value={Number.isFinite(draft[field])?draft[field]:''} onChange={e=>update({...draft,[field]:e.target.valueAsNumber})}/></PropertyRow>)}
    <Checkbox label="Smooth filtering" checked={draft.smoothFiltering} onChange={e=>update({...draft,smoothFiltering:e.target.checked})}/>
    {dirty&&<p role="status">Unsaved changes · retained when switching assets.</p>}
