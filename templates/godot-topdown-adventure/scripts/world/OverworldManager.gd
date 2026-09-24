@@ -399,7 +399,7 @@ func _spawn_props(area: Dictionary) -> void:
 ## convention AnimatedAssetSprite.gd uses, so props sit on the ground the same way characters do)
 ## plus a real but deliberately small StaticBody2D footprint — roughly the base of the sprite, not
 ## its full silhouette — so a tall prop blocks only the tile it actually stands on.
-func _place_prop(path: String, ground_anchor_pos: Vector2, tile_size: int) -> void:
+func _place_prop(path: String, ground_anchor_pos: Vector2, tile_size: int, authored_layout: Dictionary = {}) -> void:
 	var tex: Texture2D = load(path)
 	if tex == null:
 		# Import-cache race: right after a fresh --import (especially under concurrent load) the
@@ -408,6 +408,15 @@ func _place_prop(path: String, ground_anchor_pos: Vector2, tile_size: int) -> vo
 		# fresh, cache-ignoring read before giving up so the prop still appears.
 		tex = ResourceLoader.load(path, "Texture2D", ResourceLoader.CACHE_MODE_IGNORE)
 	if tex == null:
+		return
+	if not authored_layout.is_empty():
+		var layout_script = preload("res://scripts/world/AuthoredPropLayout.gd")
+		var authored: Node2D = layout_script.create(tex, authored_layout)
+		if authored == null:
+			push_warning("Invalid authored prop layout: " + path)
+			return
+		authored.position = ground_anchor_pos
+		_entities.add_child(authored)
 		return
 	var prop := Node2D.new()
 	prop.position = ground_anchor_pos
