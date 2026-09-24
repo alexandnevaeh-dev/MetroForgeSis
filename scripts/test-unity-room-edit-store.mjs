@@ -58,3 +58,20 @@ test('enemy timing saves through room transaction and rejects invalid values wit
  assert.equal(readFileSync(join(dir,paths[0]),'utf8'),saved);
  const empty=make(),s=readUnityRoomEdit(empty,'room_0');assert.throws(()=>saveUnityRoomEdit(empty,'room_0',s.objects,s.fingerprints,undefined,timing),/no enemy/);
 });
+
+test('legacy and bounded enemy timings match runtime defaults without writes during read',()=>{
+ for(const [input,expected] of [
+  [{attackWindupSeconds:0,attackRecoverySeconds:0,attackCooldownSeconds:0},[.24,.21,.8]],
+  [{attackWindupSeconds:-1,attackRecoverySeconds:null,attackCooldownSeconds:'bad'},[.24,.21,.8]],
+  [{attackWindupSeconds:100,attackRecoverySeconds:.001,attackCooldownSeconds:.2},[10,.01,10.01]],
+  [{attackWindupSeconds:.6,attackRecoverySeconds:.3,attackCooldownSeconds:100},[.6,.3,60]],
+ ]){
+  const dir=make();const root=join(dir,'gameplay.json');const pack=JSON.parse(readFileSync(root,'utf8'));
+  pack.rooms[0].enemy={id:'legacy',x:0,y:0,...input};const bytes=JSON.stringify(pack);
+  for(const f of ['gameplay.json','Assets/StreamingAssets/gameplay.json'])writeFileSync(join(dir,f),bytes);
+  const state=readUnityRoomEdit(dir,'room_0');assert.deepEqual(Object.values(state.enemyTiming),expected);
+  assert.equal(readFileSync(root,'utf8'),bytes);
+  state.objects[0].x=10;saveUnityRoomEdit(dir,'room_0',state.objects,state.fingerprints,undefined,state.enemyTiming);
+  assert.equal(readUnityRoomEdit(dir,'room_0').objects[0].x,10);
+ }
+});

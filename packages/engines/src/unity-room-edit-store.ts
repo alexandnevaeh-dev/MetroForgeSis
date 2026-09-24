@@ -17,7 +17,14 @@ export function readUnityRoomEdit(project: string, roomId: string) {
   const objects = roomSolidObjects(pack, roomId);
   const background = pack.rooms.find(room => room.id === roomId)!.backgrounds;
   const enemy = pack.rooms.find(room => room.id === roomId)!.enemy;
-  const enemyTiming = enemy ? { attackWindupSeconds: enemy.attackWindupSeconds ?? 0.24, attackRecoverySeconds: enemy.attackRecoverySeconds ?? 0.21, attackCooldownSeconds: enemy.attackCooldownSeconds ?? 0.8 } : undefined;
+  // Match EnemyActor.ConfigureAttack when inspecting legacy or out-of-range data.
+  // Reading never rewrites the source files; normalization persists only on Save.
+  const duration = (value: unknown, fallback: number, max: number) =>
+    typeof value !== 'number' || !Number.isFinite(value) || value <= 0 ? fallback : Math.max(0.01, Math.min(max, value));
+  const windup = duration(enemy?.attackWindupSeconds, 0.24, 10);
+  const recovery = duration(enemy?.attackRecoverySeconds, 0.21, 10);
+  const enemyTiming = enemy ? { attackWindupSeconds: windup, attackRecoverySeconds: recovery,
+    attackCooldownSeconds: Math.max(windup + recovery, duration(enemy.attackCooldownSeconds, 0.8, 60)) } : undefined;
   return { objects, enemyTiming, farBackground: background?.far, backgroundFraming: { farCameraRelative: background?.farCameraRelative ?? false,
     farParallax: background?.farParallax ?? 0.1 }, fingerprints: originals.map(hash) };
 }
