@@ -4359,3 +4359,9 @@ select {
 .unity-room-geometry > .room-canvas { flex: 1 1 180px; min-height: 160px; height: 0; display: block; }
 .room-background-disclosure > summary { cursor: pointer; color: var(--text-secondary); padding: var(--space-2) 0; }
 .room-background-disclosure[open] > summary { color: var(--text-primary); }
+
+.mf-checkbox-row { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.mf-checkbox-row input[type='checkbox'] { width: 16px; height: 16px; min-height: 0; padding: 0; margin: 0; flex: 0 0 16px; accent-color: var(--forge-accent); }
+.terrain-appearance-fields { border: 0; padding: 8px 0; margin: 0; min-width: 0; display: grid; gap: 8px; }
+.terrain-appearance-fields legend { color: var(--forge-text-muted); padding: 0; }
+.terrain-appearance-fields .mf-prop-row { grid-template-columns: minmax(0, 1fr) minmax(72px, 1fr); }

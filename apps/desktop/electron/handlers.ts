@@ -13,6 +13,8 @@ import {
   saveEditableLoot,
   createEditableLoot,
   saveEditableLootSource,
+  readEditableTerrain,
+  saveEditableTerrain,
   readEditableItems,
   saveEditableItem,
   computeOverallProgress,
@@ -1834,6 +1836,16 @@ export function registerIpcHandlers(cwd: string): void {
     return { ...saveEditableLootSource(projectPath, sourceId, tableId, revision), runtimeSupported: detectProjectEngine(projectPath) === 'godot' };
   });
 
+  ipcMain.handle('read-editable-terrain', async (_event, projectPath: string, asset: string) => {
+    assertReadableProjectPath(projectPath, cwd);
+    if (detectProjectEngine(projectPath) !== 'unity') throw new Error('Terrain presentation currently supports Unity projects');
+    return readEditableTerrain(projectPath, asset);
+  });
+  ipcMain.handle('save-editable-terrain', async (_event, projectPath: string, asset: string, settings: unknown, revision: string) => {
+    assertReadableProjectPath(projectPath, cwd);
+    if (detectProjectEngine(projectPath) !== 'unity') throw new Error('Terrain presentation currently supports Unity projects');
+    return saveEditableTerrain(projectPath, asset, settings, revision);
+  });
   ipcMain.handle('read-editable-items', async (_event, projectPath: string) => {
     assertReadableProjectPath(projectPath, cwd);
     return { ...readEditableItems(projectPath), runtimeSupported: detectProjectEngine(projectPath) === 'godot' };

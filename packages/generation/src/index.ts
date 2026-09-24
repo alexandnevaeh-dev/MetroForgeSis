@@ -149,3 +149,4 @@ export * from './asset-qa.js';
 export * from './asset-qa-command.js';
 export { readEditableItems, saveEditableItem } from './item-edit-service.js';
 export { readEditableLoot, saveEditableLoot, createEditableLoot, saveEditableLootSource } from './loot-edit-service.js';
+export { readEditableTerrain, saveEditableTerrain } from './terrain-edit-service.js';

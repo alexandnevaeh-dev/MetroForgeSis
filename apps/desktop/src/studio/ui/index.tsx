@@ -1063,3 +1063,8 @@ export function RejectionTagBadge({
     </span>
   );
 }
+
+/** Compact labelled checkbox for inspector forms. */
+export function Checkbox({ label, className = '', ...props }: InputHTMLAttributes<HTMLInputElement> & { label: ReactNode }) {
+  return <label className={['mf-checkbox-row', className].filter(Boolean).join(' ')}><input {...props} type="checkbox" /><span>{label}</span></label>;
+}

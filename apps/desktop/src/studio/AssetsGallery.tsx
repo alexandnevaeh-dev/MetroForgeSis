@@ -1,3 +1,4 @@
+import { TerrainPresentationEditor } from './TerrainPresentationEditor.js';
 import { previewFrameAtTime } from './animation-clock.js';
 import { AnimationPreview } from './AnimationPreview.js';
 import { LootDefinitionEditor } from './LootDefinitionEditor.js';
@@ -252,6 +253,7 @@ export function AssetsGallery() {
               )}
             </div>
             <h3 className="asset-inspector-title">{selected.id}</h3>
+            {selectedPath && /^assets\/tilesets\/biome_\d+\/(floor|wall)\.png$/.test(selected.path) && <TerrainPresentationEditor key={JSON.stringify([selectedPath,selected.path])} projectPath={selectedPath} asset={selected.path} />}
             <dl className="settings-dl asset-inspector-dl">
               <dt>Path</dt>
               <dd>

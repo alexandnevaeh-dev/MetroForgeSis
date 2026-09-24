@@ -37,6 +37,8 @@ contextBridge.exposeInMainWorld('metroforge', {
   saveEditableLoot: (projectPath: string, table: unknown, revision: string) => ipcRenderer.invoke('save-editable-loot', projectPath, table, revision),
   createEditableLoot: (projectPath: string, table: unknown, revision: string) => ipcRenderer.invoke('create-editable-loot', projectPath, table, revision),
   saveEditableLootSource: (projectPath: string, sourceId: string, tableId: string | null, revision: string) => ipcRenderer.invoke('save-editable-loot-source', projectPath, sourceId, tableId, revision),
+  readEditableTerrain: (projectPath: string, asset: string) => ipcRenderer.invoke('read-editable-terrain', projectPath, asset),
+  saveEditableTerrain: (projectPath: string, asset: string, settings: unknown, revision: string) => ipcRenderer.invoke('save-editable-terrain', projectPath, asset, settings, revision),
   readEditableItems: (projectPath: string) => ipcRenderer.invoke('read-editable-items', projectPath),
   saveEditableItem: (projectPath: string, item: unknown, revision: string) => ipcRenderer.invoke('save-editable-item', projectPath, item, revision),
   readUnityRoomEdit: (projectPath: string, roomId: string) => ipcRenderer.invoke('read-unity-room-edit', projectPath, roomId),
