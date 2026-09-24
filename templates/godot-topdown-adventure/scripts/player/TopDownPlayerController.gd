@@ -34,6 +34,7 @@ const ATTACK_MOVEMENT_MULTIPLIER := 0.55
 const HURT_INVULNERABILITY := 0.65
 var _attack_state: AttackState = AttackState.READY
 var _attack_time := 0.0
+var _attack_direction := Vector2.DOWN
 var _invulnerability_time := 0.0
 ## Read by BossController._on_hit_received() for the "dash_through" weakness tag — bosses that
 ## carry it (see bosses.json) take double damage from a hit landed while this is true. There's no
@@ -153,6 +154,7 @@ func _facing_name(dir: Vector2) -> String:
 	return best
 
 func _start_attack() -> void:
+	_attack_direction = cardinal_facing()
 	_attack_cooldown = ATTACK_STARTUP + ATTACK_ACTIVE + ATTACK_RECOVERY
 	_attack_state = AttackState.STARTUP
 	_attack_time = ATTACK_STARTUP
@@ -167,7 +169,7 @@ func _update_attack_state(delta: float) -> void:
 		return
 	match _attack_state:
 		AttackState.STARTUP:
-			var hit_dir := cardinal_facing()
+			var hit_dir := _attack_direction
 			attack_hitbox.position = hit_dir * 22.0
 			attack_hitbox.activate()
 			_attack_state = AttackState.ACTIVE
