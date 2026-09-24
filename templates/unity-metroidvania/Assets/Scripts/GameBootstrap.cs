@@ -886,7 +886,14 @@ public class GameBootstrap : MonoBehaviour
         box.size = new Vector2(28f, 48f);
         var sr = go.AddComponent<SpriteRenderer>();
         sr.sortingOrder = 7;
-        var sprite = LoadStreamingSprite("assets/props/interact/save_shrine.png", new Vector2(0.5f, 0f));
+        GameplaySpriteClip presentation = null;
+        foreach (var clip in Pack.sprites ?? System.Array.Empty<GameplaySpriteClip>())
+            if (clip != null && clip.ownerId == "checkpoint" && clip.clip == "idle") { presentation = clip; break; }
+        var sprite = presentation == null
+            ? LoadStreamingSprite("assets/props/interact/save_shrine.png", new Vector2(0.5f, 0f))
+            : StreamingArtCache.GetSprite(_streamingRoot, presentation.relativePath,
+                new Vector2(presentation.pivotX, presentation.pivotY), presentation.pixelsPerUnit,
+                presentation.smoothFiltering ? FilterMode.Bilinear : FilterMode.Point);
         if (sprite != null)
             sr.sprite = sprite;
         else

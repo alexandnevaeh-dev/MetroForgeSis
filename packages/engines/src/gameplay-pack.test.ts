@@ -110,3 +110,27 @@ describe('authored animation layouts', () => {
     expect(() => packWithSheet(spec)).toThrow('Invalid animation frame layout');
   });
 });
+
+it('exports authored checkpoint art without changing checkpoint gameplay geometry', () => {
+  const outputDir = mkdtempSync(join(tmpdir(), 'metroforge-checkpoint-'));
+  const input = {
+    outputDir, gameDna: dna,
+    worldGraph: { version: '0.1.0' as const, seed: 3, nodes: [{ id: 'room_000', type: 'room' as const, label: 'Shrine', metadata: { archetype: 'save' } }], edges: [], regions: [] },
+    progressionGraph: { version: '0.1.0' as const, seed: 3, startNodeId: 'room_000', endNodeId: 'room_000', nodes: [], edges: [], abilities: [], criticalPath: ['room_000'] },
+    roomIds: ['room_000'],
+  };
+  const baseline = buildGameplayPack(input);
+  const png = Buffer.alloc(24);
+  png.set([0x89, 0x50, 0x4e, 0x47]);
+  png.writeUInt32BE(768, 16); png.writeUInt32BE(1024, 20);
+  const idle = { frameCount: 1, frameWidth: 768, frameHeight: 1024, fps: 1, loop: false, pixelsPerUnit: 10.625, pivotX: 384.5 / 768, pivotY: 181 / 1024, smoothFiltering: true };
+  const pack = buildGameplayPack({ ...input, textureFiles: new Map([
+    ['assets/props/interact/save_shrine.png', png],
+    ['assets/props/interact/save_shrine_animations.json', Buffer.from(JSON.stringify({ idle }))],
+  ]) });
+  expect(pack.sprites.find(sprite => sprite.ownerId === 'checkpoint' && sprite.clip === 'idle'))
+    .toMatchObject({ ...idle, relativePath: 'assets/props/interact/save_shrine.png' });
+  expect(pack.rooms[0]?.checkpoint).toBeDefined();
+  expect(pack.rooms).toEqual(baseline.rooms);
+  expect(baseline.sprites.some(sprite => sprite.ownerId === 'checkpoint')).toBe(false);
+});

@@ -165,6 +165,10 @@ function collectSprites(input: AssemblyInput, enemyIds: string[]): GameplaySprit
       if (sprite) sprites.push(sprite);
     }
   }
+  const checkpointSettings = 'assets/props/interact/save_shrine_animations.json';
+  const checkpoint = clipFromSheet('checkpoint', 'idle', 'assets/props/interact/save_shrine.png', input,
+    loadClipSpecs(join(input.outputDir, checkpointSettings), input.textureFiles?.get(checkpointSettings)), 0);
+  if (checkpoint) sprites.push(checkpoint);
   return sprites;
 }
 
