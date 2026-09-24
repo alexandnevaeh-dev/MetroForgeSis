@@ -389,7 +389,12 @@ export class DiffusersProvider implements ImageGenerator {
 
       const timer = setTimeout(() => {
         terminateWorker(proc);
-        finish(() => reject(new Error('Diffusers worker timed out')));
+        // Report numeric progress only: stderr may contain prompts or private paths.
+        // Loading and inference both use tqdm, so do not label this as inference progress.
+        const reports = [...stderr.matchAll(/(\d{1,3})%\|[^\r\n]*?\|\s*(\d+)\/(\d+)/g)];
+        const last = reports.at(-1);
+        const progress = last ? `; last reported worker progress ${last[2]}/${last[3]} (${last[1]}%)` : '; no worker progress reported';
+        finish(() => reject(new Error(`Diffusers worker timed out after ${timeoutMs}ms${progress}`)));
       }, timeoutMs);
 
       options.signal?.addEventListener('abort', onAbort, { once: true });
