@@ -47,6 +47,25 @@ func run() -> void:
 		layout.layers[0].image = invalid_name
 		manager.call("_place_prop", "res://icon.svg", Vector2.ZERO, 16, layout)
 		check(entities.get_child_count() == 3, "Invalid layer reference admitted: " + invalid_name)
+	layout.layers[0].image = "icon.svg"
+	var record := {"id":"gateway-1","image":"res://icon.svg","x":72.5,"y":96,"layout":layout}
+	var area := {"id":"edited-room","kind":"overworld","tileSize":16,"propPlacements":[record]}
+	var saved := FileAccess.open("res://authored-area-roundtrip.json",FileAccess.WRITE)
+	saved.store_string(JSON.stringify(area))
+	saved.close()
+	var reloaded: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://authored-area-roundtrip.json"))
+	manager.call("_spawn_props", reloaded)
+	check(entities.get_child_count() == 4, "Saved authored room did not load")
+	if entities.get_child_count() == 4:
+		var restored: Node2D = entities.get_child(3)
+		check(restored.position == Vector2(72.5,96), "Saved prop transform lost")
+		check(restored.get_meta("placement_id") == "gateway-1", "Saved prop identity lost")
+		check(restored.y_sort_enabled, "Saved layered prop flattened")
+	manager.call("_spawn_props", {"kind":"dungeon","propPlacements":[]})
+	check(entities.get_child_count() == 4, "Explicit empty placements created props")
+	reloaded.propPlacements.append(reloaded.propPlacements[0].duplicate(true))
+	manager.call("_spawn_props", reloaded)
+	check(entities.get_child_count() == 5, "Duplicate saved placement admitted")
 	manager.free()
 	entities.free()
 	var result := {"passed": failures.is_empty(), "failures": failures, "scope": "Actual OverworldManager legacy and authored prop placement, invalid layout rejection; template import passed separately. No desktop editing or doorway occlusion test."}

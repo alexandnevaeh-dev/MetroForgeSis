@@ -17,3 +17,9 @@ Outstanding: editor persistence for authored prop records, placement clearance, 
 Optional `layers` supports 1–32 entries `{id: string, sortY: number}`. IDs must be unique; sortY is finite source-pixel ground depth relative to the shared anchor, bounded to twice the source height. Pass a dictionary of matching Texture2D objects as the third `AuthoredPropLayout.create` argument. Every layer must match sourceSize. Missing/wrong textures reject the whole prop; no silent flat fallback. Layered props use nearest sampling and nested Y sorting, preserving a shared artwork position and existing footprints. Without layers the original single-image behavior remains.
 
 Runtime helper and OverworldManager asset loading are implemented. Each layer record additionally supplies `image`, a sibling filename beside the base texture. The loader rejects missing textures, external paths and subdirectories before adding any nodes. Saved room placement records and desktop authoring controls are not yet connected. Do not automatically register the gateway candidate.
+
+## Saved area placements
+
+`TopDownArea.propPlacements` is optional. Omission retains legacy automatic scatter; an explicit array replaces scatter in both overworld and dungeon areas, and `[]` means no props. Each record is `{id, image, x, y, layout}` where image is a `res://` project texture path, x/y are finite ground-anchor coordinates, and layout is the authored contract above. Runtime nodes retain `placement_id` metadata. Duplicate IDs and malformed/missing resources are skipped with warnings. The collection is limited to 512 records. Existing area loading rebuilds these nodes on room entry.
+
+Native integration checks round-trip an area through JSON on disk, restore its layered prop and position, reject duplicates and honor an empty list. This does not prove desktop save/edit controls or collision-clearance authoring. The editor must still expose and persist these records.

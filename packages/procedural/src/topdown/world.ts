@@ -35,6 +35,23 @@ export interface TopDownPoi {
   metadata: Record<string, string | number | boolean>;
 }
 
+export interface TopDownPropLayout {
+  version: 1;
+  sourceSize: [number, number];
+  anchorPx: [number, number];
+  displayScale: number;
+  collisionRectsPx: Array<{ x: number; y: number; width: number; height: number }>;
+  layers?: Array<{ id: string; image: string; sortY: number }>;
+}
+
+export interface TopDownPropPlacement {
+  id: string;
+  /** Project-relative Godot resource path. */
+  image: string;
+  x: number;
+  y: number;
+  layout: TopDownPropLayout;
+}
 export interface TopDownArea {
   id: string;
   name: string;
@@ -45,6 +62,8 @@ export interface TopDownArea {
   tiles: number[][];
   collisionRects: Array<{ x: number; y: number; w: number; h: number }>;
   pois: TopDownPoi[];
+  /** Omitted preserves legacy scatter; an explicit empty list removes all props. */
+  propPlacements?: TopDownPropPlacement[];
 }
 
 export interface TopDownOverworld {
@@ -561,6 +580,8 @@ function buildArea(opts: {
   tiles: number[][];
   tileSize: number;
   pois: TopDownPoi[];
+  /** Omitted preserves legacy scatter; an explicit empty list removes all props. */
+  propPlacements?: TopDownPropPlacement[];
 }): TopDownArea {
   return {
     id: opts.id,

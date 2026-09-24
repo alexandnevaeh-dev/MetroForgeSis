@@ -328,7 +328,37 @@ func _build_collision(area: Dictionary) -> void:
 ## plausible real cause of a corridor narrowing enough to defeat simple bot pathing even though a
 ## human player would route around it easily. Dungeon interiors (this function's real target) have
 ## no equivalent competing hand-placed layout and are unaffected by this change.
+## Explicit placements replace scatter, including an intentionally empty list.
+func _spawn_authored_props(area: Dictionary) -> void:
+	var entries: Variant = area.get("propPlacements")
+	if not entries is Array or entries.size() > 512:
+		push_warning("Invalid authored prop placements")
+		return
+	var layout_script = preload("res://scripts/world/AuthoredPropLayout.gd")
+	var seen := {}
+	for entry: Variant in entries:
+		if not entry is Dictionary or not entry.get("id") is String or entry.id.is_empty() or seen.has(entry.id):
+			push_warning("Invalid or duplicate authored prop identity")
+			continue
+		seen[entry.id] = true
+		var image: Variant = entry.get("image")
+		if not image is String or not image.begins_with("res://") or image.contains("..") or image.contains("\\") or image.substr(6).contains(":"):
+			push_warning("Invalid authored prop resource path")
+			continue
+		if not layout_script._number(entry.get("x")) or not layout_script._number(entry.get("y")) or not entry.get("layout") is Dictionary or entry.layout.is_empty():
+			push_warning("Invalid authored prop position or layout")
+			continue
+		if not ResourceLoader.exists(image, "Texture2D"):
+			push_warning("Missing authored prop image: " + image)
+			continue
+		var before := _entities.get_child_count()
+		_place_prop(image, Vector2(float(entry.x),float(entry.y)), int(area.get("tileSize",16)), entry.layout)
+		if _entities.get_child_count() > before:
+			_entities.get_child(before).set_meta("placement_id", entry.id)
 func _spawn_props(area: Dictionary) -> void:
+	if area.has("propPlacements"):
+		_spawn_authored_props(area)
+		return
 	if String(area.get("kind", "")) != "dungeon":
 		return
 	var tile_size := int(area.get("tileSize", 16))
