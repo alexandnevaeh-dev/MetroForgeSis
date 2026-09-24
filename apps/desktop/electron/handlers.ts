@@ -1862,13 +1862,13 @@ export function registerIpcHandlers(cwd: string): void {
     return readUnityRoomEdit(projectPath, roomId);
   });
 
-  ipcMain.handle('save-unity-room-edit', async (_event, projectPath: string, roomId: string, objects: EditableObject[], fingerprints: string[], backgroundFraming?: import('@metroforge/engines').UnityBackgroundFraming) => {
+  ipcMain.handle('save-unity-room-edit', async (_event, projectPath: string, roomId: string, objects: EditableObject[], fingerprints: string[], backgroundFraming?: import('@metroforge/engines').UnityBackgroundFraming, enemyTiming?: import('@metroforge/engines').UnityEnemyTiming) => {
     assertReadableProjectPath(projectPath, cwd);
     if (detectProjectEngine(projectPath) !== 'unity') throw new Error('Unity room editing requires a Unity project');
     if (!Array.isArray(objects) || objects.length > 10000 || !Array.isArray(fingerprints) ||
         fingerprints.length !== 2 || fingerprints.some(value => typeof value !== 'string'))
       throw new Error('Invalid room edit request');
-    return saveUnityRoomEdit(projectPath, roomId, objects, fingerprints, backgroundFraming);
+    return saveUnityRoomEdit(projectPath, roomId, objects, fingerprints, backgroundFraming, enemyTiming);
   });
 
   ipcMain.handle('get-room-collision', async (_event, projectPath: string, roomId: string) => {

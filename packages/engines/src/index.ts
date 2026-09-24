@@ -11,6 +11,6 @@ export { roomSolidObjects, withRoomSolids } from './room-solid-edit.js';
 export { readUnityRoomEdit, saveUnityRoomEdit } from './unity-room-edit-store.js';
 export { rollLoot, type LootDrop } from './loot.js';
 
-export type { UnityBackgroundFraming } from './unity-room-edit-store.js';
+export type { UnityBackgroundFraming, UnityEnemyTiming } from './unity-room-edit-store.js';
 export { parseTerrainPresentation } from './terrain-presentation.js';
 export type { TerrainPresentation } from './terrain-presentation.js';

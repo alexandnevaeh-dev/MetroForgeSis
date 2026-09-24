@@ -5,6 +5,7 @@ import type { GameplayPack } from './types.js';
 import type { EditableObject } from './live-edit-session.js';
 import { roomSolidObjects, withRoomSolids } from './room-solid-edit.js';
 
+export interface UnityEnemyTiming { attackWindupSeconds: number; attackRecoverySeconds: number; attackCooldownSeconds: number }
 export interface UnityBackgroundFraming { farCameraRelative: boolean; farParallax: number }
 const paths = (project: string) => [join(project, 'gameplay.json'), join(project, 'Assets', 'StreamingAssets', 'gameplay.json')];
 const hash = (value: string) => createHash('sha256').update(value).digest('hex');
@@ -15,12 +16,14 @@ export function readUnityRoomEdit(project: string, roomId: string) {
     throw new Error('Gameplay copies differ; reconcile them before editing');
   const objects = roomSolidObjects(pack, roomId);
   const background = pack.rooms.find(room => room.id === roomId)!.backgrounds;
-  return { objects, farBackground: background?.far, backgroundFraming: { farCameraRelative: background?.farCameraRelative ?? false,
+  const enemy = pack.rooms.find(room => room.id === roomId)!.enemy;
+  const enemyTiming = enemy ? { attackWindupSeconds: enemy.attackWindupSeconds ?? 0.24, attackRecoverySeconds: enemy.attackRecoverySeconds ?? 0.21, attackCooldownSeconds: enemy.attackCooldownSeconds ?? 0.8 } : undefined;
+  return { objects, enemyTiming, farBackground: background?.far, backgroundFraming: { farCameraRelative: background?.farCameraRelative ?? false,
     farParallax: background?.farParallax ?? 0.1 }, fingerprints: originals.map(hash) };
 }
 
 /** Rollback on ordinary write failures. Backups also permit manual crash recovery. */
-export function saveUnityRoomEdit(project: string, roomId: string, objects: EditableObject[], fingerprints: string[], backgroundFraming?: UnityBackgroundFraming) {
+export function saveUnityRoomEdit(project: string, roomId: string, objects: EditableObject[], fingerprints: string[], backgroundFraming?: UnityBackgroundFraming, enemyTiming?: UnityEnemyTiming) {
   const files = paths(project);
   const originals = files.map(path => readFileSync(path, 'utf8'));
   if (fingerprints.length !== 2 || originals.some((text, index) => hash(text) !== fingerprints[index]))
@@ -36,6 +39,16 @@ export function saveUnityRoomEdit(project: string, roomId: string, objects: Edit
       throw new Error('Invalid background framing; parallax must be between 0 and 1');
     const room = updated.rooms.find(room => room.id === roomId)!;
     room.backgrounds = { ...room.backgrounds, ...backgroundFraming };
+  }
+  if (enemyTiming !== undefined) {
+    const enemy = updated.rooms.find(room => room.id === roomId)!.enemy;
+    if (!enemy) throw new Error('This room has no enemy to configure');
+    const keys = ['attackWindupSeconds', 'attackRecoverySeconds', 'attackCooldownSeconds'] as const;
+    if (!enemyTiming || Object.keys(enemyTiming).some(key => !keys.includes(key as typeof keys[number])) ||
+        keys.some(key => typeof enemyTiming[key] !== 'number' || !Number.isFinite(enemyTiming[key]) || enemyTiming[key] < 0.01 || enemyTiming[key] > (key === 'attackCooldownSeconds' ? 60 : 10)) ||
+        enemyTiming.attackCooldownSeconds < enemyTiming.attackWindupSeconds + enemyTiming.attackRecoverySeconds)
+      throw new Error('Invalid enemy timing: use positive durations; cooldown must cover windup and recovery');
+    Object.assign(enemy, enemyTiming);
   }
   const output = JSON.stringify(updated, null, 2);
   const id = randomUUID();

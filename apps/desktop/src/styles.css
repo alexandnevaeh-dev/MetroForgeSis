@@ -4365,3 +4365,6 @@ select {
 .terrain-appearance-fields { border: 0; padding: 8px 0; margin: 0; min-width: 0; display: grid; gap: 8px; }
 .terrain-appearance-fields legend { color: var(--forge-text-muted); padding: 0; }
 .terrain-appearance-fields .mf-prop-row { grid-template-columns: minmax(0, 1fr) minmax(72px, 1fr); }
+.enemy-timing-fields { border: 0; padding: 8px 0; margin: 0; min-width: 0; display: grid; gap: 8px; }
+.enemy-timing-fields legend { color: var(--forge-text-muted); padding: 0; }
+.enemy-timing-fields .mf-prop-row { grid-template-columns: minmax(0, 1fr) minmax(72px, 120px); }

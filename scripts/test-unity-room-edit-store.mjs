@@ -41,3 +41,20 @@ test('background framing shares room save, mirrors, backups and validation',()=>
  assert.deepEqual(readUnityRoomEdit(dir,'room_0').backgroundFraming,next.backgroundFraming);
  assert.equal(legacy.restartRequired,true);
 });
+
+test('enemy timing saves through room transaction and rejects invalid values without changing files',()=>{
+ const dir=make();const paths=['gameplay.json','Assets/StreamingAssets/gameplay.json'];
+ const pack=JSON.parse(readFileSync(join(dir,paths[0]),'utf8'));pack.rooms[0].enemy={id:'guard',x:12,y:34,health:50,damage:9};
+ for(const path of paths)writeFileSync(join(dir,path),JSON.stringify(pack));
+ const state=readUnityRoomEdit(dir,'room_0');
+ assert.deepEqual(state.enemyTiming,{attackWindupSeconds:.24,attackRecoverySeconds:.21,attackCooldownSeconds:.8});
+ const timing={attackWindupSeconds:.6,attackRecoverySeconds:.3,attackCooldownSeconds:1.2};
+ saveUnityRoomEdit(dir,'room_0',state.objects,state.fingerprints,undefined,timing);
+ const next=readUnityRoomEdit(dir,'room_0');assert.deepEqual(next.enemyTiming,timing);
+ const saved=readFileSync(join(dir,paths[0]),'utf8');assert.equal(saved,readFileSync(join(dir,paths[1]),'utf8'));
+ const enemy=JSON.parse(saved).rooms[0].enemy;assert.equal(enemy.health,50);assert.equal(enemy.x,12);
+ for(const bad of [{...timing,attackCooldownSeconds:.1},{...timing,attackWindupSeconds:NaN},{...timing,attackRecoverySeconds:0},{...timing,extra:1}])
+  assert.throws(()=>saveUnityRoomEdit(dir,'room_0',next.objects,next.fingerprints,undefined,bad),/Invalid enemy timing/);
+ assert.equal(readFileSync(join(dir,paths[0]),'utf8'),saved);
+ const empty=make(),s=readUnityRoomEdit(empty,'room_0');assert.throws(()=>saveUnityRoomEdit(empty,'room_0',s.objects,s.fingerprints,undefined,timing),/no enemy/);
+});

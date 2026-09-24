@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useId } from 'react';
 import { LiveEditSession, type LiveEditOperation } from '@metroforge/engines/live-edit-session';
-import { Button, Input } from './ui/index.js';
+import { Button, Input, PropertyRow } from './ui/index.js';
 type Draft = { session: LiveEditSession; fingerprints: string[]; farBackground?: string };
 // Retain unsaved room work when navigating between rooms during this app session.
 const drafts = new Map<string, Draft>();
@@ -12,9 +12,11 @@ const protectRoomDrafts=(event:BeforeUnloadEvent)=>{
 };
 if(typeof window!=='undefined')window.addEventListener('beforeunload',protectRoomDrafts);
 export function UnityRoomGeometry({projectPath,roomId,width,height,zoom=100,gridSnap=false,tileSize=16}: {projectPath:string;roomId:string;width:number;height:number;zoom?:number;gridSnap?:boolean;tileSize?:number}) {
+ const fieldId=useId();
  const scale=Number.isFinite(zoom)?Math.max(0.25,Math.min(4,zoom/100)):1;
  const snapStep=gridSnap&&Number.isFinite(tileSize)&&tileSize>0?tileSize:1;
  const viewWidth=width/scale,viewHeight=height/scale;
+ const timingId=`${roomId}:enemy-timing`;
  const framingId=`${roomId}:background-framing`;
  const key=JSON.stringify([projectPath,roomId]);
  const [draft,setDraft]=useState<Draft|null>(null);
@@ -34,8 +36,8 @@ export function UnityRoomGeometry({projectPath,roomId,width,height,zoom=100,grid
  const [backgroundUrl,setBackgroundUrl]=useState<string>();
  const [backgroundStatus,setBackgroundStatus]=useState('');
  useEffect(()=>{let alive=true;const cached=drafts.get(key);if(cached){setDraft(cached);return;}
-  void window.metroforge!.readUnityRoomEdit(projectPath,roomId).then(data=>{if(!alive)return;const next={session:new LiveEditSession(projectPath,crypto.randomUUID(),[...data.objects,{id:framingId,roomId,x:0,y:0,properties:{...data.backgroundFraming}}],new Set(['width','height','name','farCameraRelative','farParallax'])),fingerprints:data.fingerprints,farBackground:data.farBackground};drafts.set(key,next);setDraft(next);}).catch(e=>{if(alive)setError(String(e));});return()=>{alive=false;};
- },[key,projectPath,roomId,framingId]);
+  void window.metroforge!.readUnityRoomEdit(projectPath,roomId).then(data=>{if(!alive)return;const next={session:new LiveEditSession(projectPath,crypto.randomUUID(),[...data.objects,{id:framingId,roomId,x:0,y:0,properties:{...data.backgroundFraming}},...(data.enemyTiming?[{id:timingId,roomId,x:0,y:0,properties:{...data.enemyTiming}}]:[])],new Set(['width','height','name','farCameraRelative','farParallax','attackWindupSeconds','attackRecoverySeconds','attackCooldownSeconds'])),fingerprints:data.fingerprints,farBackground:data.farBackground};drafts.set(key,next);setDraft(next);}).catch(e=>{if(alive)setError(String(e));});return()=>{alive=false;};
+ },[key,projectPath,roomId,framingId,timingId]);
  useEffect(()=>{
   let alive=true;setBackgroundUrl(undefined);setBackgroundStatus('');
   if(!draft?.farBackground)return;
@@ -46,8 +48,9 @@ export function UnityRoomGeometry({projectPath,roomId,width,height,zoom=100,grid
   return()=>{alive=false;};
  },[projectPath,draft?.farBackground]);
  const state=draft?.session.snapshot();
- const solids=state?.objects.filter(o=>o.id!==framingId);
+ const solids=state?.objects.filter(o=>o.id!==framingId&&o.id!==timingId);
  const framing=state?.objects.find(o=>o.id===framingId);
+ const timing=state?.objects.find(o=>o.id===timingId);
  const object=solids?.find(o=>o.id===selected);
  const token=()=>({projectId:projectPath,sessionId:draft!.session.sessionId,baseRevision:draft!.session.snapshot().revision});
  const edit=(operations:LiveEditOperation[])=>{if(!draft||saving)return;try{draft.session.commit({...token(),operations});setError('');setNotice('');refresh(n=>n+1);}catch(e){setError(String(e));}};
@@ -56,11 +59,11 @@ export function UnityRoomGeometry({projectPath,roomId,width,height,zoom=100,grid
   setSaving(true);setError('');setNotice('');
   try{
    const data=await window.metroforge!.readUnityRoomEdit(projectPath,roomId);
-   const next:Draft={session:new LiveEditSession(projectPath,crypto.randomUUID(),[...data.objects,{id:framingId,roomId,x:0,y:0,properties:{...data.backgroundFraming}}],new Set(['width','height','name','farCameraRelative','farParallax'])),fingerprints:data.fingerprints,farBackground:data.farBackground};
+   const next:Draft={session:new LiveEditSession(projectPath,crypto.randomUUID(),[...data.objects,{id:framingId,roomId,x:0,y:0,properties:{...data.backgroundFraming}},...(data.enemyTiming?[{id:timingId,roomId,x:0,y:0,properties:{...data.enemyTiming}}]:[])],new Set(['width','height','name','farCameraRelative','farParallax','attackWindupSeconds','attackRecoverySeconds','attackCooldownSeconds'])),fingerprints:data.fingerprints,farBackground:data.farBackground};
    drafts.set(key,next);setDraft(next);setSelected('');cancelDrag();setNotice('Reloaded saved room. Previous draft and undo history discarded.');
   }catch(e){setError(String(e));}finally{setSaving(false);}
  };
- const save=async()=>{if(!draft||!state)return;setSaving(true);setError('');try{const result=await window.metroforge!.saveUnityRoomEdit(projectPath,roomId,solids!,draft.fingerprints,{farCameraRelative:framing?.properties.farCameraRelative===true,farParallax:Number(framing?.properties.farParallax??0.1)});draft.fingerprints=result.fingerprints;draft.session.markSaved(state.revision);setNotice('Saved. Restart the Unity game to apply room changes.');refresh(n=>n+1);}catch(e){setError(String(e));}finally{setSaving(false);}};
+ const save=async()=>{if(!draft||!state)return;setSaving(true);setError('');try{const result=await window.metroforge!.saveUnityRoomEdit(projectPath,roomId,solids!,draft.fingerprints,{farCameraRelative:framing?.properties.farCameraRelative===true,farParallax:Number(framing?.properties.farParallax??0.1)},timing?{attackWindupSeconds:Number(timing.properties.attackWindupSeconds),attackRecoverySeconds:Number(timing.properties.attackRecoverySeconds),attackCooldownSeconds:Number(timing.properties.attackCooldownSeconds)}:undefined);draft.fingerprints=result.fingerprints;draft.session.markSaved(state.revision);setNotice('Saved. Restart the Unity game to apply room changes.');refresh(n=>n+1);}catch(e){setError(String(e));}finally{setSaving(false);}};
  return <div className="unity-room-geometry">
   <div className="row">
    <Button disabled={!draft||saving} onClick={()=>{const id=crypto.randomUUID();edit([{type:'add',object:{id,roomId,x:Math.round(width/2),y:Math.round(height/2),properties:{width:80,height:16,name:'Platform'}}}]);setSelected(id);}}>Add platform</Button>
@@ -72,6 +75,10 @@ export function UnityRoomGeometry({projectPath,roomId,width,height,zoom=100,grid
   </div>
   <p className="hint">{state?.dirty?'Unsaved room changes · retained while switching rooms.':'Unity room geometry'} · Drag a solid to move it, or edit its position and size below. Escape cancels a drag. Runtime restart required.</p>
   {error&&<p role="alert">{error}</p>}{notice&&<p role="status">{notice}</p>}
+  {timing&&<details className="room-background-disclosure"><summary>Enemy attack timing</summary><fieldset className="enemy-timing-fields" disabled={saving}><legend>Attack durations in seconds</legend>
+   {([['attackWindupSeconds','Attack windup'],['attackRecoverySeconds','Attack recovery'],['attackCooldownSeconds','Attack cooldown']] as const).map(([key,label])=><PropertyRow key={key} label={<label htmlFor={`${fieldId}-${key}`}>{label}</label>}><Input id={`${fieldId}-${key}`} aria-label={label} type="number" min={0.01} max={key==='attackCooldownSeconds'?60:10} step={0.01} value={Number(timing.properties[key])} onChange={e=>{const value=e.currentTarget.valueAsNumber;if(Number.isFinite(value))edit([{type:'property',objectId:timingId,key,value}]);}}/></PropertyRow>)}
+   <p className="hint">Cooldown must cover windup plus recovery. Save room, then restart Unity preview to apply.</p>
+  </fieldset></details>}
   {framing&&<details className="room-background-disclosure"><summary>Distant background settings</summary><fieldset className="room-background-settings" disabled={saving}><legend>Distant background</legend><div className="room-background-fields">
    <label className="room-background-toggle"><Input type="checkbox" aria-label="Frame background to camera" checked={framing.properties.farCameraRelative===true} onChange={e=>edit([{type:'property',objectId:framingId,key:'farCameraRelative',value:e.target.checked}])}/>Frame background to camera</label>
    <label className="room-background-parallax">Parallax amount<Input aria-label="Background parallax" type="number" min={0} max={1} step={0.05} disabled={framing.properties.farCameraRelative!==true} value={Number(framing.properties.farParallax)} onChange={e=>{const value=e.currentTarget.valueAsNumber;if(Number.isFinite(value)&&value>=0&&value<=1)edit([{type:'property',objectId:framingId,key:'farParallax',value}]);}}/></label>
