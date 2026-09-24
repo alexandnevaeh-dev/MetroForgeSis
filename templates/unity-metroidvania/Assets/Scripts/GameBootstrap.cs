@@ -973,6 +973,7 @@ public class GameBootstrap : MonoBehaviour
         enemy.ConfigureMovement(spec.movement);
         enemy.Health = spec.health > 0 ? spec.health : 30f;
         enemy.Damage = spec.damage > 0 ? spec.damage : 8f;
+        enemy.ConfigureAttack(spec.attackWindupSeconds, spec.attackRecoverySeconds, spec.attackCooldownSeconds);
         enemy.Bind(_player);
         sheet.Play("idle");
         LastCreateEnemyMs = (Time.realtimeSinceStartup - t0) * 1000f;

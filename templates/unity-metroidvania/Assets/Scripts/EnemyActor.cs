@@ -18,6 +18,9 @@ public class EnemyActor : MonoBehaviour
     private float _attackCooldown;
     private float _clipLock;
     private float _attackWindup;
+    private float _windupSeconds = 0.24f;
+    private float _recoverySeconds = 0.21f;
+    private float _cooldownSeconds = 0.8f;
     private bool _attackPending;
     public bool WindingUp => _attackPending;
     private bool _dead;
@@ -39,6 +42,20 @@ public class EnemyActor : MonoBehaviour
         stationary = string.Equals(movement, "stationary", System.StringComparison.OrdinalIgnoreCase);
         _body.linearVelocity = Vector2.zero;
         _body.bodyType = stationary ? RigidbodyType2D.Static : RigidbodyType2D.Dynamic;
+    }
+
+    public void ConfigureAttack(float windupSeconds, float recoverySeconds, float cooldownSeconds)
+    {
+        // Missing legacy JSON fields deserialize to zero; preserve the default cadence.
+        _windupSeconds = ValidDuration(windupSeconds, 0.24f, 10f);
+        _recoverySeconds = ValidDuration(recoverySeconds, 0.21f, 10f);
+        _cooldownSeconds = Mathf.Max(_windupSeconds + _recoverySeconds, ValidDuration(cooldownSeconds, 0.8f, 60f));
+        _attackPending = false;
+    }
+
+    private static float ValidDuration(float value, float fallback, float maximum)
+    {
+        return float.IsNaN(value) || float.IsInfinity(value) || value <= 0f ? fallback : Mathf.Clamp(value, 0.01f, maximum);
     }
 
     public void Bind(PlayerActor player)
@@ -91,10 +108,10 @@ public class EnemyActor : MonoBehaviour
         }
         if (attackOffset.sqrMagnitude < 42f * 42f && _attackCooldown <= 0f && _clipLock <= 0f)
         {
-            _attackCooldown = 0.8f;
-            _clipLock = 0.45f;
+            _attackCooldown = _cooldownSeconds;
+            _clipLock = _windupSeconds + _recoverySeconds;
             _attackPending = true;
-            _attackWindup = 0.24f;
+            _attackWindup = _windupSeconds;
             _dir = delta >= 0f ? 1f : -1f;
             if (_animator != null) _animator.FlipX = _dir < 0f;
             _animator?.Play("attack", true);

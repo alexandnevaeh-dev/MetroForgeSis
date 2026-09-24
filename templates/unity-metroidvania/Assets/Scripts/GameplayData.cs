@@ -63,6 +63,9 @@ public class GameplayActor
     public float damage;
     public string movement;
     public string combat;
+    public float attackWindupSeconds;
+    public float attackRecoverySeconds;
+    public float attackCooldownSeconds;
 }
 
 [Serializable]

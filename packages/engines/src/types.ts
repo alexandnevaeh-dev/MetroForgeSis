@@ -55,6 +55,10 @@ export interface GameplayActor {
   damage?: number;
   movement?: string;
   combat?: string;
+  /** Unity melee timings in seconds. Other engines may not consume these yet. */
+  attackWindupSeconds?: number;
+  attackRecoverySeconds?: number;
+  attackCooldownSeconds?: number;
 }
 
 export interface GameplayBackgrounds {
