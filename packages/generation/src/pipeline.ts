@@ -1687,7 +1687,7 @@ export class GenerationPipeline {
     // METROFORGE_RUNTIME_READY, so the gate scored UNKNOWN and playtest never ran even though
     // every check had genuinely passed — docs/debug/TOPDOWN_GENRE_MILESTONE.md) is fixed, but this
     // is the regression check for it: don't let that combination silently ship again.
-    if (isTopDownArchetype(gameDna.archetype) && runtimeGateResult?.passed) {
+    if (isTopDownArchetype(gameDna.archetype) && runtimeGateResult && gateState(runtimeGateResult) === 'PASS') {
       const playtestResult = qaReport.results.find((r) => r.gate === 'godot_playtest');
       if (playtestResult && gateState(playtestResult) === 'SKIPPED') {
         errors.push(
