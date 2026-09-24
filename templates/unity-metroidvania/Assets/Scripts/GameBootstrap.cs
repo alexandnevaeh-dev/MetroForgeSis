@@ -736,7 +736,8 @@ public class GameBootstrap : MonoBehaviour
         }
         else
         {
-            sr.color = new Color(0.22f, 0.2f, 0.18f, 0.35f);
+            // Opaque collision terrain must occlude decorative background floors.
+            sr.color = new Color(0.22f, 0.2f, 0.18f, 1f);
             // Keep physics in authored world units even when a texture is missing.
             // Scaling this GameObject would multiply the already-sized BoxCollider2D.
             var fallbackTexture = Texture2D.whiteTexture;
