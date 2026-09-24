@@ -58,6 +58,14 @@ function feetOpaque(png: Buffer): boolean {
 }
 
 describe('authored foundry courier kit', () => {
+  it.each(['The Wanderer', 'A courier'])('does not infer foundry art from generic protagonist %s', protagonist => {
+    const gameDna: GameDNA = {
+      ...testDna,
+      identity: { ...testDna.identity, title: 'Dark fantasy abbey', tagline: 'Long castle halls', visualStyle: 'hand-painted 2D illustration' },
+      narrative: { ...testDna.narrative, premise: 'Explore a haunted abbey', protagonist },
+    };
+    expect(shouldUseFoundryCourierKit({ profile: 'TINY_TEST', gameDna })).toBe(false);
+  });
   it('does not replace TINY_TEST procedural actors', () => {
     expect(shouldUseFoundryCourierKit({ profile: 'TINY_TEST', gameDna: testDna })).toBe(false);
   });

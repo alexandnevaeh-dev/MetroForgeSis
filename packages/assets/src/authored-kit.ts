@@ -67,7 +67,7 @@ export function foundryBiomeStem(biomeId: string): 'pouring' | 'quench' | 'cooli
 
 /** The hand-authored courier kit is a SIDE-VIEW foundry-courier design (visor/pack/blade,
  *  foundry-tender). It ships for the side-view Foundry visual slice and for any side-view gen
- *  whose theme is explicitly foundry/courier/wanderer. It must never apply to a top-down game
+ *  whose theme is explicitly foundry. It must never apply to a top-down game
  *  (wrong genre) or to an unrelated side-view theme just because the profile is the slice. */
 export function shouldUseFoundryCourierKit(input: {
   profile: GenerationProfile;
@@ -87,5 +87,5 @@ export function shouldUseFoundryCourierKit(input: {
     .filter(Boolean)
     .join(' ')
     .toLowerCase();
-  return /\bfoundry\b|\bcourier\b|\bwanderer\b/.test(hay);
+  return /\bfoundry\b/.test(hay);
 }

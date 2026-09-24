@@ -280,3 +280,29 @@ describe('generateWorldDesignReport', () => {
     expect(report).toContain(`Victory: reach ${progressionGraph.endNodeId} from ${progressionGraph.startNodeId}`);
   });
 });
+
+describe('ability lesson placement', () => {
+  it.each(FULL_WORLD_TEST_SEEDS)('seed %i teaches movement at its pickup before the first gate', (seed) => {
+    const { worldGraph, progressionGraph } = generateFullMetroidvaniaWorld({ ...FULL_WORLD_TEST_CONFIG, seed });
+    for (const ability of progressionGraph.abilities) {
+      const lesson = worldGraph.nodes.find((node) => node.metadata?.teachesAbility === ability);
+      expect(lesson, `missing lesson for ${ability}`).toBeDefined();
+      expect(lesson!.metadata.grantsAbilities).toContain(ability);
+      expect(['boss', 'miniboss', 'arena']).not.toContain(lesson!.metadata.archetype);
+    }
+  });
+});
+
+describe('edited ability lesson validation', () => {
+  it('rejects a reachable lesson moved away from its pickup', () => {
+    const { worldGraph, progressionGraph, roomIds } = generateFullMetroidvaniaWorld({ ...FULL_WORLD_TEST_CONFIG, seed: 700001 });
+    const ability = progressionGraph.abilities[0]!;
+    const source = worldGraph.nodes.find((node) => node.metadata?.teachesAbility === ability)!;
+    const target = worldGraph.nodes.find((node) => !node.metadata?.teachesAbility && node.metadata?.archetype === 'save')!;
+    expect(target).toBeDefined();
+    delete source.metadata.teachesAbility;
+    target.metadata.teachesAbility = ability;
+    const result = validateWorldDesign({ worldGraph, progressionGraph, roomExtents: extentsFor(roomIds) });
+    expect(result.issues.map((issue) => issue.code)).toContain('misplaced_teaching_room');
+  });
+});

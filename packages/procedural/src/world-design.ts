@@ -196,19 +196,18 @@ export function generateFullMetroidvaniaWorld(options: FullWorldOptions): FullWo
     edge.metadata.transitionMotif = `${a.name} giving way to ${b.name} — blend ${a.hazards[0] ?? a.id} with ${b.hazards[0] ?? b.id}, do not hard-cut the palette`;
   }
 
-  // --- Teaching room: tag the room immediately after each ability gate as the room meant to
+  // --- Teaching room: tag the pickup room before each ability gate as the room meant to
   // exercise that ability safely before anything harder — reuses abilityGateRoomIndex, the exact
   // formula the base generator already used to place the gate itself, so this never drifts from
   // where the real gate/pickup ended up. Computed *before* the zone-miniboss placement just below
   // so that placement can steer clear of a teaching room rather than colliding with one — found
   // empirically (validateWorldDesign's own `unsafe_teaching_room` check) that the first ability's
-  // gate-post room can land exactly on a zone boundary, which is also where a zone's miniboss
+  // pickup room can land exactly on a zone boundary, which is also where a zone's miniboss
   // arena was being placed, silently turning a "safe room to try dashing" into a boss fight. -----
   const teachingRoomIds = new Set<string>();
   options.abilities.forEach((ability, ai) => {
     const gateIdx = abilityGateRoomIndex(ai, options.abilities.length, roomIds.length);
-    const postIdx = Math.min(gateIdx + 1, roomIds.length - 1);
-    const postId = roomIds[postIdx]!;
+    const postId = roomIds[gateIdx]!;
     const postNode = nodeById.get(postId);
     if (postNode) {
       postNode.metadata.teachesAbility = ability;
@@ -917,7 +916,7 @@ export function validateWorldDesign(input: ValidateWorldDesignInput): WorldDesig
     }
   }
 
-  // --- Teaching rooms: every ability's gate-post room must be tagged, and must not itself be a
+  // --- Teaching rooms: every ability's pickup room must be tagged, and must not itself be a
   // boss/miniboss/arena room (the point is a *safe* first exercise of the ability). A combat/
   // key-item gate (any grantsAbilities token that isn't a registered movement ability — see
   // nonAbilityGrantedTokens above) gets the opposite archetype rule: there is no registered
@@ -933,9 +932,17 @@ export function validateWorldDesign(input: ValidateWorldDesignInput): WorldDesig
         code: 'missing_teaching_room',
         message: isCombatToken
           ? `No room is tagged as the combat challenge for '${token}' — there should be a genuine miniboss/boss encounter that grants it.`
-          : `No room is tagged as the teaching room for ability '${token}' — there should be a safe room exercising it immediately after its gate.`,
+          : `No room is tagged as the teaching room for ability '${token}' — there should be a safe room exercising it before its first gate.`,
       });
       continue;
+    }
+    // A lesson moved past the unlock may remain reachable yet no longer introduces the skill.
+    // Keep the first practice space attached to the pickup when validating edited worlds.
+    if (!isCombatToken) {
+      const grants = teachingRoom.metadata?.grantsAbilities;
+      if (!Array.isArray(grants) || !grants.includes(token)) {
+        issues.push({ code: 'misplaced_teaching_room', message: `Teaching room for '${token}' (${teachingRoom.id}) must contain its pickup so practice precedes the first required gate.`, roomIds: [teachingRoom.id] });
+      }
     }
     const archetype = teachingRoom.metadata?.archetype;
     const isEncounterRoom = archetype === 'boss' || archetype === 'miniboss' || archetype === 'arena';
