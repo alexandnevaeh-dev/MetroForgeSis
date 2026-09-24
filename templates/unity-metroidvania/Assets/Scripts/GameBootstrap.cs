@@ -722,6 +722,7 @@ public class GameBootstrap : MonoBehaviour
         var rel = isWall
             ? $"assets/tilesets/{room.biomeId}/wall.png"
             : $"assets/tilesets/{room.biomeId}/floor.png";
+        if (TerrainArtPresentation.Apply(_streamingRoot, rel, go.transform, rect, sr)) return;
         var border = isWall ? new Vector4(6f, 12f, 6f, 12f) : new Vector4(12f, 6f, 12f, 6f);
         var tile = LoadSlicedSprite(rel, border)
             ?? LoadSlicedSprite($"assets/tilesets/{room.biomeId}/source.png", new Vector4(16f, 16f, 16f, 16f));
