@@ -462,7 +462,7 @@ export function RoomEditor() {
                   {JSON.stringify(selected, null, 2)}
                 </pre>
               ) : viewMode === 'visual' && selectedProject?.engine === 'unity' ? (
-                <UnityRoomGeometry key={`${selectedPath}:${selected.id}`} projectPath={selectedPath} roomId={selected.id} width={selected.width ?? 800} height={selected.height ?? 600} zoom={zoom} />
+                <UnityRoomGeometry key={`${selectedPath}:${selected.id}`} projectPath={selectedPath} roomId={selected.id} width={selected.width ?? 800} height={selected.height ?? 600} zoom={zoom} gridSnap={gridSnap} tileSize={tileSize} />
               ) : viewMode === 'visual' ? (
                 <>
                   {!hasGeometry && (

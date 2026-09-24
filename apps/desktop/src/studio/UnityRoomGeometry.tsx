@@ -1,17 +1,26 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { LiveEditSession, type LiveEditOperation } from '@metroforge/engines/live-edit-session';
 import { Button, Input } from './ui/index.js';
 type Draft = { session: LiveEditSession; fingerprints: string[]; farBackground?: string };
 // Retain unsaved room work when navigating between rooms during this app session.
 const drafts = new Map<string, Draft>();
-export function UnityRoomGeometry({projectPath,roomId,width,height,zoom=100}: {projectPath:string;roomId:string;width:number;height:number;zoom?:number}) {
+export function UnityRoomGeometry({projectPath,roomId,width,height,zoom=100,gridSnap=false,tileSize=16}: {projectPath:string;roomId:string;width:number;height:number;zoom?:number;gridSnap?:boolean;tileSize?:number}) {
  const scale=Number.isFinite(zoom)?Math.max(0.25,Math.min(4,zoom/100)):1;
+ const snapStep=gridSnap&&Number.isFinite(tileSize)&&tileSize>0?tileSize:1;
  const viewWidth=width/scale,viewHeight=height/scale;
  const framingId=`${roomId}:background-framing`;
  const key=JSON.stringify([projectPath,roomId]);
  const [draft,setDraft]=useState<Draft|null>(null);
  const [,refresh]=useState(0);
  const [selected,setSelected]=useState('');
+ type Drag = {id:string; pointerId:number; startX:number; startY:number; x:number; y:number; dx:number; dy:number};
+ const dragRef=useRef<Drag|null>(null);
+ const [drag,setDrag]=useState<Drag|null>(null);
+ const point=(svg:SVGSVGElement,clientX:number,clientY:number)=>{
+  const matrix=svg.getScreenCTM();if(!matrix)return null;
+  return new DOMPoint(clientX,clientY).matrixTransform(matrix.inverse());
+ };
+ const cancelDrag=()=>{dragRef.current=null;setDrag(null);};
  const [error,setError]=useState('');
  const [notice,setNotice]=useState('');
  const [saving,setSaving]=useState(false);
@@ -45,7 +54,7 @@ export function UnityRoomGeometry({projectPath,roomId,width,height,zoom=100}: {p
    <Button disabled={!state?.canRedo||saving} onClick={()=>history(true)}>Redo room edit</Button>
    <Button disabled={!state?.dirty||saving} onClick={()=>void save()}>{saving?'Saving…':'Save room'}</Button>
   </div>
-  <p className="hint">{state?.dirty?'Unsaved room changes · retained while switching rooms.':'Unity room geometry'} · Select a solid to edit its position and size. Runtime restart required.</p>
+  <p className="hint">{state?.dirty?'Unsaved room changes · retained while switching rooms.':'Unity room geometry'} · Drag a solid to move it, or edit its position and size below. Escape cancels a drag. Runtime restart required.</p>
   {error&&<p role="alert">{error}</p>}{notice&&<p role="status">{notice}</p>}
   {framing&&<details className="room-background-disclosure"><summary>Distant background settings</summary><fieldset className="room-background-settings" disabled={saving}><legend>Distant background</legend><div className="room-background-fields">
    <label className="room-background-toggle"><Input type="checkbox" aria-label="Frame background to camera" checked={framing.properties.farCameraRelative===true} onChange={e=>edit([{type:'property',objectId:framingId,key:'farCameraRelative',value:e.target.checked}])}/>Frame background to camera</label>
@@ -53,10 +62,14 @@ export function UnityRoomGeometry({projectPath,roomId,width,height,zoom=100}: {p
    </div><p className="hint">0 follows the camera; 1 allows the most drift. Save and restart Unity to preview the background.</p>
   </fieldset></details>}
   {backgroundStatus&&<p className="hint" role="status">{backgroundStatus}</p>}
-  <svg className="room-canvas" viewBox={`${(width-viewWidth)/2} ${(height-viewHeight)/2} ${viewWidth} ${viewHeight}`} style={{width:'100%'}} aria-label="Unity room geometry">
+  <svg className="room-canvas" viewBox={`${(width-viewWidth)/2} ${(height-viewHeight)/2} ${viewWidth} ${viewHeight}`} aria-label="Unity room geometry" style={{width:'100%',touchAction:'none'}}
+   onPointerMove={e=>{const current=dragRef.current;if(!current||current.pointerId!==e.pointerId)return;const p=point(e.currentTarget,e.clientX,e.clientY);if(!p)return;const next={...current,dx:Math.round((current.x+p.x-current.startX)/snapStep)*snapStep-current.x,dy:Math.round((current.y+p.y-current.startY)/snapStep)*snapStep-current.y};dragRef.current=next;setDrag(next);}}
+   onPointerUp={e=>{const current=dragRef.current;if(!current||current.pointerId!==e.pointerId)return;cancelDrag();if(current.dx||current.dy)edit([{type:'move',objectId:current.id,x:current.x+current.dx,y:current.y+current.dy}]);}}
+   onPointerCancel={cancelDrag} onLostPointerCapture={cancelDrag}
+   onKeyDown={e=>{if(e.key==='Escape'){cancelDrag();e.preventDefault();}}}>
    <rect width={width} height={height} fill="#171c24" />
    {backgroundUrl&&<image data-room-background="far" href={backgroundUrl} x={-width*0.01} y={-height*0.01} width={width*1.02} height={height*1.02} preserveAspectRatio="xMidYMid slice" pointerEvents="none" />}
-   {solids?.map(o=><rect key={o.id} role="button" tabIndex={0} aria-label={`Select ${o.properties.name??'solid'} ${o.id}`} x={o.x} y={o.y} width={Number(o.properties.width)} height={Number(o.properties.height)} fill={selected===o.id?'#70b5e8':'#6a5746'} stroke={selected===o.id?'#d9f0ff':'#bd8756'} strokeWidth={2} onClick={()=>setSelected(o.id)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSelected(o.id);}}}/>)}
+   {solids?.map(o=><rect key={o.id} role="button" tabIndex={0} aria-label={`Select ${o.properties.name??'solid'} ${o.id}`} x={o.x+(drag?.id===o.id?drag.dx:0)} y={o.y+(drag?.id===o.id?drag.dy:0)} width={Number(o.properties.width)} height={Number(o.properties.height)} fill={selected===o.id?'#70b5e8':'#6a5746'} stroke={selected===o.id?'#d9f0ff':'#bd8756'} strokeWidth={2} onPointerDown={e=>{if(saving||e.button!==0)return;const svg=e.currentTarget.ownerSVGElement;if(!svg)return;const p=point(svg,e.clientX,e.clientY);if(!p)return;e.preventDefault();e.currentTarget.focus();svg.setPointerCapture(e.pointerId);setSelected(o.id);const next={id:o.id,pointerId:e.pointerId,startX:p.x,startY:p.y,x:o.x,y:o.y,dx:0,dy:0};dragRef.current=next;setDrag(next);}} onClick={()=>setSelected(o.id)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSelected(o.id);}}}/>)}
   </svg>
   {object&&<fieldset disabled={saving}><legend>Selected solid</legend><div className="row">{(['x','y','width','height'] as const).map(field=><label key={field}>{field}<input aria-label={`Solid ${field}`} type="number" value={field==='x'||field==='y'?object[field]:Number(object.properties[field])} min={field==='width'||field==='height'?1:undefined} onChange={e=>{const value=e.currentTarget.valueAsNumber;if(!Number.isFinite(value)||((field==='width'||field==='height')&&value<=0))return;edit([field==='x'||field==='y'?{type:'move',objectId:object.id,x:field==='x'?value:object.x,y:field==='y'?value:object.y}:{type:'property',objectId:object.id,key:field,value}]);}} /></label>)}</div></fieldset>}
  </div>;
