@@ -164,3 +164,26 @@ describe('analyzeProjectCompletion', () => {
     expect(status.blockers.some((b) => b.includes('Do not invent GDScript'))).toBe(true);
   });
 });
+
+
+describe('genre-aware completion abilities', () => {
+  it.each([
+    ['TOP_DOWN_ACTION_ADVENTURE', 'wind_disc', true],
+    ['TOP_DOWN_ACTION_ADVENTURE', 'double_jump', false],
+    ['SIDE_VIEW_METROIDVANIA', 'wind_disc', false],
+    ['SIDE_VIEW_METROIDVANIA', 'double_jump', true],
+    ['TOP_DOWN_ACTION_ADVENTURE', 'invented_spell', false],
+  ] as const)('checks %s / %s against its runtime', (archetype, id, expected) => {
+    const project = stubProject();
+    project.gameDna.archetype = archetype;
+    project.gameDna.abilities = [{ id, name: id, category: 'movement', enabled: true }];
+    const result = analyzeProjectCompletion(project);
+    expect(result.checklist.find((item) => item.id === 'abilities')?.passed).toBe(expected);
+    expect(result.registeredAbilityCount).toBe(expected ? 1 : 0);
+    if (!expected && archetype === 'TOP_DOWN_ACTION_ADVENTURE') {
+      const warning = result.blockers.find((item) => item.startsWith('Unknown abilities'));
+      expect(warning).toContain('wind_disc');
+      expect(warning).not.toContain('wall_jump');
+    }
+  });
+});

@@ -2,6 +2,9 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   isRegisteredAbilityId,
+  isTopDownArchetype,
+  TOP_DOWN_DUNGEON_ITEMS,
+  REGISTERED_ABILITY_IDS,
   projectAllowsPlaceholders,
   type AssetMaturity,
 } from '@metroforge/shared';
@@ -197,8 +200,13 @@ export function analyzeProjectCompletion(project: LoadedProject): ProjectComplet
   if (!victoryQuest.ready) blockers.push(victoryQuest.detail);
 
   const enabledAbilities = project.gameDna.abilities.filter((a) => a.enabled);
-  const registered = enabledAbilities.filter((a) => isRegisteredAbilityId(a.id));
-  const unknownAbilities = enabledAbilities.filter((a) => !isRegisteredAbilityId(a.id));
+  const topDown = isTopDownArchetype(project.gameDna.archetype);
+  const supportedIds: readonly string[] = topDown
+    ? TOP_DOWN_DUNGEON_ITEMS.map((item) => item.id)
+    : REGISTERED_ABILITY_IDS;
+  const isSupported = (id: string) => topDown ? supportedIds.includes(id) : isRegisteredAbilityId(id);
+  const registered = enabledAbilities.filter((a) => isSupported(a.id));
+  const unknownAbilities = enabledAbilities.filter((a) => !isSupported(a.id));
   checklist.push({
     id: 'abilities',
     label: 'Abilities have runtime implementations',
@@ -208,7 +216,7 @@ export function analyzeProjectCompletion(project: LoadedProject): ProjectComplet
   if (unknownAbilities.length > 0) {
     blockers.push(
       `Unknown abilities (repairable=false): ${unknownAbilities.map((a) => a.id).join(', ')}. ` +
-        `Remap game_dna abilities to registered runtime ids (dash, double_jump, wall_slide, wall_jump, air_dash, ground_slam, grapple, swim, phase). ` +
+        `Remap game_dna abilities to registered runtime ids (${supportedIds.join(', ')}). ` +
         `Do not invent GDScript ability stubs.`,
     );
   }
@@ -225,7 +233,7 @@ export function analyzeProjectCompletion(project: LoadedProject): ProjectComplet
         : `${missingAttackSheets.length} missing`,
   });
   if (missingAttackSheets.length > 0) {
-    warnings.push(`Missing attack sheets: ${missingAttackSheets.slice(0, 5).join(', ')}${missingAttackSheets.length > 5 ? '…' : ''}`);
+    warnings.push(`Missing attack sheets: ${missingAttackSheets.slice(0, 5).join(', ')}${missingAttackSheets.length > 5 ? 'â€¦' : ''}`);
   }
 
   const worldGraphOk = project.worldGraph.nodes.length >= 1 && project.roomIds.length >= 1;
@@ -253,7 +261,7 @@ export function analyzeProjectCompletion(project: LoadedProject): ProjectComplet
       `AssetProductionGate blocked: ${assetGate.blockedAssets
         .slice(0, 3)
         .map((a) => `${a.path} (${a.maturity})`)
-        .join(', ')}${assetGate.blockedAssets.length > 3 ? '…' : ''}`,
+        .join(', ')}${assetGate.blockedAssets.length > 3 ? 'â€¦' : ''}`,
     );
   }
 
