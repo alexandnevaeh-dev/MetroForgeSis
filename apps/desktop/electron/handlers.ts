@@ -2110,7 +2110,7 @@ export function registerIpcHandlers(cwd: string): void {
   ipcMain.handle(
     'get-asset-version-preview',
     async (_event, projectPath: string, backupRelPath: string) => {
-      assertProjectPath(projectPath, cwd);
+      assertReadableProjectPath(projectPath, cwd);
       return { dataUrl: loadAssetThumbnail(projectPath, backupRelPath) };
     },
   );
