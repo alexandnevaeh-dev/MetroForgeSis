@@ -34,7 +34,7 @@ func body_rect(actor: Dictionary, at: Vector2) -> Rect2:
 
 func cell_rect(rect: Rect2) -> Rect2i:
 	var first := Vector2i(floor(rect.position / Grid.CELL_PX))
-	var last := Vector2i(floor((rect.end - Vector2(0.0001, 0.0001)) / Grid.CELL_PX))
+	var last := Vector2i(ceil(rect.end / Grid.CELL_PX)) - Vector2i.ONE
 	return Rect2i(first, last - first + Vector2i.ONE)
 
 func _blocked(actor: Dictionary, at: Vector2) -> bool:
@@ -217,6 +217,14 @@ func step() -> void:
 	for id in ids:
 		var actor: Dictionary = actors[id]
 		if actor.phase == "death":
+			continue
+		if grid.has_method("is_rect_awake") and not grid.is_rect_awake(body_rect(actor,actor.position)):
+			# Preserve phase time across sleeping world chunks; waking cannot skip a telegraph.
+			if actor.attack_started >= 0:
+				actor.attack_started += 1
+			if actor.hurt_until >= tick:
+				actor.hurt_until += 1
+			actor.state_started += 1
 			continue
 		actor.velocity.x = 0.0
 		var distance: float = body_rect(actor, actor.position).get_center().distance_to(player.body_rect(player.position).get_center())

@@ -29,9 +29,9 @@ func fixture(kind: String, at: Vector2) -> Dictionary:
 func advance(f: Dictionary, count: int, input: Dictionary = {}) -> void:
 	for i in count:
 		f.grid.clear_actor_occupancy()
+		f.enemies.occupy_all()
 		f.player.step(input)
 		f.grid.occupy_actor(f.player.cell_rect(f.player.position))
-		f.enemies.occupy_all()
 		f.grid.step()
 		f.enemies.step()
 		f.shots.step()
@@ -153,6 +153,15 @@ func run_tests() -> void:
 	var recall = fixture("skitter", Vector2(144, 320))
 	recall.player.position = Vector2(80, 320)
 	check(recall.player.recall() and not recall.player.take_damage(15.0), "Recall arrival immunity applies to live enemy damage")
+	var occupied_recall = fixture("skitter",Vector2(120,320))
+	occupied_recall.player.position = Vector2(320,320)
+	occupied_recall.enemies.occupy_all()
+	check(not occupied_recall.player.recall(),"Recall rejects a station occupied by a living enemy before committing the arrival")
+	occupied_recall.shots.targets[1].hp = 0.0
+	occupied_recall.enemies.synchronize_damage()
+	occupied_recall.grid.clear_actor_occupancy()
+	occupied_recall.enemies.occupy_all()
+	check(occupied_recall.player.recall() and occupied_recall.player.position == Vector2(120,320),"a cleared station becomes a safe Recall destination after the enemy dies")
 	var kill = fixture("skitter", Vector2(144, 320))
 	for i in 80:
 		if kill.shots.targets[1].hp > 0:

@@ -9,7 +9,7 @@ const report = join(repo, 'reports/game-tests/20261001-quantum-divergence');
 const store = 'E:/MetroForgeData/GitHubUpload/20261001/quantum-saves.git';
 const branch = 'refs/heads/codex/metroforge-epic-20261001';
 const expectedParent = process.argv.find(argument => argument.startsWith('--expected-parent='))?.slice('--expected-parent='.length)
-  || '65274b47b55bdef2e3fbdc62cbc1c3d7c0835ee0';
+  || '41c75e6b7a26c1d329fad139061d9a63d60cf930';
 if (!/^[a-f0-9]{40}$/.test(expectedParent)) throw Error('Provide the verified parent commit');
 const files = [
   'docs/development/QUANTUM_DIVERGENCE.md',
@@ -46,6 +46,15 @@ const files = [
   'prototypes/quantum-divergence/tests/SaveTests.gd',
   'prototypes/quantum-divergence/scenes/SavePlayground.tscn',
   'scripts/verify-quantum-save.mjs',
+  'prototypes/quantum-divergence/scripts/ChunkedGrid.gd',
+  'prototypes/quantum-divergence/scripts/MineWorld.gd',
+  'prototypes/quantum-divergence/scripts/MineNavigator.gd',
+  'prototypes/quantum-divergence/scripts/WorldPlayground.gd',
+  'prototypes/quantum-divergence/tests/ChunkTests.gd',
+  'prototypes/quantum-divergence/tests/WorldTests.gd',
+  'prototypes/quantum-divergence/scenes/WorldPlayground.tscn',
+  'prototypes/quantum-divergence/Run Probability Mines World.cmd',
+  'scripts/verify-quantum-world.mjs',
 ];
 const patterns = [/gh[pousr]_[A-Za-z0-9]{35,}/, /github_pat_[A-Za-z0-9_]{70,}/,
   /sk-(?:proj-)?[A-Za-z0-9_-]{40,}/, /nvapi-[A-Za-z0-9_-]{45,}/,
@@ -87,14 +96,18 @@ for (const id of ['200', '301', '302', '303']) if (!(combat.runtime.enemy_active
 for (const attack of ['slam', 'burst', 'roar']) if (!(combat.runtime.boss_active[attack] > 0)) throw Error('Golem active attack missing');
 const saves = JSON.parse(readFileSync(join(report, 'save-control-latest.json'), 'utf8'));
 if (saves.runtime.save_phase !== 'complete' || Object.keys(saves.runtime.save_checks).length !== 13 || Object.values(saves.runtime.save_checks).some(passed => passed !== true)) throw Error('Rendered suspend/death/restart control is incomplete');
-for (const proof of [...progression.sources, ...combat.sources, ...saves.sources]) {
+const world = JSON.parse(readFileSync(join(report, 'world-latest.json'), 'utf8'));
+if (world.suites.some(result => result.failed !== 0) || world.runtime.world.cells !== 1382400 || world.runtime.world.recall_stations < 2 || !world.runtime.progression.anchor_upper) throw Error('Full-size layout/traversal/entry verification is incomplete');
+const worldPassed = world.suites.reduce((total,result) => total + result.passed,0);
+if (worldPassed < 33 || world.suites.find(result => result.suite === 'world')?.waypoints_reached !== world.suites.find(result => result.suite === 'world')?.waypoints) throw Error('Complete physical main route is missing');
+for (const proof of [...progression.sources, ...combat.sources, ...saves.sources, ...world.sources]) {
   const current = createHash('sha256').update(readFileSync(join(repo, 'prototypes/quantum-divergence', proof.path))).digest('hex');
   if (current !== proof.sha256) throw Error('Native source changed after route verification: ' + proof.path);
 }
 const tree = git(['write-tree']).trim();
 const commit = git(['commit-tree', tree, '-p', expectedParent],
-  `Add durable quantum suspend, resume and death restart\n\nPublish complete checksum-verified E-resident save generations, validate detached run state before swapping gameplay, recover valid previous candidates and block old-run resurrection after death/extraction. Keep blueprint/loadout/lore knowledge separate from base run stats. Connect F5/F9/Enter controls, restore a valid suspend at launch and retain eight complete recovery generations without counting damaged files. Verify ${nativePassed} native checks, the preserved objective and live combat routes, and a rendered exact-tick resume followed by genuine enemy-caused death and fresh restart. Current saves support the compact encounter only; full biome, production animations, modules, audio and MetroForge app generation remain pending.\n`).trim();
-const result = { status: 'prepared', commit, parent: expectedParent, files: hashes, tests: { nativePassed, nativeFailed: 0 }, workingIndexPreserved: indexHash() === beforeIndex };
+  `Build connected full-size Probability Mines world and active chunks\n\nGenerate eight authored landmarks with seeded material pockets and a physically traversable protected backbone at 5760x3840 pixels. Add bounded awake-chunk simulation, sleeping actor clocks, changed-chunk terrain rendering, camera-relative aiming, live encounter placement and functional Recall stations. Correct large-coordinate half-open collision bounds and validate enemy occupancy before Recall arrival. Verify ${nativePassed + worldPassed} native behavior checks, full main-route starting-kit traversal, the rendered entry-to-upper-anchor walk and preserved compact combat/save recovery. Final art/animation, optional-branch proof, full-world combat completion, durable world saves, modules, audio and MetroForge app generation remain pending.\n`).trim();
+const result = { status: 'prepared', commit, parent: expectedParent, files: hashes, tests: { nativePassed: nativePassed + worldPassed, compactPassed: nativePassed, worldPassed, nativeFailed: 0 }, workingIndexPreserved: indexHash() === beforeIndex };
 writeFileSync(join(report, 'github-quantum-upload.json'), JSON.stringify(result, null, 2));
 git(['update-ref', branch, commit, expectedParent]);
 git(['push', 'origin', branch + ':' + branch]);

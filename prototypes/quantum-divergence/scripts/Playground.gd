@@ -47,6 +47,9 @@ func _setup_targets() -> void:
 func _aim_for_test(muzzle: Vector2) -> Vector2:
 	return Vector2(410, 350) - muzzle if selected == "tachyon" else Vector2.RIGHT
 
+func _aim_for_user(muzzle: Vector2) -> Vector2:
+	return get_global_mouse_position() - WORLD_OFFSET - muzzle
+
 func _after_simulation(_input: Dictionary) -> void:
 	pass
 
@@ -133,9 +136,10 @@ func _physics_process(_delta: float) -> void:
 	simulation_tick += 1
 	var input: Dictionary = _controls()
 	grid.clear_actor_occupancy()
+	# Recall validates living enemy occupancy before it moves the player.
+	_occupy_other_actors()
 	player.step(input)
 	grid.occupy_actor(player.cell_rect(player.position))
-	_occupy_other_actors()
 	grid.step()
 	_step_actors()
 	if player.recalled_this_tick:
@@ -143,7 +147,7 @@ func _physics_process(_delta: float) -> void:
 		effects.append({"type": "recall", "position": player.position - Vector2(0, 20), "until": simulation_tick + 30})
 	if _can_fire() and (fire_requested or (not smoke_test and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT))):
 		var muzzle: Vector2 = player.position + Vector2(player.facing * 14, -25)
-		var aim: Vector2 = get_global_mouse_position() - WORLD_OFFSET - muzzle
+		var aim: Vector2 = _aim_for_user(muzzle)
 		if smoke_test:
 			aim = _aim_for_test(muzzle)
 		var fired: Dictionary = instruments.fire(selected, muzzle, aim)

@@ -53,7 +53,8 @@ func body_rect(at: Vector2) -> Rect2:
 func cell_rect(at: Vector2) -> Rect2i:
 	var body: Rect2 = body_rect(at)
 	var first: Vector2i = Vector2i(floor(body.position / Grid.CELL_PX))
-	var last: Vector2i = Vector2i(floor((body.end - Vector2(0.0001, 0.0001)) / Grid.CELL_PX))
+	# Half-open bounds stay correct at large world coordinates where tiny epsilon rounds away.
+	var last: Vector2i = Vector2i(ceil(body.end / Grid.CELL_PX)) - Vector2i.ONE
 	return Rect2i(first, last - first + Vector2i.ONE)
 
 func _blocked(at: Vector2) -> bool:

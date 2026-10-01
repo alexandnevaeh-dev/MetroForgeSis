@@ -45,9 +45,9 @@ func fixture(profile: Dictionary) -> Dictionary:
 func advance(bundle: Dictionary, count: int, controls: Dictionary = {}) -> void:
 	for i in count:
 		bundle.grid.clear_actor_occupancy()
+		bundle.enemies.occupy_all()
 		bundle.player.step(controls)
 		bundle.grid.occupy_actor(bundle.player.cell_rect(bundle.player.position))
-		bundle.enemies.occupy_all()
 		bundle.grid.step()
 		bundle.enemies.step()
 		bundle.instruments.step()
