@@ -59,7 +59,9 @@ func _vertical(a: Vector2, b: Vector2, points: Array[Vector2], side: float = 1.0
 	var count: int = maxi(1,ceili(distance / (64.0 if rising else 96.0)))
 	var previous: Vector2 = a
 	for i in range(1,count + 1):
-		var at := Vector2(a.x + (128.0 * side if i % 2 == 1 else 0.0),snappedf(lerpf(a.y,b.y,float(i) / count),4.0))
+		# Rising steps advance sideways instead of stacking a ceiling over the launch pad.
+		var horizontal: float = 128.0 * side * i if rising else (128.0 * side if i % 2 == 1 else 0.0)
+		var at := Vector2(a.x + horizontal,snappedf(lerpf(a.y,b.y,float(i) / count),4.0))
 		_passage(previous,at)
 		_floor(at)
 		points.append(at)
@@ -81,7 +83,7 @@ func _vertical(a: Vector2, b: Vector2, points: Array[Vector2], side: float = 1.0
 func _join(a: Vector2, b: Vector2, points: Array[Vector2]) -> void:
 	if b.y < a.y:
 		var side: float = 1.0 if b.x >= a.x else -1.0
-		var corner := Vector2(a.x + side * 256.0,b.y)
+		var corner := Vector2(a.x + side * 128.0 * maxi(2,ceili((a.y - b.y) / 64.0)),b.y)
 		_vertical(a,corner,points,side)
 		_horizontal(corner,b,points)
 	else:
@@ -120,8 +122,12 @@ func build(seed_value: int = 42) -> Dictionary:
 	_join(lower,core,route)
 	_join(core,lift,route)
 	var secret := Vector2(512,2208)
-	_join(rift,secret,branches)
-	_join(anchor,Vector2(4200,992),branches)
+	var survey_route: Array[Vector2] = [rift]
+	var echo_route: Array[Vector2] = [anchor]
+	_join(rift,secret,survey_route)
+	_join(anchor,Vector2(4200,992),echo_route)
+	branches.append_array(survey_route.slice(1))
+	branches.append_array(echo_route.slice(1))
 	# Continuous room floors preserve a coherent chamber interior, with actual shaft openings.
 	for room in ROOMS:
 		var rect: Rect2i = room.tiles
@@ -165,6 +171,7 @@ func build(seed_value: int = 42) -> Dictionary:
 		_carve(_cells(body))
 	return {"schema_version":1,"world_id":"probability-mines-world-v1","seed":seed_value,"pixels":[5760,3840],"encounters":encounters,
 		"rooms":ROOMS.duplicate(true),"spawn":spawn,"route":route,"branches":branches,
+		"branch_routes":{"survey":survey_route,"echo":echo_route},
 		"stations":[spawn,anchor,rift,lower,core,lift,secret,Vector2(4200,992)],
 		"layout":{"anchor":anchor,"core":core,"exit":lift,"secret":secret,
 			"upper_region":Rect2i(58 * 8 + 1,4 * 8 + 1,48 * 8 - 2,32 * 8 - 2),

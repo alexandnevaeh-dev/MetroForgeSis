@@ -9,7 +9,7 @@ const report = join(repo, 'reports/game-tests/20261001-quantum-divergence');
 const store = 'E:/MetroForgeData/GitHubUpload/20261001/quantum-saves.git';
 const branch = 'refs/heads/codex/metroforge-epic-20261001';
 const expectedParent = process.argv.find(argument => argument.startsWith('--expected-parent='))?.slice('--expected-parent='.length)
-  || '41c75e6b7a26c1d329fad139061d9a63d60cf930';
+  || '3d4b4bb49efeb028454f9293bdec89177d70e465';
 if (!/^[a-f0-9]{40}$/.test(expectedParent)) throw Error('Provide the verified parent commit');
 const files = [
   'docs/development/QUANTUM_DIVERGENCE.md',
@@ -55,6 +55,11 @@ const files = [
   'prototypes/quantum-divergence/scenes/WorldPlayground.tscn',
   'prototypes/quantum-divergence/Run Probability Mines World.cmd',
   'scripts/verify-quantum-world.mjs',
+  'prototypes/quantum-divergence/scripts/WorldRunDriver.gd',
+  'prototypes/quantum-divergence/scripts/WorldVictoryPlayground.gd',
+  'prototypes/quantum-divergence/tests/BranchTests.gd',
+  'prototypes/quantum-divergence/scenes/WorldVictoryPlayground.tscn',
+  'scripts/verify-quantum-world-victory.mjs',
 ];
 const patterns = [/gh[pousr]_[A-Za-z0-9]{35,}/, /github_pat_[A-Za-z0-9_]{70,}/,
   /sk-(?:proj-)?[A-Za-z0-9_-]{40,}/, /nvapi-[A-Za-z0-9_-]{45,}/,
@@ -100,14 +105,22 @@ const world = JSON.parse(readFileSync(join(report, 'world-latest.json'), 'utf8')
 if (world.suites.some(result => result.failed !== 0) || world.runtime.world.cells !== 1382400 || world.runtime.world.recall_stations < 2 || !world.runtime.progression.anchor_upper) throw Error('Full-size layout/traversal/entry verification is incomplete');
 const worldPassed = world.suites.reduce((total,result) => total + result.passed,0);
 if (worldPassed < 33 || world.suites.find(result => result.suite === 'world')?.waypoints_reached !== world.suites.find(result => result.suite === 'world')?.waypoints) throw Error('Complete physical main route is missing');
-for (const proof of [...progression.sources, ...combat.sources, ...saves.sources, ...world.sources]) {
+const victory = JSON.parse(readFileSync(join(report, 'world-victory-latest.json'), 'utf8'));
+if (victory.branches.failed !== 0 || victory.branches.passed !== 6) throw Error('Optional physical branch traversal is missing');
+const fullRun = victory.runtime;
+if (fullRun.world.cells !== 1382400 || fullRun.world.recall_stations !== 8 || fullRun.player_hp <= 0 || fullRun.full_route.reached !== fullRun.full_route.waypoints) throw Error('Complete world tour is missing');
+for (const key of ['anchor_upper','collapse_rift','golem_core','golem_defeated','secret_found','extracted']) if (!fullRun.progression[key]) throw Error('Full-world objective missing: ' + key);
+for (const id of ['200','301','302','303']) if (!(fullRun.enemy_active_counts[id] > 0) || !(fullRun.enemy_deaths[id])) throw Error('Full-world enemy verification incomplete: ' + id);
+for (const attack of ['slam','burst','roar']) if (!(fullRun.boss_active[attack] > 0)) throw Error('Full-world Golem active attack missing');
+for (const id of ['echo','survey']) if (!fullRun.full_route.branches[id].outbound || !fullRun.full_route.branches[id].returned) throw Error('Branch out-and-back missing: ' + id);
+for (const proof of [...progression.sources, ...combat.sources, ...saves.sources, ...world.sources, ...victory.sources]) {
   const current = createHash('sha256').update(readFileSync(join(repo, 'prototypes/quantum-divergence', proof.path))).digest('hex');
   if (current !== proof.sha256) throw Error('Native source changed after route verification: ' + proof.path);
 }
 const tree = git(['write-tree']).trim();
 const commit = git(['commit-tree', tree, '-p', expectedParent],
-  `Build connected full-size Probability Mines world and active chunks\n\nGenerate eight authored landmarks with seeded material pockets and a physically traversable protected backbone at 5760x3840 pixels. Add bounded awake-chunk simulation, sleeping actor clocks, changed-chunk terrain rendering, camera-relative aiming, live encounter placement and functional Recall stations. Correct large-coordinate half-open collision bounds and validate enemy occupancy before Recall arrival. Verify ${nativePassed + worldPassed} native behavior checks, full main-route starting-kit traversal, the rendered entry-to-upper-anchor walk and preserved compact combat/save recovery. Final art/animation, optional-branch proof, full-world combat completion, durable world saves, modules, audio and MetroForge app generation remain pending.\n`).trim();
-const result = { status: 'prepared', commit, parent: expectedParent, files: hashes, tests: { nativePassed: nativePassed + worldPassed, compactPassed: nativePassed, worldPassed, nativeFailed: 0 }, workingIndexPreserved: indexHash() === beforeIndex };
+  `Verify full Probability Mines combat and optional branch traversal\n\nMake ascending branch stairs advance sideways so the echo chamber can be entered and physically backtracked with the starting movement kit. Keep separately named branch routes and add an input-only complete-world playtest covering all eight landmarks, every station, three projectile-damaged crystals, four live enemy families, every Golem attack, secret reward, core stabilization and gated extraction. Verify ${nativePassed + worldPassed + victory.branches.passed} native behavior checks and a rendered ${fullRun.ticks}-tick complete tour ending at HP ${fullRun.player_hp}. Retain initial failing echo-path evidence locally. Final art/animation, durable world saves, module programming, audio and MetroForge app generation remain pending.\n`).trim();
+const result = { status: 'prepared', commit, parent: expectedParent, files: hashes, tests: { nativePassed: nativePassed + worldPassed + victory.branches.passed, compactPassed: nativePassed, worldPassed, branchPassed: victory.branches.passed, nativeFailed: 0, fullWorldTicks: fullRun.ticks, fullWorldHP: fullRun.player_hp }, workingIndexPreserved: indexHash() === beforeIndex };
 writeFileSync(join(report, 'github-quantum-upload.json'), JSON.stringify(result, null, 2));
 git(['update-ref', branch, commit, expectedParent]);
 git(['push', 'origin', branch + ':' + branch]);

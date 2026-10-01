@@ -123,12 +123,14 @@ Version saves. Separate profile blueprints/loadouts/lore from run seed, simulati
 - [ ] Station compiler/preview and discoverable entanglement/tunneling modules.
 - [x] Native progression rules: regional anchor, three projectile-damaged crystals, permanent ghost-platform stabilization, defeated-Golem/core gate, secret reward and fully gated extraction in a rendered control.
 - [x] Initial full-size connected Probability Mines layout, seeded deposits, safe stations and live encounter placement.
-- [ ] Production world dressing, optional branch traversal proof and a completed full-world combat/objective playthrough.
+- [x] Starting-kit optional branch traversal and physical return, and a completed native full-world combat/objective playthrough.
+- [ ] Production world dressing and complete final biome presentation.
 - [x] Native live actor controller for Skitter, Wraith, Driller and Golem: telegraphs, active/recovery timing, material collision, damage, hit/death state, bounded terrain pulses and shared projectile capacity in an integrated objective route.
 - [ ] Three enemy families and Golem with original complete reviewed animation sets and timings above.
 - [ ] Original coherent terrain, interior backgrounds, effects, audio and HUD.
 - [x] Durable versioned profile/suspend files, safe recovery, death/restart and extraction ending in the compact native encounter.
-- [ ] Station programming preview, chunk-scale saves and full-biome victory flow.
+- [ ] Station programming preview and chunk-scale saves.
+- [x] Native full-biome objective, defeated-core and extraction flow with a living player.
 - [ ] Add genre schemas, capability registry, own assembler/template and app UI only when the runtime exists. Unknown genre IDs must never silently generate the existing Metroidvania.
 - [ ] Generate through MetroForge's real app UI, play through all three objectives, show gameplay/animation captures and retain failures honestly.
 
@@ -203,3 +205,15 @@ Twenty-three native chunk/actor/precision checks and ten native world checks acc
 
 Play with `Run Probability Mines World.cmd`, verify with `scripts/verify-quantum-world.mjs`, and record the entry walk with `scripts/record-quantum-playground.mjs --world`. The current mine-wall layer, machinery and actor poses are original diagnostic art. Native GPU capture and the full physics traverse do not establish production visual approval, completed full-biome combat or a stable 60 FPS budget in every region. In the same entry route, changing full viewport raster rebuilding to changed-chunk texture updates reduced measured CPU work from about 20.30ms to 15.80ms; the final verifier additionally includes focus work in its reported CPU metric. Fixed-rate movie output is presentation evidence, not a hardware-performance measurement.
 The connected-world integration also verifies that living enemy occupancy blocks Recall arrival, and that a cleared destination becomes usable after death. Station registration removes only the player's own occupancy while retaining living enemies; standing at a station cannot block its own admission.
+
+## Full-world encounter milestone, 2026-10-01
+
+The larger mine now has a completed native combat/objective route in addition to the earlier entry and physics controls. `WorldRunDriver.gd` emits only normal movement, jump/levitation, aim/fire and E interaction requests. It never writes player position, health, immunity, enemy HP, material cells or objective flags. The complete tour physically walks both the Echo Chamber and Collapsed Survey Tunnel outward and back before continuing the main mine route. No Recall or teleport shortens this tour. Separately named branch routes remain part of the authored world manifest.
+
+The first branch test found that alternating ascending platforms stacked a ceiling above the launch pad in the echo route. Ascending stairs now advance sideways, preserving side access. Both branch round trips pass from the actual entry with the unchanged starting movement kit, full-body clearance and no health grants. Six new native branch checks join the existing 217, for **223 native behavior checks**. The first failed echo result remains in `branches-first.log`; the corrected main backbone and all 23 chunk checks also pass.
+
+`WorldVictoryPlayground.tscn` and `scripts/verify-quantum-world-victory.mjs` run the full-size world with actual GPU rendering. The accepted tour reaches all 161 waypoints and all eight landmarks, registers all eight stations through E, anchors the upper region, damages three crystals with projectiles, earns the secret Entanglement blueprint, defeats Skitter/Wraith/Driller/Golem, stabilizes the defeated core and extracts. Every family reaches an active attack. The Golem reaches three slams, three bursts and two roars. Forty accepted Photon shots produce exactly 40 damaging target hits: two, three and four for the small enemies, six crystal hits and 25 Golem hits. Three genuine hostile projectile hits leave HP 76. No scripted health or invulnerability grants are used.
+
+The successful rendered route runs for 6182 ticks, including the 90-tick post-extraction hold, and retains six real viewport captures. An earlier rendered attempt completed every gate but pressed E one frame before its final waypoint was recorded; the strict test correctly failed at 160/161. The test now waits for physical arrival before requesting lift interaction. That failed result and captures remain under `world-victory-1790862683447/`; the acceptance conditions were not weakened. Latest source hashes, exact target hit counts, all attack activations, landmark visits, branch returns and captures are recorded in `world-victory-latest.json`.
+
+Add `--world-victory` to `scripts/record-quantum-playground.mjs` for the complete native viewport movie. Recording uses the existing E: Godot/FFmpeg runtimes and verifies the resulting MP4 by decoding the whole file. Movie timing is fixed at 60 FPS and is not proof of stable hardware frame rate. Awake chunks remain at or below the 96-chunk cap throughout the tour. This milestone establishes the complete prototype gameplay loop; original reviewed art/animation sheets, module programming, full-world durable saves, audio and generation through MetroForge's actual app are still pending.
