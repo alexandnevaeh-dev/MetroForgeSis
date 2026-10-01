@@ -1,0 +1,599 @@
+{
+	"actor": "wraith",
+	"animationReady": false,
+	"boneLengthsVerified": true,
+	"clips": {
+		"attack": {
+			"count": 6,
+			"fps": 24,
+			"frames": [
+				{
+					"bounds": [
+						15,
+						16,
+						35,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "attack/frame-01.png",
+					"sha256": "16939cf0f10ff0f090010774781583c47cfc26fe9cef1c0c7861a446092ecfe5"
+				},
+				{
+					"bounds": [
+						12,
+						15,
+						39,
+						59
+					],
+					"groundLine": 48.0,
+					"path": "attack/frame-02.png",
+					"sha256": "78ba14e35b981b223492fd2f30d724027bd38b236042433865888b5c0b4926fe"
+				},
+				{
+					"bounds": [
+						9,
+						15,
+						41,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "attack/frame-03.png",
+					"sha256": "f629c7fb80424c87446bd6445622859927fa10ae7140efba65e5da099bff5ab4"
+				},
+				{
+					"bounds": [
+						8,
+						16,
+						42,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "attack/frame-04.png",
+					"sha256": "62c8afd27db1e26d191d03f03ed08d51ad5a2891e405cf9bc9a1c8b3676a1820"
+				},
+				{
+					"bounds": [
+						8,
+						17,
+						42,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "attack/frame-05.png",
+					"sha256": "480bd94e2a81bbe28ac88582327696a148f180bbf31be2d0b8c898445e7793e4"
+				},
+				{
+					"bounds": [
+						11,
+						17,
+						39,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "attack/frame-06.png",
+					"sha256": "527c85dca2bc8eb27f1d12dd8ff4524f5f848448bde7678a3683bfac68825c43"
+				}
+			]
+		},
+		"death": {
+			"count": 10,
+			"fps": 18,
+			"frames": [
+				{
+					"bounds": [
+						15,
+						16,
+						35,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "death/frame-01.png",
+					"sha256": "16939cf0f10ff0f090010774781583c47cfc26fe9cef1c0c7861a446092ecfe5"
+				},
+				{
+					"bounds": [
+						19,
+						18,
+						30,
+						53
+					],
+					"groundLine": 48.0,
+					"path": "death/frame-02.png",
+					"sha256": "013d355c3364f1d5a4836d73ddfe95d518a339c5cbd62e6bfc5800a509af1f58"
+				},
+				{
+					"bounds": [
+						23,
+						20,
+						25,
+						48
+					],
+					"groundLine": 48.0,
+					"path": "death/frame-03.png",
+					"sha256": "19cce71166a2ba2163fdeac5a26e8efbe2a9f67e490b7793cadeb23cd0b2b88f"
+				},
+				{
+					"bounds": [
+						23,
+						22,
+						22,
+						43
+					],
+					"groundLine": 48.0,
+					"path": "death/frame-04.png",
+					"sha256": "f9809249f65daef9b4bda3f1ac08f88dda00a6952c60d7e45c89a2f3a5f4fb99"
+				},
+				{
+					"bounds": [
+						22,
+						26,
+						21,
+						37
+					],
+					"groundLine": 48.0,
+					"path": "death/frame-05.png",
+					"sha256": "54ecbc7a59b72baa78b6462078b2b06d75943e686b54d31beca1727689555fd4"
+				},
+				{
+					"bounds": [
+						22,
+						30,
+						18,
+						28
+					],
+					"groundLine": 48.0,
+					"path": "death/frame-06.png",
+					"sha256": "66564ab340278d4a76837d127819e0c74b6ba525ff0552b33ff69ad7c29243e8"
+				},
+				{
+					"bounds": [
+						22,
+						33,
+						16,
+						27
+					],
+					"groundLine": 48.0,
+					"path": "death/frame-07.png",
+					"sha256": "5a34d84a5eb6b193a8bd56f78662c0dcf344da314dd4f8a76d5034966a3a1710"
+				},
+				{
+					"bounds": [
+						23,
+						37,
+						14,
+						21
+					],
+					"groundLine": 48.0,
+					"path": "death/frame-08.png",
+					"sha256": "88cbef7f21d1777968a2c774a4bf2f0e4dcad48c6d1e93f653ab3849d2eb933a"
+				},
+				{
+					"bounds": [
+						25,
+						40,
+						12,
+						15
+					],
+					"groundLine": 48.0,
+					"path": "death/frame-09.png",
+					"sha256": "488b9fb31d3332466c5a4b27bf3403d0e189935541e71a6f183bb750e9db218d"
+				},
+				{
+					"bounds": [
+						28,
+						42,
+						8,
+						9
+					],
+					"groundLine": 48.0,
+					"path": "death/frame-10.png",
+					"sha256": "a0cccff63f89d4164553ad986c590342c8f16ab6e52c390ee2bdfd830ac1f1d1"
+				}
+			]
+		},
+		"hit": {
+			"count": 3,
+			"fps": 18,
+			"frames": [
+				{
+					"bounds": [
+						12,
+						15,
+						35,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "hit/frame-01.png",
+					"sha256": "14054d3b5af37e092657100144757e8e40fb3c53ed4ce4f7f8842e9d0034fe27"
+				},
+				{
+					"bounds": [
+						11,
+						16,
+						36,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "hit/frame-02.png",
+					"sha256": "a11756c25e4376bc92317faef73280149eac83813e8fafe3b8b080ab8fcdde36"
+				},
+				{
+					"bounds": [
+						14,
+						17,
+						36,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "hit/frame-03.png",
+					"sha256": "16fdf37cee35dddf645471f79b8983af9baca824a11b855733984e6b2977c007"
+				}
+			]
+		},
+		"idle": {
+			"count": 6,
+			"fps": 10,
+			"frames": [
+				{
+					"bounds": [
+						15,
+						16,
+						35,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "idle/frame-01.png",
+					"sha256": "16939cf0f10ff0f090010774781583c47cfc26fe9cef1c0c7861a446092ecfe5"
+				},
+				{
+					"bounds": [
+						14,
+						15,
+						36,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "idle/frame-02.png",
+					"sha256": "23ee2f053b798a34a98d62a2026e1f10febe992bd7ed63895721d35b7d1b4453"
+				},
+				{
+					"bounds": [
+						13,
+						15,
+						36,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "idle/frame-03.png",
+					"sha256": "57890155dd1b1c98b70f9cbf5442dc9443066a90161fc53264ad52041ff09ec6"
+				},
+				{
+					"bounds": [
+						13,
+						16,
+						36,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "idle/frame-04.png",
+					"sha256": "f211d99f9d885d548f48104b6001ea0cbdee0c0561c156c127faa8b7b538b910"
+				},
+				{
+					"bounds": [
+						14,
+						17,
+						36,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "idle/frame-05.png",
+					"sha256": "0788f996dafa0b4225e641d01fa6070b7ac07e6f5c5a1b4593988a7b69903dc5"
+				},
+				{
+					"bounds": [
+						15,
+						17,
+						36,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "idle/frame-06.png",
+					"sha256": "2a630925ad8d8e39d10f52fbe4b73fc73266e16198b2df8b26b2f5ef3ef28ea6"
+				}
+			]
+		},
+		"levitate": {
+			"count": 6,
+			"fps": 16,
+			"frames": [
+				{
+					"bounds": [
+						15,
+						16,
+						35,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "levitate/frame-01.png",
+					"sha256": "16939cf0f10ff0f090010774781583c47cfc26fe9cef1c0c7861a446092ecfe5"
+				},
+				{
+					"bounds": [
+						14,
+						15,
+						36,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "levitate/frame-02.png",
+					"sha256": "23ee2f053b798a34a98d62a2026e1f10febe992bd7ed63895721d35b7d1b4453"
+				},
+				{
+					"bounds": [
+						13,
+						15,
+						36,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "levitate/frame-03.png",
+					"sha256": "57890155dd1b1c98b70f9cbf5442dc9443066a90161fc53264ad52041ff09ec6"
+				},
+				{
+					"bounds": [
+						13,
+						16,
+						36,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "levitate/frame-04.png",
+					"sha256": "f211d99f9d885d548f48104b6001ea0cbdee0c0561c156c127faa8b7b538b910"
+				},
+				{
+					"bounds": [
+						14,
+						17,
+						36,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "levitate/frame-05.png",
+					"sha256": "0788f996dafa0b4225e641d01fa6070b7ac07e6f5c5a1b4593988a7b69903dc5"
+				},
+				{
+					"bounds": [
+						15,
+						17,
+						36,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "levitate/frame-06.png",
+					"sha256": "2a630925ad8d8e39d10f52fbe4b73fc73266e16198b2df8b26b2f5ef3ef28ea6"
+				}
+			]
+		},
+		"run": {
+			"count": 8,
+			"fps": 24,
+			"frames": [
+				{
+					"bounds": [
+						12,
+						16,
+						35,
+						59
+					],
+					"groundLine": 48.0,
+					"path": "run/frame-01.png",
+					"sha256": "f932af382f26fb18c850f2b1aa16370193d36956eccb0673c30afc040a9496ea"
+				},
+				{
+					"bounds": [
+						12,
+						15,
+						36,
+						60
+					],
+					"groundLine": 48.0,
+					"path": "run/frame-02.png",
+					"sha256": "b1fd2924cfaa85a2d000d69d16076405eb8be083924c5f842beae549d19efbce"
+				},
+				{
+					"bounds": [
+						12,
+						15,
+						36,
+						59
+					],
+					"groundLine": 48.0,
+					"path": "run/frame-03.png",
+					"sha256": "5ad420f54bd7024996b2e5f96a5eb7717a8b7f11e778b56dfede9072ba38c586"
+				},
+				{
+					"bounds": [
+						11,
+						15,
+						36,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "run/frame-04.png",
+					"sha256": "770e1938795ac693dc7b4f5180cd502eee66e06e0737ff9713141c125a202f3b"
+				},
+				{
+					"bounds": [
+						11,
+						16,
+						36,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "run/frame-05.png",
+					"sha256": "79b4c6d178907a3e9b4d12b3de33ce95ffd2f41a773e1bfff43bfbb35221fc26"
+				},
+				{
+					"bounds": [
+						11,
+						17,
+						36,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "run/frame-06.png",
+					"sha256": "cee1215a49bb835aa6d8e5d214a06367d728121a9ec87fba06e710120f597b9b"
+				},
+				{
+					"bounds": [
+						11,
+						17,
+						36,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "run/frame-07.png",
+					"sha256": "30abd053b47ad0923e6b1f0c2054d4065e22a8eb17272fdc62e6dc48c3587277"
+				},
+				{
+					"bounds": [
+						11,
+						17,
+						36,
+						59
+					],
+					"groundLine": 48.0,
+					"path": "run/frame-08.png",
+					"sha256": "fd096f8282bfcf46e58aec2d122323d77f1c49387817df0e656f5eeb32797932"
+				}
+			]
+		},
+		"walk": {
+			"count": 8,
+			"fps": 16,
+			"frames": [
+				{
+					"bounds": [
+						15,
+						16,
+						35,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "walk/frame-01.png",
+					"sha256": "16939cf0f10ff0f090010774781583c47cfc26fe9cef1c0c7861a446092ecfe5"
+				},
+				{
+					"bounds": [
+						14,
+						15,
+						36,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "walk/frame-02.png",
+					"sha256": "8b22455c2f46942e50c563f027a7bdd8dc8d4630a8a3bc16a0715ca78d7b76c6"
+				},
+				{
+					"bounds": [
+						14,
+						15,
+						35,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "walk/frame-03.png",
+					"sha256": "c0a424b292a20f6a6bf2334b22144bc67b541fead4c98899323588a22e7af6b5"
+				},
+				{
+					"bounds": [
+						13,
+						15,
+						36,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "walk/frame-04.png",
+					"sha256": "abb694f2e5f0d27029a78eb1e7d070b866f68e27ecb46d258209bd13062a0d7c"
+				},
+				{
+					"bounds": [
+						13,
+						16,
+						36,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "walk/frame-05.png",
+					"sha256": "f211d99f9d885d548f48104b6001ea0cbdee0c0561c156c127faa8b7b538b910"
+				},
+				{
+					"bounds": [
+						14,
+						17,
+						36,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "walk/frame-06.png",
+					"sha256": "d9849e964c1f3b3e90422fdc9e79f6b2bc6bc9689dccf8a2476283e32d84923b"
+				},
+				{
+					"bounds": [
+						14,
+						17,
+						37,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "walk/frame-07.png",
+					"sha256": "de02ba5b685ee95e5ccbcea4c034f0bde3cfeb797601827306eae15c4e4f300c"
+				},
+				{
+					"bounds": [
+						15,
+						17,
+						36,
+						58
+					],
+					"groundLine": 48.0,
+					"path": "walk/frame-08.png",
+					"sha256": "c5379bfb181edde50071bffe4cda5455173050c4b0a20af0b82272e0238935eb"
+				}
+			]
+		}
+	},
+	"frame": [
+		64,
+		96
+	],
+	"godot": {
+		"build": "official",
+		"hash": "89cea143987d564363e15d207438530651d943ac",
+		"hex": 263680,
+		"major": 4,
+		"minor": 6,
+		"patch": 0,
+		"status": "stable",
+		"string": "4.6-stable (official)",
+		"timestamp": 0
+	},
+	"helperScriptSha256": "be7bb9ac20f820e840309c3961c085f2e612135b25038b286504d067697f052d",
+	"logicalSize": [
+		32,
+		48
+	],
+	"ok": true,
+	"pivot": [
+		32,
+		48
+	],
+	"pixelsPerUnit": 27.4285714285714,
+	"productionApproved": false,
+	"renderDevice": "NVIDIA GeForce RTX 5060 Laptop GPU",
+	"renderVendor": "NVIDIA",
+	"source": "Original authored articulated geometry; no external meshes/textures",
+	"sourceSceneSha256": "7a14fd403f8ba217b81f942ae88f9031c638d2195a06e20214d9b402eeee204f",
+	"sourceScriptSha256": "7a7c259034077551a8d1b04c56a12ff3af9326d4a7a32831fb3d35c3b201fc64",
+	"transparent": true
+}
