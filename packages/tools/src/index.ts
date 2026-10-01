@@ -26,11 +26,15 @@ export {
   exportGodotWindowsBinary,
   ensureMacOSExportPreset,
   ensureWindowsExportPreset,
+  godotProcessEnv,
+  windowsExportTemplatesInstalled,
+  verifyPackagedWindowsLaunch,
 } from './godot-export.js';
 export type {
   GodotExportOptions,
   GodotExportResult,
   GodotMacOSExportOptions,
+  PackagedLaunchResult,
 } from './godot-export.js';
 export {
   deleteProject,

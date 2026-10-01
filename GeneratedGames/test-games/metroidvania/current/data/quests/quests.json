@@ -1,0 +1,267 @@
+{
+  "quests": [
+    {
+      "id": "quest_000",
+      "name": "Awakening",
+      "description": "Complete objective 1 in Stormglass Reliquary - Side-view Test.",
+      "prerequisites": [],
+      "objectives": [
+        {
+          "id": "obj_0_1",
+          "type": "Reach",
+          "target": "room_002",
+          "count": 1,
+          "description": "Reach room 2"
+        }
+      ],
+      "rewards": [
+        {
+          "type": "currency",
+          "id": "scrap",
+          "amount": 50
+        },
+        {
+          "type": "item",
+          "id": "warden_seal",
+          "amount": 1
+        }
+      ],
+      "dialogueStartId": "quest_000_offer",
+      "dialogueCompleteId": "quest_000_complete"
+    },
+    {
+      "id": "quest_001",
+      "name": "Trial 2",
+      "description": "Complete objective 2 in Stormglass Reliquary - Side-view Test.",
+      "prerequisites": [
+        "quest_000"
+      ],
+      "objectives": [
+        {
+          "id": "obj_1_1",
+          "type": "Kill",
+          "target": "enemy_001",
+          "count": 1,
+          "description": "Defeat Void Sentinel"
+        }
+      ],
+      "rewards": [
+        {
+          "type": "currency",
+          "id": "scrap",
+          "amount": 75
+        }
+      ],
+      "dialogueStartId": "quest_001_offer",
+      "dialogueCompleteId": "quest_001_complete"
+    },
+    {
+      "id": "quest_002",
+      "name": "Trial 3",
+      "description": "Complete objective 3 in Stormglass Reliquary - Side-view Test.",
+      "prerequisites": [
+        "quest_001"
+      ],
+      "objectives": [
+        {
+          "id": "obj_2_1",
+          "type": "Collect",
+          "target": "lost_echo",
+          "count": 1,
+          "description": "Collect a Lost Echo"
+        }
+      ],
+      "rewards": [
+        {
+          "type": "currency",
+          "id": "scrap",
+          "amount": 100
+        }
+      ],
+      "dialogueStartId": "quest_002_offer",
+      "dialogueCompleteId": "quest_002_complete"
+    },
+    {
+      "id": "quest_003",
+      "name": "Trial 4",
+      "description": "Complete objective 4 in Stormglass Reliquary - Side-view Test.",
+      "prerequisites": [
+        "quest_002"
+      ],
+      "objectives": [
+        {
+          "id": "obj_3_1",
+          "type": "Talk",
+          "target": "npc_003",
+          "count": 1,
+          "description": "Speak with a local"
+        }
+      ],
+      "rewards": [
+        {
+          "type": "currency",
+          "id": "scrap",
+          "amount": 125
+        }
+      ],
+      "dialogueStartId": "quest_003_offer",
+      "dialogueCompleteId": "quest_003_complete"
+    },
+    {
+      "id": "quest_004",
+      "name": "Trial 5",
+      "description": "Complete objective 5 in Stormglass Reliquary - Side-view Test.",
+      "prerequisites": [
+        "quest_003"
+      ],
+      "objectives": [
+        {
+          "id": "obj_4_1",
+          "type": "AbilityAcquire",
+          "target": "air_dash",
+          "count": 1,
+          "description": "Acquire Air Dash"
+        }
+      ],
+      "rewards": [
+        {
+          "type": "currency",
+          "id": "scrap",
+          "amount": 150
+        }
+      ],
+      "dialogueStartId": "quest_004_offer",
+      "dialogueCompleteId": "quest_004_complete"
+    },
+    {
+      "id": "quest_005",
+      "name": "Trial 6",
+      "description": "Complete objective 6 in Stormglass Reliquary - Side-view Test.",
+      "prerequisites": [
+        "quest_004"
+      ],
+      "objectives": [
+        {
+          "id": "obj_5_1",
+          "type": "Discover",
+          "target": "room_008",
+          "count": 1,
+          "description": "Discover room_008"
+        }
+      ],
+      "rewards": [
+        {
+          "type": "currency",
+          "id": "scrap",
+          "amount": 175
+        }
+      ],
+      "dialogueStartId": "quest_005_offer",
+      "dialogueCompleteId": "quest_005_complete"
+    },
+    {
+      "id": "quest_006",
+      "name": "Trial 7",
+      "description": "Complete objective 7 in Stormglass Reliquary - Side-view Test.",
+      "prerequisites": [
+        "quest_005"
+      ],
+      "objectives": [
+        {
+          "id": "obj_6_1",
+          "type": "Activate",
+          "target": "save_room_008",
+          "count": 1,
+          "description": "Activate the save point in room_008"
+        }
+      ],
+      "rewards": [
+        {
+          "type": "currency",
+          "id": "scrap",
+          "amount": 200
+        }
+      ],
+      "dialogueStartId": "quest_006_offer",
+      "dialogueCompleteId": "quest_006_complete"
+    },
+    {
+      "id": "quest_007",
+      "name": "Trial 8",
+      "description": "Complete objective 8 in Stormglass Reliquary - Side-view Test.",
+      "prerequisites": [
+        "quest_006"
+      ],
+      "objectives": [
+        {
+          "id": "obj_7_1",
+          "type": "Interact",
+          "target": "shop_npc_001",
+          "count": 1,
+          "description": "Browse the merchant wares"
+        }
+      ],
+      "rewards": [
+        {
+          "type": "currency",
+          "id": "scrap",
+          "amount": 225
+        }
+      ],
+      "dialogueStartId": "quest_007_offer",
+      "dialogueCompleteId": "quest_007_complete"
+    },
+    {
+      "id": "quest_008",
+      "name": "Trial 9",
+      "description": "Complete objective 9 in Stormglass Reliquary - Side-view Test.",
+      "prerequisites": [
+        "quest_007"
+      ],
+      "objectives": [
+        {
+          "id": "obj_8_1",
+          "type": "Choice",
+          "target": "quest_008_accept",
+          "count": 1,
+          "description": "Accept the quest offer"
+        }
+      ],
+      "rewards": [
+        {
+          "type": "currency",
+          "id": "scrap",
+          "amount": 250
+        }
+      ],
+      "dialogueStartId": "quest_008_offer",
+      "dialogueCompleteId": "quest_008_complete"
+    },
+    {
+      "id": "quest_009",
+      "name": "Trial 10",
+      "description": "Complete objective 10 in Stormglass Reliquary - Side-view Test.",
+      "prerequisites": [
+        "quest_008"
+      ],
+      "objectives": [
+        {
+          "id": "obj_9_1",
+          "type": "BossKill",
+          "target": "boss_final",
+          "count": 1,
+          "description": "Defeat Guardian Core"
+        }
+      ],
+      "rewards": [
+        {
+          "type": "currency",
+          "id": "scrap",
+          "amount": 275
+        }
+      ],
+      "dialogueStartId": "quest_009_offer",
+      "dialogueCompleteId": "quest_009_complete"
+    }
+  ]
+}

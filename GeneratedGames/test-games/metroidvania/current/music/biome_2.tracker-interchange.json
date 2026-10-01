@@ -1,0 +1,123 @@
+{
+  "format": "metroforge-tracker-interchange",
+  "version": "0.1.0",
+  "title": "biome_2_melancholic",
+  "bpm": 96,
+  "key": "Am",
+  "mood": "melancholic",
+  "rows": [
+    {
+      "tick": 0,
+      "note": "G#",
+      "octave": 4,
+      "volume": 97,
+      "instrument": 0
+    },
+    {
+      "tick": 4,
+      "note": "C",
+      "octave": 5,
+      "volume": 61,
+      "instrument": 0
+    },
+    {
+      "tick": 8,
+      "note": "G",
+      "octave": 4,
+      "volume": 64,
+      "instrument": 0
+    },
+    {
+      "tick": 12,
+      "note": "C#",
+      "octave": 5,
+      "volume": 63,
+      "instrument": 0
+    },
+    {
+      "tick": 16,
+      "note": "G",
+      "octave": 4,
+      "volume": 98,
+      "instrument": 0
+    },
+    {
+      "tick": 20,
+      "note": "A#",
+      "octave": 4,
+      "volume": 62,
+      "instrument": 0
+    },
+    {
+      "tick": 24,
+      "note": "G#",
+      "octave": 4,
+      "volume": 80,
+      "instrument": 0
+    },
+    {
+      "tick": 28,
+      "note": "G#",
+      "octave": 4,
+      "volume": 84,
+      "instrument": 0
+    },
+    {
+      "tick": 32,
+      "note": "C#",
+      "octave": 5,
+      "volume": 86,
+      "instrument": 0
+    },
+    {
+      "tick": 36,
+      "note": "A#",
+      "octave": 4,
+      "volume": 65,
+      "instrument": 0
+    },
+    {
+      "tick": 40,
+      "note": "B",
+      "octave": 4,
+      "volume": 66,
+      "instrument": 0
+    },
+    {
+      "tick": 44,
+      "note": "C",
+      "octave": 5,
+      "volume": 90,
+      "instrument": 0
+    },
+    {
+      "tick": 48,
+      "note": "G",
+      "octave": 4,
+      "volume": 74,
+      "instrument": 0
+    },
+    {
+      "tick": 52,
+      "note": "F#",
+      "octave": 4,
+      "volume": 68,
+      "instrument": 0
+    },
+    {
+      "tick": 56,
+      "note": "A#",
+      "octave": 4,
+      "volume": 89,
+      "instrument": 0
+    },
+    {
+      "tick": 60,
+      "note": "C#",
+      "octave": 5,
+      "volume": 65,
+      "instrument": 0
+    }
+  ],
+  "recreationHint": "Import companion .mid into OpenMPT/Furnace, or recreate these rows by hand — this JSON is not a native tracker project file"
+}

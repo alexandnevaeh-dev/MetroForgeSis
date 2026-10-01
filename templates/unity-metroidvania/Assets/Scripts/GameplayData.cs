@@ -24,6 +24,8 @@ public class GameplaySpriteClip
     public bool smoothFiltering;
     public float fps;
     public bool loop;
+    public int impactFrame = -1;
+    public bool hasImpactFrame;
     public float pivotX;
     public float pivotY;
 }
@@ -66,11 +68,26 @@ public class GameplayActor
     public float attackWindupSeconds;
     public float attackRecoverySeconds;
     public float attackCooldownSeconds;
+    public bool isBoss;
+    public string name;
+    public GameplayBossPhase[] bossPhases;
+}
+
+[Serializable]
+public class GameplayBossPhase
+{
+    public int phase;
+    public float healthThreshold;
+    public string[] attacks;
+    public float telegraphDuration;
+    public float recoveryWindow;
 }
 
 [Serializable]
 public class GameplayBackgrounds
 {
+    public string interior;
+    public float[] interiorTint;
     public bool farCameraRelative;
     public float farParallax = 0.1f;
     public string far;

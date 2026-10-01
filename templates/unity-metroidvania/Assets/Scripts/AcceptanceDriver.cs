@@ -117,10 +117,9 @@ public class AcceptanceDriver : MonoBehaviour
         _feature["npc_interaction"] = "not_implemented";
         _feature["save_continue"] = "pending";
         _feature["respawn"] = "pending";
-        _feature["boss_phases"] = "not_implemented";
+        _feature["boss_phases"] = "pending";
         _feature["victory"] = "pending";
         _notImplemented.Add("npc_interaction: no NPC actors in Unity adapter or gameplay pack");
-        _notImplemented.Add("boss_phases: victory room has no boss enemy; EnemyActor has no phase machine");
     }
 
     private IEnumerator Run()
@@ -239,7 +238,8 @@ public class AcceptanceDriver : MonoBehaviour
                 Fail("escaped_room_bounds", "Player escaped " + roomBounds.id + " at " + location);
                 yield break;
             }
-            if (_game.CurrentRoom != null && _game.CurrentRoom.victory && !_game.Victory)
+            if (_game.CurrentRoom != null && _game.CurrentRoom.victory && !_game.Victory &&
+                (_game.CurrentRoom.enemy == null || !_game.CurrentRoom.enemy.isBoss || _game.BossDefeated(_game.CurrentRoom)))
             {
                 yield return NavigateVictory();
                 if (_finished) yield break;
@@ -384,6 +384,11 @@ public class AcceptanceDriver : MonoBehaviour
             _feature["gates"] = "inconclusive";
         if (_feature["victory"] == "pending")
             _feature["victory"] = _game.Victory ? "passed" : "failed";
+        var phasedBoss = false;
+        foreach (var room in _game.Pack.rooms)
+            if (room.enemy != null && room.enemy.isBoss && room.enemy.bossPhases != null && room.enemy.bossPhases.Length > 1) phasedBoss = true;
+        _feature["boss_phases"] = phasedBoss
+            ? (_game.BossPhaseChangeCount > 0 && _game.BossDefeatCount > 0 ? "passed" : "failed") : "not_applicable";
 
         yield return TestSaveContinue();
         yield return TestRespawn();

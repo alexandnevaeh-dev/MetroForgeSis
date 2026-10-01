@@ -1,0 +1,204 @@
+[gd_scene load_steps=8 format=3 uid="uid://world_scene"]
+
+[ext_resource type="Script" path="res://scripts/world/WorldManager.gd" id="1_world"]
+[ext_resource type="Script" path="res://scripts/UI/GameHUD.gd" id="2_hud"]
+[ext_resource type="PackedScene" uid="uid://pause_menu" path="res://scenes/world/PauseMenu.tscn" id="3_pause"]
+[ext_resource type="PackedScene" uid="uid://shop_overlay" path="res://scenes/world/ShopOverlay.tscn" id="4_shop"]
+[ext_resource type="PackedScene" uid="uid://dialogue_overlay" path="res://scenes/world/DialogueOverlay.tscn" id="5_dialogue"]
+[ext_resource type="Script" path="res://scripts/UI/MinimapPanel.gd" id="6_minimap"]
+[ext_resource type="Script" path="res://scripts/UI/QuestTrackerPanel.gd" id="7_quest_tracker"]
+[ext_resource type="Script" path="res://scripts/world/TransitionFader.gd" id="8_fade"]
+
+[node name="World" type="Node2D"]
+script = ExtResource("1_world")
+
+[node name="PauseMenu" parent="." instance=ExtResource("3_pause")]
+
+[node name="ShopOverlay" parent="." instance=ExtResource("4_shop")]
+
+[node name="DialogueOverlay" parent="." instance=ExtResource("5_dialogue")]
+
+[node name="GameHUD" type="CanvasLayer" parent="."]
+script = ExtResource("2_hud")
+
+[node name="HUD" type="Control" parent="GameHUD"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="HUDFrame" type="Panel" parent="GameHUD/HUD"]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = 224.0
+offset_bottom = 54.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="GameHUD/HUD"]
+layout_mode = 1
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 20.0
+offset_top = 18.0
+offset_right = 216.0
+offset_bottom = 48.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 0
+
+[node name="VBox" type="VBoxContainer" parent="GameHUD/HUD/MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_constants/separation = 4
+
+[node name="HealthBar" type="ProgressBar" parent="GameHUD/HUD/MarginContainer/VBox"]
+custom_minimum_size = Vector2(196, 14)
+layout_mode = 2
+size_flags_horizontal = 4
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="AbilityLabel" type="Label" parent="GameHUD/HUD/MarginContainer/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.93, 0.96, 1)
+theme_override_colors/font_shadow_color = Color(0.05, 0.06, 0.08, 0.85)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+text = ""
+
+[node name="CurrencyLabel" type="Label" parent="GameHUD/HUD/MarginContainer/VBox"]
+layout_mode = 2
+text = ""
+
+[node name="CollectibleLabel" type="Label" parent="GameHUD/HUD/MarginContainer/VBox"]
+layout_mode = 2
+text = ""
+
+[node name="QuestTrackerPanel" type="PanelContainer" parent="GameHUD/HUD"]
+layout_mode = 1
+offset_left = 20.0
+offset_top = 84.0
+offset_right = 280.0
+offset_bottom = 204.0
+
+[node name="QuestTrackerView" type="Control" parent="GameHUD/HUD/QuestTrackerPanel"]
+custom_minimum_size = Vector2(260, 120)
+layout_mode = 2
+script = ExtResource("7_quest_tracker")
+
+[node name="MinimapPanel" type="PanelContainer" parent="GameHUD/HUD"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -140.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 140.0
+
+[node name="MinimapView" type="Control" parent="GameHUD/HUD/MinimapPanel"]
+custom_minimum_size = Vector2(120, 120)
+layout_mode = 2
+script = ExtResource("6_minimap")
+
+[node name="BossBarPanel" type="PanelContainer" parent="GameHUD/HUD"]
+visible = false
+layout_mode = 1
+anchors_preset = 10
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -250.0
+offset_top = 20.0
+offset_right = 250.0
+offset_bottom = 72.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="BossBarVBox" type="VBoxContainer" parent="GameHUD/HUD/BossBarPanel"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="BossName" type="Label" parent="GameHUD/HUD/BossBarPanel/BossBarVBox"]
+layout_mode = 2
+text = "Guardian"
+horizontal_alignment = 1
+
+[node name="BossHealthBar" type="ProgressBar" parent="GameHUD/HUD/BossBarPanel/BossBarVBox"]
+custom_minimum_size = Vector2(472, 14)
+layout_mode = 2
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="VictoryOverlay" type="ColorRect" parent="GameHUD"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.04, 0.05, 0.08, 0.78)
+
+[node name="VictoryLabel" type="Label" parent="GameHUD/VictoryOverlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -25.0
+offset_right = 200.0
+offset_bottom = 25.0
+theme_override_font_sizes/font_size = 40
+theme_override_colors/font_color = Color(0.35, 0.55, 0.86, 1)
+theme_override_colors/font_shadow_color = Color(0.02, 0.03, 0.05, 1)
+text = "Victory!"
+horizontal_alignment = 1
+
+[node name="DeathOverlay" type="ColorRect" parent="GameHUD"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.35, 0, 0, 0.7)
+
+[node name="DeathLabel" type="Label" parent="GameHUD/DeathOverlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -25.0
+offset_right = 200.0
+offset_bottom = 25.0
+theme_override_font_sizes/font_size = 36
+text = "You Died"
+horizontal_alignment = 1
+
+[node name="WorldCanvasModulate" type="CanvasModulate" parent="."]
+color = Color(0.90, 0.91, 0.96, 1)
+
+[node name="TransitionFader" type="CanvasLayer" parent="."]
+layer = 80
+script = ExtResource("8_fade")
+
+[node name="FadeRect" type="ColorRect" parent="TransitionFader"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+color = Color(0.05, 0.06, 0.08, 0)

@@ -419,24 +419,51 @@ function scoreRoomComposition(rooms: RoomRecordLike[]): RawDimension {
     metrics.reduce((s, m) => s + (sel(m) || 0), 0) / metrics.length;
   const avgDecoration = avg((m) => m.decorationDensity ?? 0);
   const avgPlatforms = avg((m) => m.platformCount ?? 0);
+  const avgUniqueHeights = avg((m) => m.uniquePlatformHeights ?? 0);
   const roomsWithPits = metrics.filter((m) => (m.pitCount ?? 0) > 0).length;
   const roomsWithVerticality = metrics.filter((m) => (m.verticality ?? 0) > 0.15).length;
+  const roomsWithMultiHeight = metrics.filter((m) => (m.uniquePlatformHeights ?? 0) >= 2).length;
   const avgElevation = avg((m) => m.elevationChanges ?? 0);
+  const flatBoxes = metrics.filter(
+    (m) => (m.platformCount ?? 0) <= 1 && (m.uniquePlatformHeights ?? 0) <= 1,
+  ).length;
 
   // Decoration density is the strongest "is this art-directed vs blockout" signal.
+  // Silhouette variety (unique platform heights / multi-band rooms) is the structural
+  // counterpart — flat boxes with one ledge fail even when a few props are present.
+  // Geometry can clear the bar with authored-kit dressing; AI art is not required for
+  // RoomComposition (AssetProduction / SceneReadability cover art fidelity).
   let score = 0;
-  score += Math.min(35, avgDecoration * 700); // 0.05 density → 35
-  score += Math.min(20, avgPlatforms * 8); // platform presence
-  score += (roomsWithPits / metrics.length) * 15;
+  score += Math.min(25, avgDecoration * 500); // 0.05 density → 25
+  score += Math.min(20, avgPlatforms * 5); // platform presence
+  score += Math.min(20, (roomsWithMultiHeight / metrics.length) * 20); // readable gallery bands
+  score += (roomsWithPits / metrics.length) * 10;
   score += (roomsWithVerticality / metrics.length) * 15;
-  score += Math.min(15, avgElevation * 6);
+  score += Math.min(10, avgElevation * 4);
   if (avgDecoration <= 0.001) {
     reasons.push(
       'Rooms have ~zero decoration density — geometry is blockout only, with no environmental art props/detail',
     );
+  } else if (avgDecoration < 0.01) {
+    reasons.push(
+      `Chronic low decoration density (avg ${avgDecoration.toFixed(4)}) — rooms read as sparsely dressed; pass-band contribution needs denser workstation/gallery dressing`,
+    );
   }
   if (avgPlatforms < 0.5) {
     reasons.push('Rooms contain almost no platforming geometry');
+  }
+  if (roomsWithMultiHeight / metrics.length < 0.5) {
+    reasons.push(
+      `Only ${roomsWithMultiHeight}/${metrics.length} rooms have ≥2 platform heights — missing gallery/balcony bands that make side-view silhouettes readable`,
+    );
+  }
+  if (flatBoxes / metrics.length > 0.35) {
+    reasons.push(
+      `${flatBoxes}/${metrics.length} rooms are near-flat boxes (≤1 platform height) — chronic jumbled/empty composition`,
+    );
+  }
+  if (roomsWithVerticality / metrics.length < 0.4) {
+    reasons.push('Few rooms express verticality — side-view spaces lack stacked traversal layers');
   }
   return {
     dimension: 'RoomComposition',
@@ -448,8 +475,11 @@ function scoreRoomComposition(rooms: RoomRecordLike[]): RawDimension {
       roomCount: metrics.length,
       avgDecorationDensity: Number(avgDecoration.toFixed(4)),
       avgPlatformCount: Number(avgPlatforms.toFixed(2)),
+      avgUniquePlatformHeights: Number(avgUniqueHeights.toFixed(2)),
+      roomsWithMultiHeight,
       roomsWithPits,
       roomsWithVerticality,
+      flatBoxRooms: flatBoxes,
     },
   };
 }

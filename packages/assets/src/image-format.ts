@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { resolvePythonExecutable } from '@metroforge/shared';
 
 export function isPngBuffer(buf: Buffer): boolean {
   return buf.length >= 8 && buf[0] === 0x89 && buf.toString('ascii', 1, 4) === 'PNG';
@@ -14,7 +15,7 @@ export function isJpegBuffer(buf: Buffer): boolean {
  * enhancement validator) only decodes PNG. Shells out to Pillow rather than adding a JPEG decoder
  * dependency, matching the pattern nvidia-image-edit.ts already established.
  */
-export function ensurePngBuffer(image: Buffer, pythonPath = process.env.DIFFUSERS_PYTHON ?? 'python'): Buffer {
+export function ensurePngBuffer(image: Buffer, pythonPath = resolvePythonExecutable()): Buffer {
   if (isPngBuffer(image)) return image;
   if (!isJpegBuffer(image)) {
     throw new Error('Image bytes are neither PNG nor JPEG — cannot normalize');

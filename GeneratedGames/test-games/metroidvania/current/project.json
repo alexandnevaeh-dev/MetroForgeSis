@@ -1,0 +1,14 @@
+{
+  "projectId": "test-metroidvania-2026-10-01T00-00-23-389Z",
+  "slug": "current-metroidvania",
+  "prompt": "A masked Veilblade crosses rain-soaked cloisters, prism aqueducts, and the starless belfry to restore ancient weather seals. Indigo masonry, teal rain light, amber cloth, and fractured stained glass define every room.",
+  "profile": "MEDIUM",
+  "mode": "LOCAL_ONLY",
+  "seed": 20260930,
+  "createdAt": "2026-10-01T00:00:26.312Z",
+  "lastGeneratedAt": "2026-10-01T00:00:26.312Z",
+  "gameDnaVersion": "0.1.0",
+  "generatorVersion": "0.1.0",
+  "archetype": "SIDE_VIEW_METROIDVANIA",
+  "engine": "godot"
+}

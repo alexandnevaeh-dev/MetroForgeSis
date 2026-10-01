@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import type { ImageGenRequest, ImageGenResult, ImageProviderHealthReport, ImageGenerator } from '../types/image-gen.js';
-import { GenerationCancelledError, throwIfCancelled } from '@metroforge/shared';
+import { GenerationCancelledError, resolvePythonExecutable, throwIfCancelled } from '@metroforge/shared';
 
 export interface LocalVisualFleetConfig {
   pythonPath?: string;
@@ -33,7 +33,7 @@ export class LocalVisualFleetProvider implements ImageGenerator {
   constructor(id: string, config: LocalVisualFleetConfig) {
     this.id = id;
     this.config = config;
-    this.pythonPath = config.pythonPath ?? (process.platform === 'win32' ? 'python' : 'python3');
+    this.pythonPath = resolvePythonExecutable(config.pythonPath);
   }
 
   async checkHealth(): Promise<boolean> {

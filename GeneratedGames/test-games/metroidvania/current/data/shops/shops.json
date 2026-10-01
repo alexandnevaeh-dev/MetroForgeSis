@@ -1,0 +1,42 @@
+{
+  "shops": [
+    {
+      "id": "shop_npc_001",
+      "name": "Tessa Vane's Wares",
+      "currencyId": "scrap",
+      "entries": [
+        {
+          "itemId": "health_vial",
+          "price": 40
+        },
+        {
+          "itemId": "power_charm",
+          "price": 100
+        },
+        {
+          "itemId": "forged_blade",
+          "price": 145
+        }
+      ]
+    },
+    {
+      "id": "shop_npc_005",
+      "name": "Tessa Vane's Wares",
+      "currencyId": "scrap",
+      "entries": [
+        {
+          "itemId": "health_vial",
+          "price": 80
+        },
+        {
+          "itemId": "power_charm",
+          "price": 180
+        },
+        {
+          "itemId": "forged_blade",
+          "price": 245
+        }
+      ]
+    }
+  ]
+}

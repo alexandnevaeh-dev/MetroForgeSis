@@ -3,7 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { createServer, type Server, type Socket } from 'node:net';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { existsSync, writeFileSync, unlinkSync, mkdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve as resolveProjectPath } from 'node:path';
 import { terminateProcessTree } from '@metroforge/shared';
 import {
   resolveGodotForProject,
@@ -37,7 +37,7 @@ const LIVE_EDIT = {
     'pause',
     'resume',
     'get_state',
-
+    'pick_at / Ctrl+click viewport selection',
     'set_entity_position on nodes in the current room',
   ],
   requiresRestart: [
@@ -70,6 +70,8 @@ const ALLOWED_COMMANDS = new Set([
   'pause',
   'resume',
   'get_state',
+  'pick_at',
+  'clear_selection',
   'reload_current_room',
   'set_entity_position',
 ]);
@@ -238,6 +240,7 @@ function startBridgeServer(
 }
 
 export function getPlaytestSession(projectPath: string): PlaytestSession | null {
+  projectPath = resolveProjectPath(projectPath);
   const entry = sessions.get(projectPath);
   if (!entry?.proc.pid) return null;
   const running = entry.proc.exitCode === null && !entry.proc.killed;
@@ -284,6 +287,7 @@ async function cleanupSession(projectPath: string): Promise<void> {
 }
 
 export function stopPlaytest(projectPath: string): { success: boolean; message: string } {
+  projectPath = resolveProjectPath(projectPath);
   pendingStarts.get(projectPath)?.abort();
   pendingStarts.delete(projectPath);
   const entry = sessions.get(projectPath);
@@ -304,6 +308,7 @@ export async function sendPlaytestCommand(
   cmd: string,
   payload: Record<string, unknown> = {},
 ): Promise<{ ok: boolean; error?: string; result?: Record<string, unknown> }> {
+  projectPath = resolveProjectPath(projectPath);
   const entry = sessions.get(projectPath);
   if (!entry) return { ok: false, error: 'No playtest session' };
   if (!ALLOWED_COMMANDS.has(cmd) || cmd === 'auth') {
@@ -343,6 +348,7 @@ async function startPreparedPlaytest(
   options: ResolveGodotOptions & { godotPath?: string | null; headless?: boolean } = {},
   signal?: AbortSignal,
 ): Promise<LaunchGodotResult & { session?: PlaytestSession }> {
+  projectPath = resolveProjectPath(projectPath);
   assertGodotProject(projectPath);
   const resolve = resolveGodotForProject({
     preference: options.preference ?? options.godotPath,
@@ -438,6 +444,7 @@ export async function startPlaytest(
   projectPath: string,
   options: ResolveGodotOptions & { godotPath?: string | null; headless?: boolean } = {},
 ): Promise<LaunchGodotResult & { session?: PlaytestSession }> {
+  projectPath = resolveProjectPath(projectPath);
   stopPlaytest(projectPath);
   const controller = new AbortController();
   pendingStarts.set(projectPath, controller);

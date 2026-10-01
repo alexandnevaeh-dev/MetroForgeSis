@@ -1,0 +1,12 @@
+{
+  "idle": {
+    "frameWidth": 128,
+    "frameHeight": 128,
+    "frameCount": 1,
+    "fps": 1,
+    "loop": true,
+    "pixelsPerUnit": 1.6,
+    "pivotX": 0.49609375,
+    "pivotY": 0.03125
+  }
+}

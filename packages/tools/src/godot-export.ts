@@ -1,9 +1,51 @@
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { homedir } from 'node:os';
 
 const WINDOWS_PRESET_NAME = 'Windows Desktop';
 const MACOS_PRESET_NAME = 'macOS';
+
+/**
+ * Keep Godot editor/export caches and templates on the MetroForge data drive when configured.
+ * Godot 4 on Windows resolves export templates under %APPDATA%/Godot/export_templates/<version>/.
+ * Prefer METROFORGE_GODOT_APPDATA, then METROFORGE_DATA_DIR/AppData/Roaming, else the process env.
+ */
+export function godotProcessEnv(
+  base: NodeJS.ProcessEnv = process.env,
+): NodeJS.ProcessEnv {
+  const dataDir = (base.METROFORGE_DATA_DIR ?? '').trim();
+  const configured = (base.METROFORGE_GODOT_APPDATA ?? '').trim();
+  const roaming =
+    configured ||
+    (dataDir ? join(dataDir, 'AppData', 'Roaming') : '') ||
+    base.APPDATA ||
+    join(homedir(), 'AppData', 'Roaming');
+  const local =
+    (base.METROFORGE_GODOT_LOCALAPPDATA ?? '').trim() ||
+    (dataDir ? join(dataDir, 'AppData', 'Local') : '') ||
+    base.LOCALAPPDATA ||
+    join(homedir(), 'AppData', 'Local');
+  mkdirSync(join(roaming, 'Godot'), { recursive: true });
+  mkdirSync(local, { recursive: true });
+  return {
+    ...base,
+    APPDATA: roaming,
+    LOCALAPPDATA: local,
+  };
+}
+
+export function windowsExportTemplatesInstalled(
+  versionFolder: string,
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  const roaming = godotProcessEnv(env).APPDATA!;
+  const dir = join(roaming, 'Godot', 'export_templates', versionFolder);
+  return (
+    existsSync(join(dir, 'windows_release_x86_64.exe')) &&
+    existsSync(join(dir, 'windows_debug_x86_64.exe'))
+  );
+}
 
 /** Minimal valid Godot 4.x export_presets.cfg for a runnable Windows Desktop build. */
 function windowsExportPresetsCfg(): string {
@@ -163,10 +205,87 @@ export interface GodotMacOSExportOptions {
   timeoutMs?: number;
 }
 
+export interface PackagedLaunchResult {
+  ok: boolean;
+  executable: string;
+  status: number | null;
+  stdout: string;
+  stderr: string;
+  timedOut: boolean;
+  attempts: number;
+  error?: string;
+}
+
+function sleepMs(ms: number): void {
+  const end = Date.now() + ms;
+  while (Date.now() < end) {
+    // Busy-wait: launch verification only, after a multi-second Godot export.
+  }
+}
+
+/**
+ * Headless-launch a freshly exported Windows Godot binary.
+ * Retries briefly — Windows Defender / file locks often interfere with the first open after export.
+ * Prefers the console wrapper when present so piped stdio works reliably.
+ */
+export function verifyPackagedWindowsLaunch(
+  exePath: string,
+  options: { timeoutMs?: number; attempts?: number } = {},
+): PackagedLaunchResult {
+  const attempts = Math.max(1, options.attempts ?? 3);
+  const timeoutMs = options.timeoutMs ?? 60_000;
+  const consoleExe = exePath.replace(/\.exe$/i, '_console.exe');
+  const launchExe = existsSync(consoleExe) ? consoleExe : exePath;
+  let lastStatus: number | null = null;
+  let lastStdout = '';
+  let lastStderr = '';
+  let lastError: string | undefined;
+  let timedOut = false;
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    const result = spawnSync(launchExe, ['--headless', '--quit-after', '60'], {
+      cwd: dirname(launchExe),
+      encoding: 'utf-8',
+      timeout: timeoutMs,
+      windowsHide: true,
+      maxBuffer: 8 * 1024 * 1024,
+      env: godotProcessEnv(),
+    });
+    lastStatus = result.status;
+    lastStdout = result.stdout ?? '';
+    lastStderr = result.stderr ?? '';
+    timedOut = result.error?.message?.includes('ETIMEDOUT') === true || result.signal === 'SIGTERM';
+    lastError = result.error?.message;
+    if (result.status === 0 && !result.error) {
+      return {
+        ok: true,
+        executable: launchExe,
+        status: 0,
+        stdout: lastStdout,
+        stderr: lastStderr,
+        timedOut: false,
+        attempts: attempt,
+      };
+    }
+    if (attempt < attempts) sleepMs(500 * attempt);
+  }
+
+  return {
+    ok: false,
+    executable: launchExe,
+    status: lastStatus,
+    stdout: lastStdout,
+    stderr: lastStderr,
+    timedOut,
+    attempts,
+    error: lastError,
+  };
+}
+
 /**
  * Invokes the real Godot CLI to produce a standalone Windows executable — not a source zip.
  * Requires the matching engine version's export templates to already be installed
- * (%APPDATA%/Godot/export_templates/<version>/ on Windows).
+ * (%APPDATA%/Godot/export_templates/<version>/ on Windows, or MetroForge E: redirect).
  */
 export function exportGodotWindowsBinary(options: GodotExportOptions): GodotExportResult {
   const { projectPath, godotExecutable, outputExePath } = options;
@@ -184,6 +303,7 @@ export function exportGodotWindowsBinary(options: GodotExportOptions): GodotExpo
       timeout: options.timeoutMs ?? 180_000,
       windowsHide: true,
       maxBuffer: 32 * 1024 * 1024,
+      env: godotProcessEnv(),
     },
   );
 
@@ -218,6 +338,7 @@ export function exportGodotMacOSApp(options: GodotMacOSExportOptions): GodotExpo
       timeout: options.timeoutMs ?? 300_000,
       windowsHide: true,
       maxBuffer: 32 * 1024 * 1024,
+      env: godotProcessEnv(),
     },
   );
   const outputExists = existsSync(options.outputZipPath);

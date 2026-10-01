@@ -7,6 +7,8 @@ import { ConcurrencyMeters } from './ConcurrencyMeters.js';
 import type { ActivityFilter, GenerationPhaseState } from './types.js';
 import type { WorldGraphPreview } from './metroforge-api.js';
 import { useStudio } from './StudioContext.js';
+import { genreSupports } from '@metroforge/shared/archetypes';
+import type { GameArchetype } from '@metroforge/shared/constants';
 import { GENERATION_MODES, GENERATION_PROFILES } from './generation-options.js';
 import { NoProjectHint } from './NoProjectHint.js';
 import { ScreenHeader } from './ScreenHeader.js';
@@ -122,7 +124,7 @@ export function GenerationStudio() {
   } | null>(null);
   const [previewReady, setPreviewReady] = useState(false);
   const [godotError, setGodotError] = useState<string | null>(null);
-  const [archetype, setArchetype] = useState('SIDE_VIEW_METROIDVANIA');
+  const [archetype, setArchetype] = useState<GameArchetype>('SIDE_VIEW_METROIDVANIA');
   const [previewMode, setPreviewMode] = useState<'artifact' | 'world'>('world');
   const [previewRoomId, setPreviewRoomId] = useState('');
   const [activityQuery, setActivityQuery] = useState('');
@@ -387,7 +389,11 @@ export function GenerationStudio() {
             onChange={(e) => setPrompt(e.target.value)}
             disabled={generating}
           />
-          <Select value={archetype} onChange={(e) => setArchetype(e.target.value)} disabled={generating}>
+          <Select
+            value={archetype}
+            onChange={(e) => setArchetype(e.target.value as GameArchetype)}
+            disabled={generating}
+          >
             <option value="SIDE_VIEW_METROIDVANIA">Side-view</option>
             <option value="TOP_DOWN_ACTION_ADVENTURE">Top-down</option>
           </Select>
@@ -555,7 +561,7 @@ export function GenerationStudio() {
             <>
               <WorldMapPreview
                 worldGraph={worldGraph}
-                view={archetype === 'TOP_DOWN_ACTION_ADVENTURE' ? 'spatial' : 'progression'}
+                view={genreSupports(archetype, 'supportsOverworldMap') ? 'spatial' : 'progression'}
                 selectedId={previewRoomId}
                 onSelect={setPreviewRoomId}
                 onActivate={openRoom}

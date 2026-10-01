@@ -14,9 +14,12 @@ import {
 import {
   PRODUCT,
   buildMovementJson,
+  buildTopDownMovementJson,
   movementFeasibilityStats,
   getGameArchetypePlugin,
-  isTopDownArchetype,
+  genreSupports,
+  genreUsesDungeonTools,
+  genreUsesOverworldChunks,
   resolveGameArchetype,
   DEFAULT_TOP_DOWN_MOVEMENT,
   type AssetMaturity,
@@ -29,6 +32,7 @@ import {
   prepareRoomAssemblyContext,
   recompileRooms,
   resolveFloorPropPlacements,
+  applyStormglassEncounterComposition,
   type RecompileRoomsInput,
   type RecompileRoomsResult,
 } from './room-assembler.js';
@@ -162,7 +166,7 @@ export class GodotProjectAssembler {
       const roomsData: Record<string, unknown> = {};
       let topDownOverworld: TopDownOverworld | undefined;
 
-      if (isTopDownArchetype(input.gameDna.archetype)) {
+      if (genreUsesOverworldChunks(input.gameDna.archetype)) {
         const overworld =
           input.overworld ??
           generateTopDownWorld({
@@ -172,6 +176,11 @@ export class GodotProjectAssembler {
           }).overworld;
         topDownOverworld = overworld;
         writeTopDownWorld(input.outputDir, overworld);
+        if (/hd[\s-]?2d/i.test(input.gameDna.identity.visualStyle)) {
+          const visualDir = join(input.outputDir, 'data', 'visual');
+          mkdirSync(visualDir, { recursive: true });
+          writeFileSync(join(visualDir, 'hd2d.json'), JSON.stringify({ enabled: true, style: 'pixel-sprites-in-3d-diorama', productionApproved: false }, null, 2));
+        }
         const worldArchetypeById = new Map(
           input.worldGraph.nodes.map((n) => [n.id, n.metadata?.archetype as string | undefined]),
         );
@@ -286,6 +295,9 @@ export class GodotProjectAssembler {
           platforms: opts.platforms ?? [],
           pits: opts.pits ?? [],
         });
+        if (input.gameDna.identity.title.startsWith('Stormglass Reliquary')) {
+          applyStormglassEncounterComposition(roomId, i, opts, input.gameContent?.enemies ?? []);
+        }
         compositionByRoom[roomId] = composeEnvironment({
           gameDna: input.gameDna,
           styleBible: input.styleBible,
@@ -343,23 +355,22 @@ export class GodotProjectAssembler {
         }),
         defaultPlaytestPersonaForProfile(input.gameDna.profile),
       );
-      const movementJson = isTopDownArchetype(input.gameDna.archetype)
+      const movementJson = genreSupports(input.gameDna.archetype, 'supportsFreePlanarMovement')
         ? {
-            ...buildMovementJson({
-              ...input.gameDna.movement,
+            ...buildTopDownMovementJson({
               walkSpeed: DEFAULT_TOP_DOWN_MOVEMENT.walkSpeed,
               runSpeed: DEFAULT_TOP_DOWN_MOVEMENT.runSpeed,
               acceleration: DEFAULT_TOP_DOWN_MOVEMENT.acceleration,
               deceleration: DEFAULT_TOP_DOWN_MOVEMENT.deceleration,
               knockbackDecay: DEFAULT_TOP_DOWN_MOVEMENT.knockbackDecay,
+              movementDirections: input.gameDna.topDown?.movementDirections ?? 8,
+              worldStyle: input.gameDna.topDown?.worldStyle ?? 'continuous',
             }),
-            movementDirections: input.gameDna.topDown?.movementDirections ?? 8,
-            worldStyle: input.gameDna.topDown?.worldStyle ?? 'continuous',
           }
         : buildMovementJson(input.gameDna.movement);
       const movementFeasibility = validateMovementFeasibility(
         input.worldGraph,
-        movementFeasibilityStats(movementJson),
+        movementFeasibilityStats(movementJson as ReturnType<typeof buildMovementJson>),
       );
       writeFileSync(
         join(input.outputDir, 'playtest_route.json'),
@@ -440,7 +451,7 @@ export class GodotProjectAssembler {
           // a chest in this project grants.
           JSON.stringify(
             {
-              items: isTopDownArchetype(input.gameDna.archetype)
+              items: genreUsesDungeonTools(input.gameDna.archetype)
                 ? [
                     ...input.gameContent.items,
                     ...topDownChestItemDefs(
@@ -510,7 +521,7 @@ export class GodotProjectAssembler {
       if (input.externalVisualPack) {
         patchCharacterFrameSizeForExternalPack(input.outputDir, input.externalVisualPack);
         patchCharacterSheetPathsForFoundryPack(input.outputDir, input.externalVisualPack);
-      } else if (input.foundryThemed && !isTopDownArchetype(input.gameDna.archetype)) {
+      } else if (input.foundryThemed && genreSupports(input.gameDna.archetype, 'supportsPerRoomScenes')) {
         overlaidAuthoredPaths = overlayAuthoredVisualPolish(input.outputDir, templatePath);
       }
 
@@ -582,7 +593,7 @@ export class GodotProjectAssembler {
       // Integer stretch + a non-multiple capture window letterboxes the game into a corner of
       // the PNG. Keep canvas_items so pixel art scales, without locking the window to integer.
       projectGodot = projectGodot.replace(/\nwindow\/stretch\/aspect="integer"/g, '');
-      if (!isTopDownArchetype(input.gameDna.archetype)) {
+      if (genreSupports(input.gameDna.archetype, 'supportsPerRoomScenes')) {
         const qualityDir = join(input.outputDir, 'data', 'quality');
         mkdirSync(qualityDir, { recursive: true });
         // 3.0 cropped an 800×600 room to ~426×240 world pixels so the camera showed a postage-stamp

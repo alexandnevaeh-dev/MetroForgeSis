@@ -1,0 +1,107 @@
+{
+  "bosses": [
+    {
+      "id": "boss_000",
+      "name": "Bell Warden",
+      "lore": "Bell Warden, guardian of one broken weather seal.",
+      "arenaRoomId": "room_008",
+      "health": 122,
+      "phases": [
+        {
+          "phase": 1,
+          "healthThreshold": 1,
+          "attacks": [
+            "slam",
+            "projectile"
+          ],
+          "telegraphDuration": 0.8,
+          "recoveryWindow": 1.2
+        }
+      ],
+      "weaknesses": [
+        "dash_through"
+      ],
+      "visualPrompt": "modern HD pixel art, pixel art game sprite, mini boss guardian, \"Echo Warden\", A powerful guardian of the Stormglass Reliquary - Side-view Test depths., for Stormglass Reliquary - Side-view Test, melancholic heroic tone, attacks: slam, projectile"
+    },
+    {
+      "id": "boss_001",
+      "name": "Drowned Guardian",
+      "lore": "Drowned Guardian, guardian of one broken weather seal.",
+      "arenaRoomId": "room_018",
+      "health": 119,
+      "phases": [
+        {
+          "phase": 1,
+          "healthThreshold": 1,
+          "attacks": [
+            "slam",
+            "projectile"
+          ],
+          "telegraphDuration": 0.8,
+          "recoveryWindow": 1.2
+        }
+      ],
+      "weaknesses": [
+        "dash_through"
+      ],
+      "visualPrompt": "modern HD pixel art, pixel art game sprite, mini boss guardian, \"Guardian Core\", A powerful guardian of the Stormglass Reliquary - Side-view Test depths., for Stormglass Reliquary - Side-view Test, melancholic heroic tone, attacks: slam, projectile"
+    },
+    {
+      "id": "boss_002",
+      "name": "Reliquary Sentinel",
+      "lore": "Reliquary Sentinel, guardian of one broken weather seal.",
+      "arenaRoomId": "room_028",
+      "health": 148,
+      "phases": [
+        {
+          "phase": 1,
+          "healthThreshold": 1,
+          "attacks": [
+            "slam",
+            "projectile"
+          ],
+          "telegraphDuration": 0.8,
+          "recoveryWindow": 1.2
+        }
+      ],
+      "weaknesses": [
+        "dash_through"
+      ],
+      "visualPrompt": "modern HD pixel art, pixel art game sprite, mini boss guardian, \"Machine Sovereign\", A powerful guardian of the Stormglass Reliquary - Side-view Test depths., for Stormglass Reliquary - Side-view Test, melancholic heroic tone, attacks: slam, projectile"
+    },
+    {
+      "id": "boss_final",
+      "name": "Tempest Abbot",
+      "lore": "The last keeper of the drowned monastery, sealed inside a stormglass reliquary and bound to the broken weather bells.",
+      "arenaRoomId": "room_038",
+      "health": 200,
+      "phases": [
+        {
+          "phase": 1,
+          "healthThreshold": 1,
+          "attacks": [
+            "slam",
+            "projectile"
+          ],
+          "telegraphDuration": 0.8,
+          "recoveryWindow": 1.2
+        },
+        {
+          "phase": 2,
+          "healthThreshold": 0.5,
+          "attacks": [
+            "slam",
+            "projectile",
+            "area_burst"
+          ],
+          "telegraphDuration": 0.6,
+          "recoveryWindow": 0.8
+        }
+      ],
+      "weaknesses": [
+        "dash_through"
+      ],
+      "visualPrompt": "richly detailed dark fantasy pixel art Tempest Abbot, blue-black storm priest armor, cyan stormglass core, gold reliquary halo, heavy robes and chained censer"
+    }
+  ]
+}

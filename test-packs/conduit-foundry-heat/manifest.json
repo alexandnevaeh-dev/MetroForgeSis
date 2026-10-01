@@ -1,0 +1,140 @@
+{
+  "id": "conduit-foundry-heat",
+  "visualTheme": "industrial conduit foundry heat — Unity overlay pack restored from Foundry V3 sources",
+  "playerReferenceHeight": 48,
+  "sourceLicense": "MetroForge internally authored test artwork (Foundry V3 sources); repository development-only",
+  "qaStatus": "RESTORED_FROM_FOUNDRY_V3",
+  "qaNote": "Pack directories were missing from the recovered tree. Restored as loadable ExternalVisualPack manifests with compiled destinations so Unity overlay and registry tests reconnect. Art is Foundry V3 placeholders pending dedicated conduit artwork.",
+  "assets": [
+    {
+      "id": "player_idle",
+      "family": "character",
+      "role": "player.idle",
+      "source": "characters/player/player_idle.png",
+      "destination": "assets/characters/player_idle.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1
+    },
+    {
+      "id": "enemy_000_idle",
+      "family": "character",
+      "role": "enemy.idle",
+      "source": "characters/enemies/enemy_000_idle.png",
+      "destination": "assets/enemies/enemy_000_idle.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1
+    },
+    {
+      "id": "boss_idle",
+      "family": "character",
+      "role": "boss.idle",
+      "source": "characters/boss/boss_idle.png",
+      "destination": "assets/bosses/boss_idle.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1
+    },
+    {
+      "id": "biome_1_far",
+      "family": "background",
+      "role": "biome.far",
+      "source": "background/biome_1_far.png",
+      "destination": "assets/backgrounds/biome_1/far.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "far",
+      "maxInstancesPerRoom": 4
+    },
+    {
+      "id": "biome_2_far",
+      "family": "background",
+      "role": "biome.far",
+      "source": "background/biome_2_far.png",
+      "destination": "assets/backgrounds/biome_2/far.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "far",
+      "maxInstancesPerRoom": 4
+    }
+  ]
+}

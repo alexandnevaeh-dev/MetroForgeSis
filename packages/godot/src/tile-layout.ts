@@ -1,5 +1,15 @@
 import type { TileCell } from './room-assembler.js';
-import { SeededRNG, DEFAULT_MOVEMENT_STATS, type MovementStats } from '@metroforge/procedural';
+import {
+  SeededRNG,
+  DEFAULT_MOVEMENT_STATS,
+  filterAllowedTileVariants,
+  minimalBiomeContextFromId,
+  sideViewGalleryPlan,
+  ENVIRONMENT_ARCHETYPES,
+  type BiomeConsistencyContext,
+  type EnvironmentArchetypeId,
+  type MovementStats,
+} from '@metroforge/procedural';
 import { composePlayableVisuals, suppressRepetition, type RoomBlueprint } from './composition/index.js';
 
 /** Must match packages/assets/src/tile-compiler.ts TILE_ATLAS.roles */
@@ -68,12 +78,20 @@ function tileHash(seed: number, x: number, y: number, salt: number): number {
 /**
  * Resolves visual-only material variants after structural composition. A patch is deliberately
  * larger than one cell so wear reads as a local condition, not checkerboard noise.
+ * Moss/organic variants are hard-rejected when the biome forbids them.
  */
-function applyTerrainVariants(cells: TileCell[], seed: number): TileCell[] {
+function applyTerrainVariants(
+  cells: TileCell[],
+  seed: number,
+  biome?: BiomeConsistencyContext,
+): TileCell[] {
   return cells.map((current) => {
     const role = BASE_ROLE_BY_ATLAS.get(`${current.col},${current.row}`);
     const variants = role ? TERRAIN_VARIANTS[role] : undefined;
     if (!role || !variants?.length) return current;
+
+    const allowedVariants = filterAllowedTileVariants(variants, biome);
+    if (allowedVariants.length === 0) return current;
 
     const patchX = Math.floor(current.x / 5);
     const patchY = Math.floor(current.y / 3);
@@ -81,8 +99,9 @@ function applyTerrainVariants(cells: TileCell[], seed: number): TileCell[] {
     // Clean is common, but every material patch has a deterministic shared condition.
     if (patchRoll < 52) return current;
 
-    const variantIndex = tileHash(seed, patchX, patchY, current.x + current.y + role.length) % variants.length;
-    const variant = TERRAIN_VARIANT_ATLAS[variants[variantIndex]!];
+    const variantIndex =
+      tileHash(seed, patchX, patchY, current.x + current.y + role.length) % allowedVariants.length;
+    const variant = TERRAIN_VARIANT_ATLAS[allowedVariants[variantIndex]!];
     return { ...current, col: variant.col, row: variant.row };
   });
 }
@@ -136,6 +155,8 @@ export interface RoomTileLayoutInput {
   height: number;
   tileSize: number;
   archetype?: string;
+  /** Architectural identity from world-graph metadata (library, castle_hall, …). */
+  environmentArchetype?: string;
   /**
    * Per-room seed. Callers MUST derive a distinct value per room (e.g. hash of roomId + world
    * seed) — passing the same seed for every room of an archetype reproduces the exact old
@@ -159,6 +180,10 @@ export interface RoomTileLayoutInput {
   availableAbilities?: string[];
   /** Extra salt when regenerating a duplicate silhouette without changing the room's identity seed. */
   uniquenessSalt?: number;
+  /** Biome id for material hard-reject (moss/organic wear, motif bans). */
+  biomeId?: string;
+  /** Optional full biome context; when omitted, derived from biomeId. */
+  biome?: BiomeConsistencyContext;
 }
 
 /** A real, collidable one-solid platform in pixel space (see room-assembler.ts's use of this to
@@ -235,6 +260,87 @@ function placePlatform(
   platforms.push({ x: startCol * tileSize, y: row * tileSize, width: lengthCols * tileSize, height: tileSize });
 }
 
+function platformOverlaps(
+  platforms: PlatformRect[],
+  startCol: number,
+  lengthCols: number,
+  row: number,
+  tileSize: number,
+): boolean {
+  const y = row * tileSize;
+  const x0 = startCol * tileSize;
+  const x1 = (startCol + lengthCols) * tileSize;
+  return platforms.some((p) => p.y === y && !(x1 <= p.x || x0 >= p.x + p.width));
+}
+
+/**
+ * Environment-archetype gallery / balcony bands as real collidable platforms.
+ * Combat/boss bowls keep the center open; libraries / labs / halls get readable multi-level
+ * silhouettes instead of a flat box with jumbled islands.
+ */
+function applyEnvironmentGalleryBands(input: {
+  cells: TileCell[];
+  platforms: PlatformRect[];
+  tileSize: number;
+  cols: number;
+  floorRow: number;
+  platMinRow: number;
+  platMaxRow: number;
+  jumpStep: number;
+  environmentArchetype?: string;
+  gameplayArchetype: string;
+}): number {
+  const envId = input.environmentArchetype;
+  if (!envId || !(envId in ENVIRONMENT_ARCHETYPES)) return 0;
+  const plan = sideViewGalleryPlan(envId as EnvironmentArchetypeId);
+  if (plan.balconyRows <= 0 && plan.platformBands <= 1) return 0;
+
+  const keepCenterOpen =
+    input.gameplayArchetype === 'boss' ||
+    input.gameplayArchetype === 'miniboss' ||
+    input.gameplayArchetype === 'combat' ||
+    input.gameplayArchetype === 'arena';
+  const rowsWanted = Math.max(plan.balconyRows, Math.max(0, plan.platformBands - 1));
+  if (rowsWanted <= 0) return 0;
+
+  let bandsPlaced = 0;
+  const sideLen = Math.max(3, Math.floor(input.cols * (keepCenterOpen ? 0.14 : 0.18)));
+  const midLen = Math.max(4, Math.floor(input.cols * 0.22));
+
+  for (let b = 0; b < rowsWanted; b++) {
+    const row = Math.max(
+      input.platMinRow,
+      Math.min(input.platMaxRow, input.platMaxRow - (b + 1) * Math.max(1, input.jumpStep)),
+    );
+    if (row >= input.floorRow - 1 || row < 2) continue;
+
+    const leftStart = Math.max(2, Math.floor(input.cols * 0.08));
+    const rightStart = Math.min(input.cols - 2 - sideLen, Math.floor(input.cols * 0.78));
+
+    if (!platformOverlaps(input.platforms, leftStart, sideLen, row, input.tileSize)) {
+      placePlatform(input.cells, input.platforms, input.tileSize, leftStart, sideLen, row);
+      bandsPlaced++;
+    }
+    if (!platformOverlaps(input.platforms, rightStart, sideLen, row, input.tileSize)) {
+      placePlatform(input.cells, input.platforms, input.tileSize, rightStart, sideLen, row);
+      bandsPlaced++;
+    }
+
+    // Non-combat rooms may get a mid-span gallery ledge for silhouette readability.
+    if (!keepCenterOpen && plan.platformBands >= 3 && b === 0) {
+      const midStart = Math.max(leftStart + sideLen + 2, Math.floor(input.cols * 0.4));
+      if (
+        midStart + midLen < rightStart - 1 &&
+        !platformOverlaps(input.platforms, midStart, midLen, row, input.tileSize)
+      ) {
+        placePlatform(input.cells, input.platforms, input.tileSize, midStart, midLen, row);
+        bandsPlaced++;
+      }
+    }
+  }
+  return bandsPlaced;
+}
+
 /**
  * Paint real tile cells for a room (structure first). Collision StaticBody2D must occupy
  * the same floor band as the ground row. Platform/pit geometry is returned alongside the cells so
@@ -255,6 +361,8 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
   const rng = new SeededRNG((((input.seed ?? 1) + (input.uniquenessSalt ?? 0) * 9973) >>> 0) || 1);
   const { minRow: platMinRow, maxRow: platMaxRow } = platformRowRange(floorRow, tileSize, stats);
   const jumpStep = Math.max(1, Math.floor((jumpApexPx(stats) * 0.7) / tileSize));
+  const biomeCtx =
+    input.biome ?? (input.biomeId ? minimalBiomeContextFromId(input.biomeId) : undefined);
 
   // A down-connection gated on ground_slam already reserves a floor gap for a WeakFloor scene
   // (see deriveWeakFloors in room-assembler.ts) — never double-carve that same span with a pit.
@@ -548,6 +656,21 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
     placePlatform(cells, platforms, tileSize, midCol, 6, platMaxRow);
   }
 
+  // Purpose-driven gallery / balcony geometry from environment archetypes (SIDE_VIEW overrides).
+  // Runs after gameplay platforms so combat bowls stay primary; bands fill silhouette gaps.
+  applyEnvironmentGalleryBands({
+    cells,
+    platforms,
+    tileSize,
+    cols,
+    floorRow,
+    platMinRow,
+    platMaxRow,
+    jumpStep,
+    environmentArchetype: input.environmentArchetype,
+    gameplayArchetype: archetype,
+  });
+
   // A ceiling opening needs a complete ascent regardless of the room's archetype.
   // Keep solid platforms in alternating columns so the player can jump beside their
   // undersides. Reusing the archetype's decorative platforms can obstruct this shaft.
@@ -597,13 +720,16 @@ export function buildRoomTileCells(input: RoomTileLayoutInput): RoomTileLayoutRe
     width,
     height,
     archetype,
+    environmentArchetype: input.environmentArchetype,
     seed: (((input.seed ?? 1) + (input.uniquenessSalt ?? 0) * 9973) >>> 0) || 1,
     connections,
+    biomeId: input.biomeId,
+    biome: biomeCtx,
   });
 
   // Material patches intentionally run after semantic composition, so suppress once more after
   // patching to ensure their shared condition cannot recreate long identical atlas runs.
-  const terrainCells = applyTerrainVariants(composed.cells, input.seed ?? 1);
+  const terrainCells = applyTerrainVariants(composed.cells, input.seed ?? 1, biomeCtx);
   return { cells: suppressRepetition(terrainCells, input.seed ?? 1), platforms, pits, blueprint: composed.blueprint };
 }
 

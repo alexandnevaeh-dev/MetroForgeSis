@@ -82,7 +82,7 @@ export class UnrealProjectAssembler {
           writeFileSync(dest, buffer);
         }
       }
-      for (const folder of ['assets/characters', 'assets/enemies', 'assets/backgrounds', 'assets/tilesets']) {
+      for (const folder of ['assets/characters', 'assets/enemies', 'assets/bosses', 'assets/backgrounds', 'assets/tilesets']) {
         const src = join(input.outputDir, folder);
         if (!existsSync(src)) continue;
         const walk = (dir: string, prefix: string) => {

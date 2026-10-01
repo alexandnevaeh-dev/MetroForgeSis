@@ -1,0 +1,50 @@
+{
+  "title": "The Ruined Canopy: The Verdant Oath",
+  "premise": "Aster carries the First Seed through the last inhabited woodland. The Hollow Crown was once its protector; the silence of the bells bound it to an oath that no living voice can release.",
+  "factions": [
+    {
+      "name": "The Seedbearers",
+      "belief": "A living promise must be renewed, never enforced forever."
+    },
+    {
+      "name": "The Bellwrights",
+      "belief": "Memory is a shared duty. Their silence allowed the Crown to keep an impossible oath."
+    },
+    {
+      "name": "The Lastlight Keepers",
+      "belief": "Sanctuary means sheltering the stranger, even when the forest is afraid."
+    }
+  ],
+  "locations": [
+    {
+      "id": "canopy_hamlet",
+      "history": "The final refuge built beside the old root road. Its lamps are tended by Iri."
+    },
+    {
+      "id": "canopy_archive",
+      "history": "Soren keeps the broken bells and the testimonies of those who asked the Crown never to let them die."
+    },
+    {
+      "id": "canopy_observatory",
+      "history": "The Seedbearers once read the sun here; a preserved ember teaches Seedflare."
+    },
+    {
+      "id": "canopy_gardens",
+      "history": "Water drowned the gardens when their keeper tried to shelter every root from the same storm."
+    },
+    {
+      "id": "canopy_cistern",
+      "history": "A working of the first oath survives in these living waterworks: Rootward."
+    },
+    {
+      "id": "canopy_moonwell",
+      "history": "The well preserves footsteps of a garden that no longer exists. Its memory teaches Bloomstep."
+    }
+  ],
+  "arc": [
+    "Find the Verdant Disc and reconnect the root roads.",
+    "Meet the last inhabitants, learn the three living words, and recover two testimonies.",
+    "Return the First Seed to the Hollow Crown and release its impossible oath."
+  ],
+  "productionApproved": false
+}

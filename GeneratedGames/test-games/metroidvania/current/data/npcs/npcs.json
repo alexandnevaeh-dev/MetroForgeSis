@@ -1,0 +1,102 @@
+{
+  "npcs": [
+    {
+      "id": "npc_000",
+      "name": "Ashen Reed",
+      "role": "quest_giver",
+      "roomId": "room_006",
+      "dialogueIds": [
+        "quest_000_offer",
+        "quest_000_active",
+        "quest_000_complete"
+      ],
+      "questIds": [
+        "quest_000"
+      ],
+      "spriteId": "npc_000"
+    },
+    {
+      "id": "npc_001",
+      "name": "Tessa Vane",
+      "role": "merchant",
+      "roomId": "room_016",
+      "dialogueIds": [
+        "dlg_npc_001_greet"
+      ],
+      "questIds": [],
+      "shopId": "shop_npc_001",
+      "spriteId": "npc_001"
+    },
+    {
+      "id": "npc_002",
+      "name": "Tessa Vane",
+      "role": "lore",
+      "roomId": "room_026",
+      "dialogueIds": [
+        "dlg_npc_002_lore"
+      ],
+      "questIds": [],
+      "spriteId": "npc_002"
+    },
+    {
+      "id": "npc_003",
+      "name": "Old Marrow",
+      "role": "neutral",
+      "roomId": "room_036",
+      "dialogueIds": [
+        "dlg_npc_003_neutral"
+      ],
+      "questIds": [],
+      "spriteId": "npc_003"
+    },
+    {
+      "id": "npc_004",
+      "name": "Quen Isley",
+      "role": "quest_giver",
+      "roomId": "room_006",
+      "dialogueIds": [
+        "quest_004_offer",
+        "quest_004_active",
+        "quest_004_complete"
+      ],
+      "questIds": [
+        "quest_004"
+      ],
+      "spriteId": "npc_004"
+    },
+    {
+      "id": "npc_005",
+      "name": "Tessa Vane",
+      "role": "merchant",
+      "roomId": "room_016",
+      "dialogueIds": [
+        "dlg_npc_005_greet"
+      ],
+      "questIds": [],
+      "shopId": "shop_npc_005",
+      "spriteId": "npc_005"
+    },
+    {
+      "id": "npc_006",
+      "name": "Quen Isley",
+      "role": "lore",
+      "roomId": "room_026",
+      "dialogueIds": [
+        "dlg_npc_006_lore"
+      ],
+      "questIds": [],
+      "spriteId": "npc_006"
+    },
+    {
+      "id": "npc_007",
+      "name": "Corvin",
+      "role": "neutral",
+      "roomId": "room_036",
+      "dialogueIds": [
+        "dlg_npc_007_neutral"
+      ],
+      "questIds": [],
+      "spriteId": "npc_007"
+    }
+  ]
+}

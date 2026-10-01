@@ -53,6 +53,7 @@ export function writeSharedProjectData(
         requirements: d.requirements,
       })),
       enemies: room.enemy ? [room.enemy.id] : [],
+      npcs: (room.npcs ?? []).map(npc => npc.definitionId),
       collectibles: [],
     };
   }
@@ -66,6 +67,11 @@ export function writeSharedProjectData(
   );
 
   if (input.gameContent) {
+    for (const key of ['npcs', 'dialogues', 'quests', 'shops'] as const) {
+      mkdirSync(join(input.outputDir, 'data', key), { recursive: true });
+      writeFileSync(join(input.outputDir, 'data', key, `${key}.json`),
+        JSON.stringify({ [key]: input.gameContent[key] }, null, 2));
+    }
     mkdirSync(join(input.outputDir, 'data', 'enemies'), { recursive: true });
     writeFileSync(
       join(input.outputDir, 'data', 'enemies', 'enemies.json'),

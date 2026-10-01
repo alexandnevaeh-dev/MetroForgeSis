@@ -1,0 +1,45 @@
+import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { join, resolve, sep } from 'node:path';
+import { createHash } from 'node:crypto';
+import { writeCanopyProvenance } from './lib/canopy-provenance.mjs';
+
+const root=resolve('GeneratedGames/test-games/topdown');
+const candidate=resolve(process.argv[2]??'');
+const report=resolve('reports/game-tests/20260930-ruined-canopy');
+if(!root.toLowerCase().startsWith('e:\\') || !candidate.startsWith(root+sep) || !candidate.includes('candidate-canopy-'))throw new Error('Expected a named E: top-down candidate');
+const tally=(file,marker)=>{
+  const text=readFileSync(join(report,file),'utf8');
+  const row={passed:(text.match(/^PASS:/gm)??[]).length,failed:(text.match(/^FAIL:/gm)??[]).length,softFailures:(text.match(/^SOFT_FAIL:/gm)??[]).length};
+  if(!text.includes(marker)||row.failed||!row.passed)throw new Error('Incomplete or failing test: '+file);
+  return row;
+};
+const visual=tally('visual-approved.log','CANOPY_ACCEPTANCE_END');
+const runtime=tally('runtime-approved.log','SMOKE_TEST_RESULTS_END');
+const route=tally('route-release-v2.log','PLAYTEST_RESULTS_END');
+const routeText=readFileSync(join(report,'route-release-v2.log'),'utf8');
+const telemetry=JSON.parse(routeText.split('PLAYTEST_TELEMETRY_BEGIN')[1].split('PLAYTEST_TELEMETRY_END')[0].trim());
+if(!telemetry.victoryReached || telemetry.transitionsCompleted!==10 || telemetry.failureReason)throw new Error('The real route did not reach victory');
+const game=JSON.parse(readFileSync(join(candidate,'GAME_SET.json')));
+if(game.genre!=='topdown'||game.layoutStyle!=='ruined_canopy')throw new Error('Wrong candidate game set');
+const assets=writeCanopyProvenance(candidate);
+const current=join(root,'current'), backup=join(root,'backups','20260930-ruined-canopy');
+if(existsSync(backup))throw new Error('Backup exists; never replace a recoverable previous test game');
+const old=JSON.parse(readFileSync(join(current,'GAME_SET.json')));
+const oldArtHashes=new Set(old.assets.filter(asset=>asset.path.endsWith('.png')).map(asset=>asset.sha256));
+const sameArt=game.assets.filter(asset=>asset.path.endsWith('.png')&&oldArtHashes.has(asset.sha256));
+if(sameArt.length)throw new Error('Fresh set shares previous image bytes: '+sameArt.map(asset=>asset.path).join(','));
+const sideManifest=resolve('GeneratedGames/test-games/metroidvania/current/GAME_SET.json');
+const sideHash=createHash('sha256').update(readFileSync(sideManifest)).digest('hex');
+mkdirSync(join(root,'backups'),{recursive:true});
+renameSync(current,backup);
+try { renameSync(candidate,current); } catch(error) {renameSync(backup,current);throw error;}
+if(createHash('sha256').update(readFileSync(sideManifest)).digest('hex')!==sideHash)throw new Error('Side-view manifest changed during top-down promotion');
+const design=JSON.parse(readFileSync(join(current,'CANOPY_DESIGN.json')));
+design.nativeValidated=true;design.productionApproved=false;design.validation={visual,runtime,route,report};
+writeFileSync(join(current,'CANOPY_DESIGN.json'),JSON.stringify(design,null,2));
+for(const name of ['overworld','canopy_clearing','canopy_bridge','dungeon_000_r1','dungeon_000_r2','dungeon_000_r3','hero-grounded'])copyFileSync(join(current,'.qa/canopy',name+'.png'),join(report,name+'.png'));
+writeFileSync(join(report,'route-telemetry.json'),JSON.stringify(telemetry,null,2));
+writeFileSync(join(report,'results.json'),JSON.stringify({current,backup,assets,visual,runtime,route,telemetry,sideViewManifestUnchanged:true,previousTopdownImageReuse:0,productionApproved:false},null,2));
+writeFileSync(join(current,'PLAY.md'),`# The Ruined Canopy\n\nFresh top-down woodland action-adventure test game. Art and audio are original first drafts.\n\nUse WASD or arrow keys to move, J/X or left-click to attack, Shift to dodge/sprint, E to interact, and Escape to pause. Follow the forest route to the First Seed shrine, collect the Verdant Disc, return through the shortcut, open the vine gate, rest at the approach checkpoint, then face the Hollow Crown.\n\nLaunch with the repository's Play Top-down Test.cmd. Saves stay on E: and are separate from the side-view game.\n\nResults: ${report}\n`);
+writeFileSync(join(report,'RESULTS.md'),`# Fresh top-down test: The Ruined Canopy\n\nTen original woodland rooms; ${assets} new image, metadata, and sound assets. No previous top-down image bytes reused. Promoted to ${current}; recoverable previous game at ${backup}. The side-view set remains separate.\n\n| Test | Passed | Hard failures | Optional missing checks |\n|---|---:|---:|---:|\n| Room graph, routes, ability order and shortcut | 4 | 0 | 0 |\n| Godot assembler source regressions | 6 | 0 | 0 |\n| Native graphical visual/interaction checks | ${visual.passed} | ${visual.failed} | ${visual.softFailures} |\n| Native graphical runtime regressions | ${runtime.passed} | ${runtime.failed} | ${runtime.softFailures} |\n| Input-driven entrance-to-boss route | ${route.passed} | ${route.failed} | ${route.softFailures} |\n\nThe route completed ${telemetry.transitionsCompleted} transitions, opened ${telemetry.gatesOpened} gates, collected ${telemetry.itemsCollected} items and reached victory in ${(telemetry.durationMs/1000).toFixed(2)} seconds. The bot resets health before the boss; this verifies the route and boss controls, not whole-route difficulty balance. Two catalog-driven enemy roles and the boss use the new art. The optional grotto was inspected and its graph tested; the victory route does not visit it.\n\nThe visual suite directly loads rooms for inspection; it separately drives hero movement/attacks and real passage contact with input. It verifies ground contact from the actual frame pixels, prop anchors, eight directional hero clip families, all combat actor clip families, camera coverage, foliage fading, NPC identity/dialogue, and the real disc chest and gate. Clip availability is not an approval of animation artistry.\n\nThe preview video contains 224 captured native frames encoded at 30 fps (7.47 seconds). It is a controlled preview, not a real-time performance measurement. Screenshots are native rendered captures.\n\n## Boundaries\n\nArt remains a first draft and production approval is false in both manifests. Detailed environment composition, more distinctive landmarks, animation polish, authored audio/music, and combat balance remain ongoing. Nine optional quest checks are missing because this slice has lore dialogue rather than a quest-giver. The runtime's corrupt-save warning is its intentional recovery test; resource cleanup warnings remain at test exit. Godot ran on the local NVIDIA RTX 5060. No Unity or Unreal top-down run is claimed.\n\n## References applied\n\nCopilot conversation: https://copilot.microsoft.com/chats/pw5YSx231xc1UyaGMwwwa\n\nVerified developer sources: https://www.heartmachine.com/hyper-light-drifter and https://www.radicalfishgames.com/presskit/sheet.php?p=crosscode . The Heart Machine screenshots were visually inspected. Applied principles: clear quiet routes, palette contrast, large landmarks, ability before mandatory gate, an optional branch, return shortcut, pre-boss checkpoint, and correct higher-Y-in-front rendering. Copilot's initial repeated room and reversed depth rule were corrected. Its claimed verified video IDs were not accepted as verification; trailers linked by developers are reference candidates, not videos watched in this pass. No commercial reference art was copied into the game.\n\nThe failed initial visual and route logs are preserved here alongside the final passing logs.\n`);
+console.log(JSON.stringify({current,backup,assets,visual,runtime,route,productionApproved:false}));

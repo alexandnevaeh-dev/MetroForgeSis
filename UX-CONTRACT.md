@@ -48,3 +48,16 @@ Canonical controls: shared Input and native-backed Select for scalar fields and 
 Prop changes are explicit saves, not autosaves. Preserve layers and collision metadata when changing position/scale. Removal is reversible through the same saved-room history. Block duplicate submissions while pending. Keep invalid drafts visible with an inline explanation. Record history only for successful writes. Failed saves preserve data and report the error. Project/room switches must not apply stale responses to the newly selected target.
 
 Unsupported top-down actions must not silently mutate side-view files. Asset addition and visual direct manipulation remain outstanding. Do not show an empty rendered scene as proof that an area is empty.
+
+## Native top-down game HUD
+GameHUD.gd and World.tscn own the existing readonly gameplay HUD. HealthComponent owns health; InventoryManager owns item counts/names; GameManager owns acquired abilities; MapManager owns room identity/discovery; QuestManager owns currency and active objectives. No duplicate counters or gameplay state changes are introduced for presentation. AdventureHUDTheme.gd owns this game's native theme separately from the studio and side-view UI.
+
+Vitality shows clamped actual current/max health; at 25% or below a LOW label accompanies its danger color. Known dungeon tools are displayed when owned as inventory items as well as when acquired through ability events. Names come from item definitions or game DNA, with a readable fallback; narrow labels truncate visually and retain full tooltip text. The room label follows the current graph node. HUD panels ignore mouse input. Empty quests hide the tracker; its bounded contents determine its height. Death/respawn and victory retain the existing event-driven overlay lifecycle.
+
+Native validation and screenshot evidence live in reports/game-tests/20261001-canopy-hud-interactables. These checks are not a comprehensive accessibility or release certificate.
+
+## Verdant Oath spells and memories
+
+PlayerSpellController owns essence, spell cooldowns and temporary ward protection. The readonly bottom HUD shows those actual values, Q/R/F controls, and whether a spell has been learned. Spell items persist through InventoryManager. SaveManager saves essence and cooldowns; a loaded save takes precedence over outgoing room state and is consumed once. Ordinary transitions carry current values. Unlearned spells, cooldowns, insufficient essence, attacking, death and pause prevent casting.
+
+Inventory scrolls its bounded item list and shows the selected item's description below it. Memories are readable story items. NPC dialogue choices accept quests; accepting after collecting the required items backfills progress and awards completion once. Starting a new game clears inventory and quest state. The expanded native tests and captures live in reports/game-tests/20261001-canopy-epic-foundation.

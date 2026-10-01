@@ -1,4 +1,18 @@
 /** Engine-neutral playable IR. Coordinates are Godot 2D pixels (origin top-left, +Y down). */
+import type { Dialogue } from '@metroforge/schemas';
+
+export interface GameplayNpc {
+  id: string;
+  definitionId: string;
+  spriteId: string;
+  name: string;
+  role: string;
+  x: number;
+  y: number;
+  dialogueIds: string[];
+  questIds: string[];
+  shopId?: string;
+}
 
 export interface GameplayRect {
   name?: string;
@@ -21,6 +35,9 @@ export interface GameplaySpriteClip {
   smoothFiltering?: boolean;
   fps: number;
   loop: boolean;
+  /** Zero-based strike/release pose; defaults to the middle frame when absent. */
+  impactFrame?: number;
+  hasImpactFrame?: boolean;
   /** Normalized pivot. Characters use bottom-center (0.5, 0). */
   pivotX: number;
   pivotY: number;
@@ -59,9 +76,15 @@ export interface GameplayActor {
   attackWindupSeconds?: number;
   attackRecoverySeconds?: number;
   attackCooldownSeconds?: number;
+  isBoss?: boolean;
+  name?: string;
+  bossPhases?: Array<{ phase: number; healthThreshold: number; attacks: string[]; telegraphDuration: number; recoveryWindow: number }>;
 }
 
 export interface GameplayBackgrounds {
+  /** Full-room interior plate, replacing generic outdoor parallax layers. */
+  interior?: string;
+  interiorTint?: number[];
   farCameraRelative?: boolean;
   farParallax?: number;
   far?: string;
@@ -85,6 +108,7 @@ export interface GameplayRoom {
   doors: GameplayDoor[];
   gates: GameplayGate[];
   enemy?: GameplayActor;
+  npcs?: GameplayNpc[];
   abilityPickup?: GameplayActor;
   abilityPickups?: GameplayActor[];
   /** Authored grapple anchor positions in room coordinates. */
@@ -130,6 +154,7 @@ export interface GameplayPack {
   abilities: Array<{ id: string; name: string }>;
   rooms: GameplayRoom[];
   sprites: GameplaySpriteClip[];
+  dialogues?: Dialogue[];
 }
 
 export interface EngineManifest {

@@ -1,0 +1,45 @@
+[gd_scene load_steps=2 format=3 uid="uid://v3_comparison_test"]
+
+[ext_resource type="PackedScene" uid="uid://player_scene" path="res://scenes/player/Player.tscn" id="1_v2"]
+[ext_resource type="PackedScene" uid="uid://player_scene_v3_sunnyland" path="res://scenes/player/Player_V3_SunnyLand.tscn" id="2_v3"]
+
+[node name="ComparisonTest" type="Node2D"]
+
+[node name="BackgroundPanel" type="ColorRect" parent="."]
+offset_left = -640.0
+offset_top = -360.0
+offset_right = 640.0
+offset_bottom = 360.0
+color = Color(0.1, 0.1, 0.1, 1)
+
+[node name="Label" type="Label" parent="."]
+offset_left = -300.0
+offset_top = -330.0
+offset_right = 300.0
+offset_bottom = -300.0
+text = "V3 Quality Gate Comparison: V2 (left) vs V3 SunnyLand (right)"
+horizontal_alignment = 1
+
+[node name="V2Player" parent="." instance=ExtResource("1_v2")]
+position = Vector2(-150, 0)
+
+[node name="V3Player" parent="." instance=ExtResource("2_v3")]
+position = Vector2(150, 0)
+
+[node name="InfoV2" type="Label" parent="."]
+offset_left = -200.0
+offset_top = 100.0
+offset_right = -50.0
+offset_bottom = 150.0
+text = "V2 (Current)
+Industrial Transit
+Procedurally Generated"
+
+[node name="InfoV3" type="Label" parent="."]
+offset_left = 50.0
+offset_top = 100.0
+offset_right = 200.0
+offset_bottom = 150.0
+text = "V3 (SunnyLand)
+External Source
+Professional Pixel Art"

@@ -6,6 +6,11 @@ import {
   assignRoomArchetypes,
   npcCountForProfile,
 } from './room-archetypes.js';
+import {
+  assignEnvironmentArchetype,
+  majorRoomTileSize,
+  roomPurposeFromGameplay,
+} from './environment-archetypes.js';
 
 export interface WorldGenOptions {
   seed: number;
@@ -58,17 +63,40 @@ export function generateWorldTopology(options: WorldGenOptions): WorldGenResult 
     profile: options.profile,
   });
 
-  const nodes = roomIds.map((id, i) => ({
-    id,
-    type: 'room' as const,
-    label: `Room ${i}`,
-    metadata: {
-      archetype: roomArchetypes[i]!,
-      biomeIndex: isMedium || isLarge ? Math.floor(i / Math.ceil(options.roomCount / options.biomeCount)) % options.biomeCount : i % options.biomeCount,
-      regionIndex: isLarge ? Math.floor(i / (options.roomCount / options.biomeCount)) : 0,
-      grantsAbilities: grantsAbilitiesByRoom.get(id) ?? [],
-    },
-  }));
+  const nodes = roomIds.map((id, i) => {
+    const gameplayArchetype = roomArchetypes[i]!;
+    const biomeIndex =
+      isMedium || isLarge
+        ? Math.floor(i / Math.ceil(options.roomCount / options.biomeCount)) % options.biomeCount
+        : i % options.biomeCount;
+    const biomeId = `biome_${biomeIndex}`;
+    const environmentArchetype = assignEnvironmentArchetype({
+      roomIndex: i,
+      roomCount: options.roomCount,
+      gameplayArchetype,
+      biomeId,
+      seed: options.seed,
+    });
+    const purpose = roomPurposeFromGameplay(gameplayArchetype);
+    const tileSize = majorRoomTileSize(environmentArchetype, 32, 18);
+    return {
+      id,
+      type: 'room' as const,
+      label: `Room ${i}`,
+      metadata: {
+        archetype: gameplayArchetype,
+        environmentArchetype,
+        roomPurpose: purpose,
+        biomeIndex,
+        regionIndex: isLarge ? Math.floor(i / (options.roomCount / options.biomeCount)) : 0,
+        grantsAbilities: grantsAbilitiesByRoom.get(id) ?? [],
+        screenSpanH: tileSize.screenSpanH,
+        screenSpanV: tileSize.screenSpanV,
+        targetTileWidth: tileSize.width,
+        targetTileHeight: tileSize.height,
+      },
+    };
+  });
 
   const edges: WorldGraph['edges'] = buildEdges(roomIds, options, rng, isMedium || isLarge);
 

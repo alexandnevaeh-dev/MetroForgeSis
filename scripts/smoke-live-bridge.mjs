@@ -221,6 +221,18 @@ try {
     undefined,
   );
   assert.equal(inspected.result.objects.find((x) => x.nodePath === 'Invalid').authored, undefined);
+  // Viewport selection: pick_at nearest Node2D at Enemy world position, then clear.
+  const picked = await sendPlaytestCommand(project, 'pick_at', { x: enemy.x, y: enemy.y });
+  assert.equal(picked.ok, true, picked.error);
+  assert.equal(picked.result.picked, true);
+  assert.equal(picked.result.selection.nodePath, 'Enemy');
+  const withSelection = await sendPlaytestCommand(project, 'get_state');
+  assert.equal(withSelection.result.selection.nodePath, 'Enemy');
+  assert.equal((await sendPlaytestCommand(project, 'clear_selection')).ok, true);
+  assert.equal((await sendPlaytestCommand(project, 'get_state')).result.selection, null);
+  const miss = await sendPlaytestCommand(project, 'pick_at', { x: 99999, y: 99999 });
+  assert.equal(miss.ok, true);
+  assert.equal(miss.result.picked, false);
   const stale = await sendPlaytestCommand(project, 'set_entity_position', {
     nodePath: 'Enemy',
     expectedInstanceId: 'stale-instance',

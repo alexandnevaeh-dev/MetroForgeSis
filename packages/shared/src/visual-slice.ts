@@ -6,7 +6,7 @@ import {
   type GenerationProfile,
 } from './constants.js';
 import { getRepoRoot } from './config.js';
-import { inferGameArchetypeFromPrompt, isTopDownArchetype } from './archetypes.js';
+import { inferGameArchetypeFromPrompt, genreSupports } from './archetypes.js';
 import type { GameArchetype } from './constants.js';
 
 export type VisualReviewStatus =
@@ -171,7 +171,7 @@ export function applyVisualSliceIdentityDefaults<
 >(options: T): T {
   if (options.profile !== 'VISUAL_VERTICAL_SLICE') return options;
   const archetype = options.archetype ?? inferGameArchetypeFromPrompt(options.prompt ?? '');
-  if (isTopDownArchetype(archetype)) return options;
+  if (genreSupports(archetype, 'supportsOverworldMap')) return options;
   return {
     ...options,
     // No external-pack default — the authored courier/masonry path + per-role rooms is the

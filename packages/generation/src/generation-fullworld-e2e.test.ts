@@ -119,6 +119,8 @@ describe('generation e2e — normal full-world path (no biomeCount override)', (
         rmSync(result.outputPath!, { recursive: true, force: true });
       }
     },
-    300_000,
+    // Visual slice still runs full asset assembly; on Windows with hosted providers configured
+    // this can exceed 5 minutes under load after earlier full-world cases in the same file.
+    600_000,
   );
 });

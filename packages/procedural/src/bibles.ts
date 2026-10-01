@@ -7,7 +7,7 @@ import type {
   StyleBible,
 } from '@metroforge/schemas';
 import type { GenerationProfile } from '@metroforge/shared';
-import { PROFILE_DEFAULTS, slugify, tileSizeForProfile } from '@metroforge/shared';
+import { PROFILE_DEFAULTS, slugify, tileSizeForProfile, genreCapability, genreSupports, getGenreDefinition } from '@metroforge/shared';
 import { isPaintedStyle } from './visual/rendering-medium.js';
 import { SeededRNG } from './rng.js';
 import { styleCueText } from './visual/style-registry.js';
@@ -46,7 +46,8 @@ export function generateArtBible(gameDna: GameDNA, seed: number): ArtBible {
   const palette = STYLE_PALETTES[bucket]!;
   const painted = isPaintedStyle(gameDna.identity.visualStyle);
   const medium = painted ? 'hand-painted' : 'pixel art';
-  const perspective = gameDna.archetype === 'TOP_DOWN_ACTION_ADVENTURE' ? 'top-down' : 'side view';
+  const perspective = genreCapability(gameDna.archetype, 'artProjection') === 'top-down' ? 'top-down' : 'side view';
+  const genreTags = getGenreDefinition(gameDna.archetype).referenceTags.join(', ');
 
   return {
     version: '0.1.0',
@@ -54,9 +55,9 @@ export function generateArtBible(gameDna: GameDNA, seed: number): ArtBible {
     visualStyle: gameDna.identity.visualStyle,
     palette,
     characterGuidelines: {
-      player: `${gameDna.identity.visualStyle}, readable silhouette, ${gameDna.narrative.protagonist}`,
-      enemy: `${gameDna.identity.visualStyle}, distinct readable shape, hostile`,
-      boss: `${gameDna.identity.visualStyle}, imposing scale, ${gameDna.narrative.centralConflict}`,
+      player: `${gameDna.identity.visualStyle}, readable silhouette, fluid articulated locomotion, ${gameDna.narrative.protagonist}`,
+      enemy: `${gameDna.identity.visualStyle}, distinct readable shape, hostile, posed combat tells`,
+      boss: `${gameDna.identity.visualStyle}, imposing scale, readable attack arcs, ${gameDna.narrative.centralConflict}`,
       npc: `${gameDna.identity.visualStyle}, friendly readable silhouette`,
     },
     environmentGuidelines: {
@@ -78,11 +79,11 @@ export function generateArtBible(gameDna: GameDNA, seed: number): ArtBible {
       '3d render',
     ],
     promptPrefixes: {
-      CHARACTER: `${medium} game character sprite, ${perspective}, ${gameDna.identity.visualStyle},`,
-      ENEMY: `${medium} game enemy creature, ${perspective}, ${gameDna.identity.visualStyle},`,
-      BOSS: `${medium} game boss creature, imposing, ${gameDna.identity.visualStyle},`,
-      TILE_SOURCE:  `seamless ${medium} tileset texture, ${gameDna.identity.visualStyle},`,
-      ENVIRONMENT: `${medium} parallax background, ${gameDna.identity.visualStyle},`,
+      CHARACTER: `${medium} game character sprite, ${perspective}, ${gameDna.identity.visualStyle}, ${genreTags},`,
+      ENEMY: `${medium} game enemy creature, ${perspective}, ${gameDna.identity.visualStyle}, ${genreTags},`,
+      BOSS: `${medium} game boss creature, imposing, ${gameDna.identity.visualStyle}, ${genreTags},`,
+      TILE_SOURCE:  `seamless ${medium} tileset texture, ${gameDna.identity.visualStyle}, ${genreTags},`,
+      ENVIRONMENT: `${medium} parallax background, ${gameDna.identity.visualStyle}, ${genreTags},`,
     },
   };
 }
@@ -143,7 +144,7 @@ export function generateDesignBible(
 
 /** Persistable StyleBible derived from the existing ArtBible so asset prompts stay on one creative source. */
 export function generateStyleBible(gameDna: GameDNA, art: ArtBible): StyleBible {
-  const sideView = gameDna.archetype !== 'TOP_DOWN_ACTION_ADVENTURE';
+  const sideView = genreSupports(gameDna.archetype, 'supportsVerticalPlatforming');
   const tileSize = gameDna.technical.tileSize || tileSizeForProfile(gameDna.profile);
   const painted = isPaintedStyle(art.visualStyle);
   const visualSlice = gameDna.profile === 'VISUAL_VERTICAL_SLICE';
@@ -212,7 +213,9 @@ export function generateCharacterVisualDNA(gameDna: GameDNA, art: ArtBible): Cha
     weapon: gameDna.combat.meleeEnabled ? 'one-handed melee blade, sheathed or in-hand consistently' : 'holstered tool',
     spriteWidth: 64,
     spriteHeight: 64,
-    orientation: gameDna.archetype === 'TOP_DOWN_ACTION_ADVENTURE' ? 'top-down, consistent directional facing' : 'side view, facing right in source',
+    orientation: genreSupports(gameDna.archetype, 'supportsDirectionalSpriteSheets')
+      ? 'top-down, consistent directional facing'
+      : 'side view, facing right in source',
     lighting: painted ? 'upper-left key, controlled painted edge light' : 'upper-left key, 1px dark outline',
     outline: art.uiGuidelines.iconStyle,
     anchor: 'feet-center',

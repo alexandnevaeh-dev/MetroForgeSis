@@ -1,4 +1,4 @@
-import { decodePngRgba, encodePng } from './png.js';
+import { countLowerBodyBlobs, decodePngRgba, encodePng } from './png.js';
 
 export interface SpriteQaIssue {
   code: string;
@@ -157,8 +157,27 @@ export function critiqueAnimationIdentity(
     });
   }
 
-  const fakeAnimation = fakeBob || (frames > 1 && unique < 2);
-  const passed = issues.filter((i) => i.code !== 'fake-animation').length === 0 && !fakeAnimation;
+  // Multi-leg ghost smear: bipedal walk/run lower body should not show 3+ opaque blobs.
+  let multiLegSmear = false;
+  if (opts.kind === 'walk' || opts.kind === 'run' || !opts.kind) {
+    for (let f = 0; f < frames; f++) {
+      const frame = framePixels(rgba, width, height, f, frameW);
+      if (countLowerBodyBlobs(frame, frameW, height) > 2) {
+        multiLegSmear = true;
+        break;
+      }
+    }
+  }
+  checks.noMultiLegSmear = !multiLegSmear;
+  if (multiLegSmear) {
+    issues.push({
+      code: 'multi-leg-smear',
+      message: 'walk/run frames show >2 lower-body blobs (stacked ghost legs)',
+    });
+  }
+
+  const fakeAnimation = fakeBob || (frames > 1 && unique < 2) || multiLegSmear;
+  const passed = issues.filter((i) => i.code !== 'fake-animation' && i.code !== 'multi-leg-smear').length === 0 && !fakeAnimation;
   return { passed, fakeAnimation, issues, checks };
 }
 

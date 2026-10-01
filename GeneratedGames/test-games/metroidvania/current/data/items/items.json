@@ -1,0 +1,169 @@
+{
+  "items": [
+    {
+      "id": "scrap",
+      "name": "Scrap",
+      "description": "Currency salvaged from the ruins.",
+      "category": "currency",
+      "stackable": true,
+      "maxStack": 9999,
+      "value": 1,
+      "effects": []
+    },
+    {
+      "id": "health_vial",
+      "name": "Health Vial",
+      "description": "Restores health.",
+      "category": "consumable",
+      "stackable": true,
+      "maxStack": 10,
+      "value": 25,
+      "effects": [
+        {
+          "type": "heal",
+          "value": 30
+        }
+      ]
+    },
+    {
+      "id": "heart_relic",
+      "name": "Heart Relic",
+      "description": "Permanently increases maximum health.",
+      "category": "relic",
+      "stackable": false,
+      "maxStack": 1,
+      "value": 100,
+      "effects": [
+        {
+          "type": "max_health",
+          "value": 25
+        }
+      ]
+    },
+    {
+      "id": "power_charm",
+      "name": "Power Charm",
+      "description": "Permanently increases melee attack power.",
+      "category": "charm",
+      "stackable": false,
+      "maxStack": 1,
+      "value": 80,
+      "effects": [
+        {
+          "type": "attack",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "rusted_key",
+      "name": "Rusted Key",
+      "description": "An old key found in the ruins.",
+      "category": "key",
+      "stackable": false,
+      "maxStack": 1,
+      "value": 15,
+      "effects": []
+    },
+    {
+      "id": "upgrade_shard",
+      "name": "Upgrade Shard",
+      "description": "Material used to strengthen equipment.",
+      "category": "upgrade_material",
+      "stackable": true,
+      "maxStack": 99,
+      "value": 10,
+      "effects": []
+    },
+    {
+      "id": "forged_blade",
+      "name": "Forged Blade",
+      "description": "A restored weapon. Increases melee damage while equipped.",
+      "category": "weapon",
+      "stackable": false,
+      "maxStack": 1,
+      "value": 120,
+      "effects": [
+        {
+          "type": "attack",
+          "value": 8
+        }
+      ]
+    },
+    {
+      "id": "warden_mail",
+      "name": "Warden Mail",
+      "description": "Weathered armor. Reduces incoming damage while equipped.",
+      "category": "armor",
+      "stackable": false,
+      "maxStack": 1,
+      "value": 100,
+      "effects": [
+        {
+          "type": "armor",
+          "value": 25
+        }
+      ]
+    },
+    {
+      "id": "warden_seal",
+      "name": "Warden Seal",
+      "description": "Proof of a completed trial.",
+      "category": "quest",
+      "stackable": false,
+      "maxStack": 1,
+      "value": 0,
+      "effects": []
+    },
+    {
+      "id": "lost_echo",
+      "name": "Lost Echo",
+      "description": "A remnant hidden in the ruins. Collect them all.",
+      "category": "collectible",
+      "stackable": false,
+      "maxStack": 1,
+      "value": 50,
+      "effects": []
+    },
+    {
+      "id": "lost_echo_001",
+      "name": "Silent Keepsake",
+      "description": "A remnant hidden in the ruins. Collect them all.",
+      "category": "collectible",
+      "stackable": false,
+      "maxStack": 1,
+      "value": 50,
+      "effects": []
+    },
+    {
+      "id": "lost_echo_002",
+      "name": "Forgotten Crest",
+      "description": "A remnant hidden in the ruins. Collect them all.",
+      "category": "collectible",
+      "stackable": false,
+      "maxStack": 1,
+      "value": 50,
+      "effects": []
+    },
+    {
+      "id": "lost_echo_003",
+      "name": "Ashen Token",
+      "description": "A remnant hidden in the ruins. Collect them all.",
+      "category": "collectible",
+      "stackable": false,
+      "maxStack": 1,
+      "value": 50,
+      "effects": []
+    },
+    {
+      "id": "lost_echo_004",
+      "name": "Hollow Sigil",
+      "description": "A remnant hidden in the ruins. Collect them all.",
+      "category": "collectible",
+      "stackable": false,
+      "maxStack": 1,
+      "value": 50,
+      "effects": []
+    }
+  ]
+}

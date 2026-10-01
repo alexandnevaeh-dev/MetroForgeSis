@@ -1,0 +1,185 @@
+{
+  "reachable": true,
+  "startRoomId": "overworld",
+  "victoryRoomId": "dungeon_000_r3",
+  "victoryBossId": "boss_final",
+  "transitions": [
+    {
+      "fromRoomId": "overworld",
+      "toRoomId": "dungeon_000_r0",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "dungeon_000_r0",
+      "toRoomId": "canopy_clearing",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "canopy_clearing",
+      "toRoomId": "canopy_hamlet",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "canopy_hamlet",
+      "toRoomId": "canopy_archive",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "canopy_archive",
+      "toRoomId": "canopy_observatory",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "canopy_observatory",
+      "toRoomId": "canopy_archive",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "canopy_archive",
+      "toRoomId": "canopy_hamlet",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "canopy_hamlet",
+      "toRoomId": "canopy_clearing",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "canopy_clearing",
+      "toRoomId": "canopy_hollow",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "canopy_hollow",
+      "toRoomId": "canopy_bridge",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "canopy_bridge",
+      "toRoomId": "canopy_gardens",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "canopy_gardens",
+      "toRoomId": "canopy_cistern",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "canopy_cistern",
+      "toRoomId": "canopy_moonwell",
+      "requirements": [
+        "rootward"
+      ]
+    },
+    {
+      "fromRoomId": "canopy_moonwell",
+      "toRoomId": "canopy_cistern",
+      "requirements": [
+        "rootward"
+      ]
+    },
+    {
+      "fromRoomId": "canopy_cistern",
+      "toRoomId": "canopy_gardens",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "canopy_gardens",
+      "toRoomId": "canopy_bridge",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "canopy_bridge",
+      "toRoomId": "dungeon_000_r1",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "dungeon_000_r1",
+      "toRoomId": "canopy_secret",
+      "requirements": [
+        "wind_disc"
+      ]
+    },
+    {
+      "fromRoomId": "canopy_secret",
+      "toRoomId": "dungeon_000_r1",
+      "requirements": [
+        "wind_disc"
+      ]
+    },
+    {
+      "fromRoomId": "dungeon_000_r1",
+      "toRoomId": "canopy_bridge",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "canopy_bridge",
+      "toRoomId": "canopy_clearing",
+      "requirements": [
+        "wind_disc"
+      ]
+    },
+    {
+      "fromRoomId": "canopy_clearing",
+      "toRoomId": "dungeon_000_r2",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "dungeon_000_r2",
+      "toRoomId": "canopy_approach",
+      "requirements": [
+        "wind_disc"
+      ]
+    },
+    {
+      "fromRoomId": "canopy_approach",
+      "toRoomId": "dungeon_000_r3",
+      "requirements": []
+    }
+  ],
+  "visitedRoomOrder": [
+    "overworld",
+    "dungeon_000_r0",
+    "canopy_clearing",
+    "canopy_hamlet",
+    "canopy_archive",
+    "canopy_observatory",
+    "canopy_archive",
+    "canopy_hamlet",
+    "canopy_clearing",
+    "canopy_hollow",
+    "canopy_bridge",
+    "canopy_gardens",
+    "canopy_cistern",
+    "canopy_moonwell",
+    "canopy_cistern",
+    "canopy_gardens",
+    "canopy_bridge",
+    "dungeon_000_r1",
+    "canopy_secret",
+    "dungeon_000_r1",
+    "canopy_bridge",
+    "canopy_clearing",
+    "dungeon_000_r2",
+    "canopy_approach",
+    "dungeon_000_r3"
+  ],
+  "persona": {
+    "id": "victory_rusher",
+    "displayName": "Victory Rusher",
+    "walkTimeoutSec": 8,
+    "bossAttackTimeoutSec": 12,
+    "collectAllPickups": true
+  },
+  "movementFeasibility": {
+    "feasible": true,
+    "issueCount": 0,
+    "issues": [],
+    "metrics": {
+      "jumpApexPx": 0,
+      "dashReachPx": null,
+      "airDashReachPx": null,
+      "upTransitionGapPx": 408
+    }
+  }
+}

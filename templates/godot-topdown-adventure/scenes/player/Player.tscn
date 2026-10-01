@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://player_scene"]
+[gd_scene load_steps=9 format=3 uid="uid://player_scene"]
 
 [ext_resource type="Script" path="res://scripts/player/TopDownPlayerController.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/combat/HealthComponent.gd" id="2_health"]
@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://scripts/combat/HitboxComponent.gd" id="4_hitbox"]
 [ext_resource type="Script" path="res://scripts/core/AnimatedAssetSprite.gd" id="5_sprite"]
 [ext_resource type="Script" path="res://scripts/player/TopDownCamera.gd" id="6_cam"]
+[ext_resource type="Script" path="res://scripts/core/ActorSockets.gd" id="7_sockets"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(20, 20)
@@ -61,3 +62,7 @@ one_shot = true
 [node name="Camera2D" type="Camera2D" parent="."]
 zoom = Vector2(2.5, 2.5)
 script = ExtResource("6_cam")
+
+[node name="Sockets" type="Node2D" parent="."]
+script = ExtResource("7_sockets")
+layout = "top_down"

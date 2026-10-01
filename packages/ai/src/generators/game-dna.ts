@@ -6,7 +6,9 @@ import {
   pickRegisteredAbilities,
   pickTopDownDungeonItems,
   inferGameArchetypeFromPrompt,
-  isTopDownArchetype,
+  genreSupports,
+  genreUsesDungeonTools,
+  getGenreDefinition,
   resolveGameArchetype,
   TOP_DOWN_PROFILE_DEFAULTS,
   DEFAULT_TOP_DOWN_MOVEMENT,
@@ -47,8 +49,9 @@ function fallbackVisualStyle(prompt: string): string {
 export function createDeterministicGameDNA(input: GameDNAInput): GameDNA {
   const defaults = PROFILE_DEFAULTS[input.profile];
   const archetype = resolveGameArchetype(input.archetype ?? inferGameArchetypeFromPrompt(input.prompt));
-  const topDown = isTopDownArchetype(archetype);
-  const title = input.prompt.slice(0, 60).replace(/\.$/, '') || (topDown ? 'Untitled Adventure' : 'Untitled Metroidvania');
+  const genre = getGenreDefinition(archetype);
+  const topDown = genre.perspective === 'TOP_DOWN';
+  const title = input.prompt.slice(0, 60).replace(/\.$/, '') || genre.displayName;
   const td = TOP_DOWN_PROFILE_DEFAULTS[input.profile];
 
   return GameDNASchema.parse({
@@ -56,7 +59,7 @@ export function createDeterministicGameDNA(input: GameDNAInput): GameDNA {
     identity: {
       title,
       tagline: input.prompt.slice(0, 120),
-      genre: topDown ? 'Action-Adventure' : 'Metroidvania',
+      genre: genre.displayName.includes('Metroidvania') ? 'Metroidvania' : 'Action-Adventure',
       subgenre: 'Action-Adventure',
       tone: 'dark',
       visualStyle: fallbackVisualStyle(input.prompt),
@@ -73,11 +76,11 @@ export function createDeterministicGameDNA(input: GameDNAInput): GameDNA {
       difficulty: 'normal',
     },
     combat: {
-      style: topDown ? 'directional melee' : 'fast melee',
+      style: genreSupports(archetype, 'supportsDirectionalCombat') ? 'directional melee' : 'fast melee',
       meleeEnabled: true,
-      rangedEnabled: topDown,
+      rangedEnabled: genreSupports(archetype, 'supportsDirectionalCombat'),
     },
-    movement: topDown
+    movement: genreSupports(archetype, 'supportsFreePlanarMovement')
       ? {
           walkSpeed: DEFAULT_TOP_DOWN_MOVEMENT.walkSpeed,
           runSpeed: DEFAULT_TOP_DOWN_MOVEMENT.runSpeed,
@@ -93,7 +96,9 @@ export function createDeterministicGameDNA(input: GameDNAInput): GameDNA {
           jumpHeight: 120,
           gravity: 980,
         },
-    abilities: topDown ? pickTopDownDungeonItems(input.profile) : pickRegisteredAbilities(input.profile),
+    abilities: genreUsesDungeonTools(archetype)
+      ? pickTopDownDungeonItems(input.profile)
+      : pickRegisteredAbilities(input.profile),
     world: {
       biomeCount: topDown ? td.regions : defaults.biomes,
       roomCount: topDown ? td.dungeonCount * 4 + 1 : defaults.roomsMax,
@@ -154,7 +159,7 @@ export async function generateGameDNA(
     const parsed = JSON.parse(response.text);
     const dna = GameDNASchema.parse(parsed);
     if (input.archetype) dna.archetype = input.archetype;
-    dna.abilities = isTopDownArchetype(dna.archetype)
+    dna.abilities = genreUsesDungeonTools(dna.archetype)
       ? pickTopDownDungeonItems(input.profile)
       : pickRegisteredAbilities(input.profile);
     return { dna, source: 'ai' };

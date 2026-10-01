@@ -3,32 +3,105 @@ import { mkdirSync, rmSync, existsSync, writeFileSync, readFileSync } from 'node
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { GenerationCancelledError } from '@metroforge/shared';
-import { AssetPipeline, compiledSpriteFrameSize, proceduralProductionIntent, inferAssetTypeFromPath } from '../src/asset-pipeline.js';
+import {
+  AssetPipeline,
+  compiledSpriteFrameSize,
+  proceduralProductionIntent,
+  inferAssetTypeFromPath,
+} from '../src/asset-pipeline.js';
 import { decodePngRgba, generateProceduralSprite } from '../src/png.js';
+import { PLAYER_ANIMATION_SPEC } from '../src/player-animation-spec.js';
 import type { GameDNA } from '@metroforge/schemas';
 
 describe('proceduralProductionIntent', () => {
   it('allows validated runtime procedural art across the real shipping families', () => {
-    expect(proceduralProductionIntent({ path: 'assets/tilesets/biome_0/source.png', provider: 'procedural', critiquePassed: true }, 'tileset')).toBe(true);
-    expect(proceduralProductionIntent({ path: 'assets/props/biome_0/arch.png', provider: 'procedural', critiquePassed: true }, 'prop')).toBe(true);
-    expect(proceduralProductionIntent({ path: 'assets/characters/player.png', provider: 'procedural', critiquePassed: true }, 'player')).toBe(true);
-    expect(proceduralProductionIntent({ path: 'assets/enemies/enemy_000.png', provider: 'procedural', critiquePassed: true }, 'enemy')).toBe(true);
-    expect(proceduralProductionIntent({ path: 'assets/bosses/boss_final.png', provider: 'procedural', critiquePassed: true }, 'boss')).toBe(true);
-    expect(proceduralProductionIntent({ path: 'assets/backgrounds/biome_0/far.png', provider: 'procedural', critiquePassed: true }, 'background')).toBe(true);
-    expect(proceduralProductionIntent({ path: 'assets/ui/menus/title.png', provider: 'procedural', critiquePassed: true }, 'ui')).toBe(true);
-    expect(proceduralProductionIntent({ path: 'assets/vfx/hit_spark.png', provider: 'procedural', critiquePassed: true }, 'vfx')).toBe(true);
+    expect(
+      proceduralProductionIntent(
+        {
+          path: 'assets/tilesets/biome_0/source.png',
+          provider: 'procedural',
+          critiquePassed: true,
+        },
+        'tileset',
+      ),
+    ).toBe(true);
+    expect(
+      proceduralProductionIntent(
+        { path: 'assets/props/biome_0/arch.png', provider: 'procedural', critiquePassed: true },
+        'prop',
+      ),
+    ).toBe(true);
+    expect(
+      proceduralProductionIntent(
+        { path: 'assets/characters/player.png', provider: 'procedural', critiquePassed: true },
+        'player',
+      ),
+    ).toBe(true);
+    expect(
+      proceduralProductionIntent(
+        { path: 'assets/enemies/enemy_000.png', provider: 'procedural', critiquePassed: true },
+        'enemy',
+      ),
+    ).toBe(true);
+    expect(
+      proceduralProductionIntent(
+        { path: 'assets/bosses/boss_final.png', provider: 'procedural', critiquePassed: true },
+        'boss',
+      ),
+    ).toBe(true);
+    expect(
+      proceduralProductionIntent(
+        {
+          path: 'assets/backgrounds/biome_0/far.png',
+          provider: 'procedural',
+          critiquePassed: true,
+        },
+        'background',
+      ),
+    ).toBe(true);
+    expect(
+      proceduralProductionIntent(
+        { path: 'assets/ui/menus/title.png', provider: 'procedural', critiquePassed: true },
+        'ui',
+      ),
+    ).toBe(true);
+    expect(
+      proceduralProductionIntent(
+        { path: 'assets/vfx/hit_spark.png', provider: 'procedural', critiquePassed: true },
+        'vfx',
+      ),
+    ).toBe(true);
   });
 
   it('blocks unvalidated or non-shipping procedural fallback from being treated as production', () => {
-    expect(proceduralProductionIntent({ path: 'assets/props/biome_0/arch.png', provider: 'procedural', critiquePassed: false }, 'prop')).toBe(false);
-    expect(proceduralProductionIntent({ path: 'assets/qa/tiles.png', provider: 'procedural', critiquePassed: true }, 'tile')).toBe(false);
-    expect(proceduralProductionIntent({ path: 'audio/sfx/player_attack.wav', provider: 'procedural', critiquePassed: true }, 'audio')).toBe(false);
+    expect(
+      proceduralProductionIntent(
+        { path: 'assets/props/biome_0/arch.png', provider: 'procedural', critiquePassed: false },
+        'prop',
+      ),
+    ).toBe(false);
+    expect(
+      proceduralProductionIntent(
+        { path: 'assets/qa/tiles.png', provider: 'procedural', critiquePassed: true },
+        'tile',
+      ),
+    ).toBe(false);
+    expect(
+      proceduralProductionIntent(
+        { path: 'audio/sfx/player_attack.wav', provider: 'procedural', critiquePassed: true },
+        'audio',
+      ),
+    ).toBe(false);
   });
 
   it('allows validated procedural NPC dialogue portraits (a shipping, runtime-visible UI family)', () => {
     expect(
       proceduralProductionIntent(
-        { path: 'assets/ui/portraits/quest_giver.png', provider: 'procedural', critiquePassed: true },
+        {
+          path: 'assets/ui/portraits/quest_giver.png',
+          provider: 'procedural',
+          critiquePassed: true,
+        },
         'portrait',
       ),
     ).toBe(true);
@@ -118,7 +191,9 @@ describe('AssetPipeline procedural path', () => {
     expect(result.assets.some((a) => a.path === 'assets/vfx/slam_shock.png')).toBe(true);
     expect(result.assets.some((a) => a.path === 'assets/vfx/landing_dust.png')).toBe(true);
     expect(result.assets.some((a) => a.path === 'assets/props/interact/pickup.png')).toBe(true);
-    expect(result.assets.some((a) => a.path === 'assets/props/interact/save_shrine.png')).toBe(true);
+    expect(result.assets.some((a) => a.path === 'assets/props/interact/save_shrine.png')).toBe(
+      true,
+    );
     expect(result.assets.some((a) => a.path === 'assets/props/interact/ability.png')).toBe(true);
     expect(result.assets.some((a) => a.path === 'assets/npcs/npc_000.png')).toBe(true);
     expect(result.assets.some((a) => a.path === 'assets/npcs/npc_000_walk.png')).toBe(true);
@@ -332,7 +407,8 @@ describe('AssetPipeline procedural path', () => {
     expect(playerPx.height).toBe(64);
     let feet = 0;
     for (let x = 0; x < playerPx.width; x++) {
-      if ((playerPx.rgba[((playerPx.height - 1) * playerPx.width + x) * 4 + 3] ?? 0) > 128) feet += 1;
+      if ((playerPx.rgba[((playerPx.height - 1) * playerPx.width + x) * 4 + 3] ?? 0) > 128)
+        feet += 1;
     }
     expect(feet).toBeGreaterThan(0);
 
@@ -398,8 +474,12 @@ describe('AssetPipeline procedural path', () => {
       ],
     });
 
-    expect(result.assets.filter((a) => a.path.startsWith('assets/bosses/boss_000')).length).toBeGreaterThanOrEqual(4);
-    expect(result.assets.filter((a) => a.path.startsWith('assets/bosses/boss_final')).length).toBeGreaterThanOrEqual(4);
+    expect(
+      result.assets.filter((a) => a.path.startsWith('assets/bosses/boss_000')).length,
+    ).toBeGreaterThanOrEqual(4);
+    expect(
+      result.assets.filter((a) => a.path.startsWith('assets/bosses/boss_final')).length,
+    ).toBeGreaterThanOrEqual(4);
 
     rmSync(outputDir, { recursive: true, force: true });
   });
@@ -464,21 +544,42 @@ describe('AssetPipeline procedural path', () => {
     // Every remaining locomotion/transition state now gets a real multi-frame sheet
     // (buildProgressionSheetAsset) instead of the single static `player_<name>_pose.png` it fell
     // back to before this pass — the same defect class run/walk already fixed, generalized.
-    const progressionNames = ['idle', 'jump_start', 'jump', 'fall', 'land', 'dash', 'wall_slide', 'wall_jump', 'swim'];
+    const progressionNames = [
+      'idle',
+      'jump_start',
+      'jump',
+      'fall',
+      'land',
+      'dash',
+      'wall_slide',
+      'wall_jump',
+      'swim',
+    ];
     for (const name of progressionNames) {
       const relPath = `assets/characters/player_${name}.png`;
       const asset = result.assets.find((a) => a.path === relPath);
       expect(asset, relPath).toBeDefined();
-      expect(result.assets.some((a) => a.path === `assets/characters/player_${name}_pose.png`), `${name}_pose.png must not exist`).toBe(false);
+      expect(
+        result.assets.some((a) => a.path === `assets/characters/player_${name}_pose.png`),
+        `${name}_pose.png must not exist`,
+      ).toBe(false);
     }
 
     // No stray pose stills for the states that already had a dedicated multi-frame sheet before
     // this pass either — AnimatedAssetSprite.gd's generalized precedence rule would ignore them
     // anyway, but the pipeline shouldn't waste a generation round-trip producing them.
-    expect(result.assets.some((a) => a.path === 'assets/characters/player_attack_pose.png')).toBe(false);
-    expect(result.assets.some((a) => a.path === 'assets/characters/player_hurt_pose.png')).toBe(false);
-    expect(result.assets.some((a) => a.path === 'assets/characters/player_death_pose.png')).toBe(false);
-    expect(result.assets.some((a) => a.path === 'assets/characters/player_run_pose.png')).toBe(false);
+    expect(result.assets.some((a) => a.path === 'assets/characters/player_attack_pose.png')).toBe(
+      false,
+    );
+    expect(result.assets.some((a) => a.path === 'assets/characters/player_hurt_pose.png')).toBe(
+      false,
+    );
+    expect(result.assets.some((a) => a.path === 'assets/characters/player_death_pose.png')).toBe(
+      false,
+    );
+    expect(result.assets.some((a) => a.path === 'assets/characters/player_run_pose.png')).toBe(
+      false,
+    );
 
     // attack_2/attack_3 combo continuation hits — real, distinct arcs, not a rotate/recolor.
     const attack2 = result.assets.find((a) => a.path === 'assets/characters/player_attack_2.png')!;
@@ -487,15 +588,17 @@ describe('AssetPipeline procedural path', () => {
     expect(attack3).toBeDefined();
     expect(attack2.buffer.equals(attack3.buffer)).toBe(false);
 
-    // Run is a genuine 12-frame animated sheet (production standard §22/§25), not a static pose —
+    // Run follows the animation contract, with at least twelve distinct gait samples.
     // distinct from the walk sheet (different technique: longer stride + forward lean), and
     // gated on real frame-quality metrics (§20), not just the generic animation critique.
     const run = result.assets.find((a) => a.path === 'assets/characters/player_run.png')!;
     expect(run).toBeDefined();
     const runDecoded = decodePngRgba(run.buffer);
-    expect(runDecoded.width).toBe(64 * 12);
+    const expectedRunFrames = PLAYER_ANIMATION_SPEC.run!.frameCount;
+    expect(expectedRunFrames).toBeGreaterThanOrEqual(12);
+    expect(runDecoded.width).toBe(64 * expectedRunFrames);
     expect(run.frameQuality).toBeDefined();
-    expect(run.frameQuality!.frameCount).toBe(12);
+    expect(run.frameQuality!.frameCount).toBe(expectedRunFrames);
     expect(run.frameQuality!.uniqueFrameRatio).toBeGreaterThanOrEqual(0.8);
     expect(run.frameQuality!.meanSilhouetteDelta).toBeGreaterThan(0);
     expect(run.critiquePassed).toBe(true);
@@ -532,11 +635,15 @@ describe('AssetPipeline procedural path', () => {
     // All locomotion/transition sheets must be pairwise distinct — not the same clip duplicated
     // per state under a different filename.
     const buffers = progressionNames.map(
-      (name) => result.assets.find((a) => a.path === `assets/characters/player_${name}.png`)!.buffer,
+      (name) =>
+        result.assets.find((a) => a.path === `assets/characters/player_${name}.png`)!.buffer,
     );
     for (let i = 0; i < buffers.length; i++) {
       for (let j = i + 1; j < buffers.length; j++) {
-        expect(buffers[i]!.equals(buffers[j]!), `${progressionNames[i]} vs ${progressionNames[j]}`).toBe(false);
+        expect(
+          buffers[i]!.equals(buffers[j]!),
+          `${progressionNames[i]} vs ${progressionNames[j]}`,
+        ).toBe(false);
       }
     }
 
@@ -550,7 +657,9 @@ describe('AssetPipeline procedural path', () => {
     expect(existsSync(sidecarPath)).toBe(true);
     const sidecar = JSON.parse(readFileSync(sidecarPath, 'utf8'));
     expect(sidecar.idle).toMatchObject({ frameCount: 8, fps: 8, loop: true });
-    expect(sidecar.attack_3).toMatchObject({ frameCount: 16, fps: 16, loop: false });
+    const attack3Contract = PLAYER_ANIMATION_SPEC.attack_3!;
+    expect(attack3Contract.frameCount).toBeGreaterThanOrEqual(16);
+    expect(sidecar.attack_3).toMatchObject({ frameCount: attack3Contract.frameCount, fps: attack3Contract.fps, loop: false });
 
     rmSync(outputDir, { recursive: true, force: true });
   });
@@ -701,7 +810,11 @@ describe('AssetPipeline visualMode — NVIDIA NIM enhancement pass', () => {
       skipImageGen: true,
       // visualMode intentionally omitted — must default to procedural-only.
       visualEnhancementEditor: { id: 'poison-editor', editImage },
-      visualEnhancementGenerator: { id: 'poison-generator', checkHealth: async () => true, generateImage },
+      visualEnhancementGenerator: {
+        id: 'poison-generator',
+        checkHealth: async () => true,
+        generateImage,
+      },
     });
 
     expect(result.visualEnhancement).toBeUndefined();
@@ -747,7 +860,20 @@ describe('AssetPipeline visualMode — NVIDIA NIM enhancement pass', () => {
             provider: 'nvidia-image-edit',
             model: 'qwen/qwen-image-edit-2511',
             sourceAssetIds: req.sourceAssets.map((s) => s.assetId),
-            images: [{ buffer: generateProceduralSprite({ id: 'enh', width: 64, height: 64, fill: [80, 120, 200, 200], shape: 'humanoid' }), mimeType: 'image/png', width: 64, height: 64 }],
+            images: [
+              {
+                buffer: generateProceduralSprite({
+                  id: 'enh',
+                  width: 64,
+                  height: 64,
+                  fill: [80, 120, 200, 200],
+                  shape: 'humanoid',
+                }),
+                mimeType: 'image/png',
+                width: 64,
+                height: 64,
+              },
+            ],
             seed: 1,
             provenance: {
               provider: 'nvidia-image-edit',
@@ -768,7 +894,13 @@ describe('AssetPipeline visualMode — NVIDIA NIM enhancement pass', () => {
         generateImage: async () => {
           genCalls++;
           return {
-            image: generateProceduralSprite({ id: 'gen', width: 32, height: 32, fill: [200, 160, 40, 200], shape: 'item' }),
+            image: generateProceduralSprite({
+              id: 'gen',
+              width: 32,
+              height: 32,
+              fill: [200, 160, 40, 200],
+              shape: 'item',
+            }),
             provider: 'nvidia-image',
             modelId: 'black-forest-labs/flux.1-dev',
             seed: 2,
@@ -784,7 +916,11 @@ describe('AssetPipeline visualMode — NVIDIA NIM enhancement pass', () => {
     expect(result.visualEnhancement!.attempted).toBeGreaterThanOrEqual(5);
     expect(editCalls).toBeGreaterThan(0);
     expect(genCalls).toBe(3); // checkpoint + pickup + gate
-    for (const id of ['interactive_checkpoint', 'interactive_ability_pickup', 'interactive_ability_gate']) {
+    for (const id of [
+      'interactive_checkpoint',
+      'interactive_ability_pickup',
+      'interactive_ability_gate',
+    ]) {
       const interactive = result.assets.find((asset) => asset.id === id);
       expect(interactive).toBeDefined();
       expect(interactive?.maturity).toBe('QA_REVIEW');
@@ -802,7 +938,9 @@ describe('AssetPipeline visualMode — NVIDIA NIM enhancement pass', () => {
     // (packages/generation/src/pipeline.ts) rebuilds its Godot texture-write map from exactly
     // this array and would silently clobber the enhancement back to procedural. Every activated
     // outcome's asset entry must carry the same bytes that are actually on disk.
-    const activated = result.visualEnhancement!.outcomes.filter((o) => o.succeeded && o.activatedPath);
+    const activated = result.visualEnhancement!.outcomes.filter(
+      (o) => o.succeeded && o.activatedPath,
+    );
     expect(activated.length).toBeGreaterThan(0);
     for (const outcome of activated) {
       const onDisk = readFileSync(join(outputDir, ...outcome.activatedPath!.split('/')));

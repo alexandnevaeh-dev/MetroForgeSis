@@ -1,0 +1,123 @@
+{
+  "format": "metroforge-tracker-interchange",
+  "version": "0.1.0",
+  "title": "biome_1_tense",
+  "bpm": 72,
+  "key": "Em",
+  "mood": "tense",
+  "rows": [
+    {
+      "tick": 0,
+      "note": "C#",
+      "octave": 4,
+      "volume": 66,
+      "instrument": 0
+    },
+    {
+      "tick": 4,
+      "note": "F#",
+      "octave": 4,
+      "volume": 100,
+      "instrument": 0
+    },
+    {
+      "tick": 8,
+      "note": "G",
+      "octave": 4,
+      "volume": 98,
+      "instrument": 0
+    },
+    {
+      "tick": 12,
+      "note": "F#",
+      "octave": 4,
+      "volume": 77,
+      "instrument": 0
+    },
+    {
+      "tick": 16,
+      "note": "F",
+      "octave": 4,
+      "volume": 77,
+      "instrument": 0
+    },
+    {
+      "tick": 20,
+      "note": "D",
+      "octave": 4,
+      "volume": 61,
+      "instrument": 0
+    },
+    {
+      "tick": 24,
+      "note": "F#",
+      "octave": 4,
+      "volume": 81,
+      "instrument": 0
+    },
+    {
+      "tick": 28,
+      "note": "G",
+      "octave": 4,
+      "volume": 70,
+      "instrument": 0
+    },
+    {
+      "tick": 32,
+      "note": "E",
+      "octave": 4,
+      "volume": 100,
+      "instrument": 0
+    },
+    {
+      "tick": 36,
+      "note": "E",
+      "octave": 4,
+      "volume": 97,
+      "instrument": 0
+    },
+    {
+      "tick": 40,
+      "note": "D#",
+      "octave": 4,
+      "volume": 75,
+      "instrument": 0
+    },
+    {
+      "tick": 44,
+      "note": "E",
+      "octave": 4,
+      "volume": 70,
+      "instrument": 0
+    },
+    {
+      "tick": 48,
+      "note": "F",
+      "octave": 4,
+      "volume": 82,
+      "instrument": 0
+    },
+    {
+      "tick": 52,
+      "note": "G#",
+      "octave": 4,
+      "volume": 67,
+      "instrument": 0
+    },
+    {
+      "tick": 56,
+      "note": "G",
+      "octave": 4,
+      "volume": 61,
+      "instrument": 0
+    },
+    {
+      "tick": 60,
+      "note": "E",
+      "octave": 4,
+      "volume": 66,
+      "instrument": 0
+    }
+  ],
+  "recreationHint": "Import companion .mid into OpenMPT/Furnace, or recreate these rows by hand — this JSON is not a native tracker project file"
+}

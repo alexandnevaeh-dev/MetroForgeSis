@@ -1,0 +1,14 @@
+{
+  "projectId": "7fee0339-4c34-4de1-9b86-683d26caf6b9",
+  "slug": "ruined-canopy",
+  "prompt": "Aster returns the First Seed to the Hollow Crown. Follow amber paths past moss-lit idols, cross the ruined aqueduct, recover the Verdant Disc, then open the living vine seals and face the corrupted grove guardian.",
+  "profile": "TINY_TEST",
+  "mode": "LOCAL_ONLY",
+  "seed": 20260930,
+  "createdAt": "2026-10-01T07:29:43.804Z",
+  "lastGeneratedAt": "2026-10-01T07:29:43.804Z",
+  "gameDnaVersion": "0.1.0",
+  "generatorVersion": "0.1.0",
+  "archetype": "TOP_DOWN_ACTION_ADVENTURE",
+  "engine": "godot"
+}

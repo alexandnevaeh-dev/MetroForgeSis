@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
-import { mergeAbortSignal } from '@metroforge/shared';
+import { mergeAbortSignal, resolvePythonExecutable } from '@metroforge/shared';
 import type { ImageEditRequest, ImageEditResult } from '../types/image-edit.js';
 import { decodePngRgba } from '../png.js';
 import { nvidiaModelById, nvidiaSelectModelForImageTask } from '../foundry/nvidia-catalog.js';
@@ -194,7 +194,7 @@ export class NvidiaImageEditProvider {
       process.env.NVIDIA_IMAGE_MODEL ??
       nvidiaSelectModelForImageTask('IMAGE_EDIT').modelId;
     this.enabled = config.enabled ?? Boolean(this.apiKey || this.nimBaseUrl);
-    this.pythonPath = config.pythonPath ?? process.env.DIFFUSERS_PYTHON ?? 'python';
+    this.pythonPath = resolvePythonExecutable(config.pythonPath);
     this.maxRetries = Math.max(0, config.maxRetries ?? 0);
     this.http = new NvidiaHttpClient({
       apiKey: this.apiKey,

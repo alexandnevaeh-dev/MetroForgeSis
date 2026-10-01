@@ -37,6 +37,25 @@ export {
   VISUAL_SLICE_ROOM_ARCHETYPES,
 } from './room-archetypes.js';
 export {
+  ENVIRONMENT_ARCHETYPES,
+  assignEnvironmentArchetype,
+  roomPurposeFromGameplay,
+  majorRoomTileSize,
+  sideViewGalleryPlan,
+  scoreRoomEnvironment,
+  scoreSideViewRoom,
+  scoreTopDownRoom,
+  environmentFamilyForBiome,
+} from './environment-archetypes.js';
+export type {
+  EnvironmentArchetype,
+  EnvironmentArchetypeId,
+  RoomPurposeId,
+  RoomQualityScore,
+  SideViewRoomQuality,
+  TopDownRoomQuality,
+} from './environment-archetypes.js';
+export {
   generateGameContent,
   buildBossVisualPrompt,
   enemyCombatTypeForIndex,
@@ -83,6 +102,13 @@ export {
   computeStyleFingerprint,
   fingerprintFromVisualDNA,
   resolveVisualStyleTemplate,
+  propAllowedInBiome,
+  tileAllowedInBiome,
+  filterAllowedProps,
+  filterAllowedTileVariants,
+  biomeMaterialMatches,
+  collectBiomeForbiddenTokens,
+  minimalBiomeContextFromId,
 } from './visual/index.js';
 export type {
   CompileVisualPromptInput,
@@ -90,6 +116,7 @@ export type {
   VisualStyleTemplate,
   BiomeKit,
   BiomeLightingProfile,
+  BiomeConsistencyContext,
 } from './visual/index.js';
 export { buildProgressionProof } from './progression-proof.js';
 export type { ProgressionProof, ProgressionTraceStep } from './progression-proof.js';
@@ -121,4 +148,6 @@ export type {
 export { validateExportFidelity } from './export-fidelity.js';
 export type { ExportedConnection, ExportedRoomData, ExportFidelityIssue, ExportFidelityReport } from './export-fidelity.js';
 export { generateTopDownWorld, collisionRectsFromTiles, isWalkableTile } from './topdown/world.js';
+export { createCanopyLayout } from './topdown/canopy-layout.js';
+export type { CanopyRoomLayout, CanopyScenery } from './topdown/canopy-layout.js';
 export type { TopDownOverworld, TopDownArea, TopDownPoi, TopDownWorldGenResult, TopDownPropPlacement, TopDownPropLayout } from './topdown/world.js';

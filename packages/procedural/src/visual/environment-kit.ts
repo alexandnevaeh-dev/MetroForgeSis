@@ -1,5 +1,6 @@
 import type { EnvironmentKit, EnvironmentKitItem, EnvironmentKitScale, BiomeVisualDNA, VisualDNA } from '@metroforge/schemas';
 import { SeededRNG } from '../rng.js';
+import { filterAllowedProps, propAllowedInBiome } from './biome-consistency.js';
 
 const PROFILE_SCALE: Record<string, EnvironmentKitScale> = {
   TINY_TEST: {
@@ -107,13 +108,31 @@ export function generateEnvironmentKit(input: {
     rng,
     'masonry',
   );
-  const arch = take(input.biome.architecturalFamilies, scale.architecturalElements, rng, 'arch');
-  const props = take(input.biome.propFamilies, scale.environmentProps, rng, 'debris');
-  const decorPool = [...input.biome.foregroundLanguage, ...input.biome.organicMaterials.map((m) => m.name)];
-  const decor = take(decorPool, scale.decorativeProps, rng, 'moss');
-  const fore = take(input.biome.foregroundLanguage, scale.foregroundElements, rng, 'pillar');
-  const mid = take(input.biome.midgroundLanguage, scale.midgroundElements, rng, 'ruin mass');
-  const back = take(input.biome.backgroundLanguage, scale.backgroundMotifs, rng, 'skyline');
+  const arch = take(input.biome.architecturalFamilies, scale.architecturalElements, rng, 'arch').filter((name) =>
+    propAllowedInBiome(name, input.biome),
+  );
+  const propsPool = filterAllowedProps(
+    take(input.biome.propFamilies, scale.environmentProps, rng, 'debris'),
+    input.biome,
+  );
+  const props = propsPool.length > 0 ? propsPool : filterAllowedProps(['debris', 'worklamp', 'chain'], input.biome);
+  const decorPool = filterAllowedProps(
+    [...input.biome.foregroundLanguage, ...input.biome.organicMaterials.map((m) => m.name)],
+    input.biome,
+  );
+  const decor = take(decorPool.length > 0 ? decorPool : ['debris'], scale.decorativeProps, rng, 'debris');
+  const fore = filterAllowedProps(
+    take(input.biome.foregroundLanguage, scale.foregroundElements, rng, 'pillar'),
+    input.biome,
+  );
+  const mid = filterAllowedProps(
+    take(input.biome.midgroundLanguage, scale.midgroundElements, rng, 'ruin mass'),
+    input.biome,
+  );
+  const back = filterAllowedProps(
+    take(input.biome.backgroundLanguage, scale.backgroundMotifs, rng, 'skyline'),
+    input.biome,
+  );
   const lights = take(input.biome.lighting.sources, scale.lightingElements, rng, 'lantern');
 
   return {
@@ -123,10 +142,12 @@ export function generateEnvironmentKit(input: {
     terrain: terrainNames.map((name, i) =>
       item(`${input.biome.biomeId}_terrain_${i}`, name, 'terrain', `${name} walkable family`, 'floor', 'common', 1),
     ),
-    architecture: arch.map((name, i) =>
-      item(`${input.biome.biomeId}_arch_${i}`, name, 'architecture', name, i % 2 === 0 ? 'wall' : 'midground', 'common', 0.8),
-    ),
-    props: props.map((name, i) =>
+    architecture: arch.length > 0
+      ? arch.map((name, i) =>
+          item(`${input.biome.biomeId}_arch_${i}`, name, 'architecture', name, i % 2 === 0 ? 'wall' : 'midground', 'common', 0.8),
+        )
+      : [item(`${input.biome.biomeId}_arch_0`, 'arch', 'architecture', 'arch', 'wall', 'common', 0.8)],
+    props: (props.length > 0 ? props : ['debris']).map((name, i) =>
       item(
         `${input.biome.biomeId}_prop_${i}`,
         name,

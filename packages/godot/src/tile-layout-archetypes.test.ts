@@ -108,6 +108,55 @@ describe('archetype geometry is distinct', () => {
     const ma = measureRoomLayout({ ...BASE, layout: a });
     expect(layoutsTooSimilar(ma, ma, a.platforms, a.platforms, a.pits, a.pits)).toBe(true);
   });
+
+  it('environment gallery bands raise RoomComposition above the foundry 43 baseline', () => {
+    const envs = ['armory', 'laboratory', 'dungeon', 'castle_hall', 'laboratory', 'armory'] as const;
+    const archetypes = ['combat', 'traversal', 'combat', 'challenge', 'puzzle', 'npc'] as const;
+    const rooms = envs.map((environmentArchetype, i) => {
+      const layout = buildRoomTileCells({
+        width: 960,
+        height: 720,
+        tileSize: 16,
+        archetype: archetypes[i],
+        environmentArchetype,
+        seed: 200 + i,
+        availableAbilities: ['dash'],
+        connections: [
+          { direction: 'left', requirements: [] },
+          { direction: 'right', requirements: [] },
+        ],
+      });
+      const metrics = measureRoomLayout({
+        width: 960,
+        height: 720,
+        tileSize: 16,
+        layout,
+        decorationCount: 8,
+      });
+      return { id: `room_${i}`, layoutMetrics: metrics };
+    });
+    // Inline the same scorer weights used by modern_metroidvania_gate RoomComposition.
+    const avg = (sel: (m: (typeof rooms)[0]['layoutMetrics']) => number) =>
+      rooms.reduce((s, r) => s + sel(r.layoutMetrics), 0) / rooms.length;
+    const avgDecoration = avg((m) => m.decorationDensity);
+    const avgPlatforms = avg((m) => m.platformCount);
+    const multi = rooms.filter((r) => r.layoutMetrics.uniquePlatformHeights >= 2).length / rooms.length;
+    const vert = rooms.filter((r) => r.layoutMetrics.verticality > 0.15).length / rooms.length;
+    const avgElev = avg((m) => m.elevationChanges);
+    const score = Math.min(
+      100,
+      Math.round(
+        Math.min(25, avgDecoration * 500) +
+          Math.min(20, avgPlatforms * 5) +
+          Math.min(20, multi * 20) +
+          vert * 15 +
+          Math.min(10, avgElev * 4),
+      ),
+    );
+    expect(multi).toBeGreaterThan(0.5);
+    expect(avgPlatforms).toBeGreaterThan(2);
+    expect(score).toBeGreaterThan(43);
+  });
 });
 
 it('fills long entrance halls with repeated reachable stair bays and broad balconies', () => {

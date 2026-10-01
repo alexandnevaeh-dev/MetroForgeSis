@@ -2,6 +2,7 @@ import type { BiomeVisualDNA, GameDNA, VisualDNA } from '@metroforge/schemas';
 import { SeededRNG } from '../rng.js';
 import { resolveVisualStyleTemplate, styleCueText, type VisualStyleTemplate } from './style-registry.js';
 import { hashVisualFragment } from './fingerprint.js';
+import { collectBiomeForbiddenTokens } from './biome-consistency.js';
 
 export interface BiomeMotifPack {
   id: string;
@@ -77,6 +78,78 @@ const BIOME_MOTIF_LIBRARY: BiomeMotifPack[] = [
     background: ['tower silhouettes', 'orrey glow'],
     props: ['gear pile', 'workbench', 'signage', 'lamp'],
   },
+  {
+    id: 'spore_galleries',
+    displayName: 'Spore Galleries',
+    architecture: ['mycelium-ribbed halls', 'glowcap colonnades', 'hanging spore curtains'],
+    terrain: ['lichen basalt', 'soft mycelium carpets', 'spore-dusted stone'],
+    organic: ['tall glowcaps', 'veined mycelium', 'luminescent lichen'],
+    atmosphere: 'humid bioluminescent hush',
+    foreground: ['spore curtains', 'glowcap stalks', 'hanging roots'],
+    midground: ['gallery ribs', 'mushroom terraces'],
+    background: ['cavern mouth glow', 'distant spore blooms'],
+    props: ['spore_lantern', 'glowcap', 'mycelium_shrine', 'lichen_altar'],
+  },
+  {
+    id: 'glowcap_terraces',
+    displayName: 'Glowcap Terraces',
+    architecture: ['tiered mushroom platforms', 'hollowed basalt shelves', 'arching root bridges'],
+    terrain: ['layered basalt shelves', 'soft cap flesh platforms', 'spore silt'],
+    organic: ['giant glowcaps', 'climbing lichen', 'spore fans'],
+    atmosphere: 'warm magenta-cyan bloom',
+    foreground: ['cap rims', 'spore fans', 'root ladders'],
+    midground: ['terrace stacks', 'bridged shelves'],
+    background: ['stacked cavern tiers', 'soft underglow'],
+    props: ['ladder_root', 'spore_pod', 'cap_bench', 'lantern'],
+  },
+  {
+    id: 'mycelium_depths',
+    displayName: 'Mycelium Depths',
+    architecture: ['woven mycelium tunnels', 'bulb chambers', 'filament bridges'],
+    terrain: ['fibrous mycelium weave', 'damp basalt', 'biofilm slick'],
+    organic: ['dense mycelium nets', 'pulsing bulbs', 'dangling filaments'],
+    atmosphere: 'deep indigo spore mist',
+    foreground: ['filament curtains', 'bulbs', 'dripping biofilm'],
+    midground: ['tunnel mouths', 'woven walls'],
+    background: ['depth fade', 'faint bulb constellation'],
+    props: ['bulb', 'filament_coil', 'spore_cache', 'shrine'],
+  },
+  {
+    id: 'salt_cliff_shrines',
+    displayName: 'Salt Cliff Shrines',
+    architecture: ['salt-worn cliff temples', 'open shrine facades', 'sea-cliff buttresses'],
+    terrain: ['sea-worn sandstone', 'salt-crusted ledges', 'weathered flagstone'],
+    organic: ['salt lichen', 'kelp fringe'],
+    atmosphere: 'misty coastal hush',
+    foreground: ['shrine lanterns', 'broken columns', 'salt crystals'],
+    midground: ['temple facades', 'cliff arches'],
+    background: ['fog banks', 'distant sea cliffs'],
+    props: ['shrine', 'lantern', 'offering_bowl', 'broken_column'],
+  },
+  {
+    id: 'tidepool_galleries',
+    displayName: 'Tidepool Galleries',
+    architecture: ['flooded colonnade walks', 'tide-cut galleries', 'low sea arches'],
+    terrain: ['wet tide-stone', 'slick sandstone', 'pooled flagstone'],
+    organic: ['tidepool weed', 'anemone clusters'],
+    atmosphere: 'cool tidal echo',
+    foreground: ['tide pools', 'dripping weed', 'barnacle clusters'],
+    midground: ['gallery piers', 'arched openings'],
+    background: ['mist over water', 'cliff silhouette'],
+    props: ['tide_pool', 'barnacle_cluster', 'driftwood', 'lantern'],
+  },
+  {
+    id: 'windward_colonnades',
+    displayName: 'Windward Colonnades',
+    architecture: ['wind-carved colonnades', 'open cliff walkways', 'eroded temple roofs'],
+    terrain: ['pitted sandstone', 'wind-scoured stone', 'narrow ledge rock'],
+    organic: ['wind-torn lichen', 'sparse cliff grass'],
+    atmosphere: 'bright wind and thin mist',
+    foreground: ['column drums', 'wind banners', 'ledge grass'],
+    midground: ['colonnade rows', 'broken pediments'],
+    background: ['open sky mist', 'far headlands'],
+    props: ['column', 'banner', 'pediment_shard', 'shrine'],
+  },
 ];
 
 /** Collapse sequence for the ruined conduit foundry — not color-swaps of one rivet kit
@@ -120,9 +193,97 @@ const FOUNDRY_COLLAPSE_SEQUENCE: BiomeMotifPack[] = [
   },
 ];
 
+/** Collapse sequence for the luminous fungal underdark — organic cavern architecture,
+ *  never industrial foundry materials. */
+const SPORE_UNDERGLOW_SEQUENCE: BiomeMotifPack[] = [
+  {
+    id: 'spore_galleries',
+    displayName: 'Spore Galleries',
+    architecture: ['mycelium-ribbed halls', 'glowcap colonnades', 'hanging spore curtains'],
+    terrain: ['lichen basalt', 'soft mycelium carpets', 'spore-dusted stone'],
+    organic: ['tall glowcaps', 'veined mycelium', 'luminescent lichen'],
+    atmosphere: 'humid bioluminescent hush',
+    foreground: ['spore curtains', 'glowcap stalks', 'hanging roots'],
+    midground: ['gallery ribs', 'mushroom terraces'],
+    background: ['cavern mouth glow', 'distant spore blooms'],
+    props: ['spore_lantern', 'glowcap', 'mycelium_shrine', 'lichen_altar'],
+  },
+  {
+    id: 'glowcap_terraces',
+    displayName: 'Glowcap Terraces',
+    architecture: ['tiered mushroom platforms', 'hollowed basalt shelves', 'arching root bridges'],
+    terrain: ['layered basalt shelves', 'soft cap flesh platforms', 'spore silt'],
+    organic: ['giant glowcaps', 'climbing lichen', 'spore fans'],
+    atmosphere: 'warm magenta-cyan bloom',
+    foreground: ['cap rims', 'spore fans', 'root ladders'],
+    midground: ['terrace stacks', 'bridged shelves'],
+    background: ['stacked cavern tiers', 'soft underglow'],
+    props: ['ladder_root', 'spore_pod', 'cap_bench', 'lantern'],
+  },
+  {
+    id: 'mycelium_depths',
+    displayName: 'Mycelium Depths',
+    architecture: ['woven mycelium tunnels', 'bulb chambers', 'filament bridges'],
+    terrain: ['fibrous mycelium weave', 'damp basalt', 'biofilm slick'],
+    organic: ['dense mycelium nets', 'pulsing bulbs', 'dangling filaments'],
+    atmosphere: 'deep indigo spore mist',
+    foreground: ['filament curtains', 'bulbs', 'dripping biofilm'],
+    midground: ['tunnel mouths', 'woven walls'],
+    background: ['depth fade', 'faint bulb constellation'],
+    props: ['bulb', 'filament_coil', 'spore_cache', 'shrine'],
+  },
+];
+
+/** Collapse sequence for misty coastal cliff temples — salt-worn sandstone, never industrial
+ *  foundry rivets and never fungal glowcap DNA. */
+const COASTAL_CLIFF_SEQUENCE: BiomeMotifPack[] = [
+  {
+    id: 'salt_cliff_shrines',
+    displayName: 'Salt Cliff Shrines',
+    architecture: ['salt-worn cliff temples', 'open shrine facades', 'sea-cliff buttresses'],
+    terrain: ['sea-worn sandstone', 'salt-crusted ledges', 'weathered flagstone'],
+    organic: ['salt lichen', 'kelp fringe'],
+    atmosphere: 'misty coastal hush',
+    foreground: ['shrine lanterns', 'broken columns', 'salt crystals'],
+    midground: ['temple facades', 'cliff arches'],
+    background: ['fog banks', 'distant sea cliffs'],
+    props: ['shrine', 'lantern', 'offering_bowl', 'broken_column'],
+  },
+  {
+    id: 'tidepool_galleries',
+    displayName: 'Tidepool Galleries',
+    architecture: ['flooded colonnade walks', 'tide-cut galleries', 'low sea arches'],
+    terrain: ['wet tide-stone', 'slick sandstone', 'pooled flagstone'],
+    organic: ['tidepool weed', 'anemone clusters'],
+    atmosphere: 'cool tidal echo',
+    foreground: ['tide pools', 'dripping weed', 'barnacle clusters'],
+    midground: ['gallery piers', 'arched openings'],
+    background: ['mist over water', 'cliff silhouette'],
+    props: ['tide_pool', 'barnacle_cluster', 'driftwood', 'lantern'],
+  },
+  {
+    id: 'windward_colonnades',
+    displayName: 'Windward Colonnades',
+    architecture: ['wind-carved colonnades', 'open cliff walkways', 'eroded temple roofs'],
+    terrain: ['pitted sandstone', 'wind-scoured stone', 'narrow ledge rock'],
+    organic: ['wind-torn lichen', 'sparse cliff grass'],
+    atmosphere: 'bright wind and thin mist',
+    foreground: ['column drums', 'wind banners', 'ledge grass'],
+    midground: ['colonnade rows', 'broken pediments'],
+    background: ['open sky mist', 'far headlands'],
+    props: ['column', 'banner', 'pediment_shard', 'shrine'],
+  },
+];
+
 function pickMotif(template: VisualStyleTemplate, biomeIndex: number, rng: SeededRNG): BiomeMotifPack {
   if (template.id === 'mechanical-forge') {
     return FOUNDRY_COLLAPSE_SEQUENCE[biomeIndex % FOUNDRY_COLLAPSE_SEQUENCE.length]!;
+  }
+  if (template.id === 'spore-underglow') {
+    return SPORE_UNDERGLOW_SEQUENCE[biomeIndex % SPORE_UNDERGLOW_SEQUENCE.length]!;
+  }
+  if (template.id === 'coastal-cliff-temple') {
+    return COASTAL_CLIFF_SEQUENCE[biomeIndex % COASTAL_CLIFF_SEQUENCE.length]!;
   }
   const keyed = BIOME_MOTIF_LIBRARY.filter((pack) =>
     template.keywords.some((k) => pack.id.includes(k) || pack.displayName.toLowerCase().includes(k)),
@@ -180,6 +341,8 @@ export function generateBiomeVisualDNA(input: {
     forbiddenPatterns: [...input.visualDNA.forbiddenPatterns, 'outdoor landscape photography'],
     promptAnchors: [...input.visualDNA.promptAnchors, motif.displayName, motif.atmosphere],
   };
+  // Persist motif + material hard-reject tokens so kits / validators share one source of truth.
+  dna.forbiddenPatterns = [...new Set(collectBiomeForbiddenTokens(dna))];
   dna.styleFingerprint = hashVisualFragment(
     `${input.visualDNA.styleFingerprint}|${biomeId}|${motif.id}|${ambient}|${motif.architecture.join(',')}`,
   );

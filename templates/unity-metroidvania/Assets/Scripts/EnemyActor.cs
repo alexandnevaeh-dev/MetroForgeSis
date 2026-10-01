@@ -11,6 +11,8 @@ public class EnemyActor : MonoBehaviour
     public float WalkSpeed = 40f;
     public static int HurtCallCount;
     public string CurrentClip => _animator != null ? _animator.CurrentClip : "";
+    public bool Dead => _dead;
+    public bool ExternallyControlled { get; set; }
 
     private Rigidbody2D _body;
     private SpriteSheetPlayer _animator;
@@ -83,6 +85,7 @@ public class EnemyActor : MonoBehaviour
             return;
         _attackCooldown = Mathf.Max(0f, _attackCooldown - Time.deltaTime);
         _clipLock = Mathf.Max(0f, _clipLock - Time.deltaTime);
+        if (ExternallyControlled) return;
         if (_player == null || _player.Dead)
         {
             _attackPending = false;
@@ -129,6 +132,7 @@ public class EnemyActor : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (ExternallyControlled) return;
         if (stationary) return;
         if (_dead)
         {
@@ -160,14 +164,18 @@ public class EnemyActor : MonoBehaviour
         Health -= amount;
         _attackPending = false;
         _clipLock = 0.25f;
-        _animator?.Play("hurt", true);
+        if (!ExternallyControlled) _animator?.Play("hurt", true);
         if (Health <= 0f)
         {
             _dead = true;
+            // Keep the final grounded pose fixed after disabling combat colliders.
+            _body.linearVelocity = Vector2.zero;
+            _body.simulated = false;
             OnDefeated?.Invoke(this);
             _clipLock = 2f;
             _animator?.Play("death", true);
-            Destroy(gameObject, 0.6f);
+            foreach (var collider in GetComponentsInChildren<Collider2D>()) collider.enabled = false;
+            Destroy(gameObject, Mathf.Max(0.6f, _animator != null ? _animator.ClipDuration("death") : 0f));
         }
         MainThreadProbe.EnemyHurtMarker.End();
     }

@@ -425,7 +425,9 @@ export function RoomEditor() {
                     <span>
                       Size: {widthTiles} × {heightTiles} tiles
                     </span>
-                    <span>Cells: {selected.tileCells?.length ?? 0}</span>
+                    <span>Cells: {selected.editingMode === 'topdown'
+                      ? (selected.tiles ?? []).reduce((count, row) => count + row.length, 0)
+                      : (selected.tileCells?.length ?? 0)}</span>
                     <span>
                       Collision: {collision?.rects?.length ?? 0}
                       {collision?.error ? ' (fallback)' : ''}

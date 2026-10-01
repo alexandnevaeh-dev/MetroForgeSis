@@ -1,0 +1,29 @@
+{
+  "walkSpeed": 110,
+  "runSpeed": 160,
+  "jumpHeight": 0,
+  "gravity": 0,
+  "acceleration": 800,
+  "deceleration": 1000,
+  "knockbackDecay": 600,
+  "movementDirections": 8,
+  "worldStyle": "screen_by_screen",
+  "topDown": {
+    "maxWalkSpeed": 110,
+    "maxRunSpeed": 160,
+    "acceleration": 800,
+    "deceleration": 1000,
+    "turningResponsiveness": 14,
+    "dodgeSpeed": 280,
+    "dodgeDuration": 0.22,
+    "dodgeCooldown": 0.55,
+    "dodgeInvulnerability": 0.18,
+    "diagonalNormalization": true,
+    "analogDeadzone": 0.2,
+    "facingMode": "snap_8",
+    "movementDirections": 8,
+    "knockbackDecay": 600,
+    "perspective": "TOP_DOWN_THREE_QUARTER",
+    "independentAim": false
+  }
+}

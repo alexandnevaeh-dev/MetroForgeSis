@@ -1,0 +1,179 @@
+{
+  "compositionVersion": 2,
+  "rooms": [
+    {
+      "id": "overworld",
+      "name": "Rootbound Entrance",
+      "landmark": "root_arch",
+      "purpose": "tutorial",
+      "composition": "A winding arrival trail around a root arch, with a sheltered guide and waystone."
+    },
+    {
+      "id": "dungeon_000_r0",
+      "name": "Fallen Idol Crossing",
+      "landmark": "idol",
+      "purpose": "combat",
+      "composition": "A diagonal river, broad ruined crossing, and combat staging on the eastern bank."
+    },
+    {
+      "id": "canopy_clearing",
+      "name": "Mosslight Clearing",
+      "landmark": "mushrooms",
+      "purpose": "hub",
+      "composition": "An open mushroom-lit clearing where two lower routes branch away from the sealed path."
+    },
+    {
+      "id": "dungeon_000_r2",
+      "name": "Vine-Choked Gate",
+      "landmark": "vine_gate",
+      "purpose": "gate",
+      "composition": "A narrow root-framed approach to the living vine seal, with a small side clearing."
+    },
+    {
+      "id": "canopy_hollow",
+      "name": "Whispering Hollow",
+      "landmark": "rune_tree",
+      "purpose": "combat",
+      "composition": "A winding corridor between two groves; casters flank its turns."
+    },
+    {
+      "id": "canopy_bridge",
+      "name": "Overlook Bridge",
+      "landmark": "bridge",
+      "purpose": "traversal",
+      "composition": "An aqueduct over deep water with two northern piers and an eastern landing."
+    },
+    {
+      "id": "dungeon_000_r1",
+      "name": "Shrine of the First Seed",
+      "landmark": "seed_shrine",
+      "purpose": "ability",
+      "composition": "A quiet circular stone courtyard around the First Seed altar."
+    },
+    {
+      "id": "canopy_secret",
+      "name": "Lantern Grotto",
+      "landmark": "lantern",
+      "purpose": "secret",
+      "composition": "A lantern alcove beside a crescent pool, reached along one tucked-away path."
+    },
+    {
+      "id": "canopy_approach",
+      "name": "Elder Roots Approach",
+      "landmark": "elder_roots",
+      "purpose": "save",
+      "composition": "A bent root valley with a sheltered checkpoint before the crown arena."
+    },
+    {
+      "id": "dungeon_000_r3",
+      "name": "The Hollow Crown",
+      "landmark": "crown",
+      "purpose": "boss",
+      "composition": "A broad ruined circular court, with the crown roots framing its northern edge."
+    },
+    {
+      "id": "canopy_hamlet",
+      "name": "Lastlight Hamlet",
+      "landmark": "lantern",
+      "purpose": "town",
+      "composition": "A sheltered hamlet with two timber houses beside a broad communal stone road."
+    },
+    {
+      "id": "canopy_archive",
+      "name": "The Silent Bell Archive",
+      "landmark": "idol",
+      "purpose": "lore",
+      "composition": "A ruined bell archive with a stone reading court and a tucked-away memorial."
+    },
+    {
+      "id": "canopy_observatory",
+      "name": "Emberwatch Observatory",
+      "landmark": "seed_shrine",
+      "purpose": "spell",
+      "composition": "An observatory courtyard above the river where a lost ember is preserved."
+    },
+    {
+      "id": "canopy_gardens",
+      "name": "The Drowned Gardens",
+      "landmark": "rune_tree",
+      "purpose": "traversal",
+      "composition": "A flooded garden threaded by narrow stone paths between three planted islands."
+    },
+    {
+      "id": "canopy_cistern",
+      "name": "The Root Cistern",
+      "landmark": "elder_roots",
+      "purpose": "spell",
+      "composition": "A root cistern with a sheltered central landing beside ancient waterworks."
+    },
+    {
+      "id": "canopy_moonwell",
+      "name": "Moonwell Sanctuary",
+      "landmark": "seed_shrine",
+      "purpose": "spell",
+      "composition": "A moonlit well enclosed by a crescent pool, with a quiet outer ring."
+    }
+  ],
+  "referenceConversation": "https://copilot.microsoft.com/chats/pw5YSx231xc1UyaGMwwwa",
+  "nativeValidated": true,
+  "productionApproved": false,
+  "validation": {
+    "report": "E:\\Metroforge\\MetroForge-Publish\\reports\\game-tests\\20261001-canopy-epic-foundation",
+    "suites": {
+      "visual": {
+        "passed": 611,
+        "failed": 0,
+        "softFailures": 0,
+        "sha256": "02b5c474ba96370632cc9246c4218fe72481c720909ce596c6eadb889dd4f7be"
+      },
+      "runtime": {
+        "passed": 160,
+        "failed": 0,
+        "softFailures": 9,
+        "sha256": "7b33452099ee556279c58f56fa1b3b90ec7b3a6a3105a23c2e295bd6d6a46ac9"
+      },
+      "detail": {
+        "passed": 91,
+        "failed": 0,
+        "softFailures": 0,
+        "sha256": "b46223ddb0206b131ec86b609de0bf759d5d3239ac4f8d7308046bb483a7be33"
+      },
+      "telegraphs": {
+        "passed": 9,
+        "failed": 0,
+        "softFailures": 0,
+        "sha256": "3dd04689df328fbfd1e6ef5b1a5f90894d25ed3b0a12ffab28f1849973380f36"
+      },
+      "presentation": {
+        "passed": 38,
+        "failed": 0,
+        "softFailures": 0,
+        "sha256": "49e0d6546885d73836f24e5f70911be6a598419d89789f8b3d5974e24e8643ae"
+      },
+      "spells": {
+        "passed": 52,
+        "failed": 0,
+        "softFailures": 0,
+        "sha256": "03ad259eb7e285fd60bf151637b877b184325e9f3014d2bb5cb67661c08fb43c"
+      },
+      "hd2d": {
+        "passed": 44,
+        "failed": 0,
+        "softFailures": 0,
+        "sha256": "fba283d7a20bcc18c8baa2f696964a370d25b576da47aa5177e831c62150d566"
+      },
+      "compatibility": {
+        "passed": 44,
+        "failed": 0,
+        "softFailures": 0,
+        "sha256": "af08c628303ef58471942f20bd781199ed985f698ddb875b33c40b6656ff66fc"
+      },
+      "route": {
+        "passed": 8,
+        "failed": 0,
+        "softFailures": 0,
+        "sha256": "fe78fe1edd4f3f5c77f5a6b6eab6ae84ce5b78640e3eee2eec0ddfcc39d475b8"
+      }
+    }
+  }
+}

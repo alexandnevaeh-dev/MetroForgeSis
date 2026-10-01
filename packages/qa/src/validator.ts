@@ -6,7 +6,8 @@ import type { ValidationResult, WorldGraph } from '@metroforge/schemas';
 import {
   generateId,
   isRegisteredAbilityId,
-  isTopDownArchetype,
+  genreSupports,
+  genreUsesDungeonTools,
   TOP_DOWN_DUNGEON_ITEMS,
   getGameArchetypePlugin,
   resolveGameArchetype,
@@ -23,7 +24,12 @@ import {
   validateWorldDesign,
   evaluateFullWorldApplicability,
   validateExportFidelity,
+  propAllowedInBiome,
+  scoreSideViewRoom,
+  roomPurposeFromGameplay,
   type ExportedRoomData,
+  type BiomeConsistencyContext,
+  type EnvironmentArchetypeId,
 } from '@metroforge/procedural';
 import type { ProgressionGraph } from '@metroforge/schemas';
 import { auditRoomArchetypeFidelity } from '@metroforge/godot';
@@ -241,7 +247,7 @@ export class QAValidator {
     const earlyArchetype = readProjectArchetype(projectPath);
     const requiredFiles = [
       ...REQUIRED_FILES,
-      isTopDownArchetype(earlyArchetype)
+      genreSupports(earlyArchetype, 'supportsFreePlanarMovement')
         ? 'scripts/player/TopDownPlayerController.gd'
         : 'scripts/player/PlayerController.gd',
     ];
@@ -280,7 +286,7 @@ export class QAValidator {
     // (pickTopDownDungeonItems() — see generators/game-dna.ts), not movement ability IDs, so
     // this gate checks each id against the right registry for the project's actual archetype
     // rather than always assuming side-view REGISTERED_ABILITIES.
-    const isTopDown = isTopDownArchetype(dnaArchetype as GameArchetype | undefined);
+    const isTopDown = genreUsesDungeonTools(dnaArchetype as GameArchetype | undefined);
     const unknownAbilities = dnaAbilities.filter((id) =>
       isTopDown ? !TOP_DOWN_ITEM_IDS.has(id) : !isRegisteredAbilityId(id),
     );
@@ -394,6 +400,185 @@ export class QAValidator {
               .join('; ')}`,
         details: fidelity,
       });
+
+      const envTagged = worldGraph.nodes.filter(
+        (n) => n.type === 'room' && typeof n.metadata?.environmentArchetype === 'string',
+      );
+      const envDistinct = new Set(
+        envTagged.map((n) => String(n.metadata?.environmentArchetype ?? '')),
+      );
+      const envOk = envTagged.length === 0 || envDistinct.size >= Math.min(2, envTagged.length);
+      results.push({
+        gate: 'environment_archetype_identity',
+        passed: envOk,
+        message:
+          envTagged.length === 0
+            ? 'No environmentArchetype metadata (pre-architecture projects) — skip'
+            : envOk
+              ? `Environment archetypes present (${envDistinct.size} distinct across ${envTagged.length} rooms)`
+              : 'All rooms share one environmentArchetype — architectural identity collapsed',
+        details: { tagged: envTagged.length, distinct: [...envDistinct] },
+      });
+
+      // Side-view composition: chronically flat boxes / missing gallery bands fail clearly.
+      // Top-down projects skip (their layoutMetrics / gallery bands are N/A).
+      const gameDnaPath = join(projectPath, 'game_dna.json');
+      let projectArchetype = 'SIDE_VIEW_METROIDVANIA';
+      try {
+        if (existsSync(gameDnaPath)) {
+          const dna = JSON.parse(readFileSync(gameDnaPath, 'utf-8')) as { archetype?: string };
+          projectArchetype = dna.archetype ?? projectArchetype;
+        }
+      } catch {
+        /* keep default */
+      }
+      const isTopDownProject = /top.?down/i.test(projectArchetype);
+      if (isTopDownProject) {
+        results.push({
+          gate: 'side_view_room_composition',
+          passed: true,
+          state: 'SKIPPED',
+          message: 'Top-down project — side-view gallery/composition checks do not apply',
+        });
+      } else {
+        const roomsFull = JSON.parse(
+          readFileSync(join(projectPath, 'data', 'rooms', 'rooms.json'), 'utf-8'),
+        ) as {
+          rooms?: Record<
+            string,
+            {
+              archetype?: string;
+              worldArchetype?: string;
+              width?: number;
+              height?: number;
+              tileSize?: number;
+              layoutMetrics?: {
+                platformCount?: number;
+                uniquePlatformHeights?: number;
+                decorationDensity?: number;
+                traversableAreaRatio?: number;
+                combatSpacePx?: number;
+              };
+            }
+          >;
+        };
+        const roomEntries = Object.entries(roomsFull.rooms ?? {});
+        const scored: Array<{ roomId: string; total: number; reasons: string[] }> = [];
+        for (const [roomId, room] of roomEntries) {
+          const node = worldGraph.nodes.find((n) => n.id === roomId);
+          const envRaw = node?.metadata?.environmentArchetype;
+          const envId =
+            typeof envRaw === 'string' && envRaw.length > 0
+              ? (envRaw as EnvironmentArchetypeId)
+              : ('generic_chamber' as EnvironmentArchetypeId);
+          const gp =
+            (typeof node?.metadata?.archetype === 'string'
+              ? node.metadata.archetype
+              : room.worldArchetype ?? room.archetype) ?? 'combat';
+          const m = room.layoutMetrics ?? {};
+          const tileSize = room.tileSize ?? 16;
+          const wTiles = Math.max(1, Math.floor((room.width ?? 800) / tileSize));
+          const hTiles = Math.max(1, Math.floor((room.height ?? 600) / tileSize));
+          const quality = scoreSideViewRoom({
+            environmentArchetype: envId,
+            roomPurpose: roomPurposeFromGameplay(String(gp)),
+            widthTiles: wTiles,
+            heightTiles: hTiles,
+            platformCount: m.platformCount ?? 0,
+            uniquePlatformHeights: m.uniquePlatformHeights ?? 0,
+            galleryBandsAchieved: Math.max(0, (m.uniquePlatformHeights ?? 0) - 1),
+            hasLandmark: (m.platformCount ?? 0) >= 2 || (m.uniquePlatformHeights ?? 0) >= 2,
+            decorationDensity: m.decorationDensity ?? 0,
+            traversableAreaRatio: m.traversableAreaRatio ?? 0.5,
+            biomeMaterialMatch: true,
+            combatBowlOpen:
+              String(gp) === 'combat' || String(gp) === 'boss' || String(gp) === 'arena'
+                ? (m.combatSpacePx ?? 0) > 8000 || (m.traversableAreaRatio ?? 0) >= 0.4
+                : true,
+          });
+          const reasons: string[] = [];
+          if (quality.galleryStructure < 50) reasons.push('weak gallery/balcony structure');
+          if (quality.composition < 50) reasons.push('flat or jumbled composition');
+          if (quality.silhouetteVariety < 50) reasons.push('silhouette lacks height variety');
+          if (quality.decorationIntegration < 40) reasons.push('chronically sparse decoration');
+          scored.push({ roomId, total: quality.total, reasons });
+        }
+        const chronic = scored.filter((s) => s.total < 55);
+        const avgTotal =
+          scored.length > 0
+            ? Math.round(scored.reduce((a, s) => a + s.total, 0) / scored.length)
+            : 0;
+        const compositionOk = scored.length === 0 || chronic.length / scored.length <= 0.35;
+        results.push({
+          gate: 'side_view_room_composition',
+          passed: compositionOk,
+          message: compositionOk
+            ? `Side-view room composition OK (avg score ${avgTotal}, ${chronic.length}/${scored.length} chronically weak)`
+            : `Chronic side-view composition failure: ${chronic.length}/${scored.length} rooms score <55 (avg ${avgTotal}) — flat boxes / missing galleries. Examples: ${chronic
+                .slice(0, 3)
+                .map((c) => `${c.roomId}(${c.total}${c.reasons.length ? ':' + c.reasons.join('+') : ''})`)
+                .join('; ')}`,
+          details: {
+            avgScore: avgTotal,
+            chronicCount: chronic.length,
+            roomCount: scored.length,
+            chronic: chronic.slice(0, 8),
+          },
+        });
+      }
+
+      // Hard biome material reject — kit props must not match BiomeVisualDNA.forbiddenPatterns.
+      // Pipeline writes biomes under data/visual/ (see generation pipeline visualDir).
+      const biomesPathCandidates = [
+        join(projectPath, 'data', 'visual', 'biomes.json'),
+        join(projectPath, 'visual', 'biomes.json'),
+      ];
+      const kitsPathCandidates = [
+        join(projectPath, 'data', 'visual', 'environment_kits.json'),
+        join(projectPath, 'visual', 'environment_kits.json'),
+      ];
+      const biomesPath = biomesPathCandidates.find((p) => existsSync(p));
+      const kitsPath = kitsPathCandidates.find((p) => existsSync(p));
+      if (!biomesPath) {
+        results.push({
+          gate: 'biome_material_hard_reject',
+          passed: true,
+          state: 'SKIPPED',
+          message: 'No data/visual/biomes.json — skip biome material hard-reject',
+        });
+      } else {
+        const biomes = JSON.parse(readFileSync(biomesPath, 'utf-8')) as BiomeConsistencyContext[];
+        const kits = kitsPath
+          ? (JSON.parse(readFileSync(kitsPath, 'utf-8')) as Array<{
+              biomeId?: string;
+              props?: Array<{ family?: string; id?: string; description?: string }>;
+            }>)
+          : [];
+        const violations: string[] = [];
+        for (const biome of biomes) {
+          for (const family of biome.propFamilies ?? []) {
+            if (!propAllowedInBiome(family, biome)) {
+              violations.push(`${biome.biomeId}:propFamily:${family}`);
+            }
+          }
+          const kit = kits.find((k) => k.biomeId === biome.biomeId);
+          for (const prop of kit?.props ?? []) {
+            const label = prop.family ?? prop.id ?? prop.description ?? '';
+            if (label && !propAllowedInBiome(label, biome)) {
+              violations.push(`${biome.biomeId}:kit:${label}`);
+            }
+          }
+        }
+        results.push({
+          gate: 'biome_material_hard_reject',
+          passed: violations.length === 0,
+          message:
+            violations.length === 0
+              ? `Biome material hard-reject clean (${biomes.length} biome(s))`
+              : `${violations.length} forbidden material/prop hit(s): ${violations.slice(0, 4).join('; ')}`,
+          details: { violations: violations.slice(0, 20), biomeCount: biomes.length },
+        });
+      }
     } catch {
       results.push({
         gate: 'room_archetype_fidelity',

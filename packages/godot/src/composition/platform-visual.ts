@@ -1,5 +1,6 @@
 import { type OccupancyGrid, type VisualCell, setKind, getKind, roleToCell } from './surface-roles.js';
 import type { GeometryRect, PlatformVisualStrategy } from './room-blueprint.js';
+import { tileAllowedInBiome, type BiomeConsistencyContext } from '@metroforge/procedural';
 
 export function markPlatformOccupancy(grid: OccupancyGrid, platforms: GeometryRect[], tileSize: number): void {
   for (const platform of platforms) {
@@ -20,9 +21,12 @@ export function dressPlatforms(input: {
   floorRow: number;
   strategy: PlatformVisualStrategy;
   biomeId?: string;
+  biome?: BiomeConsistencyContext;
 }): VisualCell[] {
   const extras: VisualCell[] = [];
-  const mossBiome = Boolean(input.biomeId?.endsWith('2'));
+  const mossOk = input.biome
+    ? tileAllowedInBiome('platform_moss', input.biome)
+    : Boolean(input.biomeId?.endsWith('2'));
   for (const platform of input.platforms) {
     const row = Math.floor(platform.y / input.tileSize);
     const start = Math.floor(platform.x / input.tileSize);
@@ -46,7 +50,7 @@ export function dressPlatforms(input: {
         extras.push(roleToCell(end, chainRow, 'decor_b'));
       }
     }
-    if (mossBiome && !embedded) {
+    if (mossOk && !embedded) {
       extras.push(roleToCell(start, row, 'platform_left'));
       extras.push(roleToCell(end, row, 'platform_right'));
       for (let x = start + 1; x < end; x++) {

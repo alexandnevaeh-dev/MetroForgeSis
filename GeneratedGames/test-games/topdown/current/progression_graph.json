@@ -1,0 +1,56 @@
+{
+  "version": "0.1.0",
+  "seed": 20260930,
+  "startNodeId": "overworld",
+  "endNodeId": "dungeon_000_r3",
+  "abilities": [
+    "wind_disc"
+  ],
+  "nodes": [
+    {
+      "id": "overworld",
+      "type": "room",
+      "label": "Arrival",
+      "required": true
+    },
+    {
+      "id": "item_wind_disc",
+      "type": "ability",
+      "label": "wind_disc",
+      "required": true
+    },
+    {
+      "id": "dungeon_000_r3",
+      "type": "boss",
+      "label": "The Hollow Crown",
+      "required": true
+    }
+  ],
+  "edges": [
+    {
+      "from": "overworld",
+      "to": "item_wind_disc",
+      "requires": []
+    },
+    {
+      "from": "item_wind_disc",
+      "to": "dungeon_000_r3",
+      "requires": [
+        "wind_disc"
+      ]
+    }
+  ],
+  "criticalPath": [
+    "overworld",
+    "dungeon_000_r0",
+    "canopy_clearing",
+    "canopy_hollow",
+    "canopy_bridge",
+    "dungeon_000_r1",
+    "canopy_bridge",
+    "canopy_clearing",
+    "dungeon_000_r2",
+    "canopy_approach",
+    "dungeon_000_r3"
+  ]
+}

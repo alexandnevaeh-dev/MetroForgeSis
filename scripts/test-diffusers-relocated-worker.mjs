@@ -10,7 +10,7 @@ if(!stage){mkdirSync(join(resource,'workers'));copyFileSync(new URL('../workers/
 const saved={root:process.env.METROFORGE_RESOURCE_ROOT,python:process.env.DIFFUSERS_PYTHON};
 try{
  process.env.METROFORGE_RESOURCE_ROOT=resource;
- process.env.DIFFUSERS_PYTHON='C:/Users/alexa/Documents/Codex/2026-09-16/whe/work/runtime/diffusers/Scripts/python.exe';
+ process.env.DIFFUSERS_PYTHON=saved.python ?? 'E:/MetroForgeData/Python/diffusers-native/Scripts/python.exe';
  const provider=new DiffusersProvider({modelId:'E:/Metroforge/Recovery-Audit/models/sdxl-base-1.0'});
  const concise=await provider.checkPromptBudget('Orthographic gothic stone platform, horizontal ledge, carved arches, isolated on grey.','perspective, text');
  assert.equal(concise.ok,true,concise.error);assert.equal(concise.anyOverflow,false);

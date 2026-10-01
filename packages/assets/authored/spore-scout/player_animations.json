@@ -1,0 +1,353 @@
+{
+  "walk": {
+    "frameCount": 14,
+    "fps": 12,
+    "loop": true,
+    "events": [
+      {
+        "frame": 3,
+        "id": "footstep_left"
+      },
+      {
+        "frame": 10,
+        "id": "footstep_right"
+      }
+    ],
+    "rootMotionMode": "none"
+  },
+  "run": {
+    "frameCount": 16,
+    "fps": 16,
+    "loop": true,
+    "events": [
+      {
+        "frame": 3,
+        "id": "footstep_left"
+      },
+      {
+        "frame": 11,
+        "id": "footstep_right"
+      }
+    ],
+    "rootMotionMode": "none"
+  },
+  "attack": {
+    "frameCount": 16,
+    "fps": 20,
+    "loop": false,
+    "combatSync": {
+      "hitboxOnFrame": 9,
+      "hitboxOffFrame": 12,
+      "vfxFrame": 10,
+      "sfxFrame": 8,
+      "comboCancelOpenFrame": 12
+    },
+    "attackTiming": {
+      "anticipationStart": 0,
+      "windUpStart": 4,
+      "activeStart": 9,
+      "activeEnd": 12,
+      "recoveryStart": 12,
+      "recoveryEnd": 15,
+      "hitStopDuration": 0.05,
+      "cameraImpulse": 0.4,
+      "vfxTriggerFrame": 10,
+      "sfxTriggerFrame": 8,
+      "comboCancelOpenFrame": 12,
+      "vfxSocket": "weapon_tip"
+    },
+    "events": [
+      {
+        "frame": 4,
+        "id": "weapon_swing"
+      },
+      {
+        "frame": 9,
+        "id": "hitbox_enable"
+      },
+      {
+        "frame": 10,
+        "id": "vfx_attack"
+      },
+      {
+        "frame": 8,
+        "id": "sfx_swing"
+      },
+      {
+        "frame": 12,
+        "id": "hitbox_disable"
+      }
+    ],
+    "rootMotionMode": "none",
+    "cancelWindow": {
+      "openFrame": 12,
+      "closeFrame": 15
+    }
+  },
+  "attack_2": {
+    "frameCount": 16,
+    "fps": 20,
+    "loop": false,
+    "combatSync": {
+      "hitboxOnFrame": 9,
+      "hitboxOffFrame": 12,
+      "vfxFrame": 10,
+      "sfxFrame": 8,
+      "comboCancelOpenFrame": 12
+    },
+    "attackTiming": {
+      "anticipationStart": 0,
+      "windUpStart": 4,
+      "activeStart": 9,
+      "activeEnd": 12,
+      "recoveryStart": 12,
+      "recoveryEnd": 15,
+      "hitStopDuration": 0.055,
+      "cameraImpulse": 0.5,
+      "vfxTriggerFrame": 10,
+      "sfxTriggerFrame": 8,
+      "comboCancelOpenFrame": 12,
+      "vfxSocket": "weapon_tip"
+    },
+    "events": [
+      {
+        "frame": 4,
+        "id": "weapon_swing"
+      },
+      {
+        "frame": 9,
+        "id": "hitbox_enable"
+      },
+      {
+        "frame": 10,
+        "id": "vfx_attack"
+      },
+      {
+        "frame": 8,
+        "id": "sfx_swing"
+      },
+      {
+        "frame": 12,
+        "id": "hitbox_disable"
+      }
+    ],
+    "rootMotionMode": "none",
+    "cancelWindow": {
+      "openFrame": 12,
+      "closeFrame": 15
+    }
+  },
+  "attack_3": {
+    "frameCount": 18,
+    "fps": 18,
+    "loop": false,
+    "combatSync": {
+      "hitboxOnFrame": 10,
+      "hitboxOffFrame": 14,
+      "vfxFrame": 11,
+      "sfxFrame": 9,
+      "comboCancelOpenFrame": 14
+    },
+    "attackTiming": {
+      "anticipationStart": 0,
+      "windUpStart": 4,
+      "activeStart": 10,
+      "activeEnd": 14,
+      "recoveryStart": 14,
+      "recoveryEnd": 17,
+      "hitStopDuration": 0.07,
+      "cameraImpulse": 0.65,
+      "vfxTriggerFrame": 11,
+      "sfxTriggerFrame": 9,
+      "comboCancelOpenFrame": 14,
+      "vfxSocket": "weapon_tip"
+    },
+    "events": [
+      {
+        "frame": 4,
+        "id": "weapon_swing"
+      },
+      {
+        "frame": 10,
+        "id": "hitbox_enable"
+      },
+      {
+        "frame": 11,
+        "id": "vfx_attack"
+      },
+      {
+        "frame": 9,
+        "id": "sfx_swing"
+      },
+      {
+        "frame": 14,
+        "id": "hitbox_disable"
+      }
+    ],
+    "rootMotionMode": "none",
+    "cancelWindow": {
+      "openFrame": 14,
+      "closeFrame": 17
+    }
+  },
+  "hurt": {
+    "frameCount": 6,
+    "fps": 14,
+    "loop": false,
+    "rootMotionMode": "none"
+  },
+  "death": {
+    "frameCount": 16,
+    "fps": 10,
+    "loop": false,
+    "rootMotionMode": "none"
+  },
+  "idle": {
+    "frameCount": 8,
+    "fps": 8,
+    "loop": true,
+    "rootMotionMode": "none"
+  },
+  "jump_start": {
+    "frameCount": 6,
+    "fps": 12,
+    "loop": false,
+    "events": [
+      {
+        "frame": 2,
+        "id": "jump_launch"
+      }
+    ],
+    "rootMotionMode": "none"
+  },
+  "jump": {
+    "frameCount": 6,
+    "fps": 8,
+    "loop": true,
+    "rootMotionMode": "none"
+  },
+  "fall": {
+    "frameCount": 6,
+    "fps": 8,
+    "loop": true,
+    "rootMotionMode": "none"
+  },
+  "land": {
+    "frameCount": 8,
+    "fps": 14,
+    "loop": false,
+    "events": [
+      {
+        "frame": 1,
+        "id": "land"
+      }
+    ],
+    "rootMotionMode": "none"
+  },
+  "dash": {
+    "frameCount": 8,
+    "fps": 16,
+    "loop": false,
+    "events": [
+      {
+        "frame": 0,
+        "id": "dash_start"
+      },
+      {
+        "frame": 7,
+        "id": "dash_end"
+      }
+    ],
+    "rootMotionMode": "none"
+  },
+  "wall_slide": {
+    "frameCount": 6,
+    "fps": 8,
+    "loop": true,
+    "rootMotionMode": "none"
+  },
+  "wall_jump": {
+    "frameCount": 8,
+    "fps": 14,
+    "loop": false,
+    "events": [
+      {
+        "frame": 1,
+        "id": "jump_launch"
+      }
+    ],
+    "rootMotionMode": "none"
+  },
+  "swim": {
+    "frameCount": 12,
+    "fps": 10,
+    "loop": true,
+    "rootMotionMode": "none"
+  },
+  "air_dash": {
+    "frameCount": 8,
+    "fps": 18,
+    "loop": false,
+    "rootMotionMode": "none"
+  },
+  "double_jump": {
+    "frameCount": 8,
+    "fps": 14,
+    "loop": false,
+    "rootMotionMode": "none"
+  },
+  "ground_slam_start": {
+    "frameCount": 6,
+    "fps": 12,
+    "loop": false,
+    "rootMotionMode": "none"
+  },
+  "ground_slam_fall": {
+    "frameCount": 6,
+    "fps": 12,
+    "loop": false,
+    "rootMotionMode": "none"
+  },
+  "ground_slam_impact": {
+    "frameCount": 8,
+    "fps": 16,
+    "loop": false,
+    "rootMotionMode": "none"
+  },
+  "swim_idle": {
+    "frameCount": 8,
+    "fps": 8,
+    "loop": true,
+    "rootMotionMode": "none"
+  },
+  "grapple": {
+    "frameCount": 8,
+    "fps": 12,
+    "loop": false,
+    "rootMotionMode": "none"
+  },
+  "phase": {
+    "frameCount": 8,
+    "fps": 12,
+    "loop": false,
+    "rootMotionMode": "none"
+  },
+  "respawn": {
+    "frameCount": 10,
+    "fps": 10,
+    "loop": false,
+    "rootMotionMode": "none"
+  },
+  "interact": {
+    "frameCount": 6,
+    "fps": 10,
+    "loop": false,
+    "rootMotionMode": "none"
+  },
+  "ability_acquire": {
+    "frameCount": 10,
+    "fps": 12,
+    "loop": false,
+    "rootMotionMode": "none"
+  }
+}

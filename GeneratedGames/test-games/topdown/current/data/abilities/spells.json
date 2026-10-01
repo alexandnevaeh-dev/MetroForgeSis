@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "autoStartQuests": [
+    "story_return_seed"
+  ],
+  "spells": [
+    {
+      "id": "seedflare",
+      "name": "Seedflare",
+      "cost": 18,
+      "cooldown": 1.2,
+      "description": "An ember carried through the grove. Q fires a seed of light that bursts against an enemy or wall."
+    },
+    {
+      "id": "rootward",
+      "name": "Rootward",
+      "cost": 25,
+      "cooldown": 7,
+      "description": "The old oath made tangible. R raises bark armor for 2.5 seconds, reducing incoming damage."
+    },
+    {
+      "id": "bloomstep",
+      "name": "Bloomstep",
+      "cost": 20,
+      "cooldown": 4,
+      "description": "The garden remembers your footsteps. F makes an extended invulnerable dash along your facing, stopping at solid terrain."
+    }
+  ]
+}

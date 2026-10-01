@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   isRegisteredAbilityId,
-  isTopDownArchetype,
+  genreUsesDungeonTools,
   TOP_DOWN_DUNGEON_ITEMS,
   REGISTERED_ABILITY_IDS,
   projectAllowsPlaceholders,
@@ -200,7 +200,7 @@ export function analyzeProjectCompletion(project: LoadedProject): ProjectComplet
   if (!victoryQuest.ready) blockers.push(victoryQuest.detail);
 
   const enabledAbilities = project.gameDna.abilities.filter((a) => a.enabled);
-  const topDown = isTopDownArchetype(project.gameDna.archetype);
+  const topDown = genreUsesDungeonTools(project.gameDna.archetype);
   const supportedIds: readonly string[] = topDown
     ? TOP_DOWN_DUNGEON_ITEMS.map((item) => item.id)
     : REGISTERED_ABILITY_IDS;

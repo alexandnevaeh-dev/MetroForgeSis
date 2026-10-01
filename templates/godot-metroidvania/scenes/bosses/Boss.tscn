@@ -20,6 +20,7 @@ script = ExtResource("1_boss")
 [node name="Sprite" type="AnimatedSprite2D" parent="."]
 script = ExtResource("5_sprite")
 sheet_path = "assets/bosses/boss_final_walk.png"
+run_sheet_path = "assets/bosses/boss_final_run.png"
 frame_size = Vector2i(160, 160)
 frame_count = 6
 hurt_sheet_path = "assets/bosses/boss_final_hurt.png"

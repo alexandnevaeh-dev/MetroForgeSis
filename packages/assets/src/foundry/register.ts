@@ -1,4 +1,4 @@
-import { isProviderUserEnabled } from '@metroforge/shared';
+import { isProviderUserEnabled, resolvePythonExecutable } from '@metroforge/shared';
 import type { FoundryCostClass } from '@metroforge/schemas';
 import { ImageProviderRegistry, type ImageProviderRegistration } from '../image-router.js';
 import { ComfyUIProvider } from '../providers/comfyui.js';
@@ -473,7 +473,7 @@ export function foundryBootstrapFromEnv(
   return {
     comfyuiUrl: extra.comfyuiUrl ?? process.env.COMFYUI_BASE_URL,
     automatic1111Url: extra.automatic1111Url ?? process.env.AUTOMATIC1111_BASE_URL,
-    diffusersPython: extra.diffusersPython ?? process.env.DIFFUSERS_PYTHON,
+    diffusersPython: resolvePythonExecutable(extra.diffusersPython ?? process.env.DIFFUSERS_PYTHON),
     diffusersModelId: extra.diffusersModelId ?? process.env.DIFFUSERS_MODEL_ID,
     pollinationsBaseUrl: extra.pollinationsBaseUrl ?? process.env.POLLINATIONS_BASE_URL,
     pollinationsModel: extra.pollinationsModel ?? process.env.POLLINATIONS_IMAGE_MODEL,

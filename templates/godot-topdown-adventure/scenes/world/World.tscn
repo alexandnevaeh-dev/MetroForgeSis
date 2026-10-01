@@ -27,30 +27,53 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 
+[node name="StatusBackground" type="Panel" parent="GameHUD/HUD"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 278.0
+offset_bottom = 164.0
+mouse_filter = 2
+
 [node name="MarginContainer" type="MarginContainer" parent="GameHUD/HUD"]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 20
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 20
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 278.0
+offset_bottom = 16.0
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
 
 [node name="VBox" type="VBoxContainer" parent="GameHUD/HUD/MarginContainer"]
 layout_mode = 2
-theme_override_constants/separation = 8
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_constants/separation = 6
+
+[node name="HealthReadout" type="Label" parent="GameHUD/HUD/MarginContainer/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "VITALITY"
 
 [node name="HealthBar" type="ProgressBar" parent="GameHUD/HUD/MarginContainer/VBox"]
-custom_minimum_size = Vector2(200, 20)
+custom_minimum_size = Vector2(232, 8)
 layout_mode = 2
 max_value = 100.0
 value = 100.0
 show_percentage = false
 
+[node name="LocationLabel" type="Label" parent="GameHUD/HUD/MarginContainer/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = ""
+text_overrun_behavior = 3
+
 [node name="AbilityLabel" type="Label" parent="GameHUD/HUD/MarginContainer/VBox"]
 layout_mode = 2
 text = "Abilities: None"
+text_overrun_behavior = 3
 
 [node name="CurrencyLabel" type="Label" parent="GameHUD/HUD/MarginContainer/VBox"]
 layout_mode = 2
@@ -61,12 +84,12 @@ layout_mode = 2
 text = ""
 
 [node name="QuestTrackerPanel" type="PanelContainer" parent="GameHUD/HUD/MarginContainer/VBox"]
-custom_minimum_size = Vector2(260, 120)
+custom_minimum_size = Vector2(232, 64)
 layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="QuestTrackerView" type="Control" parent="GameHUD/HUD/MarginContainer/VBox/QuestTrackerPanel"]
-custom_minimum_size = Vector2(260, 120)
+custom_minimum_size = Vector2(232, 64)
 layout_mode = 2
 script = ExtResource("7_quest_tracker")
 
@@ -75,13 +98,13 @@ layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -140.0
-offset_top = 20.0
-offset_right = -20.0
-offset_bottom = 140.0
+offset_left = -104.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = 104.0
 
 [node name="MinimapView" type="Control" parent="GameHUD/HUD/MinimapPanel"]
-custom_minimum_size = Vector2(120, 120)
+custom_minimum_size = Vector2(92, 92)
 layout_mode = 2
 script = ExtResource("6_minimap")
 
@@ -104,7 +127,7 @@ offset_top = -25.0
 offset_right = 200.0
 offset_bottom = 25.0
 theme_override_font_sizes/font_size = 36
-text = "Victory!"
+text = "Journey complete"
 horizontal_alignment = 1
 
 [node name="DeathOverlay" type="ColorRect" parent="GameHUD"]
@@ -125,6 +148,6 @@ offset_left = -200.0
 offset_top = -25.0
 offset_right = 200.0
 offset_bottom = 25.0
-theme_override_font_sizes/font_size = 36
-text = "You Died"
+theme_override_font_sizes/font_size = 24
+text = "Fallen\nReturning to your checkpoint..."
 horizontal_alignment = 1

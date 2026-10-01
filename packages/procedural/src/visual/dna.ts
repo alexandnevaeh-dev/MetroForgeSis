@@ -8,6 +8,7 @@ import type {
   MaterialLanguage,
 } from '@metroforge/schemas';
 import { VISUAL_DNA_VERSION } from '@metroforge/schemas';
+import { genreCapability, genreSupports, getGenreDefinition } from '@metroforge/shared';
 import { resolveVisualStyleTemplate, styleCueText } from './style-registry.js';
 import { fingerprintFromVisualDNA } from './fingerprint.js';
 
@@ -61,10 +62,10 @@ export function generateVisualDNA(input: {
     forbidden: template.forbidden.slice(0, 2),
   }));
   const painted = isPaintedStyle(styleBible.renderingStyle);
-  const sideView = gameDna.archetype !== 'TOP_DOWN_ACTION_ADVENTURE';
+  const sideView = genreSupports(gameDna.archetype, 'supportsVerticalPlatforming');
   const dna: VisualDNA = {
     version: VISUAL_DNA_VERSION,
-    projection: sideView ? 'side-view' : 'top-down',
+    projection: genreCapability(gameDna.archetype, 'artProjection'),
     gameId: gameDna.identity.title,
     styleFingerprint: '',
     artStyle: painted ? { ...template.artStyle, id: `${template.artStyle.id}-painted`, label: styleBible.renderingStyle, renderingFamily: 'hand-painted', edgeTreatment: styleBible.outlineRules } : template.artStyle,
@@ -152,6 +153,7 @@ export function generateVisualDNA(input: {
     ],
     promptAnchors: [
       ...template.promptAnchors.filter((anchor) => sideView || !/side[ -]view/i.test(anchor)),
+      ...getGenreDefinition(gameDna.archetype).referenceTags,
       gameDna.identity.visualStyle,
       gameDna.identity.tone,
       sideView ? 'orthographic side view' : 'top-down orthographic',

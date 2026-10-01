@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { genreSupports, resolveGameArchetype } from '@metroforge/shared/archetypes';
 import { ScreenHeader } from './ScreenHeader.js';
 import type { DungeonGraphPreview, WorldGraphPreview } from './metroforge-api.js';
 import { WorldMapPreview } from './WorldMapPreview.js';
@@ -71,16 +72,17 @@ export function DungeonEditor() {
   const [dungeonFilter, setDungeonFilter] = useState('all');
   const [error, setError] = useState<string | null>(null);
 
-  const projectArchetype =
-    selectedProject?.archetype === 'TOP_DOWN_ACTION_ADVENTURE'
-      ? 'TOP_DOWN_ACTION_ADVENTURE'
-      : selectedProject?.archetype === 'SIDE_VIEW_METROIDVANIA'
-        ? 'SIDE_VIEW_METROIDVANIA'
-        : selectedProject
-          ? 'SIDE_VIEW_METROIDVANIA'
-          : null;
-  const isTopDownProject = projectArchetype === 'TOP_DOWN_ACTION_ADVENTURE';
-  const isSideViewProject = hasActiveProject && projectArchetype === 'SIDE_VIEW_METROIDVANIA';
+  const projectArchetype = selectedProject
+    ? resolveGameArchetype(
+        typeof selectedProject.archetype === 'string' ? selectedProject.archetype : undefined,
+      )
+    : null;
+  const isTopDownProject = Boolean(
+    projectArchetype && genreSupports(projectArchetype, 'supportsOverworldMap'),
+  );
+  const isSideViewProject = Boolean(
+    hasActiveProject && projectArchetype && genreSupports(projectArchetype, 'supportsVerticalPlatforming'),
+  );
 
   const loadGraph = async (path: string, preferredDungeonId?: string) => {
     if (!window.metroforge?.getWorldGraph) return;

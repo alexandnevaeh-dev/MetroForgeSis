@@ -16,6 +16,11 @@ public class GameBootstrap : MonoBehaviour
     public PlayerActor Player => _player;
     public string SavePath => _savePath;
     public GameplayRoom CurrentRoom => _room;
+    public BossController Boss { get; private set; }
+    public int BossPhaseChangeCount { get; private set; }
+    public int BossAttackCount { get; private set; }
+    public int BossDefeatCount { get; private set; }
+    private readonly HashSet<string> _defeatedBosses = new HashSet<string>();
     public float LastRoomLoadMs { get; private set; }
     public int LastRoomLoadGc0 { get; private set; }
     public Vector2 RespawnAnchor => _spawn;
@@ -76,6 +81,8 @@ public class GameBootstrap : MonoBehaviour
         StreamingArtCache.PreloadTree(_streamingRoot, "assets/props");
         StreamingArtCache.PreloadTree(_streamingRoot, "assets/characters");
         StreamingArtCache.PreloadTree(_streamingRoot, "assets/enemies");
+        StreamingArtCache.PreloadTree(_streamingRoot, "assets/bosses");
+        StreamingArtCache.PreloadTree(_streamingRoot, "assets/architecture");
         StreamingArtCache.PreloadTree(_streamingRoot, "assets/ui");
         Debug.Log("FOUNDRY_ART_PRELOAD_MS " + StreamingArtCache.LastPreloadMs.ToString("0.0") +
                   " files=" + StreamingArtCache.LastPreloadCount);
@@ -108,6 +115,7 @@ public class GameBootstrap : MonoBehaviour
                 spawn = new Vector2(save.x, save.y);
                 savedAbilities = save.abilities;
                 Victory = save.victory;
+                RestoreBossProgress(save.defeatedBosses);
             }
         }
         try
@@ -192,6 +200,8 @@ public class GameBootstrap : MonoBehaviour
             if (File.Exists(_savePath))
                 File.Delete(_savePath);
             Victory = false;
+            _defeatedBosses.Clear();
+            BossPhaseChangeCount = BossAttackCount = BossDefeatCount = 0;
             LoadRoom(Pack.startRoomId, Vector2.zero, true);
         });
     }
@@ -260,6 +270,7 @@ public class GameBootstrap : MonoBehaviour
         _restoringSave = true;
         try
         {
+            RestoreBossProgress(save.defeatedBosses);
             LoadRoom(save.roomId, new Vector2(save.x, save.y), true);
             if (_player != null)
             {
@@ -343,6 +354,7 @@ public class GameBootstrap : MonoBehaviour
         titleBtnGo.SetActive(false);
         _inventoryPanel = canvas.AddComponent<InventoryPanelUI>();
         _inventoryPanel.Initialize(this, WriteSave);
+        canvas.AddComponent<BossEncounterHUD>().Initialize(this, _hud.font);
     }
 
     private void Update()
@@ -477,6 +489,7 @@ public class GameBootstrap : MonoBehaviour
 
             CurrentRoomId = roomId;
             _room = room;
+            Boss = null;
             var feet = absoluteSpawn && spawn != Vector2.zero
                 ? spawn
                 : Coord.FromGodot(room.spawnX, room.spawnY, room.height);
@@ -490,6 +503,7 @@ public class GameBootstrap : MonoBehaviour
                 _activeRoomRoot = existing;
                 EnsurePlayer(room, feet);
                 RestoreEnemy(room);
+                RefreshBossArena(room);
                 ClearCollectedPickup(room);
                 RefreshGates();
                 _spawn = feet;
@@ -513,7 +527,10 @@ public class GameBootstrap : MonoBehaviour
                 foreach (var solid in room.solids)
                     CreateSolid(solid, room);
                 foreach (var door in room.doors)
+                {
                     CreateDoor(door, room);
+                    if (HasBoss(room)) CreateBossArenaLock(door, room);
+                }
                 foreach (var gate in room.gates)
                     CreateGate(gate, room);
                 collidersMs = (Time.realtimeSinceStartup - tCol) * 1000f;
@@ -533,8 +550,9 @@ public class GameBootstrap : MonoBehaviour
 
                 var tInit = Time.realtimeSinceStartup;
                 EnsurePlayer(room, feet);
-                if (HasActor(room.enemy))
+                if (HasActor(room.enemy) && !BossDefeated(room))
                     CreateEnemy(room);
+                RefreshBossArena(room);
                 _spawn = feet;
                 WriteSave();
                 initMs = (Time.realtimeSinceStartup - tInit) * 1000f;
@@ -590,7 +608,7 @@ public class GameBootstrap : MonoBehaviour
     private void RestoreEnemy(GameplayRoom room)
     {
         var existing = _activeRoomRoot != null ? _activeRoomRoot.GetComponentInChildren<EnemyActor>(true) : null;
-        if (!HasActor(room.enemy))
+        if (!HasActor(room.enemy) || BossDefeated(room))
         {
             if (existing != null)
             {
@@ -601,14 +619,17 @@ public class GameBootstrap : MonoBehaviour
             }
             return;
         }
-        if (existing == null)
+        if (existing == null || existing.Dead)
         {
+            if (existing != null) RetireRuntimeActor(existing.gameObject);
             CreateEnemy(room);
             return;
         }
         existing.ResetCombat(room.enemy.health > 0 ? room.enemy.health : 30f);
         existing.transform.position = Coord.FromGodot(room.enemy.x, room.enemy.y, room.height);
         existing.Bind(_player);
+        Boss = existing.GetComponent<BossController>();
+        Boss?.ResetEncounter(_player);
         existing.gameObject.SetActive(true);
     }
 
@@ -686,6 +707,7 @@ public class GameBootstrap : MonoBehaviour
             _player.OnInventoryChanged += WriteSave;
             _player.OnVictoryReached += () =>
             {
+                if (HasBoss(_room) && !BossDefeated(_room)) return;
                 Victory = true;
                 WriteSave();
             };
@@ -719,6 +741,8 @@ public class GameBootstrap : MonoBehaviour
         var sr = go.AddComponent<SpriteRenderer>();
         sr.sortingOrder = 1;
         var isWall = rect.height > rect.width * 1.35f;
+        if (!isWall && !string.IsNullOrEmpty(room.backgrounds?.interior) &&
+            CastleTerrainPresentation.Apply(_streamingRoot, go.transform, rect, sr)) return;
         var rel = isWall
             ? $"assets/tilesets/{room.biomeId}/wall.png"
             : $"assets/tilesets/{room.biomeId}/floor.png";
@@ -774,6 +798,7 @@ public class GameBootstrap : MonoBehaviour
             return;
         if (Time.unscaledTime < _ignoreDoorsUntil)
             return;
+        if (HasBoss(_room) && !BossDefeated(_room)) return;
         if (!string.IsNullOrEmpty(CurrentRoomId) && sensor.TargetRoomId == CurrentRoomId)
             return;
         foreach (var req in sensor.Requirements)
@@ -886,6 +911,7 @@ public class GameBootstrap : MonoBehaviour
         var box = go.AddComponent<BoxCollider2D>();
         box.isTrigger = true;
         box.size = new Vector2(28f, 48f);
+        box.offset = new Vector2(0f, 24f);
         var sr = go.AddComponent<SpriteRenderer>();
         sr.sortingOrder = 7;
         GameplaySpriteClip presentation = null;
@@ -908,6 +934,57 @@ public class GameBootstrap : MonoBehaviour
         pulse.AuthoredRoomId = room.id;
     }
 
+    private static bool HasBoss(GameplayRoom room) => room != null && room.enemy != null && room.enemy.isBoss;
+    public bool BossDefeated(GameplayRoom room) => HasBoss(room) && _defeatedBosses.Contains(room.enemy.id);
+
+    private void RestoreBossProgress(string[] ids)
+    {
+        _defeatedBosses.Clear();
+        foreach (var id in ids ?? new string[0])
+            foreach (var room in Pack.rooms)
+                if (HasBoss(room) && room.enemy.id == id) { _defeatedBosses.Add(id); break; }
+    }
+
+    private string[] CaptureBossProgress()
+    {
+        var ids = new List<string>(_defeatedBosses);
+        ids.Sort(System.StringComparer.Ordinal);
+        return ids.ToArray();
+    }
+
+    private void CreateBossArenaLock(GameplayDoor door, GameplayRoom room)
+    {
+        var go = new GameObject("BossArenaLock");
+        go.transform.SetParent(RoomParent, false);
+        go.transform.position = Coord.FromGodot(door.x + door.width * 0.5f, door.y + door.height * 0.5f, room.height);
+        go.AddComponent<BoxCollider2D>().size = new Vector2(door.width, door.height);
+        go.AddComponent<BossArenaLock>();
+        var visual = new GameObject("Seal");
+        visual.transform.SetParent(go.transform, false);
+        var renderer = visual.AddComponent<SpriteRenderer>();
+        renderer.sortingOrder = 8;
+        renderer.sprite = LoadStreamingSprite("assets/props/interact/gate.png", new Vector2(0.5f, 0.5f));
+        if (renderer.sprite == null)
+            renderer.sprite = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 4f);
+        var size = renderer.sprite.bounds.size;
+        visual.transform.localScale = new Vector3(door.width / size.x, door.height / size.y, 1f);
+        renderer.color = new Color(0.35f, 0.9f, 1f, 0.8f);
+    }
+
+    private void RefreshBossArena(GameplayRoom room)
+    {
+        if (RoomParent == null) return;
+        var blocked = HasBoss(room) && !BossDefeated(room);
+        foreach (var seal in RoomParent.GetComponentsInChildren<BossArenaLock>(true))
+            seal.gameObject.SetActive(blocked);
+        var victory = RoomParent.Find("Victory");
+        if (victory != null)
+        {
+            victory.GetComponent<BoxCollider2D>().enabled = !blocked;
+            victory.GetComponent<SpriteRenderer>().enabled = !blocked;
+        }
+    }
+
     private void CreateVictory(GameplayRoom room)
     {
         var go = new GameObject("Victory");
@@ -919,7 +996,19 @@ public class GameBootstrap : MonoBehaviour
         box.size = new Vector2(48f, 48f);
         var sr = go.AddComponent<SpriteRenderer>();
         sr.sortingOrder = 7;
-        var sprite = LoadStreamingSprite("assets/props/interact/pickup.png", new Vector2(0.5f, 0.5f));
+        GameplaySpriteClip presentation = null;
+        foreach (var clip in Pack.sprites ?? System.Array.Empty<GameplaySpriteClip>())
+            if (clip != null && clip.ownerId == "victory" && clip.clip == "idle") { presentation = clip; break; }
+        var sprite = presentation == null
+            ? LoadStreamingSprite("assets/props/interact/pickup.png", new Vector2(0.5f, 0.5f))
+            : StreamingArtCache.GetSprite(_streamingRoot, presentation.relativePath,
+                new Vector2(presentation.pivotX, presentation.pivotY), presentation.pixelsPerUnit,
+                presentation.smoothFiltering ? FilterMode.Bilinear : FilterMode.Point);
+        if (presentation != null && sprite != null)
+        {
+            go.transform.position = Coord.FromGodot(room.width * 0.5f, room.floorTop, room.height);
+            box.offset = new Vector2(0f, 24f);
+        }
         if (sprite != null)
             sr.sprite = sprite;
         else
@@ -970,12 +1059,28 @@ public class GameBootstrap : MonoBehaviour
         sheet.LoadClips(Pack.sprites, spec.id, _streamingRoot);
         var enemy = go.AddComponent<EnemyActor>();
         enemy.EnemyId = spec.id;
-        enemy.OnDefeated = defeated => _loot?.Spawn(defeated, WriteSave);
+        enemy.OnDefeated = defeated =>
+        {
+            if (spec.isBoss)
+            {
+                if (_defeatedBosses.Add(spec.id)) BossDefeatCount++;
+                RefreshBossArena(room);
+                WriteSave();
+            }
+            else _loot?.Spawn(defeated, WriteSave);
+        };
         enemy.ConfigureMovement(spec.movement);
         enemy.Health = spec.health > 0 ? spec.health : 30f;
         enemy.Damage = spec.damage > 0 ? spec.damage : 8f;
         enemy.ConfigureAttack(spec.attackWindupSeconds, spec.attackRecoverySeconds, spec.attackCooldownSeconds);
         enemy.Bind(_player);
+        if (spec.isBoss)
+        {
+            Boss = go.AddComponent<BossController>();
+            Boss.Configure(enemy, spec, _player, room.width);
+            Boss.OnPhaseChanged = _ => BossPhaseChangeCount++;
+            Boss.OnAttackExecuted = () => BossAttackCount++;
+        }
         sheet.Play("idle");
         LastCreateEnemyMs = (Time.realtimeSinceStartup - t0) * 1000f;
         MainThreadProbe.EnemySpawnMarker.End();
@@ -986,21 +1091,51 @@ public class GameBootstrap : MonoBehaviour
     {
         MainThreadProbe.RespawnMarker.Begin();
         var t0 = Time.realtimeSinceStartup;
-        if (_room == null || !HasActor(_room.enemy))
+        if (_room == null || !HasActor(_room.enemy) || BossDefeated(_room))
         {
             MainThreadProbe.RespawnMarker.End();
             return;
         }
         var existing = FindFirstObjectByType<EnemyActor>();
         if (existing != null)
-            DestroyImmediate(existing.gameObject);
+            RetireRuntimeActor(existing.gameObject);
         CreateEnemy(_room);
+        RefreshBossArena(_room);
         MainThreadProbe.RespawnMarker.End();
         MainThreadProbe.Record("enemy_respawn", (Time.realtimeSinceStartup - t0) * 1000f, 0, CurrentRoomId);
     }
 
+    private void RetireRuntimeActor(GameObject actor)
+    {
+        // Death can arrive from a physics contact. Immediately disable and detach
+        // the old actor so queries see only its replacement; defer its destruction.
+        actor.SetActive(false);
+        actor.transform.SetParent(null, false);
+        Destroy(actor);
+    }
+
     private void BuildBackgrounds(GameplayRoom room)
     {
+        if (!string.IsNullOrEmpty(room.backgrounds.interior))
+        {
+            var plate = StreamingArtCache.GetSprite(_streamingRoot, room.backgrounds.interior,
+                new Vector2(0.5f, 0.5f), 1f, FilterMode.Bilinear);
+            if (plate != null)
+            {
+                var go = new GameObject("CastleInterior");
+                go.transform.SetParent(RoomParent, false);
+                go.transform.position = new Vector3(room.width * 0.5f, room.height * 0.5f, 0f);
+                var cover = Mathf.Max(room.width / plate.rect.width, room.height / plate.rect.height);
+                go.transform.localScale = new Vector3(cover, cover, 1f);
+                var renderer = go.AddComponent<SpriteRenderer>();
+                renderer.sprite = plate;
+                renderer.sortingOrder = -80;
+                var tint = room.backgrounds.interiorTint;
+                renderer.color = tint != null && tint.Length == 4
+                    ? new Color(tint[0], tint[1], tint[2], tint[3]) : Color.white;
+                return;
+            }
+        }
         CreateBg(room.backgrounds.far, room, -80, "far");
         CreateBg(room.backgrounds.mid, room, -40, "mid");
         CreateBg(room.backgrounds.near, room, -20, "near");
@@ -1298,6 +1433,7 @@ public class GameBootstrap : MonoBehaviour
             y = _player.transform.position.y,
             abilities = string.Join(",", _player.Abilities),
             victory = Victory,
+            defeatedBosses = CaptureBossProgress(),
             inventory = _player.Inventory.Capture(),
         };
         File.WriteAllText(_savePath, JsonUtility.ToJson(blob));
@@ -1315,6 +1451,7 @@ public class GameBootstrap : MonoBehaviour
         public float y;
         public string abilities;
         public bool victory;
+        public string[] defeatedBosses;
         public InventorySave inventory;
     }
 }

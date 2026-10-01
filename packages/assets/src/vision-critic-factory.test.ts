@@ -14,10 +14,12 @@ function jsonResponse(body: unknown, status = 200) {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
 });
 
 describe('createVisionCritic', () => {
   it('falls back to deterministic critique when no backends configured', async () => {
+    vi.stubEnv('NVIDIA_API_KEY', '');
     const critic = createVisionCritic({});
     expect(await critic.isAvailable()).toBe(false);
     const png = generateProceduralSprite({

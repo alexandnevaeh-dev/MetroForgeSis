@@ -1,0 +1,85 @@
+{
+  "quests": [
+    {
+      "id": "story_return_seed",
+      "name": "The First Seed",
+      "description": "Release the Hollow Crown from the oath that has outlived its people.",
+      "prerequisites": [],
+      "objectives": [
+        {
+          "id": "release",
+          "type": "BossKill",
+          "target": "boss_final",
+          "count": 1,
+          "description": "Face the Hollow Crown"
+        }
+      ],
+      "rewards": []
+    },
+    {
+      "id": "story_living_words",
+      "name": "Three Living Words",
+      "description": "Iri believes the old workings can protect the living again.",
+      "prerequisites": [],
+      "objectives": [
+        {
+          "id": "seedflare",
+          "type": "Collect",
+          "target": "seedflare",
+          "count": 1,
+          "description": "Learn Seedflare"
+        },
+        {
+          "id": "rootward",
+          "type": "Collect",
+          "target": "rootward",
+          "count": 1,
+          "description": "Learn Rootward"
+        },
+        {
+          "id": "bloomstep",
+          "type": "Collect",
+          "target": "bloomstep",
+          "count": 1,
+          "description": "Learn Bloomstep"
+        }
+      ],
+      "rewards": [
+        {
+          "type": "currency",
+          "id": "scrap",
+          "amount": 50
+        }
+      ]
+    },
+    {
+      "id": "story_oath_memory",
+      "name": "The Oath We Broke",
+      "description": "Recover the testimonies of the bellwrights and the crownkeeper.",
+      "prerequisites": [],
+      "objectives": [
+        {
+          "id": "bell",
+          "type": "Collect",
+          "target": "memory_bell",
+          "count": 1,
+          "description": "Recover the bell testimony"
+        },
+        {
+          "id": "crown",
+          "type": "Collect",
+          "target": "memory_crown",
+          "count": 1,
+          "description": "Recover the crown testimony"
+        }
+      ],
+      "rewards": [
+        {
+          "type": "currency",
+          "id": "scrap",
+          "amount": 30
+        }
+      ]
+    }
+  ]
+}

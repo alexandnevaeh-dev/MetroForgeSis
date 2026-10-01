@@ -102,7 +102,7 @@ DefaultImporter:
       );
 
       // Runtime catalogs must ship in players, not only beside the editor project.
-      for (const relative of ['items/items.json', 'loot/loot_tables.json', 'enemies/enemies.json']) {
+      for (const relative of ['items/items.json', 'loot/loot_tables.json', 'enemies/enemies.json', 'npcs/npcs.json', 'dialogues/dialogues.json', 'quests/quests.json', 'shops/shops.json']) {
         const source = join(input.outputDir, 'data', relative);
         if (!existsSync(source)) continue;
         const target = join(input.outputDir, 'Assets', 'StreamingAssets', 'data', relative);
@@ -133,7 +133,7 @@ DefaultImporter:
         }
       }
 
-      const sharedArt = ['assets/characters', 'assets/enemies', 'assets/backgrounds', 'assets/tilesets', 'assets/bosses', 'assets/props', 'assets/vfx', 'assets/ui'];
+      const sharedArt = ['assets/characters', 'assets/enemies', 'assets/npcs', 'assets/backgrounds', 'assets/tilesets', 'assets/bosses', 'assets/props', 'assets/vfx', 'assets/ui'];
       for (const folder of sharedArt) {
         const src = join(input.outputDir, folder);
         if (!existsSync(src)) continue;
@@ -161,9 +161,10 @@ DefaultImporter:
 
       const v2Pack = join(REPO_ROOT, 'test-packs', 'conduit-foundry-heat-v2');
       const v1Pack = join(REPO_ROOT, 'test-packs', 'conduit-foundry-heat');
-      const heatPack = existsSync(join(v2Pack, 'manifest.json')) ? v2Pack : v1Pack;
+      const heatPack = input.externalVisualPack === 'conduit-foundry-heat-v2' ? v2Pack : v1Pack;
       const heatCompiled = join(heatPack, 'compiled');
-      if (existsSync(join(heatPack, 'manifest.json')) && existsSync(heatCompiled)) {
+      const heatSelected = input.externalVisualPack === 'conduit-foundry-heat' || input.externalVisualPack === 'conduit-foundry-heat-v2';
+      if (heatSelected && existsSync(join(heatPack, 'manifest.json')) && existsSync(heatCompiled)) {
         const walkOverlay = (dir: string, prefix: string) => {
           for (const entry of readdirSync(dir, { withFileTypes: true })) {
             const next = join(dir, entry.name);

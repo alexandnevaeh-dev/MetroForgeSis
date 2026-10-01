@@ -17,6 +17,10 @@
     "./constants": {
       "types": "./dist/constants.d.ts",
       "import": "./dist/constants.js"
+    },
+    "./archetypes": {
+      "types": "./dist/archetypes.d.ts",
+      "import": "./dist/archetypes.js"
     }
   },
   "scripts": {

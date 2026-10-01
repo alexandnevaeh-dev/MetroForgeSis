@@ -1,0 +1,81 @@
+{
+  "version": "0.1.0",
+  "identity": {
+    "title": "Stormglass Reliquary - Side-view Test",
+    "tagline": "Restore the weather seals of a drowned cliff monastery",
+    "genre": "Metroidvania",
+    "subgenre": "Action-Adventure",
+    "tone": "melancholic heroic",
+    "visualStyle": "modern HD pixel art"
+  },
+  "technical": {
+    "resolution": {
+      "width": 1920,
+      "height": 1080
+    },
+    "tileSize": 32,
+    "targetPlaytimeHours": 0.5,
+    "difficulty": "normal"
+  },
+  "combat": {
+    "style": "fast melee",
+    "meleeEnabled": true,
+    "rangedEnabled": false
+  },
+  "movement": {
+    "walkSpeed": 220,
+    "runSpeed": 380,
+    "jumpHeight": 160,
+    "gravity": 980
+  },
+  "abilities": [
+    {
+      "id": "dash",
+      "name": "Dash",
+      "category": "movement",
+      "enabled": true
+    },
+    {
+      "id": "double_jump",
+      "name": "Double Jump",
+      "category": "movement",
+      "enabled": true
+    },
+    {
+      "id": "wall_slide",
+      "name": "Wall Slide",
+      "category": "movement",
+      "enabled": true
+    },
+    {
+      "id": "wall_jump",
+      "name": "Wall Jump",
+      "category": "movement",
+      "enabled": true
+    },
+    {
+      "id": "air_dash",
+      "name": "Air Dash",
+      "category": "movement",
+      "enabled": true
+    },
+    {
+      "id": "ground_slam",
+      "name": "Ground Slam",
+      "category": "movement",
+      "enabled": true
+    }
+  ],
+  "world": {
+    "biomeCount": 1,
+    "roomCount": 40
+  },
+  "narrative": {
+    "premise": "A masked Veilblade crosses rain-soaked cloisters, prism aqueducts, and the starless belfry to restore ancient weather seals. Indigo masonry, teal rain light, amber cloth, and fractured stained glass define every room.",
+    "protagonist": "The Veilblade",
+    "centralConflict": "Restore the weather seals before the reliquary is swallowed by the permanent storm"
+  },
+  "seed": 20260930,
+  "profile": "MEDIUM",
+  "archetype": "SIDE_VIEW_METROIDVANIA"
+}

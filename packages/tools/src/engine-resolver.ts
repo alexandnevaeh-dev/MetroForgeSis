@@ -1,4 +1,4 @@
-import { accessSync, constants, existsSync, readdirSync, readFileSync } from 'node:fs';
+import { accessSync, constants, existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -21,6 +21,16 @@ function unityBinaryFromEditorDir(editorDir: string, platform: NodeJS.Platform):
   }
   const linux = join(editorDir, 'Editor', 'Unity');
   return existsSync(linux) ? linux : null;
+}
+
+function registeredUnityBinary(location: string, platform: NodeJS.Platform): string | null {
+  const candidates = [location, platform === 'win32' ? join(location, 'Unity.exe') : join(location, 'Unity')];
+  if (platform === 'darwin') candidates.push(join(location, 'Contents', 'MacOS', 'Unity'));
+  const editorBinary = unityBinaryFromEditorDir(location, platform);
+  if (editorBinary) candidates.push(editorBinary);
+  return candidates.find((path) => {
+    try { return statSync(path).isFile(); } catch { return false; }
+  }) ?? null;
 }
 
 function probeUnityVersion(executable: string): string | null {
@@ -50,6 +60,7 @@ export function resolveUnityEditor(options: {
   envPath?: string | null;
   platform?: NodeJS.Platform;
   homeDir?: string;
+  hubConfigPath?: string;
 } = {}): UnityResolveResult {
   const platform = options.platform ?? process.platform;
   const home = options.homeDir ?? homedir();
@@ -66,6 +77,35 @@ export function resolveUnityEditor(options: {
       source: 'env',
       message: env,
     };
+  }
+
+  // Hub records manually installed editors as full executable paths, including
+  // custom drives. Directory scanning alone misses those installations.
+  const hubConfigPath = options.hubConfigPath ?? (platform === 'win32'
+    ? join(process.env.APPDATA ?? join(home, 'AppData', 'Roaming'), 'UnityHub', 'editors-v2.json')
+    : platform === 'darwin'
+      ? join(home, 'Library', 'Application Support', 'UnityHub', 'editors-v2.json')
+      : join(home, '.config', 'UnityHub', 'editors-v2.json'));
+  try {
+    const config = JSON.parse(readFileSync(hubConfigPath, 'utf-8')) as {
+      data?: Array<{ version?: string; location?: string[] }>;
+    };
+    const registered = (Array.isArray(config.data) ? config.data : [])
+      .flatMap((entry) => entry && Array.isArray(entry.location)
+        ? entry.location.filter((path) => typeof path === 'string')
+          .map((location) => ({ path: registeredUnityBinary(location, platform), version: typeof entry.version === 'string' ? entry.version : null }))
+        : [])
+      .filter((editor): editor is { path: string; version: string | null } => editor.path !== null)
+      .sort((a, b) => {
+        const preferred = Number(/^6000\.3\./.test(b.version ?? '')) - Number(/^6000\.3\./.test(a.version ?? ''));
+        return preferred || (b.version ?? '').localeCompare(a.version ?? '', undefined, { numeric: true });
+      });
+    if (registered[0]) {
+      const editor = registered[0];
+      return { path: editor.path, version: editor.version ?? probeUnityVersion(editor.path), source: 'hub', message: editor.path };
+    }
+  } catch {
+    // Missing, stale, or malformed Hub data must not prevent normal discovery.
   }
 
   const hubRoots = [

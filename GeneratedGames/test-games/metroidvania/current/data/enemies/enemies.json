@@ -1,0 +1,364 @@
+{
+  "enemies": [
+    {
+      "id": "enemy_000",
+      "name": "Choir Husk",
+      "biomeId": "biome_0",
+      "health": 47,
+      "damage": 14,
+      "speed": 93,
+      "movement": "patrol",
+      "perception": {
+        "radius": 137,
+        "lineOfSight": true
+      },
+      "combat": {
+        "type": "melee",
+        "cooldown": 1.5
+      },
+      "lootTableId": "loot_enemy_000"
+    },
+    {
+      "id": "enemy_001",
+      "name": "Drowned Cantor",
+      "biomeId": "biome_0",
+      "health": 47,
+      "damage": 6,
+      "speed": 72,
+      "movement": "hop",
+      "perception": {
+        "radius": 185,
+        "lineOfSight": true
+      },
+      "combat": {
+        "type": "projectile",
+        "cooldown": 1.5
+      },
+      "lootTableId": "loot_enemy_001"
+    },
+    {
+      "id": "enemy_002",
+      "name": "Archive Chorister",
+      "biomeId": "biome_0",
+      "health": 44,
+      "damage": 15,
+      "speed": 70,
+      "movement": "crawl",
+      "perception": {
+        "radius": 132,
+        "lineOfSight": true
+      },
+      "combat": {
+        "type": "burst",
+        "cooldown": 1.5
+      },
+      "lootTableId": "loot_enemy_002"
+    },
+    {
+      "id": "enemy_003",
+      "name": "Rime Cantor",
+      "biomeId": "biome_0",
+      "health": 43,
+      "damage": 10,
+      "speed": 70,
+      "movement": "fly",
+      "perception": {
+        "radius": 155,
+        "lineOfSight": true
+      },
+      "combat": {
+        "type": "beam",
+        "cooldown": 2
+      },
+      "lootTableId": "loot_enemy_003"
+    },
+    {
+      "id": "enemy_004",
+      "name": "Lancet Knight",
+      "biomeId": "biome_0",
+      "health": 47,
+      "damage": 10,
+      "speed": 79,
+      "movement": "hover",
+      "perception": {
+        "radius": 148,
+        "lineOfSight": true
+      },
+      "combat": {
+        "type": "area",
+        "cooldown": 1.5
+      },
+      "lootTableId": "loot_enemy_004"
+    },
+    {
+      "id": "enemy_005",
+      "name": "Brine Lancer",
+      "biomeId": "biome_0",
+      "health": 39,
+      "damage": 10,
+      "speed": 76,
+      "movement": "charge",
+      "perception": {
+        "radius": 130,
+        "lineOfSight": true
+      },
+      "combat": {
+        "type": "summon",
+        "cooldown": 3.5
+      },
+      "lootTableId": "loot_enemy_005"
+    },
+    {
+      "id": "enemy_006",
+      "name": "Reliquary Halberdier",
+      "biomeId": "biome_0",
+      "health": 32,
+      "damage": 14,
+      "speed": 74,
+      "movement": "stationary",
+      "perception": {
+        "radius": 199,
+        "lineOfSight": true
+      },
+      "combat": {
+        "type": "trap",
+        "cooldown": 2.2
+      },
+      "lootTableId": "loot_enemy_006"
+    },
+    {
+      "id": "enemy_007",
+      "name": "Frostbound Knight",
+      "biomeId": "biome_0",
+      "health": 43,
+      "damage": 8,
+      "speed": 99,
+      "movement": "teleport",
+      "perception": {
+        "radius": 165,
+        "lineOfSight": true
+      },
+      "combat": {
+        "type": "burst",
+        "cooldown": 1.5
+      },
+      "lootTableId": "loot_enemy_007"
+    },
+    {
+      "id": "enemy_008",
+      "name": "Censer Bat",
+      "biomeId": "biome_0",
+      "health": 36,
+      "damage": 9,
+      "speed": 69,
+      "movement": "burrow",
+      "perception": {
+        "radius": 181,
+        "lineOfSight": true
+      },
+      "combat": {
+        "type": "beam",
+        "cooldown": 2
+      },
+      "lootTableId": "loot_enemy_008"
+    },
+    {
+      "id": "enemy_009",
+      "name": "Tidewing",
+      "biomeId": "biome_0",
+      "health": 47,
+      "damage": 6,
+      "speed": 78,
+      "movement": "fly",
+      "perception": {
+        "radius": 121,
+        "lineOfSight": true
+      },
+      "combat": {
+        "type": "area",
+        "cooldown": 1.5
+      },
+      "lootTableId": "loot_enemy_009"
+    },
+    {
+      "id": "enemy_010",
+      "name": "Glyphwing",
+      "biomeId": "biome_0",
+      "health": 46,
+      "damage": 8,
+      "speed": 62,
+      "movement": "hover",
+      "perception": {
+        "radius": 192,
+        "lineOfSight": true
+      },
+      "combat": {
+        "type": "summon",
+        "cooldown": 3.5
+      },
+      "lootTableId": "loot_enemy_010"
+    },
+    {
+      "id": "enemy_011",
+      "name": "Storm Bellwing",
+      "biomeId": "biome_0",
+      "health": 27,
+      "damage": 8,
+      "speed": 78,
+      "movement": "stationary",
+      "perception": {
+        "radius": 196,
+        "lineOfSight": true
+      },
+      "combat": {
+        "type": "trap",
+        "cooldown": 2.2
+      },
+      "lootTableId": "loot_enemy_011"
+    },
+    {
+      "id": "enemy_012",
+      "name": "Glassbound Acolyte",
+      "biomeId": "biome_0",
+      "health": 32,
+      "damage": 8,
+      "speed": 61,
+      "movement": "charge",
+      "perception": {
+        "radius": 159,
+        "lineOfSight": true
+      },
+      "combat": {
+        "type": "burst",
+        "cooldown": 1.5
+      },
+      "lootTableId": "loot_enemy_012"
+    },
+    {
+      "id": "enemy_013",
+      "name": "Tidebound Penitent",
+      "biomeId": "biome_0",
+      "health": 29,
+      "damage": 11,
+      "speed": 67,
+      "movement": "teleport",
+      "perception": {
+        "radius": 124,
+        "lineOfSight": true
+      },
+      "combat": {
+        "type": "beam",
+        "cooldown": 2
+      },
+      "lootTableId": "loot_enemy_013"
+    },
+    {
+      "id": "enemy_014",
+      "name": "Dustbound Scribe",
+      "biomeId": "biome_0",
+      "health": 29,
+      "damage": 11,
+      "speed": 80,
+      "movement": "burrow",
+      "perception": {
+        "radius": 178,
+        "lineOfSight": true
+      },
+      "combat": {
+        "type": "area",
+        "cooldown": 1.5
+      },
+      "lootTableId": "loot_enemy_014"
+    },
+    {
+      "id": "enemy_015",
+      "name": "Static Acolyte",
+      "biomeId": "biome_0",
+      "health": 48,
+      "damage": 9,
+      "speed": 89,
+      "movement": "fly",
+      "perception": {
+        "radius": 170,
+        "lineOfSight": true
+      },
+      "combat": {
+        "type": "summon",
+        "cooldown": 3.5
+      },
+      "lootTableId": "loot_enemy_015"
+    },
+    {
+      "id": "enemy_016",
+      "name": "Bell Rat",
+      "biomeId": "biome_0",
+      "health": 37,
+      "damage": 6,
+      "speed": 97,
+      "movement": "stationary",
+      "perception": {
+        "radius": 151,
+        "lineOfSight": true
+      },
+      "combat": {
+        "type": "trap",
+        "cooldown": 2.2
+      },
+      "lootTableId": "loot_enemy_016"
+    },
+    {
+      "id": "enemy_017",
+      "name": "Silt Crawler",
+      "biomeId": "biome_0",
+      "health": 47,
+      "damage": 11,
+      "speed": 60,
+      "movement": "hover",
+      "perception": {
+        "radius": 170,
+        "lineOfSight": true
+      },
+      "combat": {
+        "type": "burst",
+        "cooldown": 1.5
+      },
+      "lootTableId": "loot_enemy_017"
+    },
+    {
+      "id": "enemy_018",
+      "name": "Relic Gnawer",
+      "biomeId": "biome_0",
+      "health": 41,
+      "damage": 8,
+      "speed": 99,
+      "movement": "charge",
+      "perception": {
+        "radius": 125,
+        "lineOfSight": true
+      },
+      "combat": {
+        "type": "beam",
+        "cooldown": 2
+      },
+      "lootTableId": "loot_enemy_018"
+    },
+    {
+      "id": "enemy_019",
+      "name": "Rime Gearling",
+      "biomeId": "biome_0",
+      "health": 38,
+      "damage": 5,
+      "speed": 76,
+      "movement": "teleport",
+      "perception": {
+        "radius": 136,
+        "lineOfSight": true
+      },
+      "combat": {
+        "type": "area",
+        "cooldown": 1.5
+      },
+      "lootTableId": "loot_enemy_019"
+    }
+  ]
+}

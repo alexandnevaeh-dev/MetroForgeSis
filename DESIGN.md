@@ -14,3 +14,16 @@ The first top-down prop inspector has typecheck evidence only. Native UI interac
 
 ## Room workspace sizing
 RoomEditor uses its available content width as a container. At 720px and above hierarchy, canvas and inspector stay alongside one another; saved resizable pane widths resume at 1050px. Fixed-column layouts hide inactive resize separators. Actual Electron window sizes 1000, 1200 and 1500 verified without workspace horizontal overflow. Smaller layouts and broader workflow accessibility checks remain outstanding.
+
+## Native top-down adventure HUD
+This is a separate generated-game surface; studio tokens and the side-view set keep their existing identity. `templates/godot-topdown-adventure/scripts/UI/AdventureHUDTheme.gd` is the canonical native runtime theme. GameHUD, its readonly panels, quest text and the current-room map marker consume it directly. Runtime ownership is model B: this document records roles; the GDScript constants own values.
+
+Ink #142630, moss panel #192e35 at 95% opacity, edge #428276, primary text #dae2b5, secondary text #a1b0ae, amber trim/location #eeb866, map/tool light #63d8d3, normal vitality #82b987 and low vitality #e07b80. Use the built-in Godot font: 14px body, 13px vitality utility, 14px room label; quest titles 13px and objectives 11px. These are native logical pixels at the 1280x720 game viewport, not CSS pixels.
+
+The signature is a compact moss-backed vitality and field-tool cluster with amber room identity. Survival information leads; the map stays at the opposite corner. Keep the center clear. Show actual health numerically and mark low health with text as well as color. Display inventory/ability names rather than internal IDs. Quest layout grows for its bounded two quests/two objectives. Native screen-reader, smaller-window and broader accessibility coverage remain separate verification work.
+
+## Verdant Oath presentation
+
+The top-down woodland test uses an opt-in 3D diorama with its existing animated pixel sprites. HD-2D style requests enable `data/visual/hd2d.json` through the Godot assembler. HD2DWorldPresenter maps the authoritative 2D tiles, positions, sprite frames, prop anchors and boss aiming lines into the 3D view; gameplay collision stays in the original controller. Nearest filtering preserves sprite edges. Timber houses, textured roof geometry, lights, shadows and restrained fog give the hamlet depth. Forward+ supports glow and ambient occlusion; Compatibility uses the same geometry without those effects.
+
+Maintain the shared woodland palette and bottom-ground anchors. Player casting has twelve authored poses at 24fps in each of eight facings; movement, combat, hit and death keep their complete strips. The renderer must use the current source frame, with no independent animation timer. The sixteen-area Verdant Oath test remains draft artwork; runtime success is not a finished graphics or performance certificate.

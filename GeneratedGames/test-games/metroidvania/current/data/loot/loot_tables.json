@@ -1,0 +1,484 @@
+{
+  "tables": [
+    {
+      "id": "loot_enemy_000",
+      "name": "Gear Mite drops",
+      "entries": [
+        {
+          "itemId": "health_vial",
+          "chance": 0.15,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        },
+        {
+          "itemId": "upgrade_shard",
+          "chance": 0.3,
+          "minQuantity": 1,
+          "maxQuantity": 2
+        },
+        {
+          "itemId": "warden_mail",
+          "chance": 0.03,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        }
+      ]
+    },
+    {
+      "id": "loot_enemy_001",
+      "name": "Void Sentinel drops",
+      "entries": [
+        {
+          "itemId": "health_vial",
+          "chance": 0.15,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        },
+        {
+          "itemId": "upgrade_shard",
+          "chance": 0.3,
+          "minQuantity": 1,
+          "maxQuantity": 2
+        },
+        {
+          "itemId": "warden_mail",
+          "chance": 0.03,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        }
+      ]
+    },
+    {
+      "id": "loot_enemy_002",
+      "name": "Gear Mite drops",
+      "entries": [
+        {
+          "itemId": "health_vial",
+          "chance": 0.15,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        },
+        {
+          "itemId": "upgrade_shard",
+          "chance": 0.3,
+          "minQuantity": 1,
+          "maxQuantity": 2
+        },
+        {
+          "itemId": "warden_mail",
+          "chance": 0.03,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        }
+      ]
+    },
+    {
+      "id": "loot_enemy_003",
+      "name": "Gear Mite drops",
+      "entries": [
+        {
+          "itemId": "health_vial",
+          "chance": 0.15,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        },
+        {
+          "itemId": "upgrade_shard",
+          "chance": 0.3,
+          "minQuantity": 1,
+          "maxQuantity": 2
+        },
+        {
+          "itemId": "warden_mail",
+          "chance": 0.03,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        }
+      ]
+    },
+    {
+      "id": "loot_enemy_004",
+      "name": "Gear Mite drops",
+      "entries": [
+        {
+          "itemId": "health_vial",
+          "chance": 0.15,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        },
+        {
+          "itemId": "upgrade_shard",
+          "chance": 0.3,
+          "minQuantity": 1,
+          "maxQuantity": 2
+        },
+        {
+          "itemId": "warden_mail",
+          "chance": 0.03,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        }
+      ]
+    },
+    {
+      "id": "loot_enemy_005",
+      "name": "Scrap Drone drops",
+      "entries": [
+        {
+          "itemId": "health_vial",
+          "chance": 0.15,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        },
+        {
+          "itemId": "upgrade_shard",
+          "chance": 0.3,
+          "minQuantity": 1,
+          "maxQuantity": 2
+        },
+        {
+          "itemId": "warden_mail",
+          "chance": 0.03,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        }
+      ]
+    },
+    {
+      "id": "loot_enemy_006",
+      "name": "Gear Mite drops",
+      "entries": [
+        {
+          "itemId": "health_vial",
+          "chance": 0.15,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        },
+        {
+          "itemId": "upgrade_shard",
+          "chance": 0.3,
+          "minQuantity": 1,
+          "maxQuantity": 2
+        },
+        {
+          "itemId": "warden_mail",
+          "chance": 0.03,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        }
+      ]
+    },
+    {
+      "id": "loot_enemy_007",
+      "name": "Rust Crawler drops",
+      "entries": [
+        {
+          "itemId": "health_vial",
+          "chance": 0.15,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        },
+        {
+          "itemId": "upgrade_shard",
+          "chance": 0.3,
+          "minQuantity": 1,
+          "maxQuantity": 2
+        },
+        {
+          "itemId": "warden_mail",
+          "chance": 0.03,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        }
+      ]
+    },
+    {
+      "id": "loot_enemy_008",
+      "name": "Arc Wisp drops",
+      "entries": [
+        {
+          "itemId": "health_vial",
+          "chance": 0.15,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        },
+        {
+          "itemId": "upgrade_shard",
+          "chance": 0.3,
+          "minQuantity": 1,
+          "maxQuantity": 2
+        },
+        {
+          "itemId": "warden_mail",
+          "chance": 0.03,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        }
+      ]
+    },
+    {
+      "id": "loot_enemy_009",
+      "name": "Void Sentinel drops",
+      "entries": [
+        {
+          "itemId": "health_vial",
+          "chance": 0.15,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        },
+        {
+          "itemId": "upgrade_shard",
+          "chance": 0.3,
+          "minQuantity": 1,
+          "maxQuantity": 2
+        },
+        {
+          "itemId": "warden_mail",
+          "chance": 0.03,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        }
+      ]
+    },
+    {
+      "id": "loot_enemy_010",
+      "name": "Rust Crawler drops",
+      "entries": [
+        {
+          "itemId": "health_vial",
+          "chance": 0.15,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        },
+        {
+          "itemId": "upgrade_shard",
+          "chance": 0.3,
+          "minQuantity": 1,
+          "maxQuantity": 2
+        },
+        {
+          "itemId": "warden_mail",
+          "chance": 0.03,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        }
+      ]
+    },
+    {
+      "id": "loot_enemy_011",
+      "name": "Gear Mite drops",
+      "entries": [
+        {
+          "itemId": "health_vial",
+          "chance": 0.15,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        },
+        {
+          "itemId": "upgrade_shard",
+          "chance": 0.3,
+          "minQuantity": 1,
+          "maxQuantity": 2
+        },
+        {
+          "itemId": "warden_mail",
+          "chance": 0.03,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        }
+      ]
+    },
+    {
+      "id": "loot_enemy_012",
+      "name": "Void Sentinel drops",
+      "entries": [
+        {
+          "itemId": "health_vial",
+          "chance": 0.15,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        },
+        {
+          "itemId": "upgrade_shard",
+          "chance": 0.3,
+          "minQuantity": 1,
+          "maxQuantity": 2
+        },
+        {
+          "itemId": "warden_mail",
+          "chance": 0.03,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        }
+      ]
+    },
+    {
+      "id": "loot_enemy_013",
+      "name": "Gear Mite drops",
+      "entries": [
+        {
+          "itemId": "health_vial",
+          "chance": 0.15,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        },
+        {
+          "itemId": "upgrade_shard",
+          "chance": 0.3,
+          "minQuantity": 1,
+          "maxQuantity": 2
+        },
+        {
+          "itemId": "warden_mail",
+          "chance": 0.03,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        }
+      ]
+    },
+    {
+      "id": "loot_enemy_014",
+      "name": "Void Sentinel drops",
+      "entries": [
+        {
+          "itemId": "health_vial",
+          "chance": 0.15,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        },
+        {
+          "itemId": "upgrade_shard",
+          "chance": 0.3,
+          "minQuantity": 1,
+          "maxQuantity": 2
+        },
+        {
+          "itemId": "warden_mail",
+          "chance": 0.03,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        }
+      ]
+    },
+    {
+      "id": "loot_enemy_015",
+      "name": "Arc Wisp drops",
+      "entries": [
+        {
+          "itemId": "health_vial",
+          "chance": 0.15,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        },
+        {
+          "itemId": "upgrade_shard",
+          "chance": 0.3,
+          "minQuantity": 1,
+          "maxQuantity": 2
+        },
+        {
+          "itemId": "warden_mail",
+          "chance": 0.03,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        }
+      ]
+    },
+    {
+      "id": "loot_enemy_016",
+      "name": "Arc Wisp drops",
+      "entries": [
+        {
+          "itemId": "health_vial",
+          "chance": 0.15,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        },
+        {
+          "itemId": "upgrade_shard",
+          "chance": 0.3,
+          "minQuantity": 1,
+          "maxQuantity": 2
+        },
+        {
+          "itemId": "warden_mail",
+          "chance": 0.03,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        }
+      ]
+    },
+    {
+      "id": "loot_enemy_017",
+      "name": "Arc Wisp drops",
+      "entries": [
+        {
+          "itemId": "health_vial",
+          "chance": 0.15,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        },
+        {
+          "itemId": "upgrade_shard",
+          "chance": 0.3,
+          "minQuantity": 1,
+          "maxQuantity": 2
+        },
+        {
+          "itemId": "warden_mail",
+          "chance": 0.03,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        }
+      ]
+    },
+    {
+      "id": "loot_enemy_018",
+      "name": "Rust Crawler drops",
+      "entries": [
+        {
+          "itemId": "health_vial",
+          "chance": 0.15,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        },
+        {
+          "itemId": "upgrade_shard",
+          "chance": 0.3,
+          "minQuantity": 1,
+          "maxQuantity": 2
+        },
+        {
+          "itemId": "warden_mail",
+          "chance": 0.03,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        }
+      ]
+    },
+    {
+      "id": "loot_enemy_019",
+      "name": "Gear Mite drops",
+      "entries": [
+        {
+          "itemId": "health_vial",
+          "chance": 0.15,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        },
+        {
+          "itemId": "upgrade_shard",
+          "chance": 0.3,
+          "minQuantity": 1,
+          "maxQuantity": 2
+        },
+        {
+          "itemId": "warden_mail",
+          "chance": 0.03,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        }
+      ]
+    }
+  ]
+}

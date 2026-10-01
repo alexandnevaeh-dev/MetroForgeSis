@@ -1,0 +1,52 @@
+{
+  "tables": [
+    {
+      "id": "loot_enemy_000",
+      "name": "Gear Mite drops",
+      "entries": [
+        {
+          "itemId": "health_vial",
+          "chance": 0.15,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        },
+        {
+          "itemId": "upgrade_shard",
+          "chance": 0.3,
+          "minQuantity": 1,
+          "maxQuantity": 2
+        },
+        {
+          "itemId": "warden_mail",
+          "chance": 0.03,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        }
+      ]
+    },
+    {
+      "id": "loot_enemy_001",
+      "name": "Void Sentinel drops",
+      "entries": [
+        {
+          "itemId": "health_vial",
+          "chance": 0.15,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        },
+        {
+          "itemId": "upgrade_shard",
+          "chance": 0.3,
+          "minQuantity": 1,
+          "maxQuantity": 2
+        },
+        {
+          "itemId": "warden_mail",
+          "chance": 0.03,
+          "minQuantity": 1,
+          "maxQuantity": 1
+        }
+      ]
+    }
+  ]
+}

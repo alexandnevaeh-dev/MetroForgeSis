@@ -1,0 +1,252 @@
+{
+  "reachable": true,
+  "startRoomId": "room_000",
+  "victoryRoomId": "room_038",
+  "victoryBossId": "boss_final",
+  "transitions": [
+    {
+      "fromRoomId": "room_000",
+      "toRoomId": "room_001",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_001",
+      "toRoomId": "room_002",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_002",
+      "toRoomId": "room_003",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_003",
+      "toRoomId": "room_004",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_004",
+      "toRoomId": "room_005",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_005",
+      "toRoomId": "room_006",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_006",
+      "toRoomId": "room_008",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_008",
+      "toRoomId": "room_009",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_009",
+      "toRoomId": "room_010",
+      "requirements": [
+        "dash"
+      ]
+    },
+    {
+      "fromRoomId": "room_010",
+      "toRoomId": "room_011",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_011",
+      "toRoomId": "room_012",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_012",
+      "toRoomId": "room_013",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_013",
+      "toRoomId": "room_014",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_014",
+      "toRoomId": "room_015",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_015",
+      "toRoomId": "room_016",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_016",
+      "toRoomId": "room_018",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_018",
+      "toRoomId": "room_019",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_019",
+      "toRoomId": "room_020",
+      "requirements": [
+        "double_jump"
+      ]
+    },
+    {
+      "fromRoomId": "room_020",
+      "toRoomId": "room_021",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_021",
+      "toRoomId": "room_022",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_022",
+      "toRoomId": "room_023",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_023",
+      "toRoomId": "room_024",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_024",
+      "toRoomId": "room_025",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_025",
+      "toRoomId": "room_026",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_026",
+      "toRoomId": "room_028",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_028",
+      "toRoomId": "room_029",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_029",
+      "toRoomId": "room_030",
+      "requirements": [
+        "ground_slam"
+      ]
+    },
+    {
+      "fromRoomId": "room_030",
+      "toRoomId": "room_031",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_031",
+      "toRoomId": "room_032",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_032",
+      "toRoomId": "room_033",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_033",
+      "toRoomId": "room_034",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_034",
+      "toRoomId": "room_035",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_035",
+      "toRoomId": "room_036",
+      "requirements": []
+    },
+    {
+      "fromRoomId": "room_036",
+      "toRoomId": "room_038",
+      "requirements": [
+        "air_dash"
+      ]
+    }
+  ],
+  "visitedRoomOrder": [
+    "room_000",
+    "room_001",
+    "room_002",
+    "room_003",
+    "room_004",
+    "room_005",
+    "room_006",
+    "room_008",
+    "room_009",
+    "room_010",
+    "room_011",
+    "room_012",
+    "room_013",
+    "room_014",
+    "room_015",
+    "room_016",
+    "room_018",
+    "room_019",
+    "room_020",
+    "room_021",
+    "room_022",
+    "room_023",
+    "room_024",
+    "room_025",
+    "room_026",
+    "room_028",
+    "room_029",
+    "room_030",
+    "room_031",
+    "room_032",
+    "room_033",
+    "room_034",
+    "room_035",
+    "room_036",
+    "room_038"
+  ],
+  "persona": {
+    "id": "ability_collector",
+    "displayName": "Ability Collector",
+    "walkTimeoutSec": 12,
+    "bossAttackTimeoutSec": 14,
+    "collectAllPickups": true
+  },
+  "movementFeasibility": {
+    "feasible": false,
+    "issueCount": 1,
+    "issues": [
+      {
+        "edgeId": "stormglass_026",
+        "from": "room_029",
+        "to": "room_030",
+        "transition": "right",
+        "requirements": [
+          "ground_slam"
+        ],
+        "reason": "ground_slam cannot satisfy horizontal gate"
+      }
+    ],
+    "metrics": {
+      "jumpApexPx": 160,
+      "dashReachPx": 75,
+      "airDashReachPx": 67.5,
+      "upTransitionGapPx": 408
+    }
+  }
+}

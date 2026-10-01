@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline';
 import type { ImageGenRequest, ImageGenResult, ImageGenerator } from '../types/image-gen.js';
-import { GenerationCancelledError, throwIfCancelled, getResourceRoot, getRepoRoot } from '@metroforge/shared';
+import { GenerationCancelledError, throwIfCancelled, getResourceRoot, getRepoRoot, resolvePythonExecutable } from '@metroforge/shared';
 import { conditioningPayload } from '../image-conditioning.js';
 export type { ImageGenRequest, ImageGenResult };
 
@@ -18,6 +18,8 @@ export interface DiffusersConfig {
   device?: 'auto' | 'cuda' | 'openvino_gpu' | 'cpu' | 'mps';
   cpuTimeoutMs?: number;
   gpuTimeoutMs?: number;
+  /** Includes cold Python/tokenizer startup; independent of image generation. */
+  promptCheckTimeoutMs?: number;
   warmupTimeoutMs?: number;
   generationTimeoutMs?: number;
 }
@@ -148,6 +150,7 @@ export class DiffusersProvider implements ImageGenerator {
   private device: 'auto' | 'cuda' | 'openvino_gpu' | 'cpu' | 'mps';
   private cpuTimeoutMs: number;
   private gpuTimeoutMs: number;
+  private promptCheckTimeoutMs: number;
   private warmupTimeoutMs: number;
   private generationTimeoutMs: number;
   private openvinoServer?: ReturnType<typeof spawn>;
@@ -157,7 +160,13 @@ export class DiffusersProvider implements ImageGenerator {
 
   constructor(config: DiffusersConfig = {}) {
     this.enabled = config.enabled ?? true;
-    this.pythonPath = config.pythonPath ?? process.env.DIFFUSERS_PYTHON ?? (existsSync(DEFAULT_VENV_PYTHON) ? DEFAULT_VENV_PYTHON : process.platform === 'win32' ? 'python' : 'python3');
+    this.pythonPath = resolvePythonExecutable(config.pythonPath);
+    if (
+      (this.pythonPath === 'python' || this.pythonPath === 'python3') &&
+      existsSync(DEFAULT_VENV_PYTHON)
+    ) {
+      this.pythonPath = DEFAULT_VENV_PYTHON;
+    }
     this.workerPath = config.workerPath ?? join(getResourceRoot(), 'workers', 'diffusers_image_worker.py');
     this.modelId = config.modelId ?? process.env.DIFFUSERS_MODEL_ID ?? 'stabilityai/sdxl-turbo';
     this.baseModelPath = config.baseModelPath ?? process.env.DIFFUSERS_BASE_MODEL_PATH;
@@ -168,6 +177,10 @@ export class DiffusersProvider implements ImageGenerator {
     this.gpuTimeoutMs = config.gpuTimeoutMs ?? Number(process.env.METROFORGE_GPU_DIFFUSION_TIMEOUT_MS ?? 420000);
     this.warmupTimeoutMs = config.warmupTimeoutMs ?? Number(process.env.METROFORGE_OPENVINO_WARMUP_TIMEOUT_MS ?? 600000);
     this.generationTimeoutMs = config.generationTimeoutMs ?? this.gpuTimeoutMs;
+    this.promptCheckTimeoutMs = config.promptCheckTimeoutMs ?? 120_000;
+    if (!Number.isFinite(this.promptCheckTimeoutMs) || this.promptCheckTimeoutMs <= 0) {
+      throw new RangeError('promptCheckTimeoutMs must be a positive finite number');
+    }
   }
 
   async checkHealth(): Promise<boolean> {
@@ -242,7 +255,7 @@ export class DiffusersProvider implements ImageGenerator {
     try {
       const res = await this.runWorker(
         { action: 'check_prompt', model_id: this.modelId, prompt, negative_prompt: negativePrompt },
-        { timeoutMs: 30_000 },
+        { timeoutMs: this.promptCheckTimeoutMs },
       );
       if (!res.ok) return { ok: false, error: res.error ?? 'prompt budget check failed' };
       return { ok: true, modelPath: res.modelPath, tokenizerClass: res.tokenizerClass, positive: res.positive, negative: res.negative, anyOverflow: res.anyOverflow };

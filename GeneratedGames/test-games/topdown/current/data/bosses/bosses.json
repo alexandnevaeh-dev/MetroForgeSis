@@ -1,0 +1,37 @@
+{
+  "bosses": [
+    {
+      "id": "boss_final",
+      "name": "The Hollow Crown",
+      "lore": "A powerful guardian of the Ruined Canopy: Verdant Oath depths.",
+      "arenaRoomId": "dungeon_000_r3",
+      "health": 240,
+      "phases": [
+        {
+          "phase": 1,
+          "healthThreshold": 1,
+          "attacks": [
+            "slam"
+          ],
+          "telegraphDuration": 0.65,
+          "recoveryWindow": 1
+        },
+        {
+          "phase": 2,
+          "healthThreshold": 0.5,
+          "attacks": [
+            "slam",
+            "projectile",
+            "area_burst"
+          ],
+          "telegraphDuration": 0.5,
+          "recoveryWindow": 0.9
+        }
+      ],
+      "weaknesses": [
+        "dash_through"
+      ],
+      "visualPrompt": "rich stylized pixel art, HD-2D inspired diorama, pixel art game sprite, final boss creature, \"Guardian Core\", A powerful guardian of the Ruined Canopy: Verdant Oath depths., for Ruined Canopy: Verdant Oath, mysterious hopeful tone, attacks: slam, projectile, area_burst"
+    }
+  ]
+}

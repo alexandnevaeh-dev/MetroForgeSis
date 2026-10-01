@@ -13,11 +13,58 @@ import {
   pickRoomPickupItem,
   buildRoomConnections,
   resolveFloorPropPlacements,
+  stormglassTargetRoomSize,
+  buildStormglassEncounterPlacements,
 } from '../src/room-assembler.js';
 import { foundryBackdropCoverScale } from '../src/foundry-visual-pack.js';
 import { generateWorldTopology } from '@metroforge/procedural';
 import { generateGameContent } from '@metroforge/procedural';
 import { GameDNASchema } from '@metroforge/schemas';
+
+describe('Stormglass level-design sizing contract', () => {
+  it('uses the approved close-framed dimensions for every production room family', () => {
+    expect(stormglassTargetRoomSize('tutorial', 32)).toEqual({ width: 960, height: 544 });
+    expect(stormglassTargetRoomSize('combat', 32)).toEqual({ width: 1152, height: 640 });
+    expect(stormglassTargetRoomSize('traversal', 32)).toEqual({ width: 640, height: 1280 });
+    expect(stormglassTargetRoomSize('ability_shrine', 32)).toEqual({ width: 896, height: 576 });
+    expect(stormglassTargetRoomSize('save', 32)).toEqual({ width: 768, height: 448 });
+    expect(stormglassTargetRoomSize('secret', 32)).toEqual({ width: 576, height: 320 });
+    expect(stormglassTargetRoomSize('miniboss', 32)).toEqual({ width: 1280, height: 704 });
+    expect(stormglassTargetRoomSize('boss', 32)).toEqual({ width: 1536, height: 768 });
+  });
+});
+
+describe('Stormglass encounter composition contract', () => {
+  it('builds 4-6 safely inset combat enemies across floor and platform tiers', () => {
+    const placements = buildStormglassEncounterPlacements('room_001', 1, {
+      width: 1152,
+      height: 640,
+      tileSize: 32,
+      biomeIndex: 0,
+      worldGraphArchetype: 'combat',
+      platforms: [
+        { x: 320, y: 384, width: 160, height: 32 },
+        { x: 704, y: 288, width: 160, height: 32 },
+      ],
+    }, ['enemy_000', 'enemy_004', 'enemy_008', 'enemy_012', 'enemy_016']);
+    expect(placements).toHaveLength(4);
+    expect(new Set(placements.map((placement) => placement.id)).size).toBe(4);
+    expect(placements.every((placement) => placement.x >= 160 && placement.x <= 992)).toBe(true);
+    expect(placements.some((placement) => placement.y < 576)).toBe(true);
+  });
+
+  it('keeps traversal pressure at 2-3 enemies', () => {
+    const placements = buildStormglassEncounterPlacements('room_005', 5, {
+      width: 640,
+      height: 1280,
+      tileSize: 32,
+      biomeIndex: 0,
+      worldGraphArchetype: 'traversal',
+      platforms: [{ x: 256, y: 896, width: 96, height: 32 }],
+    }, ['enemy_000', 'enemy_004', 'enemy_008', 'enemy_012', 'enemy_016']);
+    expect(placements).toHaveLength(3);
+  });
+});
 
 describe('buildRoomConnections (seventeenth-session regression)', () => {
   // Two connections in the same room sharing a `direction` are placed only ~48px apart along
@@ -249,6 +296,146 @@ const mediumDna = GameDNASchema.parse({
   narrative: { premise: 'Test', protagonist: 'Hero', centralConflict: 'Conflict' },
   seed: 42,
   profile: 'MEDIUM',
+});
+
+describe('Stormglass opening-room geometry contract', () => {
+  const stormglassDna = GameDNASchema.parse({
+    ...mediumDna,
+    identity: { ...mediumDna.identity, title: 'Stormglass Reliquary' },
+    technical: { ...mediumDna.technical, tileSize: 32 },
+  });
+
+  const expectedPlatforms = new Map<string, Array<{ x: number; y: number; width: number; height: number }>>([
+    ['room_000', [{ x: 320, y: 384, width: 160, height: 32 }]],
+    ['room_001', [
+      { x: 256, y: 320, width: 224, height: 32 },
+      { x: 640, y: 256, width: 224, height: 32 },
+      { x: 896, y: 192, width: 160, height: 32 },
+    ]],
+    ['room_002', [
+      { x: 64, y: 832, width: 160, height: 32 },
+      { x: 384, y: 704, width: 160, height: 32 },
+      { x: 96, y: 576, width: 160, height: 32 },
+      { x: 352, y: 448, width: 160, height: 32 },
+      { x: 128, y: 320, width: 160, height: 32 },
+    ]],
+    ['room_003', [
+      { x: 384, y: 320, width: 128, height: 32 },
+    ]],
+    ['room_004', [
+      { x: 192, y: 320, width: 224, height: 32 },
+      { x: 576, y: 256, width: 224, height: 32 },
+      { x: 832, y: 192, width: 160, height: 32 },
+    ]],
+    ['room_005', [
+      { x: 96, y: 1120, width: 160, height: 32 },
+      { x: 352, y: 992, width: 128, height: 32 },
+      { x: 96, y: 864, width: 128, height: 32 },
+      { x: 352, y: 736, width: 128, height: 32 },
+      { x: 96, y: 608, width: 128, height: 32 },
+      { x: 352, y: 480, width: 128, height: 32 },
+      { x: 96, y: 352, width: 128, height: 32 },
+      { x: 352, y: 224, width: 160, height: 32 },
+    ]],
+    ['room_006', [
+      { x: 96, y: 288, width: 160, height: 32 },
+      { x: 304, y: 352, width: 160, height: 32 },
+      { x: 512, y: 288, width: 160, height: 32 },
+    ]],
+    ['room_007', [
+      { x: 96, y: 192, width: 160, height: 32 },
+      { x: 320, y: 128, width: 128, height: 32 },
+    ]],
+    ['room_008', [
+      { x: 160, y: 480, width: 224, height: 32 },
+      { x: 512, y: 352, width: 256, height: 32 },
+      { x: 896, y: 480, width: 224, height: 32 },
+    ]],
+    ['room_009', [
+      { x: 256, y: 384, width: 160, height: 32 },
+      { x: 544, y: 384, width: 160, height: 32 },
+    ]],
+  ]);
+
+  const archetypes = [
+    'tutorial', 'combat', 'traversal', 'ability_shrine', 'combat',
+    'traversal', 'save', 'secret', 'miniboss', 'ability_gate',
+  ];
+
+  it.each([...expectedPlatforms.entries()])('%s preserves its authored platform silhouette and blueprint', (roomId, expected) => {
+    const index = Number(roomId.slice(-3));
+    const roomIds = [...expectedPlatforms.keys()];
+    const ctx = {
+      roomIds,
+      roomConnections: new Map(roomIds.map((id) => [id, []])),
+      worldGraphNodesById: new Map(roomIds.map((id, i) => [
+        id,
+        { id, type: 'room', label: id, metadata: { archetype: archetypes[i] } },
+      ])),
+      npcsByRoom: new Map(),
+      bossesByRoom: new Map(),
+    } as import('../src/room-assembler.js').RoomAssemblyContext;
+
+    const room = buildRoomAssemblyOptions(roomId, index, ctx, stormglassDna, undefined, { value: 0 }, () => false);
+
+    expect(room.tileSize).toBe(32);
+    expect(room.platforms).toEqual(expected);
+    expect(room.blueprint?.plan.platformRegions).toEqual(expected);
+    expect(room.tileCellsAuthored).toBe(true);
+  });
+
+  it('places the mandatory Dash shrine pickup inside grounded player overlap range', () => {
+    const roomIds = [...expectedPlatforms.keys()];
+    const ctx = {
+      roomIds,
+      roomConnections: new Map(roomIds.map((id) => [id, []])),
+      worldGraphNodesById: new Map(roomIds.map((id, i) => [
+        id,
+        {
+          id,
+          type: 'room',
+          label: id,
+          metadata: {
+            archetype: archetypes[i],
+            grantsAbilities: id === 'room_003' ? ['dash'] : [],
+          },
+        },
+      ])),
+      npcsByRoom: new Map(),
+      bossesByRoom: new Map(),
+    } as import('../src/room-assembler.js').RoomAssemblyContext;
+
+    const room = buildRoomAssemblyOptions('room_003', 3, ctx, stormglassDna, undefined, { value: 0 }, () => false);
+    const pickup = room.entityPlacements?.find((entry) => entry.kind === 'ability_pickup');
+
+    expect(pickup).toEqual({
+      kind: 'ability_pickup',
+      id: 'dash',
+      x: room.width / 2,
+      y: room.height - room.tileSize * 2 - 28,
+    });
+  });
+
+  it('keeps the Collapse Shaft floor route open before the Ground Slam shrine', () => {
+    const roomIds = ['room_022'];
+    const ctx = {
+      roomIds,
+      roomConnections: new Map([['room_022', []]]),
+      worldGraphNodesById: new Map([[
+        'room_022',
+        { id: 'room_022', type: 'room', label: 'Collapse Shaft', metadata: { archetype: 'traversal' } },
+      ]]),
+      npcsByRoom: new Map(),
+      bossesByRoom: new Map(),
+    } as import('../src/room-assembler.js').RoomAssemblyContext;
+
+    const room = buildRoomAssemblyOptions('room_022', 22, ctx, stormglassDna, undefined, { value: 0 }, () => false);
+    const scene = generateRoomScene('room_022', 22, room);
+
+    expect(room.pits).toEqual([]);
+    expect(scene).toContain('[node name="Floor" type="StaticBody2D"');
+    expect(scene).not.toContain('[node name="FloorRight" type="StaticBody2D"');
+  });
 });
 
 describe('room archetype fidelity', () => {

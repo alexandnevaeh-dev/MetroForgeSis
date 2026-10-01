@@ -1,0 +1,335 @@
+{
+  "tileSize": 32,
+  "roles": [
+    {
+      "role": "ground",
+      "col": 0,
+      "row": 0
+    },
+    {
+      "role": "wall",
+      "col": 1,
+      "row": 0
+    },
+    {
+      "role": "platform",
+      "col": 2,
+      "row": 0
+    },
+    {
+      "role": "path",
+      "col": 3,
+      "row": 0
+    },
+    {
+      "role": "hazard",
+      "col": 4,
+      "row": 0
+    },
+    {
+      "role": "ground_dirty",
+      "col": 5,
+      "row": 0
+    },
+    {
+      "role": "path_edge_0",
+      "col": 0,
+      "row": 1
+    },
+    {
+      "role": "path_edge_1",
+      "col": 1,
+      "row": 1
+    },
+    {
+      "role": "path_edge_2",
+      "col": 2,
+      "row": 1
+    },
+    {
+      "role": "path_edge_3",
+      "col": 3,
+      "row": 1
+    },
+    {
+      "role": "path_edge_4",
+      "col": 4,
+      "row": 1
+    },
+    {
+      "role": "path_edge_5",
+      "col": 5,
+      "row": 1
+    },
+    {
+      "role": "path_edge_6",
+      "col": 6,
+      "row": 1
+    },
+    {
+      "role": "path_edge_7",
+      "col": 7,
+      "row": 1
+    },
+    {
+      "role": "path_edge_8",
+      "col": 0,
+      "row": 2
+    },
+    {
+      "role": "path_edge_9",
+      "col": 1,
+      "row": 2
+    },
+    {
+      "role": "path_edge_10",
+      "col": 2,
+      "row": 2
+    },
+    {
+      "role": "path_edge_11",
+      "col": 3,
+      "row": 2
+    },
+    {
+      "role": "path_edge_12",
+      "col": 4,
+      "row": 2
+    },
+    {
+      "role": "path_edge_13",
+      "col": 5,
+      "row": 2
+    },
+    {
+      "role": "path_edge_14",
+      "col": 6,
+      "row": 2
+    },
+    {
+      "role": "path_edge_15",
+      "col": 7,
+      "row": 2
+    },
+    {
+      "role": "platform_edge_0",
+      "col": 0,
+      "row": 3
+    },
+    {
+      "role": "platform_edge_1",
+      "col": 1,
+      "row": 3
+    },
+    {
+      "role": "platform_edge_2",
+      "col": 2,
+      "row": 3
+    },
+    {
+      "role": "platform_edge_3",
+      "col": 3,
+      "row": 3
+    },
+    {
+      "role": "platform_edge_4",
+      "col": 4,
+      "row": 3
+    },
+    {
+      "role": "platform_edge_5",
+      "col": 5,
+      "row": 3
+    },
+    {
+      "role": "platform_edge_6",
+      "col": 6,
+      "row": 3
+    },
+    {
+      "role": "platform_edge_7",
+      "col": 7,
+      "row": 3
+    },
+    {
+      "role": "platform_edge_8",
+      "col": 0,
+      "row": 4
+    },
+    {
+      "role": "platform_edge_9",
+      "col": 1,
+      "row": 4
+    },
+    {
+      "role": "platform_edge_10",
+      "col": 2,
+      "row": 4
+    },
+    {
+      "role": "platform_edge_11",
+      "col": 3,
+      "row": 4
+    },
+    {
+      "role": "platform_edge_12",
+      "col": 4,
+      "row": 4
+    },
+    {
+      "role": "platform_edge_13",
+      "col": 5,
+      "row": 4
+    },
+    {
+      "role": "platform_edge_14",
+      "col": 6,
+      "row": 4
+    },
+    {
+      "role": "platform_edge_15",
+      "col": 7,
+      "row": 4
+    },
+    {
+      "role": "ground_variant_0",
+      "col": 0,
+      "row": 5
+    },
+    {
+      "role": "ground_variant_1",
+      "col": 1,
+      "row": 5
+    },
+    {
+      "role": "ground_variant_2",
+      "col": 2,
+      "row": 5
+    },
+    {
+      "role": "ground_variant_3",
+      "col": 3,
+      "row": 5
+    },
+    {
+      "role": "water_edge_0",
+      "col": 0,
+      "row": 6
+    },
+    {
+      "role": "water_edge_1",
+      "col": 1,
+      "row": 6
+    },
+    {
+      "role": "water_edge_2",
+      "col": 2,
+      "row": 6
+    },
+    {
+      "role": "water_edge_3",
+      "col": 3,
+      "row": 6
+    },
+    {
+      "role": "water_edge_4",
+      "col": 4,
+      "row": 6
+    },
+    {
+      "role": "water_edge_5",
+      "col": 5,
+      "row": 6
+    },
+    {
+      "role": "water_edge_6",
+      "col": 6,
+      "row": 6
+    },
+    {
+      "role": "water_edge_7",
+      "col": 7,
+      "row": 6
+    },
+    {
+      "role": "water_edge_8",
+      "col": 0,
+      "row": 7
+    },
+    {
+      "role": "water_edge_9",
+      "col": 1,
+      "row": 7
+    },
+    {
+      "role": "water_edge_10",
+      "col": 2,
+      "row": 7
+    },
+    {
+      "role": "water_edge_11",
+      "col": 3,
+      "row": 7
+    },
+    {
+      "role": "water_edge_12",
+      "col": 4,
+      "row": 7
+    },
+    {
+      "role": "water_edge_13",
+      "col": 5,
+      "row": 7
+    },
+    {
+      "role": "water_edge_14",
+      "col": 6,
+      "row": 7
+    },
+    {
+      "role": "water_edge_15",
+      "col": 7,
+      "row": 7
+    },
+    {
+      "role": "path_variant_0",
+      "col": 0,
+      "row": 8
+    },
+    {
+      "role": "path_variant_1",
+      "col": 1,
+      "row": 8
+    },
+    {
+      "role": "path_variant_2",
+      "col": 2,
+      "row": 8
+    },
+    {
+      "role": "path_variant_3",
+      "col": 3,
+      "row": 8
+    },
+    {
+      "role": "platform_variant_0",
+      "col": 4,
+      "row": 8
+    },
+    {
+      "role": "platform_variant_1",
+      "col": 5,
+      "row": 8
+    },
+    {
+      "role": "platform_variant_2",
+      "col": 6,
+      "row": 8
+    },
+    {
+      "role": "platform_variant_3",
+      "col": 7,
+      "row": 8
+    }
+  ]
+}

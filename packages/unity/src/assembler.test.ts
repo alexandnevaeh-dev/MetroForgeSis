@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { describe, expect, it } from 'vitest';
@@ -21,6 +21,38 @@ const dna: GameDNA = {
 };
 
 describe('UnityProjectAssembler', () => {
+  it('ships NPC placement, dialogue branches, catalogs and disk-backed art in the player', () => {
+    const outputDir = join(tmpdir(), `mf-unity-npc-${Date.now()}`);
+    mkdirSync(join(outputDir, 'assets/npcs'), { recursive: true });
+    const png = Buffer.alloc(24); Buffer.from('89504e470d0a1a0a', 'hex').copy(png);
+    png.write('IHDR', 12);
+    png.writeUInt32BE(512, 16); png.writeUInt32BE(128, 20);
+    writeFileSync(join(outputDir, 'assets/npcs/archivist_idle.png'), png);
+    writeFileSync(join(outputDir, 'assets/npcs/archivist_animations.json'), JSON.stringify({ idle:
+      { frameCount: 4, frameWidth: 128, frameHeight: 128, fps: 6, pixelsPerUnit: 2, pivotY: 0.0625 } }));
+    const npc = { id: 'npc_lore', spriteId: 'archivist', name: 'Mira', role: 'lore' as const,
+      roomId: 'room_000', dialogueIds: ['greeting'], questIds: [] };
+    const dialogues = [{ id: 'greeting', lines: [{ speaker: 'Mira', text: 'The roots remember.',
+      choices: [{ text: 'Tell me more', nextDialogueId: 'history' }] }] },
+      { id: 'history', lines: [{ text: 'Follow the amber stones.' }] }];
+    const result = new UnityProjectAssembler().assemble({ outputDir, gameDna: dna, roomIds: ['room_000'],
+      worldGraph: { version: '0.1.0', seed: 7, nodes: [{ id: 'room_000', type: 'room', label: 'Start', metadata: {} }], edges: [], regions: [] },
+      progressionGraph: { version: '0.1.0', seed: 7, startNodeId: 'room_000', endNodeId: 'room_000', nodes: [], edges: [], abilities: [], criticalPath: ['room_000'] },
+      gameContent: { npcs: [npc], dialogues, quests: [], shops: [], items: [], enemies: [], bosses: [] } });
+    expect(result.errors).toEqual([]);
+    expect(result.success).toBe(true);
+    const pack = JSON.parse(readFileSync(join(outputDir, 'Assets/StreamingAssets/gameplay.json'), 'utf8'));
+    expect(pack.rooms[0].npcs).toEqual([expect.objectContaining({ id: 'npc_lore', definitionId: 'npc_lore',
+      spriteId: 'archivist', name: 'Mira', role: 'lore', y: pack.rooms[0].floorTop, dialogueIds: ['greeting'] })]);
+    expect(pack.dialogues).toEqual(dialogues);
+    expect(pack.sprites.find((clip: { ownerId: string }) => clip.ownerId === 'archivist')).toMatchObject({
+      frameWidth: 128, frameHeight: 128, frameCount: 4, pixelsPerUnit: 2, pivotY: 0.0625 });
+    expect(JSON.parse(readFileSync(join(outputDir, 'Assets/StreamingAssets/data/npcs/npcs.json'), 'utf8')).npcs).toEqual([npc]);
+    expect(JSON.parse(readFileSync(join(outputDir, 'Assets/StreamingAssets/data/dialogues/dialogues.json'), 'utf8')).dialogues).toEqual(dialogues);
+    expect(JSON.parse(readFileSync(join(outputDir, 'data/rooms/rooms.json'), 'utf8')).rooms.room_000.npcs).toEqual(['npc_lore']);
+    expect(readFileSync(join(outputDir, 'Assets/StreamingAssets/assets/npcs/archivist_idle.png'))).toEqual(png);
+    expect(existsSync(join(outputDir, 'Assets/Art/assets/npcs/archivist_idle.png.meta'))).toBe(true);
+  });
   it('writes a Unity 6.3 2D project without Godot runtime files', () => {
     const outputDir = join(tmpdir(), `mf-unity-${Date.now()}`);
     mkdirSync(outputDir, { recursive: true });
@@ -64,6 +96,8 @@ describe('UnityProjectAssembler', () => {
       roomIds,
     });
     expect(result.success).toBe(true);
+    expect(result.warnings.some((warning) => warning.includes('UNITY_VISUAL_PACK overlay'))).toBe(false);
+    expect(existsSync(join(outputDir, 'Assets/StreamingAssets/assets/characters/player_idle.png'))).toBe(false);
     const importedMeta = readFileSync(join(outputDir, 'Assets/Art/assets/characters/walk.png.meta'), 'utf-8');
     expect(importedMeta.match(/maxTextureSize: 4096/g)).toHaveLength(2);
     expect(readFileSync(join(outputDir, 'Assets/StreamingAssets/assets/characters/walk.png'))).toEqual(widePng);

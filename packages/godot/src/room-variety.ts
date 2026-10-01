@@ -75,11 +75,13 @@ export function measureRoomLayout(input: {
     const y = Number(key.slice(key.indexOf(',') + 1));
     if (y >= bandTopRow) occupiedInBand++;
   }
-  const tileDecorDensity = total > 0 ? decorCells / total : 0;
+  const tileDecorDensity = bandTotal > 0 ? decorCells / bandTotal : 0;
   // Sprite-based decorations counted in the same units as the tile-cell density above (one
-  // decoration ~= one occupied "decor cell" out of the room's full cell grid), so a room that
+  // decoration ~= one occupied "decor cell" out of the reachable band), so a room that
   // relies on Sprite2D dressing instead of decor-atlas tiles is not scored as if it had none.
-  const spriteDecorDensity = total > 0 ? Math.min(1, (decorationCount ?? 0) / total) : 0;
+  // Using the reachable band (not the full room including decorative sky) matches
+  // traversableAreaRatio and avoids tall rooms reading as chronically undressed.
+  const spriteDecorDensity = bandTotal > 0 ? Math.min(1, (decorationCount ?? 0) / bandTotal) : 0;
   return {
     silhouetteHash: silhouette.slice(0, 64) || 'empty',
     platformCount: layout.platforms.length,

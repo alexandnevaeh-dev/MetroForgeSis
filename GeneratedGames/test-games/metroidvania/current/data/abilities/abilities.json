@@ -1,0 +1,40 @@
+{
+  "abilities": [
+    {
+      "id": "dash",
+      "displayName": "Dash",
+      "category": "movement",
+      "enabled": true
+    },
+    {
+      "id": "double_jump",
+      "displayName": "Double Jump",
+      "category": "movement",
+      "enabled": true
+    },
+    {
+      "id": "wall_slide",
+      "displayName": "Wall Slide",
+      "category": "movement",
+      "enabled": true
+    },
+    {
+      "id": "wall_jump",
+      "displayName": "Wall Jump",
+      "category": "movement",
+      "enabled": true
+    },
+    {
+      "id": "air_dash",
+      "displayName": "Air Dash",
+      "category": "movement",
+      "enabled": true
+    },
+    {
+      "id": "ground_slam",
+      "displayName": "Ground Slam",
+      "category": "movement",
+      "enabled": true
+    }
+  ]
+}

@@ -1,0 +1,147 @@
+{
+  "rooms": {
+    "overworld": {
+      "id": "overworld",
+      "name": "Rootbound Entrance",
+      "archetype": "tutorial",
+      "width": 960,
+      "height": 704,
+      "collectibles": [
+        "health_vial"
+      ]
+    },
+    "dungeon_000_r0": {
+      "id": "dungeon_000_r0",
+      "name": "Fallen Idol Crossing",
+      "archetype": "combat",
+      "width": 960,
+      "height": 704,
+      "collectibles": []
+    },
+    "canopy_clearing": {
+      "id": "canopy_clearing",
+      "name": "Mosslight Clearing",
+      "archetype": "hub",
+      "width": 960,
+      "height": 704,
+      "collectibles": []
+    },
+    "dungeon_000_r2": {
+      "id": "dungeon_000_r2",
+      "name": "Vine-Choked Gate",
+      "archetype": "gate",
+      "width": 960,
+      "height": 704,
+      "collectibles": []
+    },
+    "canopy_hollow": {
+      "id": "canopy_hollow",
+      "name": "Whispering Hollow",
+      "archetype": "combat",
+      "width": 960,
+      "height": 704,
+      "collectibles": []
+    },
+    "canopy_bridge": {
+      "id": "canopy_bridge",
+      "name": "Overlook Bridge",
+      "archetype": "traversal",
+      "width": 960,
+      "height": 704,
+      "collectibles": []
+    },
+    "dungeon_000_r1": {
+      "id": "dungeon_000_r1",
+      "name": "Shrine of the First Seed",
+      "archetype": "ability",
+      "width": 960,
+      "height": 704,
+      "collectibles": [
+        "wind_disc"
+      ]
+    },
+    "canopy_secret": {
+      "id": "canopy_secret",
+      "name": "Lantern Grotto",
+      "archetype": "secret",
+      "width": 960,
+      "height": 704,
+      "collectibles": [
+        "power_charm"
+      ]
+    },
+    "canopy_approach": {
+      "id": "canopy_approach",
+      "name": "Elder Roots Approach",
+      "archetype": "save",
+      "width": 960,
+      "height": 704,
+      "collectibles": []
+    },
+    "dungeon_000_r3": {
+      "id": "dungeon_000_r3",
+      "name": "The Hollow Crown",
+      "archetype": "boss",
+      "width": 960,
+      "height": 704,
+      "collectibles": []
+    },
+    "canopy_hamlet": {
+      "id": "canopy_hamlet",
+      "name": "Lastlight Hamlet",
+      "archetype": "town",
+      "width": 960,
+      "height": 704,
+      "collectibles": []
+    },
+    "canopy_archive": {
+      "id": "canopy_archive",
+      "name": "The Silent Bell Archive",
+      "archetype": "lore",
+      "width": 960,
+      "height": 704,
+      "collectibles": [
+        "memory_bell"
+      ]
+    },
+    "canopy_observatory": {
+      "id": "canopy_observatory",
+      "name": "Emberwatch Observatory",
+      "archetype": "spell",
+      "width": 960,
+      "height": 704,
+      "collectibles": [
+        "seedflare",
+        "memory_crown"
+      ]
+    },
+    "canopy_gardens": {
+      "id": "canopy_gardens",
+      "name": "The Drowned Gardens",
+      "archetype": "traversal",
+      "width": 960,
+      "height": 704,
+      "collectibles": []
+    },
+    "canopy_cistern": {
+      "id": "canopy_cistern",
+      "name": "The Root Cistern",
+      "archetype": "spell",
+      "width": 960,
+      "height": 704,
+      "collectibles": [
+        "rootward"
+      ]
+    },
+    "canopy_moonwell": {
+      "id": "canopy_moonwell",
+      "name": "Moonwell Sanctuary",
+      "archetype": "spell",
+      "width": 960,
+      "height": 704,
+      "collectibles": [
+        "bloomstep"
+      ]
+    }
+  }
+}

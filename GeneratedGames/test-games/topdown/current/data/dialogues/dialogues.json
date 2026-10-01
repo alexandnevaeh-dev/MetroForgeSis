@@ -1,0 +1,97 @@
+{
+  "dialogues": [
+    {
+      "id": "dlg_npc_000_lore",
+      "lines": [
+        {
+          "speaker": "Mira",
+          "text": "The amber road remembers every Seedbearer. Follow it to the First Seed shrine, beyond the aqueduct. The Verdant Disc will open the living vine seals."
+        },
+        {
+          "speaker": "Mira",
+          "text": "Lastlight Hamlet still keeps its lamps burning. Iri knows the living words. Soren keeps the bells we stopped ringing. Listen before you judge the Crown."
+        }
+      ]
+    },
+    {
+      "id": "story_living_words_offer",
+      "lines": [
+        {
+          "speaker": "Iri",
+          "text": "We cannot rebuild a refuge with fear. An ember sleeps in Emberwatch; an oath survives in the Root Cistern; the Moonwell remembers how to move without breaking a root. Will you bring those living words home?",
+          "choices": [
+            {
+              "id": "story_living_words_accept",
+              "text": "I will carry the story forward.",
+              "action": "accept_quest",
+              "end": true
+            },
+            {
+              "id": "story_living_words_later",
+              "text": "Let me return when I am ready.",
+              "end": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "story_living_words_active",
+      "lines": [
+        {
+          "speaker": "Iri",
+          "text": "Seedflare is a light, Rootward a promise, Bloomstep a memory. Let none of them become another chain."
+        }
+      ]
+    },
+    {
+      "id": "story_living_words_complete",
+      "lines": [
+        {
+          "speaker": "Iri",
+          "text": "Three living words, spoken again. Keep their power close. The next stranger on the root road may need it more than we do."
+        }
+      ]
+    },
+    {
+      "id": "story_oath_memory_offer",
+      "lines": [
+        {
+          "speaker": "Soren",
+          "text": "The bells did not fall silent because the guardian failed. We silenced them. Two testimonies survived: one here, one in Emberwatch. Will you listen to what we could not say?",
+          "choices": [
+            {
+              "id": "story_oath_memory_accept",
+              "text": "I will carry the story forward.",
+              "action": "accept_quest",
+              "end": true
+            },
+            {
+              "id": "story_oath_memory_later",
+              "text": "Let me return when I am ready.",
+              "end": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "story_oath_memory_active",
+      "lines": [
+        {
+          "speaker": "Soren",
+          "text": "One testimony lies beside the archive pool. The crownkeeper left the other below Emberwatch. Read them both before you enter the Crown court."
+        }
+      ]
+    },
+    {
+      "id": "story_oath_memory_complete",
+      "lines": [
+        {
+          "speaker": "Soren",
+          "text": "We asked for one more spring until there was no ending left to the oath. Take the First Seed to the guardian. Let it choose to rest."
+        }
+      ]
+    }
+  ]
+}

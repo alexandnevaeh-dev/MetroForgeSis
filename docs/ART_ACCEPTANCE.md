@@ -20,8 +20,9 @@ One coherent player and enemy asset set must support idle, locomotion, jump/fall
 - Review of actual imported assets, alpha edges, seams, pivots, layer order and lighting.
 - Separate status for technical validation, internal visual review and user acceptance. User acceptance remains pending until explicitly given.
 
-## Both genres
-Use the same material, palette and character identity for top-down games, but author perspective-specific sprites, directional animation and occlusion. Do not rotate or reuse side-view artwork as a substitute for top-down production art.
+## Separate genre directions
+
+The user requested a full top-down redesign on 2026-09-29 and selected stylized pixel art with rich color, strong silhouettes and detailed environments. Its palette, character identity, assets, animations, levels and test games are separate from the painted Metroidvania set described above. See TOPDOWN_PIXEL_REDESIGN.md. Do not reuse or rotate side-view sprites for top-down characters.
 
 ## Production constraints
 Keep all new artifacts, caches and generation reports on E:. Preserve existing assets and authored rooms. Record model/provider, prompt, seed where available, source and review result. Do not label concepts as gameplay screenshots. Do not publish rejected art as an approved milestone.

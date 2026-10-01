@@ -1,0 +1,2792 @@
+{
+  "genre": "metroidvania",
+  "archetype": "SIDE_VIEW_METROIDVANIA",
+  "generatedAt": "2026-10-01T00:00:33.025Z",
+  "seed": 20260930,
+  "sourceAssets": "E:\\Metroforge\\MetroForge-Publish\\GeneratedGames\\test-games\\metroidvania\\current",
+  "layoutStyle": "stormglass_reliquary",
+  "assets": [
+    {
+      "path": "assets/architecture/biome_0/biome_0_arch_0.png",
+      "sha256": "e67709ef2b7c3da2db0b736e11f46009e0c5635284cab21dcdd9f9f5ffedf076"
+    },
+    {
+      "path": "assets/architecture/biome_0/biome_0_arch_1.png",
+      "sha256": "2e7b2aec49ad40e0f32e2fc77129a761571e51184b7cb9a9ef3446fad96daa9e"
+    },
+    {
+      "path": "assets/architecture/biome_0/biome_0_arch_2.png",
+      "sha256": "80037413616d15396dc1b94bee0fdde2ff4ec20ce8569fdd07b58dcac9145b68"
+    },
+    {
+      "path": "assets/architecture/biome_0/biome_0_arch_3.png",
+      "sha256": "d543eed80a62fc4139072937c4c32366dca8b5ffc9735e954fdbb41dc8c80fbc"
+    },
+    {
+      "path": "assets/architecture/biome_1/biome_1_arch_0.png",
+      "sha256": "887d7e373f2f5d0a471c516ee22d96e49377783fdcaff70f846cc468ca631458"
+    },
+    {
+      "path": "assets/architecture/biome_1/biome_1_arch_1.png",
+      "sha256": "918c90b68bf21fe4a3797ba236a9ee4cdaa878ca891ac02ec0b53212afe146f9"
+    },
+    {
+      "path": "assets/architecture/biome_1/biome_1_arch_2.png",
+      "sha256": "368203db777490907286746a2f6b70a07830b57d9c8f8a838251859b122bb3de"
+    },
+    {
+      "path": "assets/architecture/biome_1/biome_1_arch_3.png",
+      "sha256": "bb744a26f2157cab14ea32173e79e05ecfeb00255413afabf129b2f532093959"
+    },
+    {
+      "path": "assets/architecture/biome_2/biome_2_arch_0.png",
+      "sha256": "e9acc7b8119b5058e738548a5814edd170f5ca622505b2f3b9d9f15e9b398412"
+    },
+    {
+      "path": "assets/architecture/biome_2/biome_2_arch_1.png",
+      "sha256": "d830a8dc6fbe846258ac47d07221b0e579be88939aac239e66f8dac7d95063bc"
+    },
+    {
+      "path": "assets/architecture/biome_2/biome_2_arch_2.png",
+      "sha256": "3b059df7ae67e965c4bd3ed387cbce894035cab696f4c522b49efee50738057c"
+    },
+    {
+      "path": "assets/architecture/biome_2/biome_2_arch_3.png",
+      "sha256": "dc749cb35360fa33eff9559f5cc32e215d93aeb0de9c345bbbc81ad51bfd91ec"
+    },
+    {
+      "path": "assets/architecture/stormglass/conditions/archive_balcony.png",
+      "sha256": "9048c1bd9b38fcecb849f2757c1da5e8584e2b7a03c51ae56a0d1c359fb53d1f"
+    },
+    {
+      "path": "assets/architecture/stormglass/conditions/archive_bookcase.png",
+      "sha256": "ef35fcf181bc97ed901e8efa4502d401418c24a26ef1b4a7829d5d719241f0a4"
+    },
+    {
+      "path": "assets/architecture/stormglass/conditions/archive_books.png",
+      "sha256": "5332cd2974a671977df21b1f54249da7a37cd46913dc517f501d3b7358bf3e1c"
+    },
+    {
+      "path": "assets/architecture/stormglass/conditions/archive_rubble.png",
+      "sha256": "5267016791df4d71f43680d5e46a8cfba2f5d71c339403424f654811f80536ba"
+    },
+    {
+      "path": "assets/architecture/stormglass/conditions/flooded_arch.png",
+      "sha256": "3bbbf2ebf078e23b1b5e101eec810fc963a32f141d391c18c4690f1a7e42a3f8"
+    },
+    {
+      "path": "assets/architecture/stormglass/conditions/flooded_puddle.png",
+      "sha256": "bcee3335d44e3e1a2ae159b0c9bbe52a03d37fadf9d2beb8c87ff703eb57ae38"
+    },
+    {
+      "path": "assets/architecture/stormglass/conditions/flooded_roots.png",
+      "sha256": "5ecb9d22ab8abf3591b7820307f56a084894effd151f187e666098193207ec72"
+    },
+    {
+      "path": "assets/architecture/stormglass/conditions/flooded_waterline.png",
+      "sha256": "aa25f284dcb49989ec724389ec9a17918d6b5a16cc2a02012f4d77680da6c551"
+    },
+    {
+      "path": "assets/architecture/stormglass/conditions/frozen_bell.png",
+      "sha256": "f31fd026a674d69870ac0c7ecfe8ea41832f4be818daa5f807bd83f622caa1bb"
+    },
+    {
+      "path": "assets/architecture/stormglass/conditions/frozen_gears.png",
+      "sha256": "32ea9eca61af884eb4ed450989e69575a01a9c43393d7b7eb8ddabf9b91db87c"
+    },
+    {
+      "path": "assets/architecture/stormglass/conditions/frozen_icicles.png",
+      "sha256": "a1a22d71ad8dd1923cfb3171ea9ae4a79ed0bb7acef09caccfa1751e2d4d2f92"
+    },
+    {
+      "path": "assets/architecture/stormglass/conditions/frozen_window.png",
+      "sha256": "fa2ae1626aea002541060a53d90ecef648d67819071af6e09c71bff8ea0d0bf2"
+    },
+    {
+      "path": "assets/architecture/stormglass/conditions/intact_altar.png",
+      "sha256": "2aadf91ac266ba0e58afc38ad4745658eaf90ef0e672daacf916299f6142d255"
+    },
+    {
+      "path": "assets/architecture/stormglass/conditions/intact_banner.png",
+      "sha256": "35fa104a22d248346fc11edafb4050f7c7950b9407fd669919fc454c0a07a47b"
+    },
+    {
+      "path": "assets/architecture/stormglass/conditions/intact_sconce.png",
+      "sha256": "5c224eac475e6708865dc40112def93358d65269c62143631c86e064d6b84580"
+    },
+    {
+      "path": "assets/architecture/stormglass/conditions/intact_statue.png",
+      "sha256": "2226517fbd954915eddc531372559c1359a7bedfffac050bbb5615a45220fd63"
+    },
+    {
+      "path": "assets/architecture/stormglass/floor_strip.png",
+      "sha256": "fa395b160b57fdc4924634be0cce3d31de4cb0fa94523e93a7aef4eb05e28489"
+    },
+    {
+      "path": "assets/architecture/stormglass/grand_arch.png",
+      "sha256": "dcf4d1ff2d2781832431ed35f828ddb4e49e564531079bf5aa34e59faf0593fa"
+    },
+    {
+      "path": "assets/architecture/stormglass/lancet_window.png",
+      "sha256": "5e67e8d02a31236bba439c8c92f9869b0e2d31875ba54b4c71e4fb4940e06bfd"
+    },
+    {
+      "path": "assets/architecture/stormglass/platform.png",
+      "sha256": "b133e0fca8b43013b6f069a349612080dc49c19f09a9c98d1ba8532abffbb273"
+    },
+    {
+      "path": "assets/backgrounds/biome_0/far.png",
+      "sha256": "f107335edc3b6789bf4fbb45afb83db46e66edad3983f02b3e65db547c0494b1"
+    },
+    {
+      "path": "assets/backgrounds/biome_0/foreground.png",
+      "sha256": "5f75b5fabe1078a8f008b65271e2c57690f64f015ceb41b4f36556fc011ba699"
+    },
+    {
+      "path": "assets/backgrounds/biome_0/mid.png",
+      "sha256": "d6b5294a1d442e115165911c26f9081ae763845476412aaac7396fe66faad6b7"
+    },
+    {
+      "path": "assets/backgrounds/biome_0/near.png",
+      "sha256": "74e58d9beaa44ec759a39f9f649452c77dc417a094c6891d9317082e0301d4cc"
+    },
+    {
+      "path": "assets/backgrounds/biome_0/overlay.png",
+      "sha256": "87d632f6121b4423c6f32c58d901859f39d68a348d851e483fc7f73483b0e783"
+    },
+    {
+      "path": "assets/backgrounds/biome_1/far.png",
+      "sha256": "f988d4c6e7913512d49a94484679cb903a94ef26b970fc8a20dc7d64193544e7"
+    },
+    {
+      "path": "assets/backgrounds/biome_1/foreground.png",
+      "sha256": "5f75b5fabe1078a8f008b65271e2c57690f64f015ceb41b4f36556fc011ba699"
+    },
+    {
+      "path": "assets/backgrounds/biome_1/mid.png",
+      "sha256": "8737db9f26f6514f46ddc71737e8fe0d5fdc7d3b001b78c69a1a257c56f8243f"
+    },
+    {
+      "path": "assets/backgrounds/biome_1/near.png",
+      "sha256": "cb11a20482771a58f10341f6a9827f1522447f10f01d5aabb1eb3c9dcfc12b50"
+    },
+    {
+      "path": "assets/backgrounds/biome_1/overlay.png",
+      "sha256": "87d632f6121b4423c6f32c58d901859f39d68a348d851e483fc7f73483b0e783"
+    },
+    {
+      "path": "assets/backgrounds/biome_2/far.png",
+      "sha256": "c397ce716fd2d3eca046dfaac6ab2fe6aa45bca31bb5770d75f7b554b25b55fb"
+    },
+    {
+      "path": "assets/backgrounds/biome_2/foreground.png",
+      "sha256": "5f75b5fabe1078a8f008b65271e2c57690f64f015ceb41b4f36556fc011ba699"
+    },
+    {
+      "path": "assets/backgrounds/biome_2/mid.png",
+      "sha256": "700e74c9e9ef4089904da925b2f0300280687ed1a0f986825968e765e22c2e3e"
+    },
+    {
+      "path": "assets/backgrounds/biome_2/near.png",
+      "sha256": "c048cf9e844f95601e987db9e86531242d8f3192602fb04d927fb682217d61fb"
+    },
+    {
+      "path": "assets/backgrounds/biome_2/overlay.png",
+      "sha256": "87d632f6121b4423c6f32c58d901859f39d68a348d851e483fc7f73483b0e783"
+    },
+    {
+      "path": "assets/backgrounds/biome_3/far.png",
+      "sha256": "de7b4f5e9c29c0b844f5da211bc0d0f1208eb5b424539a76fd4108fbfd07573a"
+    },
+    {
+      "path": "assets/backgrounds/biome_3/foreground.png",
+      "sha256": "5f75b5fabe1078a8f008b65271e2c57690f64f015ceb41b4f36556fc011ba699"
+    },
+    {
+      "path": "assets/backgrounds/biome_3/mid.png",
+      "sha256": "323bdb41cf16e66d5b92fd20416334dcc566d3127fa2a2b8eaa41afb05244190"
+    },
+    {
+      "path": "assets/backgrounds/biome_3/near.png",
+      "sha256": "545ba8682ffe623244d3448dc6905e232a675711589d2a1b3c0c8c082cc813bf"
+    },
+    {
+      "path": "assets/backgrounds/biome_3/overlay.png",
+      "sha256": "87d632f6121b4423c6f32c58d901859f39d68a348d851e483fc7f73483b0e783"
+    },
+    {
+      "path": "assets/backgrounds/stormglass/ancient_ruins.png",
+      "sha256": "8647c2db54c54e7d1d5a594854e2ac25963f40a2e49b38e7733756148787f7b3"
+    },
+    {
+      "path": "assets/backgrounds/stormglass/drowned_monastery.png",
+      "sha256": "d3ba19865c71f1b6791a1f4bec1de28c89ea707271c83b40f012a77aa1868b1f"
+    },
+    {
+      "path": "assets/backgrounds/stormglass/reliquary_interior.png",
+      "sha256": "dab4355b4beef6cddd8df503a60a4525d26f61a3b21661c01cdd1990bf892501"
+    },
+    {
+      "path": "assets/backgrounds/stormglass/storm_ice_heights.png",
+      "sha256": "15d11dd69755e66bc43f051d1a6a4903de572a6a0525925a8c726601fef81a7f"
+    },
+    {
+      "path": "assets/backgrounds/stormglass/sunken_halls.png",
+      "sha256": "db7a5e3c56e3a16fecb76ab7120fbfd70a2bddfe0d37c87960cbbafb69a5b4b9"
+    },
+    {
+      "path": "assets/bosses/boss_000.png",
+      "sha256": "77c6712e1c5e8c1febfcdb366c01d031bb49d98c084fd942479cbae09aab4220"
+    },
+    {
+      "path": "assets/bosses/boss_000_animations.json",
+      "sha256": "d108e7b8c9f5e5b9368d38bc9f488c02b9c39bb38db07ef7f2ea91d86836363c"
+    },
+    {
+      "path": "assets/bosses/boss_000_attack.png",
+      "sha256": "0c912d4baad51cc62ca5bf00ce8015d669b8959d916c5846004b86420a6c933e"
+    },
+    {
+      "path": "assets/bosses/boss_000_death.png",
+      "sha256": "c965869ab0d402fc9188ed688b4a1eaaad5aa3e67902ed142baf2a4bac66a64b"
+    },
+    {
+      "path": "assets/bosses/boss_000_hurt.png",
+      "sha256": "362f6c0c02a2e0acbc6819a5a5f81f7f65a2e269c5dd85e69d8de1952d2a575d"
+    },
+    {
+      "path": "assets/bosses/boss_000_idle.png",
+      "sha256": "12597a2e146f18f8e7d53cd78c067e57338178c2e699fa0df60d0cd1264a2627"
+    },
+    {
+      "path": "assets/bosses/boss_000_run.png",
+      "sha256": "e9665ceed69c52f75b53c686ea792072920105c655a2083d52e4ef3848b56a84"
+    },
+    {
+      "path": "assets/bosses/boss_000_walk.png",
+      "sha256": "e9665ceed69c52f75b53c686ea792072920105c655a2083d52e4ef3848b56a84"
+    },
+    {
+      "path": "assets/bosses/boss_001.png",
+      "sha256": "77c6712e1c5e8c1febfcdb366c01d031bb49d98c084fd942479cbae09aab4220"
+    },
+    {
+      "path": "assets/bosses/boss_001_animations.json",
+      "sha256": "d108e7b8c9f5e5b9368d38bc9f488c02b9c39bb38db07ef7f2ea91d86836363c"
+    },
+    {
+      "path": "assets/bosses/boss_001_attack.png",
+      "sha256": "0c912d4baad51cc62ca5bf00ce8015d669b8959d916c5846004b86420a6c933e"
+    },
+    {
+      "path": "assets/bosses/boss_001_death.png",
+      "sha256": "c965869ab0d402fc9188ed688b4a1eaaad5aa3e67902ed142baf2a4bac66a64b"
+    },
+    {
+      "path": "assets/bosses/boss_001_hurt.png",
+      "sha256": "362f6c0c02a2e0acbc6819a5a5f81f7f65a2e269c5dd85e69d8de1952d2a575d"
+    },
+    {
+      "path": "assets/bosses/boss_001_idle.png",
+      "sha256": "12597a2e146f18f8e7d53cd78c067e57338178c2e699fa0df60d0cd1264a2627"
+    },
+    {
+      "path": "assets/bosses/boss_001_run.png",
+      "sha256": "e9665ceed69c52f75b53c686ea792072920105c655a2083d52e4ef3848b56a84"
+    },
+    {
+      "path": "assets/bosses/boss_001_walk.png",
+      "sha256": "e9665ceed69c52f75b53c686ea792072920105c655a2083d52e4ef3848b56a84"
+    },
+    {
+      "path": "assets/bosses/boss_002.png",
+      "sha256": "77c6712e1c5e8c1febfcdb366c01d031bb49d98c084fd942479cbae09aab4220"
+    },
+    {
+      "path": "assets/bosses/boss_002_animations.json",
+      "sha256": "d108e7b8c9f5e5b9368d38bc9f488c02b9c39bb38db07ef7f2ea91d86836363c"
+    },
+    {
+      "path": "assets/bosses/boss_002_attack.png",
+      "sha256": "0c912d4baad51cc62ca5bf00ce8015d669b8959d916c5846004b86420a6c933e"
+    },
+    {
+      "path": "assets/bosses/boss_002_death.png",
+      "sha256": "c965869ab0d402fc9188ed688b4a1eaaad5aa3e67902ed142baf2a4bac66a64b"
+    },
+    {
+      "path": "assets/bosses/boss_002_hurt.png",
+      "sha256": "362f6c0c02a2e0acbc6819a5a5f81f7f65a2e269c5dd85e69d8de1952d2a575d"
+    },
+    {
+      "path": "assets/bosses/boss_002_idle.png",
+      "sha256": "12597a2e146f18f8e7d53cd78c067e57338178c2e699fa0df60d0cd1264a2627"
+    },
+    {
+      "path": "assets/bosses/boss_002_run.png",
+      "sha256": "e9665ceed69c52f75b53c686ea792072920105c655a2083d52e4ef3848b56a84"
+    },
+    {
+      "path": "assets/bosses/boss_002_walk.png",
+      "sha256": "e9665ceed69c52f75b53c686ea792072920105c655a2083d52e4ef3848b56a84"
+    },
+    {
+      "path": "assets/bosses/boss_003.png",
+      "sha256": "77c6712e1c5e8c1febfcdb366c01d031bb49d98c084fd942479cbae09aab4220"
+    },
+    {
+      "path": "assets/bosses/boss_003_animations.json",
+      "sha256": "d108e7b8c9f5e5b9368d38bc9f488c02b9c39bb38db07ef7f2ea91d86836363c"
+    },
+    {
+      "path": "assets/bosses/boss_003_attack.png",
+      "sha256": "0c912d4baad51cc62ca5bf00ce8015d669b8959d916c5846004b86420a6c933e"
+    },
+    {
+      "path": "assets/bosses/boss_003_death.png",
+      "sha256": "c965869ab0d402fc9188ed688b4a1eaaad5aa3e67902ed142baf2a4bac66a64b"
+    },
+    {
+      "path": "assets/bosses/boss_003_hurt.png",
+      "sha256": "362f6c0c02a2e0acbc6819a5a5f81f7f65a2e269c5dd85e69d8de1952d2a575d"
+    },
+    {
+      "path": "assets/bosses/boss_003_idle.png",
+      "sha256": "12597a2e146f18f8e7d53cd78c067e57338178c2e699fa0df60d0cd1264a2627"
+    },
+    {
+      "path": "assets/bosses/boss_003_run.png",
+      "sha256": "e9665ceed69c52f75b53c686ea792072920105c655a2083d52e4ef3848b56a84"
+    },
+    {
+      "path": "assets/bosses/boss_003_walk.png",
+      "sha256": "e9665ceed69c52f75b53c686ea792072920105c655a2083d52e4ef3848b56a84"
+    },
+    {
+      "path": "assets/bosses/boss_final.png",
+      "sha256": "77c6712e1c5e8c1febfcdb366c01d031bb49d98c084fd942479cbae09aab4220"
+    },
+    {
+      "path": "assets/bosses/boss_final_animations.json",
+      "sha256": "dd8ea08022564b638b893a7ef74be3c224b331d346b9380627844892da6cd401"
+    },
+    {
+      "path": "assets/bosses/boss_final_attack.png",
+      "sha256": "0c912d4baad51cc62ca5bf00ce8015d669b8959d916c5846004b86420a6c933e"
+    },
+    {
+      "path": "assets/bosses/boss_final_attack_burst.png",
+      "sha256": "c2ed99a8c562420c021a4068f2208bd92747e61eb7433f87dc92f94c701c6406"
+    },
+    {
+      "path": "assets/bosses/boss_final_attack_projectile.png",
+      "sha256": "befe8138bb5e6e970fb8f3f358a197ad16003915451087820b90bda9bddf4fc1"
+    },
+    {
+      "path": "assets/bosses/boss_final_death.png",
+      "sha256": "c965869ab0d402fc9188ed688b4a1eaaad5aa3e67902ed142baf2a4bac66a64b"
+    },
+    {
+      "path": "assets/bosses/boss_final_hurt.png",
+      "sha256": "362f6c0c02a2e0acbc6819a5a5f81f7f65a2e269c5dd85e69d8de1952d2a575d"
+    },
+    {
+      "path": "assets/bosses/boss_final_idle.png",
+      "sha256": "12597a2e146f18f8e7d53cd78c067e57338178c2e699fa0df60d0cd1264a2627"
+    },
+    {
+      "path": "assets/bosses/boss_final_idle_pose.png",
+      "sha256": "77c6712e1c5e8c1febfcdb366c01d031bb49d98c084fd942479cbae09aab4220"
+    },
+    {
+      "path": "assets/bosses/boss_final_locomotion.png",
+      "sha256": "e9665ceed69c52f75b53c686ea792072920105c655a2083d52e4ef3848b56a84"
+    },
+    {
+      "path": "assets/bosses/boss_final_recovery.png",
+      "sha256": "720f6991b29ec8d1667605e03e83655027556018c516b45ce2ad00d3adb2ae92"
+    },
+    {
+      "path": "assets/bosses/boss_final_run.png",
+      "sha256": "e9665ceed69c52f75b53c686ea792072920105c655a2083d52e4ef3848b56a84"
+    },
+    {
+      "path": "assets/bosses/boss_final_telegraph.png",
+      "sha256": "aaf1ed0196924aca8e9e38f78b761ae87ae5804e492fe50a109475e0a877264a"
+    },
+    {
+      "path": "assets/bosses/boss_final_walk.png",
+      "sha256": "e9665ceed69c52f75b53c686ea792072920105c655a2083d52e4ef3848b56a84"
+    },
+    {
+      "path": "assets/characters/player/identity/identity.json",
+      "sha256": "2da6ae959401d6e8678aaa2f855a7e4de6a7e2c8fa8b9f321cc2e5a340e35776"
+    },
+    {
+      "path": "assets/characters/player/identity/palette.json",
+      "sha256": "0d7556dccdadd612ee6728675af6a2974e9d305803ccb7998f20ba2b715e61f9"
+    },
+    {
+      "path": "assets/characters/player/identity/reference_front.png",
+      "sha256": "4925b350ba2f126131471b4f0dfda8758e374a8957a51c8b3704d17483d09b39"
+    },
+    {
+      "path": "assets/characters/player/identity/silhouette.png",
+      "sha256": "7de3b35a2528d92b82460aeac311d4df37010d5ed9ff7c8d85a99b1d2458462d"
+    },
+    {
+      "path": "assets/characters/player/identity/source.png",
+      "sha256": "4925b350ba2f126131471b4f0dfda8758e374a8957a51c8b3704d17483d09b39"
+    },
+    {
+      "path": "assets/characters/player.png",
+      "sha256": "6fa4c821b746e8f522c30d12cd6b4a8f6bfee8e5a6e81683cee1dcc110400ff3"
+    },
+    {
+      "path": "assets/characters/player_ability_acquire.png",
+      "sha256": "1d182733d50e8f02debcd77e54a1a35754b15234c257cd4d72283219c9708cc0"
+    },
+    {
+      "path": "assets/characters/player_air_dash.png",
+      "sha256": "17348c1ce524793b9fafb20bc3714f5c688b31fbc9fc346729e5781ba2b99982"
+    },
+    {
+      "path": "assets/characters/player_animations.json",
+      "sha256": "b3d6e9aa1ec930939c5325b87eb5ace352be7c05dbed4af78cba220e4f3e46d8"
+    },
+    {
+      "path": "assets/characters/player_attack.png",
+      "sha256": "bad6e59acafc9cf8aac8ae07904a458060eaa1908f633c66f8c16b5fb5483988"
+    },
+    {
+      "path": "assets/characters/player_attack_2.png",
+      "sha256": "bad6e59acafc9cf8aac8ae07904a458060eaa1908f633c66f8c16b5fb5483988"
+    },
+    {
+      "path": "assets/characters/player_attack_3.png",
+      "sha256": "bad6e59acafc9cf8aac8ae07904a458060eaa1908f633c66f8c16b5fb5483988"
+    },
+    {
+      "path": "assets/characters/player_dash.png",
+      "sha256": "17348c1ce524793b9fafb20bc3714f5c688b31fbc9fc346729e5781ba2b99982"
+    },
+    {
+      "path": "assets/characters/player_death.png",
+      "sha256": "17e85e7b563b5b0a34495e2a0213471a1b2a5fd8c84d4d88c60df4f5a2f9a44c"
+    },
+    {
+      "path": "assets/characters/player_double_jump.png",
+      "sha256": "d1b3437f2f60e5d60fb049b6d16f1c8dbc0b842c3b159cf7bbf7ea8282374c4e"
+    },
+    {
+      "path": "assets/characters/player_fall.png",
+      "sha256": "d101c74dc3dd93bc0af03ea09950a599c234cb87b65d9c15cf5ddfb7c5a0618f"
+    },
+    {
+      "path": "assets/characters/player_grapple.png",
+      "sha256": "bad6e59acafc9cf8aac8ae07904a458060eaa1908f633c66f8c16b5fb5483988"
+    },
+    {
+      "path": "assets/characters/player_ground_slam_fall.png",
+      "sha256": "d101c74dc3dd93bc0af03ea09950a599c234cb87b65d9c15cf5ddfb7c5a0618f"
+    },
+    {
+      "path": "assets/characters/player_ground_slam_impact.png",
+      "sha256": "5a51ae0d534a9bb8142c2a7969b2970642b29182d98d9c992b5fe9f3904b15a1"
+    },
+    {
+      "path": "assets/characters/player_ground_slam_start.png",
+      "sha256": "7fb0fd431471a4120bb1abbb884bba7d1c929d5963c799c2e6dba8d4eea896f5"
+    },
+    {
+      "path": "assets/characters/player_hurt.png",
+      "sha256": "eb26741087c0e151edcd11a47b5e7dcc7e54aec618965f0310f94db9d45b324f"
+    },
+    {
+      "path": "assets/characters/player_idle.png",
+      "sha256": "1d182733d50e8f02debcd77e54a1a35754b15234c257cd4d72283219c9708cc0"
+    },
+    {
+      "path": "assets/characters/player_interact.png",
+      "sha256": "1d182733d50e8f02debcd77e54a1a35754b15234c257cd4d72283219c9708cc0"
+    },
+    {
+      "path": "assets/characters/player_jump.png",
+      "sha256": "d1b3437f2f60e5d60fb049b6d16f1c8dbc0b842c3b159cf7bbf7ea8282374c4e"
+    },
+    {
+      "path": "assets/characters/player_jump_start.png",
+      "sha256": "7fb0fd431471a4120bb1abbb884bba7d1c929d5963c799c2e6dba8d4eea896f5"
+    },
+    {
+      "path": "assets/characters/player_land.png",
+      "sha256": "5a51ae0d534a9bb8142c2a7969b2970642b29182d98d9c992b5fe9f3904b15a1"
+    },
+    {
+      "path": "assets/characters/player_phase.png",
+      "sha256": "17348c1ce524793b9fafb20bc3714f5c688b31fbc9fc346729e5781ba2b99982"
+    },
+    {
+      "path": "assets/characters/player_respawn.png",
+      "sha256": "1d182733d50e8f02debcd77e54a1a35754b15234c257cd4d72283219c9708cc0"
+    },
+    {
+      "path": "assets/characters/player_run.png",
+      "sha256": "c46b9738ca232c87e66d13a7a66391fb54066d5f812f3bbd4e782edaf0a59f3d"
+    },
+    {
+      "path": "assets/characters/player_swim.png",
+      "sha256": "c6292c2ce8ca5a2438662e4300ede1bac272dd3c01662ed6305cd153e8a931f0"
+    },
+    {
+      "path": "assets/characters/player_swim_idle.png",
+      "sha256": "1d182733d50e8f02debcd77e54a1a35754b15234c257cd4d72283219c9708cc0"
+    },
+    {
+      "path": "assets/characters/player_walk.png",
+      "sha256": "c6292c2ce8ca5a2438662e4300ede1bac272dd3c01662ed6305cd153e8a931f0"
+    },
+    {
+      "path": "assets/characters/player_wall_jump.png",
+      "sha256": "d1b3437f2f60e5d60fb049b6d16f1c8dbc0b842c3b159cf7bbf7ea8282374c4e"
+    },
+    {
+      "path": "assets/characters/player_wall_slide.png",
+      "sha256": "d101c74dc3dd93bc0af03ea09950a599c234cb87b65d9c15cf5ddfb7c5a0618f"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3/animation_overrides.json",
+      "sha256": "f20d259d868f399d8cfba43dd330ec74ae4b08fea37c6c647e85d0cb6c69598d"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3/climb.png",
+      "sha256": "a87b1e9c590d991702effb64c7710efab77cf2623092ab7cffed460684ae934a"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3/duck.png",
+      "sha256": "e70372c70bf4a478856bbe0bb91cad13823c66c526320dd7c8a904128825dc57"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3/fall.png",
+      "sha256": "acb07952198ab3de160b903b45c756d7ecea3cd8b68a036123a47d46e3d0627a"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3/hurt.png",
+      "sha256": "4d13f7c8e69e05596152ce0a184f87535c93bf85c44d7674d06dc853e8ceb256"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3/idle.png",
+      "sha256": "fa361ee34cd2da9641a9e095bd14d33e2a7ebf4ab7a93662dd5faa721eecdb6e"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3/jump.png",
+      "sha256": "bb5878f59e396c53897f8443d6d885d0155025f519054f475a6568c9fb5cc003"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3/jump.png.import~RF11cea657.TMP",
+      "sha256": "5b1bc3c79a2412edaa69991ec38fe4271b3aa86311c48456fe3e67d9e9fd47ab"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3/metadata.json",
+      "sha256": "d52ce1f73b1029c7556ca6340be083ed649b8cf20339d1a1448aaf7ae97200f5"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3/skip.png",
+      "sha256": "1e3e72967e1666ad88feeb5085c808a2805eec6600d02c98f2845655029038da"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3/skip.png.import~RF11cea657.TMP",
+      "sha256": "25ad1f1c225bf513010fb46986b0a73f7cd161f2466e979fe196c8036d2413da"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/ability_acquire.png",
+      "sha256": "2d6c0bdb7c54551af359abfbc2ab31c769635a7b6fc7948cde06090232d7e4c5"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/ability_acquire.png.import~RF11cea657.TMP",
+      "sha256": "f55d0a7b3d32632dba26dc6c9b8c1f71010d3341be7241a4c583c982fa7496b2"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/air_dash.png",
+      "sha256": "3ba4968259ce5e7e49c364832fdf37cf964b3cd042ecf1cb917cab8d1ae8e9b6"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/attack.png",
+      "sha256": "2e8744488343731892a506dacbaeda88b8eb8276e6003110965493aa5492c4c1"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/attack_2.png",
+      "sha256": "8fb83678311b3f657fd42e2d316d65f4205624f1470572e7ecf8c993686d239d"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/attack_3.png",
+      "sha256": "c385a2b9e50357783a2543d7ba973f39fef07699f13c2788feeacb192f1c12c6"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/dash.png",
+      "sha256": "fa2aa5a2917bfbbae82581cc14fd610f9ed203025fd2038d82e9695eed7df64c"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/death.png",
+      "sha256": "0cc223b267ba67b15a6dd0339f1f38f50d666e9c31480526a91f8bfe1563cc95"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/double_jump.png",
+      "sha256": "bb5878f59e396c53897f8443d6d885d0155025f519054f475a6568c9fb5cc003"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/fall.png",
+      "sha256": "acb07952198ab3de160b903b45c756d7ecea3cd8b68a036123a47d46e3d0627a"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/grapple.png",
+      "sha256": "05419fe3b3cdabeea97d06f65cc3e44856e512a15f590f7781e67125cae48ee2"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/ground_slam_fall.png",
+      "sha256": "cc6a54e249c586c9db9b79133833ac54675247d42f544b6d12070bd350c23adb"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/ground_slam_impact.png",
+      "sha256": "bc14bbf9610c4fc86b0eff93ee89c3a2805ad261ce0060e4f4b26056844aeaa6"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/ground_slam_start.png",
+      "sha256": "ed166c584d55b2518b3f065af786301d51d311ee2048e45c12bb689ce985827c"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/hurt.png",
+      "sha256": "cbdd7ce99bfd7d527afe8b24d0471ba4ad50b476e3b6414bcaf5b38381c40fb8"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/idle.png",
+      "sha256": "fa361ee34cd2da9641a9e095bd14d33e2a7ebf4ab7a93662dd5faa721eecdb6e"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/interact.png",
+      "sha256": "e70372c70bf4a478856bbe0bb91cad13823c66c526320dd7c8a904128825dc57"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/jump.png",
+      "sha256": "bb5878f59e396c53897f8443d6d885d0155025f519054f475a6568c9fb5cc003"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/jump_start.png",
+      "sha256": "21bf7d0436241d2e9d03c4b97f21319c0d2c591e8ae5739caeedf10cfb5fdc5f"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/land.png",
+      "sha256": "2d68790e0abd1daedcdc7411040167fc8a8d3d1d9f5f9a34bd6387bd660aa8b5"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/phase.png",
+      "sha256": "4636822c2d6138c2e68d797499d0416fde15460bddafafa1d04e979865e8b008"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/player_v3_1_animations.json",
+      "sha256": "274a90ea8d15794790edb9a3be66158a824da5e1a84714f2ab909f9ffa361f25"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/respawn.png",
+      "sha256": "4311a91e47fb6498b440a5fbe39ce99f046c5317e4c8e9fc28f28df03d6179fe"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/run.png",
+      "sha256": "1e3e72967e1666ad88feeb5085c808a2805eec6600d02c98f2845655029038da"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/swim.png",
+      "sha256": "cb56a23eaa5f53b88852f500a17190051715695c821b976e6ef18532364d5dd6"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/swim_idle.png",
+      "sha256": "4636822c2d6138c2e68d797499d0416fde15460bddafafa1d04e979865e8b008"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/walk.png",
+      "sha256": "1e3e72967e1666ad88feeb5085c808a2805eec6600d02c98f2845655029038da"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/wall_jump.png",
+      "sha256": "bb5878f59e396c53897f8443d6d885d0155025f519054f475a6568c9fb5cc003"
+    },
+    {
+      "path": "assets/characters/sunnyland_v3_1_rejected_alias_build/wall_slide.png",
+      "sha256": "a87b1e9c590d991702effb64c7710efab77cf2623092ab7cffed460684ae934a"
+    },
+    {
+      "path": "assets/enemies/enemy_000.png",
+      "sha256": "437ecb2d9cace6872c08440fb46471c883b0f389ca5970cdd7e0cf72401b8198"
+    },
+    {
+      "path": "assets/enemies/enemy_000_animations.json",
+      "sha256": "7826e7ead3d93021bb910b9b633bd491d6f016558a3793dd9cf4388bdbae4395"
+    },
+    {
+      "path": "assets/enemies/enemy_000_attack.png",
+      "sha256": "450123cbc9ac1d65fec193ebc9abd63ee097de61fd4d8c519ebe5a4b6a09aa03"
+    },
+    {
+      "path": "assets/enemies/enemy_000_death.png",
+      "sha256": "dddb4405871bb3d117bf3c94202ecb8fbb1f13f1b7a0d3953f10864d351d81d9"
+    },
+    {
+      "path": "assets/enemies/enemy_000_hurt.png",
+      "sha256": "9cc7e804f054262fd578d62201a07e3c314816cef0eb8ca153594fe355627d74"
+    },
+    {
+      "path": "assets/enemies/enemy_000_idle.png",
+      "sha256": "c37370f771c9fa10ca62ed979b0e3c92259cc02593852cbb5af8cf85ee1566aa"
+    },
+    {
+      "path": "assets/enemies/enemy_000_idle_pose.png",
+      "sha256": "020366200acbcdff331f1a641ad17f98a9b8efd36d047b8a5d5e6731287f810d"
+    },
+    {
+      "path": "assets/enemies/enemy_000_run.png",
+      "sha256": "bbd3e00b382607fba1eb2c4db76fe0de4a08174ff1deab0f548fd231a12b71f3"
+    },
+    {
+      "path": "assets/enemies/enemy_000_walk.png",
+      "sha256": "bbd3e00b382607fba1eb2c4db76fe0de4a08174ff1deab0f548fd231a12b71f3"
+    },
+    {
+      "path": "assets/enemies/enemy_001.png",
+      "sha256": "437ecb2d9cace6872c08440fb46471c883b0f389ca5970cdd7e0cf72401b8198"
+    },
+    {
+      "path": "assets/enemies/enemy_001_animations.json",
+      "sha256": "7826e7ead3d93021bb910b9b633bd491d6f016558a3793dd9cf4388bdbae4395"
+    },
+    {
+      "path": "assets/enemies/enemy_001_attack.png",
+      "sha256": "450123cbc9ac1d65fec193ebc9abd63ee097de61fd4d8c519ebe5a4b6a09aa03"
+    },
+    {
+      "path": "assets/enemies/enemy_001_death.png",
+      "sha256": "dddb4405871bb3d117bf3c94202ecb8fbb1f13f1b7a0d3953f10864d351d81d9"
+    },
+    {
+      "path": "assets/enemies/enemy_001_hurt.png",
+      "sha256": "9cc7e804f054262fd578d62201a07e3c314816cef0eb8ca153594fe355627d74"
+    },
+    {
+      "path": "assets/enemies/enemy_001_idle.png",
+      "sha256": "c37370f771c9fa10ca62ed979b0e3c92259cc02593852cbb5af8cf85ee1566aa"
+    },
+    {
+      "path": "assets/enemies/enemy_001_idle_pose.png",
+      "sha256": "42ac4b710fdc6be72b5dd8fb144d99fd8ecdf3e5d1cbbf2c73b9e7f1f2b758ea"
+    },
+    {
+      "path": "assets/enemies/enemy_001_run.png",
+      "sha256": "bbd3e00b382607fba1eb2c4db76fe0de4a08174ff1deab0f548fd231a12b71f3"
+    },
+    {
+      "path": "assets/enemies/enemy_001_walk.png",
+      "sha256": "bbd3e00b382607fba1eb2c4db76fe0de4a08174ff1deab0f548fd231a12b71f3"
+    },
+    {
+      "path": "assets/enemies/enemy_002.png",
+      "sha256": "437ecb2d9cace6872c08440fb46471c883b0f389ca5970cdd7e0cf72401b8198"
+    },
+    {
+      "path": "assets/enemies/enemy_002_animations.json",
+      "sha256": "7826e7ead3d93021bb910b9b633bd491d6f016558a3793dd9cf4388bdbae4395"
+    },
+    {
+      "path": "assets/enemies/enemy_002_attack.png",
+      "sha256": "450123cbc9ac1d65fec193ebc9abd63ee097de61fd4d8c519ebe5a4b6a09aa03"
+    },
+    {
+      "path": "assets/enemies/enemy_002_death.png",
+      "sha256": "dddb4405871bb3d117bf3c94202ecb8fbb1f13f1b7a0d3953f10864d351d81d9"
+    },
+    {
+      "path": "assets/enemies/enemy_002_fly.png",
+      "sha256": "fa4eed82a5547135d5e41ecfb574097fb16deb7d8255ed4c2239e6d02296e0bd"
+    },
+    {
+      "path": "assets/enemies/enemy_002_hurt.png",
+      "sha256": "9cc7e804f054262fd578d62201a07e3c314816cef0eb8ca153594fe355627d74"
+    },
+    {
+      "path": "assets/enemies/enemy_002_idle.png",
+      "sha256": "c37370f771c9fa10ca62ed979b0e3c92259cc02593852cbb5af8cf85ee1566aa"
+    },
+    {
+      "path": "assets/enemies/enemy_002_idle_pose.png",
+      "sha256": "3d0f0bfdc68f3aaf12cd93fc13f5dd585ebb8c596410f826e4dc3fdcc242e085"
+    },
+    {
+      "path": "assets/enemies/enemy_002_run.png",
+      "sha256": "bbd3e00b382607fba1eb2c4db76fe0de4a08174ff1deab0f548fd231a12b71f3"
+    },
+    {
+      "path": "assets/enemies/enemy_002_walk.png",
+      "sha256": "bbd3e00b382607fba1eb2c4db76fe0de4a08174ff1deab0f548fd231a12b71f3"
+    },
+    {
+      "path": "assets/enemies/enemy_003.png",
+      "sha256": "437ecb2d9cace6872c08440fb46471c883b0f389ca5970cdd7e0cf72401b8198"
+    },
+    {
+      "path": "assets/enemies/enemy_003_animations.json",
+      "sha256": "7826e7ead3d93021bb910b9b633bd491d6f016558a3793dd9cf4388bdbae4395"
+    },
+    {
+      "path": "assets/enemies/enemy_003_attack.png",
+      "sha256": "450123cbc9ac1d65fec193ebc9abd63ee097de61fd4d8c519ebe5a4b6a09aa03"
+    },
+    {
+      "path": "assets/enemies/enemy_003_death.png",
+      "sha256": "dddb4405871bb3d117bf3c94202ecb8fbb1f13f1b7a0d3953f10864d351d81d9"
+    },
+    {
+      "path": "assets/enemies/enemy_003_fly.png",
+      "sha256": "b84ba0e1797ff368a43f46ff302e88366655c6e63835b94a50d67d9b111f810a"
+    },
+    {
+      "path": "assets/enemies/enemy_003_hurt.png",
+      "sha256": "9cc7e804f054262fd578d62201a07e3c314816cef0eb8ca153594fe355627d74"
+    },
+    {
+      "path": "assets/enemies/enemy_003_idle.png",
+      "sha256": "c37370f771c9fa10ca62ed979b0e3c92259cc02593852cbb5af8cf85ee1566aa"
+    },
+    {
+      "path": "assets/enemies/enemy_003_idle_pose.png",
+      "sha256": "8fd5c9260684c6bfadd1caf16b123e87b8129246f68a909f0d58896547f5f483"
+    },
+    {
+      "path": "assets/enemies/enemy_003_run.png",
+      "sha256": "bbd3e00b382607fba1eb2c4db76fe0de4a08174ff1deab0f548fd231a12b71f3"
+    },
+    {
+      "path": "assets/enemies/enemy_003_walk.png",
+      "sha256": "bbd3e00b382607fba1eb2c4db76fe0de4a08174ff1deab0f548fd231a12b71f3"
+    },
+    {
+      "path": "assets/enemies/enemy_004.png",
+      "sha256": "a50ad0977d8666a3efd317bbb430533a8fd1eb2b1665ffcc193b4cfaf401c58a"
+    },
+    {
+      "path": "assets/enemies/enemy_004_animations.json",
+      "sha256": "7826e7ead3d93021bb910b9b633bd491d6f016558a3793dd9cf4388bdbae4395"
+    },
+    {
+      "path": "assets/enemies/enemy_004_attack.png",
+      "sha256": "0849177da21e5765329c8542ab0909bde672a2c9335b60f3315d002db32018f8"
+    },
+    {
+      "path": "assets/enemies/enemy_004_death.png",
+      "sha256": "48292464f71592d80fba3a444ae70a5fa88614ffe8eb34e57dcafb9b6beeb8b4"
+    },
+    {
+      "path": "assets/enemies/enemy_004_hurt.png",
+      "sha256": "c37b3d4f30dd0839f8dc200b56a00e7f64c85b65e49e17a14820151fc866278d"
+    },
+    {
+      "path": "assets/enemies/enemy_004_idle.png",
+      "sha256": "8916d52407128f4ff1552eb611897cddcef57d7c854dda62ad19bde049d89e84"
+    },
+    {
+      "path": "assets/enemies/enemy_004_run.png",
+      "sha256": "f1341a683e175d03bde929adea25cb01fde7d136a9b3229fa30639902dbe4e8b"
+    },
+    {
+      "path": "assets/enemies/enemy_004_walk.png",
+      "sha256": "f1341a683e175d03bde929adea25cb01fde7d136a9b3229fa30639902dbe4e8b"
+    },
+    {
+      "path": "assets/enemies/enemy_005.png",
+      "sha256": "a50ad0977d8666a3efd317bbb430533a8fd1eb2b1665ffcc193b4cfaf401c58a"
+    },
+    {
+      "path": "assets/enemies/enemy_005_animations.json",
+      "sha256": "7826e7ead3d93021bb910b9b633bd491d6f016558a3793dd9cf4388bdbae4395"
+    },
+    {
+      "path": "assets/enemies/enemy_005_attack.png",
+      "sha256": "0849177da21e5765329c8542ab0909bde672a2c9335b60f3315d002db32018f8"
+    },
+    {
+      "path": "assets/enemies/enemy_005_death.png",
+      "sha256": "48292464f71592d80fba3a444ae70a5fa88614ffe8eb34e57dcafb9b6beeb8b4"
+    },
+    {
+      "path": "assets/enemies/enemy_005_hurt.png",
+      "sha256": "c37b3d4f30dd0839f8dc200b56a00e7f64c85b65e49e17a14820151fc866278d"
+    },
+    {
+      "path": "assets/enemies/enemy_005_idle.png",
+      "sha256": "8916d52407128f4ff1552eb611897cddcef57d7c854dda62ad19bde049d89e84"
+    },
+    {
+      "path": "assets/enemies/enemy_005_run.png",
+      "sha256": "f1341a683e175d03bde929adea25cb01fde7d136a9b3229fa30639902dbe4e8b"
+    },
+    {
+      "path": "assets/enemies/enemy_005_walk.png",
+      "sha256": "f1341a683e175d03bde929adea25cb01fde7d136a9b3229fa30639902dbe4e8b"
+    },
+    {
+      "path": "assets/enemies/enemy_006.png",
+      "sha256": "a50ad0977d8666a3efd317bbb430533a8fd1eb2b1665ffcc193b4cfaf401c58a"
+    },
+    {
+      "path": "assets/enemies/enemy_006_animations.json",
+      "sha256": "7826e7ead3d93021bb910b9b633bd491d6f016558a3793dd9cf4388bdbae4395"
+    },
+    {
+      "path": "assets/enemies/enemy_006_attack.png",
+      "sha256": "0849177da21e5765329c8542ab0909bde672a2c9335b60f3315d002db32018f8"
+    },
+    {
+      "path": "assets/enemies/enemy_006_death.png",
+      "sha256": "48292464f71592d80fba3a444ae70a5fa88614ffe8eb34e57dcafb9b6beeb8b4"
+    },
+    {
+      "path": "assets/enemies/enemy_006_hurt.png",
+      "sha256": "c37b3d4f30dd0839f8dc200b56a00e7f64c85b65e49e17a14820151fc866278d"
+    },
+    {
+      "path": "assets/enemies/enemy_006_idle.png",
+      "sha256": "8916d52407128f4ff1552eb611897cddcef57d7c854dda62ad19bde049d89e84"
+    },
+    {
+      "path": "assets/enemies/enemy_006_run.png",
+      "sha256": "f1341a683e175d03bde929adea25cb01fde7d136a9b3229fa30639902dbe4e8b"
+    },
+    {
+      "path": "assets/enemies/enemy_006_walk.png",
+      "sha256": "f1341a683e175d03bde929adea25cb01fde7d136a9b3229fa30639902dbe4e8b"
+    },
+    {
+      "path": "assets/enemies/enemy_007.png",
+      "sha256": "a50ad0977d8666a3efd317bbb430533a8fd1eb2b1665ffcc193b4cfaf401c58a"
+    },
+    {
+      "path": "assets/enemies/enemy_007_animations.json",
+      "sha256": "7826e7ead3d93021bb910b9b633bd491d6f016558a3793dd9cf4388bdbae4395"
+    },
+    {
+      "path": "assets/enemies/enemy_007_attack.png",
+      "sha256": "0849177da21e5765329c8542ab0909bde672a2c9335b60f3315d002db32018f8"
+    },
+    {
+      "path": "assets/enemies/enemy_007_death.png",
+      "sha256": "48292464f71592d80fba3a444ae70a5fa88614ffe8eb34e57dcafb9b6beeb8b4"
+    },
+    {
+      "path": "assets/enemies/enemy_007_hurt.png",
+      "sha256": "c37b3d4f30dd0839f8dc200b56a00e7f64c85b65e49e17a14820151fc866278d"
+    },
+    {
+      "path": "assets/enemies/enemy_007_idle.png",
+      "sha256": "8916d52407128f4ff1552eb611897cddcef57d7c854dda62ad19bde049d89e84"
+    },
+    {
+      "path": "assets/enemies/enemy_007_run.png",
+      "sha256": "f1341a683e175d03bde929adea25cb01fde7d136a9b3229fa30639902dbe4e8b"
+    },
+    {
+      "path": "assets/enemies/enemy_007_walk.png",
+      "sha256": "f1341a683e175d03bde929adea25cb01fde7d136a9b3229fa30639902dbe4e8b"
+    },
+    {
+      "path": "assets/enemies/enemy_008.png",
+      "sha256": "17f5eef25d08a1d1eabdf4ab9cb4db235199cc841153c4a9591419b69f71d109"
+    },
+    {
+      "path": "assets/enemies/enemy_008_animations.json",
+      "sha256": "7826e7ead3d93021bb910b9b633bd491d6f016558a3793dd9cf4388bdbae4395"
+    },
+    {
+      "path": "assets/enemies/enemy_008_attack.png",
+      "sha256": "c09a2d7028418302ea3e1954c68b3228b2261613ec1c1d04b63815c2b38dea07"
+    },
+    {
+      "path": "assets/enemies/enemy_008_death.png",
+      "sha256": "d610878b670596398ac5b9644b901d0d768c6ec83c7d9300f2f3cf1477f53600"
+    },
+    {
+      "path": "assets/enemies/enemy_008_hurt.png",
+      "sha256": "f429facc5e528972f6efa7324af8487ee21ae522b8db30c3f121ea00fab4c8e1"
+    },
+    {
+      "path": "assets/enemies/enemy_008_idle.png",
+      "sha256": "bc6231a5b4e16a5a0b8021ebc4c2c3ab7e80455dc9ae1b618baac9956f80f73a"
+    },
+    {
+      "path": "assets/enemies/enemy_008_run.png",
+      "sha256": "1907ab6aa303a5bf03c644d982961ad5e1232de46a67704d3ad1d7ca7f67bb21"
+    },
+    {
+      "path": "assets/enemies/enemy_008_walk.png",
+      "sha256": "1907ab6aa303a5bf03c644d982961ad5e1232de46a67704d3ad1d7ca7f67bb21"
+    },
+    {
+      "path": "assets/enemies/enemy_009.png",
+      "sha256": "17f5eef25d08a1d1eabdf4ab9cb4db235199cc841153c4a9591419b69f71d109"
+    },
+    {
+      "path": "assets/enemies/enemy_009_animations.json",
+      "sha256": "7826e7ead3d93021bb910b9b633bd491d6f016558a3793dd9cf4388bdbae4395"
+    },
+    {
+      "path": "assets/enemies/enemy_009_attack.png",
+      "sha256": "c09a2d7028418302ea3e1954c68b3228b2261613ec1c1d04b63815c2b38dea07"
+    },
+    {
+      "path": "assets/enemies/enemy_009_death.png",
+      "sha256": "d610878b670596398ac5b9644b901d0d768c6ec83c7d9300f2f3cf1477f53600"
+    },
+    {
+      "path": "assets/enemies/enemy_009_hurt.png",
+      "sha256": "f429facc5e528972f6efa7324af8487ee21ae522b8db30c3f121ea00fab4c8e1"
+    },
+    {
+      "path": "assets/enemies/enemy_009_idle.png",
+      "sha256": "bc6231a5b4e16a5a0b8021ebc4c2c3ab7e80455dc9ae1b618baac9956f80f73a"
+    },
+    {
+      "path": "assets/enemies/enemy_009_run.png",
+      "sha256": "1907ab6aa303a5bf03c644d982961ad5e1232de46a67704d3ad1d7ca7f67bb21"
+    },
+    {
+      "path": "assets/enemies/enemy_009_walk.png",
+      "sha256": "1907ab6aa303a5bf03c644d982961ad5e1232de46a67704d3ad1d7ca7f67bb21"
+    },
+    {
+      "path": "assets/enemies/enemy_010.png",
+      "sha256": "17f5eef25d08a1d1eabdf4ab9cb4db235199cc841153c4a9591419b69f71d109"
+    },
+    {
+      "path": "assets/enemies/enemy_010_animations.json",
+      "sha256": "7826e7ead3d93021bb910b9b633bd491d6f016558a3793dd9cf4388bdbae4395"
+    },
+    {
+      "path": "assets/enemies/enemy_010_attack.png",
+      "sha256": "c09a2d7028418302ea3e1954c68b3228b2261613ec1c1d04b63815c2b38dea07"
+    },
+    {
+      "path": "assets/enemies/enemy_010_death.png",
+      "sha256": "d610878b670596398ac5b9644b901d0d768c6ec83c7d9300f2f3cf1477f53600"
+    },
+    {
+      "path": "assets/enemies/enemy_010_hurt.png",
+      "sha256": "f429facc5e528972f6efa7324af8487ee21ae522b8db30c3f121ea00fab4c8e1"
+    },
+    {
+      "path": "assets/enemies/enemy_010_idle.png",
+      "sha256": "bc6231a5b4e16a5a0b8021ebc4c2c3ab7e80455dc9ae1b618baac9956f80f73a"
+    },
+    {
+      "path": "assets/enemies/enemy_010_run.png",
+      "sha256": "1907ab6aa303a5bf03c644d982961ad5e1232de46a67704d3ad1d7ca7f67bb21"
+    },
+    {
+      "path": "assets/enemies/enemy_010_walk.png",
+      "sha256": "1907ab6aa303a5bf03c644d982961ad5e1232de46a67704d3ad1d7ca7f67bb21"
+    },
+    {
+      "path": "assets/enemies/enemy_011.png",
+      "sha256": "17f5eef25d08a1d1eabdf4ab9cb4db235199cc841153c4a9591419b69f71d109"
+    },
+    {
+      "path": "assets/enemies/enemy_011_animations.json",
+      "sha256": "7826e7ead3d93021bb910b9b633bd491d6f016558a3793dd9cf4388bdbae4395"
+    },
+    {
+      "path": "assets/enemies/enemy_011_attack.png",
+      "sha256": "c09a2d7028418302ea3e1954c68b3228b2261613ec1c1d04b63815c2b38dea07"
+    },
+    {
+      "path": "assets/enemies/enemy_011_death.png",
+      "sha256": "d610878b670596398ac5b9644b901d0d768c6ec83c7d9300f2f3cf1477f53600"
+    },
+    {
+      "path": "assets/enemies/enemy_011_hurt.png",
+      "sha256": "f429facc5e528972f6efa7324af8487ee21ae522b8db30c3f121ea00fab4c8e1"
+    },
+    {
+      "path": "assets/enemies/enemy_011_idle.png",
+      "sha256": "bc6231a5b4e16a5a0b8021ebc4c2c3ab7e80455dc9ae1b618baac9956f80f73a"
+    },
+    {
+      "path": "assets/enemies/enemy_011_run.png",
+      "sha256": "1907ab6aa303a5bf03c644d982961ad5e1232de46a67704d3ad1d7ca7f67bb21"
+    },
+    {
+      "path": "assets/enemies/enemy_011_walk.png",
+      "sha256": "1907ab6aa303a5bf03c644d982961ad5e1232de46a67704d3ad1d7ca7f67bb21"
+    },
+    {
+      "path": "assets/enemies/enemy_012.png",
+      "sha256": "34eed0256d51a54696136f16a85321a7dc7e7b10e5494b6687f3a1172b7afa81"
+    },
+    {
+      "path": "assets/enemies/enemy_012_animations.json",
+      "sha256": "7826e7ead3d93021bb910b9b633bd491d6f016558a3793dd9cf4388bdbae4395"
+    },
+    {
+      "path": "assets/enemies/enemy_012_attack.png",
+      "sha256": "916fdc799931c7000f829031f9cebbc5e7ff084fa01ca9d134c3e6bf64753f1c"
+    },
+    {
+      "path": "assets/enemies/enemy_012_death.png",
+      "sha256": "8eee2ada73d50d7a83320e22ba2471b62280e93f9f1dad9e195b3fbb28ff4b2e"
+    },
+    {
+      "path": "assets/enemies/enemy_012_hurt.png",
+      "sha256": "7bca0d1831ec52f82b794a4419f28d2f4632f531e54fa6850e8f24d68e6eb3f7"
+    },
+    {
+      "path": "assets/enemies/enemy_012_idle.png",
+      "sha256": "a97d052d0fcf65f78f0ea3fc15ac21b3a8b92ac5fb852ea80bc052a8d44ff456"
+    },
+    {
+      "path": "assets/enemies/enemy_012_run.png",
+      "sha256": "5f52ef4c3675ddec24feeadf5d8f7c822691728895e2f13d0015051b23a541b4"
+    },
+    {
+      "path": "assets/enemies/enemy_012_walk.png",
+      "sha256": "5f52ef4c3675ddec24feeadf5d8f7c822691728895e2f13d0015051b23a541b4"
+    },
+    {
+      "path": "assets/enemies/enemy_013.png",
+      "sha256": "34eed0256d51a54696136f16a85321a7dc7e7b10e5494b6687f3a1172b7afa81"
+    },
+    {
+      "path": "assets/enemies/enemy_013_animations.json",
+      "sha256": "7826e7ead3d93021bb910b9b633bd491d6f016558a3793dd9cf4388bdbae4395"
+    },
+    {
+      "path": "assets/enemies/enemy_013_attack.png",
+      "sha256": "916fdc799931c7000f829031f9cebbc5e7ff084fa01ca9d134c3e6bf64753f1c"
+    },
+    {
+      "path": "assets/enemies/enemy_013_death.png",
+      "sha256": "8eee2ada73d50d7a83320e22ba2471b62280e93f9f1dad9e195b3fbb28ff4b2e"
+    },
+    {
+      "path": "assets/enemies/enemy_013_hurt.png",
+      "sha256": "7bca0d1831ec52f82b794a4419f28d2f4632f531e54fa6850e8f24d68e6eb3f7"
+    },
+    {
+      "path": "assets/enemies/enemy_013_idle.png",
+      "sha256": "a97d052d0fcf65f78f0ea3fc15ac21b3a8b92ac5fb852ea80bc052a8d44ff456"
+    },
+    {
+      "path": "assets/enemies/enemy_013_run.png",
+      "sha256": "5f52ef4c3675ddec24feeadf5d8f7c822691728895e2f13d0015051b23a541b4"
+    },
+    {
+      "path": "assets/enemies/enemy_013_walk.png",
+      "sha256": "5f52ef4c3675ddec24feeadf5d8f7c822691728895e2f13d0015051b23a541b4"
+    },
+    {
+      "path": "assets/enemies/enemy_014.png",
+      "sha256": "34eed0256d51a54696136f16a85321a7dc7e7b10e5494b6687f3a1172b7afa81"
+    },
+    {
+      "path": "assets/enemies/enemy_014_animations.json",
+      "sha256": "7826e7ead3d93021bb910b9b633bd491d6f016558a3793dd9cf4388bdbae4395"
+    },
+    {
+      "path": "assets/enemies/enemy_014_attack.png",
+      "sha256": "916fdc799931c7000f829031f9cebbc5e7ff084fa01ca9d134c3e6bf64753f1c"
+    },
+    {
+      "path": "assets/enemies/enemy_014_death.png",
+      "sha256": "8eee2ada73d50d7a83320e22ba2471b62280e93f9f1dad9e195b3fbb28ff4b2e"
+    },
+    {
+      "path": "assets/enemies/enemy_014_hurt.png",
+      "sha256": "7bca0d1831ec52f82b794a4419f28d2f4632f531e54fa6850e8f24d68e6eb3f7"
+    },
+    {
+      "path": "assets/enemies/enemy_014_idle.png",
+      "sha256": "a97d052d0fcf65f78f0ea3fc15ac21b3a8b92ac5fb852ea80bc052a8d44ff456"
+    },
+    {
+      "path": "assets/enemies/enemy_014_run.png",
+      "sha256": "5f52ef4c3675ddec24feeadf5d8f7c822691728895e2f13d0015051b23a541b4"
+    },
+    {
+      "path": "assets/enemies/enemy_014_walk.png",
+      "sha256": "5f52ef4c3675ddec24feeadf5d8f7c822691728895e2f13d0015051b23a541b4"
+    },
+    {
+      "path": "assets/enemies/enemy_015.png",
+      "sha256": "34eed0256d51a54696136f16a85321a7dc7e7b10e5494b6687f3a1172b7afa81"
+    },
+    {
+      "path": "assets/enemies/enemy_015_animations.json",
+      "sha256": "7826e7ead3d93021bb910b9b633bd491d6f016558a3793dd9cf4388bdbae4395"
+    },
+    {
+      "path": "assets/enemies/enemy_015_attack.png",
+      "sha256": "916fdc799931c7000f829031f9cebbc5e7ff084fa01ca9d134c3e6bf64753f1c"
+    },
+    {
+      "path": "assets/enemies/enemy_015_death.png",
+      "sha256": "8eee2ada73d50d7a83320e22ba2471b62280e93f9f1dad9e195b3fbb28ff4b2e"
+    },
+    {
+      "path": "assets/enemies/enemy_015_hurt.png",
+      "sha256": "7bca0d1831ec52f82b794a4419f28d2f4632f531e54fa6850e8f24d68e6eb3f7"
+    },
+    {
+      "path": "assets/enemies/enemy_015_idle.png",
+      "sha256": "a97d052d0fcf65f78f0ea3fc15ac21b3a8b92ac5fb852ea80bc052a8d44ff456"
+    },
+    {
+      "path": "assets/enemies/enemy_015_run.png",
+      "sha256": "5f52ef4c3675ddec24feeadf5d8f7c822691728895e2f13d0015051b23a541b4"
+    },
+    {
+      "path": "assets/enemies/enemy_015_walk.png",
+      "sha256": "5f52ef4c3675ddec24feeadf5d8f7c822691728895e2f13d0015051b23a541b4"
+    },
+    {
+      "path": "assets/enemies/enemy_016.png",
+      "sha256": "4a9fea94769d589360efaaba1ee9e279088df8ad766b6048bd832b01dabdef6f"
+    },
+    {
+      "path": "assets/enemies/enemy_016_animations.json",
+      "sha256": "7826e7ead3d93021bb910b9b633bd491d6f016558a3793dd9cf4388bdbae4395"
+    },
+    {
+      "path": "assets/enemies/enemy_016_attack.png",
+      "sha256": "4b8fa31f6550d3a153ecf77fbdc54a89efe1f1a1934aaf924527a99d067d80cd"
+    },
+    {
+      "path": "assets/enemies/enemy_016_death.png",
+      "sha256": "c6be7966bec5c804a45526e9d8da0c20d40aaab57b7a34aa8af0a279450c5388"
+    },
+    {
+      "path": "assets/enemies/enemy_016_hurt.png",
+      "sha256": "34530d81b7325ed0ed373fe94a672eed462ce9bb6583dadad45635b004d3df87"
+    },
+    {
+      "path": "assets/enemies/enemy_016_idle.png",
+      "sha256": "22b5c7febcf433544f86cf98fce48447d52424aba4c67f75b103168ec652ddd9"
+    },
+    {
+      "path": "assets/enemies/enemy_016_run.png",
+      "sha256": "3624ffe74a98e75848c3dd2d6da4b2586e73657331c3a5fbfaa038dcf4f561fc"
+    },
+    {
+      "path": "assets/enemies/enemy_016_walk.png",
+      "sha256": "3624ffe74a98e75848c3dd2d6da4b2586e73657331c3a5fbfaa038dcf4f561fc"
+    },
+    {
+      "path": "assets/enemies/enemy_017.png",
+      "sha256": "4a9fea94769d589360efaaba1ee9e279088df8ad766b6048bd832b01dabdef6f"
+    },
+    {
+      "path": "assets/enemies/enemy_017_animations.json",
+      "sha256": "7826e7ead3d93021bb910b9b633bd491d6f016558a3793dd9cf4388bdbae4395"
+    },
+    {
+      "path": "assets/enemies/enemy_017_attack.png",
+      "sha256": "4b8fa31f6550d3a153ecf77fbdc54a89efe1f1a1934aaf924527a99d067d80cd"
+    },
+    {
+      "path": "assets/enemies/enemy_017_death.png",
+      "sha256": "c6be7966bec5c804a45526e9d8da0c20d40aaab57b7a34aa8af0a279450c5388"
+    },
+    {
+      "path": "assets/enemies/enemy_017_hurt.png",
+      "sha256": "34530d81b7325ed0ed373fe94a672eed462ce9bb6583dadad45635b004d3df87"
+    },
+    {
+      "path": "assets/enemies/enemy_017_idle.png",
+      "sha256": "22b5c7febcf433544f86cf98fce48447d52424aba4c67f75b103168ec652ddd9"
+    },
+    {
+      "path": "assets/enemies/enemy_017_run.png",
+      "sha256": "3624ffe74a98e75848c3dd2d6da4b2586e73657331c3a5fbfaa038dcf4f561fc"
+    },
+    {
+      "path": "assets/enemies/enemy_017_walk.png",
+      "sha256": "3624ffe74a98e75848c3dd2d6da4b2586e73657331c3a5fbfaa038dcf4f561fc"
+    },
+    {
+      "path": "assets/enemies/enemy_018.png",
+      "sha256": "4a9fea94769d589360efaaba1ee9e279088df8ad766b6048bd832b01dabdef6f"
+    },
+    {
+      "path": "assets/enemies/enemy_018_animations.json",
+      "sha256": "7826e7ead3d93021bb910b9b633bd491d6f016558a3793dd9cf4388bdbae4395"
+    },
+    {
+      "path": "assets/enemies/enemy_018_attack.png",
+      "sha256": "4b8fa31f6550d3a153ecf77fbdc54a89efe1f1a1934aaf924527a99d067d80cd"
+    },
+    {
+      "path": "assets/enemies/enemy_018_death.png",
+      "sha256": "c6be7966bec5c804a45526e9d8da0c20d40aaab57b7a34aa8af0a279450c5388"
+    },
+    {
+      "path": "assets/enemies/enemy_018_hurt.png",
+      "sha256": "34530d81b7325ed0ed373fe94a672eed462ce9bb6583dadad45635b004d3df87"
+    },
+    {
+      "path": "assets/enemies/enemy_018_idle.png",
+      "sha256": "22b5c7febcf433544f86cf98fce48447d52424aba4c67f75b103168ec652ddd9"
+    },
+    {
+      "path": "assets/enemies/enemy_018_run.png",
+      "sha256": "3624ffe74a98e75848c3dd2d6da4b2586e73657331c3a5fbfaa038dcf4f561fc"
+    },
+    {
+      "path": "assets/enemies/enemy_018_walk.png",
+      "sha256": "3624ffe74a98e75848c3dd2d6da4b2586e73657331c3a5fbfaa038dcf4f561fc"
+    },
+    {
+      "path": "assets/enemies/enemy_019.png",
+      "sha256": "4a9fea94769d589360efaaba1ee9e279088df8ad766b6048bd832b01dabdef6f"
+    },
+    {
+      "path": "assets/enemies/enemy_019_animations.json",
+      "sha256": "7826e7ead3d93021bb910b9b633bd491d6f016558a3793dd9cf4388bdbae4395"
+    },
+    {
+      "path": "assets/enemies/enemy_019_attack.png",
+      "sha256": "4b8fa31f6550d3a153ecf77fbdc54a89efe1f1a1934aaf924527a99d067d80cd"
+    },
+    {
+      "path": "assets/enemies/enemy_019_death.png",
+      "sha256": "c6be7966bec5c804a45526e9d8da0c20d40aaab57b7a34aa8af0a279450c5388"
+    },
+    {
+      "path": "assets/enemies/enemy_019_hurt.png",
+      "sha256": "34530d81b7325ed0ed373fe94a672eed462ce9bb6583dadad45635b004d3df87"
+    },
+    {
+      "path": "assets/enemies/enemy_019_idle.png",
+      "sha256": "22b5c7febcf433544f86cf98fce48447d52424aba4c67f75b103168ec652ddd9"
+    },
+    {
+      "path": "assets/enemies/enemy_019_run.png",
+      "sha256": "3624ffe74a98e75848c3dd2d6da4b2586e73657331c3a5fbfaa038dcf4f561fc"
+    },
+    {
+      "path": "assets/enemies/enemy_019_walk.png",
+      "sha256": "3624ffe74a98e75848c3dd2d6da4b2586e73657331c3a5fbfaa038dcf4f561fc"
+    },
+    {
+      "path": "assets/environment/bubble.png",
+      "sha256": "21cdb679a7304cc6643b00a0c93ef0a1f6278bafdd5654d559c6c4618ca69a57"
+    },
+    {
+      "path": "assets/environment/drip.png",
+      "sha256": "3c24f8dffcad7d10dc76054a5fcf18962ba2bba69e7d5c81bba5307fd0fc11b8"
+    },
+    {
+      "path": "assets/environment/hanging_chain.png",
+      "sha256": "919917cb0fc80b49e1c6312d2bfd36dc76454474966e0a6cb21fc75b654cba46"
+    },
+    {
+      "path": "assets/environment/kelp.png",
+      "sha256": "af733bd48343ba4701917be7f18f30b16a2864e4a3e5d48a4c8c9008befea725"
+    },
+    {
+      "path": "assets/environment/spore.png",
+      "sha256": "077b62c416726a1f26d9827d4e861ca0ea5df47669b341a9489266b51f55f185"
+    },
+    {
+      "path": "assets/environment/steam.png",
+      "sha256": "d27f366cd9435ca0d9696287f30a574279ffa56950f7b8ecdb49a84005c7666a"
+    },
+    {
+      "path": "assets/environment/vine.png",
+      "sha256": "a798c33977de237d7df8969278693a5354598df789f7d89cf55d514fc34d9a3b"
+    },
+    {
+      "path": "assets/environment/water.png",
+      "sha256": "c86023db6ae0e4759b92241559ec6f463b25f1085bed17d59da5abd9b3a6ec56"
+    },
+    {
+      "path": "assets/generated/checkpoint/interactive_checkpoint.png",
+      "sha256": "91e0db1dbf06433c082eb399994b9c6403b4a7485bc01654eb868d007e85f7e5"
+    },
+    {
+      "path": "assets/generated/chest/interactive_chest_closed.png",
+      "sha256": "88bb010796dd244efe6f80c5be67317166983b25933932920a17e7fea78d92d6"
+    },
+    {
+      "path": "assets/generated/chest/interactive_chest_open.png",
+      "sha256": "c102124eee283e4c693e81df6406c5c9812e6f4f9e190ab9d85f7cee0b574d60"
+    },
+    {
+      "path": "assets/generated/gate/foundry_phase_barrier.png",
+      "sha256": "abb5df7da6c0695c42c3235302c5da144446e0c863335d07f08b295086efa3c3"
+    },
+    {
+      "path": "assets/generated/gate/interactive_ability_gate.png",
+      "sha256": "5082a9e1dfa16d901c2e9f13f6a8c7eb7fae002f28fe410bec1537f31ccf3bd3"
+    },
+    {
+      "path": "assets/generated/pickup/interactive_ability_pickup.png",
+      "sha256": "1b0b0397b870a0090f01ea78d6aa01a17ea353ee1e51a8f3465cc41f05950902"
+    },
+    {
+      "path": "assets/generated/portal/interactive_portal.png",
+      "sha256": "ceee2debda7a855121f8247c72fc673a854cc35aa805abee50d515cd4bb95d81"
+    },
+    {
+      "path": "assets/npcs/npc_000.png",
+      "sha256": "6a1a10cb9bf7dc951ecd1ff1e98c1197b6e1a53bca9c506f004f8b2b11b09a83"
+    },
+    {
+      "path": "assets/npcs/npc_000_animations.json",
+      "sha256": "8bf691c235d8e5d42f7371b93cf29646b49192cb699161fcaa0e23e5b4f86694"
+    },
+    {
+      "path": "assets/npcs/npc_000_idle.png",
+      "sha256": "2a1d4fb10caac1c0cea81d7b81b6bc92dce7470bf50bd784a5c5e62006102340"
+    },
+    {
+      "path": "assets/npcs/npc_000_listen.png",
+      "sha256": "9278d0fab99a6e4ba8089b1aaf7f5a9870cbf4a67514e17d1ce11db942d4b360"
+    },
+    {
+      "path": "assets/npcs/npc_000_talk.png",
+      "sha256": "81b83df2cedfca798c797eac2b9373d97e4e6a60271dd1aa891ce892ced74656"
+    },
+    {
+      "path": "assets/npcs/npc_000_walk.png",
+      "sha256": "2a8b927318cd1f296e35c182d6e9c319b3df3b6b7c0e871e0c4d1622198e27b4"
+    },
+    {
+      "path": "assets/npcs/npc_001.png",
+      "sha256": "fbec417fdf15d0f5d9c59dec999f0dc7c08fe50bcd966041b39397eb6bee2823"
+    },
+    {
+      "path": "assets/npcs/npc_001_animations.json",
+      "sha256": "8bf691c235d8e5d42f7371b93cf29646b49192cb699161fcaa0e23e5b4f86694"
+    },
+    {
+      "path": "assets/npcs/npc_001_idle.png",
+      "sha256": "6271fb0cc1ef119e4bfa92ae37a215d13a4d368360445c1977157febf2ebeae7"
+    },
+    {
+      "path": "assets/npcs/npc_001_listen.png",
+      "sha256": "3bdfe0b74fe203349162febd009fc679b9e0df48183cc96c0b354ca8029038ef"
+    },
+    {
+      "path": "assets/npcs/npc_001_talk.png",
+      "sha256": "594ec073f228a0f218fe4a97d2ecb6fd36107e9079691c3fa5d9cf6f786672c9"
+    },
+    {
+      "path": "assets/npcs/npc_001_walk.png",
+      "sha256": "eaaa378d0a1d3e0a995aed64bcf83af3a12aec707390033196545bd0cc113f2d"
+    },
+    {
+      "path": "assets/npcs/npc_002.png",
+      "sha256": "0fa654271f05e0366169b4ce3b16e5f4e0aff52d27f2455ab77296bb4a04bb62"
+    },
+    {
+      "path": "assets/npcs/npc_002_animations.json",
+      "sha256": "8bf691c235d8e5d42f7371b93cf29646b49192cb699161fcaa0e23e5b4f86694"
+    },
+    {
+      "path": "assets/npcs/npc_002_idle.png",
+      "sha256": "cbd88b6db16f99eea58f224474a3731a96589f56947fa715e2b405456cc8cafc"
+    },
+    {
+      "path": "assets/npcs/npc_002_listen.png",
+      "sha256": "9d16fb2d47a4454464815f767d75cf84283d19517bddda6b81082c80159d2409"
+    },
+    {
+      "path": "assets/npcs/npc_002_talk.png",
+      "sha256": "7bdd5142601b00dd800280101f2fb529e064f3052bdced93de373ed97af69427"
+    },
+    {
+      "path": "assets/npcs/npc_002_walk.png",
+      "sha256": "964778ead0a417d581b7a45b299fa5db36fe8eb55353c32a7720c08815cab206"
+    },
+    {
+      "path": "assets/npcs/npc_003.png",
+      "sha256": "9e76b1068cd503a13406df9f3b56fcf94b9958c5cc6263e446ec020d7aad0f2f"
+    },
+    {
+      "path": "assets/npcs/npc_003_animations.json",
+      "sha256": "8bf691c235d8e5d42f7371b93cf29646b49192cb699161fcaa0e23e5b4f86694"
+    },
+    {
+      "path": "assets/npcs/npc_003_idle.png",
+      "sha256": "481c85c8df696b4d6cd7492bcf9bfd60bb819be5f907f98be705a1fc5c7fc51b"
+    },
+    {
+      "path": "assets/npcs/npc_003_listen.png",
+      "sha256": "df592bdc36e7743f6b6781b89880447dc0cb165d3aa26fbee0bd15f93db47a40"
+    },
+    {
+      "path": "assets/npcs/npc_003_talk.png",
+      "sha256": "44a01680745e72837fd8759de799200ef40523d7eafb9a801a60e9ebd12ee62c"
+    },
+    {
+      "path": "assets/npcs/npc_003_walk.png",
+      "sha256": "463cd34897863c0cbe54c497d30a1ade0ee96236e343276e9d12bd5988dab5a7"
+    },
+    {
+      "path": "assets/npcs/npc_004.png",
+      "sha256": "6a1a10cb9bf7dc951ecd1ff1e98c1197b6e1a53bca9c506f004f8b2b11b09a83"
+    },
+    {
+      "path": "assets/npcs/npc_004_animations.json",
+      "sha256": "8bf691c235d8e5d42f7371b93cf29646b49192cb699161fcaa0e23e5b4f86694"
+    },
+    {
+      "path": "assets/npcs/npc_004_idle.png",
+      "sha256": "2a1d4fb10caac1c0cea81d7b81b6bc92dce7470bf50bd784a5c5e62006102340"
+    },
+    {
+      "path": "assets/npcs/npc_004_listen.png",
+      "sha256": "9278d0fab99a6e4ba8089b1aaf7f5a9870cbf4a67514e17d1ce11db942d4b360"
+    },
+    {
+      "path": "assets/npcs/npc_004_talk.png",
+      "sha256": "81b83df2cedfca798c797eac2b9373d97e4e6a60271dd1aa891ce892ced74656"
+    },
+    {
+      "path": "assets/npcs/npc_004_walk.png",
+      "sha256": "2a8b927318cd1f296e35c182d6e9c319b3df3b6b7c0e871e0c4d1622198e27b4"
+    },
+    {
+      "path": "assets/npcs/npc_005.png",
+      "sha256": "fbec417fdf15d0f5d9c59dec999f0dc7c08fe50bcd966041b39397eb6bee2823"
+    },
+    {
+      "path": "assets/npcs/npc_005_animations.json",
+      "sha256": "8bf691c235d8e5d42f7371b93cf29646b49192cb699161fcaa0e23e5b4f86694"
+    },
+    {
+      "path": "assets/npcs/npc_005_idle.png",
+      "sha256": "6271fb0cc1ef119e4bfa92ae37a215d13a4d368360445c1977157febf2ebeae7"
+    },
+    {
+      "path": "assets/npcs/npc_005_listen.png",
+      "sha256": "3bdfe0b74fe203349162febd009fc679b9e0df48183cc96c0b354ca8029038ef"
+    },
+    {
+      "path": "assets/npcs/npc_005_talk.png",
+      "sha256": "594ec073f228a0f218fe4a97d2ecb6fd36107e9079691c3fa5d9cf6f786672c9"
+    },
+    {
+      "path": "assets/npcs/npc_005_walk.png",
+      "sha256": "eaaa378d0a1d3e0a995aed64bcf83af3a12aec707390033196545bd0cc113f2d"
+    },
+    {
+      "path": "assets/npcs/npc_006.png",
+      "sha256": "0fa654271f05e0366169b4ce3b16e5f4e0aff52d27f2455ab77296bb4a04bb62"
+    },
+    {
+      "path": "assets/npcs/npc_006_animations.json",
+      "sha256": "8bf691c235d8e5d42f7371b93cf29646b49192cb699161fcaa0e23e5b4f86694"
+    },
+    {
+      "path": "assets/npcs/npc_006_idle.png",
+      "sha256": "cbd88b6db16f99eea58f224474a3731a96589f56947fa715e2b405456cc8cafc"
+    },
+    {
+      "path": "assets/npcs/npc_006_listen.png",
+      "sha256": "9d16fb2d47a4454464815f767d75cf84283d19517bddda6b81082c80159d2409"
+    },
+    {
+      "path": "assets/npcs/npc_006_talk.png",
+      "sha256": "7bdd5142601b00dd800280101f2fb529e064f3052bdced93de373ed97af69427"
+    },
+    {
+      "path": "assets/npcs/npc_006_walk.png",
+      "sha256": "964778ead0a417d581b7a45b299fa5db36fe8eb55353c32a7720c08815cab206"
+    },
+    {
+      "path": "assets/npcs/npc_007.png",
+      "sha256": "9e76b1068cd503a13406df9f3b56fcf94b9958c5cc6263e446ec020d7aad0f2f"
+    },
+    {
+      "path": "assets/npcs/npc_007_animations.json",
+      "sha256": "8bf691c235d8e5d42f7371b93cf29646b49192cb699161fcaa0e23e5b4f86694"
+    },
+    {
+      "path": "assets/npcs/npc_007_idle.png",
+      "sha256": "481c85c8df696b4d6cd7492bcf9bfd60bb819be5f907f98be705a1fc5c7fc51b"
+    },
+    {
+      "path": "assets/npcs/npc_007_listen.png",
+      "sha256": "df592bdc36e7743f6b6781b89880447dc0cb165d3aa26fbee0bd15f93db47a40"
+    },
+    {
+      "path": "assets/npcs/npc_007_talk.png",
+      "sha256": "44a01680745e72837fd8759de799200ef40523d7eafb9a801a60e9ebd12ee62c"
+    },
+    {
+      "path": "assets/npcs/npc_007_walk.png",
+      "sha256": "463cd34897863c0cbe54c497d30a1ade0ee96236e343276e9d12bd5988dab5a7"
+    },
+    {
+      "path": "assets/props/biome_0/biome_0_prop_0.png",
+      "sha256": "2a067fdc675e71ea3c03ccdef47df06128662687a4401df1cc38cdc26f999347"
+    },
+    {
+      "path": "assets/props/biome_0/biome_0_prop_1.png",
+      "sha256": "cdb588d91f53bb6f92b1c709ffe5c7cfcb7813d2d4fbde4888b65f7af8aa526d"
+    },
+    {
+      "path": "assets/props/biome_0/biome_0_prop_10.png",
+      "sha256": "fc3d50a668b268fe44e339cc7e0157988ba3f516ef0bbe89a7a9c863bda7d91d"
+    },
+    {
+      "path": "assets/props/biome_0/biome_0_prop_11.png",
+      "sha256": "522b1556a73fc04b59134f3514d3aeede5d487004baeab4a5fff67a35846ca52"
+    },
+    {
+      "path": "assets/props/biome_0/biome_0_prop_2.png",
+      "sha256": "69c2b7bcbec0dfc7e0730d24eaf0b0186955d9ecdeefb3b55e0e02b3a983a43c"
+    },
+    {
+      "path": "assets/props/biome_0/biome_0_prop_3.png",
+      "sha256": "044b1c6bed1ea9de499aa71fa1c6ea3b640b897822c2c6277a4c246d4ff8a2c6"
+    },
+    {
+      "path": "assets/props/biome_0/biome_0_prop_4.png",
+      "sha256": "9fd4bb4a61eed983a08b9706487c526e7d5b89f4421ec71c5a0090b9044f6ef8"
+    },
+    {
+      "path": "assets/props/biome_0/biome_0_prop_5.png",
+      "sha256": "fad1ce8b83cf8042ff648078098908838e24e3d33f448927a9ad87aa5c66cdc6"
+    },
+    {
+      "path": "assets/props/biome_0/biome_0_prop_6.png",
+      "sha256": "245796fda31d0e81a2ac8b5ba95db68189fa3f82c60b2862ffbe07dc01aa5e6a"
+    },
+    {
+      "path": "assets/props/biome_0/biome_0_prop_7.png",
+      "sha256": "b099ad1bbf6c36941dff5438a42012e4f89c56d7825218d594874b775cfaa3c3"
+    },
+    {
+      "path": "assets/props/biome_0/biome_0_prop_8.png",
+      "sha256": "cb927c2a9614b3b4c7fb3b340de27d78d55c969be0d8309109f7dad85ef6f164"
+    },
+    {
+      "path": "assets/props/biome_0/biome_0_prop_9.png",
+      "sha256": "4b01a944647c7166cd6474dfb055867bf8b142bbdb26e84fcbda5aef288acf47"
+    },
+    {
+      "path": "assets/props/biome_1/biome_1_prop_0.png",
+      "sha256": "b45e5331aa5cf52dfa788c7cbc9cfaad25e6a7d6d485269e1bcb0a95e349d402"
+    },
+    {
+      "path": "assets/props/biome_1/biome_1_prop_1.png",
+      "sha256": "565b1b66f4bc0dea8f94c4bbf74404670cc9aed14f8b0ab6aaf12db665fa3ae8"
+    },
+    {
+      "path": "assets/props/biome_1/biome_1_prop_10.png",
+      "sha256": "f0065856c04de13a67f8270cb8d146f8ec58a1b48622819ee5847b7e961ee765"
+    },
+    {
+      "path": "assets/props/biome_1/biome_1_prop_11.png",
+      "sha256": "910ef50291c3193c444361cb7000b85ddc594d63c023afce898a5fd4b799bcb7"
+    },
+    {
+      "path": "assets/props/biome_1/biome_1_prop_2.png",
+      "sha256": "c945f30316dd857fd75591101f55df186ccc3e6ae1be5110f72dbe74dc76df30"
+    },
+    {
+      "path": "assets/props/biome_1/biome_1_prop_3.png",
+      "sha256": "f991f8a183e47f38a65fe37d60a977bd0b891f1f14cd764e034a8cd0b5a8007d"
+    },
+    {
+      "path": "assets/props/biome_1/biome_1_prop_4.png",
+      "sha256": "93fa257d7bccd54c48d9d106015091a49b258a359582acf52cbf40edea9288a3"
+    },
+    {
+      "path": "assets/props/biome_1/biome_1_prop_5.png",
+      "sha256": "7c5d227eeb92afbf96c301d3b6a38c6dfed5085302f3b3b8a3c1116ff5a8073b"
+    },
+    {
+      "path": "assets/props/biome_1/biome_1_prop_6.png",
+      "sha256": "6627295148ef9ec0f17c5f51c4181a64b730c25a6a8eb27e24d158e29b63ce83"
+    },
+    {
+      "path": "assets/props/biome_1/biome_1_prop_7.png",
+      "sha256": "2262a880d4049dafc1dcdd8ad27b66e7097923a2d715fca97587b5613b6e743c"
+    },
+    {
+      "path": "assets/props/biome_1/biome_1_prop_8.png",
+      "sha256": "b5b3ec8b244259c7baed824b2792a8059a9061d353e4914a3096344792ef6777"
+    },
+    {
+      "path": "assets/props/biome_1/biome_1_prop_9.png",
+      "sha256": "72ff6459e987a55930a87beb5fd516949210d1941a044c5f3c88677f91ac7ba4"
+    },
+    {
+      "path": "assets/props/biome_2/biome_2_prop_0.png",
+      "sha256": "de5c6f7d5e95d3dbb7db64f562d6549532266b1ebab8e74a300c11757a771c40"
+    },
+    {
+      "path": "assets/props/biome_2/biome_2_prop_1.png",
+      "sha256": "723f5cb576f3cc95580dc4cd586c9751d5db28c4b97a2ca1ddb4f0edd38178fa"
+    },
+    {
+      "path": "assets/props/biome_2/biome_2_prop_10.png",
+      "sha256": "f0a2396b96ebcb48ec725fb6a5bd7e0f1c92d1660ab6b87f34f7c994618ce452"
+    },
+    {
+      "path": "assets/props/biome_2/biome_2_prop_11.png",
+      "sha256": "00d90b3cef3e9aa9069660c47819724d2aef01cdbcf0a63b23c584ff9146279e"
+    },
+    {
+      "path": "assets/props/biome_2/biome_2_prop_2.png",
+      "sha256": "2658812998ada774bcacd3e34dc006c0730ba8c7232a87989160a248971c761e"
+    },
+    {
+      "path": "assets/props/biome_2/biome_2_prop_3.png",
+      "sha256": "64ccfd313d423f047118a73dea22f60a3eb559be59b7df4b13007f410745855e"
+    },
+    {
+      "path": "assets/props/biome_2/biome_2_prop_4.png",
+      "sha256": "a420d331117b0dd6725eb185d6d67fecfe0c4680986d9394f9a5d81790865dd0"
+    },
+    {
+      "path": "assets/props/biome_2/biome_2_prop_5.png",
+      "sha256": "9b4bb206313883c787c1b3c8c2b2579e5dd1e0e243fb534be48f051ff959d058"
+    },
+    {
+      "path": "assets/props/biome_2/biome_2_prop_6.png",
+      "sha256": "d9a26430c9a338396855a494977670e0acd10711b2813cb2cdd0b3351afa8636"
+    },
+    {
+      "path": "assets/props/biome_2/biome_2_prop_7.png",
+      "sha256": "82c0e4112cbd7ef15d606cd7895839ee0f4b2b99e52b749c479a206bfba70cb9"
+    },
+    {
+      "path": "assets/props/biome_2/biome_2_prop_8.png",
+      "sha256": "266b586dd8c7fc9ef8eb89b3864bb05d059acb572fa04ae6179db3f6b4f2a130"
+    },
+    {
+      "path": "assets/props/biome_2/biome_2_prop_9.png",
+      "sha256": "6a9af51835c26a85d0af373461416ea0948bc3950ae6d513b6cb6c4e25e9fa92"
+    },
+    {
+      "path": "assets/props/biome_3/biome_3_prop_0.png",
+      "sha256": "c116b60260d156d02dab52ff164c480a04ee6c4fe9cbf86bbb2bd15cf4d2526c"
+    },
+    {
+      "path": "assets/props/biome_3/biome_3_prop_1.png",
+      "sha256": "c3c927993554defebdcfda25d829e8a44445346baa55c03e6b0e70522c3955c1"
+    },
+    {
+      "path": "assets/props/biome_3/biome_3_prop_10.png",
+      "sha256": "93fa257d7bccd54c48d9d106015091a49b258a359582acf52cbf40edea9288a3"
+    },
+    {
+      "path": "assets/props/biome_3/biome_3_prop_11.png",
+      "sha256": "7c5d227eeb92afbf96c301d3b6a38c6dfed5085302f3b3b8a3c1116ff5a8073b"
+    },
+    {
+      "path": "assets/props/biome_3/biome_3_prop_2.png",
+      "sha256": "15f93c00171a2c8f3174c018c35b88f82f5630ccaa6e92d64259b4895156d94d"
+    },
+    {
+      "path": "assets/props/biome_3/biome_3_prop_3.png",
+      "sha256": "ea0dd5ff3827fe856dfd70d7ec6f60ce4150955d4330bc94ad9ff68d0b175db9"
+    },
+    {
+      "path": "assets/props/biome_3/biome_3_prop_4.png",
+      "sha256": "f0065856c04de13a67f8270cb8d146f8ec58a1b48622819ee5847b7e961ee765"
+    },
+    {
+      "path": "assets/props/biome_3/biome_3_prop_5.png",
+      "sha256": "910ef50291c3193c444361cb7000b85ddc594d63c023afce898a5fd4b799bcb7"
+    },
+    {
+      "path": "assets/props/biome_3/biome_3_prop_6.png",
+      "sha256": "2063cbc1663d878c708e258051d955d88d7eaa1032cc7cf8c24bc96930fe5ee8"
+    },
+    {
+      "path": "assets/props/biome_3/biome_3_prop_7.png",
+      "sha256": "46adef20d3c6716a6aeb98f08c63189d0303a00bdb280c543ef33b52dc38afe5"
+    },
+    {
+      "path": "assets/props/biome_3/biome_3_prop_8.png",
+      "sha256": "15e9f3af9ab9a4bb386e44212e6153e986e1910cc7815c84f9261a00c80c6e6a"
+    },
+    {
+      "path": "assets/props/biome_3/biome_3_prop_9.png",
+      "sha256": "988bc043696a95e7050e56579a3efc1f2bf5e70c6203c3b8f8b365e0fd26c2a8"
+    },
+    {
+      "path": "assets/props/biome_4/biome_4_prop_0.png",
+      "sha256": "d91238713fcdfbc57340162adcf7af7a68725516209c274abd76101f414ebcd1"
+    },
+    {
+      "path": "assets/props/biome_4/biome_4_prop_1.png",
+      "sha256": "24952c1062172de527046a2b6e67875127bfb7c108e6a504f8836e4013fefe42"
+    },
+    {
+      "path": "assets/props/biome_4/biome_4_prop_10.png",
+      "sha256": "a420d331117b0dd6725eb185d6d67fecfe0c4680986d9394f9a5d81790865dd0"
+    },
+    {
+      "path": "assets/props/biome_4/biome_4_prop_11.png",
+      "sha256": "9b4bb206313883c787c1b3c8c2b2579e5dd1e0e243fb534be48f051ff959d058"
+    },
+    {
+      "path": "assets/props/biome_4/biome_4_prop_2.png",
+      "sha256": "0f582b37a464b7dc2fba90ed466439c73ee35c12e8d94e82cb9b5b3c0f8c57c6"
+    },
+    {
+      "path": "assets/props/biome_4/biome_4_prop_3.png",
+      "sha256": "27c265a75b6d4a1992fa5f33dc6e0c23f51a8391323d90d3d51d1e523b872145"
+    },
+    {
+      "path": "assets/props/biome_4/biome_4_prop_4.png",
+      "sha256": "f0a2396b96ebcb48ec725fb6a5bd7e0f1c92d1660ab6b87f34f7c994618ce452"
+    },
+    {
+      "path": "assets/props/biome_4/biome_4_prop_5.png",
+      "sha256": "00d90b3cef3e9aa9069660c47819724d2aef01cdbcf0a63b23c584ff9146279e"
+    },
+    {
+      "path": "assets/props/biome_4/biome_4_prop_6.png",
+      "sha256": "901c745d2730f0c7399389e06b208bf6f43615884e13ef51cdeac7efe5cbbe58"
+    },
+    {
+      "path": "assets/props/biome_4/biome_4_prop_7.png",
+      "sha256": "2e0964103c3aabbf7815befc21be93e1cbddcfeb955caa2b7ebadf86c3360519"
+    },
+    {
+      "path": "assets/props/biome_4/biome_4_prop_8.png",
+      "sha256": "05df2c830219054540e52ebdeacaf7de5ec01b5920d7084902f115d1cae2fe43"
+    },
+    {
+      "path": "assets/props/biome_4/biome_4_prop_9.png",
+      "sha256": "052ec226391cf8960fd35b06540b66de306116769e75f16da8c33a91d03cbb68"
+    },
+    {
+      "path": "assets/props/interact/ability.png",
+      "sha256": "e4448d33a3c6b649d249fb973058dc501c1b0d2d765663b10376bd67ca363d96"
+    },
+    {
+      "path": "assets/props/interact/pickup.png",
+      "sha256": "b858584a77be5a26805a4a6f39a0aa81863bb2db7eda05fd80180638091817b0"
+    },
+    {
+      "path": "assets/props/interact/save_shrine.png",
+      "sha256": "245796fda31d0e81a2ac8b5ba95db68189fa3f82c60b2862ffbe07dc01aa5e6a"
+    },
+    {
+      "path": "assets/qa/biome_0-layers.png",
+      "sha256": "5b8e5dbf8911c993fd859f236b2ea277e5cab97a21c36180c547087821e0d61b"
+    },
+    {
+      "path": "assets/qa/biome_1-layers.png",
+      "sha256": "f843b95edae76755726e9343aa277852110a6360fe7416fecfd926e814137f3c"
+    },
+    {
+      "path": "assets/qa/biome_2-layers.png",
+      "sha256": "bd1f6dc09da8824f80089a9f5b351e6cd970231c9e1258e3350fa8d939d152e2"
+    },
+    {
+      "path": "assets/qa/boss-animation-sheet.png",
+      "sha256": "2184b41173c964a49b32e137bf275b4a64205585bdb4dd5ebc1c42519bbdb129"
+    },
+    {
+      "path": "assets/qa/enemy-animation-sheet.png",
+      "sha256": "4e07f9462b87ee49e76322e0e9511057504b3d76b42650a800f63afcd046270a"
+    },
+    {
+      "path": "assets/qa/enemy_001-animation-sheet.png",
+      "sha256": "ef719bc873c86428cb238c1b824ddb0f6832ae3a50c65e2046658fd46338dfe5"
+    },
+    {
+      "path": "assets/qa/enemy_002-animation-sheet.png",
+      "sha256": "196cdc2f84fa63382a8c29c4b49eb4e6396cf4091a7502c796315eedd72c2141"
+    },
+    {
+      "path": "assets/qa/enemy_003-animation-sheet.png",
+      "sha256": "fadd8fa2bd810a1696683eadc2388cc49221a360225e1a2d7b0c1f6957e14776"
+    },
+    {
+      "path": "assets/qa/tileset-test.png",
+      "sha256": "b64b135f8e71ddc6ed4ba844bfd013593da2c9c21d8f23c6360fa65252f2514e"
+    },
+    {
+      "path": "assets/tilesets/biome_0/source.png",
+      "sha256": "f90a543cec1d941ab3226bb960b774ebc585b1386a9763124d7af8e4134208cb"
+    },
+    {
+      "path": "assets/tilesets/biome_0/terrain.json",
+      "sha256": "13763edbd18cd71ea951428992bd93d8940b80047807af5b11d6c3bcdaf7fc6b"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_0_0.png",
+      "sha256": "526e001f82172d76f5bc126532373cc79b75ec42e2004d801ec3580fe1a5a821"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_0_1.png",
+      "sha256": "dc8bb8d59b3f7031efb5bf2b3f4ff27c10344274ca691b6719dc2ae97bd044de"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_0_2.png",
+      "sha256": "2081faf87791f238bf11926d101980d561b6b24c6f5f185ee13eca227a19319c"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_0_3.png",
+      "sha256": "898a83b05dfdb1114611ab16aad573e8195e5566f69fc4b73eb9ed1c2fc6fea6"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_0_4.png",
+      "sha256": "e679ac2ab71132c8e55c0cd66094ca1bdd47b8d1175f95f29376d1e2d654dab9"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_0_5.png",
+      "sha256": "0cadfaeaeea93b53f2286a40f4e8fece7ce4161d938dacd9f3be7a27a54712f5"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_1_0.png",
+      "sha256": "fcbe0314df6bd87be45d9201dc01ab68aaa27699d76243602914a531adb1fbfa"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_1_1.png",
+      "sha256": "f84520b0b16a210bef5ef95765217268f53ee392df5b17af0a71d97ec7d84e8b"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_1_2.png",
+      "sha256": "560b1b0a6480c83ce69d66514d28e26edc0c093ce6466ba7527d2446231a40c9"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_1_3.png",
+      "sha256": "fc506370b7b5e215fb2a14bc3bcad0f8d97383561eef5d416483e3476e898b9d"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_1_4.png",
+      "sha256": "7c22f1585a82447dbaba614f3f87a4db5965c43de447bc000cfb5d16a275219e"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_1_5.png",
+      "sha256": "0cadfaeaeea93b53f2286a40f4e8fece7ce4161d938dacd9f3be7a27a54712f5"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_2_0.png",
+      "sha256": "ffd070b6a65dec75f1793f6be97a8d05b0cb55b9c8c8ecfb4a37e66a7744a0cb"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_2_1.png",
+      "sha256": "a4a372e4463d841fb315c034816a117b771d74c27bb3e3d774f21a1d05eeba60"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_2_2.png",
+      "sha256": "59d509bcc351e82f2fd1f9ffdedc2e6502facad0cd1fc55613e9054f6730d149"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_2_3.png",
+      "sha256": "702607075c3d2a5c2949bc4afea75bb7a444ad60d2bd7700a2eb47ea00016536"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_2_4.png",
+      "sha256": "a25f05b147a26fbe5b19d406eab462d44e38e26ed1781e23ac83950837d386f2"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_2_5.png",
+      "sha256": "0cadfaeaeea93b53f2286a40f4e8fece7ce4161d938dacd9f3be7a27a54712f5"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_3_0.png",
+      "sha256": "d66d3ad6778bc5df8c743bdf4f23da8967c3a47e0e46359fc151a8a716e7b00a"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_3_1.png",
+      "sha256": "a0711aebe3170a3668fb23fc9e6f77ceaa9e4bf8d68d456b8ec0a3d0dcc7a435"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_3_2.png",
+      "sha256": "84268b117124abc37f35d591afbafa7d33e88bc5dcf5e9161f2f2f5706d20f8d"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_3_3.png",
+      "sha256": "9e2d3efdf8bce29aba8e3c756abfaed3120f36ed2e49e9245459ac6ee4f71ff9"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_3_4.png",
+      "sha256": "f1c5f2243e402ee5d3fbb0720b6f310d027531c6ca8c9d2cebf8ea0eb64d3f36"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_3_5.png",
+      "sha256": "0cadfaeaeea93b53f2286a40f4e8fece7ce4161d938dacd9f3be7a27a54712f5"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_4_0.png",
+      "sha256": "3065d67dd93029f974f5a9b118f62258046e4d59cb3e5e4e925952cc2b5e5490"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_4_1.png",
+      "sha256": "86555665f44dd3c543a67f1930ec5793d2dab9719218e2e5c241ee5917e8ef2c"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_4_2.png",
+      "sha256": "217aaab14f64dc93893eb3f9b0245401782862fd7dc120a5dfb916cb78c4e8ec"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_4_3.png",
+      "sha256": "7592f6f9881c506dbb153d545bcbd62400863d8e6847ecd7a43fff86f4e0524d"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_4_4.png",
+      "sha256": "e4d3e7fdb4752ec2df11fcc581e4b21d1d666b48a966ab5c182ee5cbb34ca8d7"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_4_5.png",
+      "sha256": "0cadfaeaeea93b53f2286a40f4e8fece7ce4161d938dacd9f3be7a27a54712f5"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_5_0.png",
+      "sha256": "d34d0d727efcde377f8854c0c4a3d1b3c87255b0484a99efe16b13eab3ccc618"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_5_1.png",
+      "sha256": "e59bd73d0414b2894f2501b6c762d06c2364cad0fb2b2f04d8099819fa4def43"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_5_2.png",
+      "sha256": "4c867f3e56abe8592b844cea8b9ab34a595bf36911743cce1c1487b97f054f27"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_5_3.png",
+      "sha256": "93e50ac2ea4e83df1671b1f147a6cfd19fc8bb2acfac86f6d4ca6d3003ceb3c6"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_5_4.png",
+      "sha256": "c73ea3c23274ed74bb59814660a64c24a450c244cdcf31b8cfe7e7dab26120d1"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_5_5.png",
+      "sha256": "0cadfaeaeea93b53f2286a40f4e8fece7ce4161d938dacd9f3be7a27a54712f5"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_6_0.png",
+      "sha256": "ff96fac0a7bafb12cb2369c39660479be33beea884a48841a241d27c03d64af9"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_6_1.png",
+      "sha256": "3fa8a89e063ad82b53a425fa5e478f7e72e1a485b2be491d10a5604f13c5e585"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_6_2.png",
+      "sha256": "6ea9f679ab802e183a3f6b37340c4fdb03e72ce8b86bc2507daa2f75576e3aa7"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_6_3.png",
+      "sha256": "0cadfaeaeea93b53f2286a40f4e8fece7ce4161d938dacd9f3be7a27a54712f5"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_6_4.png",
+      "sha256": "0cadfaeaeea93b53f2286a40f4e8fece7ce4161d938dacd9f3be7a27a54712f5"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_6_5.png",
+      "sha256": "0cadfaeaeea93b53f2286a40f4e8fece7ce4161d938dacd9f3be7a27a54712f5"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_7_0.png",
+      "sha256": "2584c8a59a87741df020a2e4c22814e89d142bb0c40197c01e2290487c52aa13"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_7_1.png",
+      "sha256": "5234288da9f5e9c40b2f3297ada97a974ebf94479d919ddd524ca33b239bc2d0"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_7_2.png",
+      "sha256": "15aa1ff51c6737ec11d38ba6b0f28a793a033e9af59f732503e2196e388c8788"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_7_3.png",
+      "sha256": "0cadfaeaeea93b53f2286a40f4e8fece7ce4161d938dacd9f3be7a27a54712f5"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_7_4.png",
+      "sha256": "0cadfaeaeea93b53f2286a40f4e8fece7ce4161d938dacd9f3be7a27a54712f5"
+    },
+    {
+      "path": "assets/tilesets/biome_0/tiles/tile_7_5.png",
+      "sha256": "0cadfaeaeea93b53f2286a40f4e8fece7ce4161d938dacd9f3be7a27a54712f5"
+    },
+    {
+      "path": "assets/tilesets/biome_1/source.png",
+      "sha256": "07762e06bf342730fd3a2dae023c969fb9bd950c76f1eba2d4f448900a4f9ab8"
+    },
+    {
+      "path": "assets/tilesets/biome_1/terrain.json",
+      "sha256": "13763edbd18cd71ea951428992bd93d8940b80047807af5b11d6c3bcdaf7fc6b"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_0_0.png",
+      "sha256": "f21f0f46e0d96819b9bc9be21442d20615241e5061835fc9a6c69c516b036493"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_0_1.png",
+      "sha256": "ee32c8643d557a4a9538b4c635758471ac1c0dbea668e9e56a487bc631d6cb8b"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_0_2.png",
+      "sha256": "7a16a119fb0a88f443c0ecbd8784a84ff094f535fb0c031fe8cab1ccc93a2c4c"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_0_3.png",
+      "sha256": "f7bd7c5ba0a4e289e0519eec14ac007d3c601dcbcd632eeeebc5e6f7f774e7e2"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_0_4.png",
+      "sha256": "8c9521e2b8464aa4b2105d0ac055abf9c999bee5ab2e2d415cf8d037a8fe079d"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_0_5.png",
+      "sha256": "094393a9a2cbb0e4153d394ad58b688d4403d436778e8335abd73739e4df6f0d"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_1_0.png",
+      "sha256": "fc23c8a88c3f8b31977b34f022d932e79e60e064ab6d4306933e12e142c294ed"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_1_1.png",
+      "sha256": "390adcaaecf6e527f1a853d82136ee720ebaac51875293b19b38374174861072"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_1_2.png",
+      "sha256": "e8cbbe773390058bd908f93cb0be0402c3daeb1f720726b731e12c714226906f"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_1_3.png",
+      "sha256": "368a26f106e223c4ee7decad81390a2f7fe38ce6ec1202d76b38f0c78dca136a"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_1_4.png",
+      "sha256": "03712a6bbcd703a58ddbdd0be4366aeed120652de98bb7cfa9916f7165f9b537"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_1_5.png",
+      "sha256": "094393a9a2cbb0e4153d394ad58b688d4403d436778e8335abd73739e4df6f0d"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_2_0.png",
+      "sha256": "c5d5cbf88f5877eea6585d2a531f2af86e9e67db2915dce4c8895a675da9a4fb"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_2_1.png",
+      "sha256": "fc743531bb5bd8201395a212697ae2157fa0e1b1a9a1711bfcf543d3dec16958"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_2_2.png",
+      "sha256": "678a51421022ea2b0427ff80a88e7e782fff9faec22c58179ad69a785bb9cc35"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_2_3.png",
+      "sha256": "a4b643449215eafc45efe4299cf447d2f78e704dbaae1a6113af11b2a8dbd9a1"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_2_4.png",
+      "sha256": "87132c4c8368600a21699fe7dde93bde4ea14c1155c4b698afd378e78a0c869a"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_2_5.png",
+      "sha256": "094393a9a2cbb0e4153d394ad58b688d4403d436778e8335abd73739e4df6f0d"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_3_0.png",
+      "sha256": "e78338d4db60d7a092a3ed4469d0b27ccb6780c5def16c3f4c0a2bdfe21fbfa1"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_3_1.png",
+      "sha256": "03978d8faf704141601a3c3db1a4d6848e668ad44c24c62b9db7fea5671fc154"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_3_2.png",
+      "sha256": "7d801bd760282393971e1b2b6f520f62d53bfcb61696f575ed2ab080e44c57cd"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_3_3.png",
+      "sha256": "164110a27214534bc90cb3cfc846b2947efb0213248771f6d6d65d85596ab469"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_3_4.png",
+      "sha256": "39e43d7325619a3ebd9f0b85d3bd454037c42dfa8eeabcc92276558180fe3cba"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_3_5.png",
+      "sha256": "094393a9a2cbb0e4153d394ad58b688d4403d436778e8335abd73739e4df6f0d"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_4_0.png",
+      "sha256": "dc5fcd05371fbbcb56eb980ae358ffe9d64967f96d04e7f4cabe42fcc45c9e8e"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_4_1.png",
+      "sha256": "d8b325abc3602dcb36c0b5017112274cfe7d4986a4fda893cec5e09df8fa02e0"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_4_2.png",
+      "sha256": "0a06211dd6e3ce9f9baad607497d100dddcf28d4f6600a01fdbc49427221ea31"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_4_3.png",
+      "sha256": "e3fc57fb4804e1920f0166bdcc0348fd29e6b74dafa68c20eb286ed0bace36d0"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_4_4.png",
+      "sha256": "938473b23814bf24d2b87c45d9282e551a40e0d16e47e7f7c54b0bb2ce7d1add"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_4_5.png",
+      "sha256": "094393a9a2cbb0e4153d394ad58b688d4403d436778e8335abd73739e4df6f0d"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_5_0.png",
+      "sha256": "7ce0ca68eb54d5478ba5b1d7096ab2029cdc8e920f0a9e2a2a8820d537d90660"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_5_1.png",
+      "sha256": "6e6cc21f767f2df10506ed9f733900e176a8ba36ae2491d750cd6d7580e38f57"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_5_2.png",
+      "sha256": "7ab04fa777f4758b62b667056e4b0283c49a8f60d1333cb7337d0160606f273d"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_5_3.png",
+      "sha256": "bbe3af3bb2cab03a70f8f2a3d536c64ddd40a65eb24b165301b534f6908a3b7f"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_5_4.png",
+      "sha256": "dca3226ec08ea9240c003423213cd44170049da754330cb98aa8d68cd16484ac"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_5_5.png",
+      "sha256": "094393a9a2cbb0e4153d394ad58b688d4403d436778e8335abd73739e4df6f0d"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_6_0.png",
+      "sha256": "f9e98a5a63ea659d7519967652f62b364aeb41eef51136a48eefb701d37b6a8e"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_6_1.png",
+      "sha256": "52f90a3e6b289f3a90a764f58609351ed2a9935f5ac0211b64a0205d9c9569e2"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_6_2.png",
+      "sha256": "29ca3daa862940b41db374951f61ac0d6f0d3237affe171f70af3c8a6b5b2178"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_6_3.png",
+      "sha256": "094393a9a2cbb0e4153d394ad58b688d4403d436778e8335abd73739e4df6f0d"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_6_4.png",
+      "sha256": "094393a9a2cbb0e4153d394ad58b688d4403d436778e8335abd73739e4df6f0d"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_6_5.png",
+      "sha256": "094393a9a2cbb0e4153d394ad58b688d4403d436778e8335abd73739e4df6f0d"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_7_0.png",
+      "sha256": "381a616794bdd6e3084037455c94ba0d15cda72dc16c5d49314750775eeaf18a"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_7_1.png",
+      "sha256": "ec334a2c713ccb24a456537e078001bfdcd70c7d0e41cce476e53d064a2325ec"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_7_2.png",
+      "sha256": "b2f3ab052a3f623afb8232e61135fbcd445f14de18710121deee0344efa72a6c"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_7_3.png",
+      "sha256": "094393a9a2cbb0e4153d394ad58b688d4403d436778e8335abd73739e4df6f0d"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_7_4.png",
+      "sha256": "094393a9a2cbb0e4153d394ad58b688d4403d436778e8335abd73739e4df6f0d"
+    },
+    {
+      "path": "assets/tilesets/biome_1/tiles/tile_7_5.png",
+      "sha256": "094393a9a2cbb0e4153d394ad58b688d4403d436778e8335abd73739e4df6f0d"
+    },
+    {
+      "path": "assets/tilesets/biome_2/source.png",
+      "sha256": "cf982c913d4fe855dff6f23edc5cc2ab092c6ca94735f0718483212a30f102e1"
+    },
+    {
+      "path": "assets/tilesets/biome_2/terrain.json",
+      "sha256": "13763edbd18cd71ea951428992bd93d8940b80047807af5b11d6c3bcdaf7fc6b"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_0_0.png",
+      "sha256": "2697ce0312a0d0dae14d97ad49d06b1c8690ecded7485b05065d38839ece49aa"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_0_1.png",
+      "sha256": "ca6e015d382f91b674444b82eb80ffd9d63c34cc2c6646932e17a30b6b7f878e"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_0_2.png",
+      "sha256": "a90e8876a6ec7c3f537d6e7c07c099eacba7a622eb4cd84caa2bd030a385a0e3"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_0_3.png",
+      "sha256": "8de28b58859a6a3d48b6fada63d42dcda08dab6bdd11a4aecd726fbfce1f154c"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_0_4.png",
+      "sha256": "8ac85724c1ee71e5061a11aadc0de8a98e3ee4821aea8318fca777ea93cceb03"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_0_5.png",
+      "sha256": "fdcb0b5a48c8f5a9003fa8190e6476b567991ba42138322a22335d95f1caa493"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_1_0.png",
+      "sha256": "49d3527d38f2c69faba2c8160e4ce2210b79b3912fe2e2f76b5469997eb1bcf4"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_1_1.png",
+      "sha256": "fd47f8c78597704e1b7314e22e9af00c73b640dec04d0f7a190868ead300e38f"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_1_2.png",
+      "sha256": "20109e3cd3eebb5d7a92ffaaeb6ff14dfd95d8db8a4d1a04de2cd621c517a119"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_1_3.png",
+      "sha256": "1c3c38c536d929f97be51da5de94574f07feb9f706833d348218e598c1ddad73"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_1_4.png",
+      "sha256": "c60ec975732a0357c80249457127476f73126b7ff5fe5d66bd97fcbeeacb842a"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_1_5.png",
+      "sha256": "fdcb0b5a48c8f5a9003fa8190e6476b567991ba42138322a22335d95f1caa493"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_2_0.png",
+      "sha256": "f6a8badeb9eb455e1c6864e737e97ee9bf464c70d46b60704402736d02449644"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_2_1.png",
+      "sha256": "cc2eccc0773cdabd9fa8f1b62333473f2d286b14cc59c25146174d73831e6b8b"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_2_2.png",
+      "sha256": "ed766a4b4624d50d09ffee62ae57ad38db339271f2f962db81e52170e9028fd0"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_2_3.png",
+      "sha256": "bcaa7a1c82718d997d89dfab45d2e879488066e911a5216667d21cdcedff33b7"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_2_4.png",
+      "sha256": "00932107a9a893b95b8167b3375d42b0d7b2e96eba57e0b52c9d4784779fa057"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_2_5.png",
+      "sha256": "fdcb0b5a48c8f5a9003fa8190e6476b567991ba42138322a22335d95f1caa493"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_3_0.png",
+      "sha256": "d1d21cb3fb6e0fca505200caec794d35e63b41ab175213303edc8a497d03f694"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_3_1.png",
+      "sha256": "475a53b1b9400def19923d01d55788fed75fd1be099b5cb35ee1eaf6ae704108"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_3_2.png",
+      "sha256": "c85eea5f86f21008843dbcc29aac0cc497b3efbae985acfbef23f182b28778b0"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_3_3.png",
+      "sha256": "04cea768f17fa16f9572c55dd15cf745d6a5e6577dfb92aaad7488c1008694a9"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_3_4.png",
+      "sha256": "98b6e6da19624fed5a50055f4a7dc608ae388c687b4e6d3dd2287c4659be24d4"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_3_5.png",
+      "sha256": "fdcb0b5a48c8f5a9003fa8190e6476b567991ba42138322a22335d95f1caa493"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_4_0.png",
+      "sha256": "6327e3b223e9c4c8c42bac43ceea3f9dbffd58687d62819246c6dca4ba2eabd0"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_4_1.png",
+      "sha256": "0f57aa4cbf8a858f4e9eacca574634d662e6526a2b0a521add003e98fb6c92a6"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_4_2.png",
+      "sha256": "dd535d883194227966246107f52f1e9def4e8c3fbc710a7c17552f2cbde0a227"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_4_3.png",
+      "sha256": "ae05bf6f4392d3feeaac88154be202d1bd7392eecd51a3d085bd35ac222a3899"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_4_4.png",
+      "sha256": "89d267e42586973eec54c69ca1e89f81688b01b6f0bc68763fef1980fed56e0b"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_4_5.png",
+      "sha256": "fdcb0b5a48c8f5a9003fa8190e6476b567991ba42138322a22335d95f1caa493"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_5_0.png",
+      "sha256": "06ff9a0c3e37f7b4fbde395db5b30bb51d4747b5d21c873599df968ca96af48d"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_5_1.png",
+      "sha256": "35fcfdeef249c2a49c8e9a5a4e0589ebd49a76883eaba9c1e1b1afd66ff7995a"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_5_2.png",
+      "sha256": "70e0791254fb8a49086910bc9681847d35ec3428ea00a11ff75dd0604736e03d"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_5_3.png",
+      "sha256": "06857193a40fff07c3ef8805e75e765efef0bbef162dcb3ee1d7097fbd165187"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_5_4.png",
+      "sha256": "206654e88d1d7de38467e58c0a034bf7b55bf41e93b2fc4761101c9d2f5cb5af"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_5_5.png",
+      "sha256": "fdcb0b5a48c8f5a9003fa8190e6476b567991ba42138322a22335d95f1caa493"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_6_0.png",
+      "sha256": "7cd8bc9d63c2a1bf47bac30a78c26a89c59edacd8de10a04be1bdfd09aecffc9"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_6_1.png",
+      "sha256": "6d7e8ff22ca211ee02efd4d48b73965c48831ce05cf782f417ed45ce632922ca"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_6_2.png",
+      "sha256": "0c352ef747bd3bee504e5a1b732b21984ee2d5638bdef9baf394001efd462d5f"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_6_3.png",
+      "sha256": "fdcb0b5a48c8f5a9003fa8190e6476b567991ba42138322a22335d95f1caa493"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_6_4.png",
+      "sha256": "fdcb0b5a48c8f5a9003fa8190e6476b567991ba42138322a22335d95f1caa493"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_6_5.png",
+      "sha256": "fdcb0b5a48c8f5a9003fa8190e6476b567991ba42138322a22335d95f1caa493"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_7_0.png",
+      "sha256": "a7fdc0f998e3823879258a0865d9d016d745e4054a1bbee39f8406c6ab9b4d23"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_7_1.png",
+      "sha256": "2ae801515e5072a557e59ee2afa1b870a78c4b2ea005795ce13f92a9432ae73d"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_7_2.png",
+      "sha256": "e9fc690563139bcce77da06d1c86e3966a36c60bab74281f4bfdcc4148784943"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_7_3.png",
+      "sha256": "fdcb0b5a48c8f5a9003fa8190e6476b567991ba42138322a22335d95f1caa493"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_7_4.png",
+      "sha256": "fdcb0b5a48c8f5a9003fa8190e6476b567991ba42138322a22335d95f1caa493"
+    },
+    {
+      "path": "assets/tilesets/biome_2/tiles/tile_7_5.png",
+      "sha256": "fdcb0b5a48c8f5a9003fa8190e6476b567991ba42138322a22335d95f1caa493"
+    },
+    {
+      "path": "assets/tilesets/biome_3/source.png",
+      "sha256": "c56d3d7fc70940248e041527edf6d2469ab254296ea9436270fdc8a85da382fa"
+    },
+    {
+      "path": "assets/ui/boss_bar.png",
+      "sha256": "0ea3f3e420a51f6d14c1cf12f2c716288d47b4caf788b2c1cbab54535439d39b"
+    },
+    {
+      "path": "assets/ui/button_frame.png",
+      "sha256": "09a0493f4e0c7ec8415275b6ddd80acd8bc00bb556524e99fcb6218c10c81f58"
+    },
+    {
+      "path": "assets/ui/cursor.png",
+      "sha256": "dcd330b641cb99f96f29b87b14113fe2ee71726c9479f08e7bc8f385896b1d6d"
+    },
+    {
+      "path": "assets/ui/dialogue_ornament.png",
+      "sha256": "538cb2ec6606cd170fb25b1b409e888547b85096f76ad999a46936b007fc4417"
+    },
+    {
+      "path": "assets/ui/dialogue_panel.png",
+      "sha256": "fc0407401633b68297525284e3e13ee56425926b2d5cb6c05e9348b6a20ca161"
+    },
+    {
+      "path": "assets/ui/health_meter.png",
+      "sha256": "3a93b0fa401bc7e8baa62920083849215654b102979786d2ef6bb3dd68f2bb79"
+    },
+    {
+      "path": "assets/ui/hud_frame.png",
+      "sha256": "d6cd28f670ddca0032381bff74cd7b2e227a4a9f7c5d445f4ed6714c527e8238"
+    },
+    {
+      "path": "assets/ui/icons/ability_dash.png",
+      "sha256": "50482e07283b4c13097d42ef30e0e65348112db40a8ede56ecc5150b8a22aa5b"
+    },
+    {
+      "path": "assets/ui/icons/quest.png",
+      "sha256": "2cf23104ad3028dfad026f60f650cc5f16c0a143205d5049f533fb4543cd4d54"
+    },
+    {
+      "path": "assets/ui/inventory_panel.png",
+      "sha256": "e04a7e15f619053a1a843708ca4ea89b2de48a5eaf83711008fb5d046fc16a2c"
+    },
+    {
+      "path": "assets/ui/inventory_slot.png",
+      "sha256": "ab87dcd4ce8d933cb20af7042a99e835c0e4e0f110dd36e6e9298d4ef23ffa28"
+    },
+    {
+      "path": "assets/ui/map_marker.png",
+      "sha256": "dcd330b641cb99f96f29b87b14113fe2ee71726c9479f08e7bc8f385896b1d6d"
+    },
+    {
+      "path": "assets/ui/menu_button.png",
+      "sha256": "701ab54edb469a14b161e7a6e88cfa95426876605d858f5adfafde28035fd7c8"
+    },
+    {
+      "path": "assets/ui/menu_panel.png",
+      "sha256": "d41dc2a13f47831e43840ba65a676d1829ada94d68f83b8d678d84b8549fad3c"
+    },
+    {
+      "path": "assets/ui/portraits/lore.png",
+      "sha256": "c0c6ba0df24b94bc465255d3779690f0b1a3fc71655c3621efa5e7afa201c5e6"
+    },
+    {
+      "path": "assets/ui/portraits/merchant.png",
+      "sha256": "b446e0019f99053e37f67407c28454052aa6d4d198c86461cc71bfca8a3eaee6"
+    },
+    {
+      "path": "assets/ui/portraits/neutral.png",
+      "sha256": "03c920da9d205ec59b8dd424269f295da411effe19d55f4a112cc516a17674de"
+    },
+    {
+      "path": "assets/ui/portraits/player.png",
+      "sha256": "48d1600ac5fb9e9674b49b3db58c074f4c99525fce385f9419b1766a67237698"
+    },
+    {
+      "path": "assets/ui/portraits/quest_giver.png",
+      "sha256": "d33363fb27f57599632e7bb0a8c9126d2393643832c9c664dc73da0da731670f"
+    },
+    {
+      "path": "assets/ui/quest_panel.png",
+      "sha256": "827c65e8ff91c941619e8d575730a56010a87e2aee237207798300753c3620df"
+    },
+    {
+      "path": "assets/ui/selector.png",
+      "sha256": "f18194637043d6eed0e5e00974d10f6240b18597148087eeaf44db92dc0098bb"
+    },
+    {
+      "path": "assets/vfx/ability_unlock.png",
+      "sha256": "edd52a77582321e21bb73fe1e023080ff7841abf92c162408af874e13e57f1fb"
+    },
+    {
+      "path": "assets/vfx/area_burst.png",
+      "sha256": "cf1f7b0207d2143458acb98a01df426629205365f05bc61f06624b3c5c92fe4d"
+    },
+    {
+      "path": "assets/vfx/boss_phase_shift.png",
+      "sha256": "cf1f7b0207d2143458acb98a01df426629205365f05bc61f06624b3c5c92fe4d"
+    },
+    {
+      "path": "assets/vfx/dash_trail.png",
+      "sha256": "f6ae849b4cc95fedd4a495ee6108e6826250403e3456b222f242dfe3d39c092a"
+    },
+    {
+      "path": "assets/vfx/death_puff.png",
+      "sha256": "a0871a23119fb056c8b331d581ef365f6efba0cfaec38b800d868f3c0ddc8ba6"
+    },
+    {
+      "path": "assets/vfx/hit_spark.png",
+      "sha256": "edd52a77582321e21bb73fe1e023080ff7841abf92c162408af874e13e57f1fb"
+    },
+    {
+      "path": "assets/vfx/landing_dust.png",
+      "sha256": "a903a184fc85f3d8f78871a40a3b49d7eb5c9cfd0cf2e910debd00a97ef28344"
+    },
+    {
+      "path": "assets/vfx/pickup_spark.png",
+      "sha256": "cf1f7b0207d2143458acb98a01df426629205365f05bc61f06624b3c5c92fe4d"
+    },
+    {
+      "path": "assets/vfx/projectile.png",
+      "sha256": "924446d81c8c2d08e4d4b63d4e0ba5b7077a5f2850c22e8599694b7767278059"
+    },
+    {
+      "path": "assets/vfx/projectile_trail.png",
+      "sha256": "44ef5bfc0b6d76dd504e612b7ff054eeb9a988031446eeb4e0d7f2835e38f9dd"
+    },
+    {
+      "path": "assets/vfx/ranged_projectile.png",
+      "sha256": "924446d81c8c2d08e4d4b63d4e0ba5b7077a5f2850c22e8599694b7767278059"
+    },
+    {
+      "path": "assets/vfx/slam_shock.png",
+      "sha256": "cf1f7b0207d2143458acb98a01df426629205365f05bc61f06624b3c5c92fe4d"
+    },
+    {
+      "path": "audio/midi/biome_0.mid",
+      "sha256": "e3a9254fcc1606d1a69ead02654c4439f177a195269d22839fb20af60d193b2a"
+    },
+    {
+      "path": "audio/midi/biome_1.mid",
+      "sha256": "561c5dc208c7a23d3de470945a6a5f4baa310a99519558027bb6491e671fe81a"
+    },
+    {
+      "path": "audio/midi/biome_2.mid",
+      "sha256": "b85901cdf5c52e815e2cd85e81d33dcaca4a8d87016eb2c6d2f43d75a95f003e"
+    },
+    {
+      "path": "audio/midi/biome_3.mid",
+      "sha256": "b88a58ec01edd9ddcd7630761c3d49220c58d76c4de428acfbdbd02d211a8e84"
+    },
+    {
+      "path": "audio/midi/boss.mid",
+      "sha256": "5f5bb3b015d979b52cb16eaf6420199a1e7ced8dd9036cab5ddbbfc8e484d9c5"
+    },
+    {
+      "path": "audio/music/biome_0.wav",
+      "sha256": "e19fa79a72d3bc0d280d5a2859f4395319838f82e1271b6769e0827cf3ceb931"
+    },
+    {
+      "path": "audio/music/biome_1.wav",
+      "sha256": "989a5d34ae05d7786c560fdfb4900c9110f4243de242a269d5ddcf00674bc684"
+    },
+    {
+      "path": "audio/music/biome_2.wav",
+      "sha256": "62b20bfc57e3e92d02e5392fa99cfb5da500524036e1d5f3ab119c9605b9abeb"
+    },
+    {
+      "path": "audio/music/biome_3.wav",
+      "sha256": "489f3209072832df4a3c2734171b1f774eb21b4dc97cb1fc1fa0437c95f2fd4c"
+    },
+    {
+      "path": "audio/music/boss.wav",
+      "sha256": "4156ba10e599d9d4f379cdd875de17acc711011c859b7cfaacf3970d3573f79c"
+    },
+    {
+      "path": "audio/music/title.wav",
+      "sha256": "9fbd60a9c46f007e9f3571810c087c23cb74c909f8563a77ab573807a50ab9d3"
+    },
+    {
+      "path": "audio/sfx/ability.wav",
+      "sha256": "d393ebc15bf3013f55289ff3074ab895a9bb3316d86be667a7e7cfb37028df30"
+    },
+    {
+      "path": "audio/sfx/boss_attack.wav",
+      "sha256": "85af34e2f1b73aa7213fa173e000e57beef449aefb18a8388a5b2a5494cecaea"
+    },
+    {
+      "path": "audio/sfx/boss_hit.wav",
+      "sha256": "3057e0718568d903988083156f3b97da2673afff95ad2c2fa1a720ed320f97a1"
+    },
+    {
+      "path": "audio/sfx/checkpoint.wav",
+      "sha256": "6675cdb5b49ccbd39fca0ba1bb1d1e1cf9d09c34fe7b3164f492158d4ec6009c"
+    },
+    {
+      "path": "audio/sfx/dash.wav",
+      "sha256": "47e1b9ed55ebe7c2e21f98f194a861c07705a4e8ec0a70ec7f17f86ff14d9f8b"
+    },
+    {
+      "path": "audio/sfx/death.wav",
+      "sha256": "8069f58101795f9198f2111dc2c23458fa6602162af56444a7136ed3489765c3"
+    },
+    {
+      "path": "audio/sfx/door.wav",
+      "sha256": "b03d706fc72c74560a14bd0285633eda8cf81cf570625ef7701c283467f5aec6"
+    },
+    {
+      "path": "audio/sfx/enemy_attack.wav",
+      "sha256": "bd0fb8a4481a22f0c73c6a301a78a14f65a934ed6c1b99a442599fc515849c20"
+    },
+    {
+      "path": "audio/sfx/hit.wav",
+      "sha256": "61e750a8e16705764a9066522e3b71de47c44e7ede075d42ad6e29c3f8336a9b"
+    },
+    {
+      "path": "audio/sfx/jump.wav",
+      "sha256": "df8f894c1f5831612f7ded32cb393d62f2f5b79b2c3efb13e63f6cbd4231de57"
+    },
+    {
+      "path": "audio/sfx/pickup.wav",
+      "sha256": "34af02480a3ef81e3613af6e5fd4e07f8238a77d2854ec949a0b3170ab9f6be8"
+    },
+    {
+      "path": "audio/sfx/player_attack.wav",
+      "sha256": "3bb1abf46bb9ac3ba0316827e3b049047049477eb7f0a0e690fdfa2049056be5"
+    },
+    {
+      "path": "audio/sfx/player_hurt.wav",
+      "sha256": "53c7ad65da32a38533005cd824ede0405f84372a436ec33fb9174d989ea115d1"
+    },
+    {
+      "path": "audio/sfx/ui_click.wav",
+      "sha256": "6b2f31c4c0ad5f0e6c877fc755db66a68edf6762dac5f43c900665192054b9ae"
+    },
+    {
+      "path": "music/biome_0.tracker-interchange.json",
+      "sha256": "5ffaa8112206d66245b5c0e5aee240706a5f265f2689a0c068097ae18545161c"
+    },
+    {
+      "path": "music/biome_1.tracker-interchange.json",
+      "sha256": "7af35b1c2360a9267e11e088a68f5c0fd1716c013bfbb5299368c9f457e7de9f"
+    },
+    {
+      "path": "music/biome_2.tracker-interchange.json",
+      "sha256": "e8c1600fcc319c320a87834d17536a3c6db6756ed05b3403d6e80c753ab71f7d"
+    },
+    {
+      "path": "music/boss.tracker-interchange.json",
+      "sha256": "e90056d75f080ccb0e5ccfdc368f2951cbf9c53414e193110da9f431c71c76be"
+    },
+    {
+      "path": "music/tracker_patterns.json",
+      "sha256": "eb19708a463c549f84243aacd13396e67959a295958d89150c841b1324eb4712"
+    },
+    {
+      "path": "assets/props/interact/save_shrine_animations.json",
+      "sha256": "f15e22751c934ce606f91f6da8d534c9268c3e60a41f23f779434c4290a1ca31"
+    },
+    {
+      "path": "assets/props/interact/victory.png",
+      "sha256": "522b1556a73fc04b59134f3514d3aeede5d487004baeab4a5fff67a35846ca52"
+    },
+    {
+      "path": "assets/props/interact/victory_animations.json",
+      "sha256": "b31b1c95ee7937dc26357b9455b59f634c0ad94b74b60110954bb3b93ad7f384"
+    }
+  ],
+  "productionApproved": false,
+  "review": "Refreshed candidate. Native checks and visual approval are separate."
+}

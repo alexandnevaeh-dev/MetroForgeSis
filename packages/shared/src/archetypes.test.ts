@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import {
   GAME_ARCHETYPE_PLUGINS,
+  GENRE_DEFINITIONS,
+  genreCapability,
+  genreSupports,
+  getGenreDefinition,
   inferGameArchetypeFromPrompt,
   isTopDownArchetype,
   pickTopDownDungeonItems,
@@ -27,5 +31,42 @@ describe('GameArchetype registry', () => {
     expect(items).toHaveLength(1);
     expect(items[0]?.id).toBe('wind_disc');
     expect(JSON.stringify(items).toLowerCase()).not.toMatch(/zelda|hyrule|triforce|master sword|ganon|link/);
+  });
+});
+
+describe('GenreDefinition capabilities', () => {
+  it('exposes orthogonal perspective vs progression for both families', () => {
+    const side = getGenreDefinition('SIDE_VIEW_METROIDVANIA');
+    const top = getGenreDefinition('TOP_DOWN_ACTION_ADVENTURE');
+    expect(side.perspective).toBe('SIDE_VIEW');
+    expect(side.defaultProgression).toBe('ABILITY_GATED');
+    expect(top.perspective).toBe('TOP_DOWN');
+    expect(top.defaultProgression).toBe('ITEM_GATED');
+    expect(Object.keys(GENRE_DEFINITIONS)).toEqual([
+      'SIDE_VIEW_METROIDVANIA',
+      'TOP_DOWN_ACTION_ADVENTURE',
+    ]);
+  });
+
+  it('answers capability queries instead of string equality for art/locomotion forks', () => {
+    expect(genreSupports('SIDE_VIEW_METROIDVANIA', 'supportsParallaxBackgrounds')).toBe(true);
+    expect(genreSupports('SIDE_VIEW_METROIDVANIA', 'supportsJumping')).toBe(true);
+    expect(genreSupports('SIDE_VIEW_METROIDVANIA', 'supportsDirectionalSpriteSheets')).toBe(false);
+    expect(genreSupports('TOP_DOWN_ACTION_ADVENTURE', 'supportsParallaxBackgrounds')).toBe(false);
+    expect(genreSupports('TOP_DOWN_ACTION_ADVENTURE', 'supportsJumping')).toBe(false);
+    expect(genreSupports('TOP_DOWN_ACTION_ADVENTURE', 'supportsDirectionalSpriteSheets')).toBe(true);
+    expect(genreSupports('TOP_DOWN_ACTION_ADVENTURE', 'supportsSideViewQualityPass')).toBe(false);
+    expect(genreCapability('TOP_DOWN_ACTION_ADVENTURE', 'qualityPassProfile')).toBe(
+      'top_down_action_adventure',
+    );
+    expect(genreCapability('TOP_DOWN_ACTION_ADVENTURE', 'artProjection')).toBe('top-down');
+    expect(genreCapability('SIDE_VIEW_METROIDVANIA', 'abilityNamespace')).toBe('movement_abilities');
+  });
+
+  it('records honest navigation models (no aspirational navigation_agent for top-down)', () => {
+    expect(getGenreDefinition('TOP_DOWN_ACTION_ADVENTURE').runtime.navigationModel).toBe(
+      'WALKABILITY_GRID',
+    );
+    expect(GAME_ARCHETYPE_PLUGINS.TOP_DOWN_ACTION_ADVENTURE.navigationModel).toBe('walkability_grid');
   });
 });

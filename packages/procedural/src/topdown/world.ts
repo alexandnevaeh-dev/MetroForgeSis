@@ -6,6 +6,9 @@ import {
   type GenerationProfile,
 } from '@metroforge/shared';
 import { SeededRNG } from '../rng.js';
+import { ensureNavigationClearance } from './navigation-clearance.js';
+import { carveWoodland } from './woodland-layout.js';
+import { createCanopyLayout, type CanopyRoomLayout } from './canopy-layout.js';
 import type { WorldGenResult } from '../world.js';
 
 export const TILE_GRASS = 0;
@@ -42,6 +45,7 @@ export interface TopDownPropLayout {
   displayScale: number;
   collisionRectsPx: Array<{ x: number; y: number; width: number; height: number }>;
   layers?: Array<{ id: string; image: string; sortY: number }>;
+  occlusionFade?: boolean;
 }
 
 export interface TopDownPropPlacement {
@@ -64,6 +68,8 @@ export interface TopDownArea {
   pois: TopDownPoi[];
   /** Omitted preserves legacy scatter; an explicit empty list removes all props. */
   propPlacements?: TopDownPropPlacement[];
+  floorRoles?: string[][];
+  canopyComposition?: { landmark: string; layout: CanopyRoomLayout };
 }
 
 export interface TopDownOverworld {
@@ -99,6 +105,7 @@ export function generateTopDownWorld(options: {
   seed: number;
   profile: GenerationProfile;
   tileSize?: number;
+  layoutStyle?: 'woodland_ruins' | 'ruined_canopy';
 }): TopDownWorldGenResult {
   const rng = new SeededRNG(options.seed);
   const defaults = TOP_DOWN_PROFILE_DEFAULTS[options.profile];
@@ -108,7 +115,11 @@ export function generateTopDownWorld(options: {
 
   const overworldW = defaults.chunkCols * CHUNK_W;
   const overworldH = defaults.chunkRows * CHUNK_H;
-  const overworldTiles = carveField(overworldW, overworldH, rng);
+  const canopy = options.layoutStyle === 'ruined_canopy' && tileSize === 32;
+  const canopyHub = canopy ? createCanopyLayout(2, overworldW, overworldH, tileSize) : undefined;
+  const overworldTiles = canopyHub?.tiles ?? (options.layoutStyle === 'woodland_ruins'
+    ? carveWoodland(overworldW, overworldH, options.seed)
+    : carveField(overworldW, overworldH, rng));
 
   // The fixed spawn-cluster POIs (spawn/npc/chest/save/enemy — placeOverworldPois below) all sit
   // within ~120px of map center. Without excluding that cluster, a scattered dungeon entrance
@@ -142,11 +153,12 @@ export function generateTopDownWorld(options: {
 
   const overworld = buildArea({
     id: 'overworld',
-    name: 'Sunken Marches',
+    name: canopy || options.layoutStyle === 'woodland_ruins' ? 'Verdant Ruins' : 'Sunken Marches',
     kind: 'overworld',
     tiles: overworldTiles,
     tileSize,
     pois: overworldPois,
+    ...(canopyHub ? { floorRoles: canopyHub.floorRoles, canopyComposition: { landmark: 'mushrooms', layout: canopyHub } } : {}),
   });
 
   const dungeonAreas: TopDownArea[] = [];
@@ -176,7 +188,7 @@ export function generateTopDownWorld(options: {
     // get real, distinct, non-final boss ids so defeating them doesn't end the game early.
     const isFinalDungeon = d === dungeonCount - 1;
     const bossId = isFinalDungeon ? 'boss_final' : `boss_${dungeonId}`;
-    const rooms = buildDungeonRooms(dungeonId, tileSize, rewardItemId, bossId);
+    const rooms = buildDungeonRooms(dungeonId, tileSize, rewardItemId, bossId, options.seed ^ d, canopy);
     dungeonAreas.push(...rooms);
 
     if (d > 0) {
@@ -203,22 +215,37 @@ export function generateTopDownWorld(options: {
 
   const areas = [overworld, ...dungeonAreas];
   const roomIds = areas.map((area) => area.id);
-  const nodes: WorldGraph['nodes'] = areas.map((area) => ({
-    id: area.id,
-    type: area.kind === 'overworld' ? ('zone' as const) : ('room' as const),
-    label: area.name,
-    metadata: {
-      archetype: area.pois.some((p) => p.kind === 'boss')
-        ? 'boss'
-        : area.kind === 'overworld'
-          ? 'hub'
-          : 'combat',
-      grantsAbilities: area.pois
-        .filter((p) => p.kind === 'boss')
-        .map((p) => String(p.metadata.rewardItemId ?? ''))
-        .filter(Boolean),
-    },
-  }));
+  const nodes: WorldGraph['nodes'] = areas.map((area) => {
+    const envFromPoi = area.pois.find((p) => typeof p.metadata.environmentArchetype === 'string');
+    const purposeFromPoi = area.pois.find((p) => typeof p.metadata.roomPurpose === 'string');
+    const isBoss = area.pois.some((p) => p.kind === 'boss');
+    return {
+      id: area.id,
+      type: area.kind === 'overworld' ? ('zone' as const) : ('room' as const),
+      label: area.name,
+      metadata: {
+        archetype: isBoss
+          ? 'boss'
+          : area.kind === 'overworld'
+            ? 'hub'
+            : purposeFromPoi
+              ? String(purposeFromPoi.metadata.roomPurpose)
+              : 'combat',
+        environmentArchetype:
+          (envFromPoi?.metadata.environmentArchetype as string | undefined) ??
+          (area.kind === 'overworld' ? 'forest' : 'dungeon'),
+        roomPurpose:
+          (purposeFromPoi?.metadata.roomPurpose as string | undefined) ??
+          (area.kind === 'overworld' ? 'exploration' : 'combat'),
+        grantsAbilities: area.pois
+          .filter((p) => p.kind === 'boss')
+          .map((p) => String(p.metadata.rewardItemId ?? ''))
+          .filter(Boolean),
+        widthTiles: area.widthTiles,
+        heightTiles: area.heightTiles,
+      },
+    };
+  });
 
   const worldGraph: WorldGraph = {
     version: PRODUCT.schemaVersion,
@@ -228,7 +255,7 @@ export function generateTopDownWorld(options: {
     regions: [
       {
         id: 'region_0',
-        name: 'Sunken Marches',
+        name: canopy ? 'Verdant Ruins' : 'Sunken Marches',
         biomeId: 'biome_0',
         roomIds,
       },
@@ -283,7 +310,7 @@ export function generateTopDownWorld(options: {
       chunkRows: defaults.chunkRows,
       chunkWidthTiles: CHUNK_W,
       chunkHeightTiles: CHUNK_H,
-      regions: [{ id: 'region_0', name: 'Sunken Marches', theme: 'marsh' }],
+      regions: [{ id: 'region_0', name: canopy ? 'Verdant Ruins' : 'Sunken Marches', theme: canopy ? 'woodland_ruins' : 'marsh' }],
       areas,
       dungeonItemId: items[0]!.id,
       dungeonItemsById,
@@ -394,8 +421,286 @@ function carveRoom(w: number, h: number): number[][] {
   return tiles;
 }
 
-/** Deterministically scatters `count` points across the overworld on a coarse grid so multiple
- *  dungeon/town entrances never overlap, avoiding cells already taken by `avoid`. */
+/** Ceremonial hall: open floor, pillar pairs, northern dais band. */
+function carveGreatHall(w: number, h: number): number[][] {
+  const tiles = carveRoom(w, h);
+  const midX = Math.floor(w / 2);
+  for (const px of [Math.floor(w * 0.3), Math.floor(w * 0.7)]) {
+    for (const py of [Math.floor(h * 0.35), Math.floor(h * 0.65)]) {
+      if (px > 1 && px < w - 2 && py > 1 && py < h - 2) tiles[py]![px] = TILE_WALL;
+    }
+  }
+  // Northern dais / throne band — solid back wall with a small recessed platform feel.
+  for (let x = 3; x < w - 3; x++) {
+    tiles[2]![x] = TILE_DIRT;
+  }
+  tiles[2]![midX] = TILE_DIRT;
+  return tiles;
+}
+
+/** Library: north-south shelf rows with walkable aisles (not a prop sprinkle). */
+function carveLibrary(w: number, h: number): number[][] {
+  const tiles = carveRoom(w, h);
+  for (let x = 3; x < w - 3; x += 3) {
+    for (let y = 2; y < h - 2; y++) {
+      // Leave cross-aisle at mid-height for east-west circulation.
+      if (y === Math.floor(h / 2) || y === Math.floor(h / 2) - 1) continue;
+      tiles[y]![x] = TILE_WALL;
+    }
+  }
+  return tiles;
+}
+
+/** Crypt: tighter corridors and alcoves — available for crypt-themed wings. */
+export function carveCryptLayout(w: number, h: number): number[][] {
+  return carveCrypt(w, h);
+}
+
+/** Crypt: tighter corridors and alcoves. */
+function carveCrypt(w: number, h: number): number[][] {
+  const tiles = carveRoom(w, h);
+  const midX = Math.floor(w / 2);
+  const midY = Math.floor(h / 2);
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const onSpine = x === midX || y === midY || x === midX - 1 || y === midY - 1;
+      tiles[y]![x] = onSpine ? TILE_DIRT : TILE_WALL;
+    }
+  }
+  // Burial alcoves off the spine.
+  for (const [ax, ay] of [
+    [2, midY],
+    [w - 3, midY],
+    [midX, 2],
+    [midX, h - 3],
+  ] as const) {
+    tiles[ay]![ax] = TILE_DIRT;
+    if (tiles[ay]?.[ax - 1] !== undefined && ax - 1 > 0) tiles[ay]![ax - 1] = TILE_DIRT;
+    if (tiles[ay]?.[ax + 1] !== undefined && ax + 1 < w - 1) tiles[ay]![ax + 1] = TILE_DIRT;
+  }
+  return tiles;
+}
+
+/** Chapel: central aisle toward northern altar. */
+function carveChapel(w: number, h: number): number[][] {
+  const tiles = carveRoom(w, h);
+  const midX = Math.floor(w / 2);
+  for (let y = 2; y < h - 2; y++) {
+    for (let x = 2; x < w - 2; x++) {
+      const onAisle = Math.abs(x - midX) <= 1;
+      const pew = !onAisle && y % 2 === 0 && x > 2 && x < w - 3;
+      tiles[y]![x] = pew ? TILE_WALL : TILE_DIRT;
+    }
+  }
+  return tiles;
+}
+
+function buildDungeonRooms(
+  dungeonId: string,
+  tileSize: number,
+  rewardItemId: string,
+  bossId: string,
+  seed: number,
+  canopy = false,
+): TopDownArea[] {
+  const w = 20;
+  const h = 16;
+  const cx = (w / 2) * tileSize;
+  const cy = (h / 2) * tileSize;
+
+  const rooms: Array<{
+    id: string;
+    name: string;
+    carve: (width: number, height: number) => number[][];
+    env: string;
+    purpose: string;
+    pois: TopDownPoi[];
+  }> = [
+    {
+      id: `${dungeonId}_r0`,
+      name: 'Castle Entrance Hall',
+      carve: carveGreatHall,
+      env: 'castle_hall',
+      purpose: 'transition',
+      pois: [
+        {
+          id: `${dungeonId}_exit`,
+          kind: 'dungeon_entrance',
+          areaId: `${dungeonId}_r0`,
+          x: cx,
+          y: h * tileSize - tileSize * 2,
+          metadata: { targetAreaId: 'overworld' },
+        },
+        {
+          id: `${dungeonId}_to_r1`,
+          kind: 'dungeon_entrance',
+          areaId: `${dungeonId}_r0`,
+          x: cx,
+          y: tileSize * 2,
+          metadata: { targetAreaId: `${dungeonId}_r1` },
+        },
+        {
+          id: `${dungeonId}_enemy_0`,
+          kind: 'enemy',
+          areaId: `${dungeonId}_r0`,
+          x: cx + 48,
+          y: cy,
+          metadata: { enemyId: `enemy_${dungeonId}_0` },
+        },
+      ],
+    },
+    {
+      id: `${dungeonId}_r1`,
+      name: 'Flooded Archive',
+      carve: carveLibrary,
+      env: 'library',
+      purpose: 'puzzle',
+      pois: [
+        {
+          id: `${dungeonId}_back1`,
+          kind: 'dungeon_entrance',
+          areaId: `${dungeonId}_r1`,
+          x: cx,
+          y: h * tileSize - tileSize * 2,
+          metadata: { targetAreaId: `${dungeonId}_r0` },
+        },
+        {
+          id: `${dungeonId}_switch`,
+          kind: 'switch',
+          areaId: `${dungeonId}_r1`,
+          x: cx - 48,
+          y: cy,
+          metadata: { opensDoorId: `${dungeonId}_door` },
+        },
+        {
+          id: `${dungeonId}_chest`,
+          kind: 'chest',
+          areaId: `${dungeonId}_r1`,
+          x: cx + 48,
+          y: cy,
+          metadata: { itemId: `${dungeonId}_key`, locked: false },
+        },
+        {
+          id: `${dungeonId}_door`,
+          kind: 'locked_door',
+          areaId: `${dungeonId}_r1`,
+          x: cx,
+          y: tileSize * 2,
+          metadata: { keyId: `${dungeonId}_key`, targetAreaId: `${dungeonId}_r2` },
+        },
+      ],
+    },
+    {
+      id: `${dungeonId}_r2`,
+      name: 'Quiet Chapel Annex',
+      carve: carveChapel,
+      env: 'chapel',
+      purpose: 'safe',
+      pois: [
+        {
+          id: `${dungeonId}_back2`,
+          kind: 'dungeon_entrance',
+          areaId: `${dungeonId}_r2`,
+          x: cx,
+          y: h * tileSize - tileSize * 2,
+          metadata: { targetAreaId: `${dungeonId}_r1` },
+        },
+        {
+          id: `${dungeonId}_to_boss`,
+          kind: 'dungeon_entrance',
+          areaId: `${dungeonId}_r2`,
+          x: cx,
+          y: tileSize * 2,
+          metadata: { targetAreaId: `${dungeonId}_r3` },
+        },
+        {
+          id: `${dungeonId}_save`,
+          kind: 'save',
+          areaId: `${dungeonId}_r2`,
+          x: cx - 64,
+          y: cy,
+          metadata: {},
+        },
+      ],
+    },
+    {
+      id: `${dungeonId}_r3`,
+      name: 'Crypt of the Hollow Heart',
+      // Boss needs open combat space; crypt identity is semantic (env) + tighter annex rooms.
+      carve: carveGreatHall,
+      env: 'crypt',
+      purpose: 'boss',
+      pois: [
+        {
+          id: `${dungeonId}_back3`,
+          kind: 'dungeon_entrance',
+          areaId: `${dungeonId}_r3`,
+          x: cx,
+          y: h * tileSize - tileSize * 2,
+          metadata: { targetAreaId: `${dungeonId}_r2` },
+        },
+        {
+          id: `${dungeonId}_boss`,
+          kind: 'boss',
+          areaId: `${dungeonId}_r3`,
+          x: cx,
+          y: cy - 16,
+          metadata: { bossId, rewardItemId },
+        },
+        {
+          id: `${dungeonId}_victory`,
+          kind: 'victory',
+          areaId: `${dungeonId}_r3`,
+          x: cx,
+          y: tileSize * 3,
+          metadata: { requiresBoss: bossId },
+        },
+      ],
+    },
+  ];
+
+  // Room purpose determines proportions: a processional entrance, broad archive,
+  // sheltered rest area, and a combat court with room to dodge. Separate seeded
+  // variation keeps the architectural grammar without repeating identical boxes.
+  const dimensions = [[32, 24], [40, 28], [26, 22], [36, 28]] as const;
+  const layoutRng = new SeededRNG(seed);
+  return rooms.map((room, index) => {
+    const [baseWidth, baseHeight] = dimensions[index]!;
+    const width = baseWidth + layoutRng.int(0, 2) * 2;
+    const height = baseHeight + layoutRng.int(0, 2) * 2;
+    const canopyLayout = canopy ? createCanopyLayout([0,5,6,9][index]!, width, height, tileSize) : undefined;
+    const tiles = canopyLayout?.tiles ?? room.carve(width, height);
+    const pois = room.pois.map(poi => ({
+      ...poi,
+      x: poi.x * width / w,
+      // Keep portals near their intended wall instead of scaling the margin.
+      y: poi.y === tileSize * 2 ? tileSize * 2
+        : poi.y === h * tileSize - tileSize * 2 ? height * tileSize - tileSize * 2
+        : poi.y * height / h,
+    }));
+    // Every dungeon needs an explicit safe arrival point. The runtime's legacy
+    // (64,64) fallback can land inside library shelving or a crypt wall.
+    pois.unshift({ id: room.id + '_spawn', kind: 'spawn', areaId: room.id,
+      x: width * tileSize / 2, y: (height - 4) * tileSize, metadata: {} });
+    const area = buildArea({
+      id: room.id,
+      name: canopy ? ['Rootbound Passage','Ruined Aqueduct','First Seed Sanctuary','Hollow Crown Court'][index]! : room.name,
+      kind: 'dungeon',
+      tiles,
+      tileSize,
+      pois,
+      ...(canopyLayout ? {floorRoles:canopyLayout.floorRoles,canopyComposition:{landmark:['root_arch','bridge','seed_shrine','crown'][index]!,layout:canopyLayout}} : {}),
+    });
+    for (const poi of area.pois) {
+      // One woodland palette still contains distinct architecture: rooted paths,
+      // waterworks, a ruined sanctuary and an overgrown ceremonial court.
+      poi.metadata.environmentArchetype = canopy ? ['forest', 'sewer', 'chapel', 'garden'][index]! : room.env;
+      poi.metadata.roomPurpose = room.purpose;
+    }
+    return area;
+  });
+}
+
 /**
  * Places `count` points across the map, each attempting to clear `minSeparation` from every
  * point in `avoid` and every point already placed this call. Always returns exactly `count`
@@ -443,70 +748,6 @@ function scatterPoints(
   return placed;
 }
 
-function buildDungeonRooms(
-  dungeonId: string,
-  tileSize: number,
-  rewardItemId: string,
-  bossId: string,
-): TopDownArea[] {
-  const w = 16;
-  const h = 12;
-  const cx = (w / 2) * tileSize;
-  const cy = (h / 2) * tileSize;
-
-  return [
-    buildArea({
-      id: `${dungeonId}_r0`,
-      name: `${dungeonId} Entrance`,
-      kind: 'dungeon',
-      tiles: carveRoom(w, h),
-      tileSize,
-      pois: [
-        { id: `${dungeonId}_exit`, kind: 'dungeon_entrance', areaId: `${dungeonId}_r0`, x: cx, y: h * tileSize - tileSize * 2, metadata: { targetAreaId: 'overworld' } },
-        { id: `${dungeonId}_to_r1`, kind: 'dungeon_entrance', areaId: `${dungeonId}_r0`, x: cx, y: tileSize * 2, metadata: { targetAreaId: `${dungeonId}_r1` } },
-        { id: `${dungeonId}_enemy_0`, kind: 'enemy', areaId: `${dungeonId}_r0`, x: cx + 48, y: cy, metadata: { enemyId: `enemy_${dungeonId}_0` } },
-      ],
-    }),
-    buildArea({
-      id: `${dungeonId}_r1`,
-      name: `${dungeonId} Switch Crypt`,
-      kind: 'dungeon',
-      tiles: carveRoom(w, h),
-      tileSize,
-      pois: [
-        { id: `${dungeonId}_back1`, kind: 'dungeon_entrance', areaId: `${dungeonId}_r1`, x: cx, y: h * tileSize - tileSize * 2, metadata: { targetAreaId: `${dungeonId}_r0` } },
-        { id: `${dungeonId}_switch`, kind: 'switch', areaId: `${dungeonId}_r1`, x: cx - 48, y: cy, metadata: { opensDoorId: `${dungeonId}_door` } },
-        { id: `${dungeonId}_chest`, kind: 'chest', areaId: `${dungeonId}_r1`, x: cx + 48, y: cy, metadata: { itemId: `${dungeonId}_key`, locked: false } },
-        { id: `${dungeonId}_door`, kind: 'locked_door', areaId: `${dungeonId}_r1`, x: cx, y: tileSize * 2, metadata: { keyId: `${dungeonId}_key`, targetAreaId: `${dungeonId}_r2` } },
-      ],
-    }),
-    buildArea({
-      id: `${dungeonId}_r2`,
-      name: `${dungeonId} Quiet Annex`,
-      kind: 'dungeon',
-      tiles: carveRoom(w, h),
-      tileSize,
-      pois: [
-        { id: `${dungeonId}_back2`, kind: 'dungeon_entrance', areaId: `${dungeonId}_r2`, x: cx, y: h * tileSize - tileSize * 2, metadata: { targetAreaId: `${dungeonId}_r1` } },
-        { id: `${dungeonId}_to_boss`, kind: 'dungeon_entrance', areaId: `${dungeonId}_r2`, x: cx, y: tileSize * 2, metadata: { targetAreaId: `${dungeonId}_r3` } },
-        { id: `${dungeonId}_save`, kind: 'save', areaId: `${dungeonId}_r2`, x: cx - 64, y: cy, metadata: {} },
-      ],
-    }),
-    buildArea({
-      id: `${dungeonId}_r3`,
-      name: `${dungeonId} Hollow Heart`,
-      kind: 'dungeon',
-      tiles: carveRoom(w, h),
-      tileSize,
-      pois: [
-        { id: `${dungeonId}_back3`, kind: 'dungeon_entrance', areaId: `${dungeonId}_r3`, x: cx, y: h * tileSize - tileSize * 2, metadata: { targetAreaId: `${dungeonId}_r2` } },
-        { id: `${dungeonId}_boss`, kind: 'boss', areaId: `${dungeonId}_r3`, x: cx, y: cy - 16, metadata: { bossId, rewardItemId } },
-        { id: `${dungeonId}_victory`, kind: 'victory', areaId: `${dungeonId}_r3`, x: cx, y: tileSize * 3, metadata: { requiresBoss: bossId } },
-      ],
-    }),
-  ];
-}
-
 function placeOverworldPois(
   w: number,
   h: number,
@@ -518,10 +759,10 @@ function placeOverworldPois(
   const cy = (h / 2) * tileSize;
   const pois: TopDownPoi[] = [
     { id: 'spawn', kind: 'spawn', areaId: 'overworld', x: cx, y: cy, metadata: {} },
-    { id: 'npc_000', kind: 'npc', areaId: 'overworld', x: cx + 80, y: cy, metadata: { npcId: 'npc_000' } },
+    { id: 'npc_000', kind: 'npc', areaId: 'overworld', x: cx + 192, y: cy - 32, metadata: { npcId: 'npc_000' } },
     { id: 'ow_chest', kind: 'chest', areaId: 'overworld', x: cx - 80, y: cy + 48, metadata: { itemId: 'health_vial', locked: false } },
     { id: 'ow_save', kind: 'save', areaId: 'overworld', x: cx - 80, y: cy - 48, metadata: {} },
-    { id: 'ow_enemy', kind: 'enemy', areaId: 'overworld', x: cx + 120, y: cy + 80, metadata: { enemyId: 'enemy_001' } },
+    { id: 'ow_enemy', kind: 'enemy', areaId: 'overworld', x: cx + 224, y: cy + 128, metadata: { enemyId: 'enemy_001' } },
   ];
 
   dungeonSlots.forEach((pos, i) => {
@@ -582,7 +823,14 @@ function buildArea(opts: {
   pois: TopDownPoi[];
   /** Omitted preserves legacy scatter; an explicit empty list removes all props. */
   propPlacements?: TopDownPropPlacement[];
+  floorRoles?: string[][];
+  canopyComposition?: TopDownArea['canopyComposition'];
 }): TopDownArea {
+  ensureNavigationClearance(opts.tiles, opts.pois, opts.tileSize);
+  removeDiagonalPinches(opts.tiles);
+  if(opts.floorRoles)for(let y=0;y<opts.tiles.length;y++)for(let x=0;x<opts.tiles[y]!.length;x++) {
+    if(opts.tiles[y]![x]!==TILE_DIRT)opts.floorRoles[y]![x]='';
+  }
   return {
     id: opts.id,
     name: opts.name,
@@ -593,6 +841,9 @@ function buildArea(opts: {
     tiles: opts.tiles,
     collisionRects: collisionRectsFromTiles(opts.tiles, opts.tileSize),
     pois: opts.pois,
+    ...(opts.propPlacements ? {propPlacements:opts.propPlacements} : {}),
+    ...(opts.floorRoles ? {floorRoles:opts.floorRoles} : {}),
+    ...(opts.canopyComposition ? {canopyComposition:opts.canopyComposition} : {}),
   };
 }
 

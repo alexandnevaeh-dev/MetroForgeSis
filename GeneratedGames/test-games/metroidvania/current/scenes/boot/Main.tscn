@@ -1,0 +1,96 @@
+[gd_scene format=3 uid="uid://c2o5u0s1jojtx"]
+
+[ext_resource type="Script" uid="uid://dynab781uctjj" path="res://scripts/UI/TitleScreen.gd" id="1_title"]
+
+[node name="Main" type="Control" unique_id=60322351]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_title")
+
+[node name="Background" type="ColorRect" parent="." unique_id=1000601061]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 3.0
+offset_top = -3.0
+offset_right = 3.0
+offset_bottom = -3.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.08, 0.09, 0.12, 1)
+
+[node name="VBox" type="VBoxContainer" parent="." unique_id=1102884552]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -180.0
+offset_top = -120.0
+offset_right = 180.0
+offset_bottom = 140.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 16
+
+[node name="TitleLabel" type="Label" parent="VBox" unique_id=470418946]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Stormglass Reliquary - Side-view Test"
+horizontal_alignment = 1
+
+[node name="NewGameButton" type="Button" parent="VBox" unique_id=244469067]
+layout_mode = 2
+text = "New Game"
+
+[node name="ContinueButton" type="Button" parent="VBox" unique_id=51120700]
+layout_mode = 2
+text = "Continue"
+
+[node name="FilesButton" type="Button" parent="VBox" unique_id=532919739]
+layout_mode = 2
+text = "Files"
+
+[node name="FileSelectPanel" type="VBoxContainer" parent="." unique_id=2115159878]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -220.0
+offset_top = -140.0
+offset_right = 220.0
+offset_bottom = 160.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="Heading" type="Label" parent="FileSelectPanel" unique_id=307302688]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Choose Slot"
+horizontal_alignment = 1
+
+[node name="Slot0Button" type="Button" parent="FileSelectPanel" unique_id=675672889]
+layout_mode = 2
+text = "Slot 1 — Empty"
+
+[node name="Slot1Button" type="Button" parent="FileSelectPanel" unique_id=1091259588]
+layout_mode = 2
+text = "Slot 2 — Empty"
+
+[node name="Slot2Button" type="Button" parent="FileSelectPanel" unique_id=856685237]
+layout_mode = 2
+text = "Slot 3 — Empty"
+
+[node name="BackButton" type="Button" parent="FileSelectPanel" unique_id=1377105191]
+layout_mode = 2
+text = "Back"

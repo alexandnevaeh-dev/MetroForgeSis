@@ -1,3 +1,4 @@
+import { resolve as resolveProjectPath } from 'node:path';
 import type { WorldGraph } from '@metroforge/schemas';
 import type { WorldEditCommand } from '@metroforge/generation';
 import {
@@ -31,6 +32,7 @@ const roomHistories = new Map<string, EditHistory<RoomHistoryPayload>>();
 function worldHistoryFor(
   projectPath: string,
 ): EditHistory<{ command: WorldEditCommand; previousGraph: WorldGraph }> {
+  projectPath = resolveProjectPath(projectPath);
   let h = worldHistories.get(projectPath);
   if (!h) {
     h = new EditHistory(50);
@@ -40,6 +42,7 @@ function worldHistoryFor(
 }
 
 function roomHistoryFor(projectPath: string): EditHistory<RoomHistoryPayload> {
+  projectPath = resolveProjectPath(projectPath);
   let h = roomHistories.get(projectPath);
   if (!h) {
     h = new EditHistory(50);

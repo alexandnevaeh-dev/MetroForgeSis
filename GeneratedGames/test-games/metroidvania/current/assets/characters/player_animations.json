@@ -1,0 +1,155 @@
+{
+  "idle": {
+    "frameCount": 8,
+    "fps": 12,
+    "loop": true
+  },
+  "walk": {
+    "frameCount": 8,
+    "fps": 12,
+    "loop": true
+  },
+  "run": {
+    "frameCount": 8,
+    "fps": 16,
+    "loop": true
+  },
+  "jump_start": {
+    "frameCount": 2,
+    "fps": 12,
+    "loop": false
+  },
+  "jump": {
+    "frameCount": 3,
+    "fps": 12,
+    "loop": false
+  },
+  "fall": {
+    "frameCount": 2,
+    "fps": 12,
+    "loop": false
+  },
+  "land": {
+    "frameCount": 1,
+    "fps": 12,
+    "loop": false
+  },
+  "dash": {
+    "frameCount": 8,
+    "fps": 12,
+    "loop": false
+  },
+  "air_dash": {
+    "frameCount": 8,
+    "fps": 12,
+    "loop": false
+  },
+  "double_jump": {
+    "frameCount": 3,
+    "fps": 12,
+    "loop": false
+  },
+  "wall_slide": {
+    "frameCount": 2,
+    "fps": 12,
+    "loop": false
+  },
+  "wall_jump": {
+    "frameCount": 3,
+    "fps": 12,
+    "loop": false
+  },
+  "attack": {
+    "frameCount": 8,
+    "fps": 18,
+    "loop": false,
+    "attackTiming": {
+      "activeStart": 2,
+      "activeEnd": 5,
+      "recoveryEnd": 7,
+      "comboCancelOpenFrame": 6
+    }
+  },
+  "attack_2": {
+    "frameCount": 8,
+    "fps": 18,
+    "loop": false,
+    "attackTiming": {
+      "activeStart": 2,
+      "activeEnd": 5,
+      "recoveryEnd": 7,
+      "comboCancelOpenFrame": 6
+    }
+  },
+  "attack_3": {
+    "frameCount": 8,
+    "fps": 18,
+    "loop": false,
+    "attackTiming": {
+      "activeStart": 2,
+      "activeEnd": 5,
+      "recoveryEnd": 7,
+      "comboCancelOpenFrame": 6
+    }
+  },
+  "hurt": {
+    "frameCount": 8,
+    "fps": 12,
+    "loop": false
+  },
+  "death": {
+    "frameCount": 8,
+    "fps": 12,
+    "loop": false
+  },
+  "ground_slam_start": {
+    "frameCount": 2,
+    "fps": 12,
+    "loop": false
+  },
+  "ground_slam_fall": {
+    "frameCount": 2,
+    "fps": 12,
+    "loop": false
+  },
+  "ground_slam_impact": {
+    "frameCount": 1,
+    "fps": 12,
+    "loop": false
+  },
+  "grapple": {
+    "frameCount": 8,
+    "fps": 12,
+    "loop": false
+  },
+  "phase": {
+    "frameCount": 8,
+    "fps": 12,
+    "loop": false
+  },
+  "respawn": {
+    "frameCount": 8,
+    "fps": 12,
+    "loop": false
+  },
+  "interact": {
+    "frameCount": 8,
+    "fps": 12,
+    "loop": false
+  },
+  "ability_acquire": {
+    "frameCount": 8,
+    "fps": 12,
+    "loop": false
+  },
+  "swim": {
+    "frameCount": 8,
+    "fps": 12,
+    "loop": true
+  },
+  "swim_idle": {
+    "frameCount": 8,
+    "fps": 12,
+    "loop": true
+  }
+}

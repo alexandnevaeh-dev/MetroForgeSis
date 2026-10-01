@@ -41,6 +41,7 @@ interface ClipSpec {
   frameCount: number;
   fps: number;
   loop: boolean;
+  impactFrame?: number;
 }
 
 function loadClipSpecs(jsonPath: string, supplied?: Buffer): Record<string, ClipSpec> {
@@ -59,6 +60,7 @@ function loadClipSpecs(jsonPath: string, supplied?: Buffer): Record<string, Clip
         frameCount: Number(spec.frameCount) || 1,
         fps: Number(spec.fps) || 8,
         loop: spec.loop !== false,
+        impactFrame: spec.impactFrame,
       };
     }
     return out;
@@ -105,6 +107,8 @@ function clipFromSheet(
   )) {
     throw new Error(`Invalid animation frame layout for ${rel}: ${frameWidth}x${frameHeight}, ${guessedCount} frames in ${size.width}x${size.height}`);
   }
+  if (spec?.impactFrame !== undefined && (!Number.isInteger(spec.impactFrame) || spec.impactFrame < 0 || spec.impactFrame >= guessedCount))
+    throw new Error(`Invalid animation impact frame for ${rel}`);
   return {
     ownerId,
     clip,
@@ -114,6 +118,8 @@ function clipFromSheet(
     frameCount: guessedCount,
     fps: spec?.fps ?? 8,
     loop: spec?.loop ?? true,
+    impactFrame: spec?.impactFrame ?? Math.floor(guessedCount / 2),
+    hasImpactFrame: spec?.impactFrame !== undefined,
     pivotX: spec?.pivotX ?? 0.5,
     pivotY: spec?.pivotY ?? pivotY,
     pixelsPerUnit: spec?.pixelsPerUnit,
@@ -168,16 +174,28 @@ function collectSprites(input: AssemblyInput, enemyIds: string[]): GameplaySprit
   }
 
   for (const enemyId of enemyIds) {
-    const specs = loadClipSpecs(join(input.outputDir, `assets/enemies/${enemyId}_animations.json`), input.textureFiles?.get(`assets/enemies/${enemyId}_animations.json`));
-    for (const clip of ['idle', 'walk', 'attack', 'hurt', 'death']) {
-      const sprite = clipFromSheet(enemyId, clip, `assets/enemies/${enemyId}_${clip}.png`, input, specs, 0);
+    const folder = input.gameContent?.bosses.some((boss) => boss.id === enemyId) ? 'bosses' : 'enemies';
+    const settings = `assets/${folder}/${enemyId}_animations.json`;
+    const specs = loadClipSpecs(join(input.outputDir, settings), input.textureFiles?.get(settings));
+    for (const clip of ['idle', 'walk', 'run', 'telegraph', 'attack', 'attack_projectile', 'attack_burst', 'recovery', 'hurt', 'death']) {
+      const sprite = clipFromSheet(enemyId, clip, `assets/${folder}/${enemyId}_${clip}.png`, input, specs, 0);
       if (sprite) sprites.push(sprite);
     }
   }
-  const checkpointSettings = 'assets/props/interact/save_shrine_animations.json';
-  const checkpoint = clipFromSheet('checkpoint', 'idle', 'assets/props/interact/save_shrine.png', input,
-    loadClipSpecs(join(input.outputDir, checkpointSettings), input.textureFiles?.get(checkpointSettings)), 0);
-  if (checkpoint) sprites.push(checkpoint);
+  for (const [owner, asset] of [['checkpoint', 'save_shrine'], ['victory', 'victory']] as const) {
+    const settings = `assets/props/interact/${asset}_animations.json`;
+    const sprite = clipFromSheet(owner, 'idle', `assets/props/interact/${asset}.png`, input,
+      loadClipSpecs(join(input.outputDir, settings), input.textureFiles?.get(settings)), 0);
+    if (sprite) sprites.push(sprite);
+  }
+  for (const spriteId of new Set((input.gameContent?.npcs ?? []).map(npc => npc.spriteId ?? npc.id))) {
+    const settings = `assets/npcs/${spriteId}_animations.json`;
+    const specs = loadClipSpecs(join(input.outputDir, settings), input.textureFiles?.get(settings));
+    for (const clip of ['idle', 'walk', 'run', 'talk', 'listen']) {
+      const sprite = clipFromSheet(spriteId, clip, `assets/npcs/${spriteId}_${clip}.png`, input, specs, 0);
+      if (sprite) sprites.push(sprite);
+    }
+  }
   return sprites;
 }
 
@@ -203,6 +221,10 @@ export function buildGameplayPack(input: AssemblyInput): GameplayPack {
   const movement = buildMovementJson(input.gameDna.movement);
   const textureExists = (rel: string) =>
     (input.textureFiles?.has(rel) ?? false) || existsSync(join(input.outputDir, rel));
+  const castleInterior = 'assets/backgrounds/stormglass/reliquary_interior.png';
+  const usesCastleInterior = input.gameDna.archetype === 'SIDE_VIEW_METROIDVANIA' && textureExists(castleInterior);
+  const castleConditionTints = [[0.72, 0.72, 0.82, 0.76], [0.48, 0.66, 0.76, 0.74],
+    [0.62, 0.58, 0.72, 0.73], [0.58, 0.70, 0.84, 0.76]];
   const ctx = prepareRoomAssemblyContext(input.worldGraph, input.gameContent, input.roomIds);
   const enemyCounter = { value: 0 };
   const rooms: GameplayRoom[] = [];
@@ -276,10 +298,11 @@ export function buildGameplayPack(input: AssemblyInput): GameplayPack {
       }
     }
 
-    const enemyId =
+    const bossDef = input.gameContent?.bosses.find((boss) => boss.arenaRoomId === roomId);
+    const enemyId = bossDef?.id ?? (
       opts.hasEnemy && !opts.isBossRoom
         ? `enemy_${opts.enemyIndex.toString().padStart(3, '0')}`
-        : undefined;
+        : undefined);
     if (enemyId) enemyIds.push(enemyId);
     const enemyDef = enemyId
       ? input.gameContent?.enemies.find((e) => e.id === enemyId)
@@ -299,13 +322,23 @@ export function buildGameplayPack(input: AssemblyInput): GameplayPack {
       solids: collectRoomCollisionRects(opts),
       doors,
       gates,
+      npcs: opts.npcs.map((npc, index) => {
+        const definitionId = npc.definitionId ?? npc.id;
+        const definition = input.gameContent?.npcs.find(entry => entry.id === definitionId);
+        const placement = opts.entityPlacements?.find(entry => entry.kind === 'npc' && entry.id === npc.id);
+        return { id: npc.id, definitionId, spriteId: definition?.spriteId ?? definitionId,
+          name: npc.name, role: npc.role, x: placement?.x ?? opts.width * 0.75 - index * 60,
+          y: placement?.y ?? floorTop, dialogueIds: [...(definition?.dialogueIds ?? [])],
+          questIds: [...npc.questIds], shopId: npc.shopId };
+      }),
       enemy: enemyId
         ? {
             id: enemyId,
-            x: opts.width - 150,
+            x: bossDef ? opts.width * 0.65 : opts.width - 150,
             y: floorTop,
-            health: enemyDef?.health ?? 30,
-            damage: enemyDef?.damage ?? 8,
+            health: bossDef?.health ?? enemyDef?.health ?? 30,
+            damage: bossDef ? 18 : enemyDef?.damage ?? 8,
+            ...(bossDef ? { isBoss: true, name: bossDef.name, bossPhases: bossDef.phases.map((phase) => ({ ...phase, attacks: [...phase.attacks] })) } : {}),
             movement: enemyDef?.movement ?? 'patrol',
             combat: enemyDef?.combat?.type ?? 'melee',
           }
@@ -318,6 +351,10 @@ export function buildGameplayPack(input: AssemblyInput): GameplayPack {
       checkpoint: opts.hasSavePoint || i === 0 ? { x: 150, y: floorTop } : undefined,
       victory: roomId === victoryRoomId,
       backgrounds: {
+        ...(usesCastleInterior ? {
+          interior: castleInterior,
+          interiorTint: castleConditionTints[Math.min(3, Math.floor(i / 10))],
+        } : {}),
         ...readBackgroundFraming(input, opts.biomeIndex),
         far: textureExists(`assets/backgrounds/biome_${opts.biomeIndex}/far.png`)
           ? `assets/backgrounds/biome_${opts.biomeIndex}/far.png`
@@ -382,5 +419,7 @@ export function buildGameplayPack(input: AssemblyInput): GameplayPack {
       .map((a) => ({ id: a.id, name: a.name })),
     rooms,
     sprites: collectSprites(input, enemyIds),
+    dialogues: (input.gameContent?.dialogues ?? []).map(dialogue => ({ ...dialogue,
+      lines: dialogue.lines.map(line => ({ ...line, ...(line.choices ? { choices: line.choices.map(choice => ({ ...choice })) } : {}) })) })),
   };
 }

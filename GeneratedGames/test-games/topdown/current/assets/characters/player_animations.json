@@ -1,0 +1,42 @@
+{
+  "idle": {
+    "frameCount": 12,
+    "fps": 10,
+    "loop": true
+  },
+  "walk": {
+    "frameCount": 12,
+    "fps": 16,
+    "loop": true
+  },
+  "run": {
+    "frameCount": 16,
+    "fps": 24,
+    "loop": true
+  },
+  "attack": {
+    "frameCount": 12,
+    "fps": 30,
+    "loop": false,
+    "attackTiming": {
+      "activeStart": 3.6,
+      "activeEnd": 7.2,
+      "recoveryEnd": 12
+    }
+  },
+  "hurt": {
+    "frameCount": 6,
+    "fps": 16,
+    "loop": false
+  },
+  "death": {
+    "frameCount": 12,
+    "fps": 15,
+    "loop": false
+  },
+  "cast": {
+    "frameCount": 12,
+    "fps": 24,
+    "loop": false
+  }
+}

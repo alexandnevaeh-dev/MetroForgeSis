@@ -24,7 +24,9 @@ A clean install does not require paid API credentials. Optional provider service
 
 ## Environment
 
-Copy `.env.example` to `.env` only when local configuration is needed. Important optional variables include `GODOT_EXECUTABLE`, `OLLAMA_BASE_URL`, `OLLAMA_DEFAULT_MODEL`, `NVIDIA_API_KEY`, `NVIDIA_API_BASE_URL`, `COMFYUI_BASE_URL`, `DIFFUSERS_PYTHON`, and image/audio provider keys. Never commit `.env` or print credentials.
+Copy `.env.example` to `.env` only when local configuration is needed. Important optional variables include `GODOT_EXECUTABLE`, `OLLAMA_BASE_URL`, `OLLAMA_DEFAULT_MODEL`, `NVIDIA_API_KEY`, `NVIDIA_API_BASE_URL`, `COMFYUI_BASE_URL`, `DIFFUSERS_PYTHON` / `METROFORGE_PYTHON`, and image/audio provider keys. Never commit `.env` or print credentials.
+
+On Windows, point `DIFFUSERS_PYTHON` at a real interpreter (for this machine: `E:\MetroForgeData\Python\diffusers-native\Scripts\python.exe`, with its base interpreter at `E:\MetroForgeData\Python\base-3.12`). The previous `Python\diffusers` junction points to C: and should not be used for new generation. Do not use the Microsoft Store App Execution Alias under `WindowsApps` — disable those aliases under Settings → Apps → Advanced app settings → App execution aliases if `where python` still resolves there. Prefer `scripts\metroforge-create.cmd` over raw PowerShell `node ... create` so Node `ExperimentalWarning` on stderr does not become a false exit code.
 
 ## Commands
 

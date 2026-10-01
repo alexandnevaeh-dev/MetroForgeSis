@@ -1,0 +1,68 @@
+[gd_scene load_steps=9 format=3 uid="uid://player_scene"]
+
+[ext_resource type="Script" path="res://scripts/player/TopDownPlayerController.gd" id="1_player"]
+[ext_resource type="Script" path="res://scripts/combat/HealthComponent.gd" id="2_health"]
+[ext_resource type="Script" path="res://scripts/combat/HurtboxComponent.gd" id="3_hurtbox"]
+[ext_resource type="Script" path="res://scripts/combat/HitboxComponent.gd" id="4_hitbox"]
+[ext_resource type="Script" path="res://scripts/core/AnimatedAssetSprite.gd" id="5_sprite"]
+[ext_resource type="Script" path="res://scripts/player/TopDownCamera.gd" id="6_cam"]
+[ext_resource type="Script" path="res://scripts/core/ActorSockets.gd" id="7_sockets"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(20, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hurt"]
+size = Vector2(18, 18)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hit"]
+size = Vector2(24, 18)
+
+[node name="Player" type="CharacterBody2D" groups=["player"]]
+collision_layer = 2
+collision_mask = 1
+motion_mode = 1
+script = ExtResource("1_player")
+
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+script = ExtResource("5_sprite")
+sheet_path = "assets/characters/player_walk.png"
+frame_size = Vector2i(64, 64)
+frame_count = 4
+world_frame_height = 48.0
+attack_sheet_path = "assets/characters/player_attack.png"
+hurt_sheet_path = "assets/characters/player_hurt.png"
+death_sheet_path = "assets/characters/player_death.png"
+reference_pose_path = "assets/characters/player.png"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_body")
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("2_health")
+
+[node name="HurtboxComponent" type="Area2D" parent="."]
+collision_layer = 16
+collision_mask = 8
+script = ExtResource("3_hurtbox")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HurtboxComponent"]
+shape = SubResource("RectangleShape2D_hurt")
+
+[node name="AttackHitbox" type="Area2D" parent="."]
+collision_layer = 8
+collision_mask = 16
+script = ExtResource("4_hitbox")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackHitbox"]
+shape = SubResource("RectangleShape2D_hit")
+
+[node name="AttackTimer" type="Timer" parent="."]
+one_shot = true
+
+[node name="Camera2D" type="Camera2D" parent="."]
+zoom = Vector2(1.5, 1.5)
+script = ExtResource("6_cam")
+
+[node name="Sockets" type="Node2D" parent="."]
+script = ExtResource("7_sockets")
+layout = "top_down"

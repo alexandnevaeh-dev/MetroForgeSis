@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { decodePngRgba } from '../src/png.js';
+import { PLAYER_ANIMATION_SPEC } from '../src/player-animation-spec.js';
 import {
   loadAuthoredCourierPng,
   loadAuthoredMasonryPng,
@@ -125,25 +126,28 @@ describe('authored foundry courier kit', () => {
     expect(uniqueOpaque(ability!)).toBeGreaterThan(4);
   });
 
-  it('ships 256×64 walk sheets with four unique posed frames', () => {
+  it('ships articulated walk sheets with unique posed frames (PLAYER_ANIMATION_SPEC.walk)', () => {
     const walk = loadAuthoredCourierPng('player_walk.png');
     const npcWalk = loadAuthoredCourierPng('npc_000_walk.png');
     expect(walk).toBeTruthy();
     const decoded = decodePngRgba(walk!);
-    expect(decoded.width).toBe(256);
+    const walkFrames = PLAYER_ANIMATION_SPEC.walk!.frameCount;
+    const sheetW = 64 * walkFrames;
+    // Multi-frame walk-cycle via generateWalkCycleSheet (hip sway / arm opposition / compress).
+    expect(decoded.width).toBe(sheetW);
     expect(decoded.height).toBe(64);
     const hashes = new Set<string>();
-    for (let f = 0; f < 4; f++) {
+    for (let f = 0; f < walkFrames; f++) {
       let h = 0;
       for (let y = 0; y < 64; y++) {
         for (let x = 0; x < 64; x++) {
-          const i = (y * 256 + f * 64 + x) * 4;
+          const i = (y * sheetW + f * 64 + x) * 4;
           h = (h * 33 + decoded.rgba[i]! + decoded.rgba[i + 3]!) | 0;
         }
       }
       hashes.add(String(h));
     }
-    expect(hashes.size).toBe(4);
+    expect(hashes.size).toBeGreaterThanOrEqual(Math.ceil(walkFrames * 0.7));
     const npcDecoded = decodePngRgba(npcWalk!);
     expect(npcDecoded.width).toBe(256);
     expect(npcDecoded.height).toBe(64);

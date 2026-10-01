@@ -35,12 +35,48 @@ export function LiveRuntimeInspector({
   const redo = redoHistory.at(-1);
   const pending = useRef(false);
   const mounted = useRef(true);
+  const objectsRef = useRef(objects);
+  const selectionRef = useRef(selection);
+  objectsRef.current = objects;
+  selectionRef.current = selection;
   useEffect(() => {
     mounted.current = true;
     return () => {
       mounted.current = false;
     };
   }, []);
+
+  // Poll runtime viewport picks (Ctrl+click in the Godot window / pick_at) into the inspector.
+  useEffect(() => {
+    if (!connected) return;
+    const timer = window.setInterval(() => {
+      if (pending.current || !mounted.current || !window.metroforge) return;
+      void window.metroforge.playtestCommand(projectPath, 'get_state', {}).then((response) => {
+        if (!mounted.current || !response.ok || !response.result) return;
+        const sel = response.result.selection as
+          | { nodePath?: string; x?: number; y?: number }
+          | null
+          | undefined;
+        if (!sel || typeof sel.nodePath !== 'string') return;
+        if (sel.nodePath === selectionRef.current) return;
+        const match = objectsRef.current.find((object) => object.nodePath === sel.nodePath);
+        if (!match) return;
+        const next =
+          Number.isFinite(sel.x) && Number.isFinite(sel.y)
+            ? { ...match, x: Number(sel.x), y: Number(sel.y) }
+            : match;
+        setObjects((items) =>
+          items.map((item) => (item.nodePath === next.nodePath ? { ...item, x: next.x, y: next.y } : item)),
+        );
+        setSelection(next.nodePath);
+        setX(String(next.x));
+        setY(String(next.y));
+        setStatus(`Selected ${next.nodePath} from the game viewport (Ctrl+click).`);
+      });
+    }, 500);
+    return () => window.clearInterval(timer);
+  }, [connected, projectPath]);
+
   const selected = objects.find((object) => object.nodePath === selection);
   const invalid =
     x.trim() === '' ||
@@ -130,7 +166,7 @@ export function LiveRuntimeInspector({
       setRedo([]);
       setStatus(
         items.length
-          ? `${items.length} ${items.length === 1 ? 'object' : 'objects'} available. Coordinates are relative to each object's parent.`
+          ? `${items.length} ${items.length === 1 ? 'object' : 'objects'} available. Ctrl+click in the Godot window to select. Coordinates are relative to each object's parent.`
           : 'No editable objects in the current scene.',
       );
     });
@@ -227,7 +263,8 @@ export function LiveRuntimeInspector({
     <InspectorSection title="Live objects">
       <p className="hint">
         Apply, Undo and Redo change the running game. Save placement keeps the position for future play
-        sessions. Pause moving objects for precise placement.
+        sessions. Pause moving objects for precise placement. Ctrl+click an object in the Godot window to
+        select it here after Inspect.
       </p>
       <Button size="sm" disabled={busy} onClick={inspect}>
         Inspect running scene

@@ -119,7 +119,7 @@ import {
   canRedoRoom,
   listRoomEditHistory,
 } from './edit-history-store.js';
-import { GodotProjectAssembler } from '@metroforge/godot';
+import { GodotProjectAssembler, type ExternalVisualPackId } from '@metroforge/godot';
 import { ConcurrencyPool } from './concurrency-pool.js';
 import {
   waitForGenerationReview,
@@ -397,7 +397,7 @@ export function registerIpcHandlers(cwd: string): void {
         seed: number;
         generationControl?: GenerationControlMode;
         archetype?: GameArchetype;
-        externalVisualPack?: 'ashen-painted-locomotion-v1';
+        externalVisualPack?: ExternalVisualPackId;
         targetEngine?: 'unity';
       };
       try {
@@ -1170,7 +1170,7 @@ export function registerIpcHandlers(cwd: string): void {
         title: string;
         prompt?: string;
         archetype?: GameArchetype;
-        externalVisualPack?: 'ashen-painted-locomotion-v1';
+        externalVisualPack?: ExternalVisualPackId;
         targetEngine?: 'unity';
         profile?: GenerationProfile;
         mode?: GenerationMode;
@@ -1209,7 +1209,7 @@ export function registerIpcHandlers(cwd: string): void {
         seed: number;
         generationControl?: GenerationControlMode;
         archetype?: GameArchetype;
-        externalVisualPack?: 'ashen-painted-locomotion-v1';
+        externalVisualPack?: ExternalVisualPackId;
         targetEngine?: 'unity';
       },
     ) =>

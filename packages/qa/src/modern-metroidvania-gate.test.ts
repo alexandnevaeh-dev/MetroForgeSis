@@ -237,6 +237,35 @@ describe('MODERN_METROIDVANIA_GATE', () => {
     expect(typeof gate.details.summary).toBe('string');
   });
 
+  it('fails chronically flat side-view composition with explicit gallery reasons', () => {
+    const flat = evaluateModernMetroidvaniaGate({
+      archetype: 'SIDE_VIEW_METROIDVANIA',
+      rooms: Array.from({ length: 6 }, (_, i) => ({
+        id: `room_${i}`,
+        layoutMetrics: {
+          silhouetteHash: `flat-${i}`,
+          platformCount: 1,
+          pitCount: 0,
+          elevationChanges: 0,
+          uniquePlatformHeights: 1,
+          traversableAreaRatio: 0.7,
+          verticality: 0.05,
+          hazardDensity: 0,
+          decorationDensity: 0.004,
+          combatSpacePx: 20000,
+          silhouetteFilled: 100,
+        },
+      })),
+      artifacts: [],
+      terrainSets: [],
+      screenshots: [{ name: 's.png', score: 80, blank: false, uniqueColors: 20 }],
+    });
+    const composition = flat.dimensions.find((d) => d.dimension === 'RoomComposition');
+    expect(composition?.passed).toBe(false);
+    expect(composition?.score ?? 0).toBeLessThan(70);
+    expect(composition?.reasons.join(' ')).toMatch(/gallery|balcony|flat|decoration/i);
+  });
+
   it('reports every applicable failing dimension with a non-empty reason (safeguard)', () => {
     // Minimal inputs → many dimensions fail; none may fail silently.
     const result = evaluateModernMetroidvaniaGate({ archetype: 'SIDE_VIEW_METROIDVANIA' });

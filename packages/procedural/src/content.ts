@@ -9,7 +9,7 @@ import {
   DialogueSchema,
   ShopSchema,
 } from '@metroforge/schemas';
-import { PROFILE_DEFAULTS, isTopDownArchetype, pickTopDownDungeonItems, type GenerationProfile } from '@metroforge/shared';
+import { PROFILE_DEFAULTS, genreUsesDungeonTools, pickTopDownDungeonItems, type GenerationProfile } from '@metroforge/shared';
 import { SeededRNG } from './rng.js';
 import { interiorRoomId, npcRoomIndex } from './room-archetypes.js';
 
@@ -633,7 +633,7 @@ export function generateGameContent(
     ...buildCollectibleItems(profile),
   ];
 
-  if (isTopDownArchetype(gameDna.archetype)) {
+  if (genreUsesDungeonTools(gameDna.archetype)) {
     for (const tool of pickTopDownDungeonItems(profile)) {
       if (items.some((item) => item.id === tool.id)) continue;
       items.push(

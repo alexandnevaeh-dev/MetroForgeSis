@@ -1,4 +1,5 @@
 node_modules/
+nm_partial/
 .metroforge/live-bridge-smoke/
 .metroforge/live-inspector-harness/
 .metroforge/desktop-build/

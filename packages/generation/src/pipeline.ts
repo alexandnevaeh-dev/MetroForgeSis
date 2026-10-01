@@ -12,8 +12,10 @@ import {
   resolveProjectPathSafe,
   slugify,
   type StageStatus,
-  isTopDownArchetype,
   inferGameArchetypeFromPrompt,
+  genreSupports,
+  genreUsesDungeonTools,
+  genreUsesOverworldChunks,
   isRegisteredAbilityId,
   missingReleaseCandidateAbilities,
   assertMassVisualGenerationAllowed,
@@ -56,13 +58,13 @@ import {
   generateWorldDesignReport,
   MIN_FULL_WORLD_ZONES,
 } from '@metroforge/procedural';
-import { AssetPipeline, loadVisualReferenceLibrary, shouldUseFoundryCourierKit } from '@metroforge/assets';
+import { AssetPipeline, loadVisualReferenceLibrary, shouldUseFoundryCourierKit,shouldUseCanopyEnvironment,decorateCanopyWorld } from '@metroforge/assets';
 import { GodotProjectAssembler, loadExternalVisualPack } from '@metroforge/godot';
 import { UnityProjectAssembler } from '@metroforge/unity';
 import { UnrealProjectAssembler } from '@metroforge/unreal';
 import { assertEngineOutputIsolation, EngineOutputCollisionError, writeEngineManifest } from '@metroforge/engines';
 import type { ExternalVisualPackId } from '@metroforge/godot';
-import { ToolRegistry, exportProject, resolveGodotExecutableCanonical, readProjectGodotOverride } from '@metroforge/tools';
+import { ToolRegistry, exportProject, resolveGodotExecutableCanonical, readProjectGodotOverride, windowsExportTemplatesInstalled } from '@metroforge/tools';
 import { QAValidator, RepairEngineer, deriveValidationLevel, runQualityPass, runModernMetroidvaniaGate, modernGateToQAGateResult, scoreVisualQuality, fingerprintFile, planVisualRepairs, applyVisualRepairs, VISUAL_REPAIR_BUDGET, certifyVisualAssets, writeAssetFoundryReport, classifyAssetTier, buildAssetProvenanceReport, writeAssetProvenanceReport, buildProductionAssetFamilies, productionSliceReady, gateState, validateWorldSceneArchetypeIntegrity, type QAReport, type QAGateResult } from '@metroforge/qa';
 import { createProjectCheckpoint } from './project-checkpoint.js';
 import { assertPhaseArtifacts, phaseCompleteStatus } from './phase-contract.js';
@@ -468,7 +470,7 @@ export class GenerationPipeline {
     }
 
     const enabledAbilityIds = gameDna.abilities.filter((a) => a.enabled !== false).map((a) => a.id);
-    if (!isTopDownArchetype(gameDna.archetype)) {
+    if (!genreUsesDungeonTools(gameDna.archetype)) {
       const unknownRequired = enabledAbilityIds.filter((id) => !isRegisteredAbilityId(id));
       if (unknownRequired.length > 0) {
         errors.push(
@@ -639,11 +641,12 @@ export class GenerationPipeline {
     report('world_topology', 'RUNNING');
     const defaults = PROFILE_DEFAULTS[options.profile];
     const abilityIds = gameDna.abilities.filter((a) => a.enabled).map((a) => a.id);
-    const topDownWorld = isTopDownArchetype(gameDna.archetype)
+    const topDownWorld = genreUsesOverworldChunks(gameDna.archetype)
       ? generateTopDownWorld({
           seed: options.seed,
           profile: options.profile,
           tileSize: gameDna.technical.tileSize,
+          ...(shouldUseCanopyEnvironment(gameDna)?{layoutStyle:'ruined_canopy' as const}:{}),
         })
       : null;
     const roomCount = topDownWorld
@@ -738,7 +741,7 @@ export class GenerationPipeline {
     // generation (not just full 4+ zone worlds) — evaluateFullWorldApplicability/validateWorldDesign
     // inside generateWorldDesignReport's "VALIDATION SUMMARY" section says plainly when the
     // four-zone checks don't apply, rather than the report silently not existing for a slice.
-    if (!isTopDownArchetype(gameDna.archetype)) {
+    if (!genreUsesOverworldChunks(gameDna.archetype)) {
       try {
         const roomExtentsForDesign = worldGraph.nodes
           .filter((n) => n.type === 'room' || n.type === 'zone')
@@ -1000,7 +1003,7 @@ export class GenerationPipeline {
     warnings.push(...assetResult.warnings);
     if (assetResult.fakeAnimationDetected) {
       warnings.push(
-        'ANIMATION GENERATION did not produce production-ready posed frames. Derived bob/slide sheets must not be treated as ready.',
+        'ANIMATION GENERATION HARD-FAIL: bob/slide-derived sheets only — not production-ready. Do not treat this slice as reviewable animation.',
       );
     }
     // Previously computed and discarded — nothing wrote this out, so a nvidia-enhanced/auto run's
@@ -1030,6 +1033,21 @@ export class GenerationPipeline {
       }
     }
     const textureFiles = new Map(assetResult.assets.map((a) => [a.path, a.buffer]));
+    // Actor timing and VFX strip metadata must travel with the authored pixels.
+    // Both first generation and checkpoint-resume assembly use these sidecars.
+    const animationSidecars=new Set(['assets/vfx/effects.json']);
+    for(const asset of assetResult.assets)if(/^assets\/(characters|enemies|npcs|bosses)\/[^/]+\.png$/.test(asset.path))animationSidecars.add(asset.path.replace(/\.png$/,'_animations.json'));
+    for(const relative of animationSidecars) {
+      const metadataPath=join(outputPath,relative);
+      if(existsSync(metadataPath))textureFiles.set(relative,readFileSync(metadataPath));
+    }
+    // Atlas role maps are runtime data, including custom shoreline/material variants.
+    // Keep them beside their pixels through engine assembly and project export.
+    for(let b=0;b<gameDna.world.biomeCount;b++) {
+      const relative=`assets/tilesets/biome_${b}/terrain.json`;
+      const metadataPath=join(outputPath,relative);
+      if(existsSync(metadataPath))textureFiles.set(relative,readFileSync(metadataPath));
+    }
     const assetMetadata = assetResult.assets.map((a) => ({
       id: a.id,
       path: a.path,
@@ -1220,10 +1238,12 @@ export class GenerationPipeline {
     }
     const assetPassCount = assetResult.assets.filter((a) => a.critiquePassed).length;
     const placeholderCount = assetResult.assets.filter((a) => isNonProductionMaturity(a.maturity)).length;
-    const assetsDegraded = assetResult.degraded || placeholderCount > 0;
+    const fakeAnimation = assetResult.fakeAnimationDetected === true;
+    const assetsDegraded = assetResult.degraded || placeholderCount > 0 || fakeAnimation;
     if (assetsDegraded) {
       warnings.push(
         `environment_assets DEGRADED: ${placeholderCount}/${assetResult.assets.length} assets are procedural placeholders` +
+          (fakeAnimation ? '; animation sheets are bob/slide-only (not posed)' : '') +
           (assetResult.fallbackReason ? ` (${assetResult.fallbackReason})` : ''),
       );
     }
@@ -1231,7 +1251,9 @@ export class GenerationPipeline {
       'environment_assets',
       assetsDegraded ? 'DEGRADED' : 'PASSED',
       assetsDegraded
-        ? `DEGRADED — ${assetResult.assets.length} assets (${assetPassCount} critique pass, ${placeholderCount} placeholder/blockout; not production-ready)`
+        ? `DEGRADED — ${assetResult.assets.length} assets (${assetPassCount} critique pass, ${placeholderCount} placeholder/blockout` +
+            (fakeAnimation ? ', bob/slide animation' : '') +
+            '; not production-ready)'
         : `${assetResult.assets.length} assets (${assetPassCount} passed critique)`,
     );
     if (!(await maybePause('biome_art', 'environment_assets', 'Review biome art and player concept'))) {
@@ -1241,7 +1263,7 @@ export class GenerationPipeline {
       return { success: false, projectSlug: slug, outputPath, jobId: job.id, errors: ['Cancelled at review gate'], warnings, phases };
     }
 
-    if (requestedEngine !== 'godot' && isTopDownArchetype(gameDna.archetype)) {
+    if (requestedEngine !== 'godot' && genreSupports(gameDna.archetype, 'supportsOverworldMap')) {
       errors.push(
         `${requestedEngine.toUpperCase()}_ARCHETYPE_UNSUPPORTED: first milestone is SIDE_VIEW_METROIDVANIA only. Generate with --engine godot for top-down.`,
       );
@@ -1252,6 +1274,10 @@ export class GenerationPipeline {
     }
 
     report('project_assembly', 'RUNNING');
+    if(topDownWorld&&assetResult.assets.some(asset=>asset.path.startsWith('assets/props/canopy/'))) {
+      const placements=decorateCanopyWorld(topDownWorld.overworld);
+      warnings.push(`CANOPY_COMPOSITION: ${placements} grounded woodland props in ${topDownWorld.overworld.areas.length} composed areas; draft artwork remains pending visual review.`);
+    }
     createProjectCheckpoint(outputPath, 'before_assembly');
     const assemblyInput = {
       outputDir: outputPath,
@@ -1687,7 +1713,7 @@ export class GenerationPipeline {
     // METROFORGE_RUNTIME_READY, so the gate scored UNKNOWN and playtest never ran even though
     // every check had genuinely passed — docs/debug/TOPDOWN_GENRE_MILESTONE.md) is fixed, but this
     // is the regression check for it: don't let that combination silently ship again.
-    if (isTopDownArchetype(gameDna.archetype) && runtimeGateResult && gateState(runtimeGateResult) === 'PASS') {
+    if (genreSupports(gameDna.archetype, 'supportsOverworldMap') && runtimeGateResult && gateState(runtimeGateResult) === 'PASS') {
       const playtestResult = qaReport.results.find((r) => r.gate === 'godot_playtest');
       if (playtestResult && gateState(playtestResult) === 'SKIPPED') {
         errors.push(
@@ -1710,7 +1736,7 @@ export class GenerationPipeline {
     // playtest checks passing, then failed to spawn a player at all once this pass had run.
     // Skipping it here (rather than genre-adapting the whole quality-pass subsystem, well beyond
     // this fix's scope) is the safe fix until top-down gets its own equivalent pass.
-    if (isProductionQualityProfile(gameDna.profile) && godotPath && validationPassed && !isTopDownArchetype(gameDna.archetype) && requestedEngine === 'godot') {
+    if (isProductionQualityProfile(gameDna.profile) && godotPath && validationPassed && genreSupports(gameDna.archetype, 'supportsSideViewQualityPass') && requestedEngine === 'godot') {
       try {
         const qualityReport = runQualityPass({
           projectPath: outputPath,
@@ -1738,7 +1764,7 @@ export class GenerationPipeline {
       // already-PASSED result rather than letting a stale, pre-pass qaReport ship unchecked.
       const postPassIntegrity = validateWorldSceneArchetypeIntegrity(
         outputPath,
-        isTopDownArchetype(gameDna.archetype),
+        genreSupports(gameDna.archetype, 'supportsOverworldMap'),
       );
       const preExistingIndex = qaReport.results.findIndex(
         (r) => r.gate === 'world_scene_archetype_integrity',
@@ -1821,8 +1847,20 @@ export class GenerationPipeline {
           zip: false,
           requireValidation: false,
           requireCommercialSafe: options.mode === 'COMMERCIAL_SAFE',
-          packageWindows: Boolean(godotPath) && process.platform === 'win32' && requestedEngine === 'godot',
-          packageMacOS: Boolean(godotPath) && process.platform === 'darwin' && requestedEngine === 'godot',
+          // Standalone Windows packaging requires matching export templates and a
+          // runtime-validated project. Static-only / skip-runtime runs still stage the
+          // project folder and write export_manifest.json without failing the export phase.
+          packageWindows:
+            Boolean(godotPath) &&
+            process.platform === 'win32' &&
+            requestedEngine === 'godot' &&
+            validationLevel === 'RUNTIME_VALIDATED' &&
+            windowsExportTemplatesInstalled('4.6.stable'),
+          packageMacOS:
+            Boolean(godotPath) &&
+            process.platform === 'darwin' &&
+            requestedEngine === 'godot' &&
+            validationLevel === 'RUNTIME_VALIDATED',
           godotExecutable: godotPath ?? undefined,
         });
         warnings.push(...exportResult.warnings);
@@ -1980,7 +2018,13 @@ export class GenerationPipeline {
       } catch {
         warnings.push('Could not stamp visualReviewStatus onto project.json');
       }
-      warnings.push('VISUAL SLICE READY FOR HUMAN REVIEW — not FULL GAME READY');
+      if (assetResult.fakeAnimationDetected) {
+        warnings.push(
+          'VISUAL SLICE BLOCKED FOR ANIMATION REVIEW — bob/slide sheets only; regenerate with posed/articulated frames or authored courier kit before human aesthetic review',
+        );
+      } else {
+        warnings.push('VISUAL SLICE READY FOR HUMAN REVIEW — not FULL GAME READY');
+      }
     }
 
     db.projects.updateStatus(project.id, finalStatus);

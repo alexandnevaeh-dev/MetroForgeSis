@@ -1,0 +1,40 @@
+{
+  "enemies": [
+    {
+      "id": "enemy_000",
+      "name": "Rootbound Sentinel",
+      "biomeId": "biome_0",
+      "health": 35,
+      "damage": 8,
+      "speed": 65,
+      "movement": "patrol",
+      "perception": {
+        "radius": 137,
+        "lineOfSight": true
+      },
+      "combat": {
+        "type": "melee",
+        "cooldown": 1.5
+      },
+      "lootTableId": "loot_enemy_000"
+    },
+    {
+      "id": "enemy_001",
+      "name": "Rune-Stalker",
+      "biomeId": "biome_0",
+      "health": 28,
+      "damage": 8,
+      "speed": 48,
+      "movement": "hop",
+      "perception": {
+        "radius": 185,
+        "lineOfSight": true
+      },
+      "combat": {
+        "type": "projectile",
+        "cooldown": 1.5
+      },
+      "lootTableId": "loot_enemy_001"
+    }
+  ]
+}

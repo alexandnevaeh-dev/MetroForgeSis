@@ -415,6 +415,10 @@ export function resolvePublishedArchetype(opts: {
   if (opts.isBossRoom) return 'boss';
   if (opts.hasAbilityPickup) return 'ability_shrine';
   if (opts.hasSavePoint) return 'save';
+  // A reward placed inside an explicitly-authored secret remains a secret room. Treating the
+  // pickup as a stronger room identity relabelled every Stormglass secret as generic treasure
+  // and erased the optional-route contract from the published room data.
+  if (opts.worldGraphArchetype === 'secret') return 'secret';
   if (opts.roomNpcs.some((npc) => npc.role === 'merchant')) return 'shop';
   if (opts.roomNpcs.length > 0) return 'npc';
   if (opts.hasItemPickup) return 'treasure';
@@ -565,6 +569,114 @@ function defaultRoomHeight(worldGraphArchetype: string | undefined, override?: n
   return 768;
 }
 
+/**
+ * Stormglass uses a 32 px authoring grid and deliberately frames the player much closer than
+ * MetroForge's generic multi-screen rooms. These dimensions are the production contract in
+ * docs/STORMGLASS_LEVEL_DESIGN_SPEC.md. Keeping the map here, at the final assembly boundary,
+ * prevents broad environment-archetype minimums from silently inflating every room back to the
+ * old 64x39 prototype while leaving every other game family unchanged.
+ */
+export function stormglassTargetRoomSize(
+  worldGraphArchetype: string | undefined,
+  tileSize: number,
+): { width: number; height: number } {
+  const tilesByArchetype: Record<string, readonly [number, number]> = {
+    tutorial: [30, 17],
+    combat: [36, 20],
+    traversal: [20, 40],
+    challenge: [28, 28],
+    ability_shrine: [28, 18],
+    ability_gate: [30, 17],
+    save: [24, 14],
+    npc: [26, 15],
+    shop: [26, 15],
+    secret: [18, 10],
+    treasure: [18, 10],
+    miniboss: [40, 22],
+    arena: [40, 22],
+    boss: [48, 24],
+    puzzle: [30, 20],
+    transition: [30, 17],
+    connector: [30, 17],
+    set_piece: [36, 22],
+  };
+  const [columns, rows] = tilesByArchetype[worldGraphArchetype ?? ''] ?? [30, 17];
+  return { width: columns * tileSize, height: rows * tileSize };
+}
+
+/** Production encounter groups for Stormglass. Instance ids remain room-local and unique while
+ * definitionId deliberately rotates through the generated biome roster. Positions keep five
+ * tiles clear at both doors and split enemies between the floor and usable platform tiers. */
+export function buildStormglassEncounterPlacements(
+  roomId: string,
+  roomIndex: number,
+  opts: Pick<RoomAssemblyOptions, 'width' | 'height' | 'tileSize' | 'platforms' | 'worldGraphArchetype' | 'biomeIndex'>,
+  enemyDefinitionIds: readonly string[],
+): EntityPlacement[] {
+  const archetype = opts.worldGraphArchetype;
+  const count = archetype === 'combat'
+    ? roomIndex === 1 ? 4 : 4 + (roomIndex % 3)
+    : archetype === 'traversal' ? 2 + (roomIndex % 2) : 0;
+  if (count === 0) return [];
+  const safeInset = Math.max(opts.tileSize * 5, 160);
+  const span = Math.max(opts.tileSize * 4, opts.width - safeInset * 2);
+  const floorY = floorTopPx(opts.height, opts.tileSize);
+  const safePlatforms = (opts.platforms ?? []).filter((platform) =>
+    platform.x + platform.width / 2 >= safeInset && platform.x + platform.width / 2 <= opts.width - safeInset);
+  return Array.from({ length: count }, (_, slot) => {
+    const floorX = safeInset + (span * (slot + 1)) / (count + 1);
+    const platformSlot = Math.floor(slot / 2);
+    const platform = slot % 2 === 1 && platformSlot < safePlatforms.length
+      ? safePlatforms[platformSlot]
+      : undefined;
+    const definitionId = enemyDefinitionIds.length > 0
+      ? enemyDefinitionIds[(roomIndex + slot * 2) % enemyDefinitionIds.length]!
+      : 'enemy_000';
+    return {
+      kind: 'enemy' as const,
+      id: `${roomId}_enemy_${String(slot).padStart(2, '0')}`,
+      definitionId,
+      // Grand Hall deliberately wakes one sentinel as the player crosses the entry threshold;
+      // later enemies remain outside perception range to preserve the staged encounter.
+      x: roomIndex === 1 && slot === 0
+        ? 220
+        : platform ? platform.x + platform.width / 2 : Math.round(floorX),
+      y: platform ? platform.y : floorY,
+    };
+  });
+}
+
+export function applyStormglassEncounterComposition(
+  roomId: string,
+  roomIndex: number,
+  opts: RoomAssemblyOptions,
+  enemyDefinitions: ReadonlyArray<{ id: string; biomeId?: string }>,
+): void {
+  if (opts.isBossRoom || (opts.worldGraphArchetype !== 'combat' && opts.worldGraphArchetype !== 'traversal')) return;
+  opts.hasEnemy = true;
+  const defaults = resolveEntityPlacements(opts.entityPlacements, {
+    width: opts.width,
+    height: opts.height,
+    tileSize: opts.tileSize,
+    hasEnemy: true,
+    enemyIndex: opts.enemyIndex,
+    abilityPickups: opts.abilityPickups,
+    hasSavePoint: opts.hasSavePoint,
+    npcs: opts.npcs,
+    hasItemPickup: opts.hasItemPickup,
+    itemId: opts.itemId,
+  });
+  opts.entityPlacements = [
+    ...defaults.filter((placement) => placement.kind !== 'enemy'),
+    ...buildStormglassEncounterPlacements(
+      roomId,
+      roomIndex,
+      opts,
+      enemyDefinitions.filter((enemy) => enemy.biomeId === `biome_${opts.biomeIndex}`).map((enemy) => enemy.id),
+    ),
+  ];
+}
+
 export function buildRoomAssemblyOptions(
   roomId: string,
   index: number,
@@ -585,9 +697,10 @@ export function buildRoomAssemblyOptions(
   const grantsAbilities =
     (ctx.worldGraphNodesById.get(roomId)?.metadata?.grantsAbilities as string[] | undefined) ?? [];
   const hasAbilityPickup = grantsAbilities.length > 0;
-  const worldGraphArchetype = ctx.worldGraphNodesById.get(roomId)?.metadata?.archetype as
-    | string
-    | undefined;
+  const nodeMeta = ctx.worldGraphNodesById.get(roomId)?.metadata ?? {};
+  const worldGraphArchetype = nodeMeta.archetype as string | undefined;
+  const environmentArchetype =
+    typeof nodeMeta.environmentArchetype === 'string' ? nodeMeta.environmentArchetype : undefined;
   const hasSavePoint = !isBossRoom && !hasAbilityPickup && worldGraphArchetype === 'save';
   const wantsItemPickup = wantsArchetypeItemPickup(
     worldGraphArchetype,
@@ -607,13 +720,25 @@ export function buildRoomAssemblyOptions(
   );
   const enemyIndex = hasEnemy ? enemyCounter.value++ : 0;
   const biomeIndex =
-    (ctx.worldGraphNodesById.get(roomId)?.metadata?.biomeIndex as number | undefined) ??
+    (typeof nodeMeta.biomeIndex === 'number' ? nodeMeta.biomeIndex : undefined) ??
     index % gameDna.world.biomeCount;
   const biomeTexRel = `assets/tilesets/biome_${biomeIndex}/source.png`;
   const hasTileset = textureExists(biomeTexRel);
-  const width = defaultRoomWidth(worldGraphArchetype, overrides?.width);
-  const height = defaultRoomHeight(worldGraphArchetype, overrides?.height);
   const tileSize = gameDna.technical.tileSize;
+  const cleanStormglassRooms = gameDna.identity?.title?.startsWith('Stormglass Reliquary') ?? false;
+  const stormglassSize = cleanStormglassRooms
+    ? stormglassTargetRoomSize(worldGraphArchetype, tileSize)
+    : undefined;
+  const targetW =
+    typeof nodeMeta.targetTileWidth === 'number' ? nodeMeta.targetTileWidth * tileSize : undefined;
+  const targetH =
+    typeof nodeMeta.targetTileHeight === 'number' ? nodeMeta.targetTileHeight * tileSize : undefined;
+  const width = stormglassSize
+    ? overrides?.width ?? stormglassSize.width
+    : Math.max(defaultRoomWidth(worldGraphArchetype, overrides?.width), targetW ?? 0);
+  const height = stormglassSize
+    ? overrides?.height ?? stormglassSize.height
+    : Math.max(defaultRoomHeight(worldGraphArchetype, overrides?.height), targetH ?? 0);
   const far = `assets/backgrounds/biome_${biomeIndex}/far.png`;
   const mid = `assets/backgrounds/biome_${biomeIndex}/mid.png`;
   const near = `assets/backgrounds/biome_${biomeIndex}/near.png`;
@@ -626,12 +751,20 @@ export function buildRoomAssemblyOptions(
     height,
     tileSize,
     archetype: worldGraphArchetype,
+    // Stormglass already has authored full-room architecture and a deliberately
+    // compact archetype grammar. Generic environment gallery bands appended extra
+    // left/right shelves after that grammar, making transition, shrine and combat
+    // rooms converge on the same evenly spaced platform wall.
+    environmentArchetype: cleanStormglassRooms ? undefined : environmentArchetype,
     seed: deriveRoomTileSeed(gameDna.seed, roomId, index),
     movement: movementStats,
     connections,
     availableAbilities: abilitiesAvailableBeforeRoom(ctx, index),
     uniquenessSalt: overrides?.uniquenessSalt ?? 0,
+    biomeId: `biome_${biomeIndex}`,
   });
+
+  if (cleanStormglassRooms) applyStormglassOpeningGeometry(roomId, layout, tileSize);
 
   const foundryKit = overrides?.visualKit === 'foundry';
   const authoredParallax = overrides?.authoredParallax === true;
@@ -661,29 +794,146 @@ export function buildRoomAssemblyOptions(
     itemId: pickupItem?.id ?? '',
     itemAmount: pickupItem?.category === 'currency' ? 15 : 1,
     worldGraphArchetype,
+    ...(roomId === 'room_003' && grantsAbilities.length > 0 ? {
+      entityPlacements: [
+        { kind: 'player_spawn' as const, id: 'player', x: 100, y: height - tileSize * 2 },
+        // Keep the first mandatory movement pickup on the walkable floor. The former fixed
+        // y=388 placement sat below the decorative shrine platform but above the player's
+        // grounded overlap range, so a real input-driven run could pass the room without ever
+        // acquiring Dash and only fail later at the regional gate.
+        {
+          kind: 'ability_pickup' as const,
+          id: grantsAbilities[0]!,
+          x: width / 2,
+          y: height - tileSize * 2 - 28,
+        },
+      ],
+    } : {}),
     tileCells,
+    ...(cleanStormglassRooms ? { tileCellsAuthored: true } : {}),
     platforms: layout.platforms,
     pits: layout.pits,
     blueprint: layout.blueprint,
     visualKit: overrides?.visualKit,
     authoredParallax,
     backgroundLayers: {
-      far: textureExists(far) || authoredParallax ? far : undefined,
-      mid: includeAuthoredPlates && (textureExists(mid) || authoredParallax) ? mid : undefined,
-      near: includeAuthoredPlates && (textureExists(near) || authoredParallax) ? near : undefined,
-      overlay: foundryKit ? undefined : textureExists(overlay) ? overlay : undefined,
-      foreground: (!foundryKit || authoredParallax) && (textureExists(foreground) || authoredParallax) ? foreground : undefined,
+      far: !cleanStormglassRooms && (textureExists(far) || authoredParallax) ? far : undefined,
+      mid: !cleanStormglassRooms && includeAuthoredPlates && (textureExists(mid) || authoredParallax) ? mid : undefined,
+      near: !cleanStormglassRooms && includeAuthoredPlates && (textureExists(near) || authoredParallax) ? near : undefined,
+      overlay: cleanStormglassRooms || foundryKit ? undefined : textureExists(overlay) ? overlay : undefined,
+      foreground: !cleanStormglassRooms && (!foundryKit || authoredParallax) && (textureExists(foreground) || authoredParallax) ? foreground : undefined,
     },
-    propSprites: Array.from({ length: 6 }, (_, i) => `assets/props/biome_${biomeIndex}/biome_${biomeIndex}_prop_${i}.png`).filter(
+    propSprites: cleanStormglassRooms ? [] : Array.from({ length: 6 }, (_, i) => `assets/props/biome_${biomeIndex}/biome_${biomeIndex}_prop_${i}.png`).filter(
       (p) => textureExists(p) || authoredParallax,
     ),
-    architectureSprites: (!foundryKit || authoredParallax)
+    architectureSprites: !cleanStormglassRooms && (!foundryKit || authoredParallax)
       ? Array.from(
           { length: 4 },
           (_, i) => `assets/architecture/biome_${biomeIndex}/biome_${biomeIndex}_arch_${i}.png`,
         ).filter((p) => textureExists(p) || authoredParallax)
       : [],
   };
+}
+
+/**
+ * The opening vertical slice is authored room-by-room from the approved 32 px blueprint.  The
+ * generic archetype builder remains the fallback for every other room and game family.  Only
+ * platform cells/colliders are replaced here; boundary walls, door openings and floor collision
+ * stay under the shared assembler so transitions retain their tested contracts.
+ */
+function applyStormglassOpeningGeometry(
+  roomId: string,
+  layout: ReturnType<typeof buildRoomTileCells>,
+  tileSize: number,
+): void {
+  const authored: Record<string, Array<{ x: number; y: number; width: number; height: number }>> = {
+    room_000: [
+      { x: 320, y: 384, width: 160, height: 32 },
+    ],
+    room_001: [
+      { x: 256, y: 320, width: 224, height: 32 },
+      { x: 640, y: 256, width: 224, height: 32 },
+      { x: 896, y: 192, width: 160, height: 32 },
+    ],
+    room_002: [
+      { x: 64, y: 832, width: 160, height: 32 },
+      { x: 384, y: 704, width: 160, height: 32 },
+      { x: 96, y: 576, width: 160, height: 32 },
+      { x: 352, y: 448, width: 160, height: 32 },
+      { x: 128, y: 320, width: 160, height: 32 },
+    ],
+    room_003: [
+      { x: 384, y: 320, width: 128, height: 32 },
+    ],
+    room_004: [
+      { x: 192, y: 320, width: 224, height: 32 },
+      { x: 576, y: 256, width: 224, height: 32 },
+      { x: 832, y: 192, width: 160, height: 32 },
+    ],
+    room_005: [
+      { x: 96, y: 1120, width: 160, height: 32 },
+      { x: 352, y: 992, width: 128, height: 32 },
+      { x: 96, y: 864, width: 128, height: 32 },
+      { x: 352, y: 736, width: 128, height: 32 },
+      { x: 96, y: 608, width: 128, height: 32 },
+      { x: 352, y: 480, width: 128, height: 32 },
+      { x: 96, y: 352, width: 128, height: 32 },
+      { x: 352, y: 224, width: 160, height: 32 },
+    ],
+    room_006: [
+      { x: 96, y: 288, width: 160, height: 32 },
+      { x: 304, y: 352, width: 160, height: 32 },
+      { x: 512, y: 288, width: 160, height: 32 },
+    ],
+    room_007: [
+      { x: 96, y: 192, width: 160, height: 32 },
+      { x: 320, y: 128, width: 128, height: 32 },
+    ],
+    room_008: [
+      { x: 160, y: 480, width: 224, height: 32 },
+      { x: 512, y: 352, width: 256, height: 32 },
+      { x: 896, y: 480, width: 224, height: 32 },
+    ],
+    room_009: [
+      { x: 256, y: 384, width: 160, height: 32 },
+      { x: 544, y: 384, width: 160, height: 32 },
+    ],
+    // The Collapse Shaft is already a tall traversal room. Its generic 64px floor pit put the
+    // player capsule against FloorRight's vertical face on the mandatory route to Ground Slam.
+    // Preserve the climbing platforms, but keep the critical ground route continuous.
+    room_022: [
+      { x: 96, y: 1088, width: 160, height: 32 },
+      { x: 224, y: 1120, width: 96, height: 32 },
+      { x: 320, y: 1024, width: 96, height: 32 },
+      { x: 224, y: 928, width: 96, height: 32 },
+    ],
+  };
+  const platforms = authored[roomId];
+  if (!platforms) return;
+
+  const isGeneratedPlatformCell = (entry: TileCell): boolean =>
+    (entry.row === 2 && (entry.col === 0 || entry.col === 1 || entry.col === 2)) ||
+    (entry.row === 0 && entry.col === 3);
+  layout.cells = layout.cells.filter((entry) => !isGeneratedPlatformCell(entry));
+  layout.platforms.splice(0, layout.platforms.length, ...platforms);
+  if (roomId === 'room_022') {
+    layout.pits.splice(0, layout.pits.length);
+    const floorRow = Math.max(...layout.cells.map((cell) => cell.y)) - 1;
+    for (const x of [9, 10]) {
+      layout.cells.push({ x, y: floorRow, col: 4, row: 3 });
+      layout.cells.push({ x, y: floorRow + 1, col: 4, row: 4 });
+    }
+  }
+  for (const platform of platforms) {
+    const start = Math.round(platform.x / tileSize);
+    const row = Math.round(platform.y / tileSize);
+    const length = Math.round(platform.width / tileSize);
+    layout.cells.push({ x: start, y: row, col: 0, row: 2 });
+    for (let offset = 1; offset < length - 1; offset += 1)
+      layout.cells.push({ x: start + offset, y: row, col: 3, row: 0 });
+    layout.cells.push({ x: start + length - 1, y: row, col: 1, row: 2 });
+  }
+  if (layout.blueprint?.plan) layout.blueprint.plan.platformRegions = platforms.map((platform) => ({ ...platform }));
 }
 
 export function buildPublishedRoomRecord(
@@ -1573,6 +1823,7 @@ ${authoredMetadata(enemyPos)}enemy_id = "${enemyId}"
 
 [node name="Sprite" parent="${nodeName}"]
 sheet_path = "assets/enemies/${enemyId}_walk.png"
+run_sheet_path = "assets/enemies/${enemyId}_run.png"
 frame_size = Vector2i(64, 64)
 frame_count = 4
 hurt_sheet_path = "assets/enemies/${enemyId}_hurt.png"
@@ -1584,7 +1835,12 @@ attack_sheet_path = "assets/enemies/${enemyId}_attack.png"
 
   if (options.isBossRoom) {
     const bossId = options.bossId;
-    const bossFrame = bossId === 'boss_final' || bossId.includes('final') ? 160 : 96;
+    const isFinalBoss = bossId === 'boss_final' || bossId.includes('final');
+    const bossFrame = 160;
+    // Every Stormglass guardian now uses the same authored 160px production standard as the
+    // final Abbot. Non-final guardians clear the final-only special attacks but keep full-size
+    // walk, attack, hurt, death and prefixed idle sheets.
+    const bossExtraAnimations = isFinalBoss ? '' : 'extra_animation_sheets = {}\n';
     const bossPos =
       findPlacement(placements, 'boss', bossId) ??
       findPlacement(placements, 'boss') ?? { x: platformWidth / 2, y: floorTop };
@@ -1595,9 +1851,10 @@ ${authoredMetadata(bossPos)}boss_id = "${bossId}"
 
 [node name="Sprite" parent="Boss"]
 sheet_path = "assets/bosses/${bossId}_walk.png"
+run_sheet_path = "assets/bosses/${bossId}_run.png"
 frame_size = Vector2i(${bossFrame}, ${bossFrame})
 frame_count = 3
-hurt_sheet_path = "assets/bosses/${bossId}_hurt.png"
+${bossExtraAnimations}hurt_sheet_path = "assets/bosses/${bossId}_hurt.png"
 death_sheet_path = "assets/bosses/${bossId}_death.png"
 attack_sheet_path = "assets/bosses/${bossId}_attack.png"
 `;
@@ -1691,12 +1948,19 @@ amount = ${options.itemAmount}
         y = floorY + 96;
         break;
       case 'right':
-        x = platformWidth - 24 - slot * 48;
-        y = floorY - 80;
+        // Keep the sensor inside the room shell. At the old edge position its
+        // active 24px strip sat beyond the wall collider, so grounded players
+        // stopped before Area2D overlap could begin.
+        x = platformWidth - 72 - slot * 48;
+        // RoomTransition's 80px sensor begins at the node origin. Extend it 16px
+        // through the floor line so a grounded CharacterBody overlaps it rather
+        // than merely touching its bottom edge (Godot does not count that as an
+        // Area2D overlap).
+        y = floorY - 64;
         break;
       case 'left':
-        x = slot * 48;
-        y = floorY - 80;
+        x = 48 + slot * 48;
+        y = floorY - 64;
         break;
     }
     scene += `
@@ -1834,6 +2098,10 @@ export function recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult
           hasItemPickup: opts.hasItemPickup,
           itemId: opts.itemId,
         });
+      }
+      if (input.gameDna.identity.title.startsWith('Stormglass Reliquary') && !opts.isBossRoom &&
+          (opts.worldGraphArchetype === 'combat' || opts.worldGraphArchetype === 'traversal')) {
+        applyStormglassEncounterComposition(roomId, i, opts, input.gameContent?.enemies ?? []);
       }
       if (input.regenerateEncounterRoomIds?.includes(roomId)) {
         const combat = defaultEntityPlacements({

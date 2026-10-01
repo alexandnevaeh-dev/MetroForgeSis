@@ -1,0 +1,10 @@
+{
+  "abilities": [
+    {
+      "id": "wind_disc",
+      "displayName": "Verdant Disc",
+      "category": "tool",
+      "enabled": true
+    }
+  ]
+}

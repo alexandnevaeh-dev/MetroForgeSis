@@ -1,0 +1,38 @@
+{
+  "npcs": [
+    {
+      "id": "npc_000",
+      "name": "Mira of the Roots",
+      "role": "lore",
+      "roomId": "overworld",
+      "dialogueIds": [
+        "dlg_npc_000_lore"
+      ],
+      "questIds": []
+    },
+    {
+      "id": "npc_001",
+      "name": "Iri, Lastlight Keeper",
+      "role": "quest_giver",
+      "roomId": "canopy_hamlet",
+      "dialogueIds": [
+        "story_living_words_offer"
+      ],
+      "questIds": [
+        "story_living_words"
+      ]
+    },
+    {
+      "id": "npc_002",
+      "name": "Soren, Bellwright",
+      "role": "quest_giver",
+      "roomId": "canopy_archive",
+      "dialogueIds": [
+        "story_oath_memory_offer"
+      ],
+      "questIds": [
+        "story_oath_memory"
+      ]
+    }
+  ]
+}

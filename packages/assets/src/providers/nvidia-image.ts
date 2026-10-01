@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import type { ImageGenRequest, ImageGenResult, ImageGenerator, ImageProviderHealthReport } from '../types/image-gen.js';
-import { mergeAbortSignal } from '@metroforge/shared';
+import { mergeAbortSignal, resolvePythonExecutable } from '@metroforge/shared';
 import { decodePngRgba } from '../png.js';
 import {
   classifyNvidiaHttpFailure,
@@ -279,7 +279,7 @@ export class NvidiaImageProvider implements ImageGenerator {
     ).replace(/\/$/, '');
     this.modelId = config.modelId ?? process.env.NVIDIA_IMAGE_MODEL ?? DEFAULT_MODEL;
     this.enabled = config.enabled ?? !!this.apiKey;
-    this.pythonPath = config.pythonPath ?? process.env.DIFFUSERS_PYTHON ?? 'python';
+    this.pythonPath = resolvePythonExecutable(config.pythonPath);
     this.maxRetries = Math.max(0, config.maxRetries ?? DEFAULT_MAX_RETRIES);
     this.retryBackoffMs = config.retryBackoffMs?.length
       ? config.retryBackoffMs.map((n) => Math.max(0, n))

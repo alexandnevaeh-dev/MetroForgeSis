@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { inferAssetMaturity } from '@metroforge/shared';
@@ -55,7 +55,13 @@ function sha256(buffer: Buffer): string {
   return createHash('sha256').update(buffer).digest('hex');
 }
 
-describe('pipeline v2 Apple-native MPS improved scene — selected candidates', () => {
+const REQUIRED_SOURCES = [
+  join(process.cwd(), 'test-artifacts', QUALITY_DIR, 'metro_player_idle_steps20', 'source.png'),
+  join(process.cwd(), 'test-artifacts', BASELINE_DIR, 'source/assets/tilesets/metro_industrial_tiles/source.source.png'),
+  join(process.cwd(), 'test-artifacts', QUALITY_DIR, 'metro_power_terminal_v3', 'source.png'),
+];
+
+describe.skipIf(!REQUIRED_SOURCES.every((sourcePath) => existsSync(sourcePath)))('pipeline v2 Apple-native MPS improved scene — selected candidates', () => {
   it('runs the three selected real assets through normalize/process/compile/validate/QA_REVIEW and assembles the Godot scene', () => {
     const root = process.cwd();
     const evidenceDir = join(root, 'test-artifacts', RUN_SLUG);

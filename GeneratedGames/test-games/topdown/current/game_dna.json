@@ -1,0 +1,63 @@
+{
+  "version": "0.1.0",
+  "identity": {
+    "title": "Ruined Canopy: Verdant Oath",
+    "tagline": "Carry the First Seed through a forest that remembers",
+    "genre": "Action-Adventure",
+    "tone": "mysterious hopeful",
+    "visualStyle": "rich stylized pixel art, HD-2D inspired diorama"
+  },
+  "technical": {
+    "resolution": {
+      "width": 1280,
+      "height": 720
+    },
+    "tileSize": 32,
+    "targetPlaytimeHours": 0.2,
+    "difficulty": "normal"
+  },
+  "combat": {
+    "style": "directional melee",
+    "meleeEnabled": true,
+    "rangedEnabled": true
+  },
+  "movement": {
+    "walkSpeed": 120,
+    "runSpeed": 185,
+    "jumpHeight": 0,
+    "gravity": 0,
+    "acceleration": 850,
+    "deceleration": 1100
+  },
+  "abilities": [
+    {
+      "id": "wind_disc",
+      "name": "Verdant Disc",
+      "category": "tool",
+      "enabled": true
+    }
+  ],
+  "world": {
+    "biomeCount": 1,
+    "roomCount": 16,
+    "regionCount": 1
+  },
+  "narrative": {
+    "premise": "Aster returns the First Seed to the Hollow Crown. Follow amber paths past moss-lit idols, cross the ruined aqueduct, recover the Verdant Disc, then open the living vine seals and face the corrupted grove guardian.",
+    "protagonist": "Aster, the Seedbearer",
+    "centralConflict": "Restore the woodland heart before the ruins consume its roots"
+  },
+  "seed": 20260930,
+  "profile": "TINY_TEST",
+  "archetype": "TOP_DOWN_ACTION_ADVENTURE",
+  "topDown": {
+    "movementDirections": 8,
+    "worldStyle": "screen_by_screen",
+    "dungeonCount": 1,
+    "townCount": 0,
+    "worldVariantEnabled": false,
+    "dungeonItemProgression": true,
+    "puzzleDensity": 0.25,
+    "secretDensity": 0.1
+  }
+}

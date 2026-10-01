@@ -1,0 +1,32 @@
+{
+  "idle": {
+    "frameCount": 12,
+    "fps": 10,
+    "loop": true
+  },
+  "walk": {
+    "frameCount": 12,
+    "fps": 16,
+    "loop": true
+  },
+  "run": {
+    "frameCount": 16,
+    "fps": 24,
+    "loop": true
+  },
+  "attack": {
+    "frameCount": 12,
+    "fps": 21,
+    "loop": false
+  },
+  "hurt": {
+    "frameCount": 6,
+    "fps": 16,
+    "loop": false
+  },
+  "death": {
+    "frameCount": 12,
+    "fps": 16,
+    "loop": false
+  }
+}

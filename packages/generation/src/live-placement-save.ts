@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, renameSync, unlinkSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 import { detectProjectEngine } from '@metroforge/engines';
 import type { EntityPlacement } from '@metroforge/godot';
@@ -26,6 +27,29 @@ const kinds = new Set([
   'item_pickup',
   'checkpoint',
 ]);
+
+/** Top-down spawn positions are authored in one world document, not room scenes. */
+function readTopdownSpawn(projectPath: string, identity: AuthoredPlacementIdentity) {
+  const path = join(projectPath, 'data', 'world', 'overworld.json');
+  if (!existsSync(path)) return null;
+  if (detectProjectEngine(projectPath) !== 'godot') throw new Error('Live placement saving requires Godot.');
+  if (!identity || !/^[a-zA-Z0-9_-]+$/.test(identity.roomId) ||
+      identity.kind !== 'player_spawn' || typeof identity.id !== 'string' || !identity.id) {
+    throw new Error('Top-down live saving currently supports authored player spawns only.');
+  }
+  const text = readFileSync(path, 'utf8');
+  const document = JSON.parse(text) as { areas?: Array<{ id: string; pois?: Array<{
+    id: string; kind: string; x: number; y: number;
+  }> }> };
+  const areas = Array.isArray(document.areas) ? document.areas.filter(a => a && a.id === identity.roomId) : [];
+  if (areas.length !== 1) throw new Error('Saved area is missing or ambiguous.');
+  const pois = areas[0]!.pois;
+  const matches = Array.isArray(pois) ? pois.filter(p => p && p.kind === 'spawn' && p.id === identity.id) : [];
+  if (matches.length !== 1 || !Number.isFinite(matches[0]!.x) || !Number.isFinite(matches[0]!.y)) {
+    throw new Error('Saved spawn is missing, ambiguous, or invalid.');
+  }
+  return { path, document, placement: matches[0]!, revision: createHash('sha256').update(text).digest('hex') };
+}
 
 /** Read the two source artifacts together. A revision covers both, including unrelated edits. */
 function readPlacement(projectPath: string, identity: AuthoredPlacementIdentity) {
@@ -108,7 +132,7 @@ export function inspectPlacementForSave(
   projectPath: string,
   identity: AuthoredPlacementIdentity,
 ): PlacementSaveSnapshot {
-  const source = readPlacement(projectPath, identity);
+  const source = readTopdownSpawn(projectPath, identity) ?? readPlacement(projectPath, identity);
   return {
     identity: { ...identity },
     revision: source.revision,
@@ -128,6 +152,25 @@ export function saveAuthoredPlacement(
 ): { saved: PlacementSaveSnapshot; previousRoom: Record<string, unknown> } {
   if (!position || !Number.isFinite(position.x) || !Number.isFinite(position.y)) {
     throw new Error('Saved position must contain finite coordinates');
+  }
+  const topdown = readTopdownSpawn(projectPath, identity);
+  if (topdown) {
+    if (topdown.revision !== expectedRevision) throw new Error('World source changed since inspection. Inspect again before saving.');
+    // Existing placement history consumes a normalized placement snapshot and replays
+    // coordinates through this adapter; it never restores this as an entire area.
+    const previousRoom = { entityPlacements: [{ ...identity, x: topdown.placement.x, y: topdown.placement.y }] };
+    topdown.placement.x = position.x;
+    topdown.placement.y = position.y;
+    const next = JSON.stringify(topdown.document, null, 2);
+    const temporary = `${topdown.path}.${randomUUID()}.tmp`;
+    try {
+      writeFileSync(temporary, next, { flag: 'wx' });
+      renameSync(temporary, topdown.path);
+    } finally {
+      if (existsSync(temporary)) unlinkSync(temporary);
+    }
+    return { previousRoom, saved: { identity: { ...identity }, ...position,
+      revision: createHash('sha256').update(next).digest('hex') } };
   }
   const source = readPlacement(projectPath, identity);
   if (source.revision !== expectedRevision) {

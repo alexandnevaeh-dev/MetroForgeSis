@@ -14,6 +14,7 @@ const {
   exportGodotWindowsBinary,
   ensureMacOSExportPreset,
   ensureWindowsExportPreset,
+  verifyPackagedWindowsLaunch,
 } = await import('./godot-export.js');
 
 describe('godot-export', () => {
@@ -131,5 +132,34 @@ describe('godot-export', () => {
     expect(spawnSyncMock.mock.calls.at(-1)?.[1]).toEqual([
       '--headless', '--path', dir, '--export-release', 'macOS', outputZipPath,
     ]);
+  });
+
+  it('retries packaged Windows launch and prefers the console wrapper when present', () => {
+    const outputExePath = join(dir, 'Game.exe');
+    const consoleExe = join(dir, 'Game_console.exe');
+    writeFileSync(outputExePath, 'MZ');
+    writeFileSync(consoleExe, 'MZ');
+    spawnSyncMock
+      .mockImplementationOnce(() => ({
+        status: 1,
+        stdout: '',
+        stderr: 'transient',
+        signal: null,
+        error: undefined,
+      }))
+      .mockImplementationOnce(() => ({
+        status: 0,
+        stdout: 'ok',
+        stderr: '',
+        signal: null,
+        error: undefined,
+      }));
+
+    const result = verifyPackagedWindowsLaunch(outputExePath, { attempts: 3, timeoutMs: 5_000 });
+    expect(result.ok).toBe(true);
+    expect(result.attempts).toBe(2);
+    expect(result.executable).toBe(consoleExe);
+    expect(spawnSyncMock).toHaveBeenCalledTimes(2);
+    expect(spawnSyncMock.mock.calls[0]![1]).toEqual(['--headless', '--quit-after', '60']);
   });
 });

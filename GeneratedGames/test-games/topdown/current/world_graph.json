@@ -1,0 +1,411 @@
+{
+  "version": "0.1.0",
+  "seed": 20260930,
+  "nodes": [
+    {
+      "id": "overworld",
+      "type": "zone",
+      "label": "Rootbound Entrance",
+      "metadata": {
+        "archetype": "tutorial",
+        "biomeId": "biome_0",
+        "landmark": "root_arch",
+        "mapPosition": [
+          0,
+          0
+        ],
+        "grantsAbilities": []
+      }
+    },
+    {
+      "id": "dungeon_000_r0",
+      "type": "room",
+      "label": "Fallen Idol Crossing",
+      "metadata": {
+        "archetype": "combat",
+        "biomeId": "biome_0",
+        "landmark": "idol",
+        "mapPosition": [
+          1,
+          0
+        ],
+        "grantsAbilities": []
+      }
+    },
+    {
+      "id": "canopy_clearing",
+      "type": "room",
+      "label": "Mosslight Clearing",
+      "metadata": {
+        "archetype": "hub",
+        "biomeId": "biome_0",
+        "landmark": "mushrooms",
+        "mapPosition": [
+          2,
+          0
+        ],
+        "grantsAbilities": []
+      }
+    },
+    {
+      "id": "dungeon_000_r2",
+      "type": "room",
+      "label": "Vine-Choked Gate",
+      "metadata": {
+        "archetype": "gate",
+        "biomeId": "biome_0",
+        "landmark": "vine_gate",
+        "mapPosition": [
+          3,
+          0
+        ],
+        "grantsAbilities": []
+      }
+    },
+    {
+      "id": "canopy_hollow",
+      "type": "room",
+      "label": "Whispering Hollow",
+      "metadata": {
+        "archetype": "combat",
+        "biomeId": "biome_0",
+        "landmark": "rune_tree",
+        "mapPosition": [
+          2,
+          1
+        ],
+        "grantsAbilities": []
+      }
+    },
+    {
+      "id": "canopy_bridge",
+      "type": "room",
+      "label": "Overlook Bridge",
+      "metadata": {
+        "archetype": "traversal",
+        "biomeId": "biome_0",
+        "landmark": "bridge",
+        "mapPosition": [
+          2,
+          2
+        ],
+        "grantsAbilities": []
+      }
+    },
+    {
+      "id": "dungeon_000_r1",
+      "type": "room",
+      "label": "Shrine of the First Seed",
+      "metadata": {
+        "archetype": "ability",
+        "biomeId": "biome_0",
+        "landmark": "seed_shrine",
+        "mapPosition": [
+          3,
+          2
+        ],
+        "grantsAbilities": [
+          "wind_disc"
+        ]
+      }
+    },
+    {
+      "id": "canopy_secret",
+      "type": "room",
+      "label": "Lantern Grotto",
+      "metadata": {
+        "archetype": "secret",
+        "biomeId": "biome_0",
+        "landmark": "lantern",
+        "mapPosition": [
+          4,
+          2
+        ],
+        "grantsAbilities": []
+      }
+    },
+    {
+      "id": "canopy_approach",
+      "type": "room",
+      "label": "Elder Roots Approach",
+      "metadata": {
+        "archetype": "save",
+        "biomeId": "biome_0",
+        "landmark": "elder_roots",
+        "mapPosition": [
+          4,
+          0
+        ],
+        "grantsAbilities": []
+      }
+    },
+    {
+      "id": "dungeon_000_r3",
+      "type": "room",
+      "label": "The Hollow Crown",
+      "metadata": {
+        "archetype": "boss",
+        "biomeId": "biome_0",
+        "landmark": "crown",
+        "mapPosition": [
+          5,
+          0
+        ],
+        "grantsAbilities": []
+      }
+    },
+    {
+      "id": "canopy_hamlet",
+      "type": "room",
+      "label": "Lastlight Hamlet",
+      "metadata": {
+        "archetype": "town",
+        "biomeId": "biome_0",
+        "landmark": "lantern",
+        "mapPosition": [
+          0,
+          1
+        ],
+        "grantsAbilities": []
+      }
+    },
+    {
+      "id": "canopy_archive",
+      "type": "room",
+      "label": "The Silent Bell Archive",
+      "metadata": {
+        "archetype": "lore",
+        "biomeId": "biome_0",
+        "landmark": "idol",
+        "mapPosition": [
+          -1,
+          1
+        ],
+        "grantsAbilities": []
+      }
+    },
+    {
+      "id": "canopy_observatory",
+      "type": "room",
+      "label": "Emberwatch Observatory",
+      "metadata": {
+        "archetype": "spell",
+        "biomeId": "biome_0",
+        "landmark": "seed_shrine",
+        "mapPosition": [
+          -2,
+          1
+        ],
+        "grantsAbilities": []
+      }
+    },
+    {
+      "id": "canopy_gardens",
+      "type": "room",
+      "label": "The Drowned Gardens",
+      "metadata": {
+        "archetype": "traversal",
+        "biomeId": "biome_0",
+        "landmark": "rune_tree",
+        "mapPosition": [
+          2,
+          3
+        ],
+        "grantsAbilities": []
+      }
+    },
+    {
+      "id": "canopy_cistern",
+      "type": "room",
+      "label": "The Root Cistern",
+      "metadata": {
+        "archetype": "spell",
+        "biomeId": "biome_0",
+        "landmark": "elder_roots",
+        "mapPosition": [
+          3,
+          3
+        ],
+        "grantsAbilities": []
+      }
+    },
+    {
+      "id": "canopy_moonwell",
+      "type": "room",
+      "label": "Moonwell Sanctuary",
+      "metadata": {
+        "archetype": "spell",
+        "biomeId": "biome_0",
+        "landmark": "seed_shrine",
+        "mapPosition": [
+          4,
+          3
+        ],
+        "grantsAbilities": []
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "canopy_edge_0",
+      "from": "overworld",
+      "to": "dungeon_000_r0",
+      "requirements": [],
+      "optional": false,
+      "bidirectional": true
+    },
+    {
+      "id": "canopy_edge_1",
+      "from": "dungeon_000_r0",
+      "to": "canopy_clearing",
+      "requirements": [],
+      "optional": false,
+      "bidirectional": true
+    },
+    {
+      "id": "canopy_edge_2",
+      "from": "canopy_clearing",
+      "to": "dungeon_000_r2",
+      "requirements": [],
+      "optional": false,
+      "bidirectional": true
+    },
+    {
+      "id": "canopy_edge_3",
+      "from": "canopy_clearing",
+      "to": "canopy_hollow",
+      "requirements": [],
+      "optional": false,
+      "bidirectional": true
+    },
+    {
+      "id": "canopy_edge_4",
+      "from": "canopy_hollow",
+      "to": "canopy_bridge",
+      "requirements": [],
+      "optional": false,
+      "bidirectional": true
+    },
+    {
+      "id": "canopy_edge_5",
+      "from": "canopy_bridge",
+      "to": "dungeon_000_r1",
+      "requirements": [],
+      "optional": false,
+      "bidirectional": true
+    },
+    {
+      "id": "canopy_edge_6",
+      "from": "dungeon_000_r1",
+      "to": "canopy_secret",
+      "requirements": [
+        "wind_disc"
+      ],
+      "optional": true,
+      "bidirectional": true
+    },
+    {
+      "id": "canopy_edge_7",
+      "from": "canopy_bridge",
+      "to": "canopy_clearing",
+      "requirements": [
+        "wind_disc"
+      ],
+      "optional": true,
+      "bidirectional": true
+    },
+    {
+      "id": "canopy_edge_8",
+      "from": "dungeon_000_r2",
+      "to": "canopy_approach",
+      "requirements": [
+        "wind_disc"
+      ],
+      "optional": false,
+      "bidirectional": true
+    },
+    {
+      "id": "canopy_edge_9",
+      "from": "canopy_approach",
+      "to": "dungeon_000_r3",
+      "requirements": [],
+      "optional": false,
+      "bidirectional": true
+    },
+    {
+      "id": "canopy_edge_10",
+      "from": "canopy_clearing",
+      "to": "canopy_hamlet",
+      "requirements": [],
+      "optional": false,
+      "bidirectional": true
+    },
+    {
+      "id": "canopy_edge_11",
+      "from": "canopy_hamlet",
+      "to": "canopy_archive",
+      "requirements": [],
+      "optional": false,
+      "bidirectional": true
+    },
+    {
+      "id": "canopy_edge_12",
+      "from": "canopy_archive",
+      "to": "canopy_observatory",
+      "requirements": [],
+      "optional": false,
+      "bidirectional": true
+    },
+    {
+      "id": "canopy_edge_13",
+      "from": "canopy_bridge",
+      "to": "canopy_gardens",
+      "requirements": [],
+      "optional": false,
+      "bidirectional": true
+    },
+    {
+      "id": "canopy_edge_14",
+      "from": "canopy_gardens",
+      "to": "canopy_cistern",
+      "requirements": [],
+      "optional": false,
+      "bidirectional": true
+    },
+    {
+      "id": "canopy_edge_15",
+      "from": "canopy_cistern",
+      "to": "canopy_moonwell",
+      "requirements": [
+        "rootward"
+      ],
+      "optional": true,
+      "bidirectional": true
+    }
+  ],
+  "regions": [
+    {
+      "id": "region_0",
+      "name": "The Ruined Canopy",
+      "biomeId": "biome_0",
+      "roomIds": [
+        "overworld",
+        "dungeon_000_r0",
+        "canopy_clearing",
+        "dungeon_000_r2",
+        "canopy_hollow",
+        "canopy_bridge",
+        "dungeon_000_r1",
+        "canopy_secret",
+        "canopy_approach",
+        "dungeon_000_r3",
+        "canopy_hamlet",
+        "canopy_archive",
+        "canopy_observatory",
+        "canopy_gardens",
+        "canopy_cistern",
+        "canopy_moonwell"
+      ]
+    }
+  ]
+}

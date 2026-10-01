@@ -1,0 +1,123 @@
+{
+  "version": "0.1.0",
+  "seed": 20260930,
+  "startNodeId": "room_000",
+  "endNodeId": "room_038",
+  "nodes": [
+    {
+      "id": "room_000",
+      "type": "room",
+      "label": "Start",
+      "required": true
+    },
+    {
+      "id": "ability_dash",
+      "type": "ability",
+      "label": "dash",
+      "required": true
+    },
+    {
+      "id": "ability_double_jump",
+      "type": "ability",
+      "label": "double_jump",
+      "required": true
+    },
+    {
+      "id": "ability_wall_slide",
+      "type": "ability",
+      "label": "wall_slide",
+      "required": true
+    },
+    {
+      "id": "ability_wall_jump",
+      "type": "ability",
+      "label": "wall_jump",
+      "required": true
+    },
+    {
+      "id": "ability_air_dash",
+      "type": "ability",
+      "label": "air_dash",
+      "required": true
+    },
+    {
+      "id": "ability_ground_slam",
+      "type": "ability",
+      "label": "ground_slam",
+      "required": true
+    },
+    {
+      "id": "room_038",
+      "type": "boss",
+      "label": "Tempest Abbot",
+      "required": true
+    }
+  ],
+  "edges": [
+    {
+      "from": "room_000",
+      "to": "ability_dash",
+      "requires": []
+    },
+    {
+      "from": "ability_dash",
+      "to": "ability_double_jump",
+      "requires": [
+        "dash"
+      ]
+    },
+    {
+      "from": "ability_double_jump",
+      "to": "ability_wall_slide",
+      "requires": [
+        "double_jump"
+      ]
+    },
+    {
+      "from": "ability_wall_slide",
+      "to": "ability_wall_jump",
+      "requires": [
+        "wall_slide"
+      ]
+    },
+    {
+      "from": "ability_wall_jump",
+      "to": "ability_air_dash",
+      "requires": [
+        "wall_jump"
+      ]
+    },
+    {
+      "from": "ability_air_dash",
+      "to": "ability_ground_slam",
+      "requires": [
+        "air_dash"
+      ]
+    },
+    {
+      "from": "ability_ground_slam",
+      "to": "room_038",
+      "requires": [
+        "ground_slam"
+      ]
+    }
+  ],
+  "abilities": [
+    "dash",
+    "double_jump",
+    "wall_slide",
+    "wall_jump",
+    "air_dash",
+    "ground_slam"
+  ],
+  "criticalPath": [
+    "room_000",
+    "ability_dash",
+    "ability_double_jump",
+    "ability_wall_slide",
+    "ability_wall_jump",
+    "ability_air_dash",
+    "ability_ground_slam",
+    "room_038"
+  ]
+}

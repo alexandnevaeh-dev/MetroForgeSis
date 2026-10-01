@@ -1,0 +1,258 @@
+[gd_scene load_steps=5 format=3 uid="uid://pause_menu"]
+
+[ext_resource type="Script" path="res://scripts/UI/PauseMenu.gd" id="1_pause"]
+[ext_resource type="Script" path="res://scripts/UI/WorldMapPanel.gd" id="2_map"]
+[ext_resource type="Script" path="res://scripts/UI/InventoryPanel.gd" id="3_inv"]
+[ext_resource type="Script" path="res://scripts/UI/QuestPanel.gd" id="4_quest"]
+
+[node name="PauseMenu" type="CanvasLayer"]
+layer = 10
+script = ExtResource("1_pause")
+
+[node name="Dim" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.6)
+
+[node name="Panel" type="Control" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="MainPanel" type="PanelContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -110.0
+offset_top = -170.0
+offset_right = 110.0
+offset_bottom = 170.0
+
+[node name="VBox" type="VBoxContainer" parent="Panel/MainPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="Panel/MainPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Paused"
+horizontal_alignment = 1
+
+[node name="ResumeButton" type="Button" parent="Panel/MainPanel/VBox"]
+layout_mode = 2
+text = "Resume"
+
+[node name="MapButton" type="Button" parent="Panel/MainPanel/VBox"]
+layout_mode = 2
+text = "Map"
+
+[node name="InventoryButton" type="Button" parent="Panel/MainPanel/VBox"]
+layout_mode = 2
+text = "Inventory"
+
+[node name="QuestsButton" type="Button" parent="Panel/MainPanel/VBox"]
+layout_mode = 2
+text = "Quests"
+
+[node name="SettingsButton" type="Button" parent="Panel/MainPanel/VBox"]
+layout_mode = 2
+text = "Settings"
+
+[node name="TitleButton" type="Button" parent="Panel/MainPanel/VBox"]
+layout_mode = 2
+text = "Return to Title"
+
+[node name="SettingsPanel" type="PanelContainer" parent="Panel"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -160.0
+offset_top = -160.0
+offset_right = 160.0
+offset_bottom = 160.0
+
+[node name="VBox" type="VBoxContainer" parent="Panel/SettingsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TitleLabel" type="Label" parent="Panel/SettingsPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Settings"
+horizontal_alignment = 1
+
+[node name="MasterRow" type="HBoxContainer" parent="Panel/SettingsPanel/VBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Panel/SettingsPanel/VBox/MasterRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(110, 0)
+text = "Master Volume"
+
+[node name="MasterSlider" type="HSlider" parent="Panel/SettingsPanel/VBox/MasterRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.0
+max_value = 1.0
+step = 0.05
+value = 1.0
+
+[node name="MusicRow" type="HBoxContainer" parent="Panel/SettingsPanel/VBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Panel/SettingsPanel/VBox/MusicRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(110, 0)
+text = "Music Volume"
+
+[node name="MusicSlider" type="HSlider" parent="Panel/SettingsPanel/VBox/MusicRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.0
+max_value = 1.0
+step = 0.05
+value = 0.7
+
+[node name="SfxRow" type="HBoxContainer" parent="Panel/SettingsPanel/VBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Panel/SettingsPanel/VBox/SfxRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(110, 0)
+text = "SFX Volume"
+
+[node name="SfxSlider" type="HSlider" parent="Panel/SettingsPanel/VBox/SfxRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.0
+max_value = 1.0
+step = 0.05
+value = 1.0
+
+[node name="ScreenShakeRow" type="HBoxContainer" parent="Panel/SettingsPanel/VBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Panel/SettingsPanel/VBox/ScreenShakeRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(110, 0)
+text = "Screen Shake"
+
+[node name="ScreenShakeCheck" type="CheckBox" parent="Panel/SettingsPanel/VBox/ScreenShakeRow"]
+layout_mode = 2
+button_pressed = true
+
+[node name="FullscreenRow" type="HBoxContainer" parent="Panel/SettingsPanel/VBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Panel/SettingsPanel/VBox/FullscreenRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(110, 0)
+text = "Fullscreen"
+
+[node name="FullscreenCheck" type="CheckBox" parent="Panel/SettingsPanel/VBox/FullscreenRow"]
+layout_mode = 2
+
+[node name="BackButton" type="Button" parent="Panel/SettingsPanel/VBox"]
+layout_mode = 2
+text = "Back"
+
+[node name="MapPanel" type="PanelContainer" parent="Panel"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -160.0
+offset_right = 200.0
+offset_bottom = 160.0
+
+[node name="VBox" type="VBoxContainer" parent="Panel/MapPanel"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="Panel/MapPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "World Map"
+horizontal_alignment = 1
+
+[node name="WorldMapView" type="Control" parent="Panel/MapPanel/VBox"]
+custom_minimum_size = Vector2(360, 220)
+layout_mode = 2
+script = ExtResource("2_map")
+
+[node name="BackButton" type="Button" parent="Panel/MapPanel/VBox"]
+layout_mode = 2
+text = "Back"
+
+[node name="InventoryPanel" type="PanelContainer" parent="Panel"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -180.0
+offset_right = 200.0
+offset_bottom = 180.0
+
+[node name="VBox" type="VBoxContainer" parent="Panel/InventoryPanel"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="Panel/InventoryPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Inventory"
+horizontal_alignment = 1
+
+[node name="InventoryView" type="Control" parent="Panel/InventoryPanel/VBox"]
+custom_minimum_size = Vector2(360, 260)
+layout_mode = 2
+script = ExtResource("3_inv")
+
+[node name="BackButton" type="Button" parent="Panel/InventoryPanel/VBox"]
+layout_mode = 2
+text = "Back"
+
+[node name="QuestsPanel" type="PanelContainer" parent="Panel"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -160.0
+offset_right = 200.0
+offset_bottom = 160.0
+
+[node name="VBox" type="VBoxContainer" parent="Panel/QuestsPanel"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="Panel/QuestsPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Quest Log"
+horizontal_alignment = 1
+
+[node name="QuestView" type="Control" parent="Panel/QuestsPanel/VBox"]
+custom_minimum_size = Vector2(360, 220)
+layout_mode = 2
+script = ExtResource("4_quest")
+
+[node name="BackButton" type="Button" parent="Panel/QuestsPanel/VBox"]
+layout_mode = 2
+text = "Back"

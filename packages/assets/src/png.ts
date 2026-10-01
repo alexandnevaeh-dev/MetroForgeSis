@@ -148,14 +148,15 @@ function humanoidPart(fx: number, fy: number, robe = false): BodyPart {
   return null;
 }
 
-/** Player-only silhouette: heat-suit ingot runner — visor slit, ladle-hook, ash cloak,
- *  brass greaves. Evaluated before generic anatomy so equipment reads as construction. */
+/** Player-only silhouette: mycelial spore-scout — soft hood, spore-lantern staff, lichen cloak.
+ *  Foundry courier gens use the authored kit still; this is the procedural fallback silhouette. */
 function playerPart(fx: number, fy: number): BodyPart {
-  if (inRectFrac(fx, fy, 0.40, 0.74, 0.145, 0.205)) return 'glow';
-  if (inTaperedRectFrac(fx, fy, 0.58, 0.96, 0.035, 0.028, 0.80)) return 'weapon';
-  if (inEllipseFrac(fx, fy, 0.84, 0.90, 0.07, 0.05)) return 'glow';
-  if (inTaperedRectFrac(fx, fy, 0.34, 0.82, 0.05, 0.11, 0.22)) return 'cape';
-  if (inTaperedRectFrac(fx, fy, 0.12, 0.19, 0.045, 0.07, 0.54)) return 'gauntlet';
+  if (inEllipseFrac(fx, fy, 0.50, 0.14, 0.17, 0.095)) return 'glow';
+  if (inEllipseFrac(fx, fy, 0.80, 0.20, 0.05, 0.065)) return 'glow';
+  if (inTaperedRectFrac(fx, fy, 0.20, 0.94, 0.02, 0.024, 0.80)) return 'weapon';
+  if (inRectFrac(fx, fy, 0.70, 0.82, 0.54, 0.59)) return 'armR';
+  if (inTaperedRectFrac(fx, fy, 0.28, 0.90, 0.09, 0.15, 0.20)) return 'cape';
+  if (inEllipseFrac(fx, fy, 0.22, 0.42, 0.06, 0.05)) return 'gauntlet';
   return humanoidPart(fx, fy);
 }
 
@@ -951,95 +952,285 @@ interface ArticulationPose {
   footLiftPx: number;
   torsoLeanPx: number;
   armSwingPx: number;
+  /** Lateral hip counter-rotation (opposite legs), px at hip band. */
+  hipSwayPx: number;
   compress: number;
   extend: number;
   attackReachPx: number;
 }
 
-/** Inverse warp: destination (x,y) → source. Left/right legs opposite phase, arms opposite
- *  the same-side leg, torso leans from the hip, head counters the torso. Foot lift is local
- *  to the swinging leg — never a whole-sprite bob. */
-function srcForArticulated(
-  x: number,
-  y: number,
+type ArticulationPart = 'head' | 'torso' | 'leftLeg' | 'rightLeg' | 'leftArm' | 'rightArm';
+
+const ARTICULATION_HIP_Y = 0.56;
+const ARTICULATION_NECK_Y = 0.30;
+const ARTICULATION_MID_X = 0.5;
+
+/** Exclusive body-part masks so left/right limbs never sample each other (ghost legs). */
+function articulationPartAt(fx: number, fy: number): ArticulationPart {
+  if (fy < ARTICULATION_NECK_Y) return 'head';
+  if (fy >= ARTICULATION_HIP_Y) return fx < ARTICULATION_MID_X ? 'leftLeg' : 'rightLeg';
+  if (fx < 0.36) return 'leftArm';
+  if (fx > 0.64) return 'rightArm';
+  return 'torso';
+}
+
+/** Use the authored procedural rig only for its exact source image. Imported art keeps
+ * the generic segmentation; a filename alone must never impose this character's anatomy. */
+function proceduralPlayerRig(spec: SpriteSpec, sourcePng?: Buffer): ((fx: number, fy: number) => ArticulationPart) | undefined {
+  if (spec.id !== 'player' || (spec.shape && spec.shape !== 'humanoid')) return undefined;
+  if (sourcePng && !sourcePng.equals(generateProceduralSprite(spec))) return undefined;
+  return (fx, fy) => {
+    let body = playerPart(fx, fy);
+    // Outline pixels belong to their nearest painted part, rather than a horizontal band.
+    if (!body) {
+      for (const [ox, oy] of [[-1, 0], [1, 0], [0, -1], [0, 1]] as const) {
+        body = playerPart(fx + ox / spec.width, fy + oy / spec.height);
+        if (body) break;
+      }
+    }
+    switch (body) {
+      case 'legL': case 'footL': return 'leftLeg';
+      case 'legR': case 'footR': return 'rightLeg';
+      case 'armL': case 'gauntlet': return 'leftArm';
+      case 'armR': case 'weapon': return 'rightArm';
+      case 'cape': case 'belt': case 'hip': return 'torso';
+      case 'glow': return fx > 0.75 ? 'rightArm' : 'head';
+      default: return fy < ARTICULATION_NECK_Y ? 'head' : 'torso';
+    }
+  };
+}
+
+/**
+ * Forward warp: source pixel → destination. Parts are transformed independently and composited
+ * with occlusion so a swinging leg cannot pull the opposite leg's pixels into the same column
+ * (the classic inverse-warp multi-leg smear).
+ */
+function destForArticulatedPart(
+  sx: number,
+  sy: number,
   width: number,
   height: number,
   pose: ArticulationPose,
-): { sx: number; sy: number } {
-  const fx = (x + 0.5) / width;
-  const fy = (y + 0.5) / height;
-  const hipY = 0.56;
-  const neckY = 0.30;
-  const midX = 0.5;
-  let sx = x;
-  let sy = y;
+  part: ArticulationPart,
+): { dx: number; dy: number } {
+  const fx = (sx + 0.5) / width;
+  const fy = (sy + 0.5) / height;
+  const hipY = ARTICULATION_HIP_Y;
+  const neckY = ARTICULATION_NECK_Y;
+  let dx = sx;
+  let dy = sy;
 
   if (pose.compress > 0 && fy > neckY) {
-    const fold = fy >= hipY ? pose.compress * 0.42 : pose.compress * 0.14;
-    sy = neckY * height + (y - neckY * height) * (1 + fold);
+    const fold = part === 'leftLeg' || part === 'rightLeg' ? pose.compress * 0.42 : pose.compress * 0.14;
+    dy = neckY * height + (sy - neckY * height) / (1 + fold);
   }
   if (pose.extend > 0 && fy > neckY) {
-    sy = neckY * height + (y - neckY * height) / (1 + pose.extend * 0.22);
+    dy = neckY * height + (sy - neckY * height) * (1 + pose.extend * 0.22);
   }
 
-  if (fy < hipY) {
-    const fromHip = hipY - fy;
-    sx -= pose.torsoLeanPx * fromHip * 2.2;
-    if (fy < neckY) {
-      sx += pose.torsoLeanPx * (neckY - fy) * 1.6;
+  if (pose.hipSwayPx !== 0 && fy > neckY) {
+    const hipWeight = fy >= hipY ? 1.0 : Math.max(0, (fy - neckY) / (hipY - neckY));
+    dx += pose.hipSwayPx * Math.sin(pose.phase) * hipWeight;
+  }
+
+  if (part === 'torso' || part === 'head' || part === 'leftArm' || part === 'rightArm') {
+    const fromHip = Math.max(0, hipY - fy);
+    dx += pose.torsoLeanPx * fromHip * 2.2;
+    if (part === 'head') {
+      dx -= pose.torsoLeanPx * (neckY - fy) * 1.6;
     }
   }
 
-  if (fy >= hipY) {
-    const isLeft = fx < midX;
+  if (part === 'leftLeg' || part === 'rightLeg') {
+    const isLeft = part === 'leftLeg';
     const legPhase = pose.phase + (isLeft ? 0 : Math.PI);
     const swing = Math.sin(legPhase);
-    sx -= Math.cos(legPhase) * pose.stridePx;
+    dx += Math.cos(legPhase) * pose.stridePx;
     if (swing > 0) {
-      sy += swing * pose.footLiftPx;
+      dy -= swing * pose.footLiftPx;
+    } else {
+      dy -= Math.abs(swing) * pose.compress * height * 0.04;
     }
-  } else if (fy > neckY && (fx < 0.38 || fx > 0.62)) {
-    const isLeft = fx < midX;
+  } else if (part === 'leftArm' || part === 'rightArm') {
+    const isLeft = part === 'leftArm';
     const armPhase = pose.phase + (isLeft ? Math.PI : 0);
-    sx -= Math.sin(armPhase) * pose.armSwingPx;
-    sy += ((1 - Math.cos(armPhase)) * 0.5) * pose.armSwingPx * 0.2;
+    const armSwing = Math.sin(armPhase);
+    dx += armSwing * pose.armSwingPx;
+    dy -= ((1 - Math.cos(armPhase)) * 0.5) * pose.armSwingPx * 0.28;
+    dy -= Math.max(0, -armSwing) * pose.armSwingPx * 0.12;
   }
 
-  if (pose.attackReachPx !== 0 && fy < hipY && fx > 0.52) {
-    sx -= pose.attackReachPx;
-    sy += Math.round(pose.attackReachPx * 0.15);
+  if (pose.attackReachPx !== 0 && (part === 'torso' || part === 'rightArm') && fx > 0.52) {
+    dx += pose.attackReachPx;
+    dy -= Math.round(pose.attackReachPx * 0.15);
   }
 
-  return { sx: Math.round(sx), sy: Math.round(sy) };
+  return { dx, dy };
 }
 
+function blitPartOntoFrame(
+  src: Uint8Array,
+  dest: Uint8Array,
+  width: number,
+  height: number,
+  pose: ArticulationPose,
+  part: ArticulationPart,
+  partAt: (fx: number, fy: number) => ArticulationPart = articulationPartAt,
+  fit?: { scale: number; x: number; y: number },
+): void {
+  for (let sy = 0; sy < height; sy++) {
+    for (let sx = 0; sx < width; sx++) {
+      const fx = (sx + 0.5) / width;
+      const fy = (sy + 0.5) / height;
+      if (partAt(fx, fy) !== part) continue;
+      const si = (sy * width + sx) * 4;
+      const a = src[si + 3]!;
+      if (a < 8) continue;
+      const { dx, dy } = destForArticulatedPart(sx, sy, width, height, pose, part);
+      const x = Math.round(fit ? dx * fit.scale + fit.x : dx);
+      const y = Math.round(fit ? dy * fit.scale + fit.y : dy);
+      if (x < 0 || y < 0 || x >= width || y >= height) continue;
+      const di = (y * width + x) * 4;
+      // Opaque overwrite — never blend limbs (blending is what stacked ghost legs looked like).
+      dest[di] = src[si]!;
+      dest[di + 1] = src[si + 1]!;
+      dest[di + 2] = src[si + 2]!;
+      dest[di + 3] = a;
+    }
+  }
+}
+
+/**
+ * Segmented forward composite: each limb is warped from its own exclusive mask, then drawn in
+ * occlusion order (planted leg behind swinging leg). Inverse nearest-neighbor alone still
+ * sampled across the midline and stacked both legs into mid-stride frames.
+ */
 function blitArticulatedSheet(
   rgba: Uint8Array,
   width: number,
   height: number,
   frameCount: number,
   poseAt: (frame: number) => ArticulationPose,
+  partAt?: (fx: number, fy: number) => ArticulationPart,
 ): Buffer {
   const sheet = new Uint8Array(width * frameCount * height * 4);
+  const frame = new Uint8Array(width * height * 4);
+  let fit: { scale: number; x: number; y: number } | undefined;
+  if (partAt && frameCount > 0) {
+    // One fit for the entire known rig, calculated before clipping. This preserves the
+    // staff and every limb without per-frame scale jitter or moving the feet's anchor.
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (let f = 0; f < frameCount; f++) {
+      const pose = poseAt(f);
+      for (let sy = 0; sy < height; sy++) for (let sx = 0; sx < width; sx++) {
+        if (rgba[(sy * width + sx) * 4 + 3]! < 8) continue;
+        const part = partAt((sx + 0.5) / width, (sy + 0.5) / height);
+        const { dx, dy } = destForArticulatedPart(sx, sy, width, height, pose, part);
+        minX = Math.min(minX, dx); maxX = Math.max(maxX, dx);
+        minY = Math.min(minY, dy); maxY = Math.max(maxY, dy);
+      }
+    }
+    if (Number.isFinite(minX)) {
+      const margin = Math.max(1, Math.round(Math.min(width, height) * 0.03));
+      const scale = Math.min(1, (width - 1 - margin * 2) / Math.max(1, maxX - minX),
+        (height - 1 - margin * 2) / Math.max(1, maxY - minY));
+      fit = { scale, x: (width - 1 - (maxX + minX) * scale) / 2,
+        y: height - 1 - margin - maxY * scale };
+    }
+  }
   for (let f = 0; f < frameCount; f++) {
     const pose = poseAt(f);
+    frame.fill(0);
+    const leftSwing = Math.sin(pose.phase);
+    // Planted leg first, swinging leg on top — single silhouette, no stacked ghost limbs.
+    const order: ArticulationPart[] =
+      leftSwing > 0
+        ? ['rightLeg', 'leftLeg', 'torso', 'head', 'leftArm', 'rightArm']
+        : ['leftLeg', 'rightLeg', 'torso', 'head', 'leftArm', 'rightArm'];
+    for (const part of order) {
+      blitPartOntoFrame(rgba, frame, width, height, pose, part, partAt, fit);
+    }
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
-        const { sx, sy } = srcForArticulated(x, y, width, height, pose);
+        const si = (y * width + x) * 4;
         const di = (y * width * frameCount + f * width + x) * 4;
-        if (sx < 0 || sx >= width || sy < 0 || sy >= height) {
-          sheet[di + 3] = 0;
-          continue;
-        }
-        const si = (sy * width + sx) * 4;
-        sheet[di] = rgba[si]!;
-        sheet[di + 1] = rgba[si + 1]!;
-        sheet[di + 2] = rgba[si + 2]!;
-        sheet[di + 3] = rgba[si + 3]!;
+        sheet[di] = frame[si]!;
+        sheet[di + 1] = frame[si + 1]!;
+        sheet[di + 2] = frame[si + 2]!;
+        sheet[di + 3] = frame[si + 3]!;
       }
     }
   }
   return encodePng(width * frameCount, height, sheet);
+}
+
+/**
+ * Count opaque connected components in the lower body band (legs). Bipedal walk/run frames
+ * should have at most two significant leg blobs — three+ indicates multi-leg ghost smear.
+ */
+export function countLowerBodyBlobs(
+  frameRgba: Uint8Array,
+  frameWidth: number,
+  frameHeight: number,
+  opts?: { alphaThreshold?: number; minBlobPixels?: number; lowerBandStart?: number },
+): number {
+  const alphaThreshold = opts?.alphaThreshold ?? 24;
+  const minBlobPixels = opts?.minBlobPixels ?? Math.max(3, Math.floor(frameWidth * frameHeight * 0.004));
+  const y0 = Math.floor(frameHeight * (opts?.lowerBandStart ?? 0.52));
+  const visited = new Uint8Array(frameWidth * frameHeight);
+  const idx = (x: number, y: number) => y * frameWidth + x;
+  let blobs = 0;
+  for (let y = y0; y < frameHeight; y++) {
+    for (let x = 0; x < frameWidth; x++) {
+      const i = idx(x, y);
+      if (visited[i]) continue;
+      if (frameRgba[i * 4 + 3]! < alphaThreshold) {
+        visited[i] = 1;
+        continue;
+      }
+      let area = 0;
+      const stack: number[] = [i];
+      visited[i] = 1;
+      while (stack.length) {
+        const cur = stack.pop()!;
+        area += 1;
+        const cx = cur % frameWidth;
+        const cy = (cur / frameWidth) | 0;
+        for (const [nx, ny] of [
+          [cx - 1, cy],
+          [cx + 1, cy],
+          [cx, cy - 1],
+          [cx, cy + 1],
+        ] as const) {
+          if (nx < 0 || ny < y0 || nx >= frameWidth || ny >= frameHeight) continue;
+          const ni = idx(nx, ny);
+          if (visited[ni]) continue;
+          visited[ni] = 1;
+          if (frameRgba[ni * 4 + 3]! >= alphaThreshold) stack.push(ni);
+        }
+      }
+      if (area >= minBlobPixels) blobs += 1;
+    }
+  }
+  return blobs;
+}
+
+/** True when any frame's lower body has more than two significant opaque blobs (ghost legs). */
+export function hasMultiLegSmear(
+  sheetRgba: Uint8Array,
+  frameWidth: number,
+  frameHeight: number,
+  frameCount: number,
+): boolean {
+  for (let f = 0; f < frameCount; f++) {
+    const frame = new Uint8Array(frameWidth * frameHeight * 4);
+    for (let y = 0; y < frameHeight; y++) {
+      const srcRowStart = (y * frameWidth * frameCount + f * frameWidth) * 4;
+      frame.set(sheetRgba.subarray(srcRowStart, srcRowStart + frameWidth * 4), y * frameWidth * 4);
+    }
+    if (countLowerBodyBlobs(frame, frameWidth, frameHeight) > 2) return true;
+  }
+  return false;
 }
 
 /** Horizontal walk-cycle spritesheet (frameCount frames) */
@@ -1047,22 +1238,28 @@ export function generateWalkCycleSheet(spec: SpriteSpec, frameCount = 4, sourceP
   const { rgba, width, height } = sourcePng
     ? decodePngRgba(sourcePng)
     : decodePngRgba(generateProceduralSprite(spec));
-  const stride = Math.max(3, Math.round(width * 0.12));
-  const lift = Math.max(2, Math.round(height * 0.06));
-  const arms = Math.max(2, Math.round(width * 0.08));
+  const stride = Math.max(4, Math.round(width * 0.16));
+  const lift = Math.max(3, Math.round(height * 0.09));
+  const rig = proceduralPlayerRig(spec, sourcePng);
+  const arms = Math.max(1, Math.round(width * (rig ? 0.05 : 0.14)));
+  const hip = Math.max(1, Math.round(width * (rig ? 0.02 : 0.05)));
   return blitArticulatedSheet(rgba, width, height, frameCount, (f) => {
-    const phase = frameCount > 1 ? (2 * Math.PI * f) / frameCount : 0;
+    // Ease contact phases slightly so planted frames linger (weightier, less strobing).
+    const u = frameCount > 1 ? f / frameCount : 0;
+    const eased = u + 0.04 * Math.sin(4 * Math.PI * u);
+    const phase = 2 * Math.PI * eased;
     return {
       phase,
       stridePx: stride,
       footLiftPx: lift,
-      torsoLeanPx: Math.sin(phase) * 1.4,
+      torsoLeanPx: Math.sin(phase) * 2.2,
       armSwingPx: arms,
-      compress: 0.08 * (0.5 + 0.5 * Math.sin(phase * 2)),
+      hipSwayPx: hip,
+      compress: 0.14 * (0.5 + 0.5 * Math.sin(phase * 2)),
       extend: 0,
       attackReachPx: 0,
     };
-  });
+  }, rig);
 }
 
 /**
@@ -1073,23 +1270,29 @@ export function generateRunCycleSheet(spec: SpriteSpec, frameCount = 12, sourceP
   const { rgba, width, height } = sourcePng
     ? decodePngRgba(sourcePng)
     : decodePngRgba(generateProceduralSprite(spec));
-  const stride = Math.max(5, Math.round(width * 0.20));
-  const lift = Math.max(3, Math.round(height * 0.09));
-  const arms = Math.max(3, Math.round(width * 0.12));
-  const lean = Math.max(2, Math.round(width * 0.07));
+  const rig = proceduralPlayerRig(spec, sourcePng);
+  const stride = Math.max(5, Math.round(width * (rig ? 0.20 : 0.26)));
+  const lift = Math.max(4, Math.round(height * 0.13));
+  // Held equipment needs its own clearance; it must not leave the frame at mid-stride.
+  const arms = Math.max(1, Math.round(width * (rig ? 0.05 : 0.18)));
+  const lean = Math.max(3, Math.round(width * 0.09));
+  const hip = Math.max(1, Math.round(width * (rig ? 0.02 : 0.07)));
   return blitArticulatedSheet(rgba, width, height, frameCount, (f) => {
-    const phase = frameCount > 1 ? (2 * Math.PI * f) / frameCount : 0;
+    const u = frameCount > 1 ? f / frameCount : 0;
+    const eased = u + 0.03 * Math.sin(4 * Math.PI * u);
+    const phase = 2 * Math.PI * eased;
     return {
       phase,
       stridePx: stride,
       footLiftPx: lift,
-      torsoLeanPx: lean + Math.sin(phase) * 1.2,
+      torsoLeanPx: lean + Math.sin(phase) * 1.8,
       armSwingPx: arms,
-      compress: 0.12 * (0.5 + 0.5 * Math.sin(phase * 2)),
+      hipSwayPx: hip,
+      compress: 0.18 * (0.5 + 0.5 * Math.sin(phase * 2)),
       extend: 0,
       attackReachPx: 0,
     };
-  });
+  }, rig);
 }
 
 /**
@@ -1127,6 +1330,10 @@ export interface FrameQualityMetrics {
    *  coherent character animation anymore" threshold — an upper-bound sanity check against
    *  chaotic/exploding motion, not just the lower-bound "did anything move at all" checks above. */
   chaoticMotion: boolean;
+  /** True when any frame's lower body has >2 significant opaque blobs (stacked ghost legs). */
+  multiLegSmear: boolean;
+  /** Max lower-body blob count across frames (bipedal walk/run should stay ≤2). */
+  maxLowerBodyBlobs: number;
 }
 
 export function computeFrameQualityMetrics(sheetRgba: Uint8Array, frameWidth: number, frameHeight: number, frameCount: number): FrameQualityMetrics {
@@ -1134,6 +1341,7 @@ export function computeFrameQualityMetrics(sheetRgba: Uint8Array, frameWidth: nu
     return {
       frameCount: 0, uniqueFrameRatio: 0, duplicateFrameRatio: 1, meanSilhouetteDelta: 0, contentBoundsDrift: 0,
       meanPixelDelta: 0, frameDimensionConsistency: 1, alphaBoundsConsistency: 1, contentScaleVariance: 0, chaoticMotion: false,
+      multiLegSmear: false, maxLowerBodyBlobs: 0,
     };
   }
   const frameBytes = frameWidth * frameHeight * 4;
@@ -1192,10 +1400,16 @@ export function computeFrameQualityMetrics(sheetRgba: Uint8Array, frameWidth: nu
   const contentScaleVariance = coverageFractions.reduce((sum, c) => sum + (c - meanCoverage) ** 2, 0) / coverageFractions.length;
 
   const chaoticMotion = meanPixelDelta > 0.55 && contentScaleVariance > 0.02;
+  let maxLowerBodyBlobs = 0;
+  for (const frame of frames) {
+    maxLowerBodyBlobs = Math.max(maxLowerBodyBlobs, countLowerBodyBlobs(frame, frameWidth, frameHeight));
+  }
+  const multiLegSmear = maxLowerBodyBlobs > 2;
 
   return {
     frameCount, uniqueFrameRatio, duplicateFrameRatio, meanSilhouetteDelta, contentBoundsDrift,
     meanPixelDelta, frameDimensionConsistency, alphaBoundsConsistency, contentScaleVariance, chaoticMotion,
+    multiLegSmear, maxLowerBodyBlobs,
   };
 }
 
@@ -1344,11 +1558,19 @@ export function generateAttackSheet(spec: SpriteSpec, frameCount = 4, sourcePng?
   const impactFrame = Math.max(1, Math.round(frameCount * 0.65));
 
   for (let f = 0; f < frameCount; f++) {
-    // windup (deep negative pull-back) -> strike (fast overshoot at impactFrame) -> recover (deep
-    // follow-through ease, not just back to zero) — real swings don't snap-return to neutral.
-    const swingT = f <= impactFrame
-      ? -0.3 * (1 - f / impactFrame) + (f / impactFrame)
-      : 1 - 0.85 * ((f - impactFrame) / Math.max(1, frameCount - 1 - impactFrame));
+    // Smoothstep windup → strike → ease-out follow-through (anticipation + recovery in-betweens).
+    const u = frameCount > 1 ? f / (frameCount - 1) : 0;
+    const impactU = frameCount > 1 ? impactFrame / (frameCount - 1) : 1;
+    let swingT: number;
+    if (u <= impactU) {
+      const t = impactU > 0 ? u / impactU : 1;
+      const s = t * t * (3 - 2 * t);
+      swingT = -0.42 * (1 - s) + s;
+    } else {
+      const t = (u - impactU) / Math.max(1e-6, 1 - impactU);
+      const s = t * t * (3 - 2 * t);
+      swingT = 1 - 0.92 * s;
+    }
     const shiftX = Math.round(maxShift * swingT);
     const vertSign = arcKind === 'upward' ? -1 : arcKind === 'downward' ? 1 : 0;
     const shiftY = Math.round(maxVertical * swingT * vertSign);
@@ -1571,6 +1793,7 @@ export function generateProgressionSheet(
           footLiftPx: 0,
           torsoLeanPx: -progress * 2.4,
           armSwingPx: 0,
+          hipSwayPx: 0,
           compress: progress * 0.78,
           extend: 0,
           attackReachPx: -progress * 2,
@@ -1583,6 +1806,7 @@ export function generateProgressionSheet(
           footLiftPx: progress * 2,
           torsoLeanPx: progress * 1.6,
           armSwingPx: progress * 2,
+          hipSwayPx: 0,
           compress: 0,
           extend: progress * 0.7,
           attackReachPx: 0,
@@ -1595,6 +1819,7 @@ export function generateProgressionSheet(
           footLiftPx: 1,
           torsoLeanPx: -progress * 1.2,
           armSwingPx: progress * 3,
+          hipSwayPx: 0,
           compress: 0,
           extend: progress * 0.25,
           attackReachPx: 0,
@@ -1606,6 +1831,7 @@ export function generateProgressionSheet(
         footLiftPx: 0,
         torsoLeanPx: progress * 0.8,
         armSwingPx: 0,
+        hipSwayPx: 0,
         compress: progress * 0.88,
         extend: 0,
         attackReachPx: 0,
@@ -1878,6 +2104,88 @@ export interface TilesetBiomeStyle {
   /** Requested overlay features. Use partitionTilesetFeatures() first if you need to disclose
    *  which of these were actually renderable. */
   features?: readonly string[];
+  /**
+   * Structural language for overlays. `industrial` may use panel_grates (rivets).
+   * `carved_stone` / `organic` / `weathered_masonry` never emit riveted cross-hatch —
+   * they draw irregular courses, lichen blotches, or soft strata instead.
+   */
+  structureFamily?: 'industrial' | 'carved_stone' | 'organic' | 'weathered_masonry';
+}
+
+/** Hex "#rrggbb" → RGB for biome palette → tileset style mapping. */
+function hexToRgbTuple(hex: string): [number, number, number] {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return [80, 84, 90];
+  const n = Number.parseInt(m[1]!, 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+/**
+ * Build a LOCAL_ONLY tileset style from biome / visual DNA so procedural tiles match the
+ * prompt theme (coastal sandstone, organic grove, …) instead of default industrial gray
+ * + riveted panel_grates from the foundry-biased reference library.
+ */
+export function tilesetStyleFromBiomeDna(input: {
+  displayName?: string;
+  biomeId?: string;
+  forbiddenPatterns?: string[];
+  paletteGlobal?: string[];
+  paletteShadows?: string[];
+  paletteHighlights?: string[];
+  terrainMaterialNames?: string[];
+  organicMaterialNames?: string[];
+}): TilesetBiomeStyle {
+  const hay = [
+    input.displayName,
+    input.biomeId,
+    ...(input.terrainMaterialNames ?? []),
+    ...(input.organicMaterialNames ?? []),
+    ...(input.forbiddenPatterns ?? []),
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  const forbidsIndustrial =
+    /rivet|panel.?grate|industrial foundry|furnace slag|slag brick|cyan robot/i.test(hay) ||
+    /coastal|cliff|tide|temple|sandstone|grove|organic|fungal|spore|mycelium|glowcap|underdark|autumn|volcanic|ashland/i.test(
+      hay,
+    );
+
+  let structureFamily: NonNullable<TilesetBiomeStyle['structureFamily']> = 'weathered_masonry';
+  if (/foundry|pouring|quench|cooling.?yard|clockwork|mechanical|industrial/i.test(hay) && !forbidsIndustrial) {
+    structureFamily = 'industrial';
+  } else if (/fungal|spore|mycelium|glowcap|grove|organic|lichen|kelp|moss/i.test(hay)) {
+    structureFamily = 'organic';
+  } else if (/coastal|cliff|tide|temple|sandstone|colonnade|shrine|volcanic|ashland|ruin/i.test(hay)) {
+    structureFamily = 'carved_stone';
+  }
+
+  const global = input.paletteGlobal ?? [];
+  const shadows = input.paletteShadows ?? [];
+  const highlights = input.paletteHighlights ?? [];
+  const ground = hexToRgbTuple(highlights[0] ?? global[2] ?? global[1] ?? '#a89070');
+  const wall = hexToRgbTuple(global[1] ?? global[0] ?? '#6a5a48');
+  const shadow = hexToRgbTuple(shadows[0] ?? global[0] ?? '#2a2830');
+  const accent = hexToRgbTuple(highlights[1] ?? global[global.length - 1] ?? '#7a9a88');
+  const accent2 = hexToRgbTuple(global[Math.min(2, global.length - 1)] ?? '#5a7a70');
+
+  const features =
+    structureFamily === 'industrial'
+      ? (['panel_grates', 'corrosion', 'stains', 'damaged_modules'] as const)
+      : structureFamily === 'organic'
+        ? (['vegetation', 'stains', 'corrosion'] as const)
+        : (['stains', 'vegetation', 'corrosion'] as const);
+
+  return {
+    groundColor: ground,
+    wallColor: wall,
+    shadowColor: shadow,
+    accentColor: accent,
+    accentColor2: accent2,
+    features: [...features],
+    structureFamily,
+  };
 }
 
 function tileHash(seed: number, a: number, b: number, salt: number): number {
@@ -1943,8 +2251,18 @@ export function generateTilesetSource(seed: number, size = 128, style?: TilesetB
     }
   }
 
-  const { supported } = partitionTilesetFeatures(style?.features);
-  if (supported.length > 0) {
+  const { supported: rawSupported } = partitionTilesetFeatures(style?.features);
+  const structureFamily = style?.structureFamily ??
+    (!style || rawSupported.some((feature) => feature === 'panel_grates' || feature === 'damaged_modules')
+      ? 'industrial' : 'weathered_masonry');
+  // Hard gate: non-industrial biomes never get riveted cross-hatch even if a foundry-biased
+  // visual-reference template requested panel_grates.
+  const supported =
+    structureFamily === 'industrial'
+      ? rawSupported
+      : rawSupported.filter((f) => f !== 'panel_grates' && f !== 'damaged_modules');
+
+  if (supported.length > 0 || structureFamily !== 'industrial') {
     const accent = style?.accentColor ?? [140, 90, 60];
     const accent2 = style?.accentColor2 ?? [90, 100, 70];
     for (let y = 0; y < size; y++) {
@@ -1960,6 +2278,20 @@ export function generateTilesetSource(seed: number, size = 128, style?: TilesetB
         if (!isStructure) continue;
         const base: [number, number, number] = [rgba[i]!, rgba[i + 1]!, rgba[i + 2]!];
         let out = base;
+
+        // Carved / weathered stone: irregular course lines — never a 4px rivet grid.
+        if (structureFamily === 'carved_stone' || structureFamily === 'weathered_masonry') {
+          const course = localY % 7 === 0;
+          const joint = (localX + tileY * 3) % 11 === 0;
+          if (course || joint) out = blendTowards(out, shadowBase, 0.22);
+          if (tileHash(seed, x, y, 19) > 0.92) out = blendTowards(out, accent, 0.25);
+        }
+        if (structureFamily === 'organic') {
+          if (tileHash(seed, x, y, 53) > 0.88) out = blendTowards(out, accent2, 0.4);
+          if (isWall && localX % 5 === 2 && tileHash(seed, tileX, localY, 59) > 0.55) {
+            out = blendTowards(out, accent, 0.3);
+          }
+        }
 
         // panel_grates: a regular dark cross-hatch every 4px within wall panels — reads as a
         // riveted/grated structural panel without moving the tile's own boundary.

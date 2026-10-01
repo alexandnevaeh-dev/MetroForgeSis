@@ -1,3 +1,4 @@
+import type { ExternalVisualPackId } from '@metroforge/godot';
 import type { ModelEntry } from '@metroforge/schemas';
 import type { PlacementSaveSnapshot } from '@metroforge/generation';
 
@@ -395,7 +396,7 @@ export type MetroforgeBridge = {
     mode: string;
     seed: number;
     generationControl?: string;
-    externalVisualPack?: 'ashen-painted-locomotion-v1';
+    externalVisualPack?: ExternalVisualPackId;
     targetEngine?: 'unity';
     archetype?: string;
   }) => Promise<{

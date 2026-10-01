@@ -1,0 +1,46 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/test/RoomContainmentMicroTest.gd" id="1_test"]
+[ext_resource type="PackedScene" path="res://scenes/player/Player.tscn" id="2_player"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_floor"]
+size = Vector2(800, 64)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_left"]
+size = Vector2(32, 400)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_right"]
+size = Vector2(32, 400)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ceil"]
+size = Vector2(800, 32)
+
+[node name="RoomContainmentMicroTest" type="Node2D"]
+script = ExtResource("1_test")
+
+[node name="Floor" type="StaticBody2D" parent="."]
+position = Vector2(400, 432)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Floor"]
+shape = SubResource("RectangleShape2D_floor")
+
+[node name="ShellLeft" type="StaticBody2D" parent="."]
+position = Vector2(16, 216)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ShellLeft"]
+shape = SubResource("RectangleShape2D_left")
+
+[node name="ShellRight" type="StaticBody2D" parent="."]
+position = Vector2(784, 216)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ShellRight"]
+shape = SubResource("RectangleShape2D_right")
+
+[node name="ShellCeiling" type="StaticBody2D" parent="."]
+position = Vector2(400, 16)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ShellCeiling"]
+shape = SubResource("RectangleShape2D_ceil")
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+position = Vector2(400, 400)

@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { PRODUCT, isNonProductionMaturity } from '@metroforge/shared';
 import { auditExportLicense, buildAttributionsMarkdown, repairManifestArtifactLicenses } from '@metroforge/ai';
 import type { LicenseStatus } from '@metroforge/ai';
-import { exportGodotMacOSApp, exportGodotWindowsBinary } from './godot-export.js';
+import { exportGodotMacOSApp, exportGodotWindowsBinary, verifyPackagedWindowsLaunch } from './godot-export.js';
 
 export interface ExportManifest {
   version: string;
@@ -361,14 +361,8 @@ export function exportProject(options: ExportProjectOptions): ExportProjectResul
       // absent sidecar PCK is a failed package, never evidence of an embedded one.
       const embeddedPck = false;
       const binaryVerified = packageResult.success && hasMZ && existsSync(pckPath);
-      const launch = binaryVerified
-        ? spawnSync(exePath, ['--headless', '--quit-after', '60'], {
-            encoding: 'utf-8',
-            timeout: 15_000,
-            windowsHide: true,
-          })
-        : undefined;
-      const launchVerified = launch?.status === 0 && !launch.error;
+      const launch = binaryVerified ? verifyPackagedWindowsLaunch(exePath) : undefined;
+      const launchVerified = launch?.ok === true;
       const packageSucceeded = binaryVerified && launchVerified;
       packaging = {
         ...packaging,
@@ -382,7 +376,12 @@ export function exportProject(options: ExportProjectOptions): ExportProjectResul
         embeddedPck,
         message: packageSucceeded
           ? 'Windows executable verified (MZ header, package data, and headless launch)'
-          : launch?.stderr || launch?.stdout || packageResult.stderr || packageResult.stdout || 'Godot did not produce a verified Windows package',
+          : launch?.stderr ||
+            launch?.stdout ||
+            launch?.error ||
+            packageResult.stderr ||
+            packageResult.stdout ||
+            'Godot did not produce a verified Windows package',
       };
     }
   } else if (options.packageMacOS) {

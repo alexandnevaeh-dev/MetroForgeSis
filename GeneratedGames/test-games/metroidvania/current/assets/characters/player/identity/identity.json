@@ -1,0 +1,28 @@
+{
+  "id": "player",
+  "role": "player",
+  "silhouette": "readable two-tile (64px) humanoid, distinct head/weapon mass",
+  "bodyProportions": "head ~1/3 of sprite, torso compact, feet planted on canvas bottom",
+  "clothing": "HD pixel art fitted explorer kit, no costume swaps between frames",
+  "hair": "The Wanderer face, consistent hair mass",
+  "weapon": "one-handed melee blade, sheathed or in-hand consistently",
+  "primaryColors": [
+    "#110000",
+    "#333322",
+    "#222211"
+  ],
+  "accentColors": [
+    "#332222",
+    "#554433",
+    "#111111"
+  ],
+  "distinctiveFeatures": [
+    "The Wanderer"
+  ],
+  "animationTier": "AI_IDENTITY_PRESERVED",
+  "styleFingerprint": "1fc273eb36d7aeba",
+  "sourcePath": "assets/characters/player/identity/source.png",
+  "referenceFrontPath": "assets/characters/player/identity/reference_front.png",
+  "silhouettePath": "assets/characters/player/identity/silhouette.png",
+  "posePaths": {}
+}

@@ -7,6 +7,7 @@ export * from './platform.js';
 export * from './registered-abilities.js';
 export * from './ability-remap.js';
 export * from './movement-tuning.js';
+export * from './topdown-movement.js';
 export * from './cancellation.js';
 export * from './archetypes.js';
 export * from './asset-maturity.js';
@@ -14,3 +15,4 @@ export * from './provider-toggles.js';
 export * from './visual-slice.js';
 
 export * from './resources.js';
+export * from './python.js';

@@ -14,6 +14,10 @@ import {
 import { dressPlatforms, markPlatformOccupancy } from './platform-visual.js';
 import { placeArchitecture } from './architecture.js';
 import { composeBossArena } from './boss-arena.js';
+import {
+  ENVIRONMENT_ARCHETYPES,
+  type EnvironmentArchetypeId,
+} from '@metroforge/procedural';
 
 export interface ComposeVisualsInput {
   cells: VisualCell[];
@@ -29,7 +33,11 @@ export interface ComposeVisualsInput {
   seed: number;
   biomeId?: string;
   roomId?: string;
+  /** Architectural identity (library, castle_hall, …) from world-graph metadata. */
+  environmentArchetype?: string;
   connections?: Array<{ direction: string }>;
+  /** Optional biome context for material hard-reject on dressing. */
+  biome?: import('@metroforge/procedural').BiomeConsistencyContext;
 }
 
 export interface ComposeVisualsResult {
@@ -60,6 +68,19 @@ function mergeCells(base: VisualCell[], extra: VisualCell[]): VisualCell[] {
   return [...map.values()].sort((a, b) => a.y - b.y || a.x - b.x);
 }
 
+function decorationBudgetForEnv(environmentArchetype?: string): {
+  clusters: number;
+  propsPerCluster: number;
+} {
+  if (!environmentArchetype || !(environmentArchetype in ENVIRONMENT_ARCHETYPES)) {
+    return { clusters: 2, propsPerCluster: 2 };
+  }
+  const dens = ENVIRONMENT_ARCHETYPES[environmentArchetype as EnvironmentArchetypeId].decorationDensity;
+  if (dens === 'dense') return { clusters: 3, propsPerCluster: 3 };
+  if (dens === 'moderate') return { clusters: 2, propsPerCluster: 3 };
+  return { clusters: 2, propsPerCluster: 2 };
+}
+
 function buildRoomPlan(input: ComposeVisualsInput): RoomPlan {
   const floorTop = input.floorRow * input.tileSize;
   const boss = input.archetype === 'boss' || input.archetype === 'miniboss';
@@ -74,9 +95,16 @@ function buildRoomPlan(input: ComposeVisualsInput): RoomPlan {
     ? [{ role: 'arena_frame' as const, x: input.width * 0.1, grounded: true }, { role: 'arena_frame' as const, x: input.width * 0.9, grounded: true }]
     : calm
       ? [{ role: 'focal_frame' as const, x: focusX, grounded: true }]
-      : [{ role: 'edge_pillar' as const, x: input.width * 0.12, grounded: true }, { role: 'edge_pillar' as const, x: input.width * 0.88, grounded: true }];
+      : [
+          { role: 'edge_pillar' as const, x: input.width * 0.12, grounded: true },
+          { role: 'edge_pillar' as const, x: input.width * 0.88, grounded: true },
+          ...(input.width >= 960
+            ? [{ role: 'edge_pillar' as const, x: input.width * 0.5, grounded: true }]
+            : []),
+        ];
   const combat = { x: Math.round(input.width * 0.24), y: floorTop - input.tileSize * 5, width: Math.round(input.width * 0.52), height: input.tileSize * 5 };
   const quiet = { x: Math.round(input.width * 0.36), y: floorTop - input.tileSize * 6, width: Math.round(input.width * 0.28), height: input.tileSize * 6 };
+  const dress = decorationBudgetForEnv(input.environmentArchetype);
   return {
     dominantAxis: vertical ? 'vertical' : boss || input.archetype === 'combat' || input.archetype === 'arena' ? 'balanced' : 'horizontal',
     entryPoints: entries.map((connection) => ({ direction: connection.direction, x: connection.direction === 'left' ? 0 : input.width * 0.5, y: floorTop })),
@@ -89,21 +117,35 @@ function buildRoomPlan(input: ComposeVisualsInput): RoomPlan {
     focalPoint: { x: focusX, y: focusY, kind: calm ? 'reward_or_save' : boss ? 'boss' : 'traversal' },
     safeZones: calm ? [{ ...quiet }] : [],
     combatZones: boss || input.archetype === 'combat' || input.archetype === 'arena' ? [combat] : [],
-    // Two workstation clusters, kept off spawn footprints and the central combat band.
-    // Isolated mid-floor scatter was reading as density farming, not a room.
+    // Workstation / gallery clusters — denser for moderate/dense environment archetypes.
     decorationZones: boss
       ? []
       : calm
         ? [{ purpose: 'decoration', x: input.width * 0.42, y: floorTop - input.tileSize * 2, width: input.width * 0.16, height: input.tileSize * 2 }]
         : [
-            { purpose: 'decoration', x: input.width * 0.32, y: floorTop - input.tileSize * 2, width: input.width * 0.14, height: input.tileSize * 2 },
-            { purpose: 'decoration', x: input.width * 0.70, y: floorTop - input.tileSize * 2, width: input.width * 0.14, height: input.tileSize * 2 },
+            { purpose: 'decoration', x: input.width * 0.18, y: floorTop - input.tileSize * 2, width: input.width * 0.12, height: input.tileSize * 2 },
+            { purpose: 'decoration', x: input.width * 0.70, y: floorTop - input.tileSize * 2, width: input.width * 0.12, height: input.tileSize * 2 },
+            ...(dress.clusters >= 3
+              ? [
+                  {
+                    purpose: 'decoration' as const,
+                    x: input.width * 0.42,
+                    y: floorTop - input.tileSize * 2,
+                    width: input.width * 0.12,
+                    height: input.tileSize * 2,
+                  },
+                ]
+              : []),
           ],
     noDecorationZones: [{ purpose: 'no_decoration', ...quiet }],
     foregroundExclusionZones: [{ purpose: 'foreground_exclusion', ...combat }],
     visualTheme: 'industrial_transit',
     landmarkType: calm ? 'sanctuary_frame' : boss ? 'arena_frame' : vertical ? 'shaft_frame' : 'edge_supports',
-    propBudget: { clusters: boss ? 0 : calm ? 1 : 2, propsPerCluster: 2, majorStructures: edgeAnchors.length },
+    propBudget: {
+      clusters: boss ? 0 : calm ? 1 : dress.clusters,
+      propsPerCluster: boss ? 0 : calm ? 2 : dress.propsPerCluster,
+      majorStructures: edgeAnchors.length,
+    },
   };
 }
 
@@ -138,12 +180,21 @@ export function composePlayableVisuals(input: ComposeVisualsInput): ComposeVisua
 
   markPlatformOccupancy(grid, platforms, tileSize);
   const strategy = platformStrategyFor(archetype);
-  const platformExtras = dressPlatforms({ grid, platforms, tileSize, floorRow, strategy, biomeId: input.biomeId });
+  const platformExtras = dressPlatforms({
+    grid,
+    platforms,
+    tileSize,
+    floorRow,
+    strategy,
+    biomeId: input.biomeId,
+    biome: input.biome,
+  });
 
   const architecture = placeArchitecture({
     grid,
     floorRow,
     archetype,
+    environmentArchetype: input.environmentArchetype,
     seed,
     leftDoor,
     rightDoor,

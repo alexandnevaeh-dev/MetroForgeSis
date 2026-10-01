@@ -1,0 +1,7 @@
+{
+  "zoom": 1.85,
+  "deadZone": 0.16,
+  "lookAheadPx": 32,
+  "pixelSnap": true,
+  "smoothing": true
+}

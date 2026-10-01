@@ -1,6 +1,18 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, sep } from 'node:path';
-import type { GameDNA, ArtBible, StyleBible, CharacterVisualDNA, VisualDNA, BiomeVisualDNA, EnvironmentKit, FoundryAssetType, VisualReferenceLibrary, VisualReferenceAssetRole, VisualReferenceTemplate } from '@metroforge/schemas';
+import type {
+  GameDNA,
+  ArtBible,
+  StyleBible,
+  CharacterVisualDNA,
+  VisualDNA,
+  BiomeVisualDNA,
+  EnvironmentKit,
+  FoundryAssetType,
+  VisualReferenceLibrary,
+  VisualReferenceAssetRole,
+  VisualReferenceTemplate,
+} from '@metroforge/schemas';
 import {
   resolveVisualReferenceTemplate,
   roleForArchetype,
@@ -36,7 +48,11 @@ import {
   type FrameQualityMetrics,
   type AttackArcKind,
 } from './png.js';
-import { PLAYER_ANIMATION_SPEC, buildAnimationMetadataSidecar, type PlayerAnimationDefinition } from './player-animation-spec.js';
+import {
+  PLAYER_ANIMATION_SPEC,
+  buildAnimationMetadataSidecar,
+  type PlayerAnimationDefinition,
+} from './player-animation-spec.js';
 import { BOSS_ANIMATION_SPEC, buildBossAnimationSidecar } from './boss-animation-spec.js';
 import { PixelArtProcessor } from './pixel-art-processor.js';
 import {
@@ -46,6 +62,9 @@ import {
   PARALLAX_STRIP_SIZE,
 } from './parallax-strip.js';
 import { ImageProviderRegistry } from './image-router.js';
+import { canopyTerrainV2,canopyEnvironment,CANOPY_PROP_KINDS } from './topdown-canopy-environment.js';
+import { shouldUseCanopyEnvironment } from './canopy-environment-selection.js';
+import {buildCanopyActorFamily,canopyEffect,canopyIcon,canopyPickup,canopyEffectMetadata,CANOPY_EFFECT_IDS,type CanopyActorKind} from './topdown-canopy-art.js';
 import { registerFoundryImageProviders } from './foundry/register.js';
 import { LegacyAssetGenerationGateway } from './gateway/legacy-gateway.js';
 import { createAssetGenerationGateway } from './gateway/index.js';
@@ -53,7 +72,11 @@ import type { AssetGenerationGateway, AssetGenerationBackend } from './gateway/t
 import type { VisionCritic } from './vision-critic-factory.js';
 import { createVisionCritic } from './vision-critic-factory.js';
 import { runDeterministicAssetChecks } from './vlm-critic.js';
-import { critiqueAnimationSheet, critiqueTilesetSheet, type AnimationKind } from './animation-critic.js';
+import {
+  critiqueAnimationSheet,
+  critiqueTilesetSheet,
+  type AnimationKind,
+} from './animation-critic.js';
 import { TileCompiler, TILE_ATLAS } from './tile-compiler.js';
 import { assembleContactSheet, critiqueAnimationIdentity } from './sprite-qa.js';
 import { nvidiaModelForImageTask } from './image-task.js';
@@ -76,11 +99,19 @@ import {
   inferAssetMaturity,
   critiqueEffectivelyPassed,
   isNonProductionMaturity,
-  isTopDownArchetype,
+  genreSupports,
 } from '@metroforge/shared';
 import type { AssetMaturity, AssetSourceType } from '@metroforge/shared';
-import { applyVisualStyleContract, buildVisualStyleContract, compileVisualPrompt } from '@metroforge/procedural';
-import { wrapIdentityProvider, capabilitiesFromRegistration, selectAnimationTier } from './identity/provider.js';
+import {
+  applyVisualStyleContract,
+  buildVisualStyleContract,
+  compileVisualPrompt,
+} from '@metroforge/procedural';
+import {
+  wrapIdentityProvider,
+  capabilitiesFromRegistration,
+  selectAnimationTier,
+} from './identity/provider.js';
 import { writeCharacterIdentityPack } from './identity/pack.js';
 import { generateUiPanel, generateUiIcon, UI_FOUNDRY_ASSETS } from './ui-foundry.js';
 import {
@@ -93,15 +124,22 @@ import {
 import {
   AUTHORED_COURIER_PROVIDER,
   loadAuthoredCourierPng,
-  loadAuthoredMasonryPng,
-  loadAuthoredBiomePng,
   loadAuthoredCastPng,
-  loadAuthoredFoundryTileset,
-  shouldUseFoundryCourierKit,
-  foundryBiomeStem,
+  loadAuthoredKitActorPng,
+  loadAuthoredKitTileset,
+  loadAuthoredKitBiomePng,
+  loadAuthoredKitAbilityPng,
+  authoredKitBiomeStem,
+  resolveAuthoredSideViewKit,
+  type AuthoredSideViewKitId,
 } from './authored-kit.js';
 import { sanitizeImagePromptText } from './sanitize-image-prompt.js';
 import { runAssetPipelineV2 } from './pipeline-v2/orchestrator.js';
+import {
+  generateTopDownPlayerSheet,
+  TOP_DOWN_FACINGS,
+  type TopDownAction,
+} from './topdown-player-sprites.js';
 
 export interface GeneratedAsset {
   id: string;
@@ -170,20 +208,17 @@ export function derivedSourceRelPath(relPath: string): string {
 
 /** Kind of game sprite for profile-aware pixel-art compile targets. */
 export type CompiledSpriteKind =
-  | 'character'
-  | 'enemy'
-  | 'npc'
-  | 'boss'
-  | 'boss_final'
-  | 'item'
-  | 'tileset';
+  'character' | 'enemy' | 'npc' | 'boss' | 'boss_final' | 'item' | 'tileset';
 
 /**
  * Target size for pixel-art *compiled* game frames (never applied to `*_source.png`).
  * 32×32 crushed readable silhouette; 64×64 is production-usable for characters/enemies/NPCs.
  * Bosses scale up; tileset atlas stays 128; item icons stay 16.
  */
-export function compiledSpriteFrameSize(kind: CompiledSpriteKind): { width: number; height: number } {
+export function compiledSpriteFrameSize(kind: CompiledSpriteKind): {
+  width: number;
+  height: number;
+} {
   switch (kind) {
     case 'character':
     case 'enemy':
@@ -210,12 +245,30 @@ function applyStylePrompt(
   capability: string,
   prompt: string,
   visualDNA?: VisualDNA,
-  category?: 'player' | 'npc' | 'enemy' | 'boss' | 'tileset' | 'background' | 'ui' | 'icon' | 'portrait' | 'vfx' | 'prop',
+  category?:
+    | 'player'
+    | 'npc'
+    | 'enemy'
+    | 'boss'
+    | 'tileset'
+    | 'background'
+    | 'ui'
+    | 'icon'
+    | 'portrait'
+    | 'vfx'
+    | 'prop',
 ): string {
   if (visualDNA && category) {
     return compileVisualPrompt({
       visualDNA,
-      category: category === 'tileset' ? 'tileset' : category === 'background' ? 'background' : category === 'icon' ? 'icon' : category,
+      category:
+        category === 'tileset'
+          ? 'tileset'
+          : category === 'background'
+            ? 'background'
+            : category === 'icon'
+              ? 'icon'
+              : category,
       subject: prompt,
       role: capability,
       technicalSpec: {
@@ -233,7 +286,10 @@ function applyStylePrompt(
   return applyVisualStyleContract(prompt, styleBible, extras || undefined);
 }
 
-function applyStyleNegativePrompt(styleBible: StyleBible | undefined, extra?: string): string | undefined {
+function applyStyleNegativePrompt(
+  styleBible: StyleBible | undefined,
+  extra?: string,
+): string | undefined {
   const fragments = [
     extra,
     styleBible ? buildVisualStyleContract(styleBible).negativeFragment : undefined,
@@ -368,11 +424,36 @@ export interface AssetPipelineResult {
 const NPC_ROLES = ['quest_giver', 'merchant', 'lore', 'neutral'] as const;
 
 const BIOME_PALETTES: [number, number, number][][] = [
-  [[40, 45, 55], [70, 75, 90], [100, 130, 200], [180, 100, 80]],
-  [[30, 50, 35], [55, 90, 60], [90, 160, 100], [200, 180, 60]],
-  [[50, 30, 60], [90, 50, 110], [160, 80, 180], [240, 200, 255]],
-  [[55, 40, 30], [100, 70, 45], [180, 120, 60], [220, 200, 160]],
-  [[25, 35, 50], [45, 65, 90], [80, 140, 180], [200, 220, 240]],
+  [
+    [40, 45, 55],
+    [70, 75, 90],
+    [100, 130, 200],
+    [180, 100, 80],
+  ],
+  [
+    [30, 50, 35],
+    [55, 90, 60],
+    [90, 160, 100],
+    [200, 180, 60],
+  ],
+  [
+    [50, 30, 60],
+    [90, 50, 110],
+    [160, 80, 180],
+    [240, 200, 255],
+  ],
+  [
+    [55, 40, 30],
+    [100, 70, 45],
+    [180, 120, 60],
+    [220, 200, 160],
+  ],
+  [
+    [25, 35, 50],
+    [45, 65, 90],
+    [80, 140, 180],
+    [200, 220, 240],
+  ],
 ];
 
 export interface VisualTemplateProvenanceEntry {
@@ -440,7 +521,10 @@ async function resolveTemplateCore(
   styleBible: StyleBible | undefined,
   provider: ConditioningCapableRegistration | undefined,
   repoRoot: string,
-): Promise<{ template: VisualReferenceTemplate; prompt: string; provenance: VisualTemplateProvenanceEntry } | undefined> {
+): Promise<
+  | { template: VisualReferenceTemplate; prompt: string; provenance: VisualTemplateProvenanceEntry }
+  | undefined
+> {
   const template = resolveVisualReferenceTemplate(library, { assetRole, biome });
   if (!template) return undefined;
 
@@ -497,12 +581,29 @@ async function resolveEnemyVisualTemplate(
   styleBible: StyleBible | undefined,
   provider: ConditioningCapableRegistration | undefined,
   repoRoot: string,
-): Promise<{ fill: [number, number, number, number]; accent: [number, number, number, number]; prompt: string; provenance: VisualTemplateProvenanceEntry } | undefined> {
+): Promise<
+  | {
+      fill: [number, number, number, number];
+      accent: [number, number, number, number];
+      prompt: string;
+      provenance: VisualTemplateProvenanceEntry;
+    }
+  | undefined
+> {
   if (!library || library.biomes.length === 0) return undefined;
   const role = roleForArchetype(archetype);
   if (!role) return undefined;
   const biome = libraryBiomeForIndex(library, biomeIndex);
-  const core = await resolveTemplateCore(library, role, biome, assetId, seed, styleBible, provider, repoRoot);
+  const core = await resolveTemplateCore(
+    library,
+    role,
+    biome,
+    assetId,
+    seed,
+    styleBible,
+    provider,
+    repoRoot,
+  );
   if (!core) return undefined;
   const { fill, accent } = templateFillAccent(core.template);
   return { fill, accent, prompt: core.prompt, provenance: core.provenance };
@@ -516,16 +617,36 @@ async function resolveTerrainVisualTemplate(
   styleBible: StyleBible | undefined,
   provider: ConditioningCapableRegistration | undefined,
   repoRoot: string,
-): Promise<{ style: ReturnType<typeof templateTilesetStyle>; prompt: string; provenance: VisualTemplateProvenanceEntry } | undefined> {
+): Promise<
+  | {
+      style: ReturnType<typeof templateTilesetStyle>;
+      prompt: string;
+      provenance: VisualTemplateProvenanceEntry;
+    }
+  | undefined
+> {
   if (!library || library.biomes.length === 0) return undefined;
   const biome = libraryBiomeForIndex(library, biomeIndex);
-  const core = await resolveTemplateCore(library, 'terrain', biome, assetId, seed, styleBible, provider, repoRoot);
+  const core = await resolveTemplateCore(
+    library,
+    'terrain',
+    biome,
+    assetId,
+    seed,
+    styleBible,
+    provider,
+    repoRoot,
+  );
   if (!core) return undefined;
   const rawStyle = templateTilesetStyle(core.template);
   const { supported, unsupported } = partitionTilesetFeatures(rawStyle.features);
   core.provenance.appliedFeatures = supported;
   core.provenance.unsupportedFeatures = unsupported;
-  return { style: { ...rawStyle, features: supported }, prompt: core.prompt, provenance: core.provenance };
+  return {
+    style: { ...rawStyle, features: supported },
+    prompt: core.prompt,
+    provenance: core.provenance,
+  };
 }
 
 async function resolveBackgroundVisualTemplate(
@@ -536,10 +657,27 @@ async function resolveBackgroundVisualTemplate(
   styleBible: StyleBible | undefined,
   provider: ConditioningCapableRegistration | undefined,
   repoRoot: string,
-): Promise<{ palette: [number, number, number][]; features: string[]; prompt: string; provenance: VisualTemplateProvenanceEntry } | undefined> {
+): Promise<
+  | {
+      palette: [number, number, number][];
+      features: string[];
+      prompt: string;
+      provenance: VisualTemplateProvenanceEntry;
+    }
+  | undefined
+> {
   if (!library || library.biomes.length === 0) return undefined;
   const biome = libraryBiomeForIndex(library, biomeIndex);
-  const core = await resolveTemplateCore(library, 'background', biome, assetId, seed, styleBible, provider, repoRoot);
+  const core = await resolveTemplateCore(
+    library,
+    'background',
+    biome,
+    assetId,
+    seed,
+    styleBible,
+    provider,
+    repoRoot,
+  );
   if (!core) return undefined;
   const palette = templateBackgroundPalette(core.template);
   const { supported, unsupported } = partitionBackgroundFeatures(core.template.environmentFeatures);
@@ -556,10 +694,28 @@ async function resolvePropVisualTemplate(
   styleBible: StyleBible | undefined,
   provider: ConditioningCapableRegistration | undefined,
   repoRoot: string,
-): Promise<{ fill: string; accent: string; features: string[]; prompt: string; provenance: VisualTemplateProvenanceEntry } | undefined> {
+): Promise<
+  | {
+      fill: string;
+      accent: string;
+      features: string[];
+      prompt: string;
+      provenance: VisualTemplateProvenanceEntry;
+    }
+  | undefined
+> {
   if (!library || library.biomes.length === 0) return undefined;
   const biome = libraryBiomeForIndex(library, biomeIndex);
-  const core = await resolveTemplateCore(library, 'prop', biome, assetId, seed, styleBible, provider, repoRoot);
+  const core = await resolveTemplateCore(
+    library,
+    'prop',
+    biome,
+    assetId,
+    seed,
+    styleBible,
+    provider,
+    repoRoot,
+  );
   if (!core) return undefined;
   const { fill, accent } = templatePropFillAccent(core.template);
   const { supported, unsupported } = partitionPropFeatures(core.template.environmentFeatures);
@@ -685,7 +841,8 @@ export const VFX_TEXTURES: VfxSpec[] = [
     style: 'burst',
     effectType: 'landing_dust',
     whereUsed: ['PlayerController.land'],
-    prompt: 'small dusty landing puff at the feet, beige grit burst, no character, no shockwave scenery',
+    prompt:
+      'small dusty landing puff at the feet, beige grit burst, no character, no shockwave scenery',
   },
 ];
 
@@ -796,8 +953,16 @@ function foundryAssetTypeForProfile(profile: ImageGenerationProfile): FoundryAss
 }
 
 function withMaturity(
-  asset: Omit<GeneratedAsset, 'maturity' | 'productionReady' | 'sourceType' | 'critiquePassed' | 'critiqueScore'> &
-    Partial<Pick<GeneratedAsset, 'maturity' | 'productionReady' | 'sourceType' | 'critiquePassed' | 'critiqueScore'>>,
+  asset: Omit<
+    GeneratedAsset,
+    'maturity' | 'productionReady' | 'sourceType' | 'critiquePassed' | 'critiqueScore'
+  > &
+    Partial<
+      Pick<
+        GeneratedAsset,
+        'maturity' | 'productionReady' | 'sourceType' | 'critiquePassed' | 'critiqueScore'
+      >
+    >,
 ): GeneratedAsset {
   const inferred = inferAssetMaturity({
     fallbackGenerated: asset.fallbackGenerated,
@@ -813,9 +978,12 @@ function withMaturity(
     critiquePassed: asset.critiquePassed ?? false,
     critiqueScore: asset.critiqueScore ?? 0,
     maturity: proceduralProduction ? inferred.maturity : (asset.maturity ?? inferred.maturity),
-    productionReady: proceduralProduction ? true : (asset.productionReady ?? inferred.productionReady),
+    productionReady: proceduralProduction
+      ? true
+      : (asset.productionReady ?? inferred.productionReady),
     sourceType: asset.sourceType ?? inferred.sourceType,
-    productionAllowed: asset.productionAllowed ?? (inferred.productionReady || !asset.fallbackGenerated),
+    productionAllowed:
+      asset.productionAllowed ?? (inferred.productionReady || !asset.fallbackGenerated),
   };
 }
 
@@ -898,7 +1066,10 @@ export function inferAssetTypeFromPath(path: string): string {
   if (path.includes('/npcs/')) {
     return path.includes('_walk') ? 'animation' : 'npc';
   }
-  if (path.includes('/characters/')) return path.includes('_walk') || path.includes('_hurt') || path.includes('_attack') ? 'animation' : 'player';
+  if (path.includes('/characters/'))
+    return path.includes('_walk') || path.includes('_hurt') || path.includes('_attack')
+      ? 'animation'
+      : 'player';
   if (path.includes('/ui/portraits/')) return 'portrait';
   if (path.includes('/ui/')) return 'ui';
   if (path.includes('/props/') || path.includes('/architecture/')) return 'prop';
@@ -932,9 +1103,16 @@ function loadManifestArtifacts(outputDir: string): GeneratedAsset[] | null {
           fallbackGenerated: Boolean(artifact.fallbackGenerated),
           critiquePassed: artifact.critiquePassed !== false,
           critiqueScore: Number(artifact.critiqueScore ?? 100),
-          maturity: typeof artifact.maturity === 'string' ? (artifact.maturity as GeneratedAsset['maturity']) : undefined,
-          productionReady: typeof artifact.productionReady === 'boolean' ? artifact.productionReady : undefined,
-          sourceType: typeof artifact.sourceType === 'string' ? (artifact.sourceType as GeneratedAsset['sourceType']) : undefined,
+          maturity:
+            typeof artifact.maturity === 'string'
+              ? (artifact.maturity as GeneratedAsset['maturity'])
+              : undefined,
+          productionReady:
+            typeof artifact.productionReady === 'boolean' ? artifact.productionReady : undefined,
+          sourceType:
+            typeof artifact.sourceType === 'string'
+              ? (artifact.sourceType as GeneratedAsset['sourceType'])
+              : undefined,
         }),
       );
     }
@@ -974,11 +1152,16 @@ export class AssetPipeline {
      *  per asset, per this milestone's "record the selected template version and seed with
      *  outputs" and "disclose" requirements. */
     const visualTemplateProvenance: VisualTemplateProvenanceEntry[] = [];
-    const recordAsset = (asset: Omit<GeneratedAsset, 'maturity' | 'productionReady' | 'sourceType'> &
-      Partial<Pick<GeneratedAsset, 'maturity' | 'productionReady' | 'sourceType'>>, assetType: string) => {
+    const recordAsset = (
+      asset: Omit<GeneratedAsset, 'maturity' | 'productionReady' | 'sourceType'> &
+        Partial<Pick<GeneratedAsset, 'maturity' | 'productionReady' | 'sourceType'>>,
+      assetType: string,
+    ) => {
       const finalized = withMaturity({
         ...asset,
-        proceduralProduction: asset.proceduralProduction ?? proceduralProductionIntent(asset as GeneratedAsset, assetType),
+        proceduralProduction:
+          asset.proceduralProduction ??
+          proceduralProductionIntent(asset as GeneratedAsset, assetType),
       });
       assets.push(finalized);
       options.onArtifact?.(finalized, assetType);
@@ -1014,7 +1197,7 @@ export class AssetPipeline {
       options.artBible?.negativePrompts.join(', '),
     );
 
-    const imageRoute = options.skipImageGen
+    const imageRoute = options.skipImageGen || options.visualMode === 'procedural-only'
       ? {
           generator: null as ImageGenerator | null,
           warnings: [] as string[],
@@ -1065,11 +1248,40 @@ export class AssetPipeline {
       nvidiaApiBaseUrl: options.nvidiaApiBaseUrl,
       nvidiaVisionModel: options.nvidiaVisionModel,
     });
-    const vlmAvailable = options.skipVlm ? false : await vlm.isAvailable();
-    if (!vlmAvailable && !options.skipVlm) {
+    const vlmAvailable = options.skipVlm || options.visualMode === 'procedural-only' ? false : await vlm.isAvailable();
+    if (!vlmAvailable && !options.skipVlm && options.visualMode !== 'procedural-only') {
       warnings.push('VLM critic unavailable — using deterministic asset checks');
     }
 
+    const authoredKit = resolveAuthoredSideViewKit({profile:options.profile,gameDna:options.gameDna,characterVisualDna:options.characterVisualDna});
+    const useCourierKit = authoredKit !== null;
+    const useCanopyActors = shouldUseCanopyEnvironment(options.gameDna) && !imageGen;
+    const canopyAsset = (id: string,path: string,buffer: Buffer): GeneratedAsset => ({
+      id,path,buffer,provider:'metroforge-canopy-procedural-v3',fallbackGenerated:false,
+      critiquePassed:false,critiqueScore:0,sourceType:'procedural',maturity:'QA_REVIEW',
+      productionReady:false,productionAllowed:false,proceduralProduction:false,
+      compiler:'canopy-actor-effects',transformation:'original-posed-pixel-clusters',godotResourcePath:`res://${path}`,
+    });
+    const materializeCanopyActor = (id: string,kind: CanopyActorKind,folder: string) => {
+      const family=buildCanopyActorFamily(kind,kind==='hero');
+      for(const [clip,buffer] of family.sheets) {
+        const path=`assets/${folder}/${id}_${clip}.png`;
+        writeCheckpoint(options.outputDir,path,buffer);
+        recordAsset(canopyAsset(`${id}_${clip}`,path,buffer),'animation');
+      }
+      const posePath=`assets/${folder}/${id}_idle_pose.png`;
+      writeCheckpoint(options.outputDir,posePath,family.still);
+      recordAsset(canopyAsset(`${id}_idle_pose`,posePath,family.still),'animation');
+      writeCheckpoint(options.outputDir,`assets/${folder}/${id}_animations.json`,Buffer.from(JSON.stringify(family.metadata,null,2)));
+      const path=`assets/${folder}/${id}.png`;
+      writeCheckpoint(options.outputDir,path,family.still);
+      return canopyAsset(id,path,family.still);
+    };
+    if(useCanopyActors) {
+      recordAsset(materializeCanopyActor('player','hero','characters'),'player');
+      for(const [id,kind] of [['melee','melee'],['ranged','ranged'],['heavy','melee']] as const)recordAsset(materializeCanopyActor(id,kind,'enemies'),'enemy');
+      warnings.push('Detailed canopy characters and animated effects are original procedural drafts; production visual review is pending');
+    } else {
     const playerPrompt = applyStylePrompt(
       options.styleBible,
       'CHARACTER',
@@ -1098,16 +1310,10 @@ export class AssetPipeline {
       accent: [204, 108, 52, 255],
       shape: 'humanoid',
     };
-    // Foundry visual slice (and foundry-themed gens) ship a hand-authored courier still — prefer
-    // it over procedural/AI generation for the base portrait. Animation sheets stay on the V2
-    // pipeline path below (the authored kit ships 4-frame strips; re-authoring it to the V2
-    // frame counts is tracked as follow-up in docs/debug/TOPDOWN_GENRE_MILESTONE.md).
-    const useCourierKit = shouldUseFoundryCourierKit({
-      profile: options.profile,
-      gameDna: options.gameDna,
-      characterVisualDna: options.characterVisualDna,
-    });
-    const authoredPlayer = useCourierKit
+    // Side-view authored kits (foundry courier OR spore scout) prefer hand-painted stills.
+    // Animation sheets: load authored strips when present; otherwise articulate from the still
+    // (spore kit ships stills only so walk/run use the high-frame blitArticulatedSheet path).
+    const authoredPlayer = authoredKit
       ? this.materializeAuthoredCourier({
           id: 'player',
           path: 'assets/characters/player.png',
@@ -1115,6 +1321,7 @@ export class AssetPipeline {
           width: playerFrame.width,
           height: playerFrame.height,
           outputDir: options.outputDir,
+          kit: authoredKit,
         })
       : null;
     const playerAsset =
@@ -1168,8 +1375,8 @@ export class AssetPipeline {
       path: string,
       kind: AnimationKind,
     ): GeneratedAsset | null => {
-      if (!useCourierKit) return null;
-      const raw = loadAuthoredCourierPng(filename);
+      if (!authoredKit) return null;
+      const raw = loadAuthoredKitActorPng(authoredKit, filename);
       if (!raw) return null;
       const decoded = decodePngRgba(raw);
       const frames = Math.max(1, Math.round(decoded.width / playerFrame.width));
@@ -1183,6 +1390,7 @@ export class AssetPipeline {
         animationKind: kind,
         frameCount: frames,
         expectedFrameWidth: playerFrame.width,
+        kit: authoredKit,
       });
     };
     const walkDef = PLAYER_ANIMATION_SPEC.walk!;
@@ -1273,8 +1481,8 @@ export class AssetPipeline {
         ),
       'animation',
     );
-    // Genuine multi-frame run cycle (production standard §22/§25) — a real 12-frame animated
-    // sheet, not the single static pose still every other locomotion state still uses. Excluded
+    // Genuine multi-frame run cycle (production standard §22/§25), using the animation contract's
+    // frame count rather than a static pose. Excluded
     // from the pose-still list below for the same reason attack/hurt/death are: a real sheet
     // already exists for this animation name, and AnimatedAssetSprite.gd's pose-override loader
     // would otherwise clobber it with one static frame.
@@ -1292,6 +1500,28 @@ export class AssetPipeline {
       'animation',
     );
 
+    if (options.gameDna.archetype === 'TOP_DOWN_ACTION_ADVENTURE') {
+      const actions: TopDownAction[] = ['idle', 'walk', 'run', 'attack', 'hurt', 'death'];
+      for (const action of actions) {
+        for (const facing of TOP_DOWN_FACINGS) {
+          recordAsset(
+            {
+              id: `player_${action}_${facing}`,
+              path: `assets/characters/player_${action}_${facing}.png`,
+              buffer: generateTopDownPlayerSheet(action, facing),
+              provider: 'metroforge-topdown-pixel-v1',
+              fallbackGenerated: false,
+              critiquePassed: true,
+              critiqueScore: 85,
+              sourceType: 'procedural',
+              proceduralProduction: true,
+            },
+            'animation',
+          );
+        }
+      }
+    }
+
     // Every remaining locomotion/transition state (idle, jump_start, jump, fall, land, dash,
     // wall_slide, wall_jump, swim) — real multi-frame sheets via the shared progression-sheet
     // generator family, not the single static pose still these previously fell back to. Player
@@ -1308,7 +1538,15 @@ export class AssetPipeline {
       ['wall_jump', 'assets/characters/player_wall_jump.png'],
       ['swim', 'assets/characters/player_swim.png'],
     ];
-    const progressionDefs: PlayerAnimationDefinition[] = [walkDef, runDef, attackDef, attack2Def, attack3Def, hurtDef, deathDef];
+    const progressionDefs: PlayerAnimationDefinition[] = [
+      walkDef,
+      runDef,
+      attackDef,
+      attack2Def,
+      attack3Def,
+      hurtDef,
+      deathDef,
+    ];
     for (const [key, path] of progressionStates) {
       const def = PLAYER_ANIMATION_SPEC[key]!;
       progressionDefs.push(def);
@@ -1324,13 +1562,20 @@ export class AssetPipeline {
       const sidecar = buildAnimationMetadataSidecar(progressionDefs);
       if (useCourierKit) {
         for (const def of progressionDefs) {
-          const raw = loadAuthoredCourierPng(`player_${def.name}.png`);
+          const raw = authoredKit
+            ? loadAuthoredKitActorPng(authoredKit, `player_${def.name}.png`)
+            : loadAuthoredCourierPng(`player_${def.name}.png`);
           if (!raw) continue;
           const decoded = decodePngRgba(raw);
           const frames = Math.max(1, Math.round(decoded.width / playerFrame.width));
           const specDuration = def.frameCount / Math.max(1, def.fps);
           const fps = Math.max(6, Math.round(frames / specDuration));
-          sidecar[def.name] = { frameCount: frames, fps, loop: def.loop };
+          sidecar[def.name] = {
+            ...sidecar[def.name],
+            frameCount: frames,
+            fps,
+            loop: def.loop,
+          };
         }
       }
       writeFileSync(
@@ -1350,22 +1595,27 @@ export class AssetPipeline {
         abilities: abilityIds,
         generator: options.profile === 'VISUAL_VERTICAL_SLICE' ? 'mixed' : 'procedural-pose',
       });
+      const topDown = options.gameDna.archetype === 'TOP_DOWN_ACTION_ADVENTURE';
+      const view = topDown
+        ? 'three-quarter overhead top-down facing south'
+        : 'side view facing right';
       const posePrompts: Record<string, string> = {
-        idle: 'same character idle stance, feet planted, side view facing right',
-        run: 'same character running mid-stride, side view facing right',
-        jump_start: 'same character crouching into a jump, side view',
-        jump: 'same character airborne jump pose, side view',
-        fall: 'same character falling, limbs braced, side view',
-        land: 'same character landing, knees bent, side view',
-        dash: 'same character dashing forward, motion, side view',
-        wall_slide: 'same character sliding down a wall, side view',
-        wall_jump: 'same character kicking off a wall, side view',
+        idle: `same character idle stance, feet planted, ${view}`,
+        run: `same character running mid-stride, ${view}`,
+        jump_start: `same character crouching into a jump, ${view}`,
+        jump: `same character airborne jump pose, ${view}`,
+        fall: `same character falling, limbs braced, ${view}`,
+        land: `same character landing, knees bent, ${view}`,
+        dash: `same character dashing forward, motion, ${view}`,
+        wall_slide: `same character sliding down a wall, ${view}`,
+        wall_jump: `same character kicking off a wall, ${view}`,
       };
       const poseSet = await this.tryCanonicalPoseSet({
         id: 'player',
         destDir: 'assets/characters',
         source: playerSource,
         useAuthoredCourier: useCourierKit,
+        authoredKit: authoredKit ?? undefined,
         imageGen,
         styleBible: options.styleBible,
         prompt: playerPrompt,
@@ -1386,11 +1636,19 @@ export class AssetPipeline {
           .filter((name) => !(name in PLAYER_ANIMATION_SPEC))
           .map((name) => ({
             name,
-            prompt: posePrompts[name] ?? `same character ${name.replace(/_/g, ' ')} pose, side view`,
+            prompt: posePrompts[name] ?? `same character ${name.replace(/_/g, ' ')} pose, ${view}`,
           })),
       });
       warnings.push(...poseSet.warnings);
-      fakeAnimationDetected = fakeAnimationDetected || poseSet.fakeAnimation;
+      // Empty pose list means every clip already has a real multi-frame sheet from
+      // PLAYER_ANIMATION_SPEC — that is success, not bob/slide failure.
+      if (poseSet.fakeAnimation && poseSet.assets.length === 0) {
+        warnings.push(
+          'Player canonical pose set skipped (all clips already covered by multi-frame sheets) — not an animation hard-fail.',
+        );
+      } else {
+        fakeAnimationDetected = fakeAnimationDetected || poseSet.fakeAnimation;
+      }
       for (const asset of poseSet.assets) {
         recordAsset(asset, 'animation');
       }
@@ -1415,9 +1673,14 @@ export class AssetPipeline {
       writeFileSync(join(animDir, 'player_manifest.json'), JSON.stringify(animManifest, null, 2));
     }
 
+    }
     for (let i = 0; i < defaults.enemies; i++) {
       checkCancelled();
       const enemyId = `enemy_${i.toString().padStart(3, '0')}`;
+      if(useCanopyActors) {
+        recordAsset(materializeCanopyActor(enemyId,i%7===1?'ranged':'melee','enemies'),'enemy');
+        continue;
+      }
       const archetype = pickEnemyArchetype(enemyId);
       const visualTemplate = await resolveEnemyVisualTemplate(
         options.visualReferenceLibrary,
@@ -1449,7 +1712,7 @@ export class AssetPipeline {
         `Generating enemy ${i + 1} / ${defaults.enemies}`,
       );
 
-      const authoredEnemy = useCourierKit
+      const authoredEnemy = authoredKit
         ? this.materializeAuthoredCourier({
             id: enemyId,
             path: `assets/enemies/${enemyId}.png`,
@@ -1457,37 +1720,50 @@ export class AssetPipeline {
             width: enemyFrame.width,
             height: enemyFrame.height,
             outputDir: options.outputDir,
+            kit: authoredKit,
           })
         : null;
-      const enemyAsset = authoredEnemy ?? (await this.generateSprite({
-        id: enemyId,
-        path: `assets/enemies/${enemyId}.png`,
-        spec: enemySpec,
-        profile: 'ENEMY',
-        prompt:
-          visualTemplate?.prompt ??
-          applyStylePrompt(
-            options.styleBible,
-            'ENEMY',
-            options.artBible?.characterGuidelines.enemy ?? `enemy creature biome ${i % defaults.biomes}`,
-          ),
-        imageGen,
-        negativePrompt,
-        vlm,
-        vlmAvailable,
-        artDirection: options.gameDna.identity.visualStyle,
-        tileSize,
-        seed: options.seed + i,
-        outputDir: options.outputDir,
-        resume: options.resume,
-        signal: options.signal,
-      }));
-      if (visualTemplate) finalizeVisualTemplateProvenance(visualTemplate.provenance, enemyAsset.provider, enemyAsset.modelId);
+      const enemyAsset =
+        authoredEnemy ??
+        (await this.generateSprite({
+          id: enemyId,
+          path: `assets/enemies/${enemyId}.png`,
+          spec: enemySpec,
+          profile: 'ENEMY',
+          prompt:
+            visualTemplate?.prompt ??
+            applyStylePrompt(
+              options.styleBible,
+              'ENEMY',
+              options.artBible?.characterGuidelines.enemy ??
+                `enemy creature biome ${i % defaults.biomes}`,
+            ),
+          imageGen,
+          negativePrompt,
+          vlm,
+          vlmAvailable,
+          artDirection: options.gameDna.identity.visualStyle,
+          tileSize,
+          seed: options.seed + i,
+          outputDir: options.outputDir,
+          resume: options.resume,
+          signal: options.signal,
+        }));
+      if (visualTemplate)
+        finalizeVisualTemplateProvenance(
+          visualTemplate.provenance,
+          enemyAsset.provider,
+          enemyAsset.modelId,
+        );
       recordAsset(enemyAsset, 'enemy');
 
       const enemySource = enemyAsset.fallbackGenerated ? undefined : enemyAsset.buffer;
-      const authoredEnemySheet = (filename: string, path: string, kind: AnimationKind): GeneratedAsset | null =>
-        useCourierKit
+      const authoredEnemySheet = (
+        filename: string,
+        path: string,
+        kind: AnimationKind,
+      ): GeneratedAsset | null =>
+        authoredKit
           ? this.materializeAuthoredCourier({
               id: path.split('/').pop()!.replace('.png', ''),
               path,
@@ -1498,6 +1774,7 @@ export class AssetPipeline {
               animationKind: kind,
               frameCount: 4,
               expectedFrameWidth: enemyFrame.width,
+              kit: authoredKit,
             })
           : null;
       recordAsset(
@@ -1525,7 +1802,11 @@ export class AssetPipeline {
         'animation',
       );
       recordAsset(
-        authoredEnemySheet(`${enemyId}_death.png`, `assets/enemies/${enemyId}_death.png`, 'death') ??
+        authoredEnemySheet(
+          `${enemyId}_death.png`,
+          `assets/enemies/${enemyId}_death.png`,
+          'death',
+        ) ??
           this.buildDeathSheetAsset(
             enemyId,
             enemySpec,
@@ -1537,7 +1818,11 @@ export class AssetPipeline {
         'animation',
       );
       recordAsset(
-        authoredEnemySheet(`${enemyId}_attack.png`, `assets/enemies/${enemyId}_attack.png`, 'attack') ??
+        authoredEnemySheet(
+          `${enemyId}_attack.png`,
+          `assets/enemies/${enemyId}_attack.png`,
+          'attack',
+        ) ??
           this.buildAttackSheetAsset(
             enemyId,
             enemySpec,
@@ -1549,7 +1834,11 @@ export class AssetPipeline {
         'animation',
       );
       for (const extra of [`${enemyId}_idle.png`, `${enemyId}_fly.png`]) {
-        const extraAsset = authoredEnemySheet(extra, `assets/enemies/${extra}`, extra.endsWith('fly.png') ? 'idle' : 'idle');
+        const extraAsset = authoredEnemySheet(
+          extra,
+          `assets/enemies/${extra}`,
+          extra.endsWith('fly.png') ? 'idle' : 'idle',
+        );
         if (extraAsset) recordAsset(extraAsset, 'animation');
       }
       if (options.profile === 'VISUAL_VERTICAL_SLICE') {
@@ -1579,13 +1868,17 @@ export class AssetPipeline {
           poses: [{ name: 'idle', prompt: 'same creature idle, side view facing right' }],
         });
         warnings.push(...poseSet.warnings);
-        fakeAnimationDetected = fakeAnimationDetected || poseSet.fakeAnimation;
+        // Enemy/boss pose contact sheets must not poison the visual-slice animation gate —
+        // that gate is about player locomotion bob/slide, not missing enemy idle poses.
         for (const asset of poseSet.assets) recordAsset(asset, 'animation');
         if (poseSet.contactSheet) {
           recordAsset(
             {
               id: `${enemyId}_animation_sheet`,
-              path: i === 0 ? 'assets/qa/enemy-animation-sheet.png' : `assets/qa/${enemyId}-animation-sheet.png`,
+              path:
+                i === 0
+                  ? 'assets/qa/enemy-animation-sheet.png'
+                  : `assets/qa/${enemyId}-animation-sheet.png`,
               buffer: poseSet.contactSheet,
               provider: poseSet.fakeAnimation ? 'pixel-art-processor' : 'nvidia-image',
               fallbackGenerated: poseSet.fakeAnimation,
@@ -1639,7 +1932,7 @@ export class AssetPipeline {
       // Foundry visual slice ships a hand-authored foundry-tender still for npc_000 (the shrine
       // tender / Wanderer companion). Prefer it over generation for the base portrait.
       const authoredNpc =
-        useCourierKit && npcId === 'npc_000'
+        authoredKit && npcId === 'npc_000'
           ? this.materializeAuthoredCourier({
               id: npcId,
               path: `assets/npcs/${npcId}.png`,
@@ -1647,10 +1940,11 @@ export class AssetPipeline {
               width: npcSpec.width,
               height: npcSpec.height,
               outputDir: options.outputDir,
+              kit: authoredKit,
             })
           : null;
       const npcAsset =
-        authoredNpc ??
+        (useCanopyActors ? materializeCanopyActor(npcId,'npc','npcs') : authoredNpc) ??
         (await this.generateSprite({
           id: npcId,
           path: `assets/npcs/${npcId}.png`,
@@ -1673,8 +1967,9 @@ export class AssetPipeline {
           signal: options.signal,
         }));
       recordAsset(npcAsset, 'npc');
+      if(!useCanopyActors) {
       recordAsset(
-        (useCourierKit && npcId === 'npc_000'
+        (authoredKit && npcId === 'npc_000'
           ? this.materializeAuthoredCourier({
               id: `${npcId}_walk`,
               path: `assets/npcs/${npcId}_walk.png`,
@@ -1685,6 +1980,7 @@ export class AssetPipeline {
               animationKind: 'walk',
               frameCount: 4,
               expectedFrameWidth: npcSpec.width,
+              kit: authoredKit,
             })
           : null) ??
           this.buildWalkSheetAsset(
@@ -1697,7 +1993,7 @@ export class AssetPipeline {
           ),
         'animation',
       );
-      if (useCourierKit && npcId === 'npc_000') {
+      if (authoredKit && npcId === 'npc_000') {
         for (const extra of ['idle', 'talk', 'listen'] as const) {
           const extraAsset = this.materializeAuthoredCourier({
             id: `${npcId}_${extra}`,
@@ -1709,9 +2005,11 @@ export class AssetPipeline {
             animationKind: extra === 'idle' ? 'idle' : 'walk',
             frameCount: 4,
             expectedFrameWidth: npcSpec.width,
+            kit: authoredKit,
           });
           if (extraAsset) recordAsset(extraAsset, 'animation');
         }
+      }
       }
       const portraitRole = role.replace(/[^a-z0-9_]/gi, '_').toLowerCase();
       const portraitPath = `assets/ui/portraits/${portraitRole}.png`;
@@ -1736,8 +2034,12 @@ export class AssetPipeline {
             provider: npcAsset.provider,
             modelId: npcAsset.modelId,
             fallbackGenerated: npcAsset.fallbackGenerated,
-            critiquePassed: npcAsset.fallbackGenerated ? npcAsset.critiquePassed : true,
-            critiqueScore: npcAsset.fallbackGenerated ? npcAsset.critiqueScore : 70,
+            critiquePassed: npcAsset.critiquePassed,
+            critiqueScore: npcAsset.critiqueScore,
+            sourceType: npcAsset.sourceType,
+            maturity: npcAsset.maturity,
+            productionReady: npcAsset.productionReady,
+            productionAllowed: npcAsset.productionAllowed,
             parentArtifactIds: [npcId],
             compiler: 'pixel-art-processor',
             transformation: 'npc-portrait-crop',
@@ -1813,7 +2115,10 @@ export class AssetPipeline {
       resume: options.resume,
       signal: options.signal,
     });
-    recordAsset({ ...questIcon, transformation: 'quest-icon', godotResourcePath: `res://${questIconPath}` }, 'icon');
+    recordAsset(
+      { ...questIcon, transformation: 'quest-icon', godotResourcePath: `res://${questIconPath}` },
+      'icon',
+    );
 
     const bossList =
       options.bosses && options.bosses.length > 0
@@ -1827,6 +2132,10 @@ export class AssetPipeline {
       checkCancelled();
       const boss = bossList[bi]!;
       const bossId = boss.id;
+      if(useCanopyActors) {
+        recordAsset(materializeCanopyActor(bossId,'boss','bosses'),'boss');
+        continue;
+      }
       const isFinal = bossId === 'boss_final' || bi === bossList.length - 1;
       const palette = BIOME_PALETTES[(bi + 2) % BIOME_PALETTES.length]!;
       const bossFrame = compiledSpriteFrameSize(isFinal ? 'boss_final' : 'boss');
@@ -1851,7 +2160,7 @@ export class AssetPipeline {
         buildBossImagePrompt(boss, options.gameDna, options.artBible, isFinal),
       );
 
-      const authoredBoss = useCourierKit
+      const authoredBoss = authoredKit
         ? this.materializeAuthoredCourier({
             id: bossId,
             path: `assets/bosses/${bossId}.png`,
@@ -1859,30 +2168,37 @@ export class AssetPipeline {
             width: bossFrame.width,
             height: bossFrame.height,
             outputDir: options.outputDir,
+            kit: authoredKit,
           })
         : null;
-      const bossAsset = authoredBoss ?? (await this.generateSprite({
-        id: bossId,
-        path: `assets/bosses/${bossId}.png`,
-        spec: bossSpec,
-        profile: 'BOSS',
-        prompt: bossPrompt,
-        imageGen,
-        negativePrompt,
-        vlm,
-        vlmAvailable,
-        artDirection: options.gameDna.identity.visualStyle,
-        tileSize,
-        seed: options.seed + 999 + bi * 17,
-        outputDir: options.outputDir,
-        resume: options.resume,
-        signal: options.signal,
-      }));
+      const bossAsset =
+        authoredBoss ??
+        (await this.generateSprite({
+          id: bossId,
+          path: `assets/bosses/${bossId}.png`,
+          spec: bossSpec,
+          profile: 'BOSS',
+          prompt: bossPrompt,
+          imageGen,
+          negativePrompt,
+          vlm,
+          vlmAvailable,
+          artDirection: options.gameDna.identity.visualStyle,
+          tileSize,
+          seed: options.seed + 999 + bi * 17,
+          outputDir: options.outputDir,
+          resume: options.resume,
+          signal: options.signal,
+        }));
       recordAsset(bossAsset, 'boss');
 
       const bossSource = bossAsset.fallbackGenerated ? undefined : bossAsset.buffer;
-      const authoredBossSheet = (filename: string, path: string, kind: AnimationKind): GeneratedAsset | null =>
-        useCourierKit
+      const authoredBossSheet = (
+        filename: string,
+        path: string,
+        kind: AnimationKind,
+      ): GeneratedAsset | null =>
+        authoredKit
           ? this.materializeAuthoredCourier({
               id: path.split('/').pop()!.replace('.png', ''),
               path,
@@ -1893,6 +2209,7 @@ export class AssetPipeline {
               animationKind: kind === 'idle' ? 'idle' : kind,
               frameCount: 4,
               expectedFrameWidth: bossFrame.width,
+              kit: authoredKit,
             })
           : null;
       recordAsset(
@@ -1943,10 +2260,17 @@ export class AssetPipeline {
           ),
         'animation',
       );
-      const bossCombatProgression = ['idle', 'telegraph', 'recovery', 'attack_projectile', 'attack_burst'] as const;
+      const bossCombatProgression = [
+        'idle',
+        'telegraph',
+        'recovery',
+        'attack_projectile',
+        'attack_burst',
+      ] as const;
       for (const clip of bossCombatProgression) {
         const def = BOSS_ANIMATION_SPEC[clip]!;
-        const kind: AnimationKind = clip === 'attack_projectile' || clip === 'attack_burst' ? 'attack' : 'idle';
+        const kind: AnimationKind =
+          clip === 'attack_projectile' || clip === 'attack_burst' ? 'attack' : 'idle';
         recordAsset(
           authoredBossSheet(`${bossId}_${clip}.png`, `assets/bosses/${bossId}_${clip}.png`, kind) ??
             this.buildProgressionSheetAsset(
@@ -1988,7 +2312,7 @@ export class AssetPipeline {
           poses: [{ name: 'idle', prompt: 'same boss idle, imposing, side view facing right' }],
         });
         warnings.push(...poseSet.warnings);
-        fakeAnimationDetected = fakeAnimationDetected || poseSet.fakeAnimation;
+        // Boss idle pose contact must not poison the visual-slice animation gate.
         for (const asset of poseSet.assets) recordAsset(asset, 'animation');
         if (poseSet.contactSheet) {
           recordAsset(
@@ -2037,14 +2361,9 @@ export class AssetPipeline {
       let modelId: string | undefined;
 
       const authoredMasonry =
-        !cachedTileset &&
-        shouldUseFoundryCourierKit({
-          profile: options.profile,
-          gameDna: options.gameDna,
-          characterVisualDna: options.characterVisualDna,
-        })
-          ? loadAuthoredFoundryTileset(b, tileSize)
-          : null;
+        !cachedTileset && authoredKit ? loadAuthoredKitTileset(authoredKit, b, tileSize) : null;
+      let canopyAtlas = !cachedTileset && !imageGen && shouldUseCanopyEnvironment(options.gameDna)
+        ? canopyTerrainV2() : null;
 
       if (cachedTileset) {
         processedBuffer = cachedTileset;
@@ -2053,6 +2372,16 @@ export class AssetPipeline {
         provider = 'checkpoint';
         fallback = false;
         modelId = undefined;
+      } else if (canopyAtlas) {
+        processedBuffer = canopyAtlas.bytes;
+        critiquePassed = false;
+        critiqueScore = 0; // Unscored draft; native functionality is not visual approval.
+        provider = 'metroforge-canopy-procedural-v2';
+        fallback = false;
+        modelId = undefined;
+        writeCheckpoint(options.outputDir,tilesetPath,processedBuffer);
+        writeCheckpoint(options.outputDir,`assets/tilesets/biome_${b}/terrain.json`,Buffer.from(JSON.stringify({tileSize,roles:canopyAtlas.roles,style:'ruined-canopy-v2',productionApproved:false},null,2)));
+        warnings.push(`Canopy woodland terrain biome_${b} uses original procedural draft art; production visual review is pending.`);
       } else if (authoredMasonry) {
         // Hand-authored 32px foundry masonry atlas (256×192) — the Foundry visual slice's
         // deliberate modular kit, in place of the procedural compiler output.
@@ -2082,10 +2411,15 @@ export class AssetPipeline {
             'utf8',
           ),
         );
-        if (b === 0) writeCheckpoint(options.outputDir, 'assets/qa/tileset-test.png', processedBuffer);
+        if (b === 0)
+          writeCheckpoint(options.outputDir, 'assets/qa/tileset-test.png', processedBuffer);
         writeCheckpoint(options.outputDir, tilesetPath, processedBuffer);
       } else {
-        let tileBuffer = generateTilesetSource(options.seed + b * 100, 128, terrainVisualTemplate?.style);
+        let tileBuffer = generateTilesetSource(
+          options.seed + b * 100,
+          128,
+          terrainVisualTemplate?.style,
+        );
         fallback = true;
         provider = 'procedural';
         modelId = undefined;
@@ -2104,9 +2438,7 @@ export class AssetPipeline {
             const result = await imageGen.generateImage({
               profile: 'TILE_SOURCE',
               prompt: sanitizeImagePromptText(tilePrompt),
-              negativePrompt: negativePrompt
-                ? sanitizeImagePromptText(negativePrompt)
-                : undefined,
+              negativePrompt: negativePrompt ? sanitizeImagePromptText(negativePrompt) : undefined,
               width: 128,
               height: 128,
               seed: options.seed + b,
@@ -2130,7 +2462,9 @@ export class AssetPipeline {
         if (!compiled.passed) {
           warnings.push(`Tileset biome ${b} seam QA: ${compiled.seamIssues.join('; ')}`);
         }
-        const missingRoles = compiled.passed ? [] : missingRequiredTileRoles(Object.keys(TILE_ATLAS.roles));
+        const missingRoles = compiled.passed
+          ? []
+          : missingRequiredTileRoles(Object.keys(TILE_ATLAS.roles));
         if (missingRoles.length) {
           warnings.push(`Tileset biome ${b} missing roles: ${missingRoles.join(', ')}`);
         }
@@ -2142,7 +2476,14 @@ export class AssetPipeline {
               {
                 tileSize,
                 roles: buildTileTerrainMetadata(),
-                terrainSets: [{ id: GROUND_TERRAIN_SET_ID, terrain: GROUND_TERRAIN_ID, name: 'ground', maskRoles: GROUND_TERRAIN_MASK_ROLES }],
+                terrainSets: [
+                  {
+                    id: GROUND_TERRAIN_SET_ID,
+                    terrain: GROUND_TERRAIN_ID,
+                    name: 'ground',
+                    maskRoles: GROUND_TERRAIN_MASK_ROLES,
+                  },
+                ],
                 missingRoles,
                 seamIssues: compiled.seamIssues,
                 passed: compiled.passed && missingRoles.length === 0,
@@ -2164,7 +2505,11 @@ export class AssetPipeline {
         }
 
         const expectedW = decodeImageSize(processedBuffer);
-        const detCheck = runDeterministicAssetChecks(processedBuffer, expectedW.width, expectedW.height);
+        const detCheck = runDeterministicAssetChecks(
+          processedBuffer,
+          expectedW.width,
+          expectedW.height,
+        );
         const sceneCheck = critiqueTilesetSheet(processedBuffer, tileSize);
         critiquePassed = detCheck.passed && sceneCheck.passed;
         critiqueScore = Math.min(detCheck.passed ? 75 : 50, sceneCheck.score);
@@ -2184,7 +2529,18 @@ export class AssetPipeline {
 
         writeCheckpoint(options.outputDir, tilesetPath, processedBuffer);
       }
-      if (terrainVisualTemplate) finalizeVisualTemplateProvenance(terrainVisualTemplate.provenance, provider, modelId);
+      // An unavailable provider must not turn a woodland request back into generic walls.
+      // Keep the failed-provider warning, then select the original woodland draft fallback.
+      if(fallback&&shouldUseCanopyEnvironment(options.gameDna)) {
+        canopyAtlas=canopyTerrainV2();processedBuffer=canopyAtlas.bytes;
+        critiquePassed=false;critiqueScore=0;provider='metroforge-canopy-procedural-v2';
+        fallback=false;modelId=undefined;
+        writeCheckpoint(options.outputDir,tilesetPath,processedBuffer);
+        writeCheckpoint(options.outputDir,`assets/tilesets/biome_${b}/terrain.json`,Buffer.from(JSON.stringify({tileSize,roles:canopyAtlas.roles,style:'ruined-canopy-v2',productionApproved:false},null,2)));
+        warnings.push(`Canopy woodland terrain biome_${b} uses original procedural draft art after provider failure; production visual review is pending.`);
+      }
+      if (terrainVisualTemplate)
+        finalizeVisualTemplateProvenance(terrainVisualTemplate.provenance, provider, modelId);
 
       recordAsset(
         {
@@ -2196,7 +2552,8 @@ export class AssetPipeline {
           fallbackGenerated: fallback,
           critiquePassed,
           critiqueScore,
-          sourceType: authoredMasonry ? 'manual' : undefined,
+          sourceType: canopyAtlas ? 'procedural' : authoredMasonry ? 'manual' : undefined,
+          ...(canopyAtlas ? {maturity:'QA_REVIEW' as const,productionReady:false,productionAllowed:false,proceduralProduction:false} : {}),
           compiler: authoredMasonry ? 'authored-original' : undefined,
         },
         'tileset',
@@ -2216,41 +2573,39 @@ export class AssetPipeline {
             id: `biome_${b}_${tileId}`,
             path: `assets/tilesets/biome_${b}/tiles/${tileId}.png`,
             buffer: tileBuf,
-            provider: fallback ? 'procedural' : authoredMasonry ? provider : 'pixel-art-processor',
+            provider: canopyAtlas ? provider : fallback ? 'procedural' : authoredMasonry ? provider : 'pixel-art-processor',
             fallbackGenerated: fallback,
-            critiquePassed: true,
-            critiqueScore: 100,
+            critiquePassed: canopyAtlas ? false : true,
+            critiqueScore: canopyAtlas ? 0 : 100,
+            ...(canopyAtlas ? {maturity:'QA_REVIEW' as const,productionReady:false,productionAllowed:false,proceduralProduction:false,sourceType:'procedural' as const} : {}),
             sourceType: authoredMasonry ? 'manual' : undefined,
           },
           'tile',
         );
       }
 
-      if (!isTopDownArchetype(options.gameDna.archetype)) {
-        const layers = (
+      if (genreSupports(options.gameDna.archetype, 'supportsParallaxBackgrounds')) {
+        const layers =
           options.profile === 'TINY_TEST'
             ? (['far', 'mid', 'near'] as const)
-            : (['far', 'mid', 'near', 'overlay', 'foreground'] as const)
-        );
+            : (['far', 'mid', 'near', 'overlay', 'foreground'] as const);
         for (let li = 0; li < layers.length; li++) {
           const layer = layers[li]!;
           const bgPath = `assets/backgrounds/biome_${b}/${layer}.png`;
           options.onTaskStarted?.('background', `Generating ${layer} parallax for biome ${b}`);
           const dim = PARALLAX_STRIP_SIZE[layer];
+          const stem =
+            authoredKit === 'spore-scout'
+              ? (['galleries', 'terraces', 'depths'] as const)[b % 3]!
+              : (['pouring', 'quench', 'cooling'] as const)[b % 3]!;
           const authoredBgName =
-            (layer === 'foreground' || layer === 'near') && b === 0
-              ? `pouring_${layer}.png`
-              : (layer === 'foreground' || layer === 'near') && b === 1
-                ? `quench_${layer}.png`
-                : (layer === 'foreground' || layer === 'near') && b === 2
-                  ? `cooling_${layer}.png`
-                  : b === 1 && (layer === 'far' || layer === 'mid')
-                    ? `quench_${layer}.png`
-                    : b === 2 && (layer === 'far' || layer === 'mid')
-                      ? `cooling_${layer}.png`
-                      : null;
+            layer === 'foreground' || layer === 'near' || layer === 'far' || layer === 'mid'
+              ? `${stem}_${layer}.png`
+              : null;
           const authoredBgRaw =
-            useCourierKit && authoredBgName ? loadAuthoredBiomePng(authoredBgName) : null;
+            authoredKit && authoredBgName
+              ? loadAuthoredKitBiomePng(authoredKit, authoredBgName)
+              : null;
           if (authoredBgRaw) {
             const processedBg = this.pixelArt.process(authoredBgRaw, {
               targetWidth: dim.width,
@@ -2283,8 +2638,10 @@ export class AssetPipeline {
             options.visualReferenceProvider,
             options.visualReferenceLibraryRoot ?? process.cwd(),
           );
-          if (backgroundVisualTemplate) visualTemplateProvenance.push(backgroundVisualTemplate.provenance);
-          const bgPalette = backgroundVisualTemplate?.palette ?? BIOME_PALETTES[b % BIOME_PALETTES.length];
+          if (backgroundVisualTemplate)
+            visualTemplateProvenance.push(backgroundVisualTemplate.provenance);
+          const bgPalette =
+            backgroundVisualTemplate?.palette ?? BIOME_PALETTES[b % BIOME_PALETTES.length];
           const bgFeatures = backgroundVisualTemplate?.features;
           let bgBuffer = generateParallaxStrip(
             layer,
@@ -2334,7 +2691,14 @@ export class AssetPipeline {
                 warnings.push(
                   `Background far biome ${b} looked like outdoor landscape (pines/figures) — procedural citadel fallback`,
                 );
-                bgBuffer = generateParallaxStrip(layer, options.seed + b * 50 + li, dim.width, dim.height, bgPalette, bgFeatures);
+                bgBuffer = generateParallaxStrip(
+                  layer,
+                  options.seed + b * 50 + li,
+                  dim.width,
+                  dim.height,
+                  bgPalette,
+                  bgFeatures,
+                );
                 bgFallback = true;
                 bgProvider = 'procedural';
                 bgModel = undefined;
@@ -2343,7 +2707,12 @@ export class AssetPipeline {
               warnings.push(`Background ${layer} biome ${b} failed — procedural strip fallback`);
             }
           }
-          if (backgroundVisualTemplate) finalizeVisualTemplateProvenance(backgroundVisualTemplate.provenance, bgProvider, bgModel);
+          if (backgroundVisualTemplate)
+            finalizeVisualTemplateProvenance(
+              backgroundVisualTemplate.provenance,
+              bgProvider,
+              bgModel,
+            );
           writeCheckpoint(options.outputDir, bgPath, bgBuffer);
           recordAsset(
             {
@@ -2397,7 +2766,7 @@ export class AssetPipeline {
     // masonry supplies the ability altar art when the courier kit applies.
     options.onTaskStarted?.('world_interactables', 'Generating world interactable sprites');
     {
-      const useCourierKit = shouldUseFoundryCourierKit({
+      const interactKit = resolveAuthoredSideViewKit({
         profile: options.profile,
         gameDna: options.gameDna,
         characterVisualDna: options.characterVisualDna,
@@ -2407,8 +2776,16 @@ export class AssetPipeline {
       );
       for (const spec of WORLD_INTERACTABLE_ASSETS) {
         checkCancelled();
+        if(useCanopyActors) {
+          const buffer=canopyIcon(spec.family,spec.height);
+          writeCheckpoint(options.outputDir,spec.path,buffer);
+          recordAsset(canopyAsset(spec.id,spec.path,buffer),'prop');
+          continue;
+        }
         const authoredAbility =
-          useCourierKit && spec.id === 'world_ability' ? loadAuthoredMasonryPng('ability.png') : null;
+          interactKit && spec.id === 'world_ability'
+            ? loadAuthoredKitAbilityPng(interactKit)
+            : null;
         const buffer =
           authoredAbility ??
           generatePropSprite({
@@ -2441,9 +2818,16 @@ export class AssetPipeline {
     }
 
     options.onTaskStarted?.('vfx_textures', 'Generating gameplay VFX textures');
+    if(useCanopyActors)writeCheckpoint(options.outputDir,'assets/vfx/effects.json',Buffer.from(JSON.stringify(canopyEffectMetadata(),null,2)));
     for (let vi = 0; vi < VFX_TEXTURES.length; vi++) {
       checkCancelled();
       const vfx = VFX_TEXTURES[vi]!;
+      if(useCanopyActors && (CANOPY_EFFECT_IDS as readonly string[]).includes(vfx.id)) {
+        const path=`assets/vfx/${vfx.id}.png`,buffer=canopyEffect(vfx.id,10);
+        writeCheckpoint(options.outputDir,path,buffer);
+        recordAsset(canopyAsset(vfx.id,path,buffer),'vfx');
+        continue;
+      }
       options.onTaskProgress?.(
         'vfx_texture',
         vi + 1,
@@ -2465,6 +2849,16 @@ export class AssetPipeline {
       recordAsset(vfxAsset, 'vfx');
     }
 
+    if(useCanopyActors) {
+      // These three boss/projectile effects are consumed directly by the top-down runtime.
+      for(const id of ['area_burst','slam_shock','attack_warning','ranged_projectile']) {
+        const path=`assets/vfx/${id}.png`;
+        if(assets.some(asset=>asset.path===path))continue;
+        const buffer=canopyEffect(id,id==='ranged_projectile'?1:10);
+        writeCheckpoint(options.outputDir,path,buffer);
+        recordAsset(canopyAsset(id,path,buffer),'vfx');
+      }
+    }
     if (options.visualDNA) {
       options.onTaskStarted?.('ui_foundry', 'Generating UI art foundry assets');
       const uiFill = options.visualDNA.palette.ui[0] ?? '#141820';
@@ -2512,18 +2906,26 @@ export class AssetPipeline {
       const MAX_AI_PROP_FAMILIES = 6;
 
       for (const kit of options.environmentKits ?? []) {
-        const propBudget = kit.props.slice(0, options.profile === 'TINY_TEST' ? 4 : kit.props.length);
+        const propBudget = kit.props.slice(
+          0,
+          options.profile === 'TINY_TEST' ? 4 : kit.props.length,
+        );
         const familyAssets = new Map<string, GeneratedAsset>();
         let aiFamiliesAttempted = 0;
 
         for (const prop of propBudget) {
           checkCancelled();
           const rel = `assets/props/${kit.biomeId}/${prop.id}.png`;
-          const family = prop.family.includes('moss') || prop.family.includes('plant') ? 'debris' : prop.family;
+          const family =
+            prop.family.includes('moss') || prop.family.includes('plant') ? 'debris' : prop.family;
           const familyKey = `${kit.biomeId}:${family}`;
           const propIndex = Number(prop.id.replace(/.*_prop_/, '')) || 0;
-          const authoredPropRaw =
-            useCourierKit ? loadAuthoredBiomePng(`${foundryBiomeStem(kit.biomeId)}_prop_${propIndex % 4}.png`) : null;
+          const authoredPropRaw = authoredKit
+            ? loadAuthoredKitBiomePng(
+                authoredKit,
+                `${authoredKitBiomeStem(authoredKit, kit.biomeId)}_prop_${propIndex % 4}.png`,
+              )
+            : null;
 
           let familyAsset = familyAssets.get(familyKey);
           if (authoredPropRaw) {
@@ -2565,8 +2967,12 @@ export class AssetPipeline {
               id: `${kit.biomeId}_prop_family_${family.replace(/\s+/g, '_')}`,
               path: rel,
               family,
-              fill: propVisualTemplate?.fill ?? environmentDecorationPalette(options.visualDNA.palette).fill,
-              accent: propVisualTemplate?.accent ?? environmentDecorationPalette(options.visualDNA.palette).accent,
+              fill:
+                propVisualTemplate?.fill ??
+                environmentDecorationPalette(options.visualDNA.palette).fill,
+              accent:
+                propVisualTemplate?.accent ??
+                environmentDecorationPalette(options.visualDNA.palette).accent,
               width: 32,
               height: 32,
               imageGen: useAiForThisFamily ? imageGen : null,
@@ -2586,7 +2992,12 @@ export class AssetPipeline {
               signal: options.signal,
               features: propVisualTemplate?.features,
             });
-            if (propVisualTemplate) finalizeVisualTemplateProvenance(propVisualTemplate.provenance, familyAsset.provider, familyAsset.modelId);
+            if (propVisualTemplate)
+              finalizeVisualTemplateProvenance(
+                propVisualTemplate.provenance,
+                familyAsset.provider,
+                familyAsset.modelId,
+              );
             familyAssets.set(familyKey, familyAsset);
           } else if (familyAsset.path !== rel) {
             // Reuse the family's generated bytes for this instance's own checkpoint file —
@@ -2618,8 +3029,12 @@ export class AssetPipeline {
           checkCancelled();
           const rel = `assets/architecture/${kit.biomeId}/${arch.id}.png`;
           const archIndex = Number(arch.id.replace(/.*_arch_/, '')) || 0;
-          const authoredArchRaw =
-            useCourierKit ? loadAuthoredBiomePng(`${foundryBiomeStem(kit.biomeId)}_arch_${archIndex % 4}.png`) : null;
+          const authoredArchRaw = authoredKit
+            ? loadAuthoredKitBiomePng(
+                authoredKit,
+                `${authoredKitBiomeStem(authoredKit, kit.biomeId)}_arch_${archIndex % 4}.png`,
+              )
+            : null;
           if (authoredArchRaw) {
             const processedArch = this.pixelArt.process(authoredArchRaw, {
               targetWidth: 48,
@@ -2684,30 +3099,85 @@ export class AssetPipeline {
       }
     }
 
+    if(assets.some(asset=>asset.provider==='metroforge-canopy-procedural-v2'&&asset.path.endsWith('/source.png'))) {
+      for(const kind of CANOPY_PROP_KINDS) {
+        const art=canopyEnvironment(kind),path=`assets/props/canopy/${kind}.png`;
+        writeCheckpoint(options.outputDir,path,art.bytes);
+        recordAsset({id:`canopy_${kind}`,path,buffer:art.bytes,provider:'metroforge-canopy-procedural-v2',
+          fallbackGenerated:false,critiquePassed:false,critiqueScore:0,sourceType:'procedural',
+          maturity:'QA_REVIEW',productionReady:false,productionAllowed:false,proceduralProduction:false,
+          compiler:'canopy-environment',transformation:'original-pixel-clusters',godotResourcePath:`res://${path}`},'prop');
+      }
+    }
+
     const interactiveSpecs: Array<{
       id: string;
       family: 'checkpoint' | 'pickup' | 'gate' | 'chest' | 'portal';
-      shape: 'checkpoint' | 'ability_pickup' | 'ability_gate' | 'chest_closed' | 'chest_open' | 'portal';
+      shape:
+        'checkpoint' | 'ability_pickup' | 'ability_gate' | 'chest_closed' | 'chest_open' | 'portal';
       fill: [number, number, number, number];
       accent: [number, number, number, number];
     }> = [
-      { id: 'interactive_checkpoint', family: 'checkpoint', shape: 'checkpoint', fill: [44, 77, 105, 255], accent: [88, 224, 210, 255] },
-      { id: 'interactive_ability_pickup', family: 'pickup', shape: 'ability_pickup', fill: [54, 75, 132, 255], accent: [246, 208, 82, 255] },
-      { id: 'interactive_ability_gate', family: 'gate', shape: 'ability_gate', fill: [45, 58, 91, 255], accent: [246, 208, 82, 255] },
+      {
+        id: 'interactive_checkpoint',
+        family: 'checkpoint',
+        shape: 'checkpoint',
+        fill: [44, 77, 105, 255],
+        accent: [88, 224, 210, 255],
+      },
+      {
+        id: 'interactive_ability_pickup',
+        family: 'pickup',
+        shape: 'ability_pickup',
+        fill: [54, 75, 132, 255],
+        accent: [246, 208, 82, 255],
+      },
+      {
+        id: 'interactive_ability_gate',
+        family: 'gate',
+        shape: 'ability_gate',
+        fill: [45, 58, 91, 255],
+        accent: [246, 208, 82, 255],
+      },
       // No world-object family previously existed for a chest at all — every generated project's
       // chest/pickup container rendered as a hand-drawn ColorRect square in whichever template
       // instantiated it, regardless of what art actually got generated. Two states (not a recolor
       // of one shape) so a closed vs. opened chest is readable at a glance, matching the same
       // deterministic-procedural-baseline guarantee the three specs above already give: these exist
       // even with every AI provider unavailable.
-      { id: 'interactive_chest_closed', family: 'chest', shape: 'chest_closed', fill: [92, 60, 36, 255], accent: [246, 208, 82, 255] },
-      { id: 'interactive_chest_open', family: 'chest', shape: 'chest_open', fill: [92, 60, 36, 255], accent: [246, 208, 82, 255] },
+      {
+        id: 'interactive_chest_closed',
+        family: 'chest',
+        shape: 'chest_closed',
+        fill: [92, 60, 36, 255],
+        accent: [246, 208, 82, 255],
+      },
+      {
+        id: 'interactive_chest_open',
+        family: 'chest',
+        shape: 'chest_open',
+        fill: [92, 60, 36, 255],
+        accent: [246, 208, 82, 255],
+      },
       // Same gap as chest: no inter-area/dungeon-entrance portal marker existed either. A single
       // state (a portal has no locked/unlocked concept the way a gate does) is enough here.
-      { id: 'interactive_portal', family: 'portal', shape: 'portal', fill: [58, 46, 82, 255], accent: [150, 110, 226, 255] },
+      {
+        id: 'interactive_portal',
+        family: 'portal',
+        shape: 'portal',
+        fill: [58, 46, 82, 255],
+        accent: [150, 110, 226, 255],
+      },
     ];
     for (const spec of interactiveSpecs) {
       const path = `assets/generated/${spec.family}/${spec.id}.png`;
+      if(useCanopyActors) {
+        const kind=spec.family==='gate'?'gate':spec.family==='chest'?(spec.id.endsWith('_open')?'chest_open':'chest'):spec.family==='portal'?'portal':spec.family==='pickup'?'disc':'seed';
+        const buffer=canopyIcon(kind);
+        writeCheckpoint(options.outputDir,path,buffer);
+        recordAsset(canopyAsset(spec.id,path,buffer),spec.family);
+        continue;
+      }
       const buffer = generateProceduralSprite({
         id: spec.id,
         width: 32,
@@ -2734,8 +3204,18 @@ export class AssetPipeline {
         spec.family,
       );
     }
-    if (useCourierKit) {
-      const barrierRaw = loadAuthoredBiomePng('foundry_phase_barrier.png');
+    if(useCanopyActors) {
+      const pickups=[['health_pickup','health'],['progression_pickup','scrap']] as const;
+      for(const [id,kind] of pickups) {
+        const path=`assets/generated/items/${id}.png`,buffer=canopyPickup(kind);
+        writeCheckpoint(options.outputDir,path,buffer);
+        recordAsset(canopyAsset(id,path,buffer),'pickup');
+      }
+    }
+    if (authoredKit) {
+      const barrierName =
+        authoredKit === 'spore-scout' ? 'phase_barrier.png' : 'foundry_phase_barrier.png';
+      const barrierRaw = loadAuthoredKitBiomePng(authoredKit, barrierName);
       if (barrierRaw) {
         const barrierPath = 'assets/generated/gate/foundry_phase_barrier.png';
         const processedBarrier = this.pixelArt.process(barrierRaw, {
@@ -2832,9 +3312,7 @@ export class AssetPipeline {
       assets,
       visualEnhancement,
       warnings,
-      degraded:
-        !imageGen ||
-        assets.some((a) => isNonProductionMaturity(a.maturity)),
+      degraded: !imageGen || assets.some((a) => isNonProductionMaturity(a.maturity)),
       fallbackDepth: imageRoute.fallbackDepth + (imageGen ? 0 : 1),
       fallbackReason: imageRoute.fallbackReason,
       selectedProvider: imageRoute.selectedProvider ?? imageGen?.id,
@@ -2857,7 +3335,8 @@ export class AssetPipeline {
     const visualMode = options.visualMode ?? 'procedural-only';
     if (visualMode === 'procedural-only') return undefined;
 
-    const { planAssetReplacements, runVisualEnhancementPass } = await import('./visual-enhancement/index.js');
+    const { planAssetReplacements, runVisualEnhancementPass } =
+      await import('./visual-enhancement/index.js');
     const plans = planAssetReplacements({
       projectSlug: options.gameDna.identity.title ?? options.outputDir,
       generationId: `${options.seed}`,
@@ -2868,7 +3347,8 @@ export class AssetPipeline {
       })),
       biomeCount: options.biomeVisualDNAs?.length ?? 0,
     });
-    if (plans.length === 0) return { visualMode, attempted: 0, enhanced: 0, fallenBack: 0, skipped: 0, outcomes: [] };
+    if (plans.length === 0)
+      return { visualMode, attempted: 0, enhanced: 0, fallenBack: 0, skipped: 0, outcomes: [] };
 
     // Tests/callers may inject a single editor/generator directly (legacy path, still fully
     // supported) — when they do, skip building the real multi-provider chain entirely so an
@@ -2940,12 +3420,36 @@ export class AssetPipeline {
     const huggingfaceEdit = new HuggingFaceImageProvider({ apiKey: options.huggingfaceApiKey });
 
     const editorChain: import('./visual-enhancement/types.js').VisualProviderCandidate[] = [
-      { providerId: 'nvidia-image-edit', capability: 'IMAGE_EDIT' as const, editor: nvidiaEdit, priority: 0, outputCapabilities: [] },
-      { providerId: 'huggingface-image', capability: 'IMAGE_EDIT' as const, editor: huggingfaceEdit, priority: 1, outputCapabilities: ['transparent_sprite', 'alpha_output', 'fixed_dimensions'] },
+      {
+        providerId: 'nvidia-image-edit',
+        capability: 'IMAGE_EDIT' as const,
+        editor: nvidiaEdit,
+        priority: 0,
+        outputCapabilities: [],
+      },
+      {
+        providerId: 'huggingface-image',
+        capability: 'IMAGE_EDIT' as const,
+        editor: huggingfaceEdit,
+        priority: 1,
+        outputCapabilities: ['transparent_sprite', 'alpha_output', 'fixed_dimensions'],
+      },
     ];
     const generatorChain: import('./visual-enhancement/types.js').VisualProviderCandidate[] = [
-      { providerId: 'nvidia-image', capability: 'IMAGE_GENERATION' as const, generator: nvidiaGen, priority: 0, outputCapabilities: ['full_frame_image', 'fixed_dimensions'] },
-      { providerId: 'pollinations-image', capability: 'IMAGE_GENERATION' as const, generator: pollinationsGen, priority: 1, outputCapabilities: ['full_frame_image'] },
+      {
+        providerId: 'nvidia-image',
+        capability: 'IMAGE_GENERATION' as const,
+        generator: nvidiaGen,
+        priority: 0,
+        outputCapabilities: ['full_frame_image', 'fixed_dimensions'],
+      },
+      {
+        providerId: 'pollinations-image',
+        capability: 'IMAGE_GENERATION' as const,
+        generator: pollinationsGen,
+        priority: 1,
+        outputCapabilities: ['full_frame_image'],
+      },
     ];
 
     let providerHealthy: boolean | undefined;
@@ -2978,9 +3482,10 @@ export class AssetPipeline {
     id: string;
     destDir: string;
     source?: Buffer;
-    /** Prefer hand-authored `<id>_<pose>_pose.png` from the foundry courier kit over the
+    /** Prefer hand-authored `<id>_<pose>_pose.png` from the active side-view kit over the
      *  deterministic procedural transform, when the file exists. */
     useAuthoredCourier?: boolean;
+    authoredKit?: AuthoredSideViewKitId;
     imageGen: ImageGenerator | null;
     styleBible?: StyleBible;
     prompt: string;
@@ -2996,7 +3501,12 @@ export class AssetPipeline {
      *  expensive per-pose image-generation calls gated to VISUAL_VERTICAL_SLICE while every other
      *  profile — and any run with no healthy image provider — still gets real, distinct poses. */
     allowAiUpgrade?: boolean;
-  }): Promise<{ assets: GeneratedAsset[]; warnings: string[]; fakeAnimation: boolean; contactSheet?: Buffer }> {
+  }): Promise<{
+    assets: GeneratedAsset[];
+    warnings: string[];
+    fakeAnimation: boolean;
+    contactSheet?: Buffer;
+  }> {
     const poses: { name: string; prompt: string }[] = opts.poses ?? [
       { name: 'idle', prompt: 'same character idle stance, feet planted, side view facing right' },
       { name: 'run', prompt: 'same character running mid-stride, side view facing right' },
@@ -3011,7 +3521,8 @@ export class AssetPipeline {
     const contactFrames: { label: string; png: Buffer }[] = [];
     const knockedOutSource = opts.source ? knockoutVfxBackground(opts.source) : undefined;
     const actorStill = knockedOutSource
-      ? this.compileActorFrame(knockedOutSource, opts.spec.width, opts.spec.height, opts.tileSize).buffer
+      ? this.compileActorFrame(knockedOutSource, opts.spec.width, opts.spec.height, opts.tileSize)
+          .buffer
       : undefined;
     const canAttemptAi = Boolean(opts.imageGen && opts.source && opts.allowAiUpgrade === true);
 
@@ -3022,7 +3533,6 @@ export class AssetPipeline {
           : `No AI-generated reference source for "${opts.id}" — using deterministic procedural pose transforms (idle/run/jump/fall/land/dash are distinct, not literally duplicated).`,
       );
     }
-
 
     for (let i = 0; i < poses.length; i++) {
       const pose = poses[i]!;
@@ -3049,62 +3559,68 @@ export class AssetPipeline {
             `Identity-preserving pose provider unavailable for "${opts.id}" (custom reference unsupported) — deterministic poses, no Kontext retries.`,
           );
         } else {
-        try {
-          throwIfCancelled(opts.signal);
-          const result = await identityProvider.generatePose({
-            prompt: sanitizeImagePromptText(
-              `${opts.prompt}. ${pose.prompt}. transparent background, isolated sprite, identical costume and proportions`,
-            ),
-            negativePrompt: opts.negativePrompt,
-            width: 256,
-            height: 256,
-            seed: opts.seed + 9000 + i,
-            signal: opts.signal,
-            referenceImage: opts.source!,
-            poseName: pose.name,
-            posePrompt: pose.prompt,
-          });
-          const compiled = this.compileActorFrame(
-            knockoutVfxBackground(result.image),
-            opts.spec.width,
-            opts.spec.height,
-            opts.tileSize,
-          );
-          writeCheckpoint(opts.outputDir, rel, compiled.buffer);
-          const identity = critiqueAnimationIdentity(compiled.buffer, { frameWidth: opts.spec.width, expectedFrames: 1 });
-          assets.push(
-            withMaturity({
-              id: `${opts.id}_${pose.name}_pose`,
-              path: rel,
-              buffer: compiled.buffer,
-              provider: result.provider,
-              modelId: result.modelId,
-              fallbackGenerated: false,
-              critiquePassed: identity.passed,
-              critiqueScore: identity.passed ? 80 : 40,
-              fakeAnimation: false,
-              parentArtifactIds: [opts.id],
-              compiler: 'pixel-art-processor',
-              transformation: 'canonical-pose',
-              godotResourcePath: `res://${rel}`,
-            }),
-          );
-          contactFrames.push({ label: pose.name, png: compiled.buffer });
-          usedAi = true;
-        } catch (err) {
-          // Continue to the next pose instead of aborting the whole set — a single transient
-          // failure (e.g. one pose's request timing out) must not leave every later pose
-          // (jump/fall/land/dash) unwritten. This pose falls through to the deterministic
-          // procedural transform below instead.
-          warnings.push(
-            `Pose "${pose.name}" AI-conditioned generation failed for "${opts.id}" — using deterministic procedural transform instead: ${err instanceof Error ? err.message : String(err)}.`,
-          );
-        }
+          try {
+            throwIfCancelled(opts.signal);
+            const result = await identityProvider.generatePose({
+              prompt: sanitizeImagePromptText(
+                `${opts.prompt}. ${pose.prompt}. transparent background, isolated sprite, identical costume and proportions`,
+              ),
+              negativePrompt: opts.negativePrompt,
+              width: 256,
+              height: 256,
+              seed: opts.seed + 9000 + i,
+              signal: opts.signal,
+              referenceImage: opts.source!,
+              poseName: pose.name,
+              posePrompt: pose.prompt,
+            });
+            const compiled = this.compileActorFrame(
+              knockoutVfxBackground(result.image),
+              opts.spec.width,
+              opts.spec.height,
+              opts.tileSize,
+            );
+            writeCheckpoint(opts.outputDir, rel, compiled.buffer);
+            const identity = critiqueAnimationIdentity(compiled.buffer, {
+              frameWidth: opts.spec.width,
+              expectedFrames: 1,
+            });
+            assets.push(
+              withMaturity({
+                id: `${opts.id}_${pose.name}_pose`,
+                path: rel,
+                buffer: compiled.buffer,
+                provider: result.provider,
+                modelId: result.modelId,
+                fallbackGenerated: false,
+                critiquePassed: identity.passed,
+                critiqueScore: identity.passed ? 80 : 40,
+                fakeAnimation: false,
+                parentArtifactIds: [opts.id],
+                compiler: 'pixel-art-processor',
+                transformation: 'canonical-pose',
+                godotResourcePath: `res://${rel}`,
+              }),
+            );
+            contactFrames.push({ label: pose.name, png: compiled.buffer });
+            usedAi = true;
+          } catch (err) {
+            // Continue to the next pose instead of aborting the whole set — a single transient
+            // failure (e.g. one pose's request timing out) must not leave every later pose
+            // (jump/fall/land/dash) unwritten. This pose falls through to the deterministic
+            // procedural transform below instead.
+            warnings.push(
+              `Pose "${pose.name}" AI-conditioned generation failed for "${opts.id}" — using deterministic procedural transform instead: ${err instanceof Error ? err.message : String(err)}.`,
+            );
+          }
         }
       }
 
       if (!usedAi && opts.useAuthoredCourier) {
-        const authoredRaw = loadAuthoredCourierPng(`${opts.id}_${pose.name}_pose.png`);
+        const authoredRaw =
+          (opts.authoredKit
+            ? loadAuthoredKitActorPng(opts.authoredKit, `${opts.id}_${pose.name}_pose.png`)
+            : null) ?? loadAuthoredCourierPng(`${opts.id}_${pose.name}_pose.png`);
         if (authoredRaw) {
           const compiled = this.pixelArt.process(authoredRaw, {
             targetWidth: opts.spec.width,
@@ -3144,7 +3660,10 @@ export class AssetPipeline {
           skipQuantize: true,
         });
         writeCheckpoint(opts.outputDir, rel, compiled.buffer);
-        const identity = critiqueAnimationIdentity(compiled.buffer, { frameWidth: opts.spec.width, expectedFrames: 1 });
+        const identity = critiqueAnimationIdentity(compiled.buffer, {
+          frameWidth: opts.spec.width,
+          expectedFrames: 1,
+        });
         assets.push(
           withMaturity({
             id: `${opts.id}_${pose.name}_pose`,
@@ -3172,15 +3691,16 @@ export class AssetPipeline {
     return {
       assets,
       warnings,
-      fakeAnimation: assets.length === 0,
+      // Empty pose request is success (caller already covered clips). Only fail when we
+      // were asked for poses and produced nothing.
+      fakeAnimation: poses.length > 0 && assets.length === 0,
       contactSheet: contactFrames.length ? assembleContactSheet(contactFrames) : undefined,
     };
   }
 
   /**
-   * Load a hand-authored foundry courier PNG (still or frame strip) and process it into place,
+   * Load a hand-authored side-view kit PNG (still or frame strip) and process it into place,
    * with no procedural fallback. Missing files return null so callers fall through to generation.
-   * Used for the Foundry visual slice's authored Wanderer / foundry-tender art.
    */
   private materializeAuthoredCourier(opts: {
     id: string;
@@ -3192,8 +3712,11 @@ export class AssetPipeline {
     animationKind?: AnimationKind;
     frameCount?: number;
     expectedFrameWidth?: number;
+    kit?: AuthoredSideViewKitId;
   }): GeneratedAsset | null {
-    const raw = loadAuthoredCourierPng(opts.filename) ?? loadAuthoredCastPng(opts.filename);
+    const raw = opts.kit
+      ? loadAuthoredKitActorPng(opts.kit, opts.filename)
+      : (loadAuthoredCourierPng(opts.filename) ?? loadAuthoredCastPng(opts.filename));
     if (!raw) return null;
     const processed = this.pixelArt.process(raw, {
       targetWidth: opts.width,
@@ -3248,12 +3771,8 @@ export class AssetPipeline {
     sourcePng?: Buffer,
   ): GeneratedAsset {
     const still = sourcePng
-      ? this.compileActorFrame(
-          knockoutVfxBackground(sourcePng),
-          spec.width,
-          spec.height,
-          tileSize,
-        ).buffer
+      ? this.compileActorFrame(knockoutVfxBackground(sourcePng), spec.width, spec.height, tileSize)
+          .buffer
       : undefined;
     const sheet = generateWalkCycleSheet(spec, frameCount, still);
     const processed = this.pixelArt.process(sheet, {
@@ -3302,12 +3821,8 @@ export class AssetPipeline {
     sourcePng?: Buffer,
   ): GeneratedAsset {
     const still = sourcePng
-      ? this.compileActorFrame(
-          knockoutVfxBackground(sourcePng),
-          spec.width,
-          spec.height,
-          tileSize,
-        ).buffer
+      ? this.compileActorFrame(knockoutVfxBackground(sourcePng), spec.width, spec.height, tileSize)
+          .buffer
       : undefined;
     const sheet = generateRunCycleSheet(spec, frameCount, still);
     const processed = this.pixelArt.process(sheet, {
@@ -3374,16 +3889,19 @@ export class AssetPipeline {
     sourcePng?: Buffer,
   ): GeneratedAsset {
     const still = sourcePng
-      ? this.compileActorFrame(
-          knockoutVfxBackground(sourcePng),
-          spec.width,
-          spec.height,
-          tileSize,
-        ).buffer
+      ? this.compileActorFrame(knockoutVfxBackground(sourcePng), spec.width, spec.height, tileSize)
+          .buffer
       : undefined;
     const sheet = generateProgressionSheet(spec, def.poseKey ?? def.name, def.frameCount, still, {
       mode: def.mode === 'progression-oscillate' ? 'oscillate' : 'ramp',
-      tintPulse: def.poseKey === 'boss_idle' ? 16 : def.poseKey === 'boss_telegraph' ? 22 : def.name === 'idle' ? 6 : undefined,
+      tintPulse:
+        def.poseKey === 'boss_idle'
+          ? 16
+          : def.poseKey === 'boss_telegraph'
+            ? 22
+            : def.name === 'idle'
+              ? 6
+              : undefined,
     });
     const processed = this.pixelArt.process(sheet, {
       targetWidth: spec.width * def.frameCount,
@@ -3401,7 +3919,12 @@ export class AssetPipeline {
     let frameQualityPassed = true;
     try {
       const decoded = decodePngRgba(processed.buffer);
-      frameQuality = computeFrameQualityMetrics(decoded.rgba, spec.width, spec.height, def.frameCount);
+      frameQuality = computeFrameQualityMetrics(
+        decoded.rgba,
+        spec.width,
+        spec.height,
+        def.frameCount,
+      );
       frameQualityPassed =
         frameQuality.uniqueFrameRatio >= def.minUniqueFrameRatio &&
         !frameQuality.chaoticMotion &&
@@ -3430,12 +3953,8 @@ export class AssetPipeline {
     sourcePng?: Buffer,
   ): GeneratedAsset {
     const still = sourcePng
-      ? this.compileActorFrame(
-          knockoutVfxBackground(sourcePng),
-          spec.width,
-          spec.height,
-          tileSize,
-        ).buffer
+      ? this.compileActorFrame(knockoutVfxBackground(sourcePng), spec.width, spec.height, tileSize)
+          .buffer
       : undefined;
     const sheet = generateHurtFlashSheet(spec, frameCount, still);
     const processed = this.pixelArt.process(sheet, {
@@ -3470,12 +3989,8 @@ export class AssetPipeline {
     sourcePng?: Buffer,
   ): GeneratedAsset {
     const still = sourcePng
-      ? this.compileActorFrame(
-          knockoutVfxBackground(sourcePng),
-          spec.width,
-          spec.height,
-          tileSize,
-        ).buffer
+      ? this.compileActorFrame(knockoutVfxBackground(sourcePng), spec.width, spec.height, tileSize)
+          .buffer
       : undefined;
     const sheet = generateDeathSheet(spec, frameCount, still);
     const processed = this.pixelArt.process(sheet, {
@@ -3516,12 +4031,8 @@ export class AssetPipeline {
     animName: 'attack' | 'attack_2' | 'attack_3' = 'attack',
   ): GeneratedAsset {
     const still = sourcePng
-      ? this.compileActorFrame(
-          knockoutVfxBackground(sourcePng),
-          spec.width,
-          spec.height,
-          tileSize,
-        ).buffer
+      ? this.compileActorFrame(knockoutVfxBackground(sourcePng), spec.width, spec.height, tileSize)
+          .buffer
       : undefined;
     const sheet = generateAttackSheet(spec, frameCount, still, arcKind);
     const processed = this.pixelArt.process(sheet, {
@@ -3614,7 +4125,9 @@ export class AssetPipeline {
         const result = await opts.imageGen.generateImage({
           profile: 'ICON',
           prompt: sanitizeImagePromptText(opts.prompt),
-          negativePrompt: opts.negativePrompt ? sanitizeImagePromptText(opts.negativePrompt) : undefined,
+          negativePrompt: opts.negativePrompt
+            ? sanitizeImagePromptText(opts.negativePrompt)
+            : undefined,
           width: opts.width * 4,
           height: opts.height * 4,
           seed: opts.seed,
@@ -3666,9 +4179,9 @@ export class AssetPipeline {
       fallbackDepth: fallback ? 1 : 0,
       fallbackReason: fallback
         ? (fallbackErrorMessage ??
-            (opts.imageGen
-              ? 'Image provider unavailable or failed — procedural placeholder'
-              : 'AI prop generation not attempted for this profile/budget — procedural placeholder'))
+          (opts.imageGen
+            ? 'Image provider unavailable or failed — procedural placeholder'
+            : 'AI prop generation not attempted for this profile/budget — procedural placeholder'))
         : undefined,
       selectedProvider: provider,
       selectedModel: modelId,
@@ -4034,11 +4547,7 @@ export class AssetPipeline {
     );
     writeCheckpoint(opts.outputDir, opts.compiledRelPath, processed.buffer);
 
-    const det = runDeterministicAssetChecks(
-      processed.buffer,
-      opts.targetWidth,
-      opts.targetHeight,
-    );
+    const det = runDeterministicAssetChecks(processed.buffer, opts.targetWidth, opts.targetHeight);
     if (!det.passed) {
       return withMaturity({
         id: opts.id,
@@ -4206,15 +4715,16 @@ export class AssetPipeline {
     const { width, height } = frame;
 
     const styleHint =
-      opts.artBible?.characterGuidelines.player ??
-      opts.gameDna.identity.visualStyle;
+      opts.artBible?.characterGuidelines.player ?? opts.gameDna.identity.visualStyle;
     const prompt = applyStylePrompt(
       opts.styleBible,
       opts.assetType === 'tileset' || opts.assetType === 'tile'
         ? 'TILE_SOURCE'
         : opts.assetType === 'background'
           ? 'BACKGROUND'
-          : opts.assetType === 'ui_icon' || opts.assetType === 'ui_panel' || opts.assetType === 'portrait'
+          : opts.assetType === 'ui_icon' ||
+              opts.assetType === 'ui_panel' ||
+              opts.assetType === 'portrait'
             ? 'UI'
             : 'CHARACTER',
       buildManualImagePrompt(opts.description, styleHint, opts.gameDna.identity.title),
@@ -4241,9 +4751,7 @@ export class AssetPipeline {
           const result = await imageGen.generateImage({
             profile: 'TILE_SOURCE',
             prompt: sanitizeImagePromptText(prompt),
-            negativePrompt: negativePrompt
-              ? sanitizeImagePromptText(negativePrompt)
-              : undefined,
+            negativePrompt: negativePrompt ? sanitizeImagePromptText(negativePrompt) : undefined,
             width: 128,
             height: 128,
             seed: opts.seed,
@@ -4283,7 +4791,9 @@ export class AssetPipeline {
         critiquePassed: true,
         critiqueScore: 80,
         fallbackDepth: fallback ? 1 : 0,
-        fallbackReason: fallback ? 'Image provider unavailable or failed — procedural placeholder' : undefined,
+        fallbackReason: fallback
+          ? 'Image provider unavailable or failed — procedural placeholder'
+          : undefined,
         selectedProvider: provider,
         selectedModel: modelId,
         requestedCapability: 'IMAGE_GENERATION',

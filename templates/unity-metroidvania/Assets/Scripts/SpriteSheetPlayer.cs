@@ -9,12 +9,20 @@ public class SpriteSheetPlayer : MonoBehaviour
     private readonly Dictionary<string, Sprite[]> _clips = new Dictionary<string, Sprite[]>();
     private readonly Dictionary<string, float> _fps = new Dictionary<string, float>();
     private readonly Dictionary<string, bool> _loop = new Dictionary<string, bool>();
+    private readonly Dictionary<string, int> _impactFrames = new Dictionary<string, int>();
     private string _current;
     private float _elapsed;
     private int _frame;
     private bool _facingRight = true;
 
     public string CurrentClip => _current;
+    public int CurrentFrame => _frame;
+    public float GroundContactInset { get; private set; }
+    public bool HasClip(string clip) => _clips.ContainsKey(clip);
+    public float ClipDuration(string clip) => _clips.TryGetValue(clip, out var frames)
+        ? frames.Length / ValidFps(_fps.TryGetValue(clip, out var fps) ? fps : 8f) : 0f;
+    public float ClipImpactSeconds(string clip) => _clips.TryGetValue(clip, out var frames)
+        ? (_impactFrames.TryGetValue(clip, out var frame) ? frame : frames.Length / 2) / ValidFps(_fps[clip]) : 0f;
 
     // Locomotion can follow physical speed without retiming attacks or jump anticipation.
     private float _playbackSpeed = 1f;
@@ -48,16 +56,23 @@ public class SpriteSheetPlayer : MonoBehaviour
         _clips.Clear();
         _fps.Clear();
         _loop.Clear();
+        _impactFrames.Clear();
         _current = null;
         _elapsed = 0f;
         _frame = 0;
-        foreach (var clip in clips)
+        var sourceClips = new List<GameplaySpriteClip>(clips);
+        GroundContactInset = MeasureGroundContact(sourceClips, ownerId, streamingRoot);
+        foreach (var clip in sourceClips)
         {
             if (clip == null || clip.ownerId != ownerId || string.IsNullOrEmpty(clip.relativePath))
                 continue;
             var fw = Mathf.Max(1, clip.frameWidth);
             var fh = Mathf.Max(1, clip.frameHeight);
             var pivot = new Vector2(clip.pivotX, clip.pivotY);
+            // Honor explicit authored pivots. Legacy bottom-center strips share the
+            // idle boot baseline across all poses, including airborne and attack poses.
+            if (clip.pivotY == 0f && GroundContactInset > 0f)
+                pivot.y = GroundContactInset * ValidPixelsPerUnit(clip.pixelsPerUnit) / fh;
             var frames = StreamingArtCache.GetSheet(streamingRoot, clip.relativePath, fw, fh, pivot, clip.smoothFiltering ? FilterMode.Bilinear : FilterMode.Point, clip.pixelsPerUnit);
             if (frames == null || frames.Length == 0)
                 continue;
@@ -72,10 +87,39 @@ public class SpriteSheetPlayer : MonoBehaviour
             _clips[clip.clip] = frames;
             _fps[clip.clip] = ValidFps(clip.fps);
             _loop[clip.clip] = clip.loop;
+            _impactFrames[clip.clip] = clip.hasImpactFrame && clip.impactFrame >= 0 && clip.impactFrame < frames.Length
+                ? clip.impactFrame : frames.Length / 2;
         }
         var ms = (Time.realtimeSinceStartup - t0) * 1000f;
         if (ms >= 2f)
             MainThreadProbe.Record("load_clips", ms, 0, ownerId);
+    }
+
+    private static float ValidPixelsPerUnit(float value) =>
+        value > 0f && !float.IsNaN(value) && !float.IsInfinity(value) ? value : 1f;
+
+    private static float MeasureGroundContact(List<GameplaySpriteClip> clips, string ownerId, string root)
+    {
+        GameplaySpriteClip grounded = null;
+        foreach (var clip in clips)
+        {
+            if (clip == null || clip.ownerId != ownerId || clip.pivotY != 0f) continue;
+            if (clip.clip == "idle") { grounded = clip; break; }
+            if (clip.clip == "walk") grounded = clip;
+        }
+        if (grounded == null) return 0f;
+        var texture = StreamingArtCache.GetTexture(root, grounded.relativePath,
+            grounded.smoothFiltering ? FilterMode.Bilinear : FilterMode.Point, TextureWrapMode.Clamp);
+        if (texture == null) return 0f;
+        var width = Mathf.Clamp(grounded.frameWidth, 1, texture.width);
+        var height = Mathf.Clamp(grounded.frameHeight, 1, texture.height);
+        var bottom = texture.height - height;
+        var pixels = texture.GetPixels32();
+        for (var y = 0; y < height / 2; y++)
+            for (var x = 0; x < width; x++)
+                if (pixels[(bottom + y) * texture.width + x].a >= 31)
+                    return Mathf.Clamp(y / ValidPixelsPerUnit(grounded.pixelsPerUnit), 0f, 6f);
+        return 0f;
     }
 
     public void Play(string clip, bool restart = false)

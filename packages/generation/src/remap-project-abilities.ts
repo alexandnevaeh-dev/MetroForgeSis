@@ -3,6 +3,8 @@ import { join } from 'node:path';
 import {
   remapAbilityList,
   remapAbilityReferences,
+  genreUsesDungeonTools,
+  resolveGameArchetype,
   type AbilityRemapEntry,
   type AbilityReferenceRemapHit,
 } from '@metroforge/shared';
@@ -25,6 +27,7 @@ export interface RemapProjectAbilitiesResult {
 }
 
 type GameDnaFile = Record<string, unknown> & {
+  archetype?: string;
   abilities?: AbilityRemapEntry[];
 };
 
@@ -48,7 +51,7 @@ export type RemapGameDnaResult<T extends GameDnaFile = GameDnaFile> = {
  * corrupts real dungeon items into unrelated side-view ability ids.
  */
 export function remapGameDnaAbilities<T extends GameDnaFile>(dna: T): RemapGameDnaResult<T> {
-  if (dna.archetype === 'TOP_DOWN_ACTION_ADVENTURE') {
+  if (genreUsesDungeonTools(resolveGameArchetype(typeof dna.archetype === 'string' ? dna.archetype : undefined))) {
     return { dna, remapped: [], removed: [], warnings: [], changed: false };
   }
   const input = Array.isArray(dna.abilities) ? dna.abilities : [];
@@ -267,7 +270,9 @@ export function remapProjectAbilities(
     };
   }
 
-  const isTopDown = dna.archetype === 'TOP_DOWN_ACTION_ADVENTURE';
+  const isTopDown = genreUsesDungeonTools(
+    resolveGameArchetype(typeof dna.archetype === 'string' ? dna.archetype : undefined),
+  );
   const { dna: nextDna, remapped, removed, warnings, changed } = remapGameDnaAbilities(dna);
   const abilities = Array.isArray(nextDna.abilities) ? nextDna.abilities : [];
   const sync = syncAbilitiesDataFile(projectPath, abilities, dryRun);

@@ -1,0 +1,25 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/test/CombatMicroTest.gd" id="1_test"]
+[ext_resource type="PackedScene" path="res://scenes/player/Player.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/Enemy.tscn" id="3_enemy"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_floor"]
+size = Vector2(800, 64)
+
+[node name="CombatMicroTest" type="Node2D"]
+script = ExtResource("1_test")
+
+[node name="Floor" type="StaticBody2D" parent="."]
+position = Vector2(400, 432)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Floor"]
+shape = SubResource("RectangleShape2D_floor")
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+position = Vector2(180, 400)
+
+[node name="Enemy" parent="." instance=ExtResource("3_enemy")]
+position = Vector2(360, 400)
+patrol_distance = 16.0
+move_speed = 0.0

@@ -1,0 +1,418 @@
+{
+  "biome_0": {
+    "version": "0.1.0",
+    "bpm": 128,
+    "key": "Em",
+    "mood": "tense",
+    "events": [
+      {
+        "tick": 0,
+        "note": 0,
+        "duration": 4,
+        "velocity": 67
+      },
+      {
+        "tick": 4,
+        "note": 5,
+        "duration": 4,
+        "velocity": 84
+      },
+      {
+        "tick": 8,
+        "note": 0,
+        "duration": 4,
+        "velocity": 88
+      },
+      {
+        "tick": 12,
+        "note": 2,
+        "duration": 4,
+        "velocity": 66
+      },
+      {
+        "tick": 16,
+        "note": 5,
+        "duration": 4,
+        "velocity": 99
+      },
+      {
+        "tick": 20,
+        "note": 2,
+        "duration": 4,
+        "velocity": 61
+      },
+      {
+        "tick": 24,
+        "note": 5,
+        "duration": 4,
+        "velocity": 78
+      },
+      {
+        "tick": 28,
+        "note": 1,
+        "duration": 4,
+        "velocity": 70
+      },
+      {
+        "tick": 32,
+        "note": 7,
+        "duration": 4,
+        "velocity": 98
+      },
+      {
+        "tick": 36,
+        "note": 6,
+        "duration": 4,
+        "velocity": 71
+      },
+      {
+        "tick": 40,
+        "note": 0,
+        "duration": 4,
+        "velocity": 70
+      },
+      {
+        "tick": 44,
+        "note": 6,
+        "duration": 4,
+        "velocity": 65
+      },
+      {
+        "tick": 48,
+        "note": 0,
+        "duration": 4,
+        "velocity": 92
+      },
+      {
+        "tick": 52,
+        "note": 1,
+        "duration": 4,
+        "velocity": 87
+      },
+      {
+        "tick": 56,
+        "note": 7,
+        "duration": 4,
+        "velocity": 92
+      },
+      {
+        "tick": 60,
+        "note": 5,
+        "duration": 4,
+        "velocity": 69
+      }
+    ]
+  },
+  "biome_1": {
+    "version": "0.1.0",
+    "bpm": 72,
+    "key": "Em",
+    "mood": "tense",
+    "events": [
+      {
+        "tick": 0,
+        "note": 0,
+        "duration": 4,
+        "velocity": 66
+      },
+      {
+        "tick": 4,
+        "note": 5,
+        "duration": 4,
+        "velocity": 100
+      },
+      {
+        "tick": 8,
+        "note": 6,
+        "duration": 4,
+        "velocity": 98
+      },
+      {
+        "tick": 12,
+        "note": 5,
+        "duration": 4,
+        "velocity": 77
+      },
+      {
+        "tick": 16,
+        "note": 4,
+        "duration": 4,
+        "velocity": 77
+      },
+      {
+        "tick": 20,
+        "note": 1,
+        "duration": 4,
+        "velocity": 61
+      },
+      {
+        "tick": 24,
+        "note": 5,
+        "duration": 4,
+        "velocity": 81
+      },
+      {
+        "tick": 28,
+        "note": 6,
+        "duration": 4,
+        "velocity": 70
+      },
+      {
+        "tick": 32,
+        "note": 3,
+        "duration": 4,
+        "velocity": 100
+      },
+      {
+        "tick": 36,
+        "note": 3,
+        "duration": 4,
+        "velocity": 97
+      },
+      {
+        "tick": 40,
+        "note": 2,
+        "duration": 4,
+        "velocity": 75
+      },
+      {
+        "tick": 44,
+        "note": 3,
+        "duration": 4,
+        "velocity": 70
+      },
+      {
+        "tick": 48,
+        "note": 4,
+        "duration": 4,
+        "velocity": 82
+      },
+      {
+        "tick": 52,
+        "note": 7,
+        "duration": 4,
+        "velocity": 67
+      },
+      {
+        "tick": 56,
+        "note": 6,
+        "duration": 4,
+        "velocity": 61
+      },
+      {
+        "tick": 60,
+        "note": 3,
+        "duration": 4,
+        "velocity": 66
+      }
+    ]
+  },
+  "biome_2": {
+    "version": "0.1.0",
+    "bpm": 96,
+    "key": "Am",
+    "mood": "melancholic",
+    "events": [
+      {
+        "tick": 0,
+        "note": 2,
+        "duration": 4,
+        "velocity": 97
+      },
+      {
+        "tick": 4,
+        "note": 6,
+        "duration": 4,
+        "velocity": 61
+      },
+      {
+        "tick": 8,
+        "note": 1,
+        "duration": 4,
+        "velocity": 64
+      },
+      {
+        "tick": 12,
+        "note": 7,
+        "duration": 4,
+        "velocity": 63
+      },
+      {
+        "tick": 16,
+        "note": 1,
+        "duration": 4,
+        "velocity": 98
+      },
+      {
+        "tick": 20,
+        "note": 4,
+        "duration": 4,
+        "velocity": 62
+      },
+      {
+        "tick": 24,
+        "note": 2,
+        "duration": 4,
+        "velocity": 80
+      },
+      {
+        "tick": 28,
+        "note": 2,
+        "duration": 4,
+        "velocity": 84
+      },
+      {
+        "tick": 32,
+        "note": 7,
+        "duration": 4,
+        "velocity": 86
+      },
+      {
+        "tick": 36,
+        "note": 4,
+        "duration": 4,
+        "velocity": 65
+      },
+      {
+        "tick": 40,
+        "note": 5,
+        "duration": 4,
+        "velocity": 66
+      },
+      {
+        "tick": 44,
+        "note": 6,
+        "duration": 4,
+        "velocity": 90
+      },
+      {
+        "tick": 48,
+        "note": 1,
+        "duration": 4,
+        "velocity": 74
+      },
+      {
+        "tick": 52,
+        "note": 0,
+        "duration": 4,
+        "velocity": 68
+      },
+      {
+        "tick": 56,
+        "note": 4,
+        "duration": 4,
+        "velocity": 89
+      },
+      {
+        "tick": 60,
+        "note": 7,
+        "duration": 4,
+        "velocity": 65
+      }
+    ]
+  },
+  "boss": {
+    "version": "0.1.0",
+    "bpm": 128,
+    "key": "Em",
+    "mood": "tense",
+    "events": [
+      {
+        "tick": 0,
+        "note": 5,
+        "duration": 4,
+        "velocity": 82
+      },
+      {
+        "tick": 4,
+        "note": 0,
+        "duration": 4,
+        "velocity": 88
+      },
+      {
+        "tick": 8,
+        "note": 3,
+        "duration": 4,
+        "velocity": 93
+      },
+      {
+        "tick": 12,
+        "note": 1,
+        "duration": 4,
+        "velocity": 62
+      },
+      {
+        "tick": 16,
+        "note": 1,
+        "duration": 4,
+        "velocity": 79
+      },
+      {
+        "tick": 20,
+        "note": 3,
+        "duration": 4,
+        "velocity": 77
+      },
+      {
+        "tick": 24,
+        "note": 4,
+        "duration": 4,
+        "velocity": 66
+      },
+      {
+        "tick": 28,
+        "note": 6,
+        "duration": 4,
+        "velocity": 88
+      },
+      {
+        "tick": 32,
+        "note": 2,
+        "duration": 4,
+        "velocity": 60
+      },
+      {
+        "tick": 36,
+        "note": 7,
+        "duration": 4,
+        "velocity": 70
+      },
+      {
+        "tick": 40,
+        "note": 6,
+        "duration": 4,
+        "velocity": 89
+      },
+      {
+        "tick": 44,
+        "note": 2,
+        "duration": 4,
+        "velocity": 66
+      },
+      {
+        "tick": 48,
+        "note": 1,
+        "duration": 4,
+        "velocity": 97
+      },
+      {
+        "tick": 52,
+        "note": 1,
+        "duration": 4,
+        "velocity": 72
+      },
+      {
+        "tick": 56,
+        "note": 0,
+        "duration": 4,
+        "velocity": 93
+      },
+      {
+        "tick": 60,
+        "note": 7,
+        "duration": 4,
+        "velocity": 71
+      }
+    ]
+  }
+}

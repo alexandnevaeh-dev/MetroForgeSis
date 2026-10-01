@@ -1,0 +1,65 @@
+{
+  "hit_spark": {
+    "frameCount": 10,
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "fps": 24,
+    "loop": false
+  },
+  "death_puff": {
+    "frameCount": 10,
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "fps": 24,
+    "loop": false
+  },
+  "dash_trail": {
+    "frameCount": 10,
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "fps": 24,
+    "loop": false
+  },
+  "pickup_spark": {
+    "frameCount": 10,
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "fps": 24,
+    "loop": false
+  },
+  "ability_unlock": {
+    "frameCount": 10,
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "fps": 24,
+    "loop": false
+  },
+  "boss_phase_shift": {
+    "frameCount": 10,
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "fps": 24,
+    "loop": false
+  },
+  "area_burst": {
+    "frameCount": 10,
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "fps": 24,
+    "loop": false
+  },
+  "slam_shock": {
+    "frameCount": 10,
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "fps": 24,
+    "loop": false
+  },
+  "attack_warning": {
+    "frameCount": 10,
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "fps": 24,
+    "loop": false
+  }
+}

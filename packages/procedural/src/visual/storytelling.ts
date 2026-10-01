@@ -1,5 +1,6 @@
 import type { BiomeVisualDNA, StorytellingDirective, VisualDNA } from '@metroforge/schemas';
 import { SeededRNG } from '../rng.js';
+import { propAllowedInBiome } from './biome-consistency.js';
 
 const BEATS: Array<{ title: string; description: string; props: string[]; archetypes: string[] }> = [
   {
@@ -64,9 +65,13 @@ export function generateRoomStorytelling(input: {
   const rng = new SeededRNG((input.seed + input.index * 9973 + hash(input.roomId)) >>> 0 || 1);
   const matching = BEATS.filter((b) => b.archetypes.includes(input.archetype));
   const beat = (matching.length > 0 ? matching : BEATS)[rng.int(0, Math.max(0, (matching.length > 0 ? matching : BEATS).length - 1))]!;
-  const propIds = beat.props
-    .map((name) => input.kitPropIds.find((id) => id.toLowerCase().includes(name.split(' ')[0]!.toLowerCase())) ?? input.kitPropIds[rng.int(0, Math.max(0, input.kitPropIds.length - 1))])
-    .filter((id): id is string => Boolean(id))
+  const allowedBeatProps = beat.props.filter((name) => propAllowedInBiome(name, input.biome));
+  const beatPropSource = allowedBeatProps.length > 0 ? allowedBeatProps : beat.props.filter((name) => propAllowedInBiome(name.split(' ')[0] ?? name, input.biome));
+  const kitAllowed = input.kitPropIds.filter((id) => propAllowedInBiome(id, input.biome));
+  const kitPool = kitAllowed.length > 0 ? kitAllowed : input.kitPropIds;
+  const propIds = (beatPropSource.length > 0 ? beatPropSource : ['debris'])
+    .map((name) => kitPool.find((id) => id.toLowerCase().includes(name.split(' ')[0]!.toLowerCase())) ?? kitPool[rng.int(0, Math.max(0, kitPool.length - 1))])
+    .filter((id): id is string => Boolean(id) && propAllowedInBiome(id, input.biome))
     .slice(0, 3);
   const uniqueProps = [...new Set(propIds)];
   return {

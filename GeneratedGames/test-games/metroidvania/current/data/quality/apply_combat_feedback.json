@@ -1,0 +1,8 @@
+{
+  "kind": "APPLY_COMBAT_FEEDBACK",
+  "hitstopMs": 36,
+  "flashMs": 60,
+  "vfxScale": 1.1,
+  "shakeEnabledDefault": true,
+  "flashEnabledDefault": true
+}

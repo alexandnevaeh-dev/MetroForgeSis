@@ -1,0 +1,179 @@
+[gd_scene load_steps=13 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/player/Player.tscn" id="1_player"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/Enemy.tscn" id="2_enemy"]
+[ext_resource type="PackedScene" path="res://scenes/bosses/Boss.tscn" id="3_boss"]
+[ext_resource type="PackedScene" path="res://scenes/world/AbilityPickup.tscn" id="4_pickup"]
+[ext_resource type="PackedScene" path="res://scenes/world/RoomTransition.tscn" id="5_transition"]
+[ext_resource type="Script" path="res://scripts/world/RoomTileMap.gd" id="6_tilemap"]
+
+[sub_resource type="RectangleShape2D" id="floor_shape"]
+size = Vector2(1152, 64)
+[sub_resource type="RectangleShape2D" id="platform_0_shape"]
+size = Vector2(160, 32)
+
+[sub_resource type="RectangleShape2D" id="platform_1_shape"]
+size = Vector2(96, 32)
+
+[sub_resource type="RectangleShape2D" id="shell_0_shape"]
+size = Vector2(32, 448)
+
+[sub_resource type="RectangleShape2D" id="shell_1_shape"]
+size = Vector2(32, 448)
+
+[sub_resource type="RectangleShape2D" id="shell_2_shape"]
+size = Vector2(1152, 32)
+
+
+[node name="room_024" type="Node2D"]
+
+[node name="Ground" type="TileMapLayer" parent="."]
+z_index = 0
+texture_filter = 0
+script = ExtResource("6_tilemap")
+biome_id = "biome_0"
+room_width = 1152
+room_height = 640
+tile_size = 32
+room_archetype = "combat"
+painted_cells_json = "[[0,0,1,3],[1,0,1,3],[34,0,1,3],[35,0,5,0],[4,15,0,2],[5,15,3,3],[6,15,3,4],[7,15,2,2],[8,15,1,2],[25,15,0,2],[26,15,3,0],[27,15,1,2],[4,16,0,3],[8,16,7,0],[25,16,0,3],[27,16,0,3],[31,16,0,1],[4,17,1,3],[31,17,1,3],[0,18,0,1],[1,18,0,4],[2,18,4,3],[3,18,4,4],[4,18,4,3],[5,18,4,4],[6,18,0,0],[7,18,0,4],[8,18,4,3],[9,18,4,4],[10,18,0,0],[11,18,0,3],[12,18,6,0],[13,18,0,4],[14,18,4,3],[15,18,4,4],[16,18,4,3],[17,18,0,3],[18,18,6,0],[19,18,0,4],[20,18,4,3],[21,18,4,4],[22,18,0,0],[23,18,0,3],[24,18,6,0],[25,18,0,4],[26,18,4,3],[27,18,4,4],[28,18,4,4],[29,18,0,3],[30,18,6,0],[31,18,0,4],[32,18,4,3],[33,18,4,4],[34,18,0,0],[35,18,1,1],[0,19,2,1],[1,19,0,4],[2,19,4,3],[3,19,4,4],[4,19,4,4],[5,19,0,3],[6,19,0,3],[7,19,0,4],[8,19,4,3],[9,19,4,4],[10,19,0,0],[11,19,0,3],[12,19,6,0],[13,19,0,4],[14,19,4,3],[15,19,4,4],[16,19,4,3],[17,19,0,3],[18,19,6,0],[19,19,0,4],[20,19,4,3],[21,19,4,4],[22,19,0,0],[23,19,0,3],[24,19,6,0],[25,19,0,4],[26,19,4,3],[27,19,4,4],[28,19,4,3],[29,19,0,3],[30,19,6,0],[31,19,0,4],[32,19,4,3],[33,19,4,4],[34,19,0,0],[35,19,3,1]]"
+authored_cells = true
+
+[node name="Background" type="ColorRect" parent="."]
+z_index = -20
+z_as_relative = false
+visible = true
+offset_left = -240.0
+offset_top = -180.0
+offset_right = 1392.0
+offset_bottom = 820.0
+mouse_filter = 2
+color = Color(0.080, 0.120, 0.160, 1)
+
+[node name="Floor" type="StaticBody2D" parent="."]
+position = Vector2(576, 608)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Floor"]
+shape = SubResource("floor_shape")
+
+[node name="FloorVisual" type="ColorRect" parent="Floor"]
+visible = false
+offset_left = -576.0
+offset_top = -32.0
+offset_right = 576.0
+offset_bottom = 32.0
+color = Color(0.3, 0.32, 0.38, 0)
+
+[node name="Platform_0" type="StaticBody2D" parent="."]
+position = Vector2(208, 496)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platform_0"]
+shape = SubResource("platform_0_shape")
+
+[node name="Platform_1" type="StaticBody2D" parent="."]
+position = Vector2(848, 496)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platform_1"]
+shape = SubResource("platform_1_shape")
+
+[node name="ShellLeftUpper" type="StaticBody2D" parent="."]
+position = Vector2(16, 224)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ShellLeftUpper"]
+shape = SubResource("shell_0_shape")
+
+[node name="ShellRightUpper" type="StaticBody2D" parent="."]
+position = Vector2(1136, 224)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ShellRightUpper"]
+shape = SubResource("shell_1_shape")
+
+[node name="ShellCeiling" type="StaticBody2D" parent="."]
+position = Vector2(576, 16)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ShellCeiling"]
+shape = SubResource("shell_2_shape")
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+position = Vector2(100, 576)
+metadata/metroforge_room_id = "room_024"
+metadata/metroforge_entity_kind = "player_spawn"
+metadata/metroforge_entity_id = "player"
+
+[node name="Enemy" parent="." instance=ExtResource("2_enemy")]
+position = Vector2(326, 576)
+metadata/metroforge_room_id = "room_024"
+metadata/metroforge_entity_kind = "enemy"
+metadata/metroforge_entity_id = "room_024_enemy_00"
+enemy_id = "enemy_004"
+
+[node name="Sprite" parent="Enemy"]
+sheet_path = "assets/enemies/enemy_004_walk.png"
+run_sheet_path = "assets/enemies/enemy_004_run.png"
+frame_size = Vector2i(64, 64)
+frame_count = 4
+hurt_sheet_path = "assets/enemies/enemy_004_hurt.png"
+death_sheet_path = "assets/enemies/enemy_004_death.png"
+attack_sheet_path = "assets/enemies/enemy_004_attack.png"
+
+[node name="Enemy_1" parent="." instance=ExtResource("2_enemy")]
+position = Vector2(208, 480)
+metadata/metroforge_room_id = "room_024"
+metadata/metroforge_entity_kind = "enemy"
+metadata/metroforge_entity_id = "room_024_enemy_01"
+enemy_id = "enemy_006"
+
+[node name="Sprite" parent="Enemy_1"]
+sheet_path = "assets/enemies/enemy_006_walk.png"
+run_sheet_path = "assets/enemies/enemy_006_run.png"
+frame_size = Vector2i(64, 64)
+frame_count = 4
+hurt_sheet_path = "assets/enemies/enemy_006_hurt.png"
+death_sheet_path = "assets/enemies/enemy_006_death.png"
+attack_sheet_path = "assets/enemies/enemy_006_attack.png"
+
+[node name="Enemy_2" parent="." instance=ExtResource("2_enemy")]
+position = Vector2(659, 576)
+metadata/metroforge_room_id = "room_024"
+metadata/metroforge_entity_kind = "enemy"
+metadata/metroforge_entity_id = "room_024_enemy_02"
+enemy_id = "enemy_008"
+
+[node name="Sprite" parent="Enemy_2"]
+sheet_path = "assets/enemies/enemy_008_walk.png"
+run_sheet_path = "assets/enemies/enemy_008_run.png"
+frame_size = Vector2i(64, 64)
+frame_count = 4
+hurt_sheet_path = "assets/enemies/enemy_008_hurt.png"
+death_sheet_path = "assets/enemies/enemy_008_death.png"
+attack_sheet_path = "assets/enemies/enemy_008_attack.png"
+
+[node name="Enemy_3" parent="." instance=ExtResource("2_enemy")]
+position = Vector2(848, 480)
+metadata/metroforge_room_id = "room_024"
+metadata/metroforge_entity_kind = "enemy"
+metadata/metroforge_entity_id = "room_024_enemy_03"
+enemy_id = "enemy_010"
+
+[node name="Sprite" parent="Enemy_3"]
+sheet_path = "assets/enemies/enemy_010_walk.png"
+run_sheet_path = "assets/enemies/enemy_010_run.png"
+frame_size = Vector2i(64, 64)
+frame_count = 4
+hurt_sheet_path = "assets/enemies/enemy_010_hurt.png"
+death_sheet_path = "assets/enemies/enemy_010_death.png"
+attack_sheet_path = "assets/enemies/enemy_010_attack.png"
+
+[node name="Transition_left_room_023" parent="." instance=ExtResource("5_transition")]
+position = Vector2(48, 544)
+target_room_id = "room_023"
+spawn_side = "right"
+transition_direction = "left"
+is_optional = false
+
+[node name="Transition_right_room_025" parent="." instance=ExtResource("5_transition")]
+position = Vector2(1080, 544)
+target_room_id = "room_025"
+spawn_side = "left"
+transition_direction = "right"
+is_optional = false

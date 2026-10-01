@@ -26,6 +26,7 @@ function samplePng() {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
 });
 
 describe('NvidiaVisionCritic — configuration', () => {
@@ -35,6 +36,7 @@ describe('NvidiaVisionCritic — configuration', () => {
   });
 
   it('is unavailable without an API key', async () => {
+    vi.stubEnv('NVIDIA_API_KEY', '');
     const fetchSpy = vi.fn();
     vi.stubGlobal('fetch', fetchSpy);
     const critic = new NvidiaVisionCritic({ apiKey: undefined });
@@ -63,6 +65,7 @@ describe('NvidiaVisionCritic — availability', () => {
 
 describe('NvidiaVisionCritic — critique', () => {
   it('falls back to deterministic critique without a key', async () => {
+    vi.stubEnv('NVIDIA_API_KEY', '');
     const fetchSpy = vi.fn();
     vi.stubGlobal('fetch', fetchSpy);
     const critic = new NvidiaVisionCritic({ apiKey: undefined });

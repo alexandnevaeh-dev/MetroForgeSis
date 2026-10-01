@@ -1,0 +1,767 @@
+{
+  "dialogues": [
+    {
+      "id": "quest_000_offer",
+      "lines": [
+        {
+          "speaker": "Quest Giver",
+          "text": "I need help with \"Awakening\".",
+          "portrait": "quest_giver"
+        },
+        {
+          "text": "Complete objective 1 in Stormglass Reliquary - Side-view Test."
+        },
+        {
+          "text": "Will you take this on?",
+          "choices": [
+            {
+              "text": "Yes, I will help.",
+              "end": true,
+              "action": "accept_quest"
+            },
+            {
+              "text": "Not right now.",
+              "nextDialogueId": "quest_000_decline"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quest_000_decline",
+      "lines": [
+        {
+          "text": "Come back when you are ready.",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_000_active",
+      "lines": [
+        {
+          "text": "Any progress on \"Awakening\" yet?",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_000_complete",
+      "lines": [
+        {
+          "text": "Thank you for finishing \"Awakening\".",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_001_offer",
+      "lines": [
+        {
+          "speaker": "Quest Giver",
+          "text": "I need help with \"Trial 2\".",
+          "portrait": "quest_giver"
+        },
+        {
+          "text": "Complete objective 2 in Stormglass Reliquary - Side-view Test."
+        },
+        {
+          "text": "Will you take this on?",
+          "choices": [
+            {
+              "text": "Yes, I will help.",
+              "end": true,
+              "action": "accept_quest"
+            },
+            {
+              "text": "Not right now.",
+              "nextDialogueId": "quest_001_decline"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quest_001_decline",
+      "lines": [
+        {
+          "text": "Come back when you are ready.",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_001_active",
+      "lines": [
+        {
+          "text": "Any progress on \"Trial 2\" yet?",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_001_complete",
+      "lines": [
+        {
+          "text": "Thank you for finishing \"Trial 2\".",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_002_offer",
+      "lines": [
+        {
+          "speaker": "Quest Giver",
+          "text": "I need help with \"Trial 3\".",
+          "portrait": "quest_giver"
+        },
+        {
+          "text": "Complete objective 3 in Stormglass Reliquary - Side-view Test."
+        },
+        {
+          "text": "Will you take this on?",
+          "choices": [
+            {
+              "text": "Yes, I will help.",
+              "end": true,
+              "action": "accept_quest"
+            },
+            {
+              "text": "Not right now.",
+              "nextDialogueId": "quest_002_decline"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quest_002_decline",
+      "lines": [
+        {
+          "text": "Come back when you are ready.",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_002_active",
+      "lines": [
+        {
+          "text": "Any progress on \"Trial 3\" yet?",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_002_complete",
+      "lines": [
+        {
+          "text": "Thank you for finishing \"Trial 3\".",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_003_offer",
+      "lines": [
+        {
+          "speaker": "Quest Giver",
+          "text": "I need help with \"Trial 4\".",
+          "portrait": "quest_giver"
+        },
+        {
+          "text": "Complete objective 4 in Stormglass Reliquary - Side-view Test."
+        },
+        {
+          "text": "Will you take this on?",
+          "choices": [
+            {
+              "text": "Yes, I will help.",
+              "end": true,
+              "action": "accept_quest"
+            },
+            {
+              "text": "Not right now.",
+              "nextDialogueId": "quest_003_decline"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quest_003_decline",
+      "lines": [
+        {
+          "text": "Come back when you are ready.",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_003_active",
+      "lines": [
+        {
+          "text": "Any progress on \"Trial 4\" yet?",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_003_complete",
+      "lines": [
+        {
+          "text": "Thank you for finishing \"Trial 4\".",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_004_offer",
+      "lines": [
+        {
+          "speaker": "Quest Giver",
+          "text": "I need help with \"Trial 5\".",
+          "portrait": "quest_giver"
+        },
+        {
+          "text": "Complete objective 5 in Stormglass Reliquary - Side-view Test."
+        },
+        {
+          "text": "Will you take this on?",
+          "choices": [
+            {
+              "text": "Yes, I will help.",
+              "end": true,
+              "action": "accept_quest"
+            },
+            {
+              "text": "Not right now.",
+              "nextDialogueId": "quest_004_decline"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quest_004_decline",
+      "lines": [
+        {
+          "text": "Come back when you are ready.",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_004_active",
+      "lines": [
+        {
+          "text": "Any progress on \"Trial 5\" yet?",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_004_complete",
+      "lines": [
+        {
+          "text": "Thank you for finishing \"Trial 5\".",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_005_offer",
+      "lines": [
+        {
+          "speaker": "Quest Giver",
+          "text": "I need help with \"Trial 6\".",
+          "portrait": "quest_giver"
+        },
+        {
+          "text": "Complete objective 6 in Stormglass Reliquary - Side-view Test."
+        },
+        {
+          "text": "Will you take this on?",
+          "choices": [
+            {
+              "text": "Yes, I will help.",
+              "end": true,
+              "action": "accept_quest"
+            },
+            {
+              "text": "Not right now.",
+              "nextDialogueId": "quest_005_decline"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quest_005_decline",
+      "lines": [
+        {
+          "text": "Come back when you are ready.",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_005_active",
+      "lines": [
+        {
+          "text": "Any progress on \"Trial 6\" yet?",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_005_complete",
+      "lines": [
+        {
+          "text": "Thank you for finishing \"Trial 6\".",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_006_offer",
+      "lines": [
+        {
+          "speaker": "Quest Giver",
+          "text": "I need help with \"Trial 7\".",
+          "portrait": "quest_giver"
+        },
+        {
+          "text": "Complete objective 7 in Stormglass Reliquary - Side-view Test."
+        },
+        {
+          "text": "Will you take this on?",
+          "choices": [
+            {
+              "text": "Yes, I will help.",
+              "end": true,
+              "action": "accept_quest"
+            },
+            {
+              "text": "Not right now.",
+              "nextDialogueId": "quest_006_decline"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quest_006_decline",
+      "lines": [
+        {
+          "text": "Come back when you are ready.",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_006_active",
+      "lines": [
+        {
+          "text": "Any progress on \"Trial 7\" yet?",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_006_complete",
+      "lines": [
+        {
+          "text": "Thank you for finishing \"Trial 7\".",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_007_offer",
+      "lines": [
+        {
+          "speaker": "Quest Giver",
+          "text": "I need help with \"Trial 8\".",
+          "portrait": "quest_giver"
+        },
+        {
+          "text": "Complete objective 8 in Stormglass Reliquary - Side-view Test."
+        },
+        {
+          "text": "Will you take this on?",
+          "choices": [
+            {
+              "text": "Yes, I will help.",
+              "end": true,
+              "action": "accept_quest"
+            },
+            {
+              "text": "Not right now.",
+              "nextDialogueId": "quest_007_decline"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quest_007_decline",
+      "lines": [
+        {
+          "text": "Come back when you are ready.",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_007_active",
+      "lines": [
+        {
+          "text": "Any progress on \"Trial 8\" yet?",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_007_complete",
+      "lines": [
+        {
+          "text": "Thank you for finishing \"Trial 8\".",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_008_offer",
+      "lines": [
+        {
+          "speaker": "Quest Giver",
+          "text": "I need help with \"Trial 9\".",
+          "portrait": "quest_giver"
+        },
+        {
+          "text": "Complete objective 9 in Stormglass Reliquary - Side-view Test."
+        },
+        {
+          "text": "Will you take this on?",
+          "choices": [
+            {
+              "id": "quest_008_accept",
+              "text": "Yes, I will help.",
+              "end": true,
+              "action": "accept_quest"
+            },
+            {
+              "text": "Not right now.",
+              "nextDialogueId": "quest_008_decline"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quest_008_decline",
+      "lines": [
+        {
+          "text": "Come back when you are ready.",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_008_active",
+      "lines": [
+        {
+          "text": "Any progress on \"Trial 9\" yet?",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_008_complete",
+      "lines": [
+        {
+          "text": "Thank you for finishing \"Trial 9\".",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_009_offer",
+      "lines": [
+        {
+          "speaker": "Quest Giver",
+          "text": "I need help with \"Trial 10\".",
+          "portrait": "quest_giver"
+        },
+        {
+          "text": "Complete objective 10 in Stormglass Reliquary - Side-view Test."
+        },
+        {
+          "text": "Will you take this on?",
+          "choices": [
+            {
+              "text": "Yes, I will help.",
+              "end": true,
+              "action": "accept_quest"
+            },
+            {
+              "text": "Not right now.",
+              "nextDialogueId": "quest_009_decline"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quest_009_decline",
+      "lines": [
+        {
+          "text": "Come back when you are ready.",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_009_active",
+      "lines": [
+        {
+          "text": "Any progress on \"Trial 10\" yet?",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "quest_009_complete",
+      "lines": [
+        {
+          "text": "Thank you for finishing \"Trial 10\".",
+          "portrait": "quest_giver"
+        }
+      ]
+    },
+    {
+      "id": "dlg_npc_001_greet",
+      "lines": [
+        {
+          "text": "Welcome, traveler.",
+          "portrait": "merchant"
+        },
+        {
+          "text": "Looking to trade scrap for supplies?",
+          "choices": [
+            {
+              "text": "Show me your wares.",
+              "end": true,
+              "action": "open_shop"
+            },
+            {
+              "text": "Maybe later.",
+              "nextDialogueId": "dlg_npc_001_later"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dlg_npc_001_later",
+      "lines": [
+        {
+          "text": "Safe travels.",
+          "portrait": "merchant"
+        }
+      ]
+    },
+    {
+      "id": "dlg_npc_002_lore",
+      "lines": [
+        {
+          "text": "These halls remember Stormglass Reliquary - Side-view Test.",
+          "portrait": "lore"
+        },
+        {
+          "text": "What would you like to know?",
+          "choices": [
+            {
+              "text": "Tell me about the conflict.",
+              "nextDialogueId": "dlg_npc_002_conflict"
+            },
+            {
+              "text": "Any advice?",
+              "nextDialogueId": "dlg_npc_002_advice"
+            },
+            {
+              "text": "Farewell.",
+              "end": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dlg_npc_002_conflict",
+      "lines": [
+        {
+          "text": "Restore the weather seals before the reliquary is swallowed by the permanent storm",
+          "portrait": "lore"
+        },
+        {
+          "text": "Tread carefully.",
+          "portrait": "lore"
+        }
+      ]
+    },
+    {
+      "id": "dlg_npc_002_advice",
+      "lines": [
+        {
+          "text": "Upgrade your abilities before facing the final boss.",
+          "portrait": "lore"
+        }
+      ]
+    },
+    {
+      "id": "dlg_npc_003_neutral",
+      "lines": [
+        {
+          "text": "Stay safe out there.",
+          "portrait": "neutral"
+        },
+        {
+          "text": "Need directions?",
+          "choices": [
+            {
+              "text": "Where is the boss?",
+              "nextDialogueId": "dlg_npc_003_boss_hint"
+            },
+            {
+              "text": "Thanks.",
+              "end": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dlg_npc_003_boss_hint",
+      "lines": [
+        {
+          "text": "The final chamber lies at the far end of the world.",
+          "portrait": "neutral"
+        }
+      ]
+    },
+    {
+      "id": "dlg_npc_005_greet",
+      "lines": [
+        {
+          "text": "Welcome, traveler.",
+          "portrait": "merchant"
+        },
+        {
+          "text": "Looking to trade scrap for supplies?",
+          "choices": [
+            {
+              "text": "Show me your wares.",
+              "end": true,
+              "action": "open_shop"
+            },
+            {
+              "text": "Maybe later.",
+              "nextDialogueId": "dlg_npc_005_later"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dlg_npc_005_later",
+      "lines": [
+        {
+          "text": "Safe travels.",
+          "portrait": "merchant"
+        }
+      ]
+    },
+    {
+      "id": "dlg_npc_006_lore",
+      "lines": [
+        {
+          "text": "These halls remember Stormglass Reliquary - Side-view Test.",
+          "portrait": "lore"
+        },
+        {
+          "text": "What would you like to know?",
+          "choices": [
+            {
+              "text": "Tell me about the conflict.",
+              "nextDialogueId": "dlg_npc_006_conflict"
+            },
+            {
+              "text": "Any advice?",
+              "nextDialogueId": "dlg_npc_006_advice"
+            },
+            {
+              "text": "Farewell.",
+              "end": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dlg_npc_006_conflict",
+      "lines": [
+        {
+          "text": "Restore the weather seals before the reliquary is swallowed by the permanent storm",
+          "portrait": "lore"
+        },
+        {
+          "text": "Tread carefully.",
+          "portrait": "lore"
+        }
+      ]
+    },
+    {
+      "id": "dlg_npc_006_advice",
+      "lines": [
+        {
+          "text": "Upgrade your abilities before facing the final boss.",
+          "portrait": "lore"
+        }
+      ]
+    },
+    {
+      "id": "dlg_npc_007_neutral",
+      "lines": [
+        {
+          "text": "Stay safe out there.",
+          "portrait": "neutral"
+        },
+        {
+          "text": "Need directions?",
+          "choices": [
+            {
+              "text": "Where is the boss?",
+              "nextDialogueId": "dlg_npc_007_boss_hint"
+            },
+            {
+              "text": "Thanks.",
+              "end": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dlg_npc_007_boss_hint",
+      "lines": [
+        {
+          "text": "The final chamber lies at the far end of the world.",
+          "portrait": "neutral"
+        }
+      ]
+    }
+  ]
+}

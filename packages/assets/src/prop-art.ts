@@ -22,7 +22,8 @@ type PropShape =
   | 'debris'
   | 'ladle'
   | 'crucible'
-  | 'mold';
+  | 'mold'
+  | 'relic';
 
 function classifyFamily(family: string): PropShape {
   const f = family.toLowerCase();
@@ -36,7 +37,7 @@ function classifyFamily(family: string): PropShape {
   if (f.includes('lantern') || f.includes('light') || f.includes('lamp') || f.includes('worklamp')) return 'lantern';
   if (f.includes('shrine') || f.includes('statue') || f.includes('lectern') || f.includes('save')) return 'statue';
   if (f.includes('ability') || f.includes('crystal') || f.includes('altar')) return 'lantern';
-  if (f.includes('pickup') || f.includes('scrap') || f.includes('gem') || f.includes('item')) return 'gear';
+  if (f.includes('pickup') || f.includes('scrap') || f.includes('gem') || f.includes('item')) return 'relic';
   if (f.includes('chain') || f.includes('vine') || f.includes('root') || f.includes('moss')) return 'chain';
   return 'debris';
 }
@@ -119,6 +120,17 @@ function insideMold(nx: number, ny: number): boolean {
   const troughB = nx > 0.38 && nx < 0.62 && ny > 0.36 && ny < 0.78;
   const troughC = nx > 0.66 && nx < 0.9 && ny > 0.4 && ny < 0.78;
   return bed || troughA || troughB || troughC;
+}
+
+/** A faceted echo shard on a small reliquary stand. Its broad diamond silhouette stays readable
+ * at compact-room zoom without resembling a debug bar or a piece of collision geometry. */
+function insideRelic(nx: number, ny: number): boolean {
+  const shard = Math.abs(nx - 0.5) / 0.38 + Math.abs(ny - 0.4) / 0.3 <= 1;
+  const leftWing = nx > 0.08 && nx < 0.34 && ny > 0.34 && ny < 0.54 && nx + ny > 0.48;
+  const rightWing = nx > 0.66 && nx < 0.92 && ny > 0.34 && ny < 0.54 && nx - ny < 0.52;
+  const neck = ny > 0.67 && ny < 0.8 && nx > 0.4 && nx < 0.6;
+  const foot = ny >= 0.78 && ny < 0.93 && nx > 0.2 && nx < 0.8;
+  return shard || leftWing || rightWing || neck || foot;
 }
 
 /** Broken masonry / crate rubble: two or three overlapping irregular-ish blocks instead of one
@@ -293,6 +305,8 @@ function isSameShapePixel(shape: PropShape, nx: number, ny: number, seed: number
       return insideCrucible(nx, ny);
     case 'mold':
       return insideMold(nx, ny);
+    case 'relic':
+      return insideRelic(nx, ny);
     case 'debris':
     default:
       return insideDebris(nx, ny, seed);

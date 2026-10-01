@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { encodePng, decodePngRgba, generateProceduralSprite, generateWalkCycleSheet, generateRunCycleSheet, generateAttackSheet, generateHurtFlashSheet, generateVfxTexture, knockoutVfxBackground, generatePoseStill, POSE_TRANSFORMS, pickEnemyArchetype, computeFrameQualityMetrics, generateProgressionSheet, generateTilesetSource, partitionTilesetFeatures, TILESET_SUPPORTED_FEATURES, compileBossCombatSheets } from '../src/png.js';
+import { encodePng, decodePngRgba, generateProceduralSprite, generateWalkCycleSheet, generateRunCycleSheet, generateAttackSheet, generateHurtFlashSheet, generateVfxTexture, knockoutVfxBackground, generatePoseStill, POSE_TRANSFORMS, pickEnemyArchetype, computeFrameQualityMetrics, countLowerBodyBlobs, hasMultiLegSmear, generateTilesetSource, partitionTilesetFeatures, TILESET_SUPPORTED_FEATURES, compileBossCombatSheets, generateProgressionSheet } from '../src/png.js';
 import { PixelArtProcessor } from '../src/pixel-art-processor.js';
 import { runDeterministicAssetChecks } from '../src/vlm-critic.js';
 
@@ -604,6 +604,36 @@ describe('generateWalkCycleSheet identity', () => {
     const run = generateRunCycleSheet(spec, 4, still);
     expect(walk.equals(run)).toBe(false);
   });
+
+  it('rejects multi-leg ghost smear — walk frames keep ≤2 lower-body blobs', () => {
+    const spec = {
+      id: 'player',
+      width: 64,
+      height: 64,
+      fill: [90, 140, 220, 255] as [number, number, number, number],
+      shape: 'humanoid' as const,
+    };
+    const still = generateProceduralSprite(spec);
+    const walk = decodePngRgba(generateWalkCycleSheet(spec, 8, still));
+    const metrics = computeFrameQualityMetrics(walk.rgba, 64, 64, 8);
+    expect(metrics.multiLegSmear).toBe(false);
+    expect(metrics.maxLowerBodyBlobs).toBeLessThanOrEqual(2);
+    expect(hasMultiLegSmear(walk.rgba, 64, 64, 8)).toBe(false);
+    // Synthetic stacked-leg frame must trip the blob counter.
+    const ghost = new Uint8Array(64 * 64 * 4);
+    for (const x of [12, 28, 44]) {
+      for (let y = 40; y < 60; y++) {
+        for (let dx = 0; dx < 4; dx++) {
+          const i = (y * 64 + x + dx) * 4;
+          ghost[i] = 40;
+          ghost[i + 1] = 40;
+          ghost[i + 2] = 40;
+          ghost[i + 3] = 255;
+        }
+      }
+    }
+    expect(countLowerBodyBlobs(ghost, 64, 64)).toBeGreaterThan(2);
+  });
 });
 
 describe('generateRunCycleSheet', () => {
@@ -614,6 +644,28 @@ describe('generateRunCycleSheet', () => {
     fill: [90, 140, 220, 255] as [number, number, number, number],
     shape: 'humanoid' as const,
   };
+
+  it('keeps the procedural staff and cloak out of the legs and inside every 16-frame run canvas', () => {
+    for (const size of [32, 64]) {
+      const actor = { ...spec, width: size, height: size };
+      const sheet = decodePngRgba(generateRunCycleSheet(actor, 16));
+      const metrics = computeFrameQualityMetrics(sheet.rgba, size, size, 16);
+      expect(metrics.multiLegSmear).toBe(false);
+      expect(metrics.maxLowerBodyBlobs).toBeLessThanOrEqual(2);
+      expect(metrics.alphaBoundsConsistency).toBe(1);
+      expect(metrics.uniqueFrameRatio).toBeGreaterThanOrEqual(0.8);
+      expect(metrics.meanSilhouetteDelta).toBeGreaterThan(0);
+      expect(generateRunCycleSheet(actor, 16).equals(generateRunCycleSheet(actor, 16, generateProceduralSprite(actor)))).toBe(true);
+    }
+  });
+
+  it('does not impose the procedural player rig on unrelated imported artwork', () => {
+    const image = decodePngRgba(generateProceduralSprite(spec));
+    image.rgba[0] = 1; // Different source bytes, not the known authored procedural source.
+    const imported = encodePng(image.width, image.height, image.rgba);
+    expect(generateRunCycleSheet(spec, 16, imported).equals(
+      generateRunCycleSheet({ ...spec, id: 'imported_actor' }, 16, imported))).toBe(true);
+  });
 
   it('emits the requested frame count as a real horizontal strip', () => {
     const still = generateProceduralSprite(spec);
@@ -847,7 +899,7 @@ describe('generateTilesetSource biome style (fifteenth session)', () => {
     const decoded = decodePngRgba(withoutStyle);
     // Spot-check a ground pixel and a wall pixel against the original hardcoded formula.
     const rng = (n: number) => ((42 * 9301 + 49297 + n) % 233280) / 233280;
-    const groundN = rng(0 + 4 * 8); // tileX=0, tileY=4 (y=64 is ground band start at size=64)
+    const groundN = rng(0 + 2 * 8); // x=0, y=32 gives tileX=0, tileY=2 at size=64.
     const expectedGround = Math.floor(60 + groundN * 40);
     const i = (32 * 64 + 0) * 4; // y=32 is ground band (>= 64*0.5)
     expect(decoded.rgba[i]).toBe(expectedGround);

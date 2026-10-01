@@ -1,0 +1,154 @@
+[gd_scene load_steps=14 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/player/Player.tscn" id="1_player"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/Enemy.tscn" id="2_enemy"]
+[ext_resource type="PackedScene" path="res://scenes/bosses/Boss.tscn" id="3_boss"]
+[ext_resource type="PackedScene" path="res://scenes/world/AbilityPickup.tscn" id="4_pickup"]
+[ext_resource type="PackedScene" path="res://scenes/world/RoomTransition.tscn" id="5_transition"]
+[ext_resource type="PackedScene" path="res://scenes/world/SavePoint.tscn" id="8_savepoint"]
+[ext_resource type="PackedScene" path="res://scenes/world/NPC.tscn" id="9_npc"]
+[ext_resource type="Script" path="res://scripts/world/RoomTileMap.gd" id="6_tilemap"]
+
+[sub_resource type="RectangleShape2D" id="floor_shape"]
+size = Vector2(768, 64)
+[sub_resource type="RectangleShape2D" id="platform_0_shape"]
+size = Vector2(96, 32)
+
+[sub_resource type="RectangleShape2D" id="shell_0_shape"]
+size = Vector2(32, 256)
+
+[sub_resource type="RectangleShape2D" id="shell_1_shape"]
+size = Vector2(32, 256)
+
+[sub_resource type="RectangleShape2D" id="shell_2_shape"]
+size = Vector2(768, 32)
+
+
+[node name="room_016" type="Node2D"]
+
+[node name="Ground" type="TileMapLayer" parent="."]
+z_index = 0
+texture_filter = 0
+script = ExtResource("6_tilemap")
+biome_id = "biome_0"
+room_width = 768
+room_height = 448
+tile_size = 32
+room_archetype = "save"
+painted_cells_json = "[[0,0,4,4],[23,0,4,4],[4,9,0,1],[10,9,0,2],[11,9,3,0],[12,9,1,2],[4,10,4,0],[11,10,6,2],[12,10,7,2],[4,11,4,0],[0,12,0,1],[1,12,0,4],[2,12,4,3],[3,12,4,4],[4,12,4,4],[5,12,0,3],[6,12,0,3],[7,12,0,4],[8,12,4,3],[9,12,4,4],[10,12,4,3],[11,12,0,3],[12,12,0,3],[13,12,0,4],[14,12,4,3],[15,12,4,4],[16,12,0,0],[17,12,0,3],[18,12,0,3],[19,12,0,4],[20,12,4,3],[21,12,4,4],[22,12,0,3],[23,12,1,1],[0,13,2,1],[1,13,0,4],[2,13,4,3],[3,13,4,4],[4,13,0,4],[5,13,4,3],[6,13,4,4],[7,13,0,4],[8,13,4,3],[9,13,4,4],[10,13,4,4],[11,13,0,3],[12,13,0,3],[13,13,0,4],[14,13,4,3],[15,13,4,4],[16,13,0,0],[17,13,0,3],[18,13,0,3],[19,13,0,4],[20,13,4,3],[21,13,4,4],[22,13,0,3],[23,13,3,1]]"
+authored_cells = true
+
+[node name="Background" type="ColorRect" parent="."]
+z_index = -20
+z_as_relative = false
+visible = true
+offset_left = -240.0
+offset_top = -180.0
+offset_right = 1008.0
+offset_bottom = 628.0
+mouse_filter = 2
+color = Color(0.100, 0.120, 0.160, 1)
+
+[node name="Floor" type="StaticBody2D" parent="."]
+position = Vector2(384, 416)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Floor"]
+shape = SubResource("floor_shape")
+
+[node name="FloorVisual" type="ColorRect" parent="Floor"]
+visible = false
+offset_left = -384.0
+offset_top = -32.0
+offset_right = 384.0
+offset_bottom = 32.0
+color = Color(0.3, 0.32, 0.38, 0)
+
+[node name="Platform_0" type="StaticBody2D" parent="."]
+position = Vector2(368, 304)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platform_0"]
+shape = SubResource("platform_0_shape")
+
+[node name="ShellLeftUpper" type="StaticBody2D" parent="."]
+position = Vector2(16, 128)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ShellLeftUpper"]
+shape = SubResource("shell_0_shape")
+
+[node name="ShellRightUpper" type="StaticBody2D" parent="."]
+position = Vector2(752, 128)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ShellRightUpper"]
+shape = SubResource("shell_1_shape")
+
+[node name="ShellCeiling" type="StaticBody2D" parent="."]
+position = Vector2(384, 16)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ShellCeiling"]
+shape = SubResource("shell_2_shape")
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+position = Vector2(100, 384)
+metadata/metroforge_room_id = "room_016"
+metadata/metroforge_entity_kind = "player_spawn"
+metadata/metroforge_entity_id = "player"
+
+[node name="SavePoint" parent="." instance=ExtResource("8_savepoint")]
+position = Vector2(150, 384)
+metadata/metroforge_room_id = "room_016"
+metadata/metroforge_entity_kind = "checkpoint"
+metadata/metroforge_entity_id = "save_point"
+
+[node name="NPC_0" parent="." instance=ExtResource("9_npc")]
+position = Vector2(576, 384)
+metadata/metroforge_room_id = "room_016"
+metadata/metroforge_entity_kind = "npc"
+metadata/metroforge_entity_id = "npc_001"
+npc_id = "npc_001"
+npc_name = "Tessa Vane"
+role = "merchant"
+shop_id = "shop_npc_001"
+
+[node name="Sprite" parent="NPC_0"]
+sheet_path = "assets/npcs/npc_001_walk.png"
+extra_animation_sheets = {
+"idle": "assets/npcs/npc_001_idle.png",
+"talk": "assets/npcs/npc_001_talk.png",
+"listen": "assets/npcs/npc_001_listen.png"
+}
+frame_size = Vector2i(64, 64)
+frame_count = 4
+
+[node name="NPC_1" parent="." instance=ExtResource("9_npc")]
+position = Vector2(516, 384)
+metadata/metroforge_room_id = "room_016"
+metadata/metroforge_entity_kind = "npc"
+metadata/metroforge_entity_id = "npc_005"
+npc_id = "npc_005"
+npc_name = "Tessa Vane"
+role = "merchant"
+shop_id = "shop_npc_005"
+
+[node name="Sprite" parent="NPC_1"]
+sheet_path = "assets/npcs/npc_005_walk.png"
+extra_animation_sheets = {
+"idle": "assets/npcs/npc_005_idle.png",
+"talk": "assets/npcs/npc_005_talk.png",
+"listen": "assets/npcs/npc_005_listen.png"
+}
+frame_size = Vector2i(64, 64)
+frame_count = 4
+
+[node name="Transition_left_room_015" parent="." instance=ExtResource("5_transition")]
+position = Vector2(48, 352)
+target_room_id = "room_015"
+spawn_side = "right"
+transition_direction = "left"
+is_optional = false
+
+[node name="Transition_right_room_018" parent="." instance=ExtResource("5_transition")]
+position = Vector2(696, 352)
+target_room_id = "room_018"
+spawn_side = "left"
+transition_direction = "right"
+is_optional = false

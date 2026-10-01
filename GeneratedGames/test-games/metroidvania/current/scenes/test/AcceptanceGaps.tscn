@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://acceptance_gaps"]
+
+[ext_resource type="Script" path="res://scripts/test/AcceptanceGaps.gd" id="1_gaps"]
+
+[node name="WorldAcceptanceGaps" type="Node"]
+script = ExtResource("1_gaps")
