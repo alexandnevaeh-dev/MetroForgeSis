@@ -128,6 +128,7 @@ Version saves. Separate profile blueprints/loadouts/lore from run seed, simulati
 - [x] Native live actor controller for Skitter, Wraith, Driller and Golem: telegraphs, active/recovery timing, material collision, damage, hit/death state, bounded terrain pulses and shared projectile capacity in an integrated objective route.
 - [ ] Three enemy families and Golem with original complete reviewed animation sets and timings above.
 - [ ] Original coherent terrain, interior backgrounds, effects, audio and HUD.
+- [x] Local CUDA pixel-style adapter, pinned weight integrity, actual foreground isolation and native static alpha-anchor review. [Evidence and visual limits](QUANTUM_ART_PIPELINE.md).
 - [x] Durable versioned profile/suspend files, safe recovery, death/restart and extraction ending in the compact native encounter.
 - [ ] Station programming preview and chunk-scale saves.
 - [x] Native full-biome objective, defeated-core and extraction flow with a living player.

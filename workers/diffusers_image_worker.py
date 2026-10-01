@@ -430,9 +430,54 @@ def _move_pipe(pipe, device: str = "cpu"):
     return pipe
 
 
-def get_pipeline(model_id: str, device: str = "cpu", local_files_only: bool = False):
+def _local_style_adapter(value):
+    """Admit an explicit local safetensors adapter; never fetch or silently substitute one."""
+    if value is None:
+        return None
+    import math
+    if not isinstance(value, dict) or set(value) != {"path", "sha256", "scale"}:
+        raise ValueError("LOCAL_STYLE_ADAPTER_INVALID_FIELDS")
+    if not isinstance(value["path"], str) or not isinstance(value["sha256"], str):
+        raise ValueError("LOCAL_STYLE_ADAPTER_INVALID_PATH_OR_HASH")
+    path = Path(value["path"])
+    expected = value["sha256"]
+    scale = value["scale"]
+    if not path.is_absolute() or path.suffix.lower() != ".safetensors":
+        raise ValueError("LOCAL_STYLE_ADAPTER_INVALID_PATH")
+    path = path.resolve()
+    if os.name == "nt" and path.drive.lower() != "e:":
+        raise ValueError("LOCAL_STYLE_ADAPTER_MUST_STAY_ON_E")
+    if len(expected) != 64 or any(character not in "0123456789abcdef" for character in expected):
+        raise ValueError("LOCAL_STYLE_ADAPTER_INVALID_HASH")
+    if type(scale) not in (float, int) or not math.isfinite(scale) or not 0 < scale <= 2:
+        raise ValueError("LOCAL_STYLE_ADAPTER_INVALID_SCALE")
+    if not path.is_file() or not 0 < path.stat().st_size <= 256 * 1024 * 1024:
+        raise ValueError("LOCAL_STYLE_ADAPTER_MISSING_OR_TOO_LARGE")
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(chunk)
+    if digest.hexdigest() != expected:
+        raise ValueError("LOCAL_STYLE_ADAPTER_HASH_MISMATCH")
+    return {"path": str(path), "sha256": expected, "scale": float(scale)}
+
+
+def _style_key(style):
+    return (style["path"], style["sha256"], style["scale"]) if style else None
+
+
+def _apply_local_style(pipe, style):
+    if style:
+        path = Path(style["path"])
+        pipe.load_lora_weights(str(path.parent), weight_name=path.name,
+                               adapter_name="metroforge_style", local_files_only=True)
+        pipe.set_adapters("metroforge_style", adapter_weights=style["scale"])
+    return pipe
+
+
+def get_pipeline(model_id: str, device: str = "cpu", local_files_only: bool = False, style=None):
     global _pipeline, _pipeline_key
-    key = (model_id, device, _offload_strategy(device))
+    key = (model_id, device, _offload_strategy(device), _style_key(style))
     if _pipeline is not None and _pipeline_key == key:
         return _pipeline
     _pipeline = None
@@ -450,7 +495,7 @@ def get_pipeline(model_id: str, device: str = "cpu", local_files_only: bool = Fa
         local_files_only=local_files_only,
         **load_options,
     )
-    _pipeline = _move_pipe(pipe, device)
+    _pipeline = _move_pipe(_apply_local_style(pipe, style), device)
     _pipeline_key = key
     return _pipeline
 
@@ -651,9 +696,9 @@ def _generate_openvino_image(req: dict[str, Any], full_prompt: str, width: int, 
     }
 
 
-def get_img2img_pipeline(model_id: str, device: str = "cpu"):
+def get_img2img_pipeline(model_id: str, device: str = "cpu", style=None):
     global _img2img_pipeline, _img2img_pipeline_key
-    key = (model_id, device, _offload_strategy(device))
+    key = (model_id, device, _offload_strategy(device), _style_key(style))
     if _img2img_pipeline is not None and _img2img_pipeline_key == key:
         return _img2img_pipeline
     _img2img_pipeline = None
@@ -668,7 +713,7 @@ def get_img2img_pipeline(model_id: str, device: str = "cpu"):
     pipe = AutoPipelineForImage2Image.from_pretrained(
         model_id, torch_dtype=_torch_dtype(device), **load_options
     )
-    _img2img_pipeline = _move_pipe(pipe, device)
+    _img2img_pipeline = _move_pipe(_apply_local_style(pipe, style), device)
     _img2img_pipeline_key = key
     return _img2img_pipeline
 
@@ -723,10 +768,15 @@ def get_ip_adapter_pipeline(base_model_id: str, device: str = "cpu"):
 
 
 def generate_image(req: dict[str, Any]) -> dict[str, Any]:
+    style = _local_style_adapter(req.get("local_style_adapter"))
+    if style and req.get("conditioning_mode") in {"controlnet_canny", "ip_adapter"}:
+        raise ValueError("LOCAL_STYLE_ADAPTER_CONDITIONING_UNSUPPORTED")
     model_id = req.get("model_id", "stabilityai/sdxl-turbo")
     prompt = req.get("prompt", "game asset")
     negative = req.get("negative_prompt", "blurry, low quality, text, watermark")
     requested_backend = _resolve_backend(req)
+    if style and requested_backend == "openvino_gpu":
+        raise ValueError("LOCAL_STYLE_ADAPTER_OPENVINO_UNSUPPORTED")
     width = int(req.get("width", 512))
     height = int(req.get("height", 512))
     seed = int(req.get("seed", 42))
@@ -791,7 +841,7 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
         )
     elif init_image is not None and conditioning_mode:
         applied_conditioning = "img2img"
-        pipe = get_img2img_pipeline(model_id, device)
+        pipe = get_img2img_pipeline(model_id, device, style)
         generation_options = {"guidance_scale": 0.0} if "turbo" in model_id.lower() else {}
         _assert_prompt_budget(pipe, full_prompt, negative)
         result = pipe(
@@ -811,7 +861,7 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
         if budget["anyOverflow"]:
             raise ValueError("Prompt exceeds model token budget: " + json.dumps(budget))
         pipeline_start = time.perf_counter()
-        pipe = get_pipeline(model_id, device, local_files_only=True)
+        pipe = get_pipeline(model_id, device, local_files_only=True, style=style)
         pipeline_load_ms = int((time.perf_counter() - pipeline_start) * 1000)
         inference_start = time.perf_counter()
         # Distilled Turbo models require classifier-free guidance to be disabled.
@@ -841,6 +891,7 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
         "conditioning_mode": conditioning_mode,
         "effectiveConditioningMode": applied_conditioning,
         "effectiveConditioningStrength": strength if applied_conditioning else None,
+        "localStyleAdapter": style,
         "compute_backend": compute_backend,
         "device": device,
         "offload_strategy": _offload_strategy(device),

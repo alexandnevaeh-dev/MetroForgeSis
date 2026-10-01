@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "genre": "quantum-divergence",
+  "purpose": "Candidate source art for an original quantum diver and a coherent side-view mine interior. Neither raw output is automatically production approved.",
+  "backend": "installed-local-nvidia-cuda",
+  "model": "E:/Metroforge/Recovery-Audit/models/sdxl-base-1.0",
+  "jobs": [
+    {
+      "id": "diver-seed",
+      "prompt": "pixel art game sprite, full body quantum diver facing right, side view, silver segmented pressure suit, cyan visor, violet backpack, photon instrument, grounded boots, strong silhouette, crisp pixel clusters, dark outlines, steel blue palette, solid lime green background, single character, centered",
+      "negative_prompt": "text, watermark, blurry, scenery, multiple characters, cropped feet, floor, perspective",
+      "width": 512,
+      "height": 512,
+      "steps": 20,
+      "seed": 10012026
+    },
+    {
+      "id": "mine-interior",
+      "prompt": "side scrolling pixel art background, empty underground quantum mine interior, layered slate stone, steel support arches, cyan ore conduits, violet machinery, amber lamps, horizontal tunnel, orthographic side view, crisp pixel clusters, deep blue shadows, background walls only",
+      "negative_prompt": "people, characters, text, watermark, blurry, perspective, foreground floor, sky, trees",
+      "width": 768,
+      "height": 384,
+      "steps": 20,
+      "seed": 10012027
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "version": 2,
+  "genre": "quantum-divergence",
+  "purpose": "Original side-view cast candidates. Reject non-character images, clipped bounds, incompatible silhouettes and inconsistent art. No automatic promotion into the playable game.",
+  "backend": "installed-local-nvidia-cuda",
+  "model": "E:/Metroforge/Recovery-Audit/models/sdxl-base-1.0",
+  "jobs": [
+    {
+      "id": "diver-seed-a",
+      "prompt": "A single astronaut standing in profile facing right. Cyan glass helmet, white armored spacesuit, violet backpack, holding a compact gun. Full body, two legs and boots visible. Detailed pixel art sprite, dark outline, isolated on flat lime green background.",
+      "negative_prompt": "abstract, pattern, tileset, collage, grid, multiple characters, cropped feet, text, watermark, blurry, scenery, floor",
+      "width": 512, "height": 768, "steps": 20, "seed": 10013027
+    },
+    {
+      "id": "diver-seed-b",
+      "prompt": "A single astronaut standing in profile facing right. Cyan glass helmet, white armored spacesuit, violet backpack, holding a compact gun. Full body, two legs and boots visible. Detailed pixel art sprite, dark outline, isolated on flat lime green background.",
+      "negative_prompt": "abstract, pattern, tileset, collage, grid, multiple characters, cropped feet, text, watermark, blurry, scenery, floor",
+      "width": 512, "height": 768, "steps": 20, "seed": 10013028
+    },
+    {
+      "id": "skitter-seed",
+      "prompt": "A single small robotic crab facing right, side view. Four articulated legs, silver armored shell, cyan glass sensor, violet energy cell. Full body and all feet visible. Detailed pixel art game sprite, dark outline, isolated on flat lime green background.",
+      "negative_prompt": "abstract, pattern, tileset, collage, grid, multiple characters, cropped feet, text, watermark, blurry, scenery, floor",
+      "width": 512, "height": 512, "steps": 20, "seed": 10013029
+    },
+    {
+      "id": "wraith-seed",
+      "prompt": "A single floating armored specter facing right, side view. Tapered silver segmented body, cyan glass face, violet energy halo, suspended arms, levitating tail. Full body visible. Detailed pixel art game sprite, dark outline, isolated on flat lime green background.",
+      "negative_prompt": "abstract, pattern, tileset, collage, grid, multiple characters, cropped body, text, watermark, blurry, scenery, floor",
+      "width": 512, "height": 768, "steps": 20, "seed": 10013030
+    },
+    {
+      "id": "driller-seed",
+      "prompt": "A single squat mining robot facing right, side view. Silver armored body, two articulated legs, large horizontal spiral drill, cyan glass sensor, violet energy cell. Full body and feet visible. Detailed pixel art game sprite, isolated on flat lime green background.",
+      "negative_prompt": "abstract, pattern, tileset, collage, grid, multiple characters, cropped feet, text, watermark, blurry, scenery, floor",
+      "width": 768, "height": 512, "steps": 20, "seed": 10013031
+    },
+    {
+      "id": "golem-seed",
+      "prompt": "A single massive mining guardian standing in profile facing right. Silver stone plated armor, cyan reactor in chest, violet energy seams, huge articulated fists, two grounded legs. Full body and boots visible. Detailed pixel art game sprite, isolated on flat lime green background.",
+      "negative_prompt": "abstract, pattern, tileset, collage, grid, multiple characters, cropped feet, text, watermark, blurry, scenery, floor",
+      "width": 512, "height": 768, "steps": 20, "seed": 10013032
+    },
+    {
+      "id": "mine-interior",
+      "prompt": "Empty underground mining hall, orthographic side view. Dark slate rock walls, silver steel support arches, cyan ore lamps, violet industrial pipes. Continuous horizontal interior background with layered depth. Detailed pixel art environment, cool blue shadows, no foreground floor.",
+      "negative_prompt": "people, characters, text, watermark, blurry, perspective, sky, trees, bright orange background",
+      "width": 768, "height": 384, "steps": 20, "seed": 10013033
+    }
+  ]
+}
