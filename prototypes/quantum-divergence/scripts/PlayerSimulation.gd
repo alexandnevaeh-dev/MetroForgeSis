@@ -22,6 +22,25 @@ var next_heat_damage: int = 0
 var stations: Array[Vector2] = []
 var recalled_this_tick: bool = false
 var state: String = "idle"
+var hurt_until: int = 0
+var attack_until: int = 0
+var damage_events: Array[Dictionary] = []
+
+func take_damage(amount: float, source: String = "enemy") -> bool:
+	if hp <= 0 or tick < immunity_until or not is_finite(amount) or amount <= 0:
+		return false
+	hp = maxf(0.0, hp - amount)
+	hurt_until = tick + 18
+	immunity_until = tick + 30
+	state = "death" if hp <= 0 else "hit"
+	damage_events.append({"tick": tick, "damage": amount, "source": source})
+	return true
+
+func notify_attack(windup_ticks: int) -> void:
+	if hp > 0:
+		attack_until = tick + maxi(1, windup_ticks) + 6
+		if tick >= hurt_until:
+			state = "attack"
 
 func _init(material_grid, start: Vector2) -> void:
 	grid = material_grid
@@ -110,18 +129,24 @@ func step(input: Dictionary) -> void:
 		grounded = false
 	velocity.y = minf(480.0, velocity.y + GRAVITY / 60.0)
 	if bool(input.get("levitate", false)) and levitation_ticks > 0 and not grounded:
-		velocity.y = maxf(-190.0, velocity.y - 24.0)
+		# Holding the jump key must not clamp a faster jump down to levitation speed.
+		if velocity.y > -190.0:
+			velocity.y = maxf(-190.0, velocity.y - 24.0)
 		levitation_ticks -= 1
 	_move_axis(0, velocity.x / 60.0)
 	_move_axis(1, velocity.y / 60.0)
 	grounded = _blocked(position + Vector2(0, 1.0))
 	var center_cell: Vector2i = Vector2i(floor((position - Vector2(0, BODY_SIZE.y / 2.0)) / Grid.CELL_PX))
 	if grid.in_bounds(center_cell.x, center_cell.y) and grid.heat[center_cell.y * grid.width + center_cell.x] >= 0.6 and tick >= immunity_until and tick >= next_heat_damage:
-		hp = maxf(0.0, hp - 5.0)
-		next_heat_damage = tick + 30
+		if take_damage(5.0, "heat"):
+			next_heat_damage = tick + 30
 	state = "idle"
 	if hp <= 0:
 		state = "death"
+	elif tick < hurt_until:
+		state = "hit"
+	elif tick < attack_until:
+		state = "attack"
 	elif tick < dash_until:
 		state = "dash"
 	elif not grounded:

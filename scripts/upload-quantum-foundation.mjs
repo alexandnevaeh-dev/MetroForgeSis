@@ -9,7 +9,7 @@ const report = join(repo, 'reports/game-tests/20261001-quantum-divergence');
 const store = 'E:/MetroForgeData/GitHubUpload/20261001/snapshot.git';
 const branch = 'refs/heads/codex/metroforge-epic-20261001';
 const expectedParent = process.argv.find(argument => argument.startsWith('--expected-parent='))?.slice('--expected-parent='.length)
-  || '203943cd80a15e3ac81b01f064c733f7d3826fc5';
+  || 'fc5540addb6bf62b238579b1b7ee490d908d3b6a';
 if (!/^[a-f0-9]{40}$/.test(expectedParent)) throw Error('Provide the verified parent commit');
 const files = [
   'docs/development/QUANTUM_DIVERGENCE.md',
@@ -33,6 +33,12 @@ const files = [
   'prototypes/quantum-divergence/scenes/ProgressionPlayground.tscn',
   'prototypes/quantum-divergence/Run Probability Progression.cmd',
   'scripts/verify-quantum-progression.mjs',
+  'prototypes/quantum-divergence/scripts/EnemySimulation.gd',
+  'prototypes/quantum-divergence/scripts/CombatPlayground.gd',
+  'prototypes/quantum-divergence/tests/EnemyTests.gd',
+  'prototypes/quantum-divergence/scenes/CombatPlayground.tscn',
+  'prototypes/quantum-divergence/Run Live Mine Encounters.cmd',
+  'scripts/verify-quantum-combat.mjs',
 ];
 const patterns = [/gh[pousr]_[A-Za-z0-9]{35,}/, /github_pat_[A-Za-z0-9_]{70,}/,
   /sk-(?:proj-)?[A-Za-z0-9_-]{40,}/, /nvapi-[A-Za-z0-9_-]{45,}/,
@@ -67,13 +73,17 @@ if (mechanics.results.some(result => result.failed !== 0) || mechanics.runtime.r
 const nativePassed = mechanics.results.reduce((total, result) => total + result.passed, 0);
 const progression = JSON.parse(readFileSync(join(report, 'progression-latest.json'), 'utf8'));
 if (!progression.runtime.progression.extracted || progression.runtime.shots !== 33 || progression.runtime.impacts !== 2) throw Error('Progression walkthrough is incomplete');
-for (const proof of progression.sources) {
+const combat = JSON.parse(readFileSync(join(report, 'combat-latest.json'), 'utf8'));
+if (!combat.runtime.progression.extracted || combat.runtime.player_hp <= 0 || Object.keys(combat.runtime.enemy_deaths).length !== 4) throw Error('Live encounter verification is incomplete');
+for (const id of ['200', '301', '302', '303']) if (!(combat.runtime.enemy_active_counts[id] > 0)) throw Error('Enemy never reached its active attack');
+for (const attack of ['slam', 'burst', 'roar']) if (!(combat.runtime.boss_active[attack] > 0)) throw Error('Golem active attack missing');
+for (const proof of [...progression.sources, ...combat.sources]) {
   const current = createHash('sha256').update(readFileSync(join(repo, 'prototypes/quantum-divergence', proof.path))).digest('hex');
   if (current !== proof.sha256) throw Error('Native source changed after route verification: ' + proof.path);
 }
 const tree = git(['write-tree']).trim();
 const commit = git(['commit-tree', tree, '-p', expectedParent],
-  `Add quantum mine progression and fully gated extraction\n\nConnect regional anchoring, three projectile-damaged crystals, atomic permanent platforms, core gating and a one-time secret reward to a native rendered walkthrough. Verify ${nativePassed} behavior checks plus exact crystal/Golem damage and real fluid interception. Stationary targets and test art remain explicit; full biome, enemy AI, final assets and app generation are pending.\n`).trim();
+  `Connect live quantum enemies and Golem combat to mine objectives\n\nAdd timed Skitter dash, Wraith shots/glide, protected Driller carving and Golem slam/burst/roar attacks. Share projectile capacity and authoritative HP with the player, and correct held levitation slowing a faster jump. Verify ${nativePassed} native behavior checks, the preserved stationary control and a living player's complete live-enemy objective route. Programmatic test poses remain explicit; full biome, production animations, saves, audio and app generation are pending.\n`).trim();
 const result = { status: 'prepared', commit, parent: expectedParent, files: hashes, tests: { nativePassed, nativeFailed: 0 }, workingIndexPreserved: indexHash() === beforeIndex };
 writeFileSync(join(report, 'github-quantum-upload.json'), JSON.stringify(result, null, 2));
 git(['update-ref', branch, commit, expectedParent]);

@@ -5,22 +5,29 @@ import { resolve, join } from 'node:path';
 
 const repo = resolve('.');
 const progression = process.argv.includes('--progression');
-const output = join(repo, 'reports/game-tests/20261001-quantum-divergence/' + (progression ? 'progression-recording-' : 'recording-') + Date.now());
+const combat = process.argv.includes('--combat');
+assert.ok(!(progression && combat), 'Choose one recording scene');
+const output = join(repo, 'reports/game-tests/20261001-quantum-divergence/' + (combat ? 'combat-recording-' : progression ? 'progression-recording-' : 'recording-') + Date.now());
 mkdirSync(output, { recursive: true });
 const env = { ...process.env, TEMP: 'E:/MetroForgeData/Temp', TMP: 'E:/MetroForgeData/Temp',
   APPDATA: 'E:/MetroForgeData/AppData/QuantumGodot', LOCALAPPDATA: 'E:/MetroForgeData/AppData/QuantumGodotLocal' };
 const avi = join(output, 'native-playground.avi');
-const mp4 = join(output, progression ? 'quantum-progression.mp4' : 'quantum-mechanics.mp4');
+const mp4 = join(output, combat ? 'quantum-combat.mp4' : progression ? 'quantum-progression.mp4' : 'quantum-mechanics.mp4');
 const godot = 'E:/MetroForgeData/Godot/4.6/Godot_v4.6-stable_win64_console.exe';
 const ffmpeg = 'E:/MetroForgeData/Runtime/video-tools/imageio_ffmpeg/binaries/ffmpeg-win-x86_64-v7.1.exe';
 assert.ok(existsSync(ffmpeg), 'Use the already installed E: video runtime');
 const runtimeOutput = execFileSync(godot, ['--path', join(repo, 'prototypes/quantum-divergence'),
   '--position', '-10000,-10000', '--write-movie', avi, '--fixed-fps', '60', '--disable-vsync',
-  ...(progression ? ['res://scenes/ProgressionPlayground.tscn'] : []), '--',
+  ...(combat ? ['res://scenes/CombatPlayground.tscn'] : progression ? ['res://scenes/ProgressionPlayground.tscn'] : []), '--',
   '--smoke-test', '--capture-dir=' + output], { env, encoding: 'utf8', windowsHide: true, timeout: 90000 });
 writeFileSync(join(output, 'recording.log'), runtimeOutput);
 const runtime = JSON.parse(readFileSync(join(output, 'playground-result.json'), 'utf8'));
-if (progression) {
+if (combat) {
+  assert.equal(runtime.progression.extracted, true);
+  assert.ok(runtime.player_hp > 0);
+  assert.deepEqual(runtime.enemy_deaths, { '200': 'golem', '301': 'skitter', '302': 'wraith', '303': 'driller' });
+  for (const attack of ['slam', 'burst', 'roar']) assert.ok(runtime.boss_attacks[attack] > 0);
+} else if (progression) {
   assert.equal(runtime.shots, 33);
   assert.deepEqual(runtime.target_hits, { '101': 2, '102': 2, '103': 2, '200': 25 });
   assert.equal(runtime.progression.extracted, true);
@@ -35,5 +42,5 @@ assert.ok(existsSync(mp4));
 execFileSync(ffmpeg, ['-hide_banner', '-loglevel', 'error', '-i', mp4, '-f', 'null', '-'],
   { env, encoding: 'utf8', windowsHide: true, timeout: 60000 });
 const result = { output, avi, mp4, fps: 60, scope: 'Actual native viewport recording with scripted prototype controls; not final sprite animation approval or app-generated game evidence', runtime };
-writeFileSync(join(repo, 'reports/game-tests/20261001-quantum-divergence/' + (progression ? 'progression-recording-latest.json' : 'recording-latest.json')), JSON.stringify(result, null, 2));
+writeFileSync(join(repo, 'reports/game-tests/20261001-quantum-divergence/' + (combat ? 'combat-recording-latest.json' : progression ? 'progression-recording-latest.json' : 'recording-latest.json')), JSON.stringify(result, null, 2));
 console.log(JSON.stringify({ mp4, scope: result.scope }));

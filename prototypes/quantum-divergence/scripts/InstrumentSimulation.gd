@@ -17,12 +17,13 @@ var projectiles: Array[Dictionary] = []
 var targets: Dictionary = {}
 var events: Array[Dictionary] = []
 var next_id: int = 1
+var external_slots: int = 0 # Hostile projectiles share the world's 64-slot cap.
 
 func _init(material_grid) -> void:
 	grid = material_grid
 
 func slot_count() -> int:
-	var total: int = 0
+	var total: int = external_slots
 	for request in pending:
 		total += int(request.slots)
 	for projectile in projectiles:

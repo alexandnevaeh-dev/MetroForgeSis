@@ -142,10 +142,12 @@ func _extend_report() -> void:
 	report.stationary_target_notice = "Enemy AI and production sprite animation remain pending; this control proves progression and projectile damage."
 
 func _draw_targets() -> void:
-	for id in instruments.targets:
+	for id in [101, 102, 103, 200]:
 		var target: Dictionary = instruments.targets[id]
 		var rect: Rect2 = target.rect
 		if id == 200:
+			if _draw_live_golem(target):
+				continue
 			var at: Vector2 = Vector2(rect.get_center().x, rect.end.y)
 			var color := Color("57687e") if target.hp > 0 else Color("26354b")
 			for side in [-1, 1]:
@@ -175,6 +177,9 @@ func _draw_targets() -> void:
 			draw_rect(Rect2(at - Vector2(12,24), Vector2(24,24)), Color("243a51"))
 			draw_rect(Rect2(at - Vector2(8,20), Vector2(16,4)), Color("8cf4d7") if active else Color("ba8469"))
 			_text(at + Vector2(-17,15), id.to_upper(), 9)
+
+func _draw_live_golem(_target: Dictionary) -> bool:
+	return false
 
 func _draw_overlay() -> void:
 	if progress == null:

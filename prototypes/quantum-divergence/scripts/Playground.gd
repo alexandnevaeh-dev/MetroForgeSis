@@ -49,6 +49,12 @@ func _aim_for_test(muzzle: Vector2) -> Vector2:
 func _after_simulation(_input: Dictionary) -> void:
 	pass
 
+func _occupy_other_actors() -> void:
+	pass
+
+func _step_actors() -> void:
+	pass
+
 func _test_finished() -> bool:
 	return simulation_tick >= 450
 
@@ -128,7 +134,9 @@ func _physics_process(_delta: float) -> void:
 	grid.clear_actor_occupancy()
 	player.step(input)
 	grid.occupy_actor(player.cell_rect(player.position))
+	_occupy_other_actors()
 	grid.step()
+	_step_actors()
 	if player.recalled_this_tick:
 		report.recalls += 1
 		effects.append({"type": "recall", "position": player.position - Vector2(0, 20), "until": simulation_tick + 30})
@@ -140,6 +148,7 @@ func _physics_process(_delta: float) -> void:
 		var fired: Dictionary = instruments.fire(selected, muzzle, aim)
 		if fired.accepted:
 			report.shots += 1
+			player.notify_attack(int(Instruments.DEFINITIONS[selected].windup))
 		fire_requested = false
 	instruments.step()
 	_after_simulation(input)
@@ -228,8 +237,8 @@ func _text(at: Vector2, value: String, size: int, color: Color = Color("c9d8ed")
 
 func _draw_diver() -> void:
 	var at: Vector2 = player.position
-	var clip_frame: int = int(float(simulation_tick) * (24.0 if player.state == "run" else 16.0) / 60.0)
-	var stride: float = sin(clip_frame * 0.72) * 5.0 if player.state == "walk" or player.state == "run" else 0.0
+	var clip_frame: int = int(float(simulation_tick) * (24.0 if absf(player.velocity.x) > Player.WALK_SPEED else 16.0) / 60.0)
+	var stride: float = sin(clip_frame * 0.72) * 5.0 if player.grounded and absf(player.velocity.x) > 0.1 else 0.0
 	# Boots terminate exactly at the authoritative feet, never below or above an offset shadow.
 	for side in [-1.0, 1.0]:
 		var foot_x: float = side * 5.0 + stride * side
