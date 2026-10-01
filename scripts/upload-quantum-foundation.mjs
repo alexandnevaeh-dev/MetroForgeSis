@@ -6,10 +6,10 @@ import { resolve, join } from 'node:path';
 // Explicit source-only follow-up; never modifies the working checkout's Git index.
 const repo = resolve('.');
 const report = join(repo, 'reports/game-tests/20261001-quantum-divergence');
-const store = 'E:/MetroForgeData/GitHubUpload/20261001/snapshot.git';
+const store = 'E:/MetroForgeData/GitHubUpload/20261001/quantum-saves.git';
 const branch = 'refs/heads/codex/metroforge-epic-20261001';
 const expectedParent = process.argv.find(argument => argument.startsWith('--expected-parent='))?.slice('--expected-parent='.length)
-  || 'fc5540addb6bf62b238579b1b7ee490d908d3b6a';
+  || '65274b47b55bdef2e3fbdc62cbc1c3d7c0835ee0';
 if (!/^[a-f0-9]{40}$/.test(expectedParent)) throw Error('Provide the verified parent commit');
 const files = [
   'docs/development/QUANTUM_DIVERGENCE.md',
@@ -39,6 +39,13 @@ const files = [
   'prototypes/quantum-divergence/scenes/CombatPlayground.tscn',
   'prototypes/quantum-divergence/Run Live Mine Encounters.cmd',
   'scripts/verify-quantum-combat.mjs',
+  'prototypes/quantum-divergence/scripts/RunState.gd',
+  'prototypes/quantum-divergence/scripts/SaveStore.gd',
+  'prototypes/quantum-divergence/scripts/RunSession.gd',
+  'prototypes/quantum-divergence/scripts/SavePlayground.gd',
+  'prototypes/quantum-divergence/tests/SaveTests.gd',
+  'prototypes/quantum-divergence/scenes/SavePlayground.tscn',
+  'scripts/verify-quantum-save.mjs',
 ];
 const patterns = [/gh[pousr]_[A-Za-z0-9]{35,}/, /github_pat_[A-Za-z0-9_]{70,}/,
   /sk-(?:proj-)?[A-Za-z0-9_-]{40,}/, /nvapi-[A-Za-z0-9_-]{45,}/,
@@ -71,19 +78,22 @@ if (!changedFiles.length || changes.split('\n').some(line => line.startsWith('D\
 const mechanics = JSON.parse(readFileSync(join(report, 'mechanics-latest.json'), 'utf8'));
 if (mechanics.results.some(result => result.failed !== 0) || mechanics.runtime.recalls !== 1 || mechanics.runtime.shots !== 3) throw Error('Native verification is incomplete');
 const nativePassed = mechanics.results.reduce((total, result) => total + result.passed, 0);
+if (!mechanics.results.some(result => result.suite === 'save' && result.passed >= 54 && result.failed === 0)) throw Error('Complete save/session verification is missing');
 const progression = JSON.parse(readFileSync(join(report, 'progression-latest.json'), 'utf8'));
 if (!progression.runtime.progression.extracted || progression.runtime.shots !== 33 || progression.runtime.impacts !== 2) throw Error('Progression walkthrough is incomplete');
 const combat = JSON.parse(readFileSync(join(report, 'combat-latest.json'), 'utf8'));
 if (!combat.runtime.progression.extracted || combat.runtime.player_hp <= 0 || Object.keys(combat.runtime.enemy_deaths).length !== 4) throw Error('Live encounter verification is incomplete');
 for (const id of ['200', '301', '302', '303']) if (!(combat.runtime.enemy_active_counts[id] > 0)) throw Error('Enemy never reached its active attack');
 for (const attack of ['slam', 'burst', 'roar']) if (!(combat.runtime.boss_active[attack] > 0)) throw Error('Golem active attack missing');
-for (const proof of [...progression.sources, ...combat.sources]) {
+const saves = JSON.parse(readFileSync(join(report, 'save-control-latest.json'), 'utf8'));
+if (saves.runtime.save_phase !== 'complete' || Object.keys(saves.runtime.save_checks).length !== 13 || Object.values(saves.runtime.save_checks).some(passed => passed !== true)) throw Error('Rendered suspend/death/restart control is incomplete');
+for (const proof of [...progression.sources, ...combat.sources, ...saves.sources]) {
   const current = createHash('sha256').update(readFileSync(join(repo, 'prototypes/quantum-divergence', proof.path))).digest('hex');
   if (current !== proof.sha256) throw Error('Native source changed after route verification: ' + proof.path);
 }
 const tree = git(['write-tree']).trim();
 const commit = git(['commit-tree', tree, '-p', expectedParent],
-  `Connect live quantum enemies and Golem combat to mine objectives\n\nAdd timed Skitter dash, Wraith shots/glide, protected Driller carving and Golem slam/burst/roar attacks. Share projectile capacity and authoritative HP with the player, and correct held levitation slowing a faster jump. Verify ${nativePassed} native behavior checks, the preserved stationary control and a living player's complete live-enemy objective route. Programmatic test poses remain explicit; full biome, production animations, saves, audio and app generation are pending.\n`).trim();
+  `Add durable quantum suspend, resume and death restart\n\nPublish complete checksum-verified E-resident save generations, validate detached run state before swapping gameplay, recover valid previous candidates and block old-run resurrection after death/extraction. Keep blueprint/loadout/lore knowledge separate from base run stats. Connect F5/F9/Enter controls, restore a valid suspend at launch and retain eight complete recovery generations without counting damaged files. Verify ${nativePassed} native checks, the preserved objective and live combat routes, and a rendered exact-tick resume followed by genuine enemy-caused death and fresh restart. Current saves support the compact encounter only; full biome, production animations, modules, audio and MetroForge app generation remain pending.\n`).trim();
 const result = { status: 'prepared', commit, parent: expectedParent, files: hashes, tests: { nativePassed, nativeFailed: 0 }, workingIndexPreserved: indexHash() === beforeIndex };
 writeFileSync(join(report, 'github-quantum-upload.json'), JSON.stringify(result, null, 2));
 git(['update-ref', branch, commit, expectedParent]);

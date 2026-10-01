@@ -18,6 +18,7 @@ var effects: Array[Dictionary] = []
 var started_usec: int
 var worst_tick_usec: int = 0
 var measured_usec: int = 0
+var measured_ticks: int = 0
 var capture_ticks: Array[int] = [60, 330, 425]
 var report: Dictionary = {"scope": "Native mechanics playground; not MetroForge app generation, completed biome or final art approval", "shots": 0, "splits": 0, "impacts": 0, "recalls": 0}
 
@@ -173,13 +174,14 @@ func _physics_process(_delta: float) -> void:
 	var duration: int = Time.get_ticks_usec() - before_usec
 	worst_tick_usec = maxi(worst_tick_usec, duration)
 	measured_usec += duration
+	measured_ticks += 1
 	if smoke_test and capture_dir != "" and simulation_tick in capture_ticks and not captured.has(simulation_tick):
 		captured[simulation_tick] = true
 		_capture(simulation_tick)
 	if smoke_test and _test_finished():
 		report.ticks = simulation_tick
 		report.wall_seconds = (Time.get_ticks_usec() - started_usec) / 1000000.0
-		report.mean_tick_ms = float(measured_usec) / simulation_tick / 1000.0
+		report.mean_tick_ms = float(measured_usec) / maxi(1, measured_ticks) / 1000.0
 		report.worst_tick_ms = worst_tick_usec / 1000.0
 		report.player_feet = [player.position.x, player.position.y]
 		report.player_hp = player.hp

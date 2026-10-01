@@ -17,6 +17,7 @@ for (const [script, prefix, name] of [
   ['GameplayTests.gd', 'QUANTUM_GAMEPLAY_RESULTS ', 'gameplay'],
   ['ProgressionTests.gd', 'QUANTUM_PROGRESSION_RESULTS ', 'progression'],
   ['EnemyTests.gd', 'QUANTUM_ENEMY_RESULTS ', 'enemy'],
+  ['SaveTests.gd', 'QUANTUM_SAVE_RESULTS ', 'save'],
 ]) {
   const output = execFileSync(godot, ['--headless', '--path', project, '--script', 'res://tests/' + script],
     { env, encoding: 'utf8', windowsHide: true, timeout: 60000 });

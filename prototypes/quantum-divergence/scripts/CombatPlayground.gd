@@ -1,7 +1,12 @@
 extends "res://scripts/ProgressionPlayground.gd"
 ## Small native encounter fixture. Final art, full biome and app integration remain pending.
 const Enemies = preload("res://scripts/EnemySimulation.gd")
+const Session = preload("res://scripts/RunSession.gd")
+const RunState = preload("res://scripts/RunState.gd")
 var enemies
+var session
+var session_action: String = ""
+var session_notice: String = "F5 Suspend / F9 Resume"
 var dodged_attack: Dictionary = {}
 var jump_tick: int = -1000
 var enemy_deaths: Dictionary = {}
@@ -18,6 +23,98 @@ func _ready() -> void:
 	assert(enemies.add_enemy("wraith", 302, Vector2(356, 254)))
 	assert(enemies.add_enemy("driller", 303, Vector2(474, 336)))
 	assert(enemies.add_enemy("golem", 200, Vector2(576, 336), true))
+	# Keep input active while paused so Escape, F9 and restart can work.
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	if not smoke_test:
+		session = Session.new("E:/MetroForgeData/GameSaves/QuantumDivergence/profile-01", profile)
+		var initialized: Dictionary = session.initialize(_bundle())
+		if not initialized.accepted:
+			session_notice = "Save unavailable: " + initialized.reason.replace("_", " ")
+		else:
+			var loaded: Dictionary = session.resume()
+			if loaded.accepted:
+				_commit_run(loaded)
+				session_notice = "Suspended run restored."
+			elif loaded.reason not in ["no_valid_suspend", "run_ended"]:
+				session_notice = "Resume unavailable: " + loaded.reason.replace("_", " ")
+
+func _bundle() -> Dictionary:
+	return {"grid": grid, "player": player, "instruments": instruments, "enemies": enemies, "progress": progress}
+
+func _commit_run(loaded: Dictionary) -> void:
+	grid = loaded.bundle.grid
+	player = loaded.bundle.player
+	instruments = loaded.bundle.instruments
+	enemies = loaded.bundle.enemies
+	progress = loaded.bundle.progress
+	selected = loaded.selected
+	simulation_tick = loaded.tick
+	effects.clear()
+	jump_requested = false
+	dash_requested = false
+	fire_requested = false
+	interact_requested = false
+	dodged_attack.clear()
+	jump_tick = -1000
+	extraction_tick = -1
+	# Route drivers and telemetry are test/presentation state, never stored as player upgrades.
+	if not progress.anchor_upper:
+		route_stage = "anchor"
+	elif not progress.secret_found:
+		route_stage = "secret"
+	elif not progress.collapse_rift:
+		route_stage = "crystal101"
+		for id in [101,102,103]:
+			if instruments.targets[id].hp > 0:
+				route_stage = "crystal%d" % id
+				break
+	elif not progress.golem_defeated:
+		route_stage = "golem"
+	else:
+		route_stage = "exit" if progress.golem_core else "core"
+	_update_texture()
+	queue_redraw()
+
+func _input(event: InputEvent) -> void:
+	super._input(event)
+	if session == null or not event is InputEventKey or not event.pressed or event.echo:
+		return
+	if event.physical_keycode == KEY_F5:
+		session_action = "suspend"
+	elif event.physical_keycode == KEY_F9:
+		session_action = "resume"
+	elif event.physical_keycode == KEY_ENTER and (player.hp <= 0 or progress.extracted):
+		session_action = "new_run"
+
+func _physics_process(delta: float) -> void:
+	# Frame-boundary swaps: a failed read cannot alter any running component.
+	if session != null and session_action != "":
+		var action: String = session_action
+		session_action = ""
+		var result: Dictionary
+		if action == "suspend":
+			result = session.suspend(_bundle(), selected)
+			if result.accepted:
+				get_tree().paused = true
+				session_notice = "Suspended on E:. F9 resumes; Escape continues."
+		elif action in ["resume", "new_run"]:
+			result = session.resume() if action == "resume" else session.new_run()
+			if result.accepted:
+				_commit_run(result)
+				get_tree().paused = false
+				session_notice = "Fresh run; knowledge retained." if action == "new_run" else "Suspended run restored."
+		if not result.accepted:
+			session_notice = "Save action unavailable: " + result.reason.replace("_", " ")
+		queue_redraw()
+		return
+	if not smoke_test and (player.hp <= 0 or progress.extracted):
+		queue_redraw()
+		return
+	super._physics_process(delta)
+	if session != null and not get_tree().paused:
+		var observed: Dictionary = session.observe(_bundle())
+		if not observed.accepted:
+			session_notice = "Save unavailable: " + observed.reason.replace("_", " ")
 
 func _occupy_other_actors() -> void:
 	enemies.occupy_all()
@@ -174,5 +271,11 @@ func _draw_overlay() -> void:
 	draw_rect(Rect2(46,49,575,30), Color("080e1d"))
 	_text(Vector2(49,64), "LIVE ENCOUNTER CONTROL  /  ORIGINAL TEST POSES", 12, Color("758ba9"))
 	_text(Vector2(48,89), "HP %d   STATE %s" % [int(player.hp), player.state.to_upper()], 12, Color("a9d6d7"))
+	if session != null:
+		_text(Vector2(310,89), session_notice, 11, Color("a9d6d7"))
+		if get_tree().paused:
+			_text(Vector2(380,302), "SUSPENDED / PAUSED", 18, Color("e6eaff"))
+		if player.hp <= 0 or progress.extracted:
+			_text(Vector2(295,302), "RUN ENDED — ENTER starts a fresh run", 18, Color("e6eaff"))
 	draw_rect(Rect2(46,569,890,29), Color("080e1d"))
 	_text(Vector2(48,586), "E  Interact     Q  Swap     Hold R  Recall     Esc  Pause    Live AI; final art and full biome in development", 12, Color("758ba9"))
