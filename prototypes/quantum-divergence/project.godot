@@ -1,8 +1,14 @@
-; Separate native simulation foundation. Not yet a generated playable game.
+; Separate mechanics playground. Not yet a generated full biome.
 config_version=5
 
 [application]
 config/name="Quantum Divergence — Simulation Foundation"
+run/main_scene="res://scenes/Playground.tscn"
+
+[display]
+window/size/viewport_width=960
+window/size/viewport_height=600
+window/stretch/mode="canvas_items"
 
 [physics]
 common/physics_ticks_per_second=60
@@ -10,3 +16,4 @@ common/physics_ticks_per_second=60
 [rendering]
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+textures/default_filters/use_nearest_mipmap_filter=false

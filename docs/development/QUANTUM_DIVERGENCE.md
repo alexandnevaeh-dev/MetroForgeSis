@@ -117,8 +117,9 @@ Version saves. Separate profile blueprints/loadouts/lore from run seed, simulati
 - [x] Implement native reference microcells, sand/fluid, seeded ore, double-buffered heat, protected anchors, collapse lifetime/budget and clearance checks.
 - [x] Implement native simulation snapshots and deterministic continuation.
 - [ ] Chunk activation and performance measurement at biome scale; fluid viscosity tuning and vapor event output.
-- [ ] Player collision/movement, 360-degree aim, two instruments, Recall action, safe station fallback.
-- [ ] Bounded swept projectile simulation, exact three-child split behavior, atomic capacity/resource accounting, discoverable entanglement/tunneling modules.
+- [x] Native playground player collision/movement, 360-degree aim, two starting instruments, Recall hold/action, safe station fallback.
+- [x] Starting-instrument swept projectile simulation, exact three-child split behavior and atomic capacity/resource accounting in the native playground.
+- [ ] Station compiler/preview and discoverable entanglement/tunneling modules.
 - [ ] Authored/procedural world generator, regional anchors, crystals, Golem gate, secret and exit.
 - [ ] Three enemy families and Golem with original complete reviewed animation sets and timings above.
 - [ ] Original coherent terrain, interior backgrounds, effects, audio and HUD.
@@ -139,4 +140,14 @@ Official pages verified 2026-10-01. These are references to study, not licensed 
 - [Hyper Light Drifter developer storefront](https://store.steampowered.com/app/257850/Hyper_Light_Drifter/): use as a palette and environmental-cohesion reference. Heart Machine describes hand animation throughout its characters/backgrounds. Its top-down movement is not the new game's camera model.
 - Copilot's Nolla YouTube channel link is unverified as a channel in this pass and is not an individual gameplay video. Generic stock quantum pictures from its earlier response are excluded from the game art plan.
 
-This specification is not production-ready software. Current evidence covers the small native material kernel only; all unfinished systems and visual review remain explicit above.
+This specification is not production-ready software. Current implementation evidence and its limits are recorded in the mechanics milestone below; unfinished systems and visual review remain explicit above.
+
+## Mechanics milestone, 2026-10-01
+
+The isolated native playground now runs interactive controls against the same material grid shown on screen. It includes walk/run/jump, finite levitation, collision-safe dash, free aiming, Photon thermal/collapse impacts, Tachyon three-child nonrecursive splits, swept grid/target collision, damage, energy and cooldown accounting, atomic capacity reservation, protected entry clearance and Recall. A held Recall triggers once and cannot continually refresh immunity; a blocked newest station falls back to an older safe station.
+
+53 native behavior checks pass: 27 material/snapshot checks and 26 player/instrument checks. A real GPU-rendered 450-tick control run fired three times, split once, recalled once, and ended with the Diver's feet at the 336px floor and HP 100. Three actual viewport images are retained under `reports/game-tests/20261001-quantum-divergence/`. The initial capture driver failed because it expected `60` instead of the engine's zero-padded `060` filename; the real captures existed and the verifier was corrected.
+
+In the same small playground, measured mean simulation/update work improved from 17.53ms to 12.26ms after avoiding zero heat-field scans and transparent-cell color work. The later run processed 450 ticks in 7.46 seconds; its worst tick was 21.23ms. These measurements concern this small world only and do not establish a 60 FPS full biome or a production performance budget. All heat, replay, collision, capacity and Recall behavior checks passed after the optimization.
+
+Current presentation uses original programmatic test poses and geometry. It is not final approved sprite animation, the complete Probability Mines biome, an enemy/boss slice, a completed roguelite, or proof of MetroForge app generation. Actual module programming, discoverable entanglement/tunneling, complete run/profile saves, chunked world scale, final assets, enemies/objectives and app integration remain on the checklist.
