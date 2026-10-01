@@ -1,0 +1,12 @@
+; Separate native simulation foundation. Not yet a generated playable game.
+config_version=5
+
+[application]
+config/name="Quantum Divergence — Simulation Foundation"
+
+[physics]
+common/physics_ticks_per_second=60
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
