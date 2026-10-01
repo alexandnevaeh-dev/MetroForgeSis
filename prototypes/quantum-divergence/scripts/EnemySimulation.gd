@@ -1,6 +1,7 @@
 extends RefCounted
 ## Fixed-tick actors and hostile projectiles. Instrument targets own authoritative HP.
 const Grid = preload("res://scripts/MicrocellGrid.gd")
+const Contact = preload("res://scripts/MaterialContact.gd")
 const MAX_ACTORS: int = 32
 const DEFINITIONS: Dictionary = {
 	"skitter": {"size": Vector2(28, 28), "hp": 20.0, "walk": 80.0, "run": 260.0, "range": 72.0, "aggro": 180.0},
@@ -33,18 +34,10 @@ func body_rect(actor: Dictionary, at: Vector2) -> Rect2:
 	return Rect2(at - Vector2(size.x / 2.0, size.y / 2.0 if actor.kind == "wraith" else size.y), size)
 
 func cell_rect(rect: Rect2) -> Rect2i:
-	var first := Vector2i(floor(rect.position / Grid.CELL_PX))
-	var last := Vector2i(ceil(rect.end / Grid.CELL_PX)) - Vector2i.ONE
-	return Rect2i(first, last - first + Vector2i.ONE)
+	return Contact.cell_rect(rect)
 
 func _blocked(actor: Dictionary, at: Vector2) -> bool:
-	var rect: Rect2i = cell_rect(body_rect(actor, at))
-	for y in range(rect.position.y, rect.end.y):
-		for x in range(rect.position.x, rect.end.x):
-			var material: int = grid.material_at(x, y)
-			if material in [Grid.CellMaterial.SOLID, Grid.CellMaterial.UNSTABLE_ORE, Grid.CellMaterial.SAND]:
-				return true
-	return false
+	return Contact.blocked(grid, body_rect(actor, at))
 
 func add_enemy(kind: String, id: int, at: Vector2, bind_target: bool = false) -> bool:
 	if not DEFINITIONS.has(kind) or actors.has(id) or actors.size() >= MAX_ACTORS or not is_finite(at.x) or not is_finite(at.y):
@@ -95,11 +88,15 @@ func synchronize_damage() -> void:
 
 func _move_axis(actor: Dictionary, axis: int, distance: float) -> void:
 	var remaining: float = absf(distance)
+	var direction: float = signf(distance)
 	while remaining > 0.00001:
 		var amount: float = minf(1.0, remaining)
 		var candidate: Vector2 = actor.position
-		candidate[axis] += signf(distance) * amount
+		candidate[axis] += direction * amount
 		if _blocked(actor, candidate):
+			var contact: Vector2 = Contact.contact_position(grid, candidate, body_rect(actor, candidate), axis, direction)
+			if direction * (contact[axis] - float(actor.position[axis])) >= 0.0 and direction * (candidate[axis] - contact[axis]) >= 0.0 and not _blocked(actor, contact):
+				actor.position = contact
 			actor.velocity[axis] = 0.0
 			return
 		actor.position = candidate

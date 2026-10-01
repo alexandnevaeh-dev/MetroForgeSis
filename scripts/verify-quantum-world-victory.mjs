@@ -14,7 +14,7 @@ const env = { ...process.env, TEMP: 'E:/MetroForgeData/Temp', TMP: 'E:/MetroForg
 const godot = 'E:/MetroForgeData/Godot/4.6/Godot_v4.6-stable_win64_console.exe';
 const paths = ['scripts/MicrocellGrid.gd', 'scripts/ChunkedGrid.gd', 'scripts/MineWorld.gd', 'scripts/MineNavigator.gd',
   'scripts/WorldPlayground.gd', 'scripts/WorldRunDriver.gd', 'scripts/WorldVictoryPlayground.gd',
-  'scripts/PlayerSimulation.gd', 'scripts/InstrumentSimulation.gd', 'scripts/EnemySimulation.gd',
+  'scripts/MaterialContact.gd', 'scripts/PlayerSimulation.gd', 'scripts/InstrumentSimulation.gd', 'scripts/EnemySimulation.gd',
   'scripts/MinesProgression.gd', 'scripts/Playground.gd', 'scripts/ProgressionPlayground.gd', 'scripts/CombatPlayground.gd',
   'tests/BranchTests.gd', 'scenes/WorldVictoryPlayground.tscn'];
 const sources = paths.map(path => ({ path, sha256: createHash('sha256').update(readFileSync(join(project, path))).digest('hex') }));

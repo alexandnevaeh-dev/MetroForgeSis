@@ -1,6 +1,7 @@
 extends RefCounted
 ## Feet are the authoritative position; the renderer uses this same bottom-center pivot.
 const Grid = preload("res://scripts/MicrocellGrid.gd")
+const Contact = preload("res://scripts/MaterialContact.gd")
 const BODY_SIZE := Vector2(20.0, 40.0)
 const WALK_SPEED: float = 160.0
 const RUN_SPEED: float = 260.0
@@ -51,20 +52,10 @@ func body_rect(at: Vector2) -> Rect2:
 	return Rect2(at - Vector2(BODY_SIZE.x / 2.0, BODY_SIZE.y), BODY_SIZE)
 
 func cell_rect(at: Vector2) -> Rect2i:
-	var body: Rect2 = body_rect(at)
-	var first: Vector2i = Vector2i(floor(body.position / Grid.CELL_PX))
-	# Half-open bounds stay correct at large world coordinates where tiny epsilon rounds away.
-	var last: Vector2i = Vector2i(ceil(body.end / Grid.CELL_PX)) - Vector2i.ONE
-	return Rect2i(first, last - first + Vector2i.ONE)
+	return Contact.cell_rect(body_rect(at))
 
 func _blocked(at: Vector2) -> bool:
-	var rect: Rect2i = cell_rect(at)
-	for y in range(rect.position.y, rect.end.y):
-		for x in range(rect.position.x, rect.end.x):
-			var material: int = grid.material_at(x, y)
-			if material == Grid.CellMaterial.SOLID or material == Grid.CellMaterial.UNSTABLE_ORE or material == Grid.CellMaterial.SAND:
-				return true
-	return false
+	return Contact.blocked(grid, body_rect(at))
 
 func register_station(at: Vector2) -> bool:
 	if not grid.is_clear(cell_rect(at)):
@@ -93,6 +84,10 @@ func _move_axis(axis: int, distance: float) -> void:
 		var candidate: Vector2 = position
 		candidate[axis] += direction * amount
 		if _blocked(candidate):
+			var contact: Vector2 = Contact.contact_position(grid, candidate, body_rect(candidate), axis, direction)
+			# Resolve only the attempted movement, with clearance for the complete body.
+			if direction * (contact[axis] - position[axis]) >= 0.0 and direction * (candidate[axis] - contact[axis]) >= 0.0 and not _blocked(contact):
+				position = contact
 			velocity[axis] = 0.0
 			return
 		position = candidate
@@ -113,7 +108,7 @@ func step(input: Dictionary) -> void:
 	else:
 		recall_hold = 0
 		recall_latched = false
-	grounded = _blocked(position + Vector2(0, 1.0))
+	grounded = Contact.supported(grid, body_rect(position))
 	if grounded:
 		levitation_ticks = 90
 	var movement: float = clampf(float(input.get("move", 0.0)), -1.0, 1.0)
@@ -136,7 +131,7 @@ func step(input: Dictionary) -> void:
 		levitation_ticks -= 1
 	_move_axis(0, velocity.x / 60.0)
 	_move_axis(1, velocity.y / 60.0)
-	grounded = _blocked(position + Vector2(0, 1.0))
+	grounded = Contact.supported(grid, body_rect(position))
 	var center_cell: Vector2i = Vector2i(floor((position - Vector2(0, BODY_SIZE.y / 2.0)) / Grid.CELL_PX))
 	if grid.in_bounds(center_cell.x, center_cell.y) and grid.heat[center_cell.y * grid.width + center_cell.x] >= 0.6 and tick >= immunity_until and tick >= next_heat_damage:
 		if take_damage(5.0, "heat"):

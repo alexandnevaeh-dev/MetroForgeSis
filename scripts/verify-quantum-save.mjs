@@ -11,7 +11,7 @@ const captures = join(report, 'save-control-' + Date.now());
 mkdirSync(captures, { recursive: true });
 const env = { ...process.env, TEMP: 'E:/MetroForgeData/Temp', TMP: 'E:/MetroForgeData/Temp',
   APPDATA: 'E:/MetroForgeData/AppData/QuantumGodot', LOCALAPPDATA: 'E:/MetroForgeData/AppData/QuantumGodotLocal' };
-const paths = ['scripts/MicrocellGrid.gd', 'scripts/PlayerSimulation.gd', 'scripts/InstrumentSimulation.gd',
+const paths = ['scripts/MicrocellGrid.gd', 'scripts/MaterialContact.gd', 'scripts/PlayerSimulation.gd', 'scripts/InstrumentSimulation.gd',
   'scripts/MinesProgression.gd', 'scripts/EnemySimulation.gd', 'scripts/Playground.gd',
   'scripts/ProgressionPlayground.gd', 'scripts/CombatPlayground.gd', 'scripts/RunState.gd',
   'scripts/SaveStore.gd', 'scripts/RunSession.gd', 'scripts/SavePlayground.gd', 'tests/SaveTests.gd'];

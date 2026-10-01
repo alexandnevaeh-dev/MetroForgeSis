@@ -1,0 +1,4 @@
+# Preserve the bytes referenced by the immutable candidate manifest on Windows checkouts.
+*.json -text
+*.tscn -text
+*.png binary

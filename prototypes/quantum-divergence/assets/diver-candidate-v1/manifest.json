@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "genre": "quantum-divergence",
+  "actor": "diver",
+  "candidateOnly": true,
+  "productionApproved": false,
+  "animationReady": false,
+  "completeCast": false,
+  "frame": [
+    64,
+    96
+  ],
+  "logicalSize": [
+    32,
+    48
+  ],
+  "pivot": [
+    32,
+    96
+  ],
+  "source": "E:\\MetroForgeData\\ArtProduction\\quantum-diver-native-rig-v5-20261001",
+  "clips": {
+    "idle": {
+      "path": "idle.png",
+      "frames": 6,
+      "fps": 10,
+      "loop": true,
+      "uniqueFrames": 6
+    },
+    "walk": {
+      "path": "walk.png",
+      "frames": 8,
+      "fps": 16,
+      "loop": true,
+      "uniqueFrames": 8
+    },
+    "run": {
+      "path": "run.png",
+      "frames": 10,
+      "fps": 24,
+      "loop": true,
+      "uniqueFrames": 10
+    },
+    "attack": {
+      "path": "attack.png",
+      "frames": 6,
+      "fps": 24,
+      "loop": false,
+      "uniqueFrames": 6
+    },
+    "hit": {
+      "path": "hit.png",
+      "frames": 3,
+      "fps": 18,
+      "loop": false,
+      "uniqueFrames": 3
+    },
+    "death": {
+      "path": "death.png",
+      "frames": 12,
+      "fps": 18,
+      "loop": false,
+      "uniqueFrames": 12
+    },
+    "jump": {
+      "path": "jump.png",
+      "frames": 4,
+      "fps": 16,
+      "loop": false,
+      "uniqueFrames": 4
+    },
+    "levitate": {
+      "path": "levitate.png",
+      "frames": 6,
+      "fps": 16,
+      "loop": true,
+      "uniqueFrames": 6
+    },
+    "dash": {
+      "path": "dash.png",
+      "frames": 6,
+      "fps": 24,
+      "loop": false,
+      "uniqueFrames": 6
+    }
+  },
+  "totalUniqueFrames": 61,
+  "scope": "Original rig animation candidate. Native playback, complete matching cast, weapon aiming and final visual admission remain separate gates.",
+  "hashes": {
+    "attack.png": "0d31641977c45558f29ba6a3f7da210e8249896a72331ba56d91d192fd282bd0",
+    "dash.png": "d56a077d78c55365ba7bf7a0ae10020bb4d8eeb5ca5a68f506cacc297680bcf7",
+    "death.png": "f6f1556f6cbeddce07e8b83c0124a6b98ee8465a53c3ca55ddcba06e7109209c",
+    "hit.png": "51ad4a78da1cb7019910091e1598a6dac60ad9ca23ccb72b3fb5a73823a7fd02",
+    "idle.png": "55fc0d13df529bc98567cbcf3401878be9e5cdcbcb191336725e7c14ba8d5e67",
+    "jump.png": "a0441302ea96e1d7423dbdd390f1b35ef3b075691704216c90aadb20c81b4de1",
+    "levitate.png": "5e7b90ea933e51b97167547874853a4ac2ac33d1537adad45725237e509a4d45",
+    "native-bake-receipt.json": "839d32a622a9acc18e57fa44b573d9d84ef9e23a4f4edb59d3a42e72b720fe96",
+    "pose-review.png": "13eae001bbe25bdcf5522517c221869d2cb685a02ac590892531e520434f5fb0",
+    "quantum-diver-source.tscn": "d3f7299f612c49f790629ef516c7e6c592b606f6af7ecc7567d763cec4fb7b6e",
+    "run.png": "2e0a5e9fcff9a4e3e6906e97cb2fa742bd7c387eba513eb89f5589a70debf722",
+    "walk.png": "a80c76d0e965cde1e1a714b0fad387521100f30df9682a4dfcaad3bb617bba11"
+  }
+}

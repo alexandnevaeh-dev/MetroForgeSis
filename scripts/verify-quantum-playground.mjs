@@ -15,6 +15,7 @@ const results = [];
 for (const [script, prefix, name] of [
   ['SimulationTests.gd', 'QUANTUM_SIMULATION_RESULTS ', 'simulation'],
   ['GameplayTests.gd', 'QUANTUM_GAMEPLAY_RESULTS ', 'gameplay'],
+  ['ContactTests.gd', 'QUANTUM_CONTACT_RESULTS ', 'contact'],
   ['ProgressionTests.gd', 'QUANTUM_PROGRESSION_RESULTS ', 'progression'],
   ['EnemyTests.gd', 'QUANTUM_ENEMY_RESULTS ', 'enemy'],
   ['SaveTests.gd', 'QUANTUM_SAVE_RESULTS ', 'save'],

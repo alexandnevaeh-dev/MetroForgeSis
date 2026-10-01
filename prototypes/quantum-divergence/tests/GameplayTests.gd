@@ -114,7 +114,7 @@ func run_tests() -> void:
 	var player = Player.new(player_grid, Vector2(60, 240))
 	for i in 120:
 		player.step({})
-	check(player.grounded and absf(player.position.y - 240.0) < 1.0 and player.state == "idle", "player feet remain in contact with the visible material floor")
+	check(player.grounded and player.position.y == 240.0 and player.state == "idle", "player feet remain in exact contact with the visible material floor")
 	player.step({"jump": true})
 	check(player.position.y < 240.0 and not player.grounded and player.state == "jump", "jump leaves the floor through actual material collision")
 	var initial_fuel: int = player.levitation_ticks
@@ -123,7 +123,7 @@ func run_tests() -> void:
 	check(player.levitation_ticks < initial_fuel and player.position.y < 200.0, "levitation consumes a bounded fuel reservoir while lifting the player")
 	for i in 180:
 		player.step({})
-	check(player.grounded and player.levitation_ticks == 90, "landing refills levitation and aligns feet with the floor")
+	check(player.grounded and player.position.y == 240.0 and player.levitation_ticks == 90, "landing refills levitation and aligns feet exactly with the floor")
 	for y in range(30, 60):
 		player_grid.set_material(40, y, Grid.CellMaterial.SOLID, true)
 	for i in 120:

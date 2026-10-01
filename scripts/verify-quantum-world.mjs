@@ -11,7 +11,7 @@ mkdirSync(captures,{recursive:true});
 const env = {...process.env,TEMP:'E:/MetroForgeData/Temp',TMP:'E:/MetroForgeData/Temp',APPDATA:'E:/MetroForgeData/AppData/QuantumGodot',LOCALAPPDATA:'E:/MetroForgeData/AppData/QuantumGodotLocal'};
 const godot = 'E:/MetroForgeData/Godot/4.6/Godot_v4.6-stable_win64_console.exe';
 const paths = ['scripts/ChunkedGrid.gd','scripts/MineWorld.gd','scripts/MineNavigator.gd','scripts/WorldPlayground.gd',
-  'scripts/MicrocellGrid.gd','scripts/PlayerSimulation.gd','scripts/EnemySimulation.gd','scripts/InstrumentSimulation.gd',
+  'scripts/MicrocellGrid.gd','scripts/MaterialContact.gd','scripts/PlayerSimulation.gd','scripts/EnemySimulation.gd','scripts/InstrumentSimulation.gd',
   'scripts/MinesProgression.gd','scripts/Playground.gd','scripts/ProgressionPlayground.gd','scripts/CombatPlayground.gd','tests/ChunkTests.gd','tests/WorldTests.gd'];
 const sources = paths.map(path=>({path,sha256:createHash('sha256').update(readFileSync(join(project,path))).digest('hex')}));
 const suites = [];
