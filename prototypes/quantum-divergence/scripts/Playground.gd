@@ -18,6 +18,7 @@ var effects: Array[Dictionary] = []
 var started_usec: int
 var worst_tick_usec: int = 0
 var measured_usec: int = 0
+var capture_ticks: Array[int] = [60, 330, 425]
 var report: Dictionary = {"scope": "Native mechanics playground; not MetroForge app generation, completed biome or final art approval", "shots": 0, "splits": 0, "impacts": 0, "recalls": 0}
 
 func _ready() -> void:
@@ -33,11 +34,32 @@ func _ready() -> void:
 	_build_world()
 	player = Player.new(grid, Vector2(80, 336))
 	instruments = Instruments.new(grid)
-	instruments.add_target(1, Rect2(250, 276, 24, 60), 100.0)
+	_setup_targets()
 	image = Image.create(grid.width, grid.height, false, Image.FORMAT_RGBA8)
 	terrain = ImageTexture.create_from_image(image)
 	_update_texture()
 	started_usec = Time.get_ticks_usec()
+
+func _setup_targets() -> void:
+	instruments.add_target(1, Rect2(250, 276, 24, 60), 100.0)
+
+func _aim_for_test(muzzle: Vector2) -> Vector2:
+	return Vector2(410, 350) - muzzle if selected == "tachyon" else Vector2.RIGHT
+
+func _after_simulation(_input: Dictionary) -> void:
+	pass
+
+func _test_finished() -> bool:
+	return simulation_tick >= 450
+
+func _test_passed() -> bool:
+	return report.shots == 3 and report.recalls == 1 and player.hp > 0
+
+func _can_fire() -> bool:
+	return player.hp > 0
+
+func _extend_report() -> void:
+	pass
 
 func _build_world() -> void:
 	for y in range(84, 95):
@@ -110,21 +132,29 @@ func _physics_process(_delta: float) -> void:
 	if player.recalled_this_tick:
 		report.recalls += 1
 		effects.append({"type": "recall", "position": player.position - Vector2(0, 20), "until": simulation_tick + 30})
-	if fire_requested or (not smoke_test and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)):
+	if _can_fire() and (fire_requested or (not smoke_test and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT))):
 		var muzzle: Vector2 = player.position + Vector2(player.facing * 14, -25)
 		var aim: Vector2 = get_global_mouse_position() - WORLD_OFFSET - muzzle
 		if smoke_test:
-			aim = Vector2(410, 350) - muzzle if selected == "tachyon" else Vector2.RIGHT
+			aim = _aim_for_test(muzzle)
 		var fired: Dictionary = instruments.fire(selected, muzzle, aim)
 		if fired.accepted:
 			report.shots += 1
 		fire_requested = false
 	instruments.step()
+	_after_simulation(input)
 	for event in instruments.events:
 		if event.type == "split":
 			report.splits += 1
 		if event.type == "impact":
 			report.impacts += 1
+			if not report.has("impact_positions"):
+				report.impact_positions = []
+			report.impact_positions.append([event.position.x, event.position.y])
+		if event.type == "hit":
+			if not report.has("target_hits"):
+				report.target_hits = {}
+			report.target_hits[str(event.target)] = int(report.target_hits.get(str(event.target), 0)) + 1
 		if event.has("position"):
 			effects.append({"type": event.type, "position": event.position, "until": simulation_tick + 12})
 	effects = effects.filter(func(effect): return int(effect.until) > simulation_tick)
@@ -134,10 +164,10 @@ func _physics_process(_delta: float) -> void:
 	var duration: int = Time.get_ticks_usec() - before_usec
 	worst_tick_usec = maxi(worst_tick_usec, duration)
 	measured_usec += duration
-	if smoke_test and capture_dir != "" and simulation_tick in [60, 330, 425] and not captured.has(simulation_tick):
+	if smoke_test and capture_dir != "" and simulation_tick in capture_ticks and not captured.has(simulation_tick):
 		captured[simulation_tick] = true
 		_capture(simulation_tick)
-	if smoke_test and simulation_tick >= 450:
+	if smoke_test and _test_finished():
 		report.ticks = simulation_tick
 		report.wall_seconds = (Time.get_ticks_usec() - started_usec) / 1000000.0
 		report.mean_tick_ms = float(measured_usec) / simulation_tick / 1000.0
@@ -145,11 +175,12 @@ func _physics_process(_delta: float) -> void:
 		report.player_feet = [player.position.x, player.position.y]
 		report.player_hp = player.hp
 		report.max_projectile_slots = Instruments.MAX_SLOTS
+		_extend_report()
 		if capture_dir != "":
 			var file = FileAccess.open(capture_dir.path_join("playground-result.json"), FileAccess.WRITE)
 			file.store_string(JSON.stringify(report, "\t"))
 		print("QUANTUM_PLAYGROUND_RESULTS " + JSON.stringify(report))
-		get_tree().quit(0 if report.shots == 3 and report.recalls == 1 and player.hp > 0 else 1)
+		get_tree().quit(0 if _test_passed() else 1)
 
 func _capture(at_tick: int) -> void:
 	await RenderingServer.frame_post_draw
@@ -223,6 +254,19 @@ func _draw_diver() -> void:
 		draw_line(at + Vector2(-5, 4), at + Vector2(-5, 12), Color("58c2e9"), 2)
 		draw_line(at + Vector2(5, 4), at + Vector2(5, 10), Color("a7f3ff"), 2)
 
+func _draw_targets() -> void:
+	for id in instruments.targets:
+		var target: Dictionary = instruments.targets[id]
+		var rect: Rect2 = target.rect
+		if target.hp > 0:
+			draw_rect(rect, Color("253b51"))
+			draw_rect(Rect2(rect.position + Vector2(3, 3), rect.size - Vector2(6, 6)), Color("536b82"))
+			draw_circle(rect.get_center() - Vector2(0, 8), 6, Color("d08768"))
+			draw_rect(Rect2(rect.position - Vector2(0, 7), Vector2(rect.size.x * target.hp / 100.0, 3)), Color("c4a18a"))
+
+func _draw_overlay() -> void:
+	pass
+
 func _draw() -> void:
 	if grid == null:
 		return
@@ -249,14 +293,7 @@ func _draw() -> void:
 	draw_rect(Rect2(56, 330, 48, 6), Color("78ece0"))
 	draw_rect(Rect2(60, 316, 6, 14), Color("4f7590"))
 	draw_rect(Rect2(60, 317, 6, 4), Color("a5fff1"))
-	for id in instruments.targets:
-		var target: Dictionary = instruments.targets[id]
-		var rect: Rect2 = target.rect
-		if target.hp > 0:
-			draw_rect(rect, Color("253b51"))
-			draw_rect(Rect2(rect.position + Vector2(3, 3), rect.size - Vector2(6, 6)), Color("536b82"))
-			draw_circle(rect.get_center() - Vector2(0, 8), 6, Color("d08768"))
-			draw_rect(Rect2(rect.position - Vector2(0, 7), Vector2(rect.size.x * target.hp / 100.0, 3)), Color("c4a18a"))
+	_draw_targets()
 	for projectile in instruments.projectiles:
 		var color: Color = Color("86f6e9") if projectile.instrument == "photon" else Color("ec83de")
 		draw_line(projectile.position - Vector2(projectile.direction) * 10, projectile.position, color, 2)
@@ -271,3 +308,4 @@ func _draw() -> void:
 	_text(Vector2(569, 521), "SIMULATED LIQUID / ORE / DUST", 11, Color("8b9db9"))
 	_text(Vector2(48, 561), "A / D  Move     Shift  Run     Space  Jump / Levitate     Ctrl  Dash     Mouse  Aim / Fire", 13)
 	_text(Vector2(48, 582), "Q  Swap instrument     Hold R  Recall     Esc  Pause     Original test art; full biome and final assets in development", 12, Color("758ba9"))
+	_draw_overlay()

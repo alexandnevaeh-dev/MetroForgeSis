@@ -60,6 +60,22 @@ func run_tests() -> void:
 	for i in 10:
 		damage.step()
 	check(damage.targets[9].hp == 8.0 and damage.projectiles.is_empty(), "swept enemy collision applies damage once and consumes the projectile")
+	var fluid_grid = flat_world()
+	fluid_grid.set_material(16, 25, Grid.CellMaterial.FLUID)
+	var fluid_shots = Instruments.new(fluid_grid)
+	fluid_shots.add_target(1, Rect2(80, 96, 8, 8), 20.0)
+	fluid_shots.fire("photon", Vector2(40, 100), Vector2.RIGHT)
+	for i in 8:
+		fluid_shots.step()
+	check(fluid_shots.targets[1].hp == 20.0 and fluid_shots.projectiles.is_empty(), "flowing material shields a target from the first Photon shot")
+	fluid_grid.step()
+	check(fluid_grid.material_at(16, 25) == Grid.CellMaterial.EMPTY, "Photon heat vaporizes the struck fluid cell instead of damaging the target through it")
+	for i in 16:
+		fluid_shots.step()
+	fluid_shots.fire("photon", Vector2(40, 100), Vector2.RIGHT)
+	for i in 8:
+		fluid_shots.step()
+	check(fluid_shots.targets[1].hp == 8.0, "a later shot reaches the target after the material shield is removed")
 
 	var split_grid = flat_world()
 	for x in range(13, 70):

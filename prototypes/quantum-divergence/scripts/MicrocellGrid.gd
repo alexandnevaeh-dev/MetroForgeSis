@@ -24,6 +24,24 @@ var flicker_probability_per_second: float = 0.20
 var collapsed_this_tick: int = 0
 var flicker_events: int = 0
 var _has_heat: bool = false
+var flicker_regions: Dictionary = {}
+
+func set_flicker_region(id: String, rect: Rect2i, probability: float) -> bool:
+	if id.is_empty() or rect.size.x <= 0 or rect.size.y <= 0 or rect.position.x < 1 or rect.position.y < 1 or rect.end.x > width - 1 or rect.end.y > height - 1 or not is_finite(probability) or probability < 0.0 or probability > 1.0:
+		return false
+	if not flicker_regions.has(id) and flicker_regions.size() >= 16:
+		return false
+	for other_id in flicker_regions:
+		if other_id != id and rect.intersects(flicker_regions[other_id].rect):
+			return false
+	flicker_regions[id] = {"rect": rect, "probability": probability}
+	return true
+
+func flicker_probability_at(x: int, y: int) -> float:
+	for region in flicker_regions.values():
+		if region.rect.has_point(Vector2i(x, y)):
+			return float(region.probability)
+	return flicker_probability_per_second
 
 func _init(grid_width: int = 64, grid_height: int = 48, seed_value: int = 42) -> void:
 	assert(grid_width >= 3 and grid_height >= 3 and grid_width * grid_height <= MAX_CELLS)
@@ -135,6 +153,9 @@ func step() -> void:
 	collapsed_this_tick = 0
 	# Per-second Bernoulli probability converted to a fixed-tick probability.
 	var p_tick: float = 1.0 - pow(1.0 - clampf(flicker_probability_per_second, 0.0, 1.0), 1.0 / TICK_HZ)
+	var regional_ticks: Array[Dictionary] = []
+	for region in flicker_regions.values():
+		regional_ticks.append({"rect": region.rect, "p": 1.0 - pow(1.0 - float(region.probability), 1.0 / TICK_HZ)})
 	for index in cells.size():
 		if immutable[index] != 0:
 			continue
@@ -143,9 +164,17 @@ func step() -> void:
 		if collapse_until[index] != 0:
 			collapse_until[index] = 0
 			cells[index] = CellMaterial.UNSTABLE_ORE
-		if ore_origin[index] != 0 and reserved[index] == 0 and actor_occupancy[index] == 0 and (cells[index] == CellMaterial.UNSTABLE_ORE or cells[index] == CellMaterial.EMPTY) and _noise(index) < p_tick:
-			cells[index] = CellMaterial.EMPTY if cells[index] == CellMaterial.UNSTABLE_ORE else CellMaterial.UNSTABLE_ORE
-			flicker_events += 1
+		if ore_origin[index] != 0 and reserved[index] == 0 and actor_occupancy[index] == 0 and (cells[index] == CellMaterial.UNSTABLE_ORE or cells[index] == CellMaterial.EMPTY):
+			var local_p: float = p_tick
+			if not regional_ticks.is_empty():
+				var point := Vector2i(index % width, int(index / width))
+				for region in regional_ticks:
+					if region.rect.has_point(point):
+						local_p = region.p
+						break
+			if _noise(index) < local_p:
+				cells[index] = CellMaterial.EMPTY if cells[index] == CellMaterial.UNSTABLE_ORE else CellMaterial.UNSTABLE_ORE
+				flicker_events += 1
 		if (cells[index] == CellMaterial.SOLID or cells[index] == CellMaterial.UNSTABLE_ORE) and heat[index] >= 0.8:
 			cells[index] = CellMaterial.SAND
 			ore_origin[index] = 0
@@ -198,7 +227,8 @@ func snapshot() -> Dictionary:
 		"cells": cells.duplicate(), "heat": heat.duplicate(), "immutable": immutable.duplicate(),
 		"reserved": reserved.duplicate(), "actor_occupancy": actor_occupancy.duplicate(), "ore_origin": ore_origin.duplicate(), "collapse_until": collapse_until.duplicate(),
 		"flicker_probability_per_second": flicker_probability_per_second,
-		"collapsed_this_tick": collapsed_this_tick, "flicker_events": flicker_events}
+		"collapsed_this_tick": collapsed_this_tick, "flicker_events": flicker_events,
+		"flicker_regions": flicker_regions.duplicate(true)}
 
 func restore(state: Dictionary) -> bool:
 	if state.get("schema_version") != 1 or state.get("width") != width or state.get("height") != height:
@@ -218,6 +248,18 @@ func restore(state: Dictionary) -> bool:
 	var probability = state.get("flicker_probability_per_second")
 	if (typeof(probability) != TYPE_FLOAT and typeof(probability) != TYPE_INT) or not is_finite(float(probability)) or probability < 0 or probability > 1:
 		return false
+	# Old schema-1 snapshots have no regional overrides. Validate a detached grid first.
+	var restored_regions = state.get("flicker_regions", {})
+	if typeof(restored_regions) != TYPE_DICTIONARY or restored_regions.size() > 16:
+		return false
+	var region_validator = get_script().new(width, height, run_seed)
+	for id in restored_regions:
+		var region = restored_regions[id]
+		if typeof(id) != TYPE_STRING or typeof(region) != TYPE_DICTIONARY or typeof(region.get("rect")) != TYPE_RECT2I:
+			return false
+		var rate = region.get("probability")
+		if (typeof(rate) != TYPE_INT and typeof(rate) != TYPE_FLOAT) or not region_validator.set_flicker_region(id, region.rect, float(rate)):
+			return false
 	var restored_has_heat: bool = false
 	for index in cells.size():
 		if state.cells[index] > CellMaterial.FLUID or not is_finite(state.heat[index]) or state.heat[index] < 0 or state.heat[index] > 1:
@@ -242,5 +284,6 @@ func restore(state: Dictionary) -> bool:
 	collapsed_this_tick = int(state.collapsed_this_tick)
 	flicker_events = int(state.flicker_events)
 	_has_heat = restored_has_heat
+	flicker_regions = restored_regions.duplicate(true)
 	return true
 

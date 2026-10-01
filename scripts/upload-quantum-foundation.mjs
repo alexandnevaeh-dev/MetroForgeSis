@@ -9,7 +9,7 @@ const report = join(repo, 'reports/game-tests/20261001-quantum-divergence');
 const store = 'E:/MetroForgeData/GitHubUpload/20261001/snapshot.git';
 const branch = 'refs/heads/codex/metroforge-epic-20261001';
 const expectedParent = process.argv.find(argument => argument.startsWith('--expected-parent='))?.slice('--expected-parent='.length)
-  || '09f5338e7ec9525f209d9852e836192d222d0579';
+  || '203943cd80a15e3ac81b01f064c733f7d3826fc5';
 if (!/^[a-f0-9]{40}$/.test(expectedParent)) throw Error('Provide the verified parent commit');
 const files = [
   'docs/development/QUANTUM_DIVERGENCE.md',
@@ -27,6 +27,12 @@ const files = [
   'scripts/verify-quantum-playground.mjs',
   'scripts/record-quantum-playground.mjs',
   'scripts/upload-quantum-foundation.mjs',
+  'prototypes/quantum-divergence/scripts/MinesProgression.gd',
+  'prototypes/quantum-divergence/scripts/ProgressionPlayground.gd',
+  'prototypes/quantum-divergence/tests/ProgressionTests.gd',
+  'prototypes/quantum-divergence/scenes/ProgressionPlayground.tscn',
+  'prototypes/quantum-divergence/Run Probability Progression.cmd',
+  'scripts/verify-quantum-progression.mjs',
 ];
 const patterns = [/gh[pousr]_[A-Za-z0-9]{35,}/, /github_pat_[A-Za-z0-9_]{70,}/,
   /sk-(?:proj-)?[A-Za-z0-9_-]{40,}/, /nvapi-[A-Za-z0-9_-]{45,}/,
@@ -59,9 +65,15 @@ if (!changedFiles.length || changes.split('\n').some(line => line.startsWith('D\
 const mechanics = JSON.parse(readFileSync(join(report, 'mechanics-latest.json'), 'utf8'));
 if (mechanics.results.some(result => result.failed !== 0) || mechanics.runtime.recalls !== 1 || mechanics.runtime.shots !== 3) throw Error('Native verification is incomplete');
 const nativePassed = mechanics.results.reduce((total, result) => total + result.passed, 0);
+const progression = JSON.parse(readFileSync(join(report, 'progression-latest.json'), 'utf8'));
+if (!progression.runtime.progression.extracted || progression.runtime.shots !== 33 || progression.runtime.impacts !== 2) throw Error('Progression walkthrough is incomplete');
+for (const proof of progression.sources) {
+  const current = createHash('sha256').update(readFileSync(join(repo, 'prototypes/quantum-divergence', proof.path))).digest('hex');
+  if (current !== proof.sha256) throw Error('Native source changed after route verification: ' + proof.path);
+}
 const tree = git(['write-tree']).trim();
 const commit = git(['commit-tree', tree, '-p', expectedParent],
-  'Add playable quantum material mechanics playground\n\nConnect movement, two bounded instruments, swept collision and safe Recall to native simulated terrain. Verify 53 behavior checks and a real rendered control run. Preserve original programmatic test art and explicitly pending full biome, final assets and app-generation integration.\n').trim();
+  `Add quantum mine progression and fully gated extraction\n\nConnect regional anchoring, three projectile-damaged crystals, atomic permanent platforms, core gating and a one-time secret reward to a native rendered walkthrough. Verify ${nativePassed} behavior checks plus exact crystal/Golem damage and real fluid interception. Stationary targets and test art remain explicit; full biome, enemy AI, final assets and app generation are pending.\n`).trim();
 const result = { status: 'prepared', commit, parent: expectedParent, files: hashes, tests: { nativePassed, nativeFailed: 0 }, workingIndexPreserved: indexHash() === beforeIndex };
 writeFileSync(join(report, 'github-quantum-upload.json'), JSON.stringify(result, null, 2));
 git(['update-ref', branch, commit, expectedParent]);
