@@ -845,9 +845,7 @@ public class GameBootstrap : MonoBehaviour
             sr.sprite = sprite;
         else
         {
-            sr.color = new Color(0.72f, 0.55f, 0.18f, 0.85f);
-            sr.sprite = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 4f);
-            go.transform.localScale = new Vector3(gate.width, gate.height, 1f);
+            SetFallbackProp(sr, new Vector2(gate.width, gate.height), new Vector2(0.5f, 0.5f), new Color(0.72f, 0.55f, 0.18f, 0.85f));
         }
         var blocker = go.AddComponent<GateBlocker>();
         blocker.RequiredAbility = gate.requiredAbility;
@@ -894,9 +892,7 @@ public class GameBootstrap : MonoBehaviour
             sr.sprite = sprite;
         else
         {
-            sr.color = new Color(1f, 0.82f, 0.28f, 1f);
-            sr.sprite = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 4f);
-            go.transform.localScale = new Vector3(18f, 18f, 1f);
+            SetFallbackProp(sr, new Vector2(18f, 18f), new Vector2(0.5f, 0.5f), new Color(1f, 0.82f, 0.28f, 1f));
         }
         go.AddComponent<AbilityPickup>().AbilityId = pickup.id;
         go.AddComponent<PickupBob>();
@@ -926,9 +922,7 @@ public class GameBootstrap : MonoBehaviour
             sr.sprite = sprite;
         else
         {
-            sr.color = new Color(0.35f, 0.75f, 1f, 0.9f);
-            sr.sprite = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0f), 4f);
-            go.transform.localScale = new Vector3(12f, 40f, 1f);
+            SetFallbackProp(sr, new Vector2(12f, 40f), new Vector2(0.5f, 0f), new Color(0.35f, 0.75f, 1f, 0.9f));
         }
         var pulse = go.AddComponent<CheckpointPulse>();
         pulse.AuthoredRoomId = room.id;
@@ -1013,10 +1007,20 @@ public class GameBootstrap : MonoBehaviour
             sr.sprite = sprite;
         else
         {
-            sr.color = new Color(0.45f, 0.9f, 0.4f, 0.9f);
-            sr.sprite = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 4f);
-            go.transform.localScale = new Vector3(36f, 36f, 1f);
+            SetFallbackProp(sr, new Vector2(36f, 36f), new Vector2(0.5f, 0.5f), new Color(0.45f, 0.9f, 0.4f, 0.9f));
         }
+    }
+
+    private static void SetFallbackProp(SpriteRenderer renderer, Vector2 size, Vector2 pivot, Color color)
+    {
+        // Size the renderer, never the collider's transform. FullRect supports slicing
+        // without changing the authored pickup/checkpoint/gate interaction footprint.
+        var texture = Texture2D.whiteTexture;
+        renderer.sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), pivot,
+            texture.width, 0, SpriteMeshType.FullRect);
+        renderer.color = color;
+        renderer.drawMode = SpriteDrawMode.Sliced;
+        renderer.size = size;
     }
 
     private void HandleCheckpoint(Collider2D other)

@@ -238,6 +238,8 @@ public class AcceptanceDriver : MonoBehaviour
                 Fail("escaped_room_bounds", "Player escaped " + roomBounds.id + " at " + location);
                 yield break;
             }
+            yield return CollectRoomAbilities();
+            if (_finished) yield break;
             if (_game.CurrentRoom != null && _game.CurrentRoom.victory && !_game.Victory &&
                 (_game.CurrentRoom.enemy == null || !_game.CurrentRoom.enemy.isBoss || _game.BossDefeated(_game.CurrentRoom)))
             {
@@ -334,7 +336,8 @@ public class AcceptanceDriver : MonoBehaviour
                 break;
             }
             var living = UnityEngine.Object.FindFirstObjectByType<EnemyActor>();
-            if (living == null || _feature["combat_kill"] == "passed")
+            // A prior room's kill must not force forward motion through a new live foe.
+            if (living == null)
             {
                 yield return Hold(KeyCode.D, 0.45f);
                 var roomW = _game.CurrentRoom != null ? _game.CurrentRoom.width : 800f;
@@ -636,6 +639,30 @@ public class AcceptanceDriver : MonoBehaviour
         _ascending = false;
         ReleaseAll();
         if (!_game.Victory) Fail("victory_trigger_not_reached", roomId);
+    }
+
+    private IEnumerator CollectRoomAbilities()
+    {
+        var room = _game.CurrentRoom;
+        if (room == null) yield break;
+        var pickups = room.abilityPickups ?? (HasActor(room.abilityPickup)
+            ? new[] { room.abilityPickup } : Array.Empty<GameplayActor>());
+        foreach (var pickup in pickups)
+        {
+            if (!HasActor(pickup) || _game.Player.Abilities.Contains(pickup.id)) continue;
+            // Suppress incidental hops until the real pickup trigger is touched.
+            ReleaseAll();
+            _ascending = true;
+            _ascentTargetX = pickup.x;
+            var until = Mathf.Min(_deadline, Time.unscaledTime + 6f);
+            while (_game.CurrentRoomId == room.id && !_game.Player.Abilities.Contains(pickup.id)
+                && Time.unscaledTime < until) yield return null;
+            _ascending = false;
+            ReleaseAll();
+            if (!_game.Player.Abilities.Contains(pickup.id))
+            { Fail("authored_pickup_not_reached", room.id + " " + pickup.id); yield break; }
+            Note("pickup_trigger " + room.id + " " + pickup.id);
+        }
     }
 
     private GameplayDoor RequiredAscentDoor()
