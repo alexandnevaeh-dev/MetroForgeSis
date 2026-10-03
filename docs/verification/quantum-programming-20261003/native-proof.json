@@ -1,0 +1,1246 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261003\\quantum-programming-1791060993969\\tree\\reports\\game-tests\\20261003-quantum-programming\\programming-1791061383872",
+  "sourceHashes": {
+    "prototypes/quantum-divergence/scripts/MicrocellGrid.gd": "70c2929bcc7972a38afc3129c533a6640ef0cd936a3e6c4aea8e6b1d40057910",
+    "prototypes/quantum-divergence/scripts/ChunkedGrid.gd": "6a13bc0fb5bbc707324bb6d5fc4aeab7afb9a884b275e730bb71114fa4d66129",
+    "prototypes/quantum-divergence/scripts/MaterialContact.gd": "a88b93df477b13dc0a7c4501ab275a0de8bca7c30406249b6a7054bcdfb0226c",
+    "prototypes/quantum-divergence/scripts/PlayerSimulation.gd": "2400a0a32658701c6cf1b75d9793fd7557be3b0947f05fe9b63532cb01565a7c",
+    "prototypes/quantum-divergence/scripts/MinesProgression.gd": "27e44173e08997387730f384f2555cddaf44072d308359e255a0a4044c5e08a2",
+    "prototypes/quantum-divergence/scripts/EnemySimulation.gd": "7b1eeddd8e36b92032ae10c7b7a286219fe18ee5f005ad5f1710df55d5c5dfd2",
+    "prototypes/quantum-divergence/scripts/InstrumentProgram.gd": "e8f3bd102ee1f8a22ad2ff6f49da8baf23a73e4442bc2ce942fd34b1abffeab0",
+    "prototypes/quantum-divergence/scripts/InstrumentSimulation.gd": "030fcdd6c7f5c1b09fe87a4fd52a20e8a1235d78d70f1d1b1e4be00805ca2172",
+    "prototypes/quantum-divergence/scripts/InstrumentProgramming.gd": "e797cedeb3bbc9746f16c2424b8edf1761ffc52d728efb355411d0f53da834f8",
+    "prototypes/quantum-divergence/scripts/InstrumentWorkbench.gd": "a1ed140169734853f53f94fce2e394622f197aa9d048468e71bfa3286a6102f2",
+    "prototypes/quantum-divergence/scripts/Playground.gd": "da20224e8d70c5e6b2d9ec6569e753493a2c740f4aa42615b88acca9334002f4",
+    "prototypes/quantum-divergence/scripts/WorldPlayground.gd": "a2ece6b2e371b8b36b530461a6d6aff6c9582d99653139fbbfbbfe25ddf5739f",
+    "prototypes/quantum-divergence/scripts/MinesArtPlayground.gd": "31b3f2f5f68c6d0ecf38f6642c63604f15ff9d19ed88f7628aa3be5d41a08dab",
+    "prototypes/quantum-divergence/scripts/RunState.gd": "14bee7c6038db02013ade5d7085b82159c7a90b5df910f8c8bf3e0805fd66bbd",
+    "prototypes/quantum-divergence/tests/ProgrammingTests.gd": "fd852bba61a76b607a062ae5599b0dc5747f08f07434e31751c687f1b9095c30",
+    "prototypes/quantum-divergence/tests/WorkbenchTests.gd": "e72ca0780a1278fe5498166393500ae82779f69b023c89c369e40f2f316dd2bb",
+    "scripts/verify-quantum-programming.mjs": "b5f2a7d506c0ed218a1fbddf5f74d2e283a69ebe5bcd9f4d77ef6b625943b569",
+    "prototypes/quantum-divergence/tests/SimulationTests.gd": "83521effe1a842bb83e0f45d13b7596cda018e5125da09709beb164f158a7f58",
+    "prototypes/quantum-divergence/tests/GameplayTests.gd": "65471eeb468266598683abff35d0ea7562039685f49d7f766380ae89fde574e3",
+    "prototypes/quantum-divergence/tests/ContactTests.gd": "2a2e3b12d3bbe81d30ec18e3599ab66c971f7b733d43d50bdf1cd876d645fe5a",
+    "prototypes/quantum-divergence/tests/ProgressionTests.gd": "0cf3ceb253f248fc2f63f35b59ce1fc3342149cc41cb18e0849b6e8f59bad7da",
+    "prototypes/quantum-divergence/tests/EnemyTests.gd": "5b24f27fb5188c163193aca5f33929f0b805de9533edbf666ac1d946772a18b6",
+    "prototypes/quantum-divergence/tests/SaveTests.gd": "09e261c656646ba6c60f61604718bddac77617cb6d18a126ffbf7ddc1ed9f5c0",
+    "prototypes/quantum-divergence/tests/ChunkTests.gd": "5a9fc20f537dfc3d99d6d880aa57cada34e0b7b8b9d3807ae611b75c41e29376"
+  },
+  "suites": [
+    {
+      "name": "Simulation",
+      "passed": 27,
+      "failed": 0,
+      "results": [
+        {
+          "passed": true,
+          "test": "sand moves at most one cell per fixed tick"
+        },
+        {
+          "passed": true,
+          "test": "sand mass conserved through settlement"
+        },
+        {
+          "passed": true,
+          "test": "settled sand has no persistent jitter"
+        },
+        {
+          "passed": true,
+          "test": "world boundary cannot be destroyed"
+        },
+        {
+          "passed": true,
+          "test": "fluid spreads without duplication or loss"
+        },
+        {
+          "passed": true,
+          "test": "fluid spreads along the basin floor"
+        },
+        {
+          "passed": true,
+          "test": "same seed and commands replay identical simulation"
+        },
+        {
+          "passed": true,
+          "test": "different seeds change unstable ore patterns"
+        },
+        {
+          "passed": true,
+          "test": "stable solids never probability-flicker"
+        },
+        {
+          "passed": true,
+          "test": "20 percent per second is converted to 60Hz, not applied every tick"
+        },
+        {
+          "passed": true,
+          "test": "collapse rejects occupied actor or objective cells"
+        },
+        {
+          "passed": true,
+          "test": "collapse protection remains for 179 ticks"
+        },
+        {
+          "passed": true,
+          "test": "collapse expires at exactly 180 ticks"
+        },
+        {
+          "passed": true,
+          "test": "collapse mutation budget is shared across calls in a tick"
+        },
+        {
+          "passed": true,
+          "test": "double buffered heat transport is spatially symmetric"
+        },
+        {
+          "passed": true,
+          "test": "heat stays finite, bounded and dissipates"
+        },
+        {
+          "passed": true,
+          "test": "protected station material rejects heating"
+        },
+        {
+          "passed": true,
+          "test": "heat melts mutable solid while preserving protected anchors"
+        },
+        {
+          "passed": true,
+          "test": "native snapshot restores all simulation fields"
+        },
+        {
+          "passed": true,
+          "test": "suspend resume continues identical future replay"
+        },
+        {
+          "passed": true,
+          "test": "malformed snapshot rejected without partial mutation"
+        },
+        {
+          "passed": true,
+          "test": "snapshot rejects nonfinite heat without mutation"
+        },
+        {
+          "passed": true,
+          "test": "snapshot rejects wrong array types without throwing"
+        },
+        {
+          "passed": true,
+          "test": "snapshot cannot erase immutable world boundaries"
+        },
+        {
+          "passed": true,
+          "test": "safe station validates full player-sized clearance"
+        },
+        {
+          "passed": true,
+          "test": "station recall clearance rejects a single obstructing cell"
+        },
+        {
+          "passed": true,
+          "test": "station recall clearance rejects out-of-world destinations"
+        }
+      ]
+    },
+    {
+      "name": "Gameplay",
+      "passed": 29,
+      "failed": 0,
+      "results": [
+        {
+          "passed": true,
+          "test": "accepted Photon reserves capacity and charges exactly four energy"
+        },
+        {
+          "passed": true,
+          "test": "Photon cannot spawn before its six-tick telegraph"
+        },
+        {
+          "passed": true,
+          "test": "Photon spawns at the six-tick attack boundary"
+        },
+        {
+          "passed": true,
+          "test": "cooldown rejection has no resource or entity side effects"
+        },
+        {
+          "passed": true,
+          "test": "nonfinite aiming rejected without energy charge"
+        },
+        {
+          "passed": true,
+          "test": "Photon has finite maximum range and lifetime"
+        },
+        {
+          "passed": true,
+          "test": "swept shot hits a four-pixel wall before the enemy behind it"
+        },
+        {
+          "passed": true,
+          "test": "Photon impact genuinely transforms mutable terrain through heat"
+        },
+        {
+          "passed": true,
+          "test": "swept enemy collision applies damage once and consumes the projectile"
+        },
+        {
+          "passed": true,
+          "test": "flowing material shields a target from the first Photon shot"
+        },
+        {
+          "passed": true,
+          "test": "Photon heat vaporizes the struck fluid cell instead of damaging the target through it"
+        },
+        {
+          "passed": true,
+          "test": "a later shot reaches the target after the material shield is removed"
+        },
+        {
+          "passed": true,
+          "test": "Superposition replaces one parent with exactly three children"
+        },
+        {
+          "passed": true,
+          "test": "split children cannot recurse or extend the parent lifetime"
+        },
+        {
+          "passed": true,
+          "test": "all split descendants expire within the original life budget"
+        },
+        {
+          "passed": true,
+          "test": "capacity rejection reserves all three child slots or changes nothing"
+        },
+        {
+          "passed": true,
+          "test": "remaining capacity still admits a single-slot instrument"
+        },
+        {
+          "passed": true,
+          "test": "swept collision detects protected material at a diagonal grid corner"
+        },
+        {
+          "passed": true,
+          "test": "player feet remain in exact contact with the visible material floor"
+        },
+        {
+          "passed": true,
+          "test": "jump leaves the floor through actual material collision"
+        },
+        {
+          "passed": true,
+          "test": "levitation consumes a bounded fuel reservoir while lifting the player"
+        },
+        {
+          "passed": true,
+          "test": "landing refills levitation and aligns feet exactly with the floor"
+        },
+        {
+          "passed": true,
+          "test": "run and dash cannot tunnel the full player body through a material wall"
+        },
+        {
+          "passed": true,
+          "test": "Recall cannot teleport before the one-second hold"
+        },
+        {
+          "passed": true,
+          "test": "Recall returns to the safe entry with exactly half-second arrival immunity"
+        },
+        {
+          "passed": true,
+          "test": "holding Recall cannot repeatedly refresh immunity"
+        },
+        {
+          "passed": true,
+          "test": "new safe station registered using full body clearance"
+        },
+        {
+          "passed": true,
+          "test": "blocked newest station falls back to the older safe entry"
+        },
+        {
+          "passed": true,
+          "test": "actor occupancy protects material mutations independently of static objective reservations"
+        }
+      ]
+    },
+    {
+      "name": "Contact",
+      "passed": 22,
+      "failed": 0,
+      "results": [
+        {
+          "passed": true,
+          "test": "fractional fall ends exactly on the floor without material penetration"
+        },
+        {
+          "passed": true,
+          "test": "grounded is never reported before the feet actually touch the floor"
+        },
+        {
+          "passed": true,
+          "test": "twenty real jumps each return to exact contact without accumulating a foot gap"
+        },
+        {
+          "passed": true,
+          "test": "a subpixel gap remains airborne when this tick cannot reach the floor"
+        },
+        {
+          "passed": true,
+          "test": "the next falling tick resolves the remaining gap to the actual surface"
+        },
+        {
+          "passed": true,
+          "test": "maximum fall speed cannot tunnel through a four-pixel floor"
+        },
+        {
+          "passed": true,
+          "test": "exact contact is shared by solid material type 1"
+        },
+        {
+          "passed": true,
+          "test": "exact contact is shared by solid material type 2"
+        },
+        {
+          "passed": true,
+          "test": "exact contact is shared by solid material type 3"
+        },
+        {
+          "passed": true,
+          "test": "fluid never becomes a fabricated supporting floor"
+        },
+        {
+          "passed": true,
+          "test": "a single microcell ledge supports the actual overlapping foot width"
+        },
+        {
+          "passed": true,
+          "test": "walking beyond the ledge resumes falling without phantom support"
+        },
+        {
+          "passed": true,
+          "test": "upward collision puts the full body exactly below the ceiling"
+        },
+        {
+          "passed": true,
+          "test": "right wall contact respects the whole body at fractional movement speeds"
+        },
+        {
+          "passed": true,
+          "test": "left wall contact uses the same precise material boundary"
+        },
+        {
+          "passed": true,
+          "test": "touching a vertical wall cannot be mistaken for floor support"
+        },
+        {
+          "passed": true,
+          "test": "full-world vertical coordinates preserve exact half-open floor contact"
+        },
+        {
+          "passed": true,
+          "test": "full-world horizontal coordinates preserve the body footprint"
+        },
+        {
+          "passed": true,
+          "test": "skitter uses exact ground contact after a fractional fall"
+        },
+        {
+          "passed": true,
+          "test": "driller uses exact ground contact after a fractional fall"
+        },
+        {
+          "passed": true,
+          "test": "golem uses exact ground contact after a fractional fall"
+        },
+        {
+          "passed": true,
+          "test": "Wraith retains deliberate center-anchored levitation"
+        }
+      ]
+    },
+    {
+      "name": "Progression",
+      "passed": 31,
+      "failed": 0,
+      "results": [
+        {
+          "passed": true,
+          "test": "fresh run cannot use the locked lift"
+        },
+        {
+          "passed": true,
+          "test": "being inside the lift does not bypass its objective gate"
+        },
+        {
+          "passed": true,
+          "test": "living Golem prevents core stabilization"
+        },
+        {
+          "passed": true,
+          "test": "interaction requires actual proximity to the node"
+        },
+        {
+          "passed": true,
+          "test": "upper anchor reduces only its regional per-second probability"
+        },
+        {
+          "passed": true,
+          "test": "repeated anchor interaction does not compound its effect"
+        },
+        {
+          "passed": true,
+          "test": "objective clearance cannot fill with mutated terrain"
+        },
+        {
+          "passed": true,
+          "test": "first crystal requires two real Photon impacts and leaves the rift incomplete"
+        },
+        {
+          "passed": true,
+          "test": "two destroyed crystals are insufficient to stabilize the ghost route"
+        },
+        {
+          "passed": true,
+          "test": "third crystal waits for an actor occupying the future platform"
+        },
+        {
+          "passed": true,
+          "test": "blocked stabilization changes none of the other platforms"
+        },
+        {
+          "passed": true,
+          "test": "clearing actor occupancy commits all permanent ghost platforms"
+        },
+        {
+          "passed": true,
+          "test": "permanently stabilized required route rejects heat and destruction"
+        },
+        {
+          "passed": true,
+          "test": "permanent platform stays solid after the temporary-collapse expiry"
+        },
+        {
+          "passed": true,
+          "test": "300-HP Golem needs 25 Photon hits and its death alone cannot unlock the lift"
+        },
+        {
+          "passed": true,
+          "test": "interacting with the defeated core completes the third objective"
+        },
+        {
+          "passed": true,
+          "test": "complete run can extract at the lift"
+        },
+        {
+          "passed": true,
+          "test": "completed run cannot collect late rewards"
+        },
+        {
+          "passed": true,
+          "test": "secret grants one blueprint and exactly 25 healing"
+        },
+        {
+          "passed": true,
+          "test": "holding interaction cannot farm secret healing"
+        },
+        {
+          "passed": true,
+          "test": "new run keeps blueprint knowledge without duplicated unlocks, inflated HP or objective carryover"
+        },
+        {
+          "passed": true,
+          "test": "dead player cannot advance objectives"
+        },
+        {
+          "passed": true,
+          "test": "all sixteen objective/boss combinations enforce the full exit conjunction"
+        },
+        {
+          "passed": true,
+          "test": "duplicate crystal IDs reject the layout without partial reservations"
+        },
+        {
+          "passed": true,
+          "test": "ghost platform definitions cannot overwrite the protected world boundary"
+        },
+        {
+          "passed": true,
+          "test": "ghost route cannot overlap objective machinery clearance"
+        },
+        {
+          "passed": true,
+          "test": "upper-anchor interaction leaves seeded lower-region material replay unchanged"
+        },
+        {
+          "passed": true,
+          "test": "material snapshot preserves regional stabilization rates"
+        },
+        {
+          "passed": true,
+          "test": "regional snapshot resumes the same deterministic future"
+        },
+        {
+          "passed": true,
+          "test": "nonfinite regional rate rejects a snapshot atomically"
+        },
+        {
+          "passed": true,
+          "test": "overlapping probability overrides are rejected instead of depending on iteration order"
+        }
+      ]
+    },
+    {
+      "name": "Enemy",
+      "passed": 43,
+      "failed": 0,
+      "results": [
+        {
+          "passed": true,
+          "test": "Skitter cannot move its damage hitbox during twelve warning ticks"
+        },
+        {
+          "passed": true,
+          "test": "Skitter dash begins at 0.20 seconds and deals five damage"
+        },
+        {
+          "passed": true,
+          "test": "Skitter active dash lasts eighteen ticks and cannot repeatedly damage one player"
+        },
+        {
+          "passed": true,
+          "test": "Skitter recovery starts after its complete active interval"
+        },
+        {
+          "passed": true,
+          "test": "Skitter retains all eighteen recovery ticks"
+        },
+        {
+          "passed": true,
+          "test": "Skitter attack returns to idle at the exact total duration"
+        },
+        {
+          "passed": true,
+          "test": "Wraith cannot shoot during its fifteen-tick warning"
+        },
+        {
+          "passed": true,
+          "test": "Wraith spawns exactly one shot after 0.25 seconds"
+        },
+        {
+          "passed": true,
+          "test": "Wraith projectile uses swept player collision and deals eight damage"
+        },
+        {
+          "passed": true,
+          "test": "Wraith intentionally levitates at its center anchor instead of falling onto a foot pivot"
+        },
+        {
+          "passed": true,
+          "test": "four-pixel protected material blocks an enemy shot before the player"
+        },
+        {
+          "passed": true,
+          "test": "Driller cannot carve during its thirty-tick spin-up"
+        },
+        {
+          "passed": true,
+          "test": "active Driller carves mutable material and deals ten damage"
+        },
+        {
+          "passed": true,
+          "test": "Driller charge retains twenty-four active ticks"
+        },
+        {
+          "passed": true,
+          "test": "Driller ends its damaging charge before recovery"
+        },
+        {
+          "passed": true,
+          "test": "Driller cannot carve or tunnel its full body through protected station material"
+        },
+        {
+          "passed": true,
+          "test": "Driller also preserves statically reserved objective cells"
+        },
+        {
+          "passed": true,
+          "test": "Golem slam gives the complete 0.60-second telegraph without early damage"
+        },
+        {
+          "passed": true,
+          "test": "Golem slam impact occurs only at the active boundary and deals fifteen damage"
+        },
+        {
+          "passed": true,
+          "test": "Golem slam cannot damage twice during its eighteen-tick active window"
+        },
+        {
+          "passed": true,
+          "test": "Golem keeps the full thirty-six-tick recovery"
+        },
+        {
+          "passed": true,
+          "test": "Golem cycles from slam into its distinct burst attack"
+        },
+        {
+          "passed": true,
+          "test": "Golem burst emits exactly three finite shots during its bounded active interval"
+        },
+        {
+          "passed": true,
+          "test": "Golem roar changes allowed terrain without direct damage"
+        },
+        {
+          "passed": true,
+          "test": "Golem pulse genuinely stabilizes eligible ore for three seconds"
+        },
+        {
+          "passed": true,
+          "test": "Golem pulse preserves reserved objective ore and immutable anchor ore"
+        },
+        {
+          "passed": true,
+          "test": "jump input with 0.20 seconds of warning remaining clears the Golem slam hitbox"
+        },
+        {
+          "passed": true,
+          "test": "jumping with only 0.10 seconds remaining is too late to clear the slam"
+        },
+        {
+          "passed": true,
+          "test": "enemy body occupancy rejects terrain creation inside a living actor"
+        },
+        {
+          "passed": true,
+          "test": "enemy projectile and reserved player shots share one global sixty-four-slot cap"
+        },
+        {
+          "passed": true,
+          "test": "full mixed projectile capacity rejects player fire without charging energy"
+        },
+        {
+          "passed": true,
+          "test": "hostile firing also rejects saturated capacity without replacing reserved player entities"
+        },
+        {
+          "passed": true,
+          "test": "player enters hit state and receives one bounded damage event during immunity"
+        },
+        {
+          "passed": true,
+          "test": "hurt immunity expires after exactly thirty ticks"
+        },
+        {
+          "passed": true,
+          "test": "invalid damage requests cannot corrupt player health"
+        },
+        {
+          "passed": true,
+          "test": "Recall arrival immunity applies to live enemy damage"
+        },
+        {
+          "passed": true,
+          "test": "Recall rejects a station occupied by a living enemy before committing the arrival"
+        },
+        {
+          "passed": true,
+          "test": "a cleared station becomes a safe Recall destination after the enemy dies"
+        },
+        {
+          "passed": true,
+          "test": "actual player projectiles drive enemy hit and death through the shared target HP"
+        },
+        {
+          "passed": true,
+          "test": "dead enemy cannot resume moving or start new attacks"
+        },
+        {
+          "passed": true,
+          "test": "duplicate enemy IDs do not overwrite authoritative targets"
+        },
+        {
+          "passed": true,
+          "test": "Wraith exposes a distinct fast-glide run state while retaining its levitation anchor"
+        },
+        {
+          "passed": true,
+          "test": "same inputs replay identical actor movement, attack state and damage"
+        }
+      ]
+    },
+    {
+      "name": "Save",
+      "passed": 54,
+      "failed": 0,
+      "results": [
+        {
+          "passed": true,
+          "test": "save fixture fires a real capacity-reserved Tachyon"
+        },
+        {
+          "passed": true,
+          "test": "checkpoint includes actual split children and a live hostile projectile"
+        },
+        {
+          "passed": true,
+          "test": "complete suspended run validates into a detached bundle"
+        },
+        {
+          "passed": true,
+          "test": "restore preserves every material, player, instrument, actor and objective field"
+        },
+        {
+          "passed": true,
+          "test": "resume preserves pending attack windup and shared split/hostile capacity"
+        },
+        {
+          "passed": true,
+          "test": "resumed run produces identical future material, AI, projectile and damage state"
+        },
+        {
+          "passed": true,
+          "test": "unknown save version is rejected"
+        },
+        {
+          "passed": true,
+          "test": "nonfinite player health is rejected before allocation/commit"
+        },
+        {
+          "passed": true,
+          "test": "out-of-world Recall station is rejected"
+        },
+        {
+          "passed": true,
+          "test": "pending Photon cannot forge extra reserved split capacity"
+        },
+        {
+          "passed": true,
+          "test": "expired projectile cannot gain a new life on resume"
+        },
+        {
+          "passed": true,
+          "test": "invalid projectile direction is rejected"
+        },
+        {
+          "passed": true,
+          "test": "duplicate projectile IDs are rejected"
+        },
+        {
+          "passed": true,
+          "test": "hostile capacity cannot disappear from the shared accounting"
+        },
+        {
+          "passed": true,
+          "test": "actor and authoritative target HP must agree"
+        },
+        {
+          "passed": true,
+          "test": "unknown actor family cannot be loaded"
+        },
+        {
+          "passed": true,
+          "test": "forged core completion cannot bypass a living Golem"
+        },
+        {
+          "passed": true,
+          "test": "anchor flags must agree with the restored regional probability"
+        },
+        {
+          "passed": true,
+          "test": "crystal objective counts must agree with actual target health"
+        },
+        {
+          "passed": true,
+          "test": "corrupted save cannot erase the immutable world boundary"
+        },
+        {
+          "passed": true,
+          "test": "unexpected player fields cannot introduce permanent stat inflation"
+        },
+        {
+          "passed": true,
+          "test": "failed candidate loads leave live gameplay and profile knowledge untouched"
+        },
+        {
+          "passed": true,
+          "test": "incorrect component type is rejected without calling methods on a scalar"
+        },
+        {
+          "passed": true,
+          "test": "an enemy cannot load another family's special attack"
+        },
+        {
+          "passed": true,
+          "test": "unknown grid fields are rejected by the versioned run schema"
+        },
+        {
+          "passed": true,
+          "test": "resume cannot forge permanent immunity from a timer"
+        },
+        {
+          "passed": true,
+          "test": "unbounded velocity cannot create an unbounded collision loop after resume"
+        },
+        {
+          "passed": true,
+          "test": "resume cannot extend a projectile beyond its instrument lifetime"
+        },
+        {
+          "passed": true,
+          "test": "profile is written and read back on E with a complete checksum envelope"
+        },
+        {
+          "passed": true,
+          "test": "profile preserves only knowledge, loadout IDs and lore"
+        },
+        {
+          "passed": true,
+          "test": "profile rejects raw health or damage upgrades"
+        },
+        {
+          "passed": true,
+          "test": "storage outside E is rejected without creating a file"
+        },
+        {
+          "passed": true,
+          "test": "real complete suspended run is published as a fresh generation"
+        },
+        {
+          "passed": true,
+          "test": "latest active generation restores the exact checkpoint tick"
+        },
+        {
+          "passed": true,
+          "test": "semantically corrupt newer generation falls back to the previous valid run"
+        },
+        {
+          "passed": true,
+          "test": "truncated newer file cannot partially replace a running game"
+        },
+        {
+          "passed": true,
+          "test": "unpublished temporary files never become a resumable run"
+        },
+        {
+          "passed": true,
+          "test": "death marker ends the suspend without resurrecting an older living generation"
+        },
+        {
+          "passed": true,
+          "test": "even a corrupted published death marker blocks older run resurrection"
+        },
+        {
+          "passed": true,
+          "test": "death leaves persistent blueprint knowledge intact"
+        },
+        {
+          "passed": true,
+          "test": "new run resets health, energy, enemies and objectives without stat inflation"
+        },
+        {
+          "passed": true,
+          "test": "an explicitly started new run publishes a newer active generation"
+        },
+        {
+          "passed": true,
+          "test": "profile retention stays bounded while preserving eight complete backups"
+        },
+        {
+          "passed": true,
+          "test": "damaged generations never consume retention slots and erase valid older recovery files"
+        },
+        {
+          "passed": true,
+          "test": "extraction closes the logical suspend slot"
+        },
+        {
+          "passed": true,
+          "test": "interactive session captures a validated fresh baseline and loads independent knowledge"
+        },
+        {
+          "passed": true,
+          "test": "session control obtains the actual nearby blueprint secret"
+        },
+        {
+          "passed": true,
+          "test": "interactive suspend publishes a complete validated living run"
+        },
+        {
+          "passed": true,
+          "test": "interactive resume restores the secret, actor states and original checkpoint tick"
+        },
+        {
+          "passed": true,
+          "test": "a new session reads the persisted run and separate blueprint knowledge"
+        },
+        {
+          "passed": true,
+          "test": "session death publishes a terminal marker and blocks reload"
+        },
+        {
+          "passed": true,
+          "test": "dead gameplay cannot overwrite the slot with a living suspend"
+        },
+        {
+          "passed": true,
+          "test": "interactive restart restores the fresh world and base stats while retaining earned knowledge"
+        },
+        {
+          "passed": true,
+          "test": "new active run is resumable after a successful explicit restart"
+        }
+      ]
+    },
+    {
+      "name": "Chunk",
+      "passed": 23,
+      "failed": 0,
+      "results": [
+        {
+          "passed": true,
+          "test": "all chunks in the reference comparison are awake"
+        },
+        {
+          "passed": true,
+          "test": "awake chunk seams preserve whole-grid material motion, melting and flicker"
+        },
+        {
+          "passed": true,
+          "test": "sparse double buffering matches reference heat across chunk boundaries"
+        },
+        {
+          "passed": true,
+          "test": "global seeded ore and exact collapse expiry match reference"
+        },
+        {
+          "passed": true,
+          "test": "chunk activation never changes the fixed simulation tick"
+        },
+        {
+          "passed": true,
+          "test": "an immediate collapse invalidates its terrain texture rather than displaying stale ore"
+        },
+        {
+          "passed": true,
+          "test": "sleeping chunks retain matter and heat without hidden offscreen work"
+        },
+        {
+          "passed": true,
+          "test": "a static awake region does not scan the full world"
+        },
+        {
+          "passed": true,
+          "test": "reactivation resumes frozen matter at one cell per tick"
+        },
+        {
+          "passed": true,
+          "test": "chunk snapshot restores active regions and reconstructs sparse metadata"
+        },
+        {
+          "passed": true,
+          "test": "restored activation produces identical future material and heat state"
+        },
+        {
+          "passed": true,
+          "test": "invalid activation metadata is rejected before mutating any restored state"
+        },
+        {
+          "passed": true,
+          "test": "the specified 5760 by 3840 world allocates bounded state and protected edges"
+        },
+        {
+          "passed": true,
+          "test": "camera region activates a bounded halo at intended world scale"
+        },
+        {
+          "passed": true,
+          "test": "over-budget activation is rejected atomically instead of dropping arbitrary chunks"
+        },
+        {
+          "passed": true,
+          "test": "awake material computation has a deterministic chunk cap"
+        },
+        {
+          "passed": true,
+          "test": "full-world player bounds exclude an exact supporting floor without relying on a rounded-away epsilon"
+        },
+        {
+          "passed": true,
+          "test": "full-world boss bounds use the same exact half-open floor convention"
+        },
+        {
+          "passed": true,
+          "test": "sleeping enemies neither patrol offscreen nor attack through a paused material region"
+        },
+        {
+          "passed": true,
+          "test": "a newly awake Wraith starts its actual warning before firing"
+        },
+        {
+          "passed": true,
+          "test": "sleeping actor clocks preserve remaining warning time instead of skipping it"
+        },
+        {
+          "passed": true,
+          "test": "resumed telegraph still has no early hostile projectile"
+        },
+        {
+          "passed": true,
+          "test": "the resumed warning emits exactly one projectile at its original active boundary"
+        }
+      ]
+    },
+    {
+      "name": "Programming",
+      "passed": 30,
+      "failed": 0,
+      "results": [
+        {
+          "passed": true,
+          "test": "original photon preview preserves every verified firing statistic"
+        },
+        {
+          "passed": true,
+          "test": "original tachyon preview preserves every verified firing statistic"
+        },
+        {
+          "passed": true,
+          "test": "incomplete module sets are rejected"
+        },
+        {
+          "passed": true,
+          "test": "unknown program fields cannot be silently ignored"
+        },
+        {
+          "passed": true,
+          "test": "Tunneling is locked until its blueprint is discovered"
+        },
+        {
+          "passed": true,
+          "test": "Entanglement is locked until its blueprint is discovered"
+        },
+        {
+          "passed": true,
+          "test": "incompatible Superposition modules explain a rejected preview"
+        },
+        {
+          "passed": true,
+          "test": "locked application leaves loadouts and resources unchanged"
+        },
+        {
+          "passed": true,
+          "test": "unlocked application changes behavior without free energy or stat grants"
+        },
+        {
+          "passed": true,
+          "test": "Tunneling preview's seven-energy price is charged by real firing"
+        },
+        {
+          "passed": true,
+          "test": "a pending custom shot retains its compiled program after reconfiguration"
+        },
+        {
+          "passed": true,
+          "test": "eight actual occupied cells attenuate the target hit once to 9.6 damage"
+        },
+        {
+          "passed": true,
+          "test": "Dark energy traversal does not secretly heat the wall"
+        },
+        {
+          "passed": true,
+          "test": "a 33rd occupied cell stops Tunneling before the target"
+        },
+        {
+          "passed": true,
+          "test": "protected station material always blocks Tunneling and rejects its heat"
+        },
+        {
+          "passed": true,
+          "test": "Thermal module has a real material effect separate from Dark energy"
+        },
+        {
+          "passed": true,
+          "test": "edited waveform changes telegraph, price and reserved capacity in the selected slot"
+        },
+        {
+          "passed": true,
+          "test": "edited Superposition performs exactly one three-child split"
+        },
+        {
+          "passed": true,
+          "test": "custom split admission respects hostile capacity without charging rejected shots"
+        },
+        {
+          "passed": true,
+          "test": "objective crystals cannot be substituted for living entanglement targets"
+        },
+        {
+          "passed": true,
+          "test": "self-links reject without charging energy"
+        },
+        {
+          "passed": true,
+          "test": "two distinct living targets form a bounded link"
+        },
+        {
+          "passed": true,
+          "test": "one target cannot join a second link"
+        },
+        {
+          "passed": true,
+          "test": "one direct hit transfers exactly half damage once with no recursive echo"
+        },
+        {
+          "passed": true,
+          "test": "eight links cap further requests without replacing a pair"
+        },
+        {
+          "passed": true,
+          "test": "a target death immediately clears its entanglement link"
+        },
+        {
+          "passed": true,
+          "test": "all links expire at the six-second fixed-tick boundary"
+        },
+        {
+          "passed": true,
+          "test": "an actual Entanglement hit marks its first living target"
+        },
+        {
+          "passed": true,
+          "test": "a second aimed hit forms the link through projectile gameplay"
+        },
+        {
+          "passed": true,
+          "test": "v1 compact saves reject programmable state instead of silently discarding loadouts and links"
+        }
+      ]
+    }
+  ],
+  "productionReady": false,
+  "scope": "Native simulation checks and native workbench Control signals/game-owned input, not OS input or MetroForge app generation",
+  "workbench": {
+    "failed": 0,
+    "passed": 21,
+    "programs": {
+      "photon": {
+        "operator": "collapse",
+        "state": "thermal",
+        "trigger": "impact",
+        "waveform": "tachyon"
+      },
+      "tachyon": {
+        "operator": "superposition",
+        "state": "dark_energy",
+        "trigger": "probability_threshold",
+        "waveform": "tachyon"
+      }
+    },
+    "results": [
+      {
+        "passed": true,
+        "test": "real grounded Diver is admitted at the registered entry station"
+      },
+      {
+        "passed": true,
+        "test": "P opens the actual native station workbench"
+      },
+      {
+        "passed": true,
+        "test": "opening gives keyboard focus to the instrument selector"
+      },
+      {
+        "passed": true,
+        "test": "editing pauses actual material, enemy and player clocks"
+      },
+      {
+        "passed": true,
+        "test": "actual native viewport captured: 01-workbench"
+      },
+      {
+        "passed": true,
+        "test": "locked Tunneling shows a reason and disables application"
+      },
+      {
+        "passed": true,
+        "test": "actual native viewport captured: 02-locked-blueprint"
+      },
+      {
+        "passed": true,
+        "test": "valid edited waveform previews its real firing price"
+      },
+      {
+        "passed": true,
+        "test": "native mouse input applies the edited program to the selected slot"
+      },
+      {
+        "passed": true,
+        "test": "application preserves the other slot and existing energy"
+      },
+      {
+        "passed": true,
+        "test": "successful application stays paused and reports its result"
+      },
+      {
+        "passed": true,
+        "test": "actual native viewport captured: 03-program-applied"
+      },
+      {
+        "passed": true,
+        "test": "Escape closes the workbench and resumes the game"
+      },
+      {
+        "passed": true,
+        "test": "workbench clicks do not leak into attacks or movement after closing"
+      },
+      {
+        "passed": true,
+        "test": "resumed game fires the newly programmed waveform at the previewed energy cost"
+      },
+      {
+        "passed": true,
+        "test": "applied waveform controls telegraph, damage and projectile capacity"
+      },
+      {
+        "passed": true,
+        "test": "walking away from the station rejects direct application without changing the loadout"
+      },
+      {
+        "passed": true,
+        "test": "P away from a station leaves gameplay running and reports the actual admission reason"
+      },
+      {
+        "passed": true,
+        "test": "normal Recall input returns to the safe station without test position grants"
+      },
+      {
+        "passed": true,
+        "test": "the same workbench can reopen after normal traversal and Recall"
+      },
+      {
+        "passed": true,
+        "test": "closing an uncommitted draft preserves the actual equipped program"
+      }
+    ],
+    "scope": "Native Control selection signals, game-owned P/Escape/mouse events and actual GPU captures; no OS input, no position/health grants",
+    "simulation_tick": 161
+  },
+  "captures": [
+    {
+      "path": "E:\\MetroForgeData\\GitHubUpload\\20261003\\quantum-programming-1791060993969\\tree\\reports\\game-tests\\20261003-quantum-programming\\programming-1791061383872\\workbench\\01-workbench.png",
+      "sha256": "5de83698915c1e9b204996ceeab404be2019bbe51bd5d09f91a38e7edea74507"
+    },
+    {
+      "path": "E:\\MetroForgeData\\GitHubUpload\\20261003\\quantum-programming-1791060993969\\tree\\reports\\game-tests\\20261003-quantum-programming\\programming-1791061383872\\workbench\\02-locked-blueprint.png",
+      "sha256": "972bc93ce5eeb9e828d6ab71ba39fe49f725f3035ad7fa7afcacc356c4a591d8"
+    },
+    {
+      "path": "E:\\MetroForgeData\\GitHubUpload\\20261003\\quantum-programming-1791060993969\\tree\\reports\\game-tests\\20261003-quantum-programming\\programming-1791061383872\\workbench\\03-program-applied.png",
+      "sha256": "dc402b1f982bb3934ce39048f2f17b4018a5d84b1626bdfa4829f31214894480"
+    }
+  ],
+  "passed": true
+}

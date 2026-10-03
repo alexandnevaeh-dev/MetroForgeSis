@@ -120,7 +120,7 @@ Version saves. Separate profile blueprints/loadouts/lore from run seed, simulati
 - [ ] Production frame budget across every region; fluid viscosity tuning and vapor event output.
 - [x] Native playground player collision/movement, 360-degree aim, two starting instruments, Recall hold/action, safe station fallback.
 - [x] Starting-instrument swept projectile simulation, exact three-child split behavior and atomic capacity/resource accounting in the native playground.
-- [ ] Station compiler/preview and discoverable entanglement/tunneling modules.
+- [x] Station compiler/preview and discoverable entanglement/tunneling modules in the connected-world candidate.
 - [x] Native progression rules: regional anchor, three projectile-damaged crystals, permanent ghost-platform stabilization, defeated-Golem/core gate, secret reward and fully gated extraction in a rendered control.
 - [x] Initial full-size connected Probability Mines layout, seeded deposits, safe stations and live encounter placement.
 - [x] Starting-kit optional branch traversal and physical return, and a completed native full-world combat/objective playthrough.
@@ -130,10 +130,11 @@ Version saves. Separate profile blueprints/loadouts/lore from run seed, simulati
 - [ ] Original coherent terrain, interior backgrounds, effects, audio and HUD.
 - [x] Local CUDA pixel-style adapter, pinned weight integrity, actual foreground isolation and native static alpha-anchor review. [Evidence and visual limits](QUANTUM_ART_PIPELINE.md).
 - [x] Durable versioned profile/suspend files, safe recovery, death/restart and extraction ending in the compact native encounter.
-- [ ] Station programming preview and chunk-scale saves.
+- [x] Station programming preview.
+- [ ] Chunk-scale saves and durable programmed loadouts.
 - [x] Native full-biome objective, defeated-core and extraction flow with a living player.
-- [ ] Add genre schemas, capability registry, own assembler/template and app UI only when the runtime exists. Unknown genre IDs must never silently generate the existing Metroidvania.
-- [ ] Generate through MetroForge's real app UI, play through all three objectives, show gameplay/animation captures and retain failures honestly.
+- [x] Add genre schemas, capability registry, own assembler/template and app UI only when the runtime exists. Unknown genre IDs must never silently generate the existing Metroidvania.
+- [x] Generate through MetroForge's real app UI, play through all three objectives, show gameplay/animation captures and retain failures honestly.
 
 Native simulation behavior tests must prove mass conservation, one-cell movement, deterministic same-seed replay, differing seed layouts, stable-solid exclusion from flicker, per-second rates, protected anchors, occupied-cell rejection, exact collapse expiry, shared budgets, symmetric bounded heat and identical post-resume future state. Save corruption and blocked recall destination tests must fail safely.
 
@@ -218,3 +219,7 @@ The first branch test found that alternating ascending platforms stacked a ceili
 The successful rendered route runs for 6182 ticks, including the 90-tick post-extraction hold, and retains six real viewport captures. An earlier rendered attempt completed every gate but pressed E one frame before its final waypoint was recorded; the strict test correctly failed at 160/161. The test now waits for physical arrival before requesting lift interaction. That failed result and captures remain under `world-victory-1790862683447/`; the acceptance conditions were not weakened. Latest source hashes, exact target hit counts, all attack activations, landmark visits, branch returns and captures are recorded in `world-victory-latest.json`.
 
 Add `--world-victory` to `scripts/record-quantum-playground.mjs` for the complete native viewport movie. Recording uses the existing E: Godot/FFmpeg runtimes and verifies the resulting MP4 by decoding the whole file. Movie timing is fixed at 60 FPS and is not proof of stable hardware frame rate. Awake chunks remain at or below the 96-chunk cap throughout the tour. This milestone establishes the complete prototype gameplay loop; original reviewed art/animation sheets, module programming, full-world durable saves, audio and generation through MetroForge's actual app are still pending.
+
+## Station programming milestone, 2026-10-03
+
+The separate Quantum candidate now implements the four-slot compiler, native paused stabilizer workbench, discovered Entanglement and Tunneling operators, living-target links and occupied-cell attenuation. Custom recipes bind to queued shots; editing another recipe cannot rewrite a shot already in flight. Grounding, safe distance, pending attacks, hurt state and hostile projectiles all guard station access. Application consumes no energy; actual firing uses the displayed price. Defaults retain their existing simulation/save behavior. Full-world durable saves and profile/loadout persistence remain pending. [Exact native, app and release evidence](../verification/quantum-programming-20261003/README.md).

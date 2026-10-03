@@ -21,7 +21,7 @@ File creation and test results are distinct. Missing/skipped Godot validation is
 
 ## Remaining work
 
-Final artwork admission, deeper biome generation, complete weapon aiming layers, programming UI, audio, durable full-world saves, deeper Quantum editor and export-screen integration and broader engine ports remain incomplete. The reconciled generation batch was confirmed on GitHub as commit 10b16a035825e476839fa44ea030e7adf37fa868 on 2026-10-03. Unrelated legacy pipeline edits remain in the canonical working tree for dedicated reconciliation.
+Final artwork admission, deeper biome generation, complete weapon aiming layers, expanded compiler/editor workflows, audio, durable full-world saves, deeper Quantum editor and export-screen integration and broader engine ports remain incomplete. The reconciled generation batch was confirmed on GitHub as commit 10b16a035825e476839fa44ea030e7adf37fa868 on 2026-10-03. Unrelated legacy pipeline edits remain in the canonical working tree for dedicated reconciliation.
 
 ## Reconciled publication batch
 
@@ -34,3 +34,7 @@ A rejected pre-job request now leaves completed game history unchanged while ret
 ## Windows release package
 
 The exact isolated export snapshot passed 35 regressions, 34 backend checks and 25 real-app workflow checks. Both the source project and copied release package completed 161 waypoints with living extraction. Release initialization now runs outside assertions, and original raw scripts/manifests/PNG dependencies are packed with bound hashes. See [the release proof](../verification/quantum-export-20261003/README.md). Full-world saves, deeper programming, final art/audio and other engine ports remain pending.
+
+## Station programming
+
+Press P near a safe stabilizer to edit the waveform, operator, state and trigger of either equipped instrument. The compiler previews the actual firing behavior and price; Apply changes only that slot and Escape cancels unapplied edits. Gameplay remains paused during editing. The survey secret unlocks Entanglement and the three-crystal rift unlocks Tunneling. Recipes and blueprints currently last for this connected-world run; permanent loadout/profile storage and full-world saves remain pending. Compact v1 saves explicitly reject programmed state. The exact isolated snapshot passed 259 native behavior checks, 21 native GUI checks, 35 regressions, 35 backend checks, 25 real-app checks and 22 workbench checks in the exported release. See [the programming proof](../verification/quantum-programming-20261003/README.md).

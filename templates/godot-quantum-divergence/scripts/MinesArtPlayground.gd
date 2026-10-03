@@ -239,12 +239,16 @@ func _draw() -> void:
 			var fraction: float = clampf(float(enemies.tick-int(actor.attack_started))/int(Enemies.ATTACKS[actor.attack].windup),0,1)
 			draw_arc(rect.get_center(),rect.size.length()*.55,-PI*.5,-PI*.5+TAU*fraction,24,Color("f4ae75"),1)
 	for projectile in instruments.projectiles:
-		var color := Color("7ff4ec") if projectile.instrument == "photon" else Color("e5a1f6")
+		var color := Color("7ff4ec") if instruments.projectile_program(projectile).recipe.waveform == "photon" else Color("e5a1f6")
 		draw_line(projectile.position-projectile.direction*12,projectile.position,color.darkened(.3),3)
 		draw_line(projectile.position-projectile.direction*8,projectile.position,color,1)
 		draw_circle(projectile.position,1,Color.WHITE)
 	for bolt in enemies.projectiles:
 		draw_line(bolt.position-Vector2(bolt.direction)*7,bolt.position,Color("efaa76"),2)
+	for link in instruments.links:
+		draw_line(instruments.targets[link.first].rect.get_center(),instruments.targets[link.second].rect.get_center(),Color("aa7af2"),1)
+	for mark in instruments.link_marks.values():
+		draw_arc(instruments.targets[mark.target].rect.get_center(),10,0,TAU,16,Color("ba8cfa"),1)
 	_draw_sprite("diver",diver_sample.state,diver_sample.index,player.position,player.facing)
 	for effect in effects:
 		var life: float = minf(1,float(int(effect.until)-simulation_tick)/12)
@@ -268,11 +272,13 @@ func _draw_hud() -> void:
 	_text(Vector2(292,78),"ENERGY  %d" % instruments.energy,12,Color("8abbd7"))
 	draw_rect(Rect2(395,68,120,6),Color("243348"))
 	draw_rect(Rect2(395,68,instruments.energy*1.2,6),Color("69b8d7"))
-	_text(Vector2(634,29),"PHOTON STABILIZER" if selected == "photon" else "TACHYON SPLITTER",15,Color("82e8da") if selected == "photon" else Color("d9a0ec"))
+	var weapon_label: String = "PHOTON STABILIZER" if selected == "photon" else "TACHYON SPLITTER"
+	if instruments.programs[selected] != Instruments.Program.DEFAULTS[selected]: weapon_label = instruments.definition_for(selected).recipe.operator.to_upper()+" / "+instruments.definition_for(selected).recipe.waveform.to_upper()
+	_text(Vector2(634,29),weapon_label,15,Color("82e8da") if selected == "photon" else Color("d9a0ec"))
 	_text(Vector2(634,52),"Stabilize the mine • reach the Quantum Lift",11,Color("96aebb"))
 	_text(Vector2(24,549),"ANCHOR  "+("STABLE" if progress.anchor_upper else "UNSTABLE")+"     RIFT  %d / 3     CORE  " % progress.crystals_destroyed+("STABLE" if progress.golem_core else "UNSTABLE"),12,Color("92d2c6"))
-	_text(Vector2(24,573),"A/D Move   Shift Run   Space Jump/Levitate   Ctrl Dash   Mouse Aim/Fire   Q Swap   R Recall   E Interact",12,Color("aabfc9"))
-	_text(Vector2(24,592),"Art preview • progress resets when closed",10,Color("758c9c"))
+	_text(Vector2(24,573),"A/D Move  Shift Run  Space Jump/Levitate  Ctrl Dash  Mouse Fire  Q Swap  R Recall  E Interact  P Compile",12,Color("aabfc9"))
+	_text(Vector2(24,592),notice.left(110)+" • Run resets on close",10,Color("819cab"))
 	if get_tree().paused:
 		draw_rect(VIEW,Color(0.02,.04,.08,.75))
 		_text(Vector2(330,305),"PAUSED  •  ESC TO CONTINUE",18,Color("d7e9ec"))

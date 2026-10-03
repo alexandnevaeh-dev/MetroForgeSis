@@ -164,7 +164,7 @@ func _physics_process(_delta: float) -> void:
 		var fired: Dictionary = instruments.fire(selected, muzzle, aim)
 		if fired.accepted:
 			report.shots += 1
-			player.notify_attack(int(Instruments.DEFINITIONS[selected].windup))
+			player.notify_attack(int(fired.windup))
 		fire_requested = false
 	instruments.step()
 	_after_simulation(input)

@@ -2,6 +2,7 @@ extends "res://scripts/MinesArtPlayground.gd"
 ## Portable generated entry: validates configuration before creating any world state.
 var generation_config: Dictionary = {}
 var initial_terrain_sha256: String = ""
+const WorkbenchProbe = preload("res://scripts/WorkbenchRunDriver.gd")
 
 func _load_generation_config() -> bool:
 	var parsed = JSON.parse_string(FileAccess.get_file_as_string("res://quantum_project.json"))
@@ -42,6 +43,10 @@ func _ready() -> void:
 	if "--generation-layout-only" in OS.get_cmdline_user_args():
 		print("QUANTUM_GENERATED_LAYOUT " + JSON.stringify(_world_descriptor()))
 		get_tree().quit(0)
+	elif "--workbench-probe" in OS.get_cmdline_user_args():
+		# Release templates disable external script/path overrides. Keep this QA driver
+		# inside the verified package, using only real Controls and normal game inputs.
+		add_child(WorkbenchProbe.new(self))
 
 func _world_descriptor() -> Dictionary:
 	var nodes: Array = []

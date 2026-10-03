@@ -158,6 +158,12 @@ check('copied release package completes gameplay rather than only starting',()=>
   assert.equal(packaged.art.propChecks,480);
   for (const kind of ['skitter','driller','wraith','golem']) for (const state of ['idle','walk','run','attack','hit','death']) assert.equal(packaged.art.actorStates[kind][state],true);
 });
+check('generated release includes distinct module slots and earned discovery blueprints',()=>{
+  assert.deepEqual(packaged.programming.programs.photon,{waveform:'photon',operator:'collapse',state:'thermal',trigger:'impact'});
+  assert.deepEqual(packaged.programming.programs.tachyon,{waveform:'tachyon',operator:'superposition',state:'dark_energy',trigger:'probability_threshold'});
+  assert.deepEqual([...packaged.programming.blueprints].sort(),['entanglement','tunneling']);
+  assert.equal(packaged.programming.applications,0);
+});
 const originalConfig = digest(join(run.outputPath,'quantum_project.json'));
 const collision = await pipeline.run({...base,slug:'the-lattice-expedition'});
 check('existing generated game is preserved on a repeated slug',()=>{

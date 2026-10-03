@@ -20,6 +20,9 @@ static func _fields(object, names: Array[String]) -> Dictionary:
 	return result
 
 static func snapshot(bundle: Dictionary, selected: String = "photon") -> Dictionary:
+	# The v1 compact encounter cannot silently discard programmable world state.
+	if bundle.instruments.programs != Instruments.Program.DEFAULTS or not bundle.instruments.links.is_empty() or not bundle.instruments.link_marks.is_empty():
+		return {"unsupported":"programmable_world_state_requires_v2"}
 	return {"schema_version": 1, "world_id": "probability-encounter-v1", "selected": selected,
 		"tick": bundle.grid.tick, "grid": bundle.grid.snapshot(), "player": _fields(bundle.player, PLAYER_FIELDS),
 		"instruments": _fields(bundle.instruments, INSTRUMENT_FIELDS), "enemies": _fields(bundle.enemies, ENEMY_FIELDS),

@@ -1,6 +1,7 @@
 extends RefCounted
 ## Fixed-tick instrument rules, independent of input, sprites and scene nodes.
 const Grid = preload("res://scripts/MicrocellGrid.gd")
+const Program = preload("res://scripts/InstrumentProgram.gd")
 const MAX_SLOTS: int = 64
 const MAX_RANGE: float = 640.0
 const DEFINITIONS: Dictionary = {
@@ -18,6 +19,50 @@ var targets: Dictionary = {}
 var events: Array[Dictionary] = []
 var next_id: int = 1
 var external_slots: int = 0 # Hostile projectiles share the world's 64-slot cap.
+var programs: Dictionary = Program.DEFAULTS.duplicate(true)
+var links: Array[Dictionary] = []
+var link_marks: Dictionary = {}
+var linkable_targets: Dictionary = {} # Living actors only; objective crystals are not entities.
+
+func set_program(instrument: String, recipe, blueprints: Array = []) -> Dictionary:
+	if not DEFINITIONS.has(instrument): return {"accepted":false,"reason":"Unknown instrument slot."}
+	var compiled: Dictionary = Program.compile(recipe,blueprints)
+	if not compiled.accepted: return compiled
+	programs[instrument] = recipe.duplicate(true)
+	link_marks.erase(instrument)
+	return compiled
+
+func definition_for(instrument: String) -> Dictionary:
+	var compiled: Dictionary = Program.compile(programs.get(instrument),["entanglement","tunneling"])
+	return compiled.get("definition",{})
+
+func projectile_program(projectile: Dictionary) -> Dictionary:
+	return projectile.program if projectile.has("program") else {"recipe":Program.DEFAULTS[projectile.instrument]}
+
+func _prune_links() -> void:
+	links = links.filter(func(link): return tick < int(link.until) and targets[link.first].hp > 0 and targets[link.second].hp > 0)
+	for instrument in link_marks.keys():
+		var mark: Dictionary = link_marks[instrument]
+		if tick >= int(mark.until) or not targets.has(mark.target) or targets[mark.target].hp <= 0: link_marks.erase(instrument)
+
+func link_targets(first: int, second: int) -> Dictionary:
+	if first == second or not targets.has(first) or not targets.has(second) or not linkable_targets.has(first) or not linkable_targets.has(second) or targets[first].hp <= 0 or targets[second].hp <= 0:
+		return {"accepted":false,"reason":"invalid_targets"}
+	if links.size() >= 8: return {"accepted":false,"reason":"link_capacity"}
+	for link in links:
+		if first in [link.first,link.second] or second in [link.first,link.second]: return {"accepted":false,"reason":"already_linked"}
+	links.append({"first":first,"second":second,"until":tick+360})
+	events.append({"type":"linked","first":first,"second":second})
+	return {"accepted":true}
+
+func _entangle_hit(instrument: String, target: int) -> void:
+	if targets[target].hp <= 0 or not linkable_targets.has(target): return
+	for link in links:
+		if target in [link.first,link.second]: return
+	var mark: Dictionary = link_marks.get(instrument,{})
+	if not mark.is_empty() and mark.target != target:
+		if link_targets(int(mark.target),target).accepted: link_marks.erase(instrument)
+	else: link_marks[instrument] = {"target":target,"until":tick+360}
 
 func _init(material_grid) -> void:
 	grid = material_grid
@@ -37,7 +82,8 @@ func fire(instrument: String, origin: Vector2, direction: Vector2) -> Dictionary
 		return {"accepted": false, "reason": "invalid_aim"}
 	if not grid.in_bounds(int(floor(origin.x / Grid.CELL_PX)), int(floor(origin.y / Grid.CELL_PX))):
 		return {"accepted": false, "reason": "outside_world"}
-	var definition: Dictionary = DEFINITIONS[instrument]
+	var definition: Dictionary = definition_for(instrument)
+	if definition.is_empty(): return {"accepted":false,"reason":"invalid_program"}
 	if tick < int(cooldown_until[instrument]):
 		return {"accepted": false, "reason": "cooldown"}
 	if energy < float(definition.cost):
@@ -52,10 +98,14 @@ func fire(instrument: String, origin: Vector2, direction: Vector2) -> Dictionary
 	last_fire = tick
 	pending.append({"id": id, "instrument": instrument, "origin": origin,
 		"direction": direction.normalized(), "spawn_at": tick + int(definition.windup), "slots": int(definition.slots)})
-	return {"accepted": true, "id": id}
+	# Bind the compiled custom program now. Reprogramming cannot rewrite a shot in flight.
+	if programs[instrument] != Program.DEFAULTS[instrument]: pending.back().program = definition.duplicate(true)
+	return {"accepted": true, "id": id,"windup":int(definition.windup)}
 
-func add_target(id: int, rect: Rect2, hp: float) -> void:
+func add_target(id: int, rect: Rect2, hp: float, living: bool = false) -> void:
 	targets[id] = {"rect": rect, "hp": hp}
+	if living: linkable_targets[id] = true
+	else: linkable_targets.erase(id)
 
 func _segment_hit(start: Vector2, end: Vector2, rect: Rect2) -> float:
 	var delta: Vector2 = end - start
@@ -115,8 +165,18 @@ func _damage(projectile: Dictionary, target_id: int, point: Vector2) -> void:
 	var target: Dictionary = targets[target_id]
 	target.hp = maxf(0.0, float(target.hp) - float(projectile.damage))
 	events.append({"type": "hit", "id": projectile.id, "target": target_id, "position": point, "damage": projectile.damage})
+	for link in links:
+		if target_id not in [link.first,link.second]: continue
+		var other: int = int(link.second) if target_id == link.first else int(link.first)
+		if targets[other].hp > 0:
+			var transferred: float = float(projectile.damage)*0.5
+			targets[other].hp = maxf(0.0,float(targets[other].hp)-transferred)
+			events.append({"type":"hit","id":projectile.id,"target":other,"position":targets[other].rect.get_center(),"damage":transferred,"secondary":true})
+	_prune_links()
+	if projectile_program(projectile).recipe.operator == "entanglement": _entangle_hit(projectile.instrument,target_id)
 
 func _advance(projectile: Dictionary, output: Array[Dictionary]) -> void:
+	var recipe: Dictionary = projectile_program(projectile).recipe
 	if tick >= int(projectile.expires_at):
 		events.append({"type": "expired", "id": projectile.id, "distance": projectile.travelled})
 		return
@@ -151,7 +211,7 @@ func _advance(projectile: Dictionary, output: Array[Dictionary]) -> void:
 			events.append({"type": "impact", "position": point, "protected": true})
 			return
 		var low_density: bool = material == Grid.CellMaterial.FLUID or (material == Grid.CellMaterial.EMPTY and grid.ore_origin[index] != 0)
-		if projectile.instrument == "tachyon" and not bool(projectile.split_child) and low_density and int(projectile.expires_at) - tick >= 12:
+		if recipe.operator == "superposition" and not bool(projectile.split_child) and low_density and int(projectile.expires_at) - tick >= 12:
 			for angle in [-0.16, 0.0, 0.16]:
 				var child: Dictionary = projectile.duplicate(true)
 				child.id = next_id
@@ -164,13 +224,23 @@ func _advance(projectile: Dictionary, output: Array[Dictionary]) -> void:
 				output.append(child)
 			events.append({"type": "split", "id": projectile.id, "position": point, "children": 3})
 			return
-		if material == Grid.CellMaterial.SOLID or material == Grid.CellMaterial.UNSTABLE_ORE or material == Grid.CellMaterial.SAND or (projectile.instrument == "photon" and material == Grid.CellMaterial.FLUID):
-			if projectile.instrument == "photon":
-				if grid.ore_origin[index] != 0:
-					grid.collapse_rect(Rect2i(cell - Vector2i(4, 4), Vector2i(8, 8)))
-				else:
-					grid.add_heat(cell.x, cell.y, 0.95)
-				events.append({"type": "impact", "position": point, "protected": false})
+		var occupied: bool = material in [Grid.CellMaterial.SOLID,Grid.CellMaterial.UNSTABLE_ORE,Grid.CellMaterial.SAND,Grid.CellMaterial.FLUID]
+		if recipe.operator == "tunneling" and occupied:
+			var crossed: Array = projectile.get("tunnel_cells",[])
+			if not crossed.has(index):
+				if crossed.size() >= 32:
+					events.append({"type":"impact","position":point,"protected":false,"tunnel_limit":true})
+					return
+				crossed.append(index)
+				projectile.tunnel_cells = crossed
+				if crossed.size() % 8 == 0: projectile.damage = float(projectile.damage)*0.8
+				if recipe.state == "thermal": grid.add_heat(cell.x,cell.y,0.95)
+			continue
+		if occupied and (material != Grid.CellMaterial.FLUID or recipe.state == "thermal"):
+			if recipe.operator == "collapse" and grid.ore_origin[index] != 0:
+				grid.collapse_rect(Rect2i(cell - Vector2i(4, 4), Vector2i(8, 8)))
+			elif recipe.state == "thermal": grid.add_heat(cell.x, cell.y, 0.95)
+			events.append({"type": "impact", "position": point, "protected": false})
 			return
 	if nearest_id != -1:
 		_damage(projectile, nearest_id, start.lerp(end, nearest_time))
@@ -182,6 +252,7 @@ func _advance(projectile: Dictionary, output: Array[Dictionary]) -> void:
 func step() -> void:
 	tick += 1
 	events.clear()
+	_prune_links()
 	if tick - last_fire >= 60:
 		energy = minf(100.0, energy + 8.0 / 60.0)
 	var waiting: Array[Dictionary] = []
@@ -189,10 +260,11 @@ func step() -> void:
 		if tick < int(request.spawn_at):
 			waiting.append(request)
 			continue
-		var definition: Dictionary = DEFINITIONS[request.instrument]
+		var definition: Dictionary = request.get("program",DEFINITIONS[request.instrument])
 		projectiles.append({"id": request.id, "instrument": request.instrument, "position": request.origin,
 			"direction": request.direction, "damage": definition.damage, "speed": definition.speed,
 			"expires_at": tick + int(definition.life), "travelled": 0.0, "split_child": false, "slots": request.slots})
+		if request.has("program"): projectiles.back().program = request.program.duplicate(true)
 		events.append({"type": "spawn", "id": request.id, "position": request.origin})
 	pending = waiting
 	var active: Array[Dictionary] = []

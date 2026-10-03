@@ -229,7 +229,7 @@ export async function runQuantumGeneration(options: GenerateOptions): Promise<Ge
     writeJson(join(outputPath,'validation_report.json'),{passed:validationPassed,validationLevel,results:gates,productionReady:false,candidateOnly:true,scope:'Dedicated local Quantum generation and native gameplay; AI content, expanded biomes, final art/audio and full-world saves remain incomplete'});
     db.projects.updateStatus(projectId,status);
     db.jobs.updateJobStatus(job.id,status,currentPhase);
-    warnings.push('Quantum is a playable candidate: AI content generation, instrument programming, expanded biomes, final visual polish, audio and durable full-world saves remain pending');
+    warnings.push('Quantum is a playable candidate: AI content generation, expanded biomes, final visual polish, audio and durable full-world saves remain pending; four-slot instrument programming is available at safe stations with P');
     emit({type:'GenerationCompleted',success:true,validationPassed,validationLevel,exportPath} as GenerationEvent);
     return {success:true,projectSlug:slug,outputPath,jobId:job.id,errors,warnings,phases,validationPassed,validationLevel,projectStatus:status,exportPath};
   } catch (error) {

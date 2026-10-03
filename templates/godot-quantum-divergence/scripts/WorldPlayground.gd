@@ -3,6 +3,8 @@ extends "res://scripts/CombatPlayground.gd"
 const ChunkGrid = preload("res://scripts/ChunkedGrid.gd")
 const MineWorld = preload("res://scripts/MineWorld.gd")
 const Navigator = preload("res://scripts/MineNavigator.gd")
+const Programming = preload("res://scripts/InstrumentProgramming.gd")
+const Workbench = preload("res://scripts/InstrumentWorkbench.gd")
 const VIEW := Rect2(Vector2(16,96),Vector2(928,432))
 var manifest: Dictionary
 var navigator = Navigator.new()
@@ -14,8 +16,22 @@ var terrain_chunks: Dictionary = {}
 var visible_chunks: Array[Vector2i] = []
 var restart_requested: bool = false
 var focus_work_usec: int = 0
+var programming
+var workbench
+var programming_release_guard: bool = false
+
+func _clear_game_requests() -> void:
+	jump_requested = false
+	dash_requested = false
+	fire_requested = false
+	interact_requested = false
 
 func _input(event: InputEvent) -> void:
+	if workbench != null and workbench.opened: return
+	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_P:
+		if not get_tree().paused: workbench.open()
+		get_viewport().set_input_as_handled()
+		return
 	super._input(event)
 	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_ENTER and (player.hp <= 0 or progress.extracted):
 		restart_requested = true
@@ -61,7 +77,11 @@ func _ready() -> void:
 	_update_texture()
 	ready_usec = Time.get_ticks_usec() - before
 	started_usec = Time.get_ticks_usec()
-	notice = "Explore the mine; E activates stations and objective machinery. World saves are not connected yet."
+	programming = Programming.new(self)
+	if workbench != null: workbench.free()
+	workbench = Workbench.new(self,programming)
+	add_child(workbench)
+	notice = "E registers stations and activates machinery. P opens a safe station's workbench."
 
 func _focus() -> void:
 	var cell := Vector2i(player.position / 4.0)
@@ -122,15 +142,30 @@ func _after_simulation(input: Dictionary) -> void:
 				player.register_station(station)
 		grid.occupy_actor(player.cell_rect(player.position))
 	super._after_simulation(input)
+	if progress.collapse_rift and "tunneling" not in profile.get("blueprints",[]):
+		var knowledge: Array = profile.get("blueprints",[]).duplicate()
+		knowledge.append("tunneling")
+		profile.blueprints = knowledge
+		notice = "Tunneling blueprint recovered from the stable rift. Recompile at a station with P."
 
 func _controls() -> Dictionary:
 	if not smoke_test:
+		if programming_release_guard:
+			var held: bool = Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
+			for key in [KEY_A,KEY_D,KEY_SHIFT,KEY_SPACE,KEY_CTRL,KEY_R,KEY_E,KEY_P,KEY_Q]: held = held or Input.is_physical_key_pressed(key)
+			if held:
+				_clear_game_requests()
+				return {}
+			programming_release_guard = false
 		return super._controls()
 	if player.position.distance_to(manifest.layout.anchor) < 12.0:
 		interact_requested = true
 	if navigator.next_point >= 16:
 		return {}
 	return navigator.controls(player,manifest.route)
+
+func _can_fire() -> bool:
+	return not programming_release_guard and super._can_fire()
 
 func _aim_for_user(muzzle: Vector2) -> Vector2:
 	return get_global_mouse_position() - VIEW.position + camera_origin - muzzle
@@ -143,6 +178,7 @@ func _test_passed() -> bool:
 
 func _extend_report() -> void:
 	super._extend_report()
+	report.programming = {"programs":instruments.programs.duplicate(true),"blueprints":profile.get("blueprints",[]).duplicate(),"applications":workbench.applied,"active_links":instruments.links.size()}
 	report.world = {"pixels":manifest.pixels,"cells":grid.cells.size(),"rooms":manifest.rooms.size(),"seed":manifest.seed,"world_id":manifest.world_id,"main_waypoints":manifest.route.size(),"visited_waypoints":navigator.reached.size(),"max_active_chunks":maximum_awake,"max_work_cells":maximum_work,"generation_ms":ready_usec / 1000.0,"camera_origin":[camera_origin.x,camera_origin.y],"focus_mean_ms":float(focus_work_usec) / maxi(1,measured_ticks) / 1000.0,"cpu_mean_with_focus_ms":float(measured_usec + focus_work_usec) / maxi(1,measured_ticks) / 1000.0,"recall_stations":player.stations.size()}
 
 func _update_texture() -> void:

@@ -58,6 +58,7 @@ func add_enemy(kind: String, id: int, at: Vector2, bind_target: bool = false) ->
 		instruments.add_target(id, body_rect(actor, at), float(DEFINITIONS[kind].hp))
 	actors[id] = actor
 	instruments.targets[id].rect = body_rect(actor, at)
+	instruments.linkable_targets[id] = true
 	return true
 
 func _set_state(actor: Dictionary, value: String) -> void:
