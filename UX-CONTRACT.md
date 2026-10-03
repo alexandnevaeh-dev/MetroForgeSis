@@ -5,7 +5,7 @@ Scope: existing Electron/React studio; English authoring interface. This records
 Visual source: redesign-audit/DESIGN_TOKENS.md documents apps/desktop/src/tokens.css. Runtime tokens remain canonical and flow through styles.css and studio/ui/index.tsx. Preserve the existing dense warm amber/brown editor panels (verified runtime theme; the older token guide requires reconciliation); add no parallel palette or typography for this feature.
 
 ## Canonical UI Map
-| Capability | Canonical owner | Source | Variant | Verification |
+| Capability | Canonical owner | Source of truth | Allowed variants | Verification |
 | --- | --- | --- | --- | --- |
 | Select/Listbox | studio/ui/index.tsx Select | existing Room/Project editors | Native OS popup accepted for object choice | Native popup keyboard selection passed in browser harness |
 | Form | studio/ui/index.tsx Input and Button | RoomEditor placement inspector | Live numeric coordinates; finite values only | Typecheck; native validation; browser apply/save/undo/conflict passed |
@@ -48,6 +48,12 @@ Canonical controls: shared Input and native-backed Select for scalar fields and 
 Prop changes are explicit saves, not autosaves. Preserve layers and collision metadata when changing position/scale. Removal is reversible through the same saved-room history. Block duplicate submissions while pending. Keep invalid drafts visible with an inline explanation. Record history only for successful writes. Failed saves preserve data and report the error. Project/room switches must not apply stale responses to the newly selected target.
 
 Unsupported top-down actions must not silently mutate side-view files. Asset addition and visual direct manipulation remain outstanding. Do not show an empty rendered scene as proof that an area is empty.
+
+## Quantum creation
+
+CreateScreen owns genre selection and the create/result flow; shared Input, native-backed Select, TextArea and Button own scalar controls. Selecting Quantum uses the dedicated local Godot generation contract in packages/generation/src/quantum-generation.ts: the Probability Mines test profile, local authored assets, selected nonnegative integer seed and its own material runtime. Manual room scaffolding and AI modes must not be substituted. Show these current limits beside the controls. Genre radio cards support arrow/Home/End keyboard selection and a single tab stop. Preserve entered title, prompt and seed when changing genres.
+
+Creation validates whole-number seeds without truncation or replacing zero with 42. Block duplicate submissions and disable input while either creation action runs. Keep failed input available for correction. Select a resulting project only when files were actually created. Created files, pending tests, failed tests and passing tests are separate result states; file creation alone must never receive a Tests passed badge. Native generation and UI verification reports establish their own scope, not production approval.
 
 ## Native top-down game HUD
 GameHUD.gd and World.tscn own the existing readonly gameplay HUD. HealthComponent owns health; InventoryManager owns item counts/names; GameManager owns acquired abilities; MapManager owns room identity/discovery; QuestManager owns currency and active objectives. No duplicate counters or gameplay state changes are introduced for presentation. AdventureHUDTheme.gd owns this game's native theme separately from the studio and side-view UI.

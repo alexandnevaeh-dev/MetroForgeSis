@@ -1,6 +1,7 @@
 export { assertPhaseArtifacts, phaseCompleteStatus } from './phase-contract.js';
 export type { PhaseArtifactCheck } from './phase-contract.js';
 export { GenerationPipeline } from './pipeline.js';
+export { runQuantumGeneration } from './quantum-generation.js';
 export type { GenerateOptions, GenerateResult } from './pipeline.js';
 export * from './events.js';
 export * from './progress.js';

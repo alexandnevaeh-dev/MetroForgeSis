@@ -131,6 +131,9 @@ export async function generateGameDNA(
   input: GameDNAInput,
   provider: GameDNATextSource | null,
 ): Promise<{ dna: GameDNA; source: 'ai' | 'deterministic' }> {
+  if (resolveGameArchetype(input.archetype ?? inferGameArchetypeFromPrompt(input.prompt)) === 'QUANTUM_SIMULATION_ROGUELITE') {
+    throw new Error('Quantum requires its dedicated generation contract; generic room DNA is unsupported');
+  }
   if (!provider || provider.health === 'unavailable') {
     return { dna: createDeterministicGameDNA(input), source: 'deterministic' };
   }

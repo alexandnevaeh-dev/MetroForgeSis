@@ -391,6 +391,7 @@ export type MetroforgeBridge = {
     errors: string[];
   }>;
   generateGame: (opts: {
+    title?: string;
     prompt: string;
     profile: string;
     mode: string;
@@ -401,6 +402,9 @@ export type MetroforgeBridge = {
     archetype?: string;
   }) => Promise<{
     success: boolean;
+    cancelled?: boolean;
+    validationPassed?: boolean;
+    validationLevel?: string;
     projectSlug: string;
     outputPath: string;
     errors: string[];

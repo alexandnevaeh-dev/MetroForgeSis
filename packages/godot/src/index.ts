@@ -1,4 +1,6 @@
 export { GodotProjectAssembler, getTemplatePath, overlayAuthoredVisualPolish, applyAuthoredOverlayProvenance, isRollbackOnlyTemplatePath, stripRollbackOnlyAssets } from './assembler.js';
+export { assembleQuantumProject } from './quantum-assembler.js';
+export type { QuantumAssemblyInput, QuantumAssemblyResult } from './quantum-assembler.js';
 export type { AssemblyInput, AssemblyResult, RecompileRoomsInput, RecompileRoomsResult } from './assembler.js';
 export {
   deriveRoomIds,

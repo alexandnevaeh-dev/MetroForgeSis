@@ -28,8 +28,8 @@ export type CameraModel =
   | 'TOP_DOWN_FOLLOW'
   | 'TOP_DOWN_SCREEN'
   | 'CONTINUOUS_FOLLOW';
-export type NavigationModel = 'PLATFORMER_GEOMETRY' | 'WALKABILITY_GRID' | 'NAVIGATION_AGENT';
-export type AbilityNamespace = 'movement_abilities' | 'dungeon_tools';
+export type NavigationModel = 'PLATFORMER_GEOMETRY' | 'WALKABILITY_GRID' | 'NAVIGATION_AGENT' | 'MATERIAL_CONTACT';
+export type AbilityNamespace = 'movement_abilities' | 'dungeon_tools' | 'quantum_instruments';
 export type ArtProjection = 'side-view' | 'top-down';
 export type QualityPassProfile =
   | 'side_view_metroidvania'
@@ -67,10 +67,10 @@ export type GenreCapabilityFlag = {
 
 export interface GenreRuntimeBinding {
   godotTemplate: string;
-  playerController: 'side_view' | 'top_down_8dir';
+  playerController: 'side_view' | 'top_down_8dir' | 'quantum_diver';
   cameraModel: CameraModel;
-  worldGenerator: 'linear_room_graph' | 'overworld_chunks';
-  combatModel: 'side_view_melee' | 'directional_top_down';
+  worldGenerator: 'linear_room_graph' | 'overworld_chunks' | 'chunked_material_world';
+  combatModel: 'side_view_melee' | 'directional_top_down' | 'programmable_projectiles';
   navigationModel: NavigationModel;
   locomotion: LocomotionModel;
 }
@@ -89,6 +89,33 @@ export interface GenreDefinition {
 }
 
 export const GENRE_DEFINITIONS: Record<GameArchetype, GenreDefinition> = {
+  QUANTUM_SIMULATION_ROGUELITE: {
+    id: 'QUANTUM_SIMULATION_ROGUELITE',
+    displayName: 'Quantum Simulation Roguelite',
+    perspective: 'SIDE_VIEW',
+    defaultWorldTopology: 'INTERCONNECTED',
+    defaultProgression: 'STORY_GATED',
+    defaultCombat: 'SHOOTER',
+    capabilities: {
+      supportsVerticalPlatforming: true, supportsFreePlanarMovement: false,
+      supportsJumping: true, supportsGravity: true, supportsElevationLayers: false,
+      supportsLockedAbilityGates: false, supportsItemToolGates: false,
+      supportsProjectileCombat: true, supportsDirectionalCombat: true,
+      supportsRoomTransitions: false, supportsContinuousWorldCamera: true,
+      supportsDungeonRooms: false, supportsParallaxBackgrounds: false,
+      supportsYSort: false, supportsDirectionalSpriteSheets: false,
+      supportsOverworldMap: false, supportsPerRoomScenes: false,
+      supportsSideViewQualityPass: false, abilityNamespace: 'quantum_instruments',
+      artProjection: 'side-view', qualityPassProfile: 'none',
+    },
+    runtime: {
+      godotTemplate: 'templates/godot-quantum-divergence',
+      playerController: 'quantum_diver', cameraModel: 'CONTINUOUS_FOLLOW',
+      worldGenerator: 'chunked_material_world', combatModel: 'programmable_projectiles',
+      navigationModel: 'MATERIAL_CONTACT', locomotion: 'PLATFORMER',
+    },
+    referenceTags: ['destructible_microcells','seeded_materials','interior_machinery','crisp_articulated_sprites','run_objectives'],
+  },
   SIDE_VIEW_METROIDVANIA: {
     id: 'SIDE_VIEW_METROIDVANIA',
     displayName: 'Side-View Metroidvania',
@@ -234,11 +261,11 @@ export interface GameArchetypePlugin {
   id: GameArchetype;
   runtimeTemplate: string;
   defaultGenre: string;
-  playerController: 'side_view' | 'top_down_8dir';
+  playerController: GenreRuntimeBinding['playerController'];
   cameraModel: 'follow_room' | 'follow_or_screen';
-  worldGenerator: 'linear_room_graph' | 'overworld_chunks';
-  combatModel: 'side_view_melee' | 'directional_top_down';
-  navigationModel: 'platformer' | 'navigation_agent' | 'walkability_grid';
+  worldGenerator: GenreRuntimeBinding['worldGenerator'];
+  combatModel: GenreRuntimeBinding['combatModel'];
+  navigationModel: 'platformer' | 'navigation_agent' | 'walkability_grid' | 'material_contact';
   ySort: boolean;
 }
 
@@ -250,11 +277,11 @@ function toLegacyPlugin(def: GenreDefinition): GameArchetypePlugin {
       ? 'platformer'
       : def.runtime.navigationModel === 'NAVIGATION_AGENT'
         ? 'navigation_agent'
-        : 'walkability_grid';
+        : def.runtime.navigationModel === 'MATERIAL_CONTACT' ? 'material_contact' : 'walkability_grid';
   return {
     id: def.id,
     runtimeTemplate: def.runtime.godotTemplate,
-    defaultGenre: def.displayName.includes('Metroidvania') ? 'Metroidvania' : 'Action-Adventure',
+    defaultGenre: def.id === 'QUANTUM_SIMULATION_ROGUELITE' ? 'Quantum Simulation Roguelite' : def.displayName.includes('Metroidvania') ? 'Metroidvania' : 'Action-Adventure',
     playerController: def.runtime.playerController,
     cameraModel: cameraLegacy,
     worldGenerator: def.runtime.worldGenerator,
@@ -267,6 +294,7 @@ function toLegacyPlugin(def: GenreDefinition): GameArchetypePlugin {
 export const GAME_ARCHETYPE_PLUGINS: Record<GameArchetype, GameArchetypePlugin> = {
   SIDE_VIEW_METROIDVANIA: toLegacyPlugin(GENRE_DEFINITIONS.SIDE_VIEW_METROIDVANIA),
   TOP_DOWN_ACTION_ADVENTURE: toLegacyPlugin(GENRE_DEFINITIONS.TOP_DOWN_ACTION_ADVENTURE),
+  QUANTUM_SIMULATION_ROGUELITE: toLegacyPlugin(GENRE_DEFINITIONS.QUANTUM_SIMULATION_ROGUELITE),
 };
 
 export function getGameArchetypePlugin(id: GameArchetype): GameArchetypePlugin {
@@ -278,12 +306,14 @@ export function isTopDownArchetype(id: GameArchetype | undefined): boolean {
 }
 
 export function resolveGameArchetype(value: string | undefined | null): GameArchetype {
+  if (value === 'QUANTUM_SIMULATION_ROGUELITE') return 'QUANTUM_SIMULATION_ROGUELITE';
   if (value === 'TOP_DOWN_ACTION_ADVENTURE') return 'TOP_DOWN_ACTION_ADVENTURE';
   return 'SIDE_VIEW_METROIDVANIA';
 }
 
 /** Infer from a prompt only when the caller did not pass an explicit archetype. */
 export function inferGameArchetypeFromPrompt(prompt: string): GameArchetype {
+  if (/\bquantum divergence\b|\bquantum\b.*\b(?:simulation|roguelite)\b/i.test(prompt)) return 'QUANTUM_SIMULATION_ROGUELITE';
   if (/\btop[\s-]?down\b/i.test(prompt) || /\baction[\s-]?adventure\b/i.test(prompt)) {
     return 'TOP_DOWN_ACTION_ADVENTURE';
   }

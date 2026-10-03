@@ -2085,6 +2085,23 @@ textarea {
   background: var(--accent-soft);
 }
 
+.archetype-card.quantum-archetype {
+  grid-column: 1 / -1;
+}
+
+.archetype-card:not(:disabled):hover {
+  border-color: var(--accent);
+}
+
+.archetype-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.create-primary {
+  min-inline-size: 26ch;
+}
+
 .qa-layout {
   display: grid;
   grid-template-columns: minmax(280px, 0.95fr) minmax(0, 1.35fr);

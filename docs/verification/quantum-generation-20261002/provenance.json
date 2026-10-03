@@ -1,0 +1,45 @@
+{
+  "completedAt": "2026-10-03T16:57:34.145Z",
+  "parent": "d0e155edfedbc25e00ad1386363fdfaa32134944",
+  "sourceScope": "Published baseline plus independently reconciled Quantum changes; current working source and index preserved",
+  "backendChecks": 31,
+  "realAppChecks": 24,
+  "regressionChecks": 29,
+  "workspaceImports": "Isolated publication packages; existing E: third-party runtimes",
+  "generatedGame": {
+    "title": "Quantum UI Expedition",
+    "seed": 0,
+    "terrainSha256": "0e74a79071ad2706a1d78cfd5c3e56ee86c2b4291b4d64b5d22c91f2de99fc66",
+    "waypoints": 161,
+    "hp": 76,
+    "extracted": true
+  },
+  "earlierCaptureFailures": {
+    "runs": [
+      "1790930045532",
+      "1791045476283"
+    ],
+    "passed": false,
+    "reason": "Timed out during narrow viewport screenshot after 21 passing checks; retained separately, not counted as passing"
+  },
+  "desktopAudit": {
+    "errors": 9,
+    "total": 9,
+    "unresolved": 0,
+    "violations": 9,
+    "warnings": 0
+  },
+  "fullDesktopCompliance": false,
+  "productionReady": false,
+  "excludedPriorEdits": [
+    "Legacy asynchronous QA worker integration",
+    "Legacy AI attempt/progress reporting",
+    "Legacy HD-2D DNA overrides",
+    "Read-only early generation asset/world previews",
+    "Legacy failed-runtime proof classification corrections"
+  ],
+  "build": {
+    "builder": "native-esbuild",
+    "builtAt": "2026-10-02T08:28:38.293Z"
+  }
+}

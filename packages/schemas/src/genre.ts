@@ -59,10 +59,11 @@ export const NavigationModelSchema = z.enum([
   'PLATFORMER_GEOMETRY',
   'WALKABILITY_GRID',
   'NAVIGATION_AGENT',
+  'MATERIAL_CONTACT',
 ]);
 export type NavigationModel = z.infer<typeof NavigationModelSchema>;
 
-export const AbilityNamespaceSchema = z.enum(['movement_abilities', 'dungeon_tools']);
+export const AbilityNamespaceSchema = z.enum(['movement_abilities', 'dungeon_tools', 'quantum_instruments']);
 export type AbilityNamespace = z.infer<typeof AbilityNamespaceSchema>;
 
 export const ArtProjectionSchema = z.enum(['side-view', 'top-down']);
@@ -104,10 +105,10 @@ export type GenreCapabilities = z.infer<typeof GenreCapabilitiesSchema>;
 
 export const GenreRuntimeBindingSchema = z.object({
   godotTemplate: z.string().min(1),
-  playerController: z.enum(['side_view', 'top_down_8dir']),
+  playerController: z.enum(['side_view', 'top_down_8dir', 'quantum_diver']),
   cameraModel: CameraModelSchema,
-  worldGenerator: z.enum(['linear_room_graph', 'overworld_chunks']),
-  combatModel: z.enum(['side_view_melee', 'directional_top_down']),
+  worldGenerator: z.enum(['linear_room_graph', 'overworld_chunks', 'chunked_material_world']),
+  combatModel: z.enum(['side_view_melee', 'directional_top_down', 'programmable_projectiles']),
   navigationModel: NavigationModelSchema,
   locomotion: LocomotionModelSchema,
 });

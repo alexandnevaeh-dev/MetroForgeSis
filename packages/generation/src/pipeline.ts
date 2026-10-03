@@ -84,9 +84,12 @@ import { writeVisualSliceReviewRequired } from './visual-review.js';
 import { writeVisualSliceReports, collectVisualSliceEvidence } from './visual-slice-report.js';
 import { writeVgf2VisualSliceReport } from './vgf2-report.js';
 import { inheritDerivativeLicense } from './derivative-license.js';
+import { runQuantumGeneration } from './quantum-generation.js';
 
 export interface GenerateOptions {
   prompt: string;
+  /** Optional project title entered in the desktop commission. */
+  title?: string;
   profile: GenerationProfile;
   mode: GenerationMode;
   /** procedural-only (default when absent): guaranteed procedural baseline, never calls NVIDIA
@@ -106,6 +109,8 @@ export interface GenerateOptions {
   resume?: boolean;
   /** Skip Godot import, runtime smoke, and playtest subprocesses. Static validation still runs. */
   skipRuntimeValidation?: boolean;
+  /** Record the dedicated Quantum native gameplay gate on E:; false by default. */
+  quantumRecordRuntime?: boolean;
   /** Skip staging a packaged copy under Exports/<slug>/ after final QA. */
   skipExport?: boolean;
   onPhase?: (phase: string, status: string, message?: string) => void;
@@ -196,6 +201,9 @@ export class GenerationPipeline {
   private readonly repair = new RepairEngineer();
 
   async run(options: GenerateOptions): Promise<GenerateResult> {
+    if ((options.archetype ?? inferGameArchetypeFromPrompt(options.prompt)) === 'QUANTUM_SIMULATION_ROGUELITE') {
+      return runQuantumGeneration({...options,archetype:'QUANTUM_SIMULATION_ROGUELITE'});
+    }
     options = applyVisualSliceIdentityDefaults(options);
     const cwd = options.cwd ?? process.cwd();
     const config = loadConfig();

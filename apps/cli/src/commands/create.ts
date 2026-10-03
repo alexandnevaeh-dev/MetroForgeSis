@@ -65,7 +65,7 @@ export function registerCreateCommand(program: Command): void {
     .option('--slug <slug>', 'Project directory slug')
     .option('--hardware-profile <profile>', 'LOW_RESOURCE, BALANCED, or HIGH_QUALITY')
     .option('--external-visual-pack <id>', 'Optional test pack: industrial-transit or metroforge-foundry-v3. Side-view VISUAL_VERTICAL_SLICE defaults to the authored courier+masonry pipeline path; pass metroforge-foundry-v3 for the prebuilt pack.')
-    .option('--archetype <archetype>', 'Game archetype: SIDE_VIEW_METROIDVANIA or TOP_DOWN_ACTION_ADVENTURE')
+    .option('--archetype <archetype>', 'Game archetype: SIDE_VIEW_METROIDVANIA, TOP_DOWN_ACTION_ADVENTURE, or QUANTUM_SIMULATION_ROGUELITE (LOCAL_ONLY/TINY_TEST/Godot preview)')
     .option('--engine <engine>', 'Target engine: godot (default), unity, or unreal')
     .option('--no-generate', 'Only create project metadata without generating')
     .option('--resume', 'Resume from an existing Game DNA checkpoint if the project already exists')

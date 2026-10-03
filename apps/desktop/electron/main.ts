@@ -45,7 +45,7 @@ function resolvePreloadPath(): string {
 
 function createWindow(): void {
   const win = new BrowserWindow({
-    show: process.env.METROFORGE_DESKTOP_SMOKE !== '1',
+    show: process.env.METROFORGE_DESKTOP_SMOKE !== '1' && process.env.METROFORGE_DESKTOP_HIDDEN !== '1',
     width: 1280,
     height: 800,
     webPreferences: {

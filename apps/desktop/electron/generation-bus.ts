@@ -5,6 +5,20 @@ import type { GenerationEvent, GenerationEventCategory } from '@metroforge/gener
 const EVENTS_FILE = 'generation_events.jsonl';
 
 export class GenerationEventStore {
+  /** One job owns this buffer; never create a destination before atomic assembly. */
+  createDeferredAppender(): (projectPath: string, event: GenerationEvent) => void {
+    const pending = new Map<string, GenerationEvent[]>();
+    return (projectPath, event) => {
+      const events = [...(pending.get(projectPath) ?? []), event];
+      if (!existsSync(projectPath)) {
+        pending.set(projectPath, events);
+        return;
+      }
+      for (const queued of events) this.append(projectPath, queued);
+      pending.delete(projectPath);
+    };
+  }
+
   append(projectPath: string, event: GenerationEvent): void {
     const file = join(projectPath, EVENTS_FILE);
     appendFileSync(file, `${JSON.stringify(event)}\n`, 'utf-8');

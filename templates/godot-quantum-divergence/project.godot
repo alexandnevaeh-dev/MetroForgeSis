@@ -1,0 +1,19 @@
+; Dedicated generated Quantum runtime. Authored candidate artwork, not final approval.
+config_version=5
+
+[application]
+config/name="Quantum Divergence"
+run/main_scene="res://scenes/GeneratedMines.tscn"
+
+[display]
+window/size/viewport_width=960
+window/size/viewport_height=600
+window/stretch/mode="canvas_items"
+
+[physics]
+common/physics_ticks_per_second=60
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/default_filters/use_nearest_mipmap_filter=false

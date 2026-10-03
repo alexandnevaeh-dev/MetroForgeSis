@@ -1,0 +1,377 @@
+{
+	"assets": {
+		"anchor": {
+			"bounds": [
+				4,
+				10,
+				56,
+				86
+			],
+			"frame": [
+				64,
+				96
+			],
+			"groundLine": 96.0,
+			"logicalSize": [
+				32,
+				48
+			],
+			"opaque": false,
+			"path": "anchor.png",
+			"pivot": [
+				32,
+				96
+			],
+			"sha256": "0ea8e88a0786f4b17c4af7ed1276eaa83d810b0bc4cbfa823e21941c22a52cd3",
+			"sourcePath": "anchor-source.tscn",
+			"sourceSha256": "7aed11d88eb6a2427dc2dbae1a05714d2e01de4b7d971040438c6ffb827d8f35"
+		},
+		"bedrock-a": {
+			"bounds": [
+				0,
+				0,
+				64,
+				64
+			],
+			"frame": [
+				64,
+				64
+			],
+			"groundLine": 64.0,
+			"logicalSize": [
+				32,
+				32
+			],
+			"opaque": true,
+			"path": "bedrock-a.png",
+			"pivot": [
+				32,
+				64
+			],
+			"sha256": "bb19426a32a77ed01ebfb382bed802e304c060cee1eccdf2fd386892973c9a25",
+			"sourcePath": "bedrock-a-source.tscn",
+			"sourceSha256": "bdc9269ed218a29d67292c3ec57eb233d8360c4bb561bb26d23564e5ea9fabcd"
+		},
+		"bedrock-b": {
+			"bounds": [
+				0,
+				0,
+				64,
+				64
+			],
+			"frame": [
+				64,
+				64
+			],
+			"groundLine": 64.0,
+			"logicalSize": [
+				32,
+				32
+			],
+			"opaque": true,
+			"path": "bedrock-b.png",
+			"pivot": [
+				32,
+				64
+			],
+			"sha256": "dd5bd4d5ba67b6be35235af2a59b608c62c1ea7e58db0f8f916a5a9d6851cd4e",
+			"sourcePath": "bedrock-b-source.tscn",
+			"sourceSha256": "64e03ac8f69cce66f7e07261628aa562bc19fe0f1488e72ca60e37d31b504711"
+		},
+		"catwalk": {
+			"bounds": [
+				0,
+				0,
+				64,
+				64
+			],
+			"frame": [
+				64,
+				64
+			],
+			"groundLine": 64.0,
+			"logicalSize": [
+				32,
+				32
+			],
+			"opaque": true,
+			"path": "catwalk.png",
+			"pivot": [
+				32,
+				64
+			],
+			"sha256": "a4c75aed30b4b2238e760e0dcc9b76fb2959d6e38ec2379c03fcacf71741cb74",
+			"sourcePath": "catwalk-source.tscn",
+			"sourceSha256": "f497f80d617fda2cc290293ee4cb7998aed45e9c2995f9262d9bf9bfffadd62c"
+		},
+		"core": {
+			"bounds": [
+				4,
+				31,
+				120,
+				97
+			],
+			"frame": [
+				128,
+				128
+			],
+			"groundLine": 128.0,
+			"logicalSize": [
+				64,
+				64
+			],
+			"opaque": false,
+			"path": "core.png",
+			"pivot": [
+				64,
+				128
+			],
+			"sha256": "ce3e3e755052964a5349809e3f769c6189be5fc023b9f73ee297b7602cb467c3",
+			"sourcePath": "core-source.tscn",
+			"sourceSha256": "0aa49e00596b8a0eaa825c17c6086a6c756c02ff51c250a1cbb5626d72a41d42"
+		},
+		"crystal": {
+			"bounds": [
+				5,
+				6,
+				30,
+				66
+			],
+			"frame": [
+				40,
+				72
+			],
+			"groundLine": 72.0,
+			"logicalSize": [
+				20,
+				36
+			],
+			"opaque": false,
+			"path": "crystal.png",
+			"pivot": [
+				20,
+				72
+			],
+			"sha256": "34b3d5c245a7fac7881655ee438f0d8f96479ff5881dc5222859a0871877d038",
+			"sourcePath": "crystal-source.tscn",
+			"sourceSha256": "ca6e1738d955f1372726a122f184e7e0d49ccc9fd6c8c387599af41e13df51bb"
+		},
+		"fluid": {
+			"bounds": [
+				0,
+				0,
+				64,
+				64
+			],
+			"frame": [
+				64,
+				64
+			],
+			"groundLine": 64.0,
+			"logicalSize": [
+				32,
+				32
+			],
+			"opaque": true,
+			"path": "fluid.png",
+			"pivot": [
+				32,
+				64
+			],
+			"sha256": "ee29c0e9d30a16d2ce39b2eacadf324e59fd2a5a37c24d62fdb3d5f0218fa94d",
+			"sourcePath": "fluid-source.tscn",
+			"sourceSha256": "a00f410a7c9a06fc8aa41f024f297aefd65ad185070897039064624356109f3c"
+		},
+		"lift": {
+			"bounds": [
+				4,
+				26,
+				184,
+				166
+			],
+			"frame": [
+				192,
+				192
+			],
+			"groundLine": 192.0,
+			"logicalSize": [
+				96,
+				96
+			],
+			"opaque": false,
+			"path": "lift.png",
+			"pivot": [
+				96,
+				192
+			],
+			"sha256": "2571c20d45a080546a5c74a1ec578b4df681db7924beda86b27538765268a998",
+			"sourcePath": "lift-source.tscn",
+			"sourceSha256": "e1570b49ce02667ffe60db2c27395bb4ecad458be22a9a70c986c976c372d087"
+		},
+		"ore": {
+			"bounds": [
+				0,
+				0,
+				64,
+				64
+			],
+			"frame": [
+				64,
+				64
+			],
+			"groundLine": 64.0,
+			"logicalSize": [
+				32,
+				32
+			],
+			"opaque": true,
+			"path": "ore.png",
+			"pivot": [
+				32,
+				64
+			],
+			"sha256": "3060158fa3bd685dcf4a8777c1c3bb23c70aaeda5fb8ad45970bf0253d5b0bbd",
+			"sourcePath": "ore-source.tscn",
+			"sourceSha256": "a9981ba683a33211bb11a033f47649ee8aae07b10eaffb7e4fbbbfa5f0246a03"
+		},
+		"sand": {
+			"bounds": [
+				0,
+				0,
+				64,
+				64
+			],
+			"frame": [
+				64,
+				64
+			],
+			"groundLine": 64.0,
+			"logicalSize": [
+				32,
+				32
+			],
+			"opaque": true,
+			"path": "sand.png",
+			"pivot": [
+				32,
+				64
+			],
+			"sha256": "2e981be6c6c0e109913e9458dc0f366f015b818102ad822e9bfd1a15d5c1c2d4",
+			"sourcePath": "sand-source.tscn",
+			"sourceSha256": "647d228faddef451e8968eebab89b36d9fabaf04bd111aafd6c28f00a9e9027a"
+		},
+		"station": {
+			"bounds": [
+				4,
+				20,
+				120,
+				108
+			],
+			"frame": [
+				128,
+				128
+			],
+			"groundLine": 128.0,
+			"logicalSize": [
+				64,
+				64
+			],
+			"opaque": false,
+			"path": "station.png",
+			"pivot": [
+				64,
+				128
+			],
+			"sha256": "6eaeabdbb59fc17997fa180b349d50fcfde6cac1aa25db061d08fe8bc172a81b",
+			"sourcePath": "station-source.tscn",
+			"sourceSha256": "c49f7fb56eeaef8801b8a95682228a2981204f82dd34955a031c35d46dbac4f5"
+		},
+		"wall-a": {
+			"bounds": [
+				0,
+				0,
+				256,
+				192
+			],
+			"frame": [
+				256,
+				192
+			],
+			"groundLine": 192.0,
+			"logicalSize": [
+				128,
+				96
+			],
+			"opaque": true,
+			"path": "wall-a.png",
+			"pivot": [
+				128,
+				192
+			],
+			"sha256": "02b5dcfd91b5b4f0542153362ecb9f7363982344cee36719ca5a1140bf7b7ec1",
+			"sourcePath": "wall-a-source.tscn",
+			"sourceSha256": "5d1250db1e236b528536f18b7b2f50961fb8b7839f72d2c7cfc155aec61b6290"
+		},
+		"wall-b": {
+			"bounds": [
+				0,
+				0,
+				256,
+				192
+			],
+			"frame": [
+				256,
+				192
+			],
+			"groundLine": 192.0,
+			"logicalSize": [
+				128,
+				96
+			],
+			"opaque": true,
+			"path": "wall-b.png",
+			"pivot": [
+				128,
+				192
+			],
+			"sha256": "d23c90e6d05ba3ebad90706506a13bcbf9e3caa554761ac8052a3dced78ebc6d",
+			"sourcePath": "wall-b-source.tscn",
+			"sourceSha256": "b6ae8c4c5ca99c5abc0b0616a3a788cb8fc8bf986d611e33c39b13969929e709"
+		},
+		"wall-rib": {
+			"bounds": [
+				36,
+				3,
+				56,
+				250
+			],
+			"frame": [
+				128,
+				256
+			],
+			"groundLine": 256.0,
+			"logicalSize": [
+				64,
+				128
+			],
+			"opaque": false,
+			"path": "wall-rib.png",
+			"pivot": [
+				64,
+				256
+			],
+			"sha256": "4c3b1c9ef1667a4a1df2a9d28f5e1b6da3700970726f943438c37a96917a98f3",
+			"sourcePath": "wall-rib-source.tscn",
+			"sourceSha256": "792c66d6db3eb4f18305f994f895f606e49493639bc797bd377cb668373c9dd6"
+		}
+	},
+	"genre": "quantum-divergence",
+	"helperScriptSha256": "be7bb9ac20f820e840309c3961c085f2e612135b25038b286504d067697f052d",
+	"ok": true,
+	"pixelsPerUnit": 27.4285714285714,
+	"productionApproved": false,
+	"renderDevice": "NVIDIA GeForce RTX 5060 Laptop GPU",
+	"renderVendor": "NVIDIA",
+	"source": "Original geometry, no external meshes/textures",
+	"sourceScriptSha256": "0bc3f42e80442abb0081f26940109e0553a2ac3476952e7547523d87f614f9d3"
+}

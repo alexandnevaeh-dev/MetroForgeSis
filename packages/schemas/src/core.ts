@@ -25,7 +25,7 @@ export const GenerationProfileSchema = z.enum([
 ]);
 
 /** Gameplay genre plugin. Distinct from room `archetype` (tutorial/boss/shop). */
-export const GameArchetypeSchema = z.enum(['SIDE_VIEW_METROIDVANIA', 'TOP_DOWN_ACTION_ADVENTURE']);
+export const GameArchetypeSchema = z.enum(['SIDE_VIEW_METROIDVANIA', 'TOP_DOWN_ACTION_ADVENTURE', 'QUANTUM_SIMULATION_ROGUELITE']);
 
 export type GameArchetype = z.infer<typeof GameArchetypeSchema>;
 

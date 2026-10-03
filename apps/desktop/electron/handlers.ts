@@ -390,7 +390,10 @@ export function registerIpcHandlers(cwd: string): void {
     if (job.type === 'generate_game') {
       const active = activeGenerations.get(job.id);
       if (!active) return;
+      const appendEvent = generationEventStore.createDeferredAppender();
+      let generationFailure: string | null = null;
       const payload = job.payload as {
+        title?: string;
         prompt: string;
         profile: GenerationProfile;
         mode: GenerationMode;
@@ -422,12 +425,16 @@ export function registerIpcHandlers(cwd: string): void {
             active.sender.send('generation-progress', { phase, status, message });
           },
           onEvent: (genEvent: GenerationEvent) => {
-            if (genEvent.projectPath) generationEventStore.append(genEvent.projectPath, genEvent);
+            if (genEvent.projectPath) appendEvent(genEvent.projectPath, genEvent);
             active.sender.send('generation-event', genEvent);
           },
         });
         active.resolve({ ...result, phases: active.phases });
+        if (!result.success || result.validationPassed === false) {
+          generationFailure = result.errors.join('; ') || 'Generated project still requires passing runtime tests';
+        }
       } catch (err) {
+        generationFailure = err instanceof Error ? err.message : String(err);
         active.resolve({
           success: false,
           projectSlug: '',
@@ -439,6 +446,7 @@ export function registerIpcHandlers(cwd: string): void {
       } finally {
         activeGenerations.delete(job.id);
       }
+      if (generationFailure) throw new Error(generationFailure);
       return;
     }
 
@@ -1203,6 +1211,7 @@ export function registerIpcHandlers(cwd: string): void {
     async (
       event,
       opts: {
+        title?: string;
         prompt: string;
         profile: GenerationProfile;
         mode: GenerationMode;

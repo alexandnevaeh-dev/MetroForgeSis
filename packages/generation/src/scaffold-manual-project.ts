@@ -61,6 +61,9 @@ export function uniqueProjectDir(root: string, slug: string): { slug: string; pa
 
 /** Assemble a playable Godot starter from the template + procedural TINY_TEST topology. No LLM. */
 export function scaffoldManualProject(options: ScaffoldManualProjectOptions): ScaffoldManualProjectResult {
+  if (options.archetype === 'QUANTUM_SIMULATION_ROGUELITE') {
+    return {success:false,projectPath:options.outputDir,slug:options.slug,errors:['Use Quantum local generation to build its dedicated material world; room-template scaffolding is unsupported'],warnings:[]};
+  }
   const errors: string[] = [];
   const warnings: string[] = [];
   const profile = options.profile ?? 'TINY_TEST';

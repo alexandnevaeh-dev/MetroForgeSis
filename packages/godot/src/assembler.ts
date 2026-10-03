@@ -136,6 +136,9 @@ export class GodotProjectAssembler {
   }
 
   assemble(input: AssemblyInput): AssemblyResult {
+    if (input.gameDna.archetype === 'QUANTUM_SIMULATION_ROGUELITE') {
+      return {success:false,projectPath:input.outputDir,errors:['Quantum requires the dedicated material-world assembler'],warnings:[]};
+    }
     const errors: string[] = [];
     const warnings: string[] = [];
 

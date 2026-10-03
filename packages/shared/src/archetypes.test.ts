@@ -43,6 +43,7 @@ describe('GenreDefinition capabilities', () => {
     expect(top.perspective).toBe('TOP_DOWN');
     expect(top.defaultProgression).toBe('ITEM_GATED');
     expect(Object.keys(GENRE_DEFINITIONS)).toEqual([
+      'QUANTUM_SIMULATION_ROGUELITE',
       'SIDE_VIEW_METROIDVANIA',
       'TOP_DOWN_ACTION_ADVENTURE',
     ]);
@@ -68,5 +69,16 @@ describe('GenreDefinition capabilities', () => {
       'WALKABILITY_GRID',
     );
     expect(GAME_ARCHETYPE_PLUGINS.TOP_DOWN_ACTION_ADVENTURE.navigationModel).toBe('walkability_grid');
+  });
+
+  it('keeps Quantum material navigation and simulation separate from both room runtimes', () => {
+    const quantum = getGenreDefinition('QUANTUM_SIMULATION_ROGUELITE');
+    expect(quantum.runtime.worldGenerator).toBe('chunked_material_world');
+    expect(quantum.runtime.playerController).toBe('quantum_diver');
+    expect(quantum.runtime.navigationModel).toBe('MATERIAL_CONTACT');
+    expect(quantum.capabilities.abilityNamespace).toBe('quantum_instruments');
+    expect(quantum.capabilities.supportsSideViewQualityPass).toBe(false);
+    expect(quantum.capabilities.supportsPerRoomScenes).toBe(false);
+    expect(inferGameArchetypeFromPrompt('Quantum Divergence simulation roguelite')).toBe(quantum.id);
   });
 });

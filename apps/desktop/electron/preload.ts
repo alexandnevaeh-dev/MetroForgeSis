@@ -113,6 +113,7 @@ contextBridge.exposeInMainWorld('metroforge', {
   undoRoomEdit: (projectPath: string) => ipcRenderer.invoke('undo-room-edit', projectPath),
   redoRoomEdit: (projectPath: string) => ipcRenderer.invoke('redo-room-edit', projectPath),
   generateGame: (opts: {
+    title?: string;
     prompt: string;
     profile: string;
     mode: string;

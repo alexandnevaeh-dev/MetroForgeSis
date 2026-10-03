@@ -1,0 +1,1472 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261002\\quantum-publication-1790929224829\\tree\\reports\\game-tests\\20261001-quantum-divergence\\generation-1790929772367",
+  "checks": [
+    {
+      "label": "registry selects the actual Quantum runtime",
+      "passed": true
+    },
+    {
+      "label": "strict configuration rejects negative seed",
+      "passed": true
+    },
+    {
+      "label": "strict configuration rejects fractional seed",
+      "passed": true
+    },
+    {
+      "label": "strict configuration rejects overflow seed",
+      "passed": true
+    },
+    {
+      "label": "strict configuration rejects blank title",
+      "passed": true
+    },
+    {
+      "label": "strict configuration rejects control-character title",
+      "passed": true
+    },
+    {
+      "label": "strict configuration rejects unsupported biome",
+      "passed": true
+    },
+    {
+      "label": "strict configuration rejects unknown configuration field",
+      "passed": true
+    },
+    {
+      "label": "strict configuration rejects false production approval",
+      "passed": true
+    },
+    {
+      "label": "all shipped template dependencies match their bound hashes",
+      "passed": true
+    },
+    {
+      "label": "generic room assembler refuses Quantum without writing output",
+      "passed": true
+    },
+    {
+      "label": "manual room scaffold refuses Quantum without writing output",
+      "passed": true
+    },
+    {
+      "label": "generic AI DNA refuses a Quantum room fallback",
+      "passed": true
+    },
+    {
+      "label": "changed template fails before any project is written",
+      "passed": true
+    },
+    {
+      "label": "pipeline rejects unsupported AI mode before project creation",
+      "passed": true
+    },
+    {
+      "label": "pipeline rejects expanded profile before project creation",
+      "passed": true
+    },
+    {
+      "label": "pipeline rejects Unity engine before project creation",
+      "passed": true
+    },
+    {
+      "label": "pipeline rejects Unreal engine before project creation",
+      "passed": true
+    },
+    {
+      "label": "pipeline rejects room visual pack before project creation",
+      "passed": true
+    },
+    {
+      "label": "pipeline rejects generation resume before project creation",
+      "passed": true
+    },
+    {
+      "label": "pipeline rejects room override before project creation",
+      "passed": true
+    },
+    {
+      "label": "pipeline rejects review pauses before project creation",
+      "passed": true
+    },
+    {
+      "label": "cancelled generation creates no project",
+      "passed": true
+    },
+    {
+      "label": "actual MetroForge pipeline creates and validates a standalone Quantum game",
+      "passed": true
+    },
+    {
+      "label": "actual generated configuration controls seed and displayed title",
+      "passed": true
+    },
+    {
+      "label": "events preserve real start, phase and validation completion states",
+      "passed": true
+    },
+    {
+      "label": "existing generated game is preserved on a repeated slug",
+      "passed": true
+    },
+    {
+      "label": "skipped native gates stay unverified: same-seed",
+      "passed": true
+    },
+    {
+      "label": "skipped native gates stay unverified: different-seed",
+      "passed": true
+    },
+    {
+      "label": "same seed reproduces actual material bytes in a second generated project",
+      "passed": true
+    },
+    {
+      "label": "different seed changes actual terrain and preserves authored geometry",
+      "passed": true
+    }
+  ],
+  "sources": [
+    {
+      "path": "packages/shared/src/constants.ts",
+      "sha256": "1e3308d8fc38170614345f3356bc26afb02054ef92f9dabde2b0117d30bcc02d"
+    },
+    {
+      "path": "packages/shared/src/archetypes.ts",
+      "sha256": "ec8f0eb73f6ba4f7fa2d5222cf4ac95c019be6b8d7b46e65b0b80d91a69ab114"
+    },
+    {
+      "path": "packages/schemas/src/core.ts",
+      "sha256": "8d960d065aa593f01927502cad8f12046c54c9d3b1f093941e74c9fa652a55eb"
+    },
+    {
+      "path": "packages/schemas/src/genre.ts",
+      "sha256": "8e29583756bb9b8df85a54639bec46639edd4aba499c2f41884123367b7cd457"
+    },
+    {
+      "path": "packages/schemas/src/quantum.ts",
+      "sha256": "1c5abca9ebf08b98b8e316477190eb2b4be582cd06cc8bf03eca53305099b131"
+    },
+    {
+      "path": "packages/schemas/src/index.ts",
+      "sha256": "9682a45401ecf63d1610692cb457aba103bd646831586d3759ad626484a25273"
+    },
+    {
+      "path": "packages/godot/src/quantum-assembler.ts",
+      "sha256": "e7542070e1d86223d0ab9d44e15f0037beebdf8ad934e4879aec2b7c5313c1f9"
+    },
+    {
+      "path": "packages/godot/src/assembler.ts",
+      "sha256": "b1ca082e96ae7fd995fd106a0ae1307710a23e798a6ac689af2d0192e33d5d3e"
+    },
+    {
+      "path": "packages/godot/src/index.ts",
+      "sha256": "b39c921df501cb12a8fc0d648f3ce9faef08a3be063351a07263071de8da7966"
+    },
+    {
+      "path": "packages/generation/src/quantum-generation.ts",
+      "sha256": "4120453cc8f9ce8bcb64c5c670c9c5c25fe79c9b5c874ba709c2e4e57c8a4fcb"
+    },
+    {
+      "path": "packages/generation/src/pipeline.ts",
+      "sha256": "17d282631c1dd585bff1bb0f52c1cdf8b0a5aa3ee1da055bfc886511bab416ad"
+    },
+    {
+      "path": "packages/generation/src/index.ts",
+      "sha256": "c42f96208e61a93c8e8fa3cd3ff3829eecc1d8684bb77066783febcb77337961"
+    },
+    {
+      "path": "packages/generation/src/scaffold-manual-project.ts",
+      "sha256": "99de9a4ab8b6d766a95f71ccccd01987fb303a858dc11fe796bafd5ce1fb687f"
+    },
+    {
+      "path": "packages/ai/src/generators/game-dna.ts",
+      "sha256": "a8c5487854a78b6d4fc5cf4adb5992aa914248e5b213e0cbdc4356c72c121c2a"
+    },
+    {
+      "path": "scripts/package-quantum-runtime.mjs",
+      "sha256": "0494ca01b3f4812c6b564c768094134fcb326b8eb97f75a8bc066d10deb22443"
+    },
+    {
+      "path": "scripts/verify-quantum-generation.mjs",
+      "sha256": "3626caeeac0c1d0ab5e740562247144f4de78066ebc22bd2954bcfc0a7de5865"
+    }
+  ],
+  "templateSha256": "bd5003262b7fde65519dd47eda1bf36e1ddc846c1970f9361f56ad98cf06361b",
+  "project": {
+    "success": true,
+    "projectSlug": "the-lattice-expedition",
+    "outputPath": "E:\\MetroForgeData\\GitHubUpload\\20261002\\quantum-publication-1790929224829\\tree\\reports\\game-tests\\20261001-quantum-divergence\\generation-1790929772367\\GeneratedGames\\the-lattice-expedition",
+    "jobId": "job_muqpchi3_o28pws",
+    "errors": [],
+    "warnings": [
+      "Quantum is a playable candidate: AI content generation, instrument programming, expanded biomes, final visual polish, audio and durable full-world saves remain pending"
+    ],
+    "phases": [
+      {
+        "phase": "intake",
+        "status": "PASSED",
+        "message": "Dedicated Quantum material-world generator"
+      },
+      {
+        "phase": "game_dna",
+        "status": "RUNNING"
+      },
+      {
+        "phase": "game_dna",
+        "status": "PASSED",
+        "message": "Local authored design and selected seed; no AI request"
+      },
+      {
+        "phase": "project_assembly",
+        "status": "RUNNING"
+      },
+      {
+        "phase": "project_assembly",
+        "status": "PASSED",
+        "message": "119 verified runtime/configuration files"
+      },
+      {
+        "phase": "environment_assets",
+        "status": "PASSED",
+        "message": "Matching original Quantum candidate packs; no cross-genre fallback"
+      },
+      {
+        "phase": "static_validation",
+        "status": "PASSED",
+        "message": "Template dependency hashes and strict Quantum configuration verified"
+      },
+      {
+        "phase": "design_bible",
+        "status": "SKIPPED",
+        "message": "Not generated by the current Quantum candidate path"
+      },
+      {
+        "phase": "progression_graph",
+        "status": "SKIPPED",
+        "message": "Not generated by the current Quantum candidate path"
+      },
+      {
+        "phase": "enemy_families",
+        "status": "SKIPPED",
+        "message": "Not generated by the current Quantum candidate path"
+      },
+      {
+        "phase": "bosses",
+        "status": "SKIPPED",
+        "message": "Not generated by the current Quantum candidate path"
+      },
+      {
+        "phase": "quests",
+        "status": "SKIPPED",
+        "message": "Not generated by the current Quantum candidate path"
+      },
+      {
+        "phase": "npcs",
+        "status": "SKIPPED",
+        "message": "Not generated by the current Quantum candidate path"
+      },
+      {
+        "phase": "audio",
+        "status": "SKIPPED",
+        "message": "Not generated by the current Quantum candidate path"
+      },
+      {
+        "phase": "automated_repair",
+        "status": "SKIPPED",
+        "message": "Not generated by the current Quantum candidate path"
+      },
+      {
+        "phase": "world_topology",
+        "status": "RUNNING",
+        "message": "Building selected seed with the actual native generator"
+      },
+      {
+        "phase": "world_topology",
+        "status": "PASSED",
+        "message": "Eight authored landmarks connected through native seeded material terrain"
+      },
+      {
+        "phase": "final_qa",
+        "status": "RUNNING",
+        "message": "Playing through the generated project with normal controls"
+      },
+      {
+        "phase": "final_qa",
+        "status": "PASSED",
+        "message": "Native generated game completed its route"
+      },
+      {
+        "phase": "export",
+        "status": "SKIPPED",
+        "message": "Native project is playable; packaged standalone export is not implemented in the Quantum path yet"
+      }
+    ],
+    "validationPassed": true,
+    "validationLevel": "RUNTIME_VALIDATED",
+    "projectStatus": "complete"
+  },
+  "events": [
+    {
+      "type": "GenerationStarted",
+      "profile": "TINY_TEST",
+      "mode": "LOCAL_ONLY",
+      "seed": 42,
+      "prompt": "Stabilize the Probability Mines and extract.",
+      "timestamp": "2026-10-02T08:29:34.221Z",
+      "jobId": "job_muqpchi3_o28pws",
+      "projectSlug": "the-lattice-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261002\\quantum-publication-1790929224829\\tree\\reports\\game-tests\\20261001-quantum-divergence\\generation-1790929772367\\GeneratedGames\\the-lattice-expedition",
+      "category": "AI"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "intake",
+      "status": "PASSED",
+      "message": "Dedicated Quantum material-world generator",
+      "timestamp": "2026-10-02T08:29:34.223Z",
+      "jobId": "job_muqpchi3_o28pws",
+      "projectSlug": "the-lattice-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261002\\quantum-publication-1790929224829\\tree\\reports\\game-tests\\20261001-quantum-divergence\\generation-1790929772367\\GeneratedGames\\the-lattice-expedition",
+      "category": "ALL"
+    },
+    {
+      "type": "PhaseStarted",
+      "phase": "game_dna",
+      "status": "RUNNING",
+      "timestamp": "2026-10-02T08:29:34.276Z",
+      "jobId": "job_muqpchi3_o28pws",
+      "projectSlug": "the-lattice-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261002\\quantum-publication-1790929224829\\tree\\reports\\game-tests\\20261001-quantum-divergence\\generation-1790929772367\\GeneratedGames\\the-lattice-expedition",
+      "category": "AI"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "game_dna",
+      "status": "PASSED",
+      "message": "Local authored design and selected seed; no AI request",
+      "timestamp": "2026-10-02T08:29:34.332Z",
+      "jobId": "job_muqpchi3_o28pws",
+      "projectSlug": "the-lattice-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261002\\quantum-publication-1790929224829\\tree\\reports\\game-tests\\20261001-quantum-divergence\\generation-1790929772367\\GeneratedGames\\the-lattice-expedition",
+      "category": "AI"
+    },
+    {
+      "type": "PhaseStarted",
+      "phase": "project_assembly",
+      "status": "RUNNING",
+      "timestamp": "2026-10-02T08:29:34.399Z",
+      "jobId": "job_muqpchi3_o28pws",
+      "projectSlug": "the-lattice-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261002\\quantum-publication-1790929224829\\tree\\reports\\game-tests\\20261001-quantum-divergence\\generation-1790929772367\\GeneratedGames\\the-lattice-expedition",
+      "category": "GODOT"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "project_assembly",
+      "status": "PASSED",
+      "message": "119 verified runtime/configuration files",
+      "timestamp": "2026-10-02T08:29:34.635Z",
+      "jobId": "job_muqpchi3_o28pws",
+      "projectSlug": "the-lattice-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261002\\quantum-publication-1790929224829\\tree\\reports\\game-tests\\20261001-quantum-divergence\\generation-1790929772367\\GeneratedGames\\the-lattice-expedition",
+      "category": "GODOT"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "environment_assets",
+      "status": "PASSED",
+      "message": "Matching original Quantum candidate packs; no cross-genre fallback",
+      "timestamp": "2026-10-02T08:29:34.776Z",
+      "jobId": "job_muqpchi3_o28pws",
+      "projectSlug": "the-lattice-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261002\\quantum-publication-1790929224829\\tree\\reports\\game-tests\\20261001-quantum-divergence\\generation-1790929772367\\GeneratedGames\\the-lattice-expedition",
+      "category": "ASSETS"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "static_validation",
+      "status": "PASSED",
+      "message": "Template dependency hashes and strict Quantum configuration verified",
+      "timestamp": "2026-10-02T08:29:34.976Z",
+      "jobId": "job_muqpchi3_o28pws",
+      "projectSlug": "the-lattice-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261002\\quantum-publication-1790929224829\\tree\\reports\\game-tests\\20261001-quantum-divergence\\generation-1790929772367\\GeneratedGames\\the-lattice-expedition",
+      "category": "QA"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "design_bible",
+      "status": "SKIPPED",
+      "message": "Not generated by the current Quantum candidate path",
+      "timestamp": "2026-10-02T08:29:35.043Z",
+      "jobId": "job_muqpchi3_o28pws",
+      "projectSlug": "the-lattice-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261002\\quantum-publication-1790929224829\\tree\\reports\\game-tests\\20261001-quantum-divergence\\generation-1790929772367\\GeneratedGames\\the-lattice-expedition",
+      "category": "AI"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "progression_graph",
+      "status": "SKIPPED",
+      "message": "Not generated by the current Quantum candidate path",
+      "timestamp": "2026-10-02T08:29:35.109Z",
+      "jobId": "job_muqpchi3_o28pws",
+      "projectSlug": "the-lattice-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261002\\quantum-publication-1790929224829\\tree\\reports\\game-tests\\20261001-quantum-divergence\\generation-1790929772367\\GeneratedGames\\the-lattice-expedition",
+      "category": "WORLD"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "enemy_families",
+      "status": "SKIPPED",
+      "message": "Not generated by the current Quantum candidate path",
+      "timestamp": "2026-10-02T08:29:35.176Z",
+      "jobId": "job_muqpchi3_o28pws",
+      "projectSlug": "the-lattice-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261002\\quantum-publication-1790929224829\\tree\\reports\\game-tests\\20261001-quantum-divergence\\generation-1790929772367\\GeneratedGames\\the-lattice-expedition",
+      "category": "ALL"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "bosses",
+      "status": "SKIPPED",
+      "message": "Not generated by the current Quantum candidate path",
+      "timestamp": "2026-10-02T08:29:35.251Z",
+      "jobId": "job_muqpchi3_o28pws",
+      "projectSlug": "the-lattice-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261002\\quantum-publication-1790929224829\\tree\\reports\\game-tests\\20261001-quantum-divergence\\generation-1790929772367\\GeneratedGames\\the-lattice-expedition",
+      "category": "ALL"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "quests",
+      "status": "SKIPPED",
+      "message": "Not generated by the current Quantum candidate path",
+      "timestamp": "2026-10-02T08:29:35.431Z",
+      "jobId": "job_muqpchi3_o28pws",
+      "projectSlug": "the-lattice-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261002\\quantum-publication-1790929224829\\tree\\reports\\game-tests\\20261001-quantum-divergence\\generation-1790929772367\\GeneratedGames\\the-lattice-expedition",
+      "category": "ALL"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "npcs",
+      "status": "SKIPPED",
+      "message": "Not generated by the current Quantum candidate path",
+      "timestamp": "2026-10-02T08:29:35.641Z",
+      "jobId": "job_muqpchi3_o28pws",
+      "projectSlug": "the-lattice-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261002\\quantum-publication-1790929224829\\tree\\reports\\game-tests\\20261001-quantum-divergence\\generation-1790929772367\\GeneratedGames\\the-lattice-expedition",
+      "category": "ALL"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "audio",
+      "status": "SKIPPED",
+      "message": "Not generated by the current Quantum candidate path",
+      "timestamp": "2026-10-02T08:29:35.775Z",
+      "jobId": "job_muqpchi3_o28pws",
+      "projectSlug": "the-lattice-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261002\\quantum-publication-1790929224829\\tree\\reports\\game-tests\\20261001-quantum-divergence\\generation-1790929772367\\GeneratedGames\\the-lattice-expedition",
+      "category": "ASSETS"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "automated_repair",
+      "status": "SKIPPED",
+      "message": "Not generated by the current Quantum candidate path",
+      "timestamp": "2026-10-02T08:29:35.941Z",
+      "jobId": "job_muqpchi3_o28pws",
+      "projectSlug": "the-lattice-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261002\\quantum-publication-1790929224829\\tree\\reports\\game-tests\\20261001-quantum-divergence\\generation-1790929772367\\GeneratedGames\\the-lattice-expedition",
+      "category": "QA"
+    },
+    {
+      "type": "PhaseStarted",
+      "phase": "world_topology",
+      "status": "RUNNING",
+      "message": "Building selected seed with the actual native generator",
+      "timestamp": "2026-10-02T08:29:36.388Z",
+      "jobId": "job_muqpchi3_o28pws",
+      "projectSlug": "the-lattice-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261002\\quantum-publication-1790929224829\\tree\\reports\\game-tests\\20261001-quantum-divergence\\generation-1790929772367\\GeneratedGames\\the-lattice-expedition",
+      "category": "WORLD"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "world_topology",
+      "status": "PASSED",
+      "message": "Eight authored landmarks connected through native seeded material terrain",
+      "timestamp": "2026-10-02T08:29:43.327Z",
+      "jobId": "job_muqpchi3_o28pws",
+      "projectSlug": "the-lattice-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261002\\quantum-publication-1790929224829\\tree\\reports\\game-tests\\20261001-quantum-divergence\\generation-1790929772367\\GeneratedGames\\the-lattice-expedition",
+      "category": "WORLD"
+    },
+    {
+      "type": "PhaseStarted",
+      "phase": "final_qa",
+      "status": "RUNNING",
+      "message": "Playing through the generated project with normal controls",
+      "timestamp": "2026-10-02T08:29:43.414Z",
+      "jobId": "job_muqpchi3_o28pws",
+      "projectSlug": "the-lattice-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261002\\quantum-publication-1790929224829\\tree\\reports\\game-tests\\20261001-quantum-divergence\\generation-1790929772367\\GeneratedGames\\the-lattice-expedition",
+      "category": "QA"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "final_qa",
+      "status": "PASSED",
+      "message": "Native generated game completed its route",
+      "timestamp": "2026-10-02T08:31:47.212Z",
+      "jobId": "job_muqpchi3_o28pws",
+      "projectSlug": "the-lattice-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261002\\quantum-publication-1790929224829\\tree\\reports\\game-tests\\20261001-quantum-divergence\\generation-1790929772367\\GeneratedGames\\the-lattice-expedition",
+      "category": "QA"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "export",
+      "status": "SKIPPED",
+      "message": "Native project is playable; packaged standalone export is not implemented in the Quantum path yet",
+      "timestamp": "2026-10-02T08:31:47.299Z",
+      "jobId": "job_muqpchi3_o28pws",
+      "projectSlug": "the-lattice-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261002\\quantum-publication-1790929224829\\tree\\reports\\game-tests\\20261001-quantum-divergence\\generation-1790929772367\\GeneratedGames\\the-lattice-expedition",
+      "category": "ALL"
+    },
+    {
+      "type": "GenerationCompleted",
+      "success": true,
+      "validationPassed": true,
+      "validationLevel": "RUNTIME_VALIDATED",
+      "timestamp": "2026-10-02T08:31:47.432Z",
+      "jobId": "job_muqpchi3_o28pws",
+      "projectSlug": "the-lattice-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261002\\quantum-publication-1790929224829\\tree\\reports\\game-tests\\20261001-quantum-divergence\\generation-1790929772367\\GeneratedGames\\the-lattice-expedition",
+      "category": "ALL"
+    }
+  ],
+  "layouts": {
+    "primary": {
+      "initial_terrain_sha256": "9a463498947f2e416d0f324222f2daa4202aa5b4ad1419b5094f7bbdb84b531e",
+      "pixels": [
+        5760,
+        3840
+      ],
+      "seed": 42,
+      "stations": [
+        [
+          512,
+          1120
+        ],
+        [
+          2400,
+          1120
+        ],
+        [
+          2400,
+          2272
+        ],
+        [
+          800,
+          3488
+        ],
+        [
+          4500,
+          3424
+        ],
+        [
+          4500,
+          3744
+        ],
+        [
+          512,
+          2208
+        ],
+        [
+          4200,
+          992
+        ]
+      ],
+      "version": 1,
+      "worldGraph": {
+        "edges": [
+          {
+            "bidirectional": true,
+            "from": "entry",
+            "id": "entry:upper",
+            "metadata": {
+              "branch": "main",
+              "source": "authored_physical_backbone"
+            },
+            "optional": false,
+            "requirements": [],
+            "to": "upper"
+          },
+          {
+            "bidirectional": true,
+            "from": "upper",
+            "id": "upper:rift",
+            "metadata": {
+              "branch": "main",
+              "source": "authored_physical_backbone"
+            },
+            "optional": false,
+            "requirements": [],
+            "to": "rift"
+          },
+          {
+            "bidirectional": true,
+            "from": "rift",
+            "id": "rift:lower",
+            "metadata": {
+              "branch": "main",
+              "source": "authored_physical_backbone"
+            },
+            "optional": false,
+            "requirements": [],
+            "to": "lower"
+          },
+          {
+            "bidirectional": true,
+            "from": "lower",
+            "id": "lower:arena",
+            "metadata": {
+              "branch": "main",
+              "source": "authored_physical_backbone"
+            },
+            "optional": false,
+            "requirements": [],
+            "to": "arena"
+          },
+          {
+            "bidirectional": true,
+            "from": "arena",
+            "id": "arena:lift",
+            "metadata": {
+              "branch": "main",
+              "source": "authored_physical_backbone"
+            },
+            "optional": false,
+            "requirements": [],
+            "to": "lift"
+          },
+          {
+            "bidirectional": true,
+            "from": "rift",
+            "id": "rift:survey",
+            "metadata": {
+              "branch": "survey",
+              "source": "authored_physical_backbone"
+            },
+            "optional": true,
+            "requirements": [],
+            "to": "survey"
+          },
+          {
+            "bidirectional": true,
+            "from": "upper",
+            "id": "upper:echo",
+            "metadata": {
+              "branch": "echo",
+              "source": "authored_physical_backbone"
+            },
+            "optional": true,
+            "requirements": [],
+            "to": "echo"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "entry",
+            "label": "Diver Arrival",
+            "metadata": {
+              "biome": "probability-mines",
+              "continuous_material_world": true,
+              "rect_pixels": [
+                128,
+                128,
+                1536,
+                1024
+              ]
+            },
+            "type": "region"
+          },
+          {
+            "id": "upper",
+            "label": "Upper Probability Mines",
+            "metadata": {
+              "biome": "probability-mines",
+              "continuous_material_world": true,
+              "rect_pixels": [
+                1856,
+                128,
+                1536,
+                1024
+              ]
+            },
+            "type": "region"
+          },
+          {
+            "id": "rift",
+            "label": "Mid Mines Rift",
+            "metadata": {
+              "biome": "probability-mines",
+              "continuous_material_world": true,
+              "rect_pixels": [
+                1856,
+                1344,
+                1536,
+                960
+              ]
+            },
+            "type": "region"
+          },
+          {
+            "id": "survey",
+            "label": "Collapsed Survey Tunnel",
+            "metadata": {
+              "biome": "probability-mines",
+              "continuous_material_world": true,
+              "rect_pixels": [
+                128,
+                1344,
+                1344,
+                896
+              ]
+            },
+            "type": "region"
+          },
+          {
+            "id": "lower",
+            "label": "Lower Extraction Works",
+            "metadata": {
+              "biome": "probability-mines",
+              "continuous_material_world": true,
+              "rect_pixels": [
+                128,
+                2496,
+                1536,
+                1024
+              ]
+            },
+            "type": "region"
+          },
+          {
+            "id": "echo",
+            "label": "Entanglement Echo Chamber",
+            "metadata": {
+              "biome": "probability-mines",
+              "continuous_material_world": true,
+              "rect_pixels": [
+                3584,
+                128,
+                1408,
+                896
+              ]
+            },
+            "type": "region"
+          },
+          {
+            "id": "arena",
+            "label": "Probability Golem Foundry",
+            "metadata": {
+              "biome": "probability-mines",
+              "continuous_material_world": true,
+              "rect_pixels": [
+                3584,
+                1920,
+                2048,
+                1536
+              ]
+            },
+            "type": "region"
+          },
+          {
+            "id": "lift",
+            "label": "Quantum Lift",
+            "metadata": {
+              "biome": "probability-mines",
+              "continuous_material_world": true,
+              "rect_pixels": [
+                3584,
+                3584,
+                1280,
+                192
+              ]
+            },
+            "type": "region"
+          }
+        ],
+        "regions": [
+          {
+            "biomeId": "probability-mines",
+            "id": "entry",
+            "name": "Diver Arrival",
+            "roomIds": []
+          },
+          {
+            "biomeId": "probability-mines",
+            "id": "upper",
+            "name": "Upper Probability Mines",
+            "roomIds": []
+          },
+          {
+            "biomeId": "probability-mines",
+            "id": "rift",
+            "name": "Mid Mines Rift",
+            "roomIds": []
+          },
+          {
+            "biomeId": "probability-mines",
+            "id": "survey",
+            "name": "Collapsed Survey Tunnel",
+            "roomIds": []
+          },
+          {
+            "biomeId": "probability-mines",
+            "id": "lower",
+            "name": "Lower Extraction Works",
+            "roomIds": []
+          },
+          {
+            "biomeId": "probability-mines",
+            "id": "echo",
+            "name": "Entanglement Echo Chamber",
+            "roomIds": []
+          },
+          {
+            "biomeId": "probability-mines",
+            "id": "arena",
+            "name": "Probability Golem Foundry",
+            "roomIds": []
+          },
+          {
+            "biomeId": "probability-mines",
+            "id": "lift",
+            "name": "Quantum Lift",
+            "roomIds": []
+          }
+        ],
+        "seed": 42,
+        "version": "1"
+      }
+    },
+    "sameSeed": {
+      "initial_terrain_sha256": "9a463498947f2e416d0f324222f2daa4202aa5b4ad1419b5094f7bbdb84b531e",
+      "pixels": [
+        5760,
+        3840
+      ],
+      "seed": 42,
+      "stations": [
+        [
+          512,
+          1120
+        ],
+        [
+          2400,
+          1120
+        ],
+        [
+          2400,
+          2272
+        ],
+        [
+          800,
+          3488
+        ],
+        [
+          4500,
+          3424
+        ],
+        [
+          4500,
+          3744
+        ],
+        [
+          512,
+          2208
+        ],
+        [
+          4200,
+          992
+        ]
+      ],
+      "version": 1,
+      "worldGraph": {
+        "edges": [
+          {
+            "bidirectional": true,
+            "from": "entry",
+            "id": "entry:upper",
+            "metadata": {
+              "branch": "main",
+              "source": "authored_physical_backbone"
+            },
+            "optional": false,
+            "requirements": [],
+            "to": "upper"
+          },
+          {
+            "bidirectional": true,
+            "from": "upper",
+            "id": "upper:rift",
+            "metadata": {
+              "branch": "main",
+              "source": "authored_physical_backbone"
+            },
+            "optional": false,
+            "requirements": [],
+            "to": "rift"
+          },
+          {
+            "bidirectional": true,
+            "from": "rift",
+            "id": "rift:lower",
+            "metadata": {
+              "branch": "main",
+              "source": "authored_physical_backbone"
+            },
+            "optional": false,
+            "requirements": [],
+            "to": "lower"
+          },
+          {
+            "bidirectional": true,
+            "from": "lower",
+            "id": "lower:arena",
+            "metadata": {
+              "branch": "main",
+              "source": "authored_physical_backbone"
+            },
+            "optional": false,
+            "requirements": [],
+            "to": "arena"
+          },
+          {
+            "bidirectional": true,
+            "from": "arena",
+            "id": "arena:lift",
+            "metadata": {
+              "branch": "main",
+              "source": "authored_physical_backbone"
+            },
+            "optional": false,
+            "requirements": [],
+            "to": "lift"
+          },
+          {
+            "bidirectional": true,
+            "from": "rift",
+            "id": "rift:survey",
+            "metadata": {
+              "branch": "survey",
+              "source": "authored_physical_backbone"
+            },
+            "optional": true,
+            "requirements": [],
+            "to": "survey"
+          },
+          {
+            "bidirectional": true,
+            "from": "upper",
+            "id": "upper:echo",
+            "metadata": {
+              "branch": "echo",
+              "source": "authored_physical_backbone"
+            },
+            "optional": true,
+            "requirements": [],
+            "to": "echo"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "entry",
+            "label": "Diver Arrival",
+            "metadata": {
+              "biome": "probability-mines",
+              "continuous_material_world": true,
+              "rect_pixels": [
+                128,
+                128,
+                1536,
+                1024
+              ]
+            },
+            "type": "region"
+          },
+          {
+            "id": "upper",
+            "label": "Upper Probability Mines",
+            "metadata": {
+              "biome": "probability-mines",
+              "continuous_material_world": true,
+              "rect_pixels": [
+                1856,
+                128,
+                1536,
+                1024
+              ]
+            },
+            "type": "region"
+          },
+          {
+            "id": "rift",
+            "label": "Mid Mines Rift",
+            "metadata": {
+              "biome": "probability-mines",
+              "continuous_material_world": true,
+              "rect_pixels": [
+                1856,
+                1344,
+                1536,
+                960
+              ]
+            },
+            "type": "region"
+          },
+          {
+            "id": "survey",
+            "label": "Collapsed Survey Tunnel",
+            "metadata": {
+              "biome": "probability-mines",
+              "continuous_material_world": true,
+              "rect_pixels": [
+                128,
+                1344,
+                1344,
+                896
+              ]
+            },
+            "type": "region"
+          },
+          {
+            "id": "lower",
+            "label": "Lower Extraction Works",
+            "metadata": {
+              "biome": "probability-mines",
+              "continuous_material_world": true,
+              "rect_pixels": [
+                128,
+                2496,
+                1536,
+                1024
+              ]
+            },
+            "type": "region"
+          },
+          {
+            "id": "echo",
+            "label": "Entanglement Echo Chamber",
+            "metadata": {
+              "biome": "probability-mines",
+              "continuous_material_world": true,
+              "rect_pixels": [
+                3584,
+                128,
+                1408,
+                896
+              ]
+            },
+            "type": "region"
+          },
+          {
+            "id": "arena",
+            "label": "Probability Golem Foundry",
+            "metadata": {
+              "biome": "probability-mines",
+              "continuous_material_world": true,
+              "rect_pixels": [
+                3584,
+                1920,
+                2048,
+                1536
+              ]
+            },
+            "type": "region"
+          },
+          {
+            "id": "lift",
+            "label": "Quantum Lift",
+            "metadata": {
+              "biome": "probability-mines",
+              "continuous_material_world": true,
+              "rect_pixels": [
+                3584,
+                3584,
+                1280,
+                192
+              ]
+            },
+            "type": "region"
+          }
+        ],
+        "regions": [
+          {
+            "biomeId": "probability-mines",
+            "id": "entry",
+            "name": "Diver Arrival",
+            "roomIds": []
+          },
+          {
+            "biomeId": "probability-mines",
+            "id": "upper",
+            "name": "Upper Probability Mines",
+            "roomIds": []
+          },
+          {
+            "biomeId": "probability-mines",
+            "id": "rift",
+            "name": "Mid Mines Rift",
+            "roomIds": []
+          },
+          {
+            "biomeId": "probability-mines",
+            "id": "survey",
+            "name": "Collapsed Survey Tunnel",
+            "roomIds": []
+          },
+          {
+            "biomeId": "probability-mines",
+            "id": "lower",
+            "name": "Lower Extraction Works",
+            "roomIds": []
+          },
+          {
+            "biomeId": "probability-mines",
+            "id": "echo",
+            "name": "Entanglement Echo Chamber",
+            "roomIds": []
+          },
+          {
+            "biomeId": "probability-mines",
+            "id": "arena",
+            "name": "Probability Golem Foundry",
+            "roomIds": []
+          },
+          {
+            "biomeId": "probability-mines",
+            "id": "lift",
+            "name": "Quantum Lift",
+            "roomIds": []
+          }
+        ],
+        "seed": 42,
+        "version": "1"
+      }
+    },
+    "differentSeed": {
+      "initial_terrain_sha256": "3f5235cec3b300942cd35689d004cf6c0f6bb341fc31af561cc9ff3b7639eca3",
+      "pixels": [
+        5760,
+        3840
+      ],
+      "seed": 73,
+      "stations": [
+        [
+          512,
+          1120
+        ],
+        [
+          2400,
+          1120
+        ],
+        [
+          2400,
+          2272
+        ],
+        [
+          800,
+          3488
+        ],
+        [
+          4500,
+          3424
+        ],
+        [
+          4500,
+          3744
+        ],
+        [
+          512,
+          2208
+        ],
+        [
+          4200,
+          992
+        ]
+      ],
+      "version": 1,
+      "worldGraph": {
+        "edges": [
+          {
+            "bidirectional": true,
+            "from": "entry",
+            "id": "entry:upper",
+            "metadata": {
+              "branch": "main",
+              "source": "authored_physical_backbone"
+            },
+            "optional": false,
+            "requirements": [],
+            "to": "upper"
+          },
+          {
+            "bidirectional": true,
+            "from": "upper",
+            "id": "upper:rift",
+            "metadata": {
+              "branch": "main",
+              "source": "authored_physical_backbone"
+            },
+            "optional": false,
+            "requirements": [],
+            "to": "rift"
+          },
+          {
+            "bidirectional": true,
+            "from": "rift",
+            "id": "rift:lower",
+            "metadata": {
+              "branch": "main",
+              "source": "authored_physical_backbone"
+            },
+            "optional": false,
+            "requirements": [],
+            "to": "lower"
+          },
+          {
+            "bidirectional": true,
+            "from": "lower",
+            "id": "lower:arena",
+            "metadata": {
+              "branch": "main",
+              "source": "authored_physical_backbone"
+            },
+            "optional": false,
+            "requirements": [],
+            "to": "arena"
+          },
+          {
+            "bidirectional": true,
+            "from": "arena",
+            "id": "arena:lift",
+            "metadata": {
+              "branch": "main",
+              "source": "authored_physical_backbone"
+            },
+            "optional": false,
+            "requirements": [],
+            "to": "lift"
+          },
+          {
+            "bidirectional": true,
+            "from": "rift",
+            "id": "rift:survey",
+            "metadata": {
+              "branch": "survey",
+              "source": "authored_physical_backbone"
+            },
+            "optional": true,
+            "requirements": [],
+            "to": "survey"
+          },
+          {
+            "bidirectional": true,
+            "from": "upper",
+            "id": "upper:echo",
+            "metadata": {
+              "branch": "echo",
+              "source": "authored_physical_backbone"
+            },
+            "optional": true,
+            "requirements": [],
+            "to": "echo"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "entry",
+            "label": "Diver Arrival",
+            "metadata": {
+              "biome": "probability-mines",
+              "continuous_material_world": true,
+              "rect_pixels": [
+                128,
+                128,
+                1536,
+                1024
+              ]
+            },
+            "type": "region"
+          },
+          {
+            "id": "upper",
+            "label": "Upper Probability Mines",
+            "metadata": {
+              "biome": "probability-mines",
+              "continuous_material_world": true,
+              "rect_pixels": [
+                1856,
+                128,
+                1536,
+                1024
+              ]
+            },
+            "type": "region"
+          },
+          {
+            "id": "rift",
+            "label": "Mid Mines Rift",
+            "metadata": {
+              "biome": "probability-mines",
+              "continuous_material_world": true,
+              "rect_pixels": [
+                1856,
+                1344,
+                1536,
+                960
+              ]
+            },
+            "type": "region"
+          },
+          {
+            "id": "survey",
+            "label": "Collapsed Survey Tunnel",
+            "metadata": {
+              "biome": "probability-mines",
+              "continuous_material_world": true,
+              "rect_pixels": [
+                128,
+                1344,
+                1344,
+                896
+              ]
+            },
+            "type": "region"
+          },
+          {
+            "id": "lower",
+            "label": "Lower Extraction Works",
+            "metadata": {
+              "biome": "probability-mines",
+              "continuous_material_world": true,
+              "rect_pixels": [
+                128,
+                2496,
+                1536,
+                1024
+              ]
+            },
+            "type": "region"
+          },
+          {
+            "id": "echo",
+            "label": "Entanglement Echo Chamber",
+            "metadata": {
+              "biome": "probability-mines",
+              "continuous_material_world": true,
+              "rect_pixels": [
+                3584,
+                128,
+                1408,
+                896
+              ]
+            },
+            "type": "region"
+          },
+          {
+            "id": "arena",
+            "label": "Probability Golem Foundry",
+            "metadata": {
+              "biome": "probability-mines",
+              "continuous_material_world": true,
+              "rect_pixels": [
+                3584,
+                1920,
+                2048,
+                1536
+              ]
+            },
+            "type": "region"
+          },
+          {
+            "id": "lift",
+            "label": "Quantum Lift",
+            "metadata": {
+              "biome": "probability-mines",
+              "continuous_material_world": true,
+              "rect_pixels": [
+                3584,
+                3584,
+                1280,
+                192
+              ]
+            },
+            "type": "region"
+          }
+        ],
+        "regions": [
+          {
+            "biomeId": "probability-mines",
+            "id": "entry",
+            "name": "Diver Arrival",
+            "roomIds": []
+          },
+          {
+            "biomeId": "probability-mines",
+            "id": "upper",
+            "name": "Upper Probability Mines",
+            "roomIds": []
+          },
+          {
+            "biomeId": "probability-mines",
+            "id": "rift",
+            "name": "Mid Mines Rift",
+            "roomIds": []
+          },
+          {
+            "biomeId": "probability-mines",
+            "id": "survey",
+            "name": "Collapsed Survey Tunnel",
+            "roomIds": []
+          },
+          {
+            "biomeId": "probability-mines",
+            "id": "lower",
+            "name": "Lower Extraction Works",
+            "roomIds": []
+          },
+          {
+            "biomeId": "probability-mines",
+            "id": "echo",
+            "name": "Entanglement Echo Chamber",
+            "roomIds": []
+          },
+          {
+            "biomeId": "probability-mines",
+            "id": "arena",
+            "name": "Probability Golem Foundry",
+            "roomIds": []
+          },
+          {
+            "biomeId": "probability-mines",
+            "id": "lift",
+            "name": "Quantum Lift",
+            "roomIds": []
+          }
+        ],
+        "seed": 73,
+        "version": "1"
+      }
+    }
+  },
+  "recording": null,
+  "productionReady": false,
+  "scope": "Actual MetroForge generation backend and generated native game; not manual desktop UI use, AI content generation or final production approval"
+}

@@ -63,7 +63,7 @@ export function isProductionQualityProfile(profile: GenerationProfile | string |
   return Boolean(profile && (PRODUCTION_QUALITY_PROFILES as readonly string[]).includes(profile));
 }
 
-export type GameArchetype = 'SIDE_VIEW_METROIDVANIA' | 'TOP_DOWN_ACTION_ADVENTURE';
+export type GameArchetype = 'SIDE_VIEW_METROIDVANIA' | 'TOP_DOWN_ACTION_ADVENTURE' | 'QUANTUM_SIMULATION_ROGUELITE';
 
 export type HardwareProfile = 'LOW_RESOURCE' | 'BALANCED' | 'HIGH_QUALITY';
 
