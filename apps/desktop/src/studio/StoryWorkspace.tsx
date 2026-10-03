@@ -340,7 +340,7 @@ export function StoryWorkspace() {
                 <>
                   <label className="create-field">
                     Premise
-                    <TextArea rows={6} value={draft} onChange={(e) => setDraft(e.target.value)} />
+                    <TextArea className="resize-none" rows={6} value={draft} onChange={(e) => setDraft(e.target.value)} />
                   </label>
                   <p className="hint">
                     Protagonist: {story.narrative.protagonist}
@@ -353,7 +353,7 @@ export function StoryWorkspace() {
                   <p className="mono">{selectedQuest.id}</p>
                   <label className="create-field">
                     Description
-                    <TextArea rows={6} value={draft} onChange={(e) => setDraft(e.target.value)} />
+                    <TextArea className="resize-none" rows={6} value={draft} onChange={(e) => setDraft(e.target.value)} />
                   </label>
                   <ul className="hint">
                     {selectedQuest.objectives.map((obj) => (
@@ -373,7 +373,7 @@ export function StoryWorkspace() {
               {selectedKind === 'dialogue' && selectedDialogue && (
                 <label className="create-field">
                   Lines (one per row)
-                  <TextArea rows={8} value={draft} onChange={(e) => setDraft(e.target.value)} />
+                  <TextArea className="resize-none" rows={8} value={draft} onChange={(e) => setDraft(e.target.value)} />
                 </label>
               )}
               {proposed ? (

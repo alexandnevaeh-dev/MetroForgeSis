@@ -16,7 +16,7 @@ function phaseTone(status: string): 'default' | 'accent' | 'success' | 'warning'
   return 'default';
 }
 
-export function CreateScreen({ bridgeReady }: { bridgeReady: boolean | null }) {
+export function CreateScreen({ bridgeReady, active = true }: { bridgeReady: boolean | null; active?: boolean }) {
   const { setSelectedPath, refreshProjects, navigate, creationMode, setCreationMode } = useStudio();
   const [title, setTitle] = useState('Untitled Forge');
   const [prompt, setPrompt] = useState('');
@@ -114,7 +114,7 @@ export function CreateScreen({ bridgeReady }: { bridgeReady: boolean | null }) {
   }, [title, prompt, profile, mode, parsedSeed, titleError, quantum, archetype, refreshProjects, setSelectedPath, setCreationMode]);
 
   return (
-    <section className="workspace-screen create-screen">
+    <section className="workspace-screen create-screen" hidden={!active}>
       <ScreenHeader
         eyebrow="Commission"
         title="New Game"

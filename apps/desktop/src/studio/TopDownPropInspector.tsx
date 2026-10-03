@@ -36,7 +36,7 @@ export function TopDownPropInspector({ props, busy, onSave, onUndo, onRedo, sele
 function PropFields({prop,busy,onSave,onRemove}:{prop:TopDownEditorProp;busy:boolean;onSave:(prop:TopDownEditorProp)=>void;onRemove:()=>void}) {
   const [x,setX]=useState(String(prop.x));const [y,setY]=useState(String(prop.y));const [scale,setScale]=useState(String(prop.layout.displayScale));
   const valid=[x,y,scale].every(value=>value.trim()!=='' && Number.isFinite(Number(value))) && Number(scale)>0 && Number(scale)<=4;
-  return <form onSubmit={event=>{event.preventDefault();if(valid&&!busy)onSave({...prop,x:Number(x),y:Number(y),layout:{...prop.layout,displayScale:Number(scale)}});}}>
+  return <form noValidate onSubmit={event=>{event.preventDefault();if(valid&&!busy)onSave({...prop,x:Number(x),y:Number(y),layout:{...prop.layout,displayScale:Number(scale)}});}}>
     <p className="hint">{prop.image.replace('res://','')}</p>
     <label>Ground X<Input type="number" step="any" value={x} disabled={busy} onChange={e=>setX(e.target.value)} /></label>
     <label>Ground Y<Input type="number" step="any" value={y} disabled={busy} onChange={e=>setY(e.target.value)} /></label>

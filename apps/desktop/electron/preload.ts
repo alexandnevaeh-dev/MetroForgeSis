@@ -3,6 +3,9 @@ import { contextBridge, ipcRenderer } from 'electron';
 contextBridge.exposeInMainWorld('metroforge', {
   getVersion: () => ipcRenderer.invoke('get-version') as Promise<string>,
   getConfig: () => ipcRenderer.invoke('get-config'),
+  getCredentialStatus: () => ipcRenderer.invoke('get-credential-status'),
+  saveCredential: (id: string, value: string) => ipcRenderer.invoke('save-credential', id, value),
+  removeCredential: (id: string) => ipcRenderer.invoke('remove-credential', id),
   resolveGodot: (projectPath?: string | null) => ipcRenderer.invoke('resolve-godot', projectPath),
   setAppSettings: (settings: Record<string, string>) =>
     ipcRenderer.invoke('set-app-settings', settings) as Promise<{ success: boolean; saved: Record<string, string> }>,

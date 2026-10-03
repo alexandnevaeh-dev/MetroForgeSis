@@ -4,10 +4,12 @@ import { topDownRoomRecords } from './topdown-room-records.js';
 import { latestPhases } from './latest-phases.js';
 import { resolveAssetAnimation } from './asset-animation.js';
 import { launchUnityPreview, prepareUnityPreview } from './unity-preview.js';
-import { ipcMain, shell } from 'electron';
+import { ipcMain, shell, safeStorage, BrowserWindow } from 'electron';
+import { CredentialStore } from './credentials.js';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { detectProjectEngine, readUnityRoomEdit, saveUnityRoomEdit, type EditableObject } from '@metroforge/engines';
 import { readdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join, resolve as resolvePath, basename } from 'node:path';
+import { join, resolve as resolvePath, basename, dirname } from 'node:path';
 import { getVersionString } from '@metroforge/core';
 import { loadConfig, resolveGeneratedGamesPath, isPathWithinRoot, type GameArchetype, parseProviderEnabledMap, isProviderEnabledSettingKey } from '@metroforge/shared';
 import {
@@ -357,6 +359,17 @@ function assertReadableProjectPath(projectPath: string, repoRoot: string): void 
   if (!detectProjectEngine(projectPath)) throw new Error('Unrecognized engine project');
 }
 
+/** Read-only previews are available before an engine project has been assembled. */
+function assertReadableGenerationPath(projectPath: string, repoRoot: string): void {
+  const base = resolveGeneratedGamesPath(loadConfig(), repoRoot);
+  if (!isPathWithinRoot(resolvePath(base), resolvePath(projectPath))) {
+    throw new Error('Project path outside generated games directory');
+  }
+  if (!detectProjectEngine(projectPath) && !existsSync(join(projectPath, 'generation_events.jsonl'))) {
+    throw new Error('Unrecognized generated project');
+  }
+}
+
 function assertProjectPath(projectPath: string, repoRoot: string): void {
   if (!existsSync(join(projectPath, 'project.godot'))) {
     throw new Error('Invalid project path');
@@ -371,6 +384,18 @@ function assertProjectPath(projectPath: string, repoRoot: string): void {
 export function registerIpcHandlers(cwd: string): void {
   const config = loadConfig();
   const dataDir = config.dataDir || join(cwd, '.metroforge');
+  const credentials = new CredentialStore(join(dataDir, 'credentials.enc'), safeStorage, process.env);
+  const rendererUrl = pathToFileURL(join(dirname(fileURLToPath(import.meta.url)), '../dist/index.html')).href;
+  const checkCredentialSender = (event: Electron.IpcMainInvokeEvent) => {
+    const url = event.senderFrame?.url;
+    if (!BrowserWindow.fromWebContents(event.sender) || event.senderFrame !== event.sender.mainFrame ||
+      (url !== rendererUrl && !(process.env.VITE_DEV_SERVER_URL && url && new URL(url).origin === new URL(process.env.VITE_DEV_SERVER_URL).origin))) {
+      throw new Error('API key access is restricted to the MetroForge application.');
+    }
+  };
+  ipcMain.handle('get-credential-status', event => { checkCredentialSender(event); return credentials.status(); });
+  ipcMain.handle('save-credential', (event, id: unknown, value: unknown) => { checkCredentialSender(event); return credentials.save(id, value); });
+  ipcMain.handle('remove-credential', (event, id: unknown) => { checkCredentialSender(event); return credentials.remove(id); });
   void applyStoredConcurrency(dataDir);
 
   /** Canonical Godot path for Settings / Doctor / Preview / Play / QA / export â€” prefs beat env. */
@@ -1350,7 +1375,7 @@ export function registerIpcHandlers(cwd: string): void {
   });
 
   ipcMain.handle('get-asset-preview', async (_event, projectPath: string, relPath: string) => {
-    assertReadableProjectPath(projectPath, cwd);
+    assertReadableGenerationPath(projectPath, cwd);
     return { dataUrl: loadAssetThumbnail(projectPath, relPath) };
   });
 
@@ -1741,7 +1766,7 @@ export function registerIpcHandlers(cwd: string): void {
   }));
 
   ipcMain.handle('get-world-graph', async (_event, projectPath: string) => {
-    assertReadableProjectPath(projectPath, cwd);
+    assertReadableGenerationPath(projectPath, cwd);
     const raw = JSON.parse(readFileSync(join(projectPath, 'world_graph.json'), 'utf-8'));
     return WorldGraphSchema.parse(raw);
   });

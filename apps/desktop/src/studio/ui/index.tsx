@@ -49,7 +49,7 @@ export function Button({
   ]
     .filter(Boolean)
     .join(' ');
-  return <button type="button" className={classes} {...props} />;
+  return <button type="button" className={classes} {...props} onClick={props.onClick} />;
 }
 
 export function ButtonStrip({
@@ -96,7 +96,7 @@ export function TextArea({
   className = '',
   ...props
 }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea className={['mf-input', 'mf-textarea', className].filter(Boolean).join(' ')} {...props} />;
+  return <textarea className={['mf-input', 'mf-textarea', 'resize-none', className].filter(Boolean).join(' ')} {...props} />;
 }
 
 export function SearchField({
@@ -815,6 +815,7 @@ export function EditorToolButton({
       className={['editor-tool-btn', active ? 'active' : '', className].filter(Boolean).join(' ')}
       aria-pressed={active}
       {...props}
+      onClick={props.onClick}
     >
       {children}
     </button>

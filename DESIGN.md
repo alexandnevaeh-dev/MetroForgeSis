@@ -6,6 +6,10 @@ MetroForge is a Windows game creation and editing tool. Preserve the established
 ## Runtime token ownership
 `apps/desktop/src/tokens.css` is canonical for colors, typography, spacing and radii; `apps/desktop/src/styles.css` maps these into application layouts. Current surfaces include app #171a20, panel #252b34, primary text #edf1f7, muted text #96a3b5, copper accent #e07030. No new palette or font is introduced for prop editing.
 
+## Connection setup and navigation
+
+The application remains a forge workbench. Navigation now leads with the task name (New Game, World Map, API Keys); forge names are secondary captions. Create, Library, Build & Play, AI & Quality and Dispatch group related tasks. The API Keys page uses the same runtime tokens, shared Input/Button/Badge controls and a responsive two-column connection grid. Each card exposes one provider, credential source and a masked replacement field. A copper border marks the storage explanation; no separate palette or font is introduced. Connection setup replaces the unrelated generation activity drawer with space for forms and a contextual connection guide. Runtime token ownership remains model B; colors and spacing are consumed directly from tokens.css through styles.css.
+
 ## Shared components
 Reuse Button, Input, Select, InspectorSection and editor primitives from `apps/desktop/src/studio/ui/index.tsx`. RoomEditor owns async save feedback and room refresh; the generation room-edit service owns validation and persistence. Keep physical positions and scale together in the inspector. Top-down runtime data must not be presented as side-view tile data.
 

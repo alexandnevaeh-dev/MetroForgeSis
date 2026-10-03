@@ -11,6 +11,9 @@ out/
 *.log
 .env
 .env.local
+**/credentials.enc
+**/credentials.enc.pending
+**/credentials.enc.held
 *.db
 *.db-journal
 .DS_Store

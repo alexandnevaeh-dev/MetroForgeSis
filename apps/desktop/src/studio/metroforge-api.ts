@@ -239,7 +239,16 @@ export type RoomCollisionPreview = {
   rects?: Array<{ x: number; y: number; w: number; h: number }>;
 };
 
+export type CredentialStatus = {
+  encryptionAvailable: boolean;
+  error: string | null;
+  entries: Array<{ id: string; configured: boolean; source: 'saved' | 'environment' | 'none' }>;
+};
+
 export type MetroforgeBridge = {
+  getCredentialStatus: () => Promise<CredentialStatus>;
+  saveCredential: (id: string, value: string) => Promise<CredentialStatus>;
+  removeCredential: (id: string) => Promise<CredentialStatus>;
   getVersion: () => Promise<string>;
   getConfig: () => Promise<DesktopConfig>;
   resolveGodot: (projectPath?: string | null) => Promise<GodotResolveInfo>;

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useStudio } from './StudioContext.js';
 import { ConcurrencyMeters } from './ConcurrencyMeters.js';
+import { summarizeTextHealth } from './aiOpsShared.js';
 
 export function StatusBar({
   version,
@@ -40,8 +41,7 @@ export function StatusBar({
           setVram('—');
         }
         if (list && Array.isArray(list)) {
-          const healthy = list.filter((p) => p.health === 'healthy' && p.enabled).length;
-          setProviders(`${healthy}/${list.length} providers`);
+          setProviders(summarizeTextHealth(list).label);
         } else {
           setProviders('—');
         }

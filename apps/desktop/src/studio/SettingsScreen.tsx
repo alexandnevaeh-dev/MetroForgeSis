@@ -306,9 +306,10 @@ export function SettingsScreen() {
 
           {category === 'Runtime' && config && (
             <Panel level={1} title="Runtime providers (enable/disable)">
+              <Button onClick={() => navigate('API Keys')}>Add or update API keys</Button>
               <p className="hint">
                 Opt-out toggles in the app settings DB. Disabled providers stay out of bootstrap and probes. Keys stay
-                in <code>.env</code>.
+                in the encrypted API Keys store or your existing <code>.env</code>.
               </p>
               <div className="form-grid">
                 {TEXT_PROVIDER_TOGGLE_IDS.map((id) => (

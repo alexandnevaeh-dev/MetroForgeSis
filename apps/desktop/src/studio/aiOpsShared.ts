@@ -1,18 +1,13 @@
 /** Shared AI-ops display helpers — map real backend strings; never invent routing decisions. */
 
 export type HealthKind =
-  | 'healthy'
-  | 'degraded'
-  | 'unavailable'
-  | 'disabled'
-  | 'unconfigured'
-  | 'unknown'
-  | 'checking';
+  'healthy' | 'degraded' | 'unavailable' | 'disabled' | 'unconfigured' | 'unknown' | 'checking';
 
 export function normalizeHealth(raw: string | undefined | null): HealthKind {
   const s = String(raw ?? '').toLowerCase();
   if (!s) return 'unknown';
-  if (s === 'healthy' || s === 'ok' || s === 'pass' || s === 'passed' || s === 'success') return 'healthy';
+  if (s === 'healthy' || s === 'ok' || s === 'pass' || s === 'passed' || s === 'success')
+    return 'healthy';
   if (s === 'degraded' || s === 'warn' || s === 'warning') return 'degraded';
   if (s === 'disabled') return 'disabled';
   if (s === 'unconfigured' || s === 'not_configured') return 'unconfigured';
@@ -47,6 +42,20 @@ export function healthLabel(kind: HealthKind): string {
     default:
       return 'Unknown';
   }
+}
+
+/** Text-provider catalog only; this is not an engine or image-generation health claim. */
+export function summarizeTextHealth(rows: Array<{ enabled: boolean; health: string }>) {
+  const enabled = rows.filter((row) => row.enabled);
+  const healthy = enabled.filter((row) => normalizeHealth(row.health) === 'healthy').length;
+  if (!enabled.length)
+    return { healthy, enabled: 0, label: 'Text AI not configured', status: 'WARN' as const };
+  return {
+    healthy,
+    enabled: enabled.length,
+    label: `${healthy}/${enabled.length} text AI ready`,
+    status: healthy === enabled.length ? ('PASS' as const) : ('WARN' as const),
+  };
 }
 
 export function healthDotClass(kind: HealthKind): string {
@@ -170,9 +179,14 @@ export function doctorCategory(name: string): string {
 }
 
 /** Backend score factors already encoded in reason strings (e.g. "installed +50"). */
-export function parseScoreFactorReasons(reasons: string[]): Array<{ label: string; detail: string }> {
+export function parseScoreFactorReasons(
+  reasons: string[],
+): Array<{ label: string; detail: string }> {
   return reasons
-    .filter((r) => /\+\d/.test(r) || /score|benchmark|installed|health|license|local|remote|vram|ram/i.test(r))
+    .filter(
+      (r) =>
+        /\+\d/.test(r) || /score|benchmark|installed|health|license|local|remote|vram|ram/i.test(r),
+    )
     .map((r) => {
       const plus = r.match(/^(.*?)\s*(\+\d+(?:\.\d+)?)\s*$/);
       if (plus) return { label: plus[1]!.trim() || r, detail: plus[2]! };

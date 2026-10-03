@@ -17,6 +17,7 @@ import { ProjectSelect } from './studio/ProjectSelect.js';
 import { QAScreen } from './studio/QAScreen.js';
 import { ModelsScreen } from './studio/ModelsScreen.js';
 import { ProvidersScreen } from './studio/ProvidersScreen.js';
+import { ApiKeysScreen } from './studio/ApiKeysScreen.js';
 import { CreateScreen } from './studio/CreateScreen.js';
 import { ProjectsScreen } from './studio/ProjectsScreen.js';
 import { PreviewScreen } from './studio/PreviewScreen.js';
@@ -31,7 +32,7 @@ import { ForgeAssistPanel } from './studio/ForgeAssistPanel.js';
 function navBreadcrumb(activeNav: NavId): { group: string; label: string } {
   for (const group of NAV_GROUPS) {
     const hit = group.items.find((item) => item.id === activeNav);
-    if (hit) return { group: group.label, label: hit.label };
+    if (hit) return { group: group.label, label: hit.functionLabel };
   }
   const fallback = ALL_NAV_ITEMS.find((item) => item.id === activeNav);
   return { group: 'Studio', label: fallback?.label ?? activeNav };
@@ -144,6 +145,7 @@ function TopCommandBar({
           Story
         </button>
         <HealthPopover bridgeReady={bridgeReady} onOpenProviders={() => onNavigate('Providers')} />
+        <button type="button" className="topbar-action" onClick={() => onNavigate('API Keys')}>API Keys</button>
       </div>
     </header>
   );
@@ -154,6 +156,7 @@ export function App() {
   const [version, setVersion] = useState('MetroForge');
   const [bridgeReady, setBridgeReady] = useState<boolean | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  useEffect(() => { document.title = `${activeNav} — MetroForge`; }, [activeNav]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(max-width: 1449px)').matches,
   );
@@ -246,8 +249,8 @@ export function App() {
                       data-abbrev={item.functionLabel.slice(0, 2).toUpperCase()}
                     >
                       <span className="nav-item-label">
-                        <span className="nav-forge">{item.forge}</span>
                         <span className="nav-function">{item.functionLabel}</span>
+                        <span className="nav-forge">{item.forge}</span>
                       </span>
                       {shortcut ? <span className="nav-shortcut">{shortcut}</span> : null}
                     </button>
@@ -266,7 +269,7 @@ export function App() {
           )}
           {activeNav === 'Dashboard' && <ProjectDashboard />}
           {activeNav === 'Studio' && <GenerationStudio />}
-          {activeNav === 'Create' && <CreateScreen bridgeReady={bridgeReady} />}
+          <CreateScreen bridgeReady={bridgeReady} active={activeNav === 'Create'} />
           {activeNav === 'Projects' && <ProjectsScreen />}
           {activeNav === 'Assets' && <AssetsGallery />}
           {activeNav === 'Generate Asset' && <GenerateAssetScreen />}
@@ -277,6 +280,7 @@ export function App() {
           {activeNav === 'Story' && <StoryWorkspace />}
           {activeNav === 'Models' && <ModelsScreen />}
           {activeNav === 'Providers' && <ProvidersScreen />}
+          <ApiKeysScreen active={activeNav === 'API Keys'} />
           {activeNav === 'Routing' && <RoutingInspector />}
           {activeNav === 'QA' && <QAScreen />}
           {activeNav === 'Visual Review' && <VisualReviewScreen />}
@@ -284,7 +288,7 @@ export function App() {
           {activeNav === 'Settings' && <SettingsScreen />}
         </main>
         <ForgeAssistPanel activeNav={activeNav} />
-        <ForgeActivityDrawer />
+        {activeNav !== 'API Keys' && <ForgeActivityDrawer />}
         <StatusBar version={version} bridgeReady={bridgeReady} activeNav={activeNav} />
         <GoToPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} onSelect={setActiveNav} />
       </div>

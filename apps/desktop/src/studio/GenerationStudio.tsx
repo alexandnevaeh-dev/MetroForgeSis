@@ -39,6 +39,9 @@ type GenerationEvent = {
   seed?: number;
   modelId?: string;
   gate?: string;
+  prompt?: string;
+  mode?: string;
+  archetype?: GameArchetype;
 };
 
 const STATUS_CLASS: Record<string, string> = {
@@ -99,15 +102,18 @@ function phaseBadgeTone(
 }
 
 export function GenerationStudio() {
-  const { projects, selectedPath, setSelectedPath, refreshProjects, openRoom, openAsset, navigate } =
+  const { liveGeneration, projects, selectedPath, setSelectedPath, refreshProjects, openRoom, openAsset, navigate } =
     useStudio();
-  const [prompt, setPrompt] = useState('');
-  const [profile, setProfile] = useState('TINY_TEST');
-  const [mode, setMode] = useState('LOCAL_ONLY');
-  const [seed, setSeed] = useState('42');
-  const [generating, setGenerating] = useState(false);
-  const [phases, setPhases] = useState<GenerationPhaseState[]>([]);
-  const [events, setEvents] = useState<GenerationEvent[]>([]);
+  const cachedEvents = liveGeneration.events as GenerationEvent[];
+  const request = cachedEvents.find((event) => event.type === 'GenerationStarted');
+  const cachedRunning = Boolean(request && !cachedEvents.some((event) => event.type === 'GenerationCompleted' || event.type === 'GenerationFailed'));
+  const [prompt, setPrompt] = useState(request?.prompt ?? '');
+  const [profile, setProfile] = useState(request?.profile ?? 'TINY_TEST');
+  const [mode, setMode] = useState(request?.mode ?? 'LOCAL_ONLY');
+  const [seed, setSeed] = useState(String(request?.seed ?? 42));
+  const [generating, setGenerating] = useState(cachedRunning);
+  const [phases, setPhases] = useState<GenerationPhaseState[]>(liveGeneration.phases);
+  const [events, setEvents] = useState<GenerationEvent[]>(cachedEvents);
   const [overallProgress, setOverallProgress] = useState(0);
   const [currentTask, setCurrentTask] = useState<string | null>(null);
   const [previewArtifact, setPreviewArtifact] = useState<GenerationEvent | null>(null);
@@ -124,7 +130,7 @@ export function GenerationStudio() {
   } | null>(null);
   const [previewReady, setPreviewReady] = useState(false);
   const [godotError, setGodotError] = useState<string | null>(null);
-  const [archetype, setArchetype] = useState<GameArchetype>('SIDE_VIEW_METROIDVANIA');
+  const [archetype, setArchetype] = useState<GameArchetype>(request?.archetype ?? 'SIDE_VIEW_METROIDVANIA');
   const [previewMode, setPreviewMode] = useState<'artifact' | 'world'>('world');
   const [previewRoomId, setPreviewRoomId] = useState('');
   const [activityQuery, setActivityQuery] = useState('');
@@ -553,7 +559,7 @@ export function GenerationStudio() {
           {previewMode === 'artifact' && previewArtifact?.type === 'ArtifactGenerated' && (
             <LiveArtifactPreview
               event={previewArtifact}
-              projectPath={selectedPath}
+              projectPath={previewArtifact.projectPath || selectedPath}
               onOpen={() => previewArtifact.artifactId && openAsset(previewArtifact.artifactId)}
             />
           )}
@@ -743,12 +749,21 @@ function LiveArtifactPreview({
   onOpen?: () => void;
 }) {
   const [dataUrl, setDataUrl] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
+    setDataUrl(null);
+    setPreviewError(null);
     if (!projectPath || !event.path || !window.metroforge?.getAssetPreview) return;
     window.metroforge.getAssetPreview(projectPath, event.path).then((r) => {
+      if (!active) return;
       if (r.dataUrl) setDataUrl(r.dataUrl);
+      else setPreviewError('Preview unavailable for this artifact.');
+    }).catch(() => {
+      if (active) setPreviewError('Unable to load this artifact preview.');
     });
+    return () => { active = false; };
   }, [event.path, projectPath]);
 
   return (
@@ -756,7 +771,7 @@ function LiveArtifactPreview({
       {dataUrl ? (
         <img src={dataUrl} alt={event.artifactId} />
       ) : (
-        <p className="hint">Loading {event.path}…</p>
+        <p className="hint">{previewError || `Loading ${event.path}…`}</p>
       )}
       <figcaption>
         <strong>{event.artifactId}</strong>

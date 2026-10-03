@@ -4408,3 +4408,29 @@ select {
 @container room-editor (max-width: 1049px) {
   .room-editor-workspace > .editor-pane-divider { display: none; }
 }
+
+/* Connection setup shares the studio tokens and natural content scrolling. */
+.credentials-screen[hidden] { display: none; }
+.create-screen[hidden] { display: none; }
+.credentials-intro { display: flex; gap: var(--forge-space-4); align-items: flex-start; justify-content: space-between; padding: var(--forge-space-5); border-left: 3px solid var(--forge-accent); }
+.credentials-intro h3 { margin: var(--forge-space-2) 0; }
+.credentials-intro .hint { max-width: 72ch; margin: 0; }
+.credentials-intro .mf-badge { flex-shrink: 0; }
+.credentials-feedback { min-height: 2.6em; margin: var(--forge-space-4) 0; }
+.credentials-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: var(--forge-space-4); }
+.credential-card { padding: var(--forge-space-5); min-width: 0; }
+.credential-card header { display: flex; align-items: center; flex-wrap: wrap; gap: var(--forge-space-2); justify-content: space-between; }
+.credential-card h3 { margin: 0; font-size: 1rem; }
+.credential-card form { margin-top: var(--forge-space-4); }
+.credential-card label { display: block; margin-bottom: var(--forge-space-2); }
+.credential-input-row { display: flex; gap: var(--forge-space-2); }
+.credential-input-row input { min-width: 0; flex: 1; }
+.credential-input-row .mf-btn { width: 60px; flex-shrink: 0; }
+.credential-help { min-height: 2.6em; margin: var(--forge-space-2) 0; }
+.credential-actions { flex-wrap: wrap; }
+.credential-save { width: 104px; }
+.credential-remove { border-top: 1px solid var(--forge-border); margin-top: var(--forge-space-4); padding-top: var(--forge-space-3); }
+.nav-function { font-size: .82rem; font-weight: 600; }
+.nav-forge { font-size: .62rem; color: var(--forge-text-muted); letter-spacing: .025em; }
+@media (max-width: 1000px) { .credentials-intro { flex-direction: column; } }
+.resize-none { resize: none; }

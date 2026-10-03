@@ -4,6 +4,13 @@ import { Button, InspectorPanel } from './ui/index.js';
 
 export function ForgeAssistPanel({ activeNav }: { activeNav: string }) {
   const { selectedPath, hasActiveProject, creationMode, focusRoomId, navigate, openGenerator } = useStudio();
+  if (activeNav === 'API Keys') return <InspectorPanel title="Connection guide" className="forge-assist">
+    <p className="hint">1. Paste a key from your provider account and save it.</p>
+    <p className="hint">2. Open Providers to check access. A saved key can still be expired, rate limited or missing model permissions.</p>
+    <p className="hint">3. Enable the provider in Settings → Runtime and choose an AI generation mode.</p>
+    <Button onClick={() => navigate('Providers')}>Open Providers</Button>
+    <Button onClick={() => navigate('Settings')}>Provider settings</Button>
+  </InspectorPanel>;
 
   if (creationMode === 'manual') {
     return (

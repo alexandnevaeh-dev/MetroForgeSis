@@ -91,6 +91,14 @@ try {
   proof.buttonWidthStable = Math.abs(before.width - during.width) < 1;
   check('creation button keeps its width while busy', proof.buttonWidthStable);
   await capture('02-generating.png');
+  await page.locator('.topbar-actions button').filter({ hasText: 'API Keys' }).click();
+  await page.getByRole('heading', { name: 'API Keys', exact: true }).waitFor();
+  check('connection setup is available while generation runs', await page.locator('.credentials-screen').isVisible());
+  await page.locator('.topbar-actions button').filter({ hasText: 'Studio' }).click();
+  await page.locator('.studio-layout').waitFor();
+  check('generation monitor restores real phase activity after navigation', await page.locator('.studio-layout').getAttribute('data-generating') === 'true' && await page.locator('.phase-tree-item').count() > 0);
+  await page.locator('.topbar-actions button').filter({ hasText: 'New Game' }).click();
+  check('returning to creation preserves busy state and entered request', await busy.isDisabled() && await title.inputValue() === 'Quantum UI Expedition' && await seed.inputValue() === '0');
   console.log(JSON.stringify({ stage: 'real-app-generation-running', output }));
   await page.waitForFunction(() => !!document.querySelector('.create-result'), undefined, { timeout: 480000 });
   await page.locator('.create-result').scrollIntoViewIfNeeded();

@@ -9,6 +9,7 @@ import {
 } from 'react';
 import type { StudioProject } from './metroforge-api.js';
 import type { NavId } from './nav.js';
+import type { GenerationPhaseState } from './types.js';
 
 const STORAGE_KEY = 'metroforge.activeProjectPath';
 const MODE_KEY = 'metroforge.creationMode';
@@ -22,6 +23,7 @@ export type GeneratorPrefill = {
 export type CreationMode = 'manual' | 'assisted' | 'full-ai';
 
 type StudioContextValue = {
+  liveGeneration: { events: Record<string, unknown>[]; phases: GenerationPhaseState[] };
   projects: StudioProject[];
   selectedPath: string;
   selectedProject?: StudioProject;
@@ -79,6 +81,26 @@ export function StudioProvider({
   const [creationMode, setCreationModeState] = useState<CreationMode>(readStoredMode);
   const [activityOpen, setActivityOpen] = useState(true);
   const [focusStoryId, setFocusStoryId] = useState('');
+  const [liveGeneration, setLiveGeneration] = useState<StudioContextValue['liveGeneration']>({ events: [], phases: [] });
+
+  // Keep real backend events above individual screens so navigation cannot erase a live run.
+  useEffect(() => {
+    const unsub = window.metroforge?.onGenerationEvent?.((event) => {
+      setLiveGeneration((previous) => {
+        if (event.type === 'GenerationStarted') return { events: [event], phases: [] };
+        const phases = [...previous.phases];
+        if (event.type === 'PhaseStarted' || event.type === 'PhaseCompleted') {
+          const phase = String(event.phase ?? '');
+          const next = { phase, status: String(event.status ?? 'PENDING'), message: typeof event.message === 'string' ? event.message : undefined };
+          const index = phases.findIndex((item) => item.phase === phase);
+          if (index < 0) phases.push(next);
+          else phases[index] = next;
+        }
+        return { events: [...previous.events.slice(-499), event], phases };
+      });
+    });
+    return () => unsub?.();
+  }, []);
 
   const setCreationMode = useCallback((mode: CreationMode) => {
     setCreationModeState(mode);
@@ -159,6 +181,7 @@ export function StudioProvider({
 
   const value = useMemo(
     () => ({
+      liveGeneration,
       projects,
       selectedPath,
       selectedProject,
@@ -181,6 +204,7 @@ export function StudioProvider({
       openStory,
     }),
     [
+      liveGeneration,
       projects,
       selectedPath,
       selectedProject,

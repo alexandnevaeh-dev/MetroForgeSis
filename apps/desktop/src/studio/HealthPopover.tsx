@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Badge, HealthDot } from './ui/index.js';
-import { healthLabel, normalizeHealth } from './aiOpsShared.js';
+import { healthLabel, normalizeHealth, summarizeTextHealth } from './aiOpsShared.js';
 
 type ProviderRow = {
   id: string;
@@ -41,18 +41,9 @@ export function HealthPopover({
           return;
         }
         setProviders(list);
-        const healthy = list.filter((p) => p.health === 'healthy' && p.enabled).length;
-        const degraded = list.filter((p) => p.health === 'degraded').length;
-        if (healthy === list.length) {
-          setLabel('All systems nominal');
-          setStatus('PASS');
-        } else if (healthy > 0) {
-          setLabel(`${healthy}/${list.length} healthy`);
-          setStatus(degraded > 0 ? 'WARN' : 'PASS');
-        } else {
-          setLabel('Providers unhealthy');
-          setStatus('FAIL');
-        }
+        const summary = summarizeTextHealth(list);
+        setLabel(summary.label);
+        setStatus(summary.status);
       } catch {
         if (!cancelled) {
           setLabel('Health unknown');
@@ -91,7 +82,7 @@ export function HealthPopover({
         className="topbar-health"
         aria-expanded={open}
         aria-haspopup="dialog"
-        title="Provider health (live)"
+        title="Text AI health (live). Image providers and engines have separate checks."
         onClick={() => setOpen((v) => !v)}
       >
         <Badge tone={status === 'PASS' ? 'success' : status === 'FAIL' ? 'danger' : 'warning'}>
@@ -125,7 +116,7 @@ export function HealthPopover({
               })}
             </ul>
           )}
-          <p className="hint">Presence-only — no credentials shown.</p>
+          <p className="hint">Text AI only. Local game templates can run without hosted keys. Check Providers for image connections.</p>
         </div>
       )}
     </div>

@@ -1,7 +1,7 @@
 export const NAV_GROUPS = [
   {
     id: 'create',
-    label: 'The Floor',
+    label: 'Create',
     items: [
       { id: 'Dashboard', label: 'Hearth · Overview', shortcut: '1', forge: 'Hearth', functionLabel: 'Overview' },
       { id: 'Create', label: 'Commission · New Game', shortcut: '2', forge: 'Commission', functionLabel: 'New Game' },
@@ -10,7 +10,7 @@ export const NAV_GROUPS = [
   },
   {
     id: 'library',
-    label: 'The Vault',
+    label: 'Library',
     items: [
       { id: 'Projects', label: 'Vault · Projects', shortcut: '4', forge: 'Vault', functionLabel: 'Projects' },
       { id: 'Assets', label: 'Foundry · Assets', shortcut: '5', forge: 'Foundry', functionLabel: 'Assets' },
@@ -19,9 +19,9 @@ export const NAV_GROUPS = [
   },
   {
     id: 'world',
-    label: 'The Workshop',
+    label: 'Build & Play',
     items: [
-      { id: 'World', label: 'World Map · Editor', forge: 'World Map', functionLabel: 'Editor' },
+      { id: 'World', label: 'World Map · Editor', forge: 'Editor', functionLabel: 'World Map' },
       { id: 'Rooms', label: 'Chambers · Rooms', forge: 'Chambers', functionLabel: 'Rooms' },
       { id: 'Dungeon', label: 'Deep Holds · Dungeon', forge: 'Deep Holds', functionLabel: 'Dungeon' },
       { id: 'Story', label: 'Chronicle · Story', forge: 'Chronicle', functionLabel: 'Story' },
@@ -30,10 +30,11 @@ export const NAV_GROUPS = [
   },
   {
     id: 'ai',
-    label: 'The Kiln',
+    label: 'AI & Quality',
     items: [
       { id: 'Models', label: 'Kiln · Models', forge: 'Kiln', functionLabel: 'Models' },
       { id: 'Providers', label: 'Bellows · Providers', forge: 'Bellows', functionLabel: 'Providers' },
+      { id: 'API Keys', label: 'API Keys', forge: 'Connections', functionLabel: 'API Keys' },
       { id: 'Routing', label: 'Flues · Routing', forge: 'Flues', functionLabel: 'Routing' },
       { id: 'QA', label: 'Assay · QA', forge: 'Assay', functionLabel: 'QA' },
       { id: 'Visual Review', label: 'Quench · Visual Review', forge: 'Quench', functionLabel: 'Visual Review' },

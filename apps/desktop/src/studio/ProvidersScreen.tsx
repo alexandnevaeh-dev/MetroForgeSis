@@ -173,6 +173,7 @@ export function ProvidersScreen() {
             <Button variant="secondary" onClick={() => navigate('Settings')}>
               Settings
             </Button>
+            <Button variant="secondary" onClick={() => navigate('API Keys')}>Manage API keys</Button>
           </div>
         }
       />
@@ -245,8 +246,8 @@ export function ProvidersScreen() {
           <AiOpsLog
             title="Credentials & image providers"
             actions={
-              <Button size="sm" variant="ghost" onClick={() => navigate('Settings')}>
-                Open Settings
+              <Button size="sm" variant="ghost" onClick={() => navigate('API Keys')}>
+                Manage API keys
               </Button>
             }
           >

@@ -26,7 +26,7 @@ export function ItemDefinitionEditor({projectPath}:{projectPath:string}) {
   {selected&&<fieldset disabled={busy}><legend>{String(selected.id)} · {String(selected.category)}</legend>
    {(['name','description'] as const).map(field=><label key={field}>{field}<input aria-label={`Item ${field}`} value={String(selected[field]??'')} onChange={e=>setSelected({...selected,[field]:e.target.value})}/></label>)}
    {(['value','maxStack'] as const).map(field=><label key={field}>{field}<input type="number" aria-label={`Item ${field}`} value={Number(selected[field]??(field==='maxStack'?1:0))} onChange={e=>setSelected({...selected,[field]:e.target.valueAsNumber})}/></label>)}
-   <label>Effects (JSON)<textarea aria-label="Item effects" value={effects} onChange={e=>setEffects(e.target.value)}/></label>
+   <label>Effects (JSON)<textarea className="resize-none" rows={6} aria-label="Item effects" value={effects} onChange={e=>setEffects(e.target.value)}/></label>
    {dirty&&<p role="status">Unsaved changes · retained while switching items and screens in this session.</p>}
    <Button disabled={!dirty} onClick={()=>{if(baseline){itemDrafts.delete(JSON.stringify([projectPath,baseline.id]));setSelected(structuredClone(baseline));setEffects(JSON.stringify(baseline.effects??[],null,2));setMessage('Draft discarded.');}}}>Discard item changes</Button>
    <Button disabled={!dirty} onClick={()=>void save()}>Save item definition</Button>

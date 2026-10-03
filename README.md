@@ -43,7 +43,9 @@ pnpm metroforge scout
 
 ## Hosted AI Providers
 
-Optional free-tier providers — enable by setting keys in `.env`:
+Add hosted provider keys from **API Keys** in MetroForge's top bar or under **AI & Quality**. Keys saved there are encrypted for your Windows account in the configured application data directory. Existing `.env` keys remain supported; the interface shows their presence without retrieving their values. Check **Providers** to verify access and **Settings → Runtime** to enable providers.
+
+Optional free-tier providers — keys can also be set in `.env`:
 
 | Provider | Env Variable |
 |----------|-------------|

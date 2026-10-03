@@ -162,7 +162,7 @@ export function GenerateAssetScreen() {
           <ProjectSelect />
           <label>
             Prompt
-            <textarea
+            <textarea className="resize-none"
               rows={5}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
