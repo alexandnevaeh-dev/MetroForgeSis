@@ -25,7 +25,7 @@ const {generateGameDNA} = await import('../packages/ai/dist/index.js');
 const digest = path=>createHash('sha256').update(readFileSync(path)).digest('hex');
 const sourcePaths = ['packages/shared/src/constants.ts','packages/shared/src/archetypes.ts','packages/schemas/src/core.ts','packages/schemas/src/genre.ts',
   'packages/schemas/src/quantum.ts','packages/schemas/src/index.ts','packages/godot/src/quantum-assembler.ts','packages/godot/src/assembler.ts','packages/godot/src/index.ts',
-  'packages/generation/src/quantum-generation.ts','packages/generation/src/pipeline.ts','packages/generation/src/index.ts','packages/generation/src/scaffold-manual-project.ts',
+  'packages/generation/src/quantum-generation.ts','packages/generation/src/quantum-runtime.ts','packages/generation/src/events.ts','packages/generation/src/pipeline.ts','packages/generation/src/index.ts','packages/generation/src/scaffold-manual-project.ts',
   'packages/ai/src/generators/game-dna.ts','scripts/package-quantum-runtime.mjs','scripts/verify-quantum-generation.mjs'];
 const sources = sourcePaths.map(path=>({path,sha256:digest(join(repo,path))}));
 const template = join(repo,'templates/godot-quantum-divergence');
@@ -129,6 +129,35 @@ check('events preserve real start, phase and validation completion states',()=>{
   assert.equal(events.at(-1).type,'GenerationCompleted');
   assert.equal(events.at(-1).validationPassed,true);
 });
+const standalone = JSON.parse(readFileSync(join(run.outputPath,'reports/quantum-generation/standalone.json'),'utf8'));
+const packaged = JSON.parse(readFileSync(join(run.outputPath,'reports/quantum-generation/packaged-gameplay/playground-result.json'),'utf8'));
+check('normal generation exports and fingerprints the Windows release package',()=>{
+  assert.equal(standalone.passed,true);
+  assert.equal(standalone.release,true);
+  assert.equal(run.exportPath,join(run.outputPath,'build/windows'));
+  assert.equal(events.at(-1).exportPath,run.exportPath);
+  assert.deepEqual(standalone.files.map(file=>file.path),['game.exe','game.pck','game.console.exe']);
+  for (const file of standalone.files) assert.equal(digest(join(run.exportPath,file.path)),file.sha256);
+  assert.equal(JSON.parse(readFileSync(join(run.outputPath,'engine.json'),'utf8')).standaloneBuild,true);
+});
+check('copied release package preserves every original template dependency',()=>{
+  assert.equal(packaged.generation.package.standalone,true);
+  assert.equal(packaged.generation.package.release,true);
+  assert.equal(packaged.generation.package.integrity,true);
+  assert.equal(packaged.generation.package.files,Object.keys(manifest.hashes).length);
+  assert.equal(packaged.generation.package.template_sha256,templateSha256);
+  assert.equal(packaged.generation.configuration_sha256,digest(join(run.outputPath,'quantum_project.json')));
+});
+check('copied release package completes gameplay rather than only starting',()=>{
+  assert.equal(packaged.full_route.reached,161);
+  assert.equal(packaged.full_route.failure,'');
+  assert.equal(packaged.progression.extracted,true);
+  assert.ok(packaged.player_hp>0);
+  assert.equal(packaged.art.floorFailures,0);
+  assert.equal(packaged.art.propFailures,0);
+  assert.equal(packaged.art.propChecks,480);
+  for (const kind of ['skitter','driller','wraith','golem']) for (const state of ['idle','walk','run','attack','hit','death']) assert.equal(packaged.art.actorStates[kind][state],true);
+});
 const originalConfig = digest(join(run.outputPath,'quantum_project.json'));
 const collision = await pipeline.run({...base,slug:'the-lattice-expedition'});
 check('existing generated game is preserved on a repeated slug',()=>{
@@ -153,6 +182,8 @@ for (const result of [same,different]) check('skipped native gates stay unverifi
   assert.equal(result.validationPassed,false);
   assert.equal(result.validationLevel,'STATIC_VALIDATED');
   assert.equal(result.projectStatus,'validation_failed');
+  assert.equal(result.exportPath,undefined);
+  assert.ok(result.phases.some(phase=>phase.phase==='export' && phase.status==='SKIPPED'));
 });
 const a = JSON.parse(readFileSync(join(run.outputPath,'quantum_world.json'),'utf8'));
 const b = layout(same);
@@ -173,7 +204,7 @@ if (process.argv.includes('--record')) {
   assert.equal(recording?.decoded,true);
   assert.equal(digest(recording.path),recording.sha256);
 }
-const result = {output,checks,sources,templateSha256,project:run,events,layouts:{primary:a,sameSeed:b,differentSeed:c},recording,
+const result = {output,checks,sources,templateSha256,project:run,events,layouts:{primary:a,sameSeed:b,differentSeed:c},recording,standalone,
   productionReady:false,scope:'Actual MetroForge generation backend and generated native game; not manual desktop UI use, AI content generation or final production approval'};
 writeFileSync(join(output,'verification.json'),JSON.stringify(result,null,2));
 writeFileSync(join(reports,'generation-latest.json'),JSON.stringify(result,null,2));

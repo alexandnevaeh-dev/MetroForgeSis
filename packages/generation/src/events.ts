@@ -169,6 +169,8 @@ export interface GenerationCompletedEvent extends GenerationEventBase {
   success: boolean;
   validationPassed: boolean;
   validationLevel?: string;
+  /** Verified standalone build folder, when a package was produced and playtested. */
+  exportPath?: string;
 }
 
 export interface GenerationFailedEvent extends GenerationEventBase {

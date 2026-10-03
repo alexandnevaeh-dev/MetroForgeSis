@@ -28,7 +28,7 @@ export function assembleQuantumProject(input: QuantumAssemblyInput): QuantumAsse
   const manifest = QuantumTemplateManifestSchema.parse(JSON.parse(manifestBytes.toString('utf8')));
   const files = Object.entries(manifest.hashes).map(([path,sha])=>{
     if (isAbsolute(path) || path.split('/').some(part=>part==='..' || part==='.' || !part)) throw new Error('Unsafe Quantum template path: '+path);
-    if (!/^(?:scripts\/[A-Za-z]+\.gd|scenes\/[A-Za-z]+\.tscn|assets\/[a-z0-9/-]+\.(?:png|json|tscn)|assets\/[a-z0-9/-]+\/(?:README\.md|\.gitattributes)|project\.godot|\.gitattributes)$/.test(path)) throw new Error('Unexpected Quantum template file: '+path);
+    if (!/^(?:scripts\/[A-Za-z]+\.gd|scenes\/[A-Za-z]+\.tscn|assets\/[a-z0-9/-]+\.(?:png|json|tscn)|assets\/[a-z0-9/-]+\/(?:README\.md|\.gitattributes)|addons\/quantum_export\/(?:Plugin\.gd|RawFiles\.gd|plugin\.cfg)|export_presets\.cfg|project\.godot|\.gitattributes)$/.test(path)) throw new Error('Unexpected Quantum template file: '+path);
     const location = realpathSync(join(template,path));
     const inside = relative(template,location);
     if (inside.startsWith('..'+sep) || inside==='..' || isAbsolute(inside) || !lstatSync(location).isFile()) throw new Error('Quantum template file escapes its root: '+path);
@@ -36,7 +36,7 @@ export function assembleQuantumProject(input: QuantumAssemblyInput): QuantumAsse
     if (hash(bytes)!==sha) throw new Error('Quantum template hash mismatch: '+path);
     return {path,bytes,sha};
   });
-  for (const required of ['project.godot','scripts/GeneratedMines.gd',manifest.entryScene,'assets/mine-kit-candidate-v1/manifest.json','assets/cast-candidate-v2/manifest.json','assets/diver-candidate-v1/manifest.json']) {
+  for (const required of ['project.godot','scripts/GeneratedMines.gd',manifest.entryScene,'assets/mine-kit-candidate-v1/manifest.json','assets/cast-candidate-v2/manifest.json','assets/diver-candidate-v1/manifest.json','addons/quantum_export/Plugin.gd','addons/quantum_export/RawFiles.gd','addons/quantum_export/plugin.cfg','export_presets.cfg']) {
     if (!manifest.hashes[required]) throw new Error('Incomplete Quantum template: '+required);
   }
   const project = files.find(file=>file.path==='project.godot')!.bytes.toString('utf8');

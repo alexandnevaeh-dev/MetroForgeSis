@@ -17,3 +17,6 @@ common/physics_ticks_per_second=60
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/default_filters/use_nearest_mipmap_filter=false
+
+[editor_plugins]
+enabled=PackedStringArray("res://addons/quantum_export/plugin.cfg")

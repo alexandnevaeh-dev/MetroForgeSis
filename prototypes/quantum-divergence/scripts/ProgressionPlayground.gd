@@ -16,10 +16,12 @@ func _ready() -> void:
 	report.scope = "Native progression control with stationary combat targets and original test art; not a full biome, finished enemy AI or MetroForge app generation"
 	super._ready()
 	progress = Progression.new(grid, instruments, player, profile)
-	assert(progress.configure({"anchor": Vector2(120, 336), "core": Vector2(626, 336),
+	if not progress.configure({"anchor": Vector2(120, 336), "core": Vector2(626, 336),
 		"exit": Vector2(708, 336), "secret": Vector2(165, 336), "upper_region": Rect2i(1, 1, 78, 83),
 		"ghost_platforms": [Rect2i(80, 53, 12, 1), Rect2i(106, 48, 12, 1)],
-		"crystals": [101, 102, 103], "golem": 200}))
+		"crystals": [101, 102, 103], "golem": 200}):
+		_runtime_failure("Quantum fixture objective configuration failed")
+		return
 
 func _build_world() -> void:
 	for y in range(84, 95):

@@ -18,6 +18,7 @@ export interface CreationResult {
   validationPassed?: boolean;
   validationLevel?: string;
   outputPath?: string;
+  exportPath?: string;
   errors?: string[];
   warnings?: string[];
 }

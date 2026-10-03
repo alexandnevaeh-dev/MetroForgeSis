@@ -5,7 +5,7 @@ import { join, resolve } from 'node:path';
 
 const repo = resolve('.');
 const source = join(repo,'prototypes/quantum-divergence');
-const output = join(repo,'templates/godot-quantum-divergence');
+const output = process.argv[2] ? resolve(process.argv[2]) : join(repo,'templates/godot-quantum-divergence');
 assert.match(output,/^E:[/\\]/i);
 assert.ok(!existsSync(output),'Refusing to overwrite a template; inspect and preserve its prior version first');
 const hash = bytes=>createHash('sha256').update(bytes).digest('hex');
@@ -37,6 +37,8 @@ for (const name of ['mine-kit-candidate-v1','cast-candidate-v2','diver-candidate
 }
 files.set('project.godot',Buffer.from('; Dedicated generated Quantum runtime. Authored candidate artwork, not final approval.\nconfig_version=5\n\n[application]\nconfig/name="Quantum Divergence"\nrun/main_scene="res://scenes/GeneratedMines.tscn"\n\n[display]\nwindow/size/viewport_width=960\nwindow/size/viewport_height=600\nwindow/stretch/mode="canvas_items"\n\n[physics]\ncommon/physics_ticks_per_second=60\n\n[rendering]\nrenderer/rendering_method="gl_compatibility"\nrenderer/rendering_method.mobile="gl_compatibility"\ntextures/default_filters/use_nearest_mipmap_filter=false\n'));
 files.set('.gitattributes',Buffer.from('* -text\n*.png binary\n'));
+for (const path of ['addons/quantum_export/Plugin.gd','addons/quantum_export/RawFiles.gd','addons/quantum_export/plugin.cfg','export_presets.cfg']) files.set(path,readFileSync(join(source,path)));
+files.set('project.godot',Buffer.concat([files.get('project.godot'),Buffer.from('\n[editor_plugins]\nenabled=PackedStringArray("res://addons/quantum_export/plugin.cfg")\n')]));
 const manifest = {version:1,archetype:'QUANTUM_SIMULATION_ROGUELITE',entryScene:'scenes/GeneratedMines.tscn',candidateOnly:true,productionApproved:false,
   hashes:Object.fromEntries([...files].sort(([a],[b])=>a.localeCompare(b)).map(([path,bytes])=>[path,hash(bytes)]))};
 // All dependency and package checks precede publication; raw art/tool/test/cache folders stay out.

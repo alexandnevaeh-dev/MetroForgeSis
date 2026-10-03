@@ -311,6 +311,9 @@ export function CreateScreen({ bridgeReady }: { bridgeReady: boolean | null }) {
               <p>
                 Game created at: <code className="mono">{result.outputPath}</code>
               </p>
+              {result.exportPath && (
+                <p>Windows game: <code className="mono">{result.exportPath}/game.exe</code></p>
+              )}
               {result.validationPassed === false && <p className="result error" role="status">{result.errors?.length ? 'Game files were created, but tests failed. Review the errors before treating this game as ready.' : 'Game files were created. Gameplay tests still need to run before this game is verified.'}</p>}
               {!!result.errors?.length && <p className="result error" role="alert">{result.errors.join('; ')}</p>}
               <div className="row" style={{ marginTop: 'var(--space-3)' }}>

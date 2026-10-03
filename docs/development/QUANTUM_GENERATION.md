@@ -10,7 +10,7 @@ Titles, descriptions and integer seeds (including zero) reach the generated conf
 
 The native entry builds the actual selected seed, fingerprints its initial material grid and reports eight authored regions with physically connected branches. It does not invent generic room scenes. Native validation imports the generated project, verifies its configuration and terrain fingerprints, then drives the actual gameplay controls through 161 waypoints, both optional branches, enemy/boss attacks, objectives and living extraction. Ground contacts and all six core animation states per enemy family are checked. Run progress currently resets on close; full connected-world suspension remains unfinished.
 
-File creation and test results are distinct. Missing/skipped Godot validation is **Tests pending**, failed validation retains files and reports **Tests failed**, and **Tests passed** requires runtime validation. Passing candidate tests is not final artwork approval, stable 60 FPS certification, standalone export readiness or a completed application. The generated raw-PNG loaders still warn about export packaging; no working standalone Quantum export is claimed.
+File creation and test results are distinct. Missing/skipped Godot validation is **Tests pending**, failed validation retains files and reports **Tests failed**, and **Tests passed** requires runtime validation. Passing candidate tests is not final artwork approval, stable 60 FPS certification or a completed application. Normal Windows creation now exports the release game, copies its executable, console wrapper and PCK away from the source folder, and verifies the full native route before marking standaloneBuild or export as passed. The result panel displays the verified build location. Missing runtime validation leaves export skipped.
 
 ## Evidence
 
@@ -21,7 +21,7 @@ File creation and test results are distinct. Missing/skipped Godot validation is
 
 ## Remaining work
 
-Final artwork admission, deeper biome generation, complete weapon aiming layers, programming UI, audio, durable full-world saves, Quantum-specific editor/export integrations and broader engine ports remain incomplete. The reconciled generation batch was confirmed on GitHub as commit 10b16a035825e476839fa44ea030e7adf37fa868 on 2026-10-03. Unrelated legacy pipeline edits remain in the canonical working tree for dedicated reconciliation.
+Final artwork admission, deeper biome generation, complete weapon aiming layers, programming UI, audio, durable full-world saves, deeper Quantum editor and export-screen integration and broader engine ports remain incomplete. The reconciled generation batch was confirmed on GitHub as commit 10b16a035825e476839fa44ea030e7adf37fa868 on 2026-10-03. Unrelated legacy pipeline edits remain in the canonical working tree for dedicated reconciliation.
 
 ## Reconciled publication batch
 
@@ -30,3 +30,7 @@ The exact publication source has its own fresh 31-check backend proof, 29-test r
 ## Duplicate-name history preservation
 
 A rejected pre-job request now leaves completed game history unchanged while retaining early events for real jobs. The exact isolated follow-up passed 31 focused regressions and 24 real-app checks, including preservation of every generated file after rejection and native 161-waypoint living extraction. See [the follow-up proof](../verification/quantum-collision-20261003/README.md). Backend source and template hashes remain identical to the preceding publication.
+
+## Windows release package
+
+The exact isolated export snapshot passed 35 regressions, 34 backend checks and 25 real-app workflow checks. Both the source project and copied release package completed 161 waypoints with living extraction. Release initialization now runs outside assertions, and original raw scripts/manifests/PNG dependencies are packed with bound hashes. See [the release proof](../verification/quantum-export-20261003/README.md). Full-world saves, deeper programming, final art/audio and other engine ports remain pending.

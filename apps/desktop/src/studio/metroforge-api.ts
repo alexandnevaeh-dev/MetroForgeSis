@@ -410,6 +410,7 @@ export type MetroforgeBridge = {
     errors: string[];
     warnings: string[];
     phases: GenerationPhaseState[];
+    exportPath?: string;
   }>;
   getGenerationState: (projectPath: string) => Promise<{
     projectPath: string;

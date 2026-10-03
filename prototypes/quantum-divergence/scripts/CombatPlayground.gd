@@ -19,10 +19,10 @@ func _ready() -> void:
 	super._ready()
 	report.scope = "Native live-enemy objective route with original programmatic test poses; not full biome, approved sprite animation or MetroForge app generation"
 	enemies = Enemies.new(grid, instruments, player)
-	assert(enemies.add_enemy("skitter", 301, Vector2(238, 336)))
-	assert(enemies.add_enemy("wraith", 302, Vector2(356, 254)))
-	assert(enemies.add_enemy("driller", 303, Vector2(474, 336)))
-	assert(enemies.add_enemy("golem", 200, Vector2(576, 336), true))
+	for actor in [["skitter",301,Vector2(238,336),false],["wraith",302,Vector2(356,254),false],["driller",303,Vector2(474,336),false],["golem",200,Vector2(576,336),true]]:
+		if not enemies.add_enemy(actor[0],actor[1],actor[2],actor[3]):
+			_runtime_failure("Quantum encounter placement failed")
+			return
 	# Keep input active while paused so Escape, F9 and restart can work.
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	if not smoke_test:

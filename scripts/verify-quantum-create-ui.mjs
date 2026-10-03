@@ -112,6 +112,10 @@ try {
   const runtime = JSON.parse(readFileSync(join(project, 'reports/quantum-generation/gameplay/playground-result.json'), 'utf8'));
   check('zero seed and entered title reached actual generated runtime', configuration.seed === 0 && configuration.title === 'Quantum UI Expedition' && runtime.generation.seed === 0);
   check('native game traversed all 161 waypoints and extracted alive', runtime.world.visited_waypoints === 161 && runtime.progression.extracted && runtime.player_hp > 0 && validation.passed);
+  const standalone = JSON.parse(readFileSync(join(project, 'reports/quantum-generation/standalone.json'), 'utf8'));
+  const packagedRuntime = JSON.parse(readFileSync(join(project, 'reports/quantum-generation/packaged-gameplay/playground-result.json'), 'utf8'));
+  proof.standalone = { build: completed.exportPath, files: standalone.files, waypoints: packagedRuntime.world.visited_waypoints, hp: packagedRuntime.player_hp, release: packagedRuntime.generation.package.release };
+  check('normal app creation builds and validates the standalone Windows game', standalone.passed && completed.exportPath && proof.resultText.includes('Windows game:') && packagedRuntime.generation.package.standalone && packagedRuntime.generation.package.integrity && packagedRuntime.world.visited_waypoints === 161 && packagedRuntime.progression.extracted);
   proof.runtime = { seed: runtime.generation.seed, terrainSha256: runtime.generation.initial_terrain_sha256, waypoints: runtime.world.visited_waypoints, hp: runtime.player_hp, extracted: runtime.progression.extracted };
   const beforeCollision = projectHashes(project);
   await create.click();

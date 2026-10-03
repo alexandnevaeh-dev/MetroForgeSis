@@ -31,8 +31,12 @@ func _ready() -> void:
 		if argument.begins_with("--capture-dir="):
 			capture_dir = argument.trim_prefix("--capture-dir=")
 	if capture_dir != "":
-		assert(capture_dir.to_lower().begins_with("e:/") or capture_dir.to_lower().begins_with("e:\\"))
-		DirAccess.make_dir_recursive_absolute(capture_dir)
+		if not (capture_dir.to_lower().begins_with("e:/") or capture_dir.to_lower().begins_with("e:\\")):
+			_runtime_failure("Quantum captures must stay on E:")
+			return
+		if DirAccess.make_dir_recursive_absolute(capture_dir) != OK:
+			_runtime_failure("Cannot create Quantum capture folder")
+			return
 	var world_seed: int = _world_seed()
 	grid = ChunkGrid.new(1440,960,world_seed)
 	manifest = MineWorld.new(grid).build(world_seed)
@@ -42,10 +46,14 @@ func _ready() -> void:
 		instruments.add_target(101 + i,Rect2(2296 + 304 * i,2236,20,36),24.0)
 	instruments.add_target(200,Rect2(4370,3332,60,92),300.0)
 	progress = Progression.new(grid,instruments,player,profile)
-	assert(progress.configure(manifest.layout))
+	if not progress.configure(manifest.layout):
+		_runtime_failure("Quantum objective configuration failed")
+		return
 	enemies = Enemies.new(grid,instruments,player)
 	for actor in manifest.encounters:
-		assert(enemies.add_enemy(actor.kind,actor.id,actor.position,actor.id == 200))
+		if not enemies.add_enemy(actor.kind,actor.id,actor.position,actor.id == 200):
+			_runtime_failure("Quantum enemy placement failed")
+			return
 	capture_ticks = [60,240,480]
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	report.scope = "Full-size connected mine with viewport chunk activation and live actor placement; rendered entry-to-upper-anchor control, not full-biome combat completion, final art or MetroForge app generation"
@@ -67,7 +75,9 @@ func _focus() -> void:
 	if not grid.set_active_regions(regions):
 		# Deterministic camera-first admission; entities are preserved when work is saturated.
 		var admitted: Array = [regions[0]]
-		assert(grid.set_active_regions(admitted))
+		if not grid.set_active_regions(admitted):
+			_runtime_failure("Quantum camera region exceeded the simulation budget")
+			return
 		for region in regions.slice(1):
 			var candidate: Array = admitted + [region]
 			if grid.set_active_regions(candidate):

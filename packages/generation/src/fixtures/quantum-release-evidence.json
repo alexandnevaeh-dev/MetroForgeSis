@@ -1,0 +1,332 @@
+[
+  {
+    "label": "release before runtime setup fix",
+    "runtime": {
+      "generation": {
+        "archetype": "QUANTUM_SIMULATION_ROGUELITE",
+        "candidateOnly": true,
+        "configuration_sha256": "95b920ee02f5e708dec6f4e248f5fb13376ae02a6f273ff08f989cd0ca610e6d",
+        "entry_script_sha256": "60f18d97ad67bb6044d2676946891b2376907289157bf0201f8064b18e3e919d",
+        "initial_terrain_sha256": "0e74a79071ad2706a1d78cfd5c3e56ee86c2b4291b4d64b5d22c91f2de99fc66",
+        "package": {
+          "failures": [],
+          "files": 121,
+          "integrity": true,
+          "release": true,
+          "standalone": true,
+          "template_sha256": "990ada727c8b325350d16a685aa7768902fed4e2f2fcc1ee946a1787a2443f13"
+        },
+        "productionApproved": false,
+        "seed": 0,
+        "title": "Quantum Portable Expedition"
+      },
+      "world": {
+        "camera_origin": [
+          1944,
+          1952
+        ],
+        "cells": 1382400,
+        "cpu_mean_with_focus_ms": 9.61772090909091,
+        "focus_mean_ms": 0.044562,
+        "generation_ms": 458.736,
+        "main_waypoints": 101,
+        "max_active_chunks": 77,
+        "max_work_cells": 25600,
+        "pixels": [
+          5760,
+          3840
+        ],
+        "recall_stations": 4,
+        "rooms": 8,
+        "seed": 0,
+        "tour_waypoints": 161,
+        "visited_waypoints": 69,
+        "world_id": "probability-mines-world-v1"
+      },
+      "full_route": {
+        "activity": "rift_crystals",
+        "branches": {
+          "echo": {
+            "outbound": true,
+            "returned": true
+          },
+          "survey": {
+            "outbound": false,
+            "returned": false
+          }
+        },
+        "failure": "",
+        "next": 69,
+        "reached": 69,
+        "regions": [
+          "Diver Arrival",
+          "Connecting Mine Galleries",
+          "Upper Probability Mines",
+          "Entanglement Echo Chamber",
+          "Mid Mines Rift"
+        ],
+        "waypoints": 161
+      },
+      "player_hp": 100,
+      "progression": {
+        "anchor_upper": false,
+        "collapse_rift": false,
+        "crystals_destroyed": 0,
+        "exit_ready": false,
+        "extracted": false,
+        "golem_core": false,
+        "golem_defeated": false,
+        "secret_found": false,
+        "stabilization_pending": false
+      },
+      "art": {
+        "actorStates": {},
+        "additionalCaptures": {
+          "region:Connecting Mine Galleries": 266,
+          "region:Diver Arrival": 1,
+          "region:Entanglement Echo Chamber": 734,
+          "region:Mid Mines Rift": 1586,
+          "region:Upper Probability Mines": 311
+        },
+        "candidateOnly": true,
+        "castManifestSha256": "cfa147460ac6f2bd4cbc99f580011fc651bce513cbd7fb36099a50d315b36733",
+        "diverManifestSha256": "9788527d697b8f8df4e185dd5e42a657eb891bd480f1cb8b83eca04f1af377ad",
+        "floorChecks": 10538,
+        "floorFailures": 0,
+        "integrity": true,
+        "kitManifestSha256": "f5301ee10456fd993ce65b3ddf0cc7ebfdb08c670265d149d673477f5dad555f",
+        "maxSwatches": 705,
+        "maxTerrainTextures": 32,
+        "playerStates": {
+          "attack": true,
+          "idle": true,
+          "jump": true,
+          "levitate": true,
+          "run": true
+        },
+        "productionApproved": false,
+        "propChecks": 480,
+        "propFailures": 0,
+        "regions": {
+          "Connecting Mine Galleries": 266,
+          "Diver Arrival": 1,
+          "Entanglement Echo Chamber": 734,
+          "Mid Mines Rift": 1586,
+          "Upper Probability Mines": 311
+        }
+      },
+      "enemy_deaths": {},
+      "enemy_active_counts": {},
+      "boss_active": {}
+    },
+    "expected": {
+      "templateSha256": "990ada727c8b325350d16a685aa7768902fed4e2f2fcc1ee946a1787a2443f13",
+      "configSha256": "95b920ee02f5e708dec6f4e248f5fb13376ae02a6f273ff08f989cd0ca610e6d",
+      "files": 123,
+      "projectPath": "fixture-only",
+      "seed": 0,
+      "terrainSha256": "0e74a79071ad2706a1d78cfd5c3e56ee86c2b4291b4d64b5d22c91f2de99fc66",
+      "entrySha256": "60f18d97ad67bb6044d2676946891b2376907289157bf0201f8064b18e3e919d"
+    }
+  },
+  {
+    "label": "verified release after runtime setup fix",
+    "runtime": {
+      "generation": {
+        "archetype": "QUANTUM_SIMULATION_ROGUELITE",
+        "candidateOnly": true,
+        "configuration_sha256": "95b920ee02f5e708dec6f4e248f5fb13376ae02a6f273ff08f989cd0ca610e6d",
+        "entry_script_sha256": "1791c5ba46c229215baf9ab3da0fd0cac60b9e52f7d2b4f6a5dfa2627b00da75",
+        "initial_terrain_sha256": "0e74a79071ad2706a1d78cfd5c3e56ee86c2b4291b4d64b5d22c91f2de99fc66",
+        "package": {
+          "failures": [],
+          "files": 121,
+          "integrity": true,
+          "release": true,
+          "standalone": true,
+          "template_sha256": "aa6eba7b1b4ecad4c01819cb42ac4ae0ece75e770fee44a943e8ef19d6e254ff"
+        },
+        "productionApproved": false,
+        "seed": 0,
+        "title": "Quantum Portable Expedition"
+      },
+      "world": {
+        "camera_origin": [
+          4036,
+          3408
+        ],
+        "cells": 1382400,
+        "cpu_mean_with_focus_ms": 11.129608309085,
+        "focus_mean_ms": 0.0438296152602651,
+        "generation_ms": 411.775,
+        "main_waypoints": 101,
+        "max_active_chunks": 77,
+        "max_work_cells": 44032,
+        "pixels": [
+          5760,
+          3840
+        ],
+        "recall_stations": 8,
+        "rooms": 8,
+        "seed": 0,
+        "tour_waypoints": 161,
+        "visited_waypoints": 161,
+        "world_id": "probability-mines-world-v1"
+      },
+      "full_route": {
+        "activity": "complete",
+        "branches": {
+          "echo": {
+            "outbound": true,
+            "returned": true
+          },
+          "survey": {
+            "outbound": true,
+            "returned": true
+          }
+        },
+        "failure": "",
+        "next": 161,
+        "reached": 161,
+        "regions": [
+          "Diver Arrival",
+          "Connecting Mine Galleries",
+          "Upper Probability Mines",
+          "Entanglement Echo Chamber",
+          "Mid Mines Rift",
+          "Collapsed Survey Tunnel",
+          "Lower Extraction Works",
+          "Probability Golem Foundry",
+          "Quantum Lift"
+        ],
+        "waypoints": 161
+      },
+      "player_hp": 76,
+      "progression": {
+        "anchor_upper": true,
+        "collapse_rift": true,
+        "crystals_destroyed": 3,
+        "exit_ready": true,
+        "extracted": true,
+        "golem_core": true,
+        "golem_defeated": true,
+        "secret_found": true,
+        "stabilization_pending": false
+      },
+      "art": {
+        "actorStates": {
+          "driller": {
+            "attack": true,
+            "death": true,
+            "hit": true,
+            "idle": true,
+            "run": true,
+            "walk": true
+          },
+          "golem": {
+            "attack": true,
+            "death": true,
+            "hit": true,
+            "idle": true,
+            "run": true,
+            "walk": true
+          },
+          "skitter": {
+            "attack": true,
+            "death": true,
+            "hit": true,
+            "idle": true,
+            "run": true,
+            "walk": true
+          },
+          "wraith": {
+            "attack": true,
+            "death": true,
+            "hit": true,
+            "idle": true,
+            "run": true,
+            "walk": true
+          }
+        },
+        "additionalCaptures": {
+          "attack:200:burst": 5347,
+          "attack:200:roar": 5426,
+          "attack:200:slam": 5262,
+          "attack:301:dash": 126,
+          "attack:302:shot": 551,
+          "attack:303:drill": 2212,
+          "death:200": 5917,
+          "death:301": 226,
+          "death:302": 674,
+          "death:303": 2407,
+          "region:Collapsed Survey Tunnel": 2832,
+          "region:Connecting Mine Galleries": 341,
+          "region:Diver Arrival": 1,
+          "region:Entanglement Echo Chamber": 906,
+          "region:Lower Extraction Works": 4006,
+          "region:Mid Mines Rift": 1758,
+          "region:Probability Golem Foundry": 5104,
+          "region:Quantum Lift": 6025,
+          "region:Upper Probability Mines": 386
+        },
+        "candidateOnly": true,
+        "castManifestSha256": "cfa147460ac6f2bd4cbc99f580011fc651bce513cbd7fb36099a50d315b36733",
+        "diverManifestSha256": "9788527d697b8f8df4e185dd5e42a657eb891bd480f1cb8b83eca04f1af377ad",
+        "floorChecks": 23132,
+        "floorFailures": 0,
+        "integrity": true,
+        "kitManifestSha256": "f5301ee10456fd993ce65b3ddf0cc7ebfdb08c670265d149d673477f5dad555f",
+        "maxSwatches": 1790,
+        "maxTerrainTextures": 32,
+        "playerStates": {
+          "attack": true,
+          "hit": true,
+          "idle": true,
+          "jump": true,
+          "levitate": true,
+          "run": true
+        },
+        "productionApproved": false,
+        "propChecks": 480,
+        "propFailures": 0,
+        "regions": {
+          "Collapsed Survey Tunnel": 2832,
+          "Connecting Mine Galleries": 341,
+          "Diver Arrival": 1,
+          "Entanglement Echo Chamber": 906,
+          "Lower Extraction Works": 4006,
+          "Mid Mines Rift": 1758,
+          "Probability Golem Foundry": 5104,
+          "Quantum Lift": 6025,
+          "Upper Probability Mines": 386
+        }
+      },
+      "enemy_deaths": {
+        "200": "golem",
+        "301": "skitter",
+        "302": "wraith",
+        "303": "driller"
+      },
+      "enemy_active_counts": {
+        "200": 8,
+        "301": 1,
+        "302": 2,
+        "303": 1
+      },
+      "boss_active": {
+        "burst": 3,
+        "roar": 2,
+        "slam": 3
+      }
+    },
+    "expected": {
+      "templateSha256": "aa6eba7b1b4ecad4c01819cb42ac4ae0ece75e770fee44a943e8ef19d6e254ff",
+      "configSha256": "95b920ee02f5e708dec6f4e248f5fb13376ae02a6f273ff08f989cd0ca610e6d",
+      "files": 123,
+      "projectPath": "fixture-only",
+      "seed": 0,
+      "terrainSha256": "0e74a79071ad2706a1d78cfd5c3e56ee86c2b4291b4d64b5d22c91f2de99fc66",
+      "entrySha256": "1791c5ba46c229215baf9ab3da0fd0cac60b9e52f7d2b4f6a5dfa2627b00da75"
+    }
+  }
+]

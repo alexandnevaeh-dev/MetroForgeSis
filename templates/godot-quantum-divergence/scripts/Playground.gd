@@ -22,6 +22,13 @@ var measured_ticks: int = 0
 var capture_ticks: Array[int] = [60, 330, 425]
 var report: Dictionary = {"scope": "Native mechanics playground; not MetroForge app generation, completed biome or final art approval", "shots": 0, "splits": 0, "impacts": 0, "recalls": 0}
 
+func _runtime_failure(message: String) -> void:
+	push_error(message)
+	set_process(false)
+	set_physics_process(false)
+	set_process_input(false)
+	get_tree().quit(1)
+
 func _ready() -> void:
 	for argument in OS.get_cmdline_user_args():
 		if argument == "--smoke-test":
@@ -29,8 +36,12 @@ func _ready() -> void:
 		if argument.begins_with("--capture-dir="):
 			capture_dir = argument.trim_prefix("--capture-dir=")
 	if capture_dir != "":
-		assert(capture_dir.to_lower().begins_with("e:/") or capture_dir.to_lower().begins_with("e:\\"))
-		DirAccess.make_dir_recursive_absolute(capture_dir)
+		if not (capture_dir.to_lower().begins_with("e:/") or capture_dir.to_lower().begins_with("e:\\")):
+			_runtime_failure("Quantum captures must stay on E:")
+			return
+		if DirAccess.make_dir_recursive_absolute(capture_dir) != OK:
+			_runtime_failure("Cannot create Quantum capture folder")
+			return
 	grid = Grid.new(192, 96, 42)
 	_build_world()
 	player = Player.new(grid, Vector2(80, 336))
