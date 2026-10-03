@@ -1,7 +1,7 @@
 /** Real hidden desktop workflow, normal IPC and native gameplay; no provider mocks or OS input. */
 import { _electron } from 'playwright';
 import { createRequire } from 'node:module';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,6 +19,7 @@ proof.captures = [];
 proof.captureMethod = 'Electron webContents.capturePage with stayHidden/stayAwake; actual viewport, no screenshot substitution';
 async function capture(name) {
   await page.waitForFunction(() => document.getAnimations().every(animation => animation.playState !== 'running' || animation.effect?.getComputedTiming().iterations === Infinity));
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   const viewport = await page.evaluate(() => ({ width: innerWidth, height: innerHeight }));
   const captured = await app.evaluate(async ({ BrowserWindow }) => {
     const window = BrowserWindow.getAllWindows()[0];
@@ -33,6 +34,12 @@ async function capture(name) {
 }
 const check = (label, value) => { checks.push({ label, passed: !!value }); assert.ok(value, label); };
 const sha = path => createHash('sha256').update(readFileSync(path)).digest('hex');
+function projectHashes(root, relative = '') {
+  return Object.fromEntries(readdirSync(join(root, relative), { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name)).flatMap(entry => {
+    const file = join(relative, entry.name);
+    return entry.isDirectory() ? Object.entries(projectHashes(root, file)) : [[file, sha(join(root, file))]];
+  }));
+}
 for (const directory of ['temp', 'data', 'appdata', 'localappdata', 'GeneratedGames']) mkdirSync(join(output, directory), { recursive: true });
 const env = { ...process.env, TEMP: join(output, 'temp'), TMP: join(output, 'temp'),
   APPDATA: join(output, 'appdata'), LOCALAPPDATA: join(output, 'localappdata'),
@@ -106,10 +113,12 @@ try {
   check('zero seed and entered title reached actual generated runtime', configuration.seed === 0 && configuration.title === 'Quantum UI Expedition' && runtime.generation.seed === 0);
   check('native game traversed all 161 waypoints and extracted alive', runtime.world.visited_waypoints === 161 && runtime.progression.extracted && runtime.player_hp > 0 && validation.passed);
   proof.runtime = { seed: runtime.generation.seed, terrainSha256: runtime.generation.initial_terrain_sha256, waypoints: runtime.world.visited_waypoints, hp: runtime.player_hp, extracted: runtime.progression.extracted };
-  const configSha = sha(join(project, 'quantum_project.json'));
+  const beforeCollision = projectHashes(project);
   await create.click();
   await page.waitForFunction(() => document.querySelector('.create-result')?.textContent.includes('Generation failed:'), undefined, { timeout: 30000 });
-  check('same-title collision fails without overwriting completed game', sha(join(project, 'quantum_project.json')) === configSha && (await page.locator('.create-result').innerText()).includes('Failed'));
+  const afterCollision = projectHashes(project);
+  proof.collisionPreservation = { files: Object.keys(beforeCollision).length, changed: [...new Set([...Object.keys(beforeCollision), ...Object.keys(afterCollision)])].filter(file => beforeCollision[file] !== afterCollision[file]) };
+  check('same-title collision leaves every completed game file and history unchanged', proof.collisionPreservation.changed.length === 0 && (await page.locator('.create-result').innerText()).includes('Failed'));
   check('failed submission preserves entered data for correction', await title.inputValue() === configuration.title && await seed.inputValue() === '0' && await prompt.inputValue() === configuration.prompt);
   await page.waitForFunction(async () => (await window.metroforge.listGenerationQueue()).some(job => job.status === 'failed'), undefined, { timeout: 30000 });
   check('queue reports the failed creation rather than completed', (await page.evaluate(() => window.metroforge.listGenerationQueue())).some(job => job.status === 'failed'));

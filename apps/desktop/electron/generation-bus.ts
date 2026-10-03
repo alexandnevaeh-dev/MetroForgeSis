@@ -8,9 +8,17 @@ export class GenerationEventStore {
   /** One job owns this buffer; never create a destination before atomic assembly. */
   createDeferredAppender(): (projectPath: string, event: GenerationEvent) => void {
     const pending = new Map<string, GenerationEvent[]>();
+    const owned = new Set<string>();
     return (projectPath, event) => {
+      // Intake can fail before a job exists, including collisions with an older game.
+      // Legacy generation emits its initial events before assigning the job ID.
+      if (event.jobId) owned.add(projectPath);
+      if (!owned.has(projectPath) && event.type === 'GenerationFailed') {
+        pending.delete(projectPath);
+        return;
+      }
       const events = [...(pending.get(projectPath) ?? []), event];
-      if (!existsSync(projectPath)) {
+      if (!owned.has(projectPath) || !existsSync(projectPath)) {
         pending.set(projectPath, events);
         return;
       }
