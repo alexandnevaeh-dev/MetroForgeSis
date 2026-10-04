@@ -1,5 +1,5 @@
 import { playGeneratedProject } from './godot-actions.js';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ScreenHeader } from './ScreenHeader.js';
 import { ProjectSelect } from './ProjectSelect.js';
 import { NoProjectHint } from './NoProjectHint.js';
@@ -115,40 +115,72 @@ const QUICK_LAUNCH: Array<{ id: NavId; label: string; shortcut?: string }> = [
 ];
 
 export function ProjectDashboard() {
-  const { selectedPath, hasActiveProject, navigate, openRoom, projects, setSelectedPath } = useStudio();
+  const { selectedPath, hasActiveProject, navigate, openRoom, projects, setSelectedPath } =
+    useStudio();
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [godotError, setGodotError] = useState<string | null>(null);
   const [acceptResult, setAcceptResult] = useState<string | null>(null);
   const [remapResult, setRemapResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [checkpoints, setCheckpoints] = useState<Array<{ id: string; label: string; timestamp: string }>>([]);
+  const [dashboardError, setDashboardError] = useState<string | null>(null);
+  const dashboardRead = useRef(0);
+  const readingPath = useRef<string | null>(null);
+  const [checkpoints, setCheckpoints] = useState<
+    Array<{ id: string; label: string; timestamp: string }>
+  >([]);
   const [hardware, setHardware] = useState<string | null>(null);
-  const [providerStats, setProviderStats] = useState<{ healthy: number; total: number } | null>(null);
+  const [providerStats, setProviderStats] = useState<{ healthy: number; total: number } | null>(
+    null,
+  );
   const [modelCount, setModelCount] = useState<number | null>(null);
 
   const jump = (id: NavId) => navigate(id);
 
-  const refreshDashboard = async (path = selectedPath) => {
-    if (!path || !window.metroforge?.getProjectDashboard) {
-      setDashboard(null);
-      return;
-    }
-    setLoading(true);
-    try {
-      setDashboard((await window.metroforge.getProjectDashboard(path)) as DashboardData);
-      if (window.metroforge.listProjectCheckpoints) {
-        setCheckpoints(await window.metroforge.listProjectCheckpoints(path));
-      } else {
+  const refreshDashboard = useCallback(
+    async (path = selectedPath) => {
+      if (readingPath.current === path) return;
+      const request = ++dashboardRead.current;
+      readingPath.current = null;
+      if (!path || !window.metroforge?.getProjectDashboard) {
+        setDashboard(null);
         setCheckpoints([]);
+        setDashboardError(null);
+        setLoading(false);
+        return;
       }
-    } finally {
-      setLoading(false);
-    }
-  };
+      readingPath.current = path;
+      setLoading(true);
+      setDashboardError(null);
+      try {
+        const [data, savedCheckpoints] = await Promise.all([
+          window.metroforge.getProjectDashboard(path),
+          window.metroforge.listProjectCheckpoints?.(path) ?? Promise.resolve([]),
+        ]);
+        if (request !== dashboardRead.current) return;
+        setDashboard(data as DashboardData);
+        setCheckpoints(savedCheckpoints);
+      } catch (error) {
+        if (request === dashboardRead.current)
+          setDashboardError(error instanceof Error ? error.message : String(error));
+      } finally {
+        if (request === dashboardRead.current) {
+          readingPath.current = null;
+          setLoading(false);
+        }
+      }
+    },
+    [selectedPath],
+  );
 
   useEffect(() => {
+    setDashboard(null);
+    setCheckpoints([]);
     void refreshDashboard(selectedPath);
-  }, [selectedPath]);
+    return () => {
+      dashboardRead.current++;
+      readingPath.current = null;
+    };
+  }, [selectedPath, refreshDashboard]);
 
   useEffect(() => {
     if (!window.metroforge?.getHardwareProfile) {
@@ -215,14 +247,29 @@ export function ProjectDashboard() {
         actions={
           <div className="row">
             <ProjectSelect />
-            <Button disabled={!hasActiveProject || loading} onClick={() => void refreshDashboard()}>
-              {loading ? 'Refreshing…' : 'Refresh'}
+            <Button
+              disabled={!hasActiveProject || loading}
+              aria-busy={loading}
+              onClick={() => void refreshDashboard()}
+            >
+              Refresh
             </Button>
             <Button onClick={() => jump('Models')}>Open catalog</Button>
           </div>
         }
       />
       <NoProjectHint />
+      {dashboardError && (
+        <div className="result error">
+          <p role="alert">
+            Could not load this project overview. Check the project files or try again.
+          </p>
+          <details>
+            <summary>Error details</summary>
+            <pre className="dashboard-load-error">{dashboardError}</pre>
+          </details>
+        </div>
+      )}
 
       {hasActiveProject && dashboard && (
         <ForgeOverviewStrip
@@ -237,7 +284,7 @@ export function ProjectDashboard() {
         <EmptyState
           className="dashboard-empty-error"
           title="Dashboard unavailable"
-          description="getProjectDashboard returned no data for this project. Environment widgets below still use live provider/model IPC when available."
+          description="This project overview could not be loaded. Retry or open QA to inspect the project; environment information remains available below."
           actions={
             <>
               <Button variant="primary" onClick={() => void refreshDashboard()}>
@@ -257,7 +304,9 @@ export function ProjectDashboard() {
             <div className="dashboard-env-stats">
               <div>
                 <span>Providers</span>
-                <strong>{providerStats ? `${providerStats.healthy}/${providerStats.total}` : '—'}</strong>
+                <strong>
+                  {providerStats ? `${providerStats.healthy}/${providerStats.total}` : '—'}
+                </strong>
               </div>
               <div>
                 <span>Models</span>
@@ -279,7 +328,11 @@ export function ProjectDashboard() {
                   onClick={() => jump(item.id)}
                 >
                   <span>{item.label}</span>
-                  {item.shortcut ? <kbd>{item.shortcut}</kbd> : <span className="quick-launch-hint">—</span>}
+                  {item.shortcut ? (
+                    <kbd>{item.shortcut}</kbd>
+                  ) : (
+                    <span className="quick-launch-hint">—</span>
+                  )}
                 </button>
               ))}
             </div>
@@ -292,7 +345,14 @@ export function ProjectDashboard() {
           <div className="dashboard-main-col">
             <div className="dashboard-kpi-row">
               <Panel level={2} className="dashboard-kpi" title="Timeline">
-                <h3 style={{ textTransform: 'none', letterSpacing: 0, fontSize: '1rem', marginBottom: '0.2rem' }}>
+                <h3
+                  style={{
+                    textTransform: 'none',
+                    letterSpacing: 0,
+                    fontSize: '1rem',
+                    marginBottom: '0.2rem',
+                  }}
+                >
                   {dashboard.title ?? 'Untitled project'}
                 </h3>
                 <p className="hint">
@@ -313,7 +373,10 @@ export function ProjectDashboard() {
 
               <Panel level={1} className="dashboard-kpi" title="Environment">
                 <div className="dashboard-env-status">
-                  <span className={envHealthy ? 'status-dot ok' : 'status-dot error'} aria-hidden="true" />
+                  <span
+                    className={envHealthy ? 'status-dot ok' : 'status-dot error'}
+                    aria-hidden="true"
+                  />
                   <span>
                     Overall Status:{' '}
                     <strong style={{ color: envHealthy ? 'var(--success)' : 'var(--warning)' }}>
@@ -334,7 +397,9 @@ export function ProjectDashboard() {
                   </div>
                   <div>
                     <span>QA</span>
-                    <strong>{qaLabel ?? (dashboard.completion?.validationPassed ? 'PASS' : '—')}</strong>
+                    <strong>
+                      {qaLabel ?? (dashboard.completion?.validationPassed ? 'PASS' : '—')}
+                    </strong>
                   </div>
                 </div>
                 <p className="hint" style={{ marginTop: '0.4rem' }}>
@@ -380,7 +445,10 @@ export function ProjectDashboard() {
                 {projects.length > 0 ? (
                   <DataTable columns={['Name', 'Profile', 'Status']}>
                     {projects.slice(0, 8).map((p) => (
-                      <tr key={p.path} className={p.path === selectedPath ? 'row-selected' : undefined}>
+                      <tr
+                        key={p.path}
+                        className={p.path === selectedPath ? 'row-selected' : undefined}
+                      >
                         <td>
                           <button
                             type="button"
@@ -402,7 +470,10 @@ export function ProjectDashboard() {
                     ))}
                   </DataTable>
                 ) : (
-                  <EmptyState title="No projects" description="Commission a game to populate the library." />
+                  <EmptyState
+                    title="No projects"
+                    description="Commission a game to populate the library."
+                  />
                 )}
               </Panel>
 
@@ -416,7 +487,11 @@ export function ProjectDashboard() {
                       onClick={() => jump(item.id)}
                     >
                       <span>{item.label}</span>
-                      {item.shortcut ? <kbd>{item.shortcut}</kbd> : <span className="quick-launch-hint">—</span>}
+                      {item.shortcut ? (
+                        <kbd>{item.shortcut}</kbd>
+                      ) : (
+                        <span className="quick-launch-hint">—</span>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -460,7 +535,9 @@ export function ProjectDashboard() {
                         `${r.abilityCount} abilities`,
                       ];
                       if (r.remapped.length) {
-                        parts.push(`remapped: ${r.remapped.map((x) => `${x.from}→${x.to}`).join(', ')}`);
+                        parts.push(
+                          `remapped: ${r.remapped.map((x) => `${x.from}→${x.to}`).join(', ')}`,
+                        );
                       }
                       if (r.removed.length) {
                         parts.push(`removed: ${r.removed.join(', ')}`);
@@ -478,7 +555,8 @@ export function ProjectDashboard() {
                     size="sm"
                     onClick={async () => {
                       setGodotError(null);
-                      if (selectedPath) await window.metroforge?.revealProjectFolder?.(selectedPath);
+                      if (selectedPath)
+                        await window.metroforge?.revealProjectFolder?.(selectedPath);
                     }}
                   >
                     Folder
@@ -566,7 +644,9 @@ export function ProjectDashboard() {
                       {dashboard.playtestRoute.personaDisplayName && (
                         <li>
                           Persona: {dashboard.playtestRoute.personaDisplayName}
-                          {dashboard.playtestRoute.personaId ? ` (${dashboard.playtestRoute.personaId})` : ''}
+                          {dashboard.playtestRoute.personaId
+                            ? ` (${dashboard.playtestRoute.personaId})`
+                            : ''}
                         </li>
                       )}
                     </ul>
@@ -575,12 +655,14 @@ export function ProjectDashboard() {
                     <>
                       <p
                         className={
-                          dashboard.playtestTelemetry.victoryState && dashboard.playtestTelemetry.gameComplete
+                          dashboard.playtestTelemetry.victoryState &&
+                          dashboard.playtestTelemetry.gameComplete
                             ? 'check-pass'
                             : 'check-warn'
                         }
                       >
-                        {dashboard.playtestTelemetry.victoryState && dashboard.playtestTelemetry.gameComplete
+                        {dashboard.playtestTelemetry.victoryState &&
+                        dashboard.playtestTelemetry.gameComplete
                           ? 'Last run: victory'
                           : 'Last run: incomplete'}
                         {' · '}
@@ -599,7 +681,12 @@ export function ProjectDashboard() {
                           <li>
                             Rooms visited:{' '}
                             {dashboard.playtestTelemetry.roomsVisited.slice(0, 8).map((roomId) => (
-                              <button key={roomId} type="button" className="tab" onClick={() => openRoom(roomId)}>
+                              <button
+                                key={roomId}
+                                type="button"
+                                className="tab"
+                                onClick={() => openRoom(roomId)}
+                              >
                                 {roomId}
                               </button>
                             ))}
@@ -610,7 +697,8 @@ export function ProjectDashboard() {
                         dashboard.playtestTelemetry.balanceHints.length) > 0 && (
                         <ul className="check-list">
                           {(
-                            dashboard.playtestTelemetry.balanceSummary ?? dashboard.playtestTelemetry.balanceHints
+                            dashboard.playtestTelemetry.balanceSummary ??
+                            dashboard.playtestTelemetry.balanceHints
                           ).map((hint) => (
                             <li key={hint} className="check-warn">
                               {formatPlaytestHint(hint)}
@@ -620,11 +708,15 @@ export function ProjectDashboard() {
                       )}
                     </>
                   ) : (
-                    <p className="hint">No telemetry yet — run acceptance to record a playtest run</p>
+                    <p className="hint">
+                      No telemetry yet — run acceptance to record a playtest run
+                    </p>
                   )}
                 </>
               ) : (
-                <p className="hint">Playtest route unavailable — regenerate project to enable the bot</p>
+                <p className="hint">
+                  Playtest route unavailable — regenerate project to enable the bot
+                </p>
               )}
             </Panel>
           </div>

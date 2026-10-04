@@ -393,11 +393,16 @@ export type MetroforgeBridge = {
   redoRoomEdit: (
     projectPath: string,
   ) => Promise<{ success?: boolean; error?: string; errors?: string[]; message?: string }>;
-  refreshProjectTemplate: (projectPath: string) => Promise<{
+  refreshProjectTemplate: (projectPath: string, opts?: { dryRun?: boolean; expectedPlanDigest?: string }) => Promise<{
     success: boolean;
     copied: string[];
     removed: string[];
     errors: string[];
+    dryRun?: boolean;
+    planDigest?: string;
+    templateName?: string;
+    backupPath?: string;
+    validationInvalidated?: boolean;
   }>;
   generateGame: (opts: {
     title?: string;

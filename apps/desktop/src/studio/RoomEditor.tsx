@@ -277,7 +277,7 @@ export function RoomEditor() {
           <EditorWorkbench className="room-editor-workspace">
             <aside className="editor-left-rail">
               <Panel level={1} title="Hierarchy">
-                <SearchField
+                <SearchField onClear={() => setQuery('')}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Filter rooms…"

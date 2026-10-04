@@ -1,7 +1,28 @@
 import { useStudio } from './StudioContext.js';
 
 export function ProjectSelect({ compact = false }: { compact?: boolean }) {
-  const { projects, selectedPath, setSelectedPath, navigate } = useStudio();
+  const {
+    projects,
+    projectsLoading,
+    projectsLoaded,
+    projectsError,
+    selectedPath,
+    setSelectedPath,
+    navigate,
+  } = useStudio();
+
+  if (!projectsLoaded)
+    return (
+      <div className={compact ? 'project-select compact' : 'project-select'}>
+        <p className="hint" role="status">
+          {projectsError
+            ? 'Library unavailable'
+            : projectsLoading
+              ? 'Loading projects…'
+              : 'Library unavailable'}
+        </p>
+      </div>
+    );
 
   if (projects.length === 0) {
     return (
@@ -21,7 +42,7 @@ export function ProjectSelect({ compact = false }: { compact?: boolean }) {
       {compact ? 'Active project' : 'Project'}
       <select value={selectedPath} onChange={(e) => setSelectedPath(e.target.value)}>
         {projects.map((project) => (
-          <option key={project.slug} value={project.path}>
+          <option key={project.path} value={project.path}>
             {project.title ?? project.slug}
           </option>
         ))}

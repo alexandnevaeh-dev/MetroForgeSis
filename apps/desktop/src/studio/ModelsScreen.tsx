@@ -287,7 +287,7 @@ export function ModelsScreen() {
             }
             toolbar={
               <>
-                <SearchField
+                <SearchField onClear={() => setQuery('')}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search models…"

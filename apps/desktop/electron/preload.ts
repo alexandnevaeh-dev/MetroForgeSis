@@ -177,12 +177,17 @@ contextBridge.exposeInMainWorld('metroforge', {
     ipcRenderer.invoke('get-asset-version-preview', projectPath, backupRelPath),
   exportProject: (projectPath: string, opts?: { force?: boolean; zip?: boolean; commercialSafe?: boolean; requireProductionAssets?: boolean }) =>
     ipcRenderer.invoke('export-project', projectPath, opts),
-  refreshProjectTemplate: (projectPath: string) =>
-    ipcRenderer.invoke('refresh-project-template', projectPath) as Promise<{
+  refreshProjectTemplate: (projectPath: string, opts?: { dryRun?: boolean; expectedPlanDigest?: string }) =>
+    ipcRenderer.invoke('refresh-project-template', projectPath, opts) as Promise<{
       success: boolean;
       copied: string[];
       removed: string[];
       errors: string[];
+    dryRun?: boolean;
+    planDigest?: string;
+    templateName?: string;
+    backupPath?: string;
+    validationInvalidated?: boolean;
     }>,
   runProjectAcceptance: (projectPath: string, opts?: { skipRuntime?: boolean }) =>
     ipcRenderer.invoke('run-project-acceptance', projectPath, opts) as Promise<{

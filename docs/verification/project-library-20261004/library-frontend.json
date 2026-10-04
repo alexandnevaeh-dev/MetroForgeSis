@@ -1,0 +1,133 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\project-library-review\\reports\\game-tests\\20261004-library-frontend\\1791081084887",
+  "scope": "Real ProjectsScreen, StudioProvider and shared search with a controlled bridge; failure, concurrency, keyboard and layout checks; no engine acceptance",
+  "sourceHashes": {
+    "apps/desktop/src/studio/ProjectsScreen.tsx": "0f0b7760cb9436a7231000ab58954e2c3fddb9c0bb5fb5d2f34d8789f125fa72",
+    "apps/desktop/src/studio/StudioContext.tsx": "4b3cc10d27dd41ccc03812237cf4c539efeea4f0a699814e1ec920235577e1ce",
+    "apps/desktop/src/studio/ui/index.tsx": "10fa50ed9d20558e202090b4f06ee901653968779cb27ccf31b65ed079eb8288",
+    "apps/desktop/src/styles.css": "b5c3ad7ba93d1342e94260380ab03dc110fd786b9a1ddd3743ea7b9a3abaa1e1",
+    "scripts/verify-library-frontend.mjs": "b2912bc341942bf0f65770d33f7f4369469f616f961d773c3375474cb540d833"
+  },
+  "checks": [
+    {
+      "label": "initial failure does not claim an empty library",
+      "passed": true
+    },
+    {
+      "label": "initial render is bounded to twenty projects",
+      "passed": true
+    },
+    {
+      "label": "same slugs with distinct paths retain distinct cards",
+      "passed": true
+    },
+    {
+      "label": "explicit pagination adds twenty projects",
+      "passed": true
+    },
+    {
+      "label": "engine and genre are readable labels",
+      "passed": true
+    },
+    {
+      "label": "Quantum has no room-template refresh",
+      "passed": true
+    },
+    {
+      "label": "Unity does not offer a Godot editor or source export",
+      "passed": true
+    },
+    {
+      "label": "Unreal play is unavailable without a build",
+      "passed": true
+    },
+    {
+      "label": "search includes readable genre names",
+      "passed": true
+    },
+    {
+      "label": "keyboard clear empties query and returns focus",
+      "passed": true
+    },
+    {
+      "label": "new search resets the page bound",
+      "passed": true
+    },
+    {
+      "label": "read failure preserves known projects and selected path",
+      "passed": true
+    },
+    {
+      "label": "refresh exposes pending state",
+      "passed": true
+    },
+    {
+      "label": "library reads do not overlap",
+      "passed": true
+    },
+    {
+      "label": "duplicate exports submit once",
+      "passed": true
+    },
+    {
+      "label": "pending action locks controls",
+      "passed": true
+    },
+    {
+      "label": "export never silently bypasses validation",
+      "passed": true
+    },
+    {
+      "label": "export feedback identifies source scope and warnings",
+      "passed": true
+    },
+    {
+      "label": "review does not apply runtime changes",
+      "passed": true
+    },
+    {
+      "label": "cancel leaves only read-only refresh calls",
+      "passed": true
+    },
+    {
+      "label": "apply binds the reviewed digest",
+      "passed": true
+    },
+    {
+      "label": "success reports backup and repeated validation",
+      "passed": true
+    },
+    {
+      "label": "editor rejection is inline and retryable",
+      "passed": true
+    },
+    {
+      "label": "play acknowledgement does not invent running-game success",
+      "passed": true
+    },
+    {
+      "label": "no matches has an explicit recovery action",
+      "passed": true
+    },
+    {
+      "label": "library fits a narrow window",
+      "passed": true
+    },
+    {
+      "label": "native fixture stays hidden",
+      "passed": true
+    },
+    {
+      "label": "no renderer errors on failure or late unmount response",
+      "passed": true
+    },
+    {
+      "label": "source files stayed unchanged",
+      "passed": true
+    }
+  ],
+  "captures": [
+    "library-narrow.png"
+  ],
+  "passed": true
+}

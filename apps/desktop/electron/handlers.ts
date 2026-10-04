@@ -3,7 +3,7 @@ import { resolvePropAsset } from './prop-asset.js';
 import { topDownRoomRecords } from './topdown-room-records.js';
 import { latestPhases } from './latest-phases.js';
 import { resolveAssetAnimation } from './asset-animation.js';
-import { launchUnityPreview, prepareUnityPreview } from './unity-preview.js';
+import { launchUnityPreview } from './unity-preview.js';
 import { ipcMain, shell, safeStorage, BrowserWindow } from 'electron';
 import { CredentialStore } from './credentials.js';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -2218,11 +2218,15 @@ export function registerIpcHandlers(cwd: string): void {
 
   ipcMain.handle(
     'refresh-project-template',
-    async (_event, projectPath: string) => {
+    async (_event, projectPath: string, opts?: { dryRun?: boolean; expectedPlanDigest?: string }) => {
       assertReadableProjectPath(projectPath, cwd);
-      if (detectProjectEngine(projectPath) === 'unity') return prepareUnityPreview(projectPath);
+      if (detectProjectEngine(projectPath) !== 'godot') {
+        return { success: false, copied: [], removed: [], errors: ['Runtime template refresh is available for Godot room projects. Use the engine preview workflow for this project.'] };
+      }
       assertProjectPath(projectPath, cwd);
-      return refreshProjectTemplate(projectPath);
+      if (opts?.expectedPlanDigest !== undefined && !/^[a-f0-9]{64}$/.test(opts.expectedPlanDigest)) throw new Error('Invalid refresh review');
+      if (opts?.dryRun !== true && !opts?.expectedPlanDigest) throw new Error('Review template refresh before applying');
+      return refreshProjectTemplate(projectPath, { dryRun: opts?.dryRun === true, expectedPlanDigest: opts?.expectedPlanDigest });
     },
   );
 

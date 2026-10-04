@@ -4457,3 +4457,19 @@ select {
 .nav-forge { font-size: .62rem; color: var(--forge-text-muted); letter-spacing: .025em; }
 @media (max-width: 1000px) { .credentials-intro { flex-direction: column; } }
 .resize-none { resize: none; }
+
+/* Library uses the shared controls and inherited forge tokens. */
+.projects-screen .project-card .mono,
+.projects-screen .result,
+.project-refresh-files li {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.project-actions { margin-top: var(--space-2); }
+.project-refresh-files { max-height: 14rem; overflow: auto; padding-left: var(--space-4); }
+
+.mf-search-clearable input::-webkit-search-cancel-button { -webkit-appearance: none; }
+.projects-screen .toolbar .mf-search { flex: 1; }
+.projects-screen .project-card-head strong { overflow-wrap: anywhere; min-width: 0; }
+
+.dashboard-load-error { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 14rem; overflow: auto; }

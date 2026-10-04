@@ -101,14 +101,34 @@ export function TextArea({
 
 export function SearchField({
   className = '',
+  onClear,
   ...props
-}: InputHTMLAttributes<HTMLInputElement>) {
+}: InputHTMLAttributes<HTMLInputElement> & { onClear?: () => void }) {
+  const input = useRef<HTMLInputElement>(null);
   return (
-    <div className={['mf-search', className].filter(Boolean).join(' ')}>
+    <div
+      className={['mf-search', onClear ? 'mf-search-clearable' : '', className]
+        .filter(Boolean)
+        .join(' ')}
+    >
       <span className="mf-search-icon" aria-hidden="true">
         ⌕
       </span>
-      <input className="mf-input mf-search-input" type="search" {...props} />
+      <input ref={input} className="mf-input mf-search-input" type="search" {...props} />
+      {onClear && String(props.value ?? '').length > 0 && (
+        <Button
+          variant="icon"
+          size="compact"
+          aria-label="Clear search"
+          disabled={props.disabled}
+          onClick={() => {
+            onClear();
+            input.current?.focus();
+          }}
+        >
+          <span aria-hidden="true">×</span>
+        </Button>
+      )}
     </div>
   );
 }

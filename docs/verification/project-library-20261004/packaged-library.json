@@ -1,0 +1,197 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\project-library-review\\reports\\game-tests\\20261004-project-library\\1791081085532",
+  "packaged": "E:/MetroForgeData/Releases/MetroForge-library-20261004-v2/MetroForge.exe",
+  "scope": "Actual app, preload and handler IPC; disposable synthetic Godot project fixtures; runtime update review, backups, validation gate and source ZIP; no native game/visual acceptance",
+  "checks": [
+    {
+      "label": "malformed project overview fails inline without breaking navigation",
+      "passed": true
+    },
+    {
+      "label": "capture preserves hidden native window",
+      "passed": true
+    },
+    {
+      "label": "packaged library lists twenty of twenty-three real fixture directories",
+      "passed": true
+    },
+    {
+      "label": "topdown and sideview have separate genre labels",
+      "passed": true
+    },
+    {
+      "label": "sealed Quantum runtime does not offer room refresh",
+      "passed": true
+    },
+    {
+      "label": "real fixture pagination reveals remaining directories",
+      "passed": true
+    },
+    {
+      "label": "library search uses project metadata",
+      "passed": true
+    },
+    {
+      "label": "capture preserves hidden native window",
+      "passed": true
+    },
+    {
+      "label": "main process rejects an unreviewed runtime mutation",
+      "passed": true
+    },
+    {
+      "label": "real dry-run leaves project runtime and backups untouched",
+      "passed": true
+    },
+    {
+      "label": "capture preserves hidden native window",
+      "passed": true
+    },
+    {
+      "label": "stale review rejects actual IPC mutation and preserves user edit",
+      "passed": true
+    },
+    {
+      "label": "packaged topdown refresh uses shipped topdown player bytes",
+      "passed": true
+    },
+    {
+      "label": "topdown refresh preserves its custom gate",
+      "passed": true
+    },
+    {
+      "label": "custom rendering setting survives runtime refresh",
+      "passed": true
+    },
+    {
+      "label": "backup contains the user preimage and applied receipt",
+      "passed": true
+    },
+    {
+      "label": "actual refresh invalidates the old validation pass",
+      "passed": true
+    },
+    {
+      "label": "library source export respects current validation",
+      "passed": true
+    },
+    {
+      "label": "real library action creates a nonempty source ZIP on E:",
+      "passed": true
+    },
+    {
+      "label": "private refresh backups are excluded from export",
+      "passed": true
+    },
+    {
+      "label": "source export is not labeled as a Windows executable",
+      "passed": true
+    },
+    {
+      "label": "capture preserves hidden native window",
+      "passed": true
+    },
+    {
+      "label": "packaged keyboard clear restores focus and full first page",
+      "passed": true
+    },
+    {
+      "label": "sideview refresh uses its separate shipped player bytes",
+      "passed": true
+    },
+    {
+      "label": "sideview alone removes its retired gate",
+      "passed": true
+    },
+    {
+      "label": "all three projects preserve generated rooms, art and identity",
+      "passed": true
+    },
+    {
+      "label": "Quantum runtime files were never refreshed",
+      "passed": true
+    },
+    {
+      "label": "real app library fits a narrow window",
+      "passed": true
+    },
+    {
+      "label": "capture preserves hidden native window",
+      "passed": true
+    },
+    {
+      "label": "no renderer errors in actual packaged workflow: ",
+      "passed": true
+    },
+    {
+      "label": "tested source stayed unchanged",
+      "passed": true
+    },
+    {
+      "label": "tested package artifacts stayed unchanged",
+      "passed": true
+    }
+  ],
+  "captures": [
+    {
+      "file": "00-overview-recovery.png",
+      "size": {
+        "width": 1424,
+        "height": 935
+      },
+      "visible": false
+    },
+    {
+      "file": "01-library.png",
+      "size": {
+        "width": 1424,
+        "height": 935
+      },
+      "visible": false
+    },
+    {
+      "file": "02-refresh-review.png",
+      "size": {
+        "width": 1424,
+        "height": 935
+      },
+      "visible": false
+    },
+    {
+      "file": "03-export-result.png",
+      "size": {
+        "width": 1424,
+        "height": 935
+      },
+      "visible": false
+    },
+    {
+      "file": "04-library-narrow.png",
+      "size": {
+        "width": 884,
+        "height": 735
+      },
+      "visible": false
+    }
+  ],
+  "sourceHashes": {
+    "apps/desktop/src/studio/ProjectsScreen.tsx": "0f0b7760cb9436a7231000ab58954e2c3fddb9c0bb5fb5d2f34d8789f125fa72",
+    "apps/desktop/src/studio/StudioContext.tsx": "4b3cc10d27dd41ccc03812237cf4c539efeea4f0a699814e1ec920235577e1ce",
+    "apps/desktop/src/studio/ProjectDashboard.tsx": "cd2f5ea78da4a0917e2dbed46f04d904f75d7b833380ace5bd35b1ff095ea514",
+    "apps/desktop/src/studio/ProjectSelect.tsx": "5cc10c54db0ea55fc14711050a7e31f31d656210d9c008b30b795adeba287996",
+    "packages/tools/src/project-template-refresh.ts": "e40d23a3e2976afb786112c9383a4bbdbe124facf5b4ad3a571c25fd5d2798f9",
+    "scripts/verify-project-library-ui.mjs": "2312d934539fa9e57f7ac1336c24b5e074f4c24655d286eb41d20e0b931232ec"
+  },
+  "artifactHashes": {
+    "MetroForge.exe": "1925f358e7f0e9675a5ac4198fb076613f0db318da56d388799a97be74a5b19c",
+    "resources/app/dist-electron/main.js": "4aec04885c311604a057409e649f038ad9adf46d9532ddfece92c04bf8735e2f",
+    "resources/app/dist-electron/preload.cjs": "2e09c785d871c363dafff2a86205c379404264fb1a7c16741f5148294955a5c1",
+    "resources/app/node_modules/@metroforge/tools/dist/project-template-refresh.js": "c1a390f0ba37a2c7ef328c85e89e9847017842bba56dab80d2bde3b69590563c",
+    "resources/app/dist/assets/main.css": "03f774dd1e31ec6c3477289198850f1a312cc28c41c93f6224cf8ebc7ed30208",
+    "resources/app/dist/assets/main.js": "ec77effbb89526b3afbb44c425de508e3bd29315417492e5db18b1631e547d9e"
+  },
+  "pageErrors": [],
+  "backupPath": "E:\\MetroForgeData\\GitHubUpload\\20261004\\project-library-review\\reports\\game-tests\\20261004-project-library\\1791081085532\\games\\game-00\\.metroforge\\template-refresh\\6905beb5-a892-4c42-b3cf-0820f9479c7b",
+  "archivePath": "E:\\MetroForgeData\\GitHubUpload\\20261004\\project-library-review\\reports\\game-tests\\20261004-project-library\\1791081085532\\Exports\\game-00\\game-00-2026-10-04T02-31-46-098Z.zip",
+  "passed": true
+}
