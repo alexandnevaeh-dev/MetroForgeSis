@@ -4226,6 +4226,26 @@ select {
   max-height: 180px;
   overflow: auto;
 }
+.queue-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding-block: var(--space-2);
+}
+.queue-item > strong {
+  flex: 1 1 20rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.queue-item > span {
+  flex-shrink: 0;
+}
+.queue-item > .result {
+  flex: 1 1 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 .forge-overview-strip {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);

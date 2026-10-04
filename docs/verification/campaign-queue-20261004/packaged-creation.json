@@ -1,0 +1,737 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182",
+  "checks": [
+    {
+      "label": "desktop stays hidden throughout browser-driven testing",
+      "passed": true
+    },
+    {
+      "label": "three distinct genre choices",
+      "passed": true
+    },
+    {
+      "label": "arrow keys select top-down independently",
+      "passed": true
+    },
+    {
+      "label": "End selects Quantum with one keyboard tab stop",
+      "passed": true
+    },
+    {
+      "label": "invalid seed \"\" blocks creation with associated error",
+      "passed": true
+    },
+    {
+      "label": "invalid seed \"-1\" blocks creation with associated error",
+      "passed": true
+    },
+    {
+      "label": "invalid seed \"1.5\" blocks creation with associated error",
+      "passed": true
+    },
+    {
+      "label": "invalid seed \"2147483648\" blocks creation with associated error",
+      "passed": true
+    },
+    {
+      "label": "zero seed is valid",
+      "passed": true
+    },
+    {
+      "label": "Quantum uses local preview choices",
+      "passed": true
+    },
+    {
+      "label": "busy controls prevent duplicate submission",
+      "passed": true
+    },
+    {
+      "label": "creation button keeps its width while busy",
+      "passed": true
+    },
+    {
+      "label": "running queue descriptions, types, statuses and actions do not overlap or overflow",
+      "passed": true
+    },
+    {
+      "label": "connection setup is available while generation runs",
+      "passed": true
+    },
+    {
+      "label": "generation monitor restores real phase activity after navigation",
+      "passed": true
+    },
+    {
+      "label": "returning to creation preserves busy state and entered request",
+      "passed": true
+    },
+    {
+      "label": "completed queue descriptions, types, statuses and actions do not overlap or overflow",
+      "passed": true
+    },
+    {
+      "label": "double click started exactly one job",
+      "passed": true
+    },
+    {
+      "label": "normal IPC returned runtime-validated success",
+      "passed": true
+    },
+    {
+      "label": "app reports passing tests only after actual validation",
+      "passed": true
+    },
+    {
+      "label": "completed progress contains one final row per phase",
+      "passed": true
+    },
+    {
+      "label": "zero seed and entered title reached actual generated runtime",
+      "passed": true
+    },
+    {
+      "label": "native game traversed all 161 waypoints and extracted alive",
+      "passed": true
+    },
+    {
+      "label": "normal app creation builds and validates the standalone Windows game",
+      "passed": true
+    },
+    {
+      "label": "same-title collision leaves every completed game file and history unchanged",
+      "passed": true
+    },
+    {
+      "label": "failed submission preserves entered data for correction",
+      "passed": true
+    },
+    {
+      "label": "queue reports the failed creation rather than completed",
+      "passed": true
+    },
+    {
+      "label": "failed queue descriptions, types, statuses and actions do not overlap or overflow",
+      "passed": true
+    },
+    {
+      "label": "narrow queue descriptions, types, statuses and actions do not overlap or overflow",
+      "passed": true
+    },
+    {
+      "label": "narrow creation screen has no horizontal document overflow",
+      "passed": true
+    },
+    {
+      "label": "desktop remains hidden after native validation",
+      "passed": true
+    },
+    {
+      "label": "no renderer errors",
+      "passed": true
+    }
+  ],
+  "scope": "Real hidden Electron UI, normal preload IPC and native generated-game route; no OS-level input",
+  "productionReady": false,
+  "captures": [
+    {
+      "file": "01-ready.png",
+      "size": {
+        "width": 1584,
+        "height": 1035
+      },
+      "viewport": {
+        "width": 1584,
+        "height": 1035
+      },
+      "visible": false
+    },
+    {
+      "file": "02-generating.png",
+      "size": {
+        "width": 1584,
+        "height": 1035
+      },
+      "viewport": {
+        "width": 1584,
+        "height": 1035
+      },
+      "visible": false
+    },
+    {
+      "file": "03-result.png",
+      "size": {
+        "width": 1584,
+        "height": 1035
+      },
+      "viewport": {
+        "width": 1584,
+        "height": 1035
+      },
+      "visible": false
+    },
+    {
+      "file": "04-collision-preserved.png",
+      "size": {
+        "width": 1584,
+        "height": 1035
+      },
+      "viewport": {
+        "width": 1584,
+        "height": 1035
+      },
+      "visible": false
+    },
+    {
+      "file": "05-narrow.png",
+      "size": {
+        "width": 984,
+        "height": 655
+      },
+      "viewport": {
+        "width": 984,
+        "height": 655
+      },
+      "visible": false
+    }
+  ],
+  "captureMethod": "Electron webContents.capturePage with stayHidden/stayAwake; actual viewport, no screenshot substitution",
+  "pageErrors": [],
+  "buttonGeometry": {
+    "before": {
+      "x": 223,
+      "y": 685.9375,
+      "width": 182.203125,
+      "height": 32
+    },
+    "during": {
+      "x": 223,
+      "y": 685.9375,
+      "width": 182.203125,
+      "height": 32
+    }
+  },
+  "buttonWidthStable": true,
+  "queueLayouts": [
+    {
+      "state": "running",
+      "layout": [
+        {
+          "parent": {
+            "x": 31,
+            "y": 935.71875,
+            "width": 1190,
+            "height": 48.28125
+          },
+          "children": [
+            {
+              "x": 31,
+              "y": 951.109375,
+              "width": 964.875,
+              "height": 17.5
+            },
+            {
+              "x": 1007.875,
+              "y": 951.109375,
+              "width": 85.203125,
+              "height": 17.5
+            },
+            {
+              "x": 1105.078125,
+              "y": 951.109375,
+              "width": 43.03125,
+              "height": 17.5
+            },
+            {
+              "x": 1160.109375,
+              "y": 943.71875,
+              "width": 60.890625,
+              "height": 32.28125
+            }
+          ],
+          "overlaps": false,
+          "contained": true
+        }
+      ]
+    },
+    {
+      "state": "completed",
+      "layout": [
+        {
+          "parent": {
+            "x": 31,
+            "y": 950.5,
+            "width": 1190,
+            "height": 33.5
+          },
+          "children": [
+            {
+              "x": 31,
+              "y": 958.5,
+              "width": 1021.875,
+              "height": 17.5
+            },
+            {
+              "x": 1064.875,
+              "y": 958.5,
+              "width": 85.203125,
+              "height": 17.5
+            },
+            {
+              "x": 1162.078125,
+              "y": 958.5,
+              "width": 58.921875,
+              "height": 17.5
+            }
+          ],
+          "overlaps": false,
+          "contained": true
+        }
+      ]
+    },
+    {
+      "state": "failed",
+      "layout": [
+        {
+          "parent": {
+            "x": 31,
+            "y": 867.46875,
+            "width": 1173,
+            "height": 95.375
+          },
+          "children": [
+            {
+              "x": 31,
+              "y": 875.46875,
+              "width": 1033.5625,
+              "height": 17.5
+            },
+            {
+              "x": 1076.5625,
+              "y": 875.46875,
+              "width": 85.203125,
+              "height": 17.5
+            },
+            {
+              "x": 1173.765625,
+              "y": 875.46875,
+              "width": 30.234375,
+              "height": 17.5
+            },
+            {
+              "x": 31,
+              "y": 912.96875,
+              "width": 1173,
+              "height": 41.875
+            }
+          ],
+          "overlaps": false,
+          "contained": true
+        },
+        {
+          "parent": {
+            "x": 31,
+            "y": 962.84375,
+            "width": 1173,
+            "height": 33.5
+          },
+          "children": [
+            {
+              "x": 31,
+              "y": 970.84375,
+              "width": 1004.875,
+              "height": 17.5
+            },
+            {
+              "x": 1047.875,
+              "y": 970.84375,
+              "width": 85.203125,
+              "height": 17.5
+            },
+            {
+              "x": 1145.078125,
+              "y": 970.84375,
+              "width": 58.921875,
+              "height": 17.5
+            }
+          ],
+          "overlaps": false,
+          "contained": true
+        }
+      ]
+    },
+    {
+      "state": "narrow",
+      "layout": [
+        {
+          "parent": {
+            "x": 31,
+            "y": 487.46875,
+            "width": 905,
+            "height": 95.375
+          },
+          "children": [
+            {
+              "x": 31,
+              "y": 495.46875,
+              "width": 765.5625,
+              "height": 17.5
+            },
+            {
+              "x": 808.5625,
+              "y": 495.46875,
+              "width": 85.203125,
+              "height": 17.5
+            },
+            {
+              "x": 905.765625,
+              "y": 495.46875,
+              "width": 30.234375,
+              "height": 17.5
+            },
+            {
+              "x": 31,
+              "y": 532.96875,
+              "width": 905,
+              "height": 41.875
+            }
+          ],
+          "overlaps": false,
+          "contained": true
+        },
+        {
+          "parent": {
+            "x": 31,
+            "y": 582.84375,
+            "width": 905,
+            "height": 33.5
+          },
+          "children": [
+            {
+              "x": 31,
+              "y": 590.84375,
+              "width": 736.875,
+              "height": 17.5
+            },
+            {
+              "x": 779.875,
+              "y": 590.84375,
+              "width": 85.203125,
+              "height": 17.5
+            },
+            {
+              "x": 877.078125,
+              "y": 590.84375,
+              "width": 58.921875,
+              "height": 17.5
+            }
+          ],
+          "overlaps": false,
+          "contained": true
+        }
+      ]
+    }
+  ],
+  "resultText": "RESULT\nTests passed\n\nGame created at: E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition\n\nWindows game: E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition\\build\\windows/game.exe\n\nOpen Generation Studio\nProject Dashboard\nOpen in Godot\nPlay\nQuantum is a playable candidate: AI content generation, expanded biomes, final visual polish, audio and durable full-world saves remain pending; four-slot instrument programming is available at safe stations with P",
+  "events": [
+    {
+      "type": "GenerationStarted",
+      "profile": "TINY_TEST",
+      "mode": "LOCAL_ONLY",
+      "seed": 0,
+      "prompt": "A Quantum Diver explores the connected Probability Mines, stabilizes the anchors, defeats the Golem and escapes the cascade.",
+      "timestamp": "2026-10-04T01:07:32.992Z",
+      "jobId": "job_mut4fraf_peek1u",
+      "projectSlug": "quantum-ui-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition",
+      "category": "AI"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "intake",
+      "status": "PASSED",
+      "message": "Dedicated Quantum material-world generator",
+      "timestamp": "2026-10-04T01:07:32.993Z",
+      "jobId": "job_mut4fraf_peek1u",
+      "projectSlug": "quantum-ui-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition",
+      "category": "ALL"
+    },
+    {
+      "type": "PhaseStarted",
+      "phase": "game_dna",
+      "status": "RUNNING",
+      "timestamp": "2026-10-04T01:07:33.002Z",
+      "jobId": "job_mut4fraf_peek1u",
+      "projectSlug": "quantum-ui-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition",
+      "category": "AI"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "game_dna",
+      "status": "PASSED",
+      "message": "Local authored design and selected seed; no AI request",
+      "timestamp": "2026-10-04T01:07:33.007Z",
+      "jobId": "job_mut4fraf_peek1u",
+      "projectSlug": "quantum-ui-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition",
+      "category": "AI"
+    },
+    {
+      "type": "PhaseStarted",
+      "phase": "project_assembly",
+      "status": "RUNNING",
+      "timestamp": "2026-10-04T01:07:33.011Z",
+      "jobId": "job_mut4fraf_peek1u",
+      "projectSlug": "quantum-ui-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition",
+      "category": "GODOT"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "project_assembly",
+      "status": "PASSED",
+      "message": "127 verified runtime/configuration files",
+      "timestamp": "2026-10-04T01:07:33.546Z",
+      "jobId": "job_mut4fraf_peek1u",
+      "projectSlug": "quantum-ui-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition",
+      "category": "GODOT"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "environment_assets",
+      "status": "PASSED",
+      "message": "Matching original Quantum candidate packs; no cross-genre fallback",
+      "timestamp": "2026-10-04T01:07:33.550Z",
+      "jobId": "job_mut4fraf_peek1u",
+      "projectSlug": "quantum-ui-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition",
+      "category": "ASSETS"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "static_validation",
+      "status": "PASSED",
+      "message": "Template dependency hashes and strict Quantum configuration verified",
+      "timestamp": "2026-10-04T01:07:33.551Z",
+      "jobId": "job_mut4fraf_peek1u",
+      "projectSlug": "quantum-ui-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition",
+      "category": "QA"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "design_bible",
+      "status": "SKIPPED",
+      "message": "Not generated by the current Quantum candidate path",
+      "timestamp": "2026-10-04T01:07:33.553Z",
+      "jobId": "job_mut4fraf_peek1u",
+      "projectSlug": "quantum-ui-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition",
+      "category": "AI"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "progression_graph",
+      "status": "SKIPPED",
+      "message": "Not generated by the current Quantum candidate path",
+      "timestamp": "2026-10-04T01:07:33.555Z",
+      "jobId": "job_mut4fraf_peek1u",
+      "projectSlug": "quantum-ui-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition",
+      "category": "WORLD"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "enemy_families",
+      "status": "SKIPPED",
+      "message": "Not generated by the current Quantum candidate path",
+      "timestamp": "2026-10-04T01:07:33.557Z",
+      "jobId": "job_mut4fraf_peek1u",
+      "projectSlug": "quantum-ui-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition",
+      "category": "ALL"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "bosses",
+      "status": "SKIPPED",
+      "message": "Not generated by the current Quantum candidate path",
+      "timestamp": "2026-10-04T01:07:33.559Z",
+      "jobId": "job_mut4fraf_peek1u",
+      "projectSlug": "quantum-ui-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition",
+      "category": "ALL"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "quests",
+      "status": "SKIPPED",
+      "message": "Not generated by the current Quantum candidate path",
+      "timestamp": "2026-10-04T01:07:33.561Z",
+      "jobId": "job_mut4fraf_peek1u",
+      "projectSlug": "quantum-ui-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition",
+      "category": "ALL"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "npcs",
+      "status": "SKIPPED",
+      "message": "Not generated by the current Quantum candidate path",
+      "timestamp": "2026-10-04T01:07:33.562Z",
+      "jobId": "job_mut4fraf_peek1u",
+      "projectSlug": "quantum-ui-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition",
+      "category": "ALL"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "audio",
+      "status": "SKIPPED",
+      "message": "Not generated by the current Quantum candidate path",
+      "timestamp": "2026-10-04T01:07:33.566Z",
+      "jobId": "job_mut4fraf_peek1u",
+      "projectSlug": "quantum-ui-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition",
+      "category": "ASSETS"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "automated_repair",
+      "status": "SKIPPED",
+      "message": "Not generated by the current Quantum candidate path",
+      "timestamp": "2026-10-04T01:07:33.568Z",
+      "jobId": "job_mut4fraf_peek1u",
+      "projectSlug": "quantum-ui-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition",
+      "category": "QA"
+    },
+    {
+      "type": "PhaseStarted",
+      "phase": "world_topology",
+      "status": "RUNNING",
+      "message": "Building selected seed with the actual native generator",
+      "timestamp": "2026-10-04T01:07:33.800Z",
+      "jobId": "job_mut4fraf_peek1u",
+      "projectSlug": "quantum-ui-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition",
+      "category": "WORLD"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "world_topology",
+      "status": "PASSED",
+      "message": "Eight authored landmarks connected through native seeded material terrain",
+      "timestamp": "2026-10-04T01:07:41.383Z",
+      "jobId": "job_mut4fraf_peek1u",
+      "projectSlug": "quantum-ui-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition",
+      "category": "WORLD"
+    },
+    {
+      "type": "PhaseStarted",
+      "phase": "final_qa",
+      "status": "RUNNING",
+      "message": "Playing through the generated project with normal controls",
+      "timestamp": "2026-10-04T01:07:41.386Z",
+      "jobId": "job_mut4fraf_peek1u",
+      "projectSlug": "quantum-ui-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition",
+      "category": "QA"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "final_qa",
+      "status": "PASSED",
+      "message": "Native generated game completed its route",
+      "timestamp": "2026-10-04T01:09:33.617Z",
+      "jobId": "job_mut4fraf_peek1u",
+      "projectSlug": "quantum-ui-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition",
+      "category": "QA"
+    },
+    {
+      "type": "PhaseStarted",
+      "phase": "export",
+      "status": "RUNNING",
+      "message": "Building and playing the copied Windows release package",
+      "timestamp": "2026-10-04T01:09:33.620Z",
+      "jobId": "job_mut4fraf_peek1u",
+      "projectSlug": "quantum-ui-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition",
+      "category": "ALL"
+    },
+    {
+      "type": "PhaseCompleted",
+      "phase": "export",
+      "status": "PASSED",
+      "message": "Windows release package completed the full native gameplay route",
+      "timestamp": "2026-10-04T01:11:40.456Z",
+      "jobId": "job_mut4fraf_peek1u",
+      "projectSlug": "quantum-ui-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition",
+      "category": "ALL"
+    },
+    {
+      "type": "GenerationCompleted",
+      "success": true,
+      "validationPassed": true,
+      "validationLevel": "RUNTIME_VALIDATED",
+      "exportPath": "E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition\\build\\windows",
+      "timestamp": "2026-10-04T01:11:40.463Z",
+      "jobId": "job_mut4fraf_peek1u",
+      "projectSlug": "quantum-ui-expedition",
+      "projectPath": "E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition",
+      "category": "ALL"
+    }
+  ],
+  "generatedProject": "E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition",
+  "standalone": {
+    "build": "E:\\MetroForgeData\\GitHubUpload\\20261003\\campaign-queue-review\\reports\\game-tests\\20261002-quantum-create-ui\\1791076021182\\GeneratedGames\\quantum-ui-expedition\\build\\windows",
+    "files": [
+      {
+        "path": "game.exe",
+        "bytes": 104578048,
+        "sha256": "f9cb815a32a1ae3a73ad8699ed2b068cb76fe01636d7e8538243056fac05f37b"
+      },
+      {
+        "path": "game.pck",
+        "bytes": 4517236,
+        "sha256": "446c5feafc44c0dd1d22912f8479bb3704ea5cb21b7734d31f835e7b39afb6e5"
+      },
+      {
+        "path": "game.console.exe",
+        "bytes": 188928,
+        "sha256": "77db0d03f70aad4545b91e219fbdc002a9ef01409c00e1a886d9d1f2772c5662"
+      }
+    ],
+    "waypoints": 161,
+    "hp": 76,
+    "release": true
+  },
+  "runtime": {
+    "seed": 0,
+    "terrainSha256": "0e74a79071ad2706a1d78cfd5c3e56ee86c2b4291b4d64b5d22c91f2de99fc66",
+    "waypoints": 161,
+    "hp": 76,
+    "extracted": true
+  },
+  "collisionPreservation": {
+    "files": 479,
+    "changed": []
+  },
+  "harnessSha256": "90a747d8eda7ebb1f39109bbfc64e44db85f1408e6e82d84ce9813088ba36856",
+  "testedArtifact": {
+    "executable": "E:/MetroForgeData/Releases/MetroForge-campaign-queue-20261004-v1/MetroForge.exe",
+    "hashes": {
+      "E:/MetroForgeData/Releases/MetroForge-campaign-queue-20261004-v1/MetroForge.exe": "1925f358e7f0e9675a5ac4198fb076613f0db318da56d388799a97be74a5b19c",
+      "E:\\MetroForgeData\\Releases\\MetroForge-campaign-queue-20261004-v1\\resources\\app\\dist\\assets\\main.js": "0be55cb8c4ab97862c872f8ec4d6ba773b905248185d57d47a2104def23b2bd8",
+      "E:\\MetroForgeData\\Releases\\MetroForge-campaign-queue-20261004-v1\\resources\\app\\dist\\assets\\main.css": "d5bf08ccf4346815198e664e8223041dd031b98fd0bcae9138de1a099d5ee145",
+      "E:\\MetroForgeData\\Releases\\MetroForge-campaign-queue-20261004-v1\\resources\\app\\dist-electron\\main.js": "4aec04885c311604a057409e649f038ad9adf46d9532ddfece92c04bf8735e2f",
+      "E:\\MetroForgeData\\Releases\\MetroForge-campaign-queue-20261004-v1\\resources\\app\\dist-electron\\preload.cjs": "ccebbbe458fc666598356443466b8e89370226e0f92acd4917879f9c05bd67c2"
+    }
+  },
+  "passed": true
+}

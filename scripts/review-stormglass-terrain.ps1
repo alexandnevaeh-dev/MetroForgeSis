@@ -1,8 +1,9 @@
-param([Parameter(Mandatory=$true)][string]$Project)
+param([Parameter(Mandatory=$true)][string]$Project, [string]$Output)
 $ErrorActionPreference = 'Stop'
 $projectPath = (Resolve-Path -LiteralPath $Project).Path
 if ([IO.Path]::GetPathRoot($projectPath) -ine 'E:\') { throw 'Validation project must be on E:.' }
-$output = Join-Path $projectPath 'qa/terrain-material'
+$output = if ($Output) { [IO.Path]::GetFullPath($Output) } else { Join-Path $projectPath 'qa/terrain-material' }
+if ([IO.Path]::GetPathRoot($output) -ine 'E:\') { throw 'Validation output must be on E:.' }
 New-Item -ItemType Directory -Path $output -Force | Out-Null
 $log = Join-Path $output 'editor.log'
 if (Test-Path -LiteralPath $log) { throw 'Preserve existing review evidence; use a fresh fixture.' }
@@ -11,6 +12,7 @@ $env:TMP=$env:TEMP
 $env:UPM_CACHE_ROOT='E:\MetroForgeData\UnityCache\upm'
 $env:BEE_CACHE_DIRECTORY='E:\MetroForgeData\UnityCache\bee'
 $env:METROFORGE_GAME_SAVE_DIR=Join-Path $output 'saves'
+$env:METROFORGE_TERRAIN_REVIEW_DIR=$output
 New-Item -ItemType Directory -Path $env:METROFORGE_GAME_SAVE_DIR -Force | Out-Null
 $arguments=@('-batchmode','-projectPath',('"'+$projectPath+'"'),'-executeMethod','TerrainMaterialReview.Run',
   '-giCacheFolder','E:\MetroForgeData\UnityCache\gi','-logFile',('"'+$log+'"'))

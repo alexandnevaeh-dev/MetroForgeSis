@@ -18,6 +18,7 @@ public static class TerrainMaterialReview
     static readonly string[] Rooms = { "room_000", "room_019", "room_038" };
     static readonly List<string> Results = new List<string>();
     static int passed, failed;
+    static string Output => Path.GetFullPath(Environment.GetEnvironmentVariable("METROFORGE_TERRAIN_REVIEW_DIR") ?? Path.Combine(Application.dataPath,"../qa/terrain-material"));
     static TerrainMaterialReview()
     {
         EditorApplication.playModeStateChanged += state => {
@@ -51,6 +52,9 @@ public static class TerrainMaterialReview
             if(roomIndex<0) {
                 game=UnityEngine.Object.FindFirstObjectByType<GameBootstrap>();
                 if(game==null||game.Pack==null||!game.OnTitleScreen)return;
+                // Fix the diagnostic render aspect before gameplay updates clamp the
+                // camera. Changing it only at capture exposed an artificial edge gutter.
+                Camera.main.aspect=960f/600f;
                 if(!game.TryClickTitleContinue())throw new Exception("Actual title Continue did not load the game");
                 roomIndex=0;next=EditorApplication.timeSinceStartup+1;return;
             }
@@ -86,14 +90,14 @@ public static class TerrainMaterialReview
             camera.targetTexture=target;camera.Render();RenderTexture.active=target;
             image=new Texture2D(960,600,TextureFormat.RGB24,false);
             image.ReadPixels(new Rect(0,0,960,600),0,0);image.Apply();
-            var output=Path.GetFullPath(Path.Combine(Application.dataPath,"../qa/terrain-material"));
+            var output=Output;
             Directory.CreateDirectory(output);File.WriteAllBytes(Path.Combine(output,room+".png"),image.EncodeToPNG());
         } finally {RenderTexture.active=active;camera.targetTexture=previous;RenderTexture.ReleaseTemporary(target);if(image!=null)UnityEngine.Object.Destroy(image);}
     }
     static void Finish(bool ok)
     {
         EditorApplication.update-=Tick;
-        var output=Path.GetFullPath(Path.Combine(Application.dataPath,"../qa/terrain-material"));Directory.CreateDirectory(output);
+        var output=Output;Directory.CreateDirectory(output);
         File.WriteAllText(Path.Combine(output,"result.json"),"{\"passed\":"+(ok?"true":"false")+",\"checksPassed\":"+passed+",\"checksFailed\":"+failed+",\"scope\":\"Native PlayMode camera renders and collider-aligned material diagnostics; explicit room warps, not traversal acceptance\",\"results\":["+string.Join(",",Results)+"]}");
         SessionState.SetInt(Key,ok?1:2);EditorApplication.ExitPlaymode();
     }

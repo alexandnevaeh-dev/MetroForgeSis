@@ -1,0 +1,95 @@
+{
+  "productionReady": false,
+  "unitPassed": 34,
+  "unitFailed": 0,
+  "creationPassed": true,
+  "creationChecks": 32,
+  "connectionPassed": true,
+  "connectionChecks": 44,
+  "unity": {
+    "passed": true,
+    "roomsVisited": 35,
+    "roomsTotal": 40,
+    "inputsUnchanged": true,
+    "features": {
+      "traversal": "passed",
+      "containment": "passed",
+      "combat": "passed",
+      "combat_one_hit": "passed",
+      "combat_follow_up": "passed",
+      "combat_kill": "passed",
+      "player_invuln": "passed",
+      "abilities": "passed",
+      "gates": "inconclusive",
+      "npc_interaction": "not_implemented",
+      "save_continue": "passed",
+      "respawn": "passed",
+      "boss_phases": "passed",
+      "victory": "passed"
+    },
+    "unvisited": [
+      "room_007",
+      "room_017",
+      "room_027",
+      "room_037",
+      "room_039"
+    ],
+    "sourceBindingSha256": "52134555be7e58cbf3ecf2a20d0cbf403c3145c2a8cd4f95298501547d228881",
+    "sourceComparison": [
+      {
+        "file": "templates/unity-metroidvania/Assets/Scripts/GameBootstrap.cs",
+        "nativeSha256": "e3765ca6a348e2db666542c488bd99cef3a2ca80af96ac18535913a5e65fea98",
+        "gitBlobSha256": "e3765ca6a348e2db666542c488bd99cef3a2ca80af96ac18535913a5e65fea98",
+        "archiveSha256": "e3765ca6a348e2db666542c488bd99cef3a2ca80af96ac18535913a5e65fea98",
+        "gitLineEndingOnly": false,
+        "archiveLineEndingOnly": false
+      },
+      {
+        "file": "templates/unity-metroidvania/Assets/Scripts/CastleTerrainPresentation.cs",
+        "nativeSha256": "4eae384f9e085d8f6fe7331ba316036dd382d45686c8451b4e9dc6ad8cf4454e",
+        "gitBlobSha256": "4eae384f9e085d8f6fe7331ba316036dd382d45686c8451b4e9dc6ad8cf4454e",
+        "archiveSha256": "a928d5fc50b5f8157d8e52bd2694c47dbdb650520e854ea6f93d258e28934808",
+        "gitLineEndingOnly": false,
+        "archiveLineEndingOnly": true
+      },
+      {
+        "file": "templates/unity-metroidvania/Assets/Scripts/PlayerActor.cs",
+        "nativeSha256": "2cade107a853157d5049d54ff950d768df5760505c1ccd205ba5e025cc076c22",
+        "gitBlobSha256": "44658973073a7e74c6c95b3d4bfa4b2f2909c5323ccbb7affc2e71049cbb0e73",
+        "archiveSha256": "a5752fce09bbdab55b513695890aa1df9390eb691b7d17046c019794709e72df",
+        "gitLineEndingOnly": true,
+        "archiveLineEndingOnly": true
+      },
+      {
+        "file": "templates/unity-metroidvania/Assets/Scripts/EnemyActor.cs",
+        "nativeSha256": "0922ef319d27fa350614b67ec5f7861bb92c63df2bb7297e7592aa909c687d2c",
+        "gitBlobSha256": "f2695330c5fd3a0554a8114902934f0549274da22f77106347d0b86fa5072bfa",
+        "archiveSha256": "865edd0b52757093cebd863834c82248e1156aa1139fa29a7937b06d6da7d1eb",
+        "gitLineEndingOnly": true,
+        "archiveLineEndingOnly": true
+      },
+      {
+        "file": "templates/unity-metroidvania/Assets/Scripts/BossController.cs",
+        "nativeSha256": "a9cb98d6fc019dec30656b175360adb2ed9c9a07eab1148a75a6b8ec0e87c3e1",
+        "gitBlobSha256": "a9cb98d6fc019dec30656b175360adb2ed9c9a07eab1148a75a6b8ec0e87c3e1",
+        "archiveSha256": "f54465eb2dc8da226d61f69122413c5e6da3dc83ccbdf9a72e30869a7e06f298",
+        "gitLineEndingOnly": false,
+        "archiveLineEndingOnly": true
+      },
+      {
+        "file": "templates/unity-metroidvania/Assets/Scripts/AcceptanceDriver.cs",
+        "nativeSha256": "f442e4967a87e83b0601b3ad101aa93bdf37d14e840d2cd137ff67ee5894431c",
+        "gitBlobSha256": "f442e4967a87e83b0601b3ad101aa93bdf37d14e840d2cd137ff67ee5894431c",
+        "archiveSha256": "f442e4967a87e83b0601b3ad101aa93bdf37d14e840d2cd137ff67ee5894431c",
+        "gitLineEndingOnly": false,
+        "archiveLineEndingOnly": false
+      }
+    ]
+  },
+  "quantum": {
+    "waypoints": 161,
+    "extracted": true,
+    "release": true
+  },
+  "scope": "Hidden packaged Electron workflow and actual native gameplay. No live hosted-provider authentication or final art/animation approval. Unity direct damage/save probes are separate from traversal. Editor diagnostic recapture blocked by license; prior successful native build remains source-bound."
+}

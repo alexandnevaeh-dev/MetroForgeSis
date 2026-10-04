@@ -10,6 +10,7 @@ import assert from 'node:assert/strict';
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const desktop = join(repo, 'apps/desktop');
 const require = createRequire(join(desktop, 'package.json'));
+const packaged = process.argv.find(argument => argument.startsWith('--packaged='))?.slice('--packaged='.length);
 const output = join(repo, 'reports/game-tests/20261002-quantum-create-ui', String(Date.now()));
 const checks = [];
 let app;
@@ -32,6 +33,24 @@ async function capture(name) {
   writeFileSync(join(output, name), Buffer.from(captured.bytes, 'base64'));
   proof.captures.push({ file: name, size: captured.size, viewport, visible: false });
 }
+async function checkQueueLayout(state) {
+  await page.waitForFunction(() => document.querySelectorAll('.queue-item').length > 0);
+  const layout = await page.locator('.queue-item').evaluateAll(rows => rows.map(row => {
+    const bounds = element => {
+      const { x, y, width, height } = element.getBoundingClientRect();
+      return { x, y, width, height };
+    };
+    const parent = bounds(row);
+    const children = [...row.children].map(bounds);
+    const overlaps = children.some((a, index) => children.slice(index + 1).some(b =>
+      Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x) > 1 &&
+      Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y) > 1));
+    return { parent, children, overlaps, contained: children.every(child =>
+      child.x >= parent.x - 1 && child.x + child.width <= parent.x + parent.width + 1) };
+  }));
+  (proof.queueLayouts ??= []).push({ state, layout });
+  check(`${state} queue descriptions, types, statuses and actions do not overlap or overflow`, layout.every(row => !row.overlaps && row.contained));
+}
 const check = (label, value) => { checks.push({ label, passed: !!value }); assert.ok(value, label); };
 const sha = path => createHash('sha256').update(readFileSync(path)).digest('hex');
 function projectHashes(root, relative = '') {
@@ -46,9 +65,13 @@ const env = { ...process.env, TEMP: join(output, 'temp'), TMP: join(output, 'tem
   METROFORGE_DATA_DIR: join(output, 'data'), METROFORGE_GENERATED_GAMES_DIR: join(output, 'GeneratedGames'),
   METROFORGE_RESOURCE_ROOT: repo, METROFORGE_DESKTOP_HIDDEN: '1',
   GODOT_EXECUTABLE: 'E:/MetroForgeData/Godot/4.6/Godot_v4.6-stable_win64_console.exe' };
+if (packaged) {
+  env.METROFORGE_RESOURCE_ROOT = join(dirname(packaged), 'resources/metroforge');
+  env.METROFORGE_WORKSPACE_DIR = join(output, 'workspace');
+}
 for (const key of ['ELECTRON_RUN_AS_NODE', 'VITE_DEV_SERVER_URL', 'METROFORGE_DESKTOP_SMOKE', 'METROFORGE_OPEN_DEVTOOLS']) delete env[key];
 try {
-  app = await _electron.launch({ executablePath: require('electron'), args: [desktop], cwd: repo, env, timeout: 60000 });
+  app = await _electron.launch({ executablePath: packaged || require('electron'), args: packaged ? [] : [desktop], cwd: repo, env, timeout: 60000 });
   page = await app.firstWindow();
   // A hidden test window must keep rendering after viewport changes; production settings stay unchanged.
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].webContents.setBackgroundThrottling(false));
@@ -91,6 +114,7 @@ try {
   proof.buttonWidthStable = Math.abs(before.width - during.width) < 1;
   check('creation button keeps its width while busy', proof.buttonWidthStable);
   await capture('02-generating.png');
+  await checkQueueLayout('running');
   await page.locator('.topbar-actions button').filter({ hasText: 'API Keys' }).click();
   await page.getByRole('heading', { name: 'API Keys', exact: true }).waitFor();
   check('connection setup is available while generation runs', await page.locator('.credentials-screen').isVisible());
@@ -103,6 +127,7 @@ try {
   await page.waitForFunction(() => !!document.querySelector('.create-result'), undefined, { timeout: 480000 });
   await page.locator('.create-result').scrollIntoViewIfNeeded();
   await capture('03-result.png');
+  await checkQueueLayout('completed');
   proof.resultText = await page.locator('.create-result').innerText();
   proof.events = await page.evaluate(() => window.quantumUiEvents);
   check('double click started exactly one job', proof.events.filter(event => event.type === 'GenerationStarted').length === 1);
@@ -135,14 +160,23 @@ try {
   await page.waitForFunction(async () => (await window.metroforge.listGenerationQueue()).some(job => job.status === 'failed'), undefined, { timeout: 30000 });
   check('queue reports the failed creation rather than completed', (await page.evaluate(() => window.metroforge.listGenerationQueue())).some(job => job.status === 'failed'));
   await capture('04-collision-preserved.png');
+  await checkQueueLayout('failed');
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setBounds({ width: 1000, height: 720 }));
   await page.waitForFunction(() => window.innerWidth <= 1000);
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   await capture('05-narrow.png');
+  await checkQueueLayout('narrow');
   check('narrow creation screen has no horizontal document overflow', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
   check('desktop remains hidden after native validation', await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().every(win => !win.isVisible())));
   check('no renderer errors', proof.pageErrors.length === 0);
-  proof.sourceHashes = Object.fromEntries(['apps/desktop/src/studio/CreateScreen.tsx', 'apps/desktop/src/studio/creation-contract.ts', 'apps/desktop/src/studio/metroforge-api.ts', 'apps/desktop/src/styles.css', 'apps/desktop/electron/main.ts', 'apps/desktop/electron/handlers.ts', 'apps/desktop/electron/generation-bus.ts', 'apps/desktop/dist/assets/main.js', 'apps/desktop/dist-electron/main.js', 'apps/desktop/dist-electron/preload.cjs', 'scripts/verify-quantum-create-ui.mjs'].map(file => [file, sha(join(repo, file))]));
+  proof.harnessSha256 = sha(fileURLToPath(import.meta.url));
+  if (packaged) {
+    proof.testedArtifact = { executable: packaged, hashes: Object.fromEntries([
+      packaged, ...['resources/app/dist/assets/main.js', 'resources/app/dist/assets/main.css', 'resources/app/dist-electron/main.js', 'resources/app/dist-electron/preload.cjs'].map(file => join(dirname(packaged), file)),
+    ].map(file => [file, sha(file)])) };
+  } else {
+    proof.sourceHashes = Object.fromEntries(['apps/desktop/src/studio/CreateScreen.tsx', 'apps/desktop/src/studio/creation-contract.ts', 'apps/desktop/src/studio/metroforge-api.ts', 'apps/desktop/src/styles.css', 'apps/desktop/electron/main.ts', 'apps/desktop/electron/handlers.ts', 'apps/desktop/electron/generation-bus.ts', 'apps/desktop/dist/assets/main.js', 'apps/desktop/dist-electron/main.js', 'apps/desktop/dist-electron/preload.cjs'].map(file => [file, sha(join(repo, file))]));
+  }
   proof.passed = true;
 } catch (error) {
   if (page) {
