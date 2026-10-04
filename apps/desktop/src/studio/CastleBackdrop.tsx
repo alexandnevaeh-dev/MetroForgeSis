@@ -33,6 +33,42 @@ export function CastleBackdrop({
       />
     );
   }
+  const grade = profile.stoneGrade ?? [0.86, 0.9, 0.96];
+  if (profile.panoramaMode === 'continuous') {
+    const sourceHeight = background.height * (profile.sourceHeightFraction ?? 1);
+    const cover = Math.max(width / background.width, height / sourceHeight);
+    return (
+      <g
+        className="room-scene-background"
+        aria-label="Saved castle background"
+        data-castle-profile="continuous"
+        data-stone-grade={JSON.stringify(grade)}
+      >
+        <defs>
+          <filter id={`${id}-continuous-grade`} colorInterpolationFilters="sRGB">
+            <feColorMatrix
+              type="matrix"
+              values={`${grade[0]} 0 0 0 0  0 ${grade[1]} 0 0 0  0 0 ${grade[2]} 0 0  0 0 0 1 0`}
+            />
+          </filter>
+        </defs>
+        <svg
+          data-continuous-panorama="true"
+          data-source-height={sourceHeight}
+          x={(width - background.width * cover) * 0.5}
+          y={(height - tileSize * 2 - sourceHeight * cover) * background.anchorY}
+          width={background.width * cover}
+          height={sourceHeight * cover}
+          viewBox={`0 0 ${background.width} ${sourceHeight}`}
+          overflow="hidden"
+          filter={`url(#${id}-continuous-grade)`}
+          opacity={background.opacity}
+        >
+          <image href={background.dataUrl} width={background.width} height={background.height} />
+        </svg>
+      </g>
+    );
+  }
   const bandHeight = profile.panoramaHeight;
   const tileWidth = (background.width * bandHeight) / background.height;
   const floor = height - tileSize * 2;
@@ -42,6 +78,7 @@ export function CastleBackdrop({
       className="room-scene-background"
       aria-label="Saved castle background"
       data-castle-profile="modular"
+      data-stone-grade={JSON.stringify(grade)}
       data-band-height={bandHeight}
       data-tile-width={tileWidth}
     >
@@ -49,7 +86,7 @@ export function CastleBackdrop({
         <filter id={`${id}-stone-grade`} colorInterpolationFilters="sRGB">
           <feColorMatrix
             type="matrix"
-            values="0.86 0 0 0 0  0 0.90 0 0 0  0 0 0.96 0 0  0 0 0 1 0"
+            values={`${grade[0]} 0 0 0 0  0 ${grade[1]} 0 0 0  0 0 ${grade[2]} 0 0  0 0 0 1 0`}
           />
         </filter>
         {Array.from({ length: bands }, (_, index) => {

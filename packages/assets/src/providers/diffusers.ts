@@ -3,7 +3,13 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline';
 import type { ImageGenRequest, ImageGenResult, ImageGenerator } from '../types/image-gen.js';
-import { GenerationCancelledError, throwIfCancelled, getResourceRoot, getRepoRoot, resolvePythonExecutable } from '@metroforge/shared';
+import {
+  GenerationCancelledError,
+  throwIfCancelled,
+  getResourceRoot,
+  getRepoRoot,
+  resolvePythonExecutable,
+} from '@metroforge/shared';
 import { conditioningPayload } from '../image-conditioning.js';
 export type { ImageGenRequest, ImageGenResult };
 
@@ -13,12 +19,18 @@ export function diffusersGenerationError(message: string): string {
   if (!message.startsWith(prefix)) return message;
   try {
     const budget = JSON.parse(message.slice(prefix.length)) as PromptBudgetResult;
-    const side = budget.positive?.overflow ? budget.positive : budget.negative?.overflow ? budget.negative : undefined;
+    const side = budget.positive?.overflow
+      ? budget.positive
+      : budget.negative?.overflow
+        ? budget.negative
+        : undefined;
     if (side && Number.isFinite(side.tokenCount) && Number.isFinite(side.maxTokens)) {
       const label = side === budget.positive ? 'prompt' : 'negative prompt';
       return `The ${label} uses ${side.tokenCount} tokens; this model allows ${side.maxTokens}. Shorten the description or project style and retry. No artwork was replaced.`;
     }
-  } catch { /* A malformed diagnostic still gets a useful, bounded message. */ }
+  } catch {
+    /* A malformed diagnostic still gets a useful, bounded message. */
+  }
   return 'The prompt exceeds this model’s text limit. Shorten the description or project style and retry. No artwork was replaced.';
 }
 
@@ -72,7 +84,12 @@ interface WorkerResponse {
   positive?: PromptSideBudget;
   negative?: PromptSideBudget;
   anyOverflow?: boolean;
-  promptBudget?: { positive: PromptSideBudget; negative: PromptSideBudget; anyOverflow: boolean; tokenizerClass?: string };
+  promptBudget?: {
+    positive: PromptSideBudget;
+    negative: PromptSideBudget;
+    anyOverflow: boolean;
+    tokenizerClass?: string;
+  };
   effectiveConditioningMode?: string | null;
   effectiveConditioningStrength?: number | null;
   effectivePrompt?: string;
@@ -136,8 +153,15 @@ const DEFAULT_VENV_PYTHON = join(
 function terminateWorker(proc: ReturnType<typeof spawn>): void {
   if (proc.killed) return;
   if (process.platform === 'win32' && proc.pid) {
-    try { execFileSync('taskkill.exe', ['/PID', String(proc.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' }); return; }
-    catch { /* Fall through to Node's platform kill. */ }
+    try {
+      execFileSync('taskkill.exe', ['/PID', String(proc.pid), '/T', '/F'], {
+        windowsHide: true,
+        stdio: 'ignore',
+      });
+      return;
+    } catch {
+      /* Fall through to Node's platform kill. */
+    }
   }
   proc.kill('SIGKILL');
 }
@@ -146,7 +170,9 @@ function terminateWorker(proc: ReturnType<typeof spawn>): void {
 export function parseOpenVinoWorkerLine(line: string): WorkerResponse | undefined {
   try {
     const response = JSON.parse(line) as WorkerResponse;
-    return response && typeof response === 'object' && typeof response.ok === 'boolean' ? response : undefined;
+    return response && typeof response === 'object' && typeof response.ok === 'boolean'
+      ? response
+      : undefined;
   } catch {
     return undefined;
   }
@@ -171,7 +197,10 @@ export class DiffusersProvider implements ImageGenerator {
   private openvinoServer?: ReturnType<typeof spawn>;
   private openvinoStartedAt?: number;
   private openvinoQueue: Promise<unknown> = Promise.resolve();
-  private openvinoPending?: { resolve: (response: WorkerResponse) => void; reject: (error: Error) => void };
+  private openvinoPending?: {
+    resolve: (response: WorkerResponse) => void;
+    reject: (error: Error) => void;
+  };
 
   constructor(config: DiffusersConfig = {}) {
     this.enabled = config.enabled ?? true;
@@ -182,15 +211,23 @@ export class DiffusersProvider implements ImageGenerator {
     ) {
       this.pythonPath = DEFAULT_VENV_PYTHON;
     }
-    this.workerPath = config.workerPath ?? join(getResourceRoot(), 'workers', 'diffusers_image_worker.py');
+    this.workerPath =
+      config.workerPath ?? join(getResourceRoot(), 'workers', 'diffusers_image_worker.py');
     this.modelId = config.modelId ?? process.env.DIFFUSERS_MODEL_ID ?? 'stabilityai/sdxl-turbo';
     this.baseModelPath = config.baseModelPath ?? process.env.DIFFUSERS_BASE_MODEL_PATH;
     this.ipAdapterRepo = config.ipAdapterRepo ?? process.env.DIFFUSERS_IP_ADAPTER_REPO;
     this.ipAdapterWeight = config.ipAdapterWeight ?? process.env.DIFFUSERS_IP_ADAPTER_WEIGHT;
-    this.device = config.device ?? ((process.env.METROFORGE_DIFFUSION_DEVICE as 'auto' | 'cuda' | 'openvino_gpu' | 'cpu' | 'mps') ?? 'auto');
-    this.cpuTimeoutMs = config.cpuTimeoutMs ?? Number(process.env.METROFORGE_CPU_DIFFUSION_TIMEOUT_MS ?? 180000);
-    this.gpuTimeoutMs = config.gpuTimeoutMs ?? Number(process.env.METROFORGE_GPU_DIFFUSION_TIMEOUT_MS ?? 420000);
-    this.warmupTimeoutMs = config.warmupTimeoutMs ?? Number(process.env.METROFORGE_OPENVINO_WARMUP_TIMEOUT_MS ?? 600000);
+    this.device =
+      config.device ??
+      (process.env.METROFORGE_DIFFUSION_DEVICE as
+        'auto' | 'cuda' | 'openvino_gpu' | 'cpu' | 'mps') ??
+      'auto';
+    this.cpuTimeoutMs =
+      config.cpuTimeoutMs ?? Number(process.env.METROFORGE_CPU_DIFFUSION_TIMEOUT_MS ?? 180000);
+    this.gpuTimeoutMs =
+      config.gpuTimeoutMs ?? Number(process.env.METROFORGE_GPU_DIFFUSION_TIMEOUT_MS ?? 420000);
+    this.warmupTimeoutMs =
+      config.warmupTimeoutMs ?? Number(process.env.METROFORGE_OPENVINO_WARMUP_TIMEOUT_MS ?? 600000);
     this.generationTimeoutMs = config.generationTimeoutMs ?? this.gpuTimeoutMs;
     this.promptCheckTimeoutMs = config.promptCheckTimeoutMs ?? 120_000;
     if (!Number.isFinite(this.promptCheckTimeoutMs) || this.promptCheckTimeoutMs <= 0) {
@@ -202,8 +239,12 @@ export class DiffusersProvider implements ImageGenerator {
     if (!this.enabled || !existsSync(this.workerPath)) return false;
     try {
       const res = await this.runWorker({ action: 'health', quick: true }, { timeoutMs: 4_000 });
-      const computeBackends = (res as { compute_backends?: Record<string, { available?: boolean }> }).compute_backends ?? {};
-      const anyAvailable = Object.values(computeBackends).some((backend) => backend?.available === true) || res.ok === true;
+      const computeBackends =
+        (res as { compute_backends?: Record<string, { available?: boolean }> }).compute_backends ??
+        {};
+      const anyAvailable =
+        Object.values(computeBackends).some((backend) => backend?.available === true) ||
+        res.ok === true;
       return res.ok === true && anyAvailable && res.readiness !== 'RUNTIME_NOT_INSTALLED';
     } catch {
       return false;
@@ -215,23 +256,41 @@ export class DiffusersProvider implements ImageGenerator {
       return { status: 'UNAVAILABLE' as const, reason: 'Diffusers worker is missing or disabled' };
     }
     try {
-      const res = await this.runWorker({
-        action: 'health',
-        model_id: this.modelId,
-        quick: true,
-        base_model_path: this.baseModelPath,
-        ip_adapter_repo: this.ipAdapterRepo,
-        ip_adapter_weight: this.ipAdapterWeight,
-      }, { timeoutMs: 4_000 });
+      const res = await this.runWorker(
+        {
+          action: 'health',
+          model_id: this.modelId,
+          quick: true,
+          base_model_path: this.baseModelPath,
+          ip_adapter_repo: this.ipAdapterRepo,
+          ip_adapter_weight: this.ipAdapterWeight,
+        },
+        { timeoutMs: 4_000 },
+      );
       if (!res.ok) {
-        return { status: 'UNAVAILABLE' as const, reason: res.error ?? 'Diffusers runtime unavailable' };
+        return {
+          status: 'UNAVAILABLE' as const,
+          reason: res.error ?? 'Diffusers runtime unavailable',
+        };
       }
-      const computeBackends = (res as { compute_backends?: Record<string, { available?: boolean; device?: string; dtype?: string }> }).compute_backends ?? {};
+      const computeBackends =
+        (
+          res as {
+            compute_backends?: Record<
+              string,
+              { available?: boolean; device?: string; dtype?: string }
+            >;
+          }
+        ).compute_backends ?? {};
       const available = Object.entries(computeBackends)
         .filter(([, info]) => info?.available === true)
         .map(([backend, info]) => `${backend}:${info?.device ?? 'n/a'}`);
-      const recommended = (res as { selected_backend?: string; recommended_backend?: string }).selected_backend ?? (res as { recommended_backend?: string }).recommended_backend ?? 'cpu';
-      const referenceReady = res.readiness === 'REFERENCE_CAPABLE' || res.readiness === 'REFERENCE_INVOCATION_VALIDATED';
+      const recommended =
+        (res as { selected_backend?: string; recommended_backend?: string }).selected_backend ??
+        (res as { recommended_backend?: string }).recommended_backend ??
+        'cpu';
+      const referenceReady =
+        res.readiness === 'REFERENCE_CAPABLE' || res.readiness === 'REFERENCE_INVOCATION_VALIDATED';
       const healthy = referenceReady || available.length > 0;
       return {
         status: healthy ? ('HEALTHY' as const) : ('UNAVAILABLE' as const),
@@ -249,7 +308,10 @@ export class DiffusersProvider implements ImageGenerator {
         }),
       };
     } catch (error) {
-      return { status: 'UNAVAILABLE' as const, reason: error instanceof Error ? error.message : String(error) };
+      return {
+        status: 'UNAVAILABLE' as const,
+        reason: error instanceof Error ? error.message : String(error),
+      };
     }
   }
 
@@ -273,7 +335,14 @@ export class DiffusersProvider implements ImageGenerator {
         { timeoutMs: this.promptCheckTimeoutMs },
       );
       if (!res.ok) return { ok: false, error: res.error ?? 'prompt budget check failed' };
-      return { ok: true, modelPath: res.modelPath, tokenizerClass: res.tokenizerClass, positive: res.positive, negative: res.negative, anyOverflow: res.anyOverflow };
+      return {
+        ok: true,
+        modelPath: res.modelPath,
+        tokenizerClass: res.tokenizerClass,
+        positive: res.positive,
+        negative: res.negative,
+        anyOverflow: res.anyOverflow,
+      };
     } catch (error) {
       return { ok: false, error: error instanceof Error ? error.message : String(error) };
     }
@@ -294,7 +363,8 @@ export class DiffusersProvider implements ImageGenerator {
         { action: 'segment_foreground', image_base64: png.toString('base64') },
         { timeoutMs: 60_000 },
       );
-      if (!res.ok || !res.image_base64) return { ok: false, error: res.error ?? 'segmentation failed' };
+      if (!res.ok || !res.image_base64)
+        return { ok: false, error: res.error ?? 'segmentation failed' };
       return {
         ok: true,
         buffer: Buffer.from(res.image_base64, 'base64'),
@@ -313,37 +383,46 @@ export class DiffusersProvider implements ImageGenerator {
     throwIfCancelled(request.signal);
     const seed = request.seed ?? Math.floor(Math.random() * 2 ** 31);
     const requestedBackend = this.device === 'auto' ? 'auto' : this.device;
-    const backend = requestedBackend === 'auto'
-      ? await this.resolveAutoBackend()
-      : requestedBackend;
-    const payload =
-      {
-        action: 'generate',
-        model_id: this.modelId,
-        base_model_path: this.baseModelPath,
-        ip_adapter_repo: this.ipAdapterRepo,
-        ip_adapter_weight: this.ipAdapterWeight,
-        profile: request.profile,
-        prompt: request.prompt,
-        negative_prompt: request.negativePrompt,
-        width: request.width,
-        height: request.height,
-        seed,
-        compute_backend: backend,
-        // A per-request step count must win over the process-wide env var/default — otherwise a
-        // caller's declared inferenceSteps and what actually runs can silently diverge, which
-        // would make generationRequestHash() (built from the *requested* steps) lie about the
-        // *executed* steps. Unset requests keep exactly the previous behavior.
-        steps: request.inferenceSteps ?? (backend === 'openvino_gpu'
+    const backend =
+      requestedBackend === 'auto' ? await this.resolveAutoBackend() : requestedBackend;
+    const payload = {
+      action: 'generate',
+      model_id: this.modelId,
+      base_model_path: this.baseModelPath,
+      ip_adapter_repo: this.ipAdapterRepo,
+      ip_adapter_weight: this.ipAdapterWeight,
+      profile: request.profile,
+      prompt: request.prompt,
+      negative_prompt: request.negativePrompt,
+      width: request.width,
+      height: request.height,
+      seed,
+      compute_backend: backend,
+      // A per-request step count must win over the process-wide env var/default — otherwise a
+      // caller's declared inferenceSteps and what actually runs can silently diverge, which
+      // would make generationRequestHash() (built from the *requested* steps) lie about the
+      // *executed* steps. Unset requests keep exactly the previous behavior.
+      steps:
+        request.inferenceSteps ??
+        (backend === 'openvino_gpu'
           ? Number(process.env.METROFORGE_OPENVINO_STEPS ?? 6)
-          : /turbo/i.test(this.modelId) ? 4 : 20),
-        openvino_device: process.env.METROFORGE_OPENVINO_DEVICE ?? 'GPU',
-        diagnostic_path: process.env.METROFORGE_OPENVINO_DIAGNOSTIC_PATH,
-        ...(request.conditioning ? conditioningPayload(request.conditioning) : {}),
-      };
-    const res = backend === 'openvino_gpu'
-      ? await this.runOpenVinoServer(payload, { timeoutMs: this.generationTimeoutMs, signal: request.signal })
-      : await this.runWorker(payload, { timeoutMs: backend === 'cpu' ? this.cpuTimeoutMs : this.gpuTimeoutMs, signal: request.signal });
+          : /turbo/i.test(this.modelId)
+            ? 4
+            : 20),
+      openvino_device: process.env.METROFORGE_OPENVINO_DEVICE ?? 'GPU',
+      diagnostic_path: process.env.METROFORGE_OPENVINO_DIAGNOSTIC_PATH,
+      ...(request.conditioning ? conditioningPayload(request.conditioning) : {}),
+    };
+    const res =
+      backend === 'openvino_gpu'
+        ? await this.runOpenVinoServer(payload, {
+            timeoutMs: this.generationTimeoutMs,
+            signal: request.signal,
+          })
+        : await this.runWorker(payload, {
+            timeoutMs: backend === 'cpu' ? this.cpuTimeoutMs : this.gpuTimeoutMs,
+            signal: request.signal,
+          });
 
     if (!res.ok || !res.image_base64) {
       throw new Error(diffusersGenerationError(res.error ?? 'Diffusers worker failed'));
@@ -394,7 +473,8 @@ export class DiffusersProvider implements ImageGenerator {
     payload: Record<string, unknown>,
     options: { timeoutMs?: number; signal?: AbortSignal } = {},
   ): Promise<WorkerResponse> {
-    const timeoutMs = options.timeoutMs ?? Number(process.env.METROFORGE_CPU_DIFFUSION_TIMEOUT_MS ?? 120000);
+    const timeoutMs =
+      options.timeoutMs ?? Number(process.env.METROFORGE_CPU_DIFFUSION_TIMEOUT_MS ?? 120000);
     return new Promise((resolve, reject) => {
       const proc = spawn(this.pythonPath, [this.workerPath], {
         stdio: ['pipe', 'pipe', 'pipe'],
@@ -423,8 +503,12 @@ export class DiffusersProvider implements ImageGenerator {
         // Loading and inference both use tqdm, so do not label this as inference progress.
         const reports = [...stderr.matchAll(/(\d{1,3})%\|[^\r\n]*?\|\s*(\d+)\/(\d+)/g)];
         const last = reports.at(-1);
-        const progress = last ? `; last reported worker progress ${last[2]}/${last[3]} (${last[1]}%)` : '; no worker progress reported';
-        finish(() => reject(new Error(`Diffusers worker timed out after ${timeoutMs}ms${progress}`)));
+        const progress = last
+          ? `; last reported worker progress ${last[2]}/${last[3]} (${last[1]}%)`
+          : '; no worker progress reported';
+        finish(() =>
+          reject(new Error(`Diffusers worker timed out after ${timeoutMs}ms${progress}`)),
+        );
       }, timeoutMs);
 
       options.signal?.addEventListener('abort', onAbort, { once: true });
@@ -439,9 +523,15 @@ export class DiffusersProvider implements ImageGenerator {
       proc.on('error', (err) => {
         finish(() => reject(err));
       });
-      proc.on('close', (code) => {
+      proc.on('close', (code, signal) => {
         if (code !== 0 && !stdout.trim()) {
-          finish(() => reject(new Error(stderr || `Diffusers worker exited with code ${code}`)));
+          finish(() =>
+            reject(
+              new Error(
+                `Diffusers worker exited with code ${code}${signal ? ` (${signal})` : ''}${stderr ? `: ${stderr}` : ''}`,
+              ),
+            ),
+          );
           return;
         }
         try {
@@ -457,7 +547,10 @@ export class DiffusersProvider implements ImageGenerator {
   }
 
   private async resolveAutoBackend(): Promise<'cuda' | 'openvino_gpu' | 'cpu'> {
-    const health = await this.runWorker({ action: 'health', model_id: this.modelId }, { timeoutMs: 4_000 });
+    const health = await this.runWorker(
+      { action: 'health', model_id: this.modelId },
+      { timeoutMs: 4_000 },
+    );
     const selected = health.selected_backend;
     return selected === 'cuda' || selected === 'openvino_gpu' ? selected : 'cpu';
   }
@@ -507,7 +600,22 @@ export class DiffusersProvider implements ImageGenerator {
         invalidateServer();
         finish(() => reject(new Error('OpenVINO worker timed out')));
       }, options.timeoutMs);
-      this.openvinoPending = { resolve: (response) => finish(() => resolve({ ...response, timings: { ...(response.timings ?? {}), parentRoundTripMs: Date.now() - requestStartedAt, workerAgeMs: this.openvinoStartedAt ? Date.now() - this.openvinoStartedAt : undefined } })), reject: (error) => finish(() => reject(error)) };
+      this.openvinoPending = {
+        resolve: (response) =>
+          finish(() =>
+            resolve({
+              ...response,
+              timings: {
+                ...(response.timings ?? {}),
+                parentRoundTripMs: Date.now() - requestStartedAt,
+                workerAgeMs: this.openvinoStartedAt
+                  ? Date.now() - this.openvinoStartedAt
+                  : undefined,
+              },
+            }),
+          ),
+        reject: (error) => finish(() => reject(error)),
+      };
       server.once('error', onError);
       server.once('exit', onExit);
       options.signal?.addEventListener('abort', onAbort, { once: true });
@@ -517,7 +625,11 @@ export class DiffusersProvider implements ImageGenerator {
 
   private getOpenVinoServer() {
     if (this.openvinoServer && !this.openvinoServer.killed) return this.openvinoServer;
-    const server = spawn(this.pythonPath, [join(getResourceRoot(), 'workers', 'openvino_direct_server.py')], { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
+    const server = spawn(
+      this.pythonPath,
+      [join(getResourceRoot(), 'workers', 'openvino_direct_server.py')],
+      { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true },
+    );
     const lines = createInterface({ input: server.stdout! });
     lines.on('line', (line) => {
       const pending = this.openvinoPending;

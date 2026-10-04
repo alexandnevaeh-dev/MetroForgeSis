@@ -1,0 +1,30 @@
+{
+  "code": 1,
+  "base": "E:\\MetroForgeData\\TestArtifacts\\castle-interior-storeys-20261004-v1",
+  "scriptErrors": false,
+  "nativeErrors": [],
+  "warnings": [
+    "WARNING: ObjectDB instances leaked at exit (run with --verbose for details)."
+  ],
+  "scope": "Controlled initial room load followed by actual Input-only stairs, upper loft crossing and downstairs return",
+  "nvidia": true,
+  "storeyTraversal": {
+    "captures": [],
+    "observations": [
+      {
+        "position": [
+          343.949768066406,
+          1471.92529296875
+        ],
+        "reached": false,
+        "step": 0,
+        "target": {
+          "x": 336,
+          "y": 1376
+        }
+      }
+    ],
+    "passed": false,
+    "scope": "Controlled initial room load, then actual Input-only stair ascent, loft crossing and downstairs return; no actor position, health, ability or enemy modifications."
+  }
+}

@@ -1,0 +1,140 @@
+{
+	"captures": [
+		"res://qa/castle-storeys/middle.png",
+		"res://qa/castle-storeys/upper.png",
+		"res://qa/castle-storeys/archive-loft.png",
+		"res://qa/castle-storeys/downstairs-return.png"
+	],
+	"observations": [
+		{
+			"position": [
+				336.858764648438,
+				1375.99621582031
+			],
+			"reached": true,
+			"step": 0,
+			"target": {
+				"x": 336.0,
+				"y": 1376.0
+			}
+		},
+		{
+			"position": [
+				528.204711914063,
+				1279.98522949219
+			],
+			"reached": true,
+			"step": 1,
+			"target": {
+				"x": 528.0,
+				"y": 1280.0
+			}
+		},
+		{
+			"position": [
+				720.059387207031,
+				1183.99401855469
+			],
+			"reached": true,
+			"step": 2,
+			"target": {
+				"x": 720.0,
+				"y": 1184.0
+			}
+		},
+		{
+			"position": [
+				911.9169921875,
+				1087.99523925781
+			],
+			"reached": true,
+			"step": 3,
+			"target": {
+				"x": 912.0,
+				"y": 1088.0
+			}
+		},
+		{
+			"position": [
+				1103.77380371094,
+				991.995544433594
+			],
+			"reached": true,
+			"step": 4,
+			"target": {
+				"x": 1104.0,
+				"y": 992.0
+			}
+		},
+		{
+			"position": [
+				3631.322265625,
+				895.995483398438
+			],
+			"reached": true,
+			"step": 5,
+			"target": {
+				"x": 3632.0,
+				"y": 896.0
+			}
+		},
+		{
+			"position": [
+				3439.46142578125,
+				799.995483398438
+			],
+			"reached": true,
+			"step": 6,
+			"target": {
+				"x": 3440.0,
+				"y": 800.0
+			}
+		},
+		{
+			"position": [
+				3247.6005859375,
+				703.995483398438
+			],
+			"reached": true,
+			"step": 7,
+			"target": {
+				"x": 3248.0,
+				"y": 704.0
+			}
+		},
+		{
+			"position": [
+				3055.73974609375,
+				607.995483398438
+			],
+			"reached": true,
+			"step": 8,
+			"target": {
+				"x": 3056.0,
+				"y": 608.0
+			}
+		},
+		{
+			"position": [
+				2881.34008789063,
+				511.925231933594
+			],
+			"reached": true,
+			"step": 9,
+			"target": {
+				"x": 2864.0,
+				"y": 512.0
+			}
+		},
+		{
+			"reached": true,
+			"route": "upper-loft-crossing"
+		},
+		{
+			"reached": true,
+			"route": "downstairs-return"
+		}
+	],
+	"passed": true,
+	"scope": "Controlled initial room load, then actual Input-only stair ascent, loft crossing and downstairs return; no actor position, health, ability or enemy modifications."
+}

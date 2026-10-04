@@ -21,6 +21,7 @@ Reuse Button, Input, Select, InspectorSection and editor primitives from `apps/d
 The first top-down prop inspector has typecheck evidence only. Native UI interaction, narrow layout, keyboard operation and screenshot review remain required before calling it complete.
 
 ## Room workspace sizing
+The Castle background inspector describes the composition selected by the authored room profile. Continuous rooms use a single image aligned to the floor; modular rooms retain their existing bay-height description. Reuse the shared hint, Select, Input and Button primitives. This text does not imply that all castle rooms have been rebuilt or that the saved artwork passed native visual review.
 The room canvas opens fitted to its available width. Zoom controls allow closer inspection. Room IDs and archetypes use separate lines in the shared hierarchy row; the inspector thumbnail contains the room rather than cropping its lower half. Saved castle background artwork sits behind authored geometry and markers; this is an editor composition, with complete runtime decoration available through Play Preview. Geometry, painting and snapping consume the actual scene tile size.
 RoomEditor uses its available content width as a container. At 720px and above hierarchy, canvas and inspector stay alongside one another; saved resizable pane widths resume at 1050px. Fixed-column layouts hide inactive resize separators. Actual Electron window sizes 1000, 1200 and 1500 verified without workspace horizontal overflow. Smaller layouts and broader workflow accessibility checks remain outstanding.
 
@@ -51,5 +52,12 @@ Long asset IDs and paths wrap inside their inspector. Below 1200px the header pr
 Rooms joins Assets in using the full authoring width, with its own hierarchy and inspector beside one scene canvas. The shared shell keeps project navigation and status; general assistant/activity panels remain available on their owning routes. Select displays actual saved geometry and atlas tiles. Paint and Erase retain the same saved biome framing and native grid, with a visible cursor and explicit draft/save state. Dense rooms use one SVG grid pattern and only occupied tile nodes, rather than a focusable DOM node for every empty cell. Existing runtime tokens and shared controls retain ownership.
 
 
-### Modular castle room previews
-The castle backdrop is owned by one shared SVG renderer across tile authoring, entity views and miniatures. Supported room profiles repeat and mirror horizontal interior bays at their authored world height, with dimmer upper storeys. Existing rooms retain their saved cover/framing behavior. Scene editing controls, global tokens and paint ownership remain unchanged.
+### Castle room previews
+One shared SVG renderer owns castle backgrounds across tile authoring, entity views and miniatures. Continuous profiles show one uniformly scaled wall composition anchored to the collision floor; optional source framing hides baked perspective floors without altering the image. Legacy modular profiles retain their explicit repeated bays. Inspector guidance describes the active composition. Native renderer version 4 and SVG use the same source frame and stone grade.
+
+The staged gallery is a three-storey wing with long middle and upper floors, two climbable stair routes and eight named internal spaces. Doorway headers separate chambers without obstructing the lower route. Balcony surfaces repeat carved material at uniform scale rather than stretching a single ornament. Two grounded pier lights have architectural placement; generic gallery scatter and condition decals are omitted. The current candidate covers one wing. Other rooms still require authored chamber variety and material detail.
+
+
+Background alternatives expose one detail selector in the canonical Asset workshop form: standard 640 by 360 or detailed 1024 by 576. Detailed retains the bounded local source canvas without post-generation downsampling. Replacement preserves selected artwork dimensions and omits this create-only option. Other asset roles and project sets retain their defaults. Invalid detail values or replacement misuse fail before provider selection/promotion.
+
+Castle spatial profiles permit 256 to 1536 world-pixel bay heights and optional validated RGB stone grading. Native renderer version 2 and the shared SVG renderer use the same values. Small bays or grading require a capable runtime; unsupported runtime snapshots fail before allowing inaccurate editor previews. Existing profiles retain their original default grade.

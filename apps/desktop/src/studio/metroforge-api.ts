@@ -460,6 +460,7 @@ export type MetroforgeBridge = {
     variants?: number;
     assetId?: string;
     operation?: 'create' | 'replace';
+    backgroundDetail?: 'standard' | 'detailed';
     seed?: number;
   }) => Promise<GenerateAssetResponse>;
   listRooms: (projectPath: string) => Promise<Array<Record<string, unknown> & { id: string }>>;

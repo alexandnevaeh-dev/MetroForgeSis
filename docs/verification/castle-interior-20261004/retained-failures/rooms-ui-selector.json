@@ -1,0 +1,22 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\castle-art-review\\reports\\game-tests\\20261004-castle-interior-ui\\1791130852459",
+  "project": "E:\\MetroForgeData\\GitHubUpload\\20261004\\castle-art-review\\reports\\game-tests\\20261004-castle-interior-ui\\1791130852459\\games\\stormglass-castle",
+  "executable": "E:/MetroForgeData/Releases/MetroForge-castle-interior-20261004-v6/MetroForge.exe",
+  "checks": [
+    {
+      "label": "saved original generated image is selected",
+      "passed": true
+    },
+    {
+      "label": "capture remains hidden: failure.png",
+      "passed": true
+    }
+  ],
+  "captures": [
+    "failure.png"
+  ],
+  "pageErrors": [],
+  "scope": "Final packaged Rooms UI, real Apply/Undo/reapply and native collision IPC on saved original CUDA art. No fresh inference in this test; workshop generation has its own receipt.",
+  "passed": false,
+  "error": "locator.getAttribute: Error: strict mode violation: locator('[data-continuous-panorama]') resolved to 2 elements:\n    1) <svg x=\"0\" y=\"-256\" width=\"4096\" height=\"1728\" opacity=\"0.9\" overflow=\"hidden\" viewBox=\"0 0 1024 432\" data-source-height=\"432\" data-continuous-panorama=\"true\" filter=\"url(#ra-continuous-grade)\">…</svg> aka getByLabel('room_001 saved geometry and').getByLabel('Saved castle background').getByRole('img')\n    2) <svg x=\"0\" y=\"-256\" width=\"4096\" height=\"1728\" opacity=\"0.9\" overflow=\"hidden\" viewBox=\"0 0 1024 432\" data-source-height=\"432\" data-continuous-panorama=\"true\" filter=\"url(#r6-continuous-grade)\">…</svg> aka getByLabel('Room mini preview').getByLabel('Saved castle background').getByRole('img')\n\nCall log:\n\u001b[2m  - waiting for locator('[data-continuous-panorama]')\u001b[22m\n\n    at E:\\MetroForgeData\\GitHubUpload\\20261004\\castle-art-review\\scripts\\verify-castle-interior-ui.mjs:132:55"
+}

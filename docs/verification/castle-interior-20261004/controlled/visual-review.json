@@ -1,0 +1,13 @@
+{
+  "compositionImproved": true,
+  "finalArtAccepted": false,
+  "capturedAssetSha256": "f3993a0af927d68367b9579b7ff5af14c4eb4842b5f0971dafa8987f95c0e5e4",
+  "inspection": "Viewed native left/middle/right, middle/upper, centered overview and actual-input upper/loft/downstairs captures. One continuous cropped wall, no pasted whole-scene repeats, uniform carved balcony material and grounded lights. Three floors and chamber doorway openings are visible.",
+  "sourceHeightFraction": 0.75,
+  "limits": [
+    "Background remains a large arcade composition; finer per-chamber detail and enclosure remain ongoing.",
+    "Eight named spaces are architectural circulation, not eight unique furnished asset sets.",
+    "Other 39 rooms retain previous geometry/dressing; enemy/boss art and crisp animation still need distinct replacements."
+  ],
+  "scope": "Agent composition review of captured candidate, not user approval or final whole-castle quality."
+}

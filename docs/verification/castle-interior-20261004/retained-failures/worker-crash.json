@@ -1,0 +1,53 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\castle-art-review\\reports\\game-tests\\20261004-castle-continuity-ui\\1791127017825",
+  "project": "E:\\MetroForgeData\\GitHubUpload\\20261004\\castle-art-review\\reports\\game-tests\\20261004-castle-continuity-ui\\1791127017825\\games\\stormglass-castle",
+  "executable": "E:/MetroForgeData/Releases/MetroForge-castle-continuity-20261004-v4/MetroForge.exe",
+  "checks": [
+    {
+      "label": "local generation settings saved by the application",
+      "passed": true
+    },
+    {
+      "label": "background detail is hidden for actor and item roles",
+      "passed": true
+    },
+    {
+      "label": "existing standard canvas remains the default",
+      "passed": true
+    },
+    {
+      "label": "detail selector supports native keyboard selection",
+      "passed": true
+    },
+    {
+      "label": "real IPC refuses invalid detail before changing the registry",
+      "passed": true
+    },
+    {
+      "label": "detail selector locks while generation is busy",
+      "passed": true
+    },
+    {
+      "label": "capture stays hidden: 01-cuda-generation.png",
+      "passed": true
+    },
+    {
+      "label": "one new image is saved alongside the existing castle artwork",
+      "passed": false
+    },
+    {
+      "label": "capture stays hidden: failure.png",
+      "passed": true
+    }
+  ],
+  "captures": [
+    "01-cuda-generation.png",
+    "failure.png"
+  ],
+  "pageErrors": [],
+  "scope": "Actual packaged UI and saved project, one local CUDA generation, preview/save/undo/reapply. Native gameplay and visual acceptance are separate.",
+  "uiText": "LIBRARY\n\nAsset workshop\n\nCreate artwork in your game's style. Compare alternatives, inspect usage, and restore previous versions.\n\nART DIRECTION\nProject\nStormglass Reliquary - Side-view Test\n\nStormglass Reliquary - Side-view Test · side view metroidvania. Artwork stays in this project's asset set. Switching projects clears this selection.\n\nPrompt\nAsset type\nCharacter concept\nPlayer\nEnemy\nBoss\nNPC\nPortrait\nWeapon\nItem\nProp\nTileset source\nTile\nBackground\nUI icon\nUI panel\nEffect texture\nProvider mode\nFREE ONLY\nLOCAL ONLY\nHYBRID FREE\nCUSTOM\nNVIDIA ONLY\nOFFLINE\nFASTEST\nHIGHEST QUALITY\nLOW VRAM\nLOWEST COST\nBALANCED\nCOMMERCIAL SAFE\nAlternatives\n1\n2\n3\n4\nSeed\nBackground detail\nStandard - 640 × 360\nDetailed - 1024 × 576\nNew alternatives use this size. Replacements keep the selected image's dimensions.\nGenerate alternative\nReplace selected\n\nAlternatives create new assets. Replace updates one registered image and saves its previous version. Animation sheets need the animation workflow.\n\n0 of 1 alternatives saved to this project.\n\nManual image generation failed (legacy): E:\\MetroForgeData\\Python\\diffusers-native\\Lib\\site-packages\\transformers\\utils\\hub.py:128: FutureWarning: Using `TRANSFORMERS_CACHE` is deprecated and will be removed in v5 of Transformers. Use `HF_HOME` instead. warnings.warn( Loading pipeline components...: 0%| | 0/7 [00:00<?, ?it/s] Loading pipeline components...: 14%|#4 | 1/7 [00:01<00:06, 1.06s/it] Loading pipeline components...: 29%|##8 | 2/7 [00:03<00:10, 2.13s/it] Loading pipeline components...: 57%|#####7 | 4/7 [00:13<00:11, 3.93s/it] Loading pipeline components...: 71%|#######1 | 5/7 [00:14<00:06, 3.01s/it] Loading pipeline components...: 100%|##########| 7/7 [00:15<00:00, 1.68s/it] Loading pipeline components...: 100%|##########| 7/7 [00:15<00:00, 2.18s/it] 0%| | 0/20 [00:00<?, ?it/s]\n\nALTERNATIVES\n\nAlternative 1 · Failed\n\nManual image generation failed (legacy): E:\\MetroForgeData\\Python\\diffusers-native\\Lib\\site-packages\\transformers\\utils\\hub.py:128: FutureWarning: Using `TRANSFORMERS_CACHE` is deprecated and will be removed in v5 of Transformers. Use `HF_HOME` instead. warnings.warn( Loading pipeline components...: 0%| | 0/7 [00:00<?, ?it/s] Loading pipeline components...: 14%|#4 | 1/7 [00:01<00:06, 1.06s/it] Loading pipeline components...: 29%|##8 | 2/7 [00:03<00:10, 2.13s/it] Loading pipeline components...: 57%|#####7 | 4/7 [00:13<00:11, 3.93s/it] Loading pipeline components...: 71%|#######1 | 5/7 [00:14<00:06, 3.01s/it] Loading pipeline components...: 100%|##########| 7/7 [00:15<00:00, 1.68s/it] Loading pipeline components...: 100%|##########| 7/7 [00:15<00:00, 2.18s/it] 0%| | 0/20 [00:00<?, ?it/s]\n\nSELECTED ARTWORK\nAsset\nSelect an alternative\nWhere used\n—\nVersion history\nSelect artwork to view its history",
+  "passed": false,
+  "error": "AssertionError [ERR_ASSERTION]: one new image is saved alongside the existing castle artwork\n    at check (file:///E:/MetroForgeData/GitHubUpload/20261004/castle-art-review/scripts/verify-castle-continuity-ui.mjs:97:10)\n    at file:///E:/MetroForgeData/GitHubUpload/20261004/castle-art-review/scripts/verify-castle-continuity-ui.mjs:205:3",
+  "uiAtFailure": "LIBRARY\n\nAsset workshop\n\nCreate artwork in your game's style. Compare alternatives, inspect usage, and restore previous versions.\n\nART DIRECTION\nProject\nStormglass Reliquary - Side-view Test\n\nStormglass Reliquary - Side-view Test · side view metroidvania. Artwork stays in this project's asset set. Switching projects clears this selection.\n\nPrompt\nAsset type\nCharacter concept\nPlayer\nEnemy\nBoss\nNPC\nPortrait\nWeapon\nItem\nProp\nTileset source\nTile\nBackground\nUI icon\nUI panel\nEffect texture\nProvider mode\nFREE ONLY\nLOCAL ONLY\nHYBRID FREE\nCUSTOM\nNVIDIA ONLY\nOFFLINE\nFASTEST\nHIGHEST QUALITY\nLOW VRAM\nLOWEST COST\nBALANCED\nCOMMERCIAL SAFE\nAlternatives\n1\n2\n3\n4\nSeed\nBackground detail\nStandard - 640 × 360\nDetailed - 1024 × 576\nNew alternatives use this size. Replacements keep the selected image's dimensions.\nGenerate alternative\nReplace selected\n\nAlternatives create new assets. Replace updates one registered image and saves its previous version. Animation sheets need the animation workflow.\n\n0 of 1 alternatives saved to this project.\n\nManual image generation failed (legacy): E:\\MetroForgeData\\Python\\diffusers-native\\Lib\\site-packages\\transformers\\utils\\hub.py:128: FutureWarning: Using `TRANSFORMERS_CACHE` is deprecated and will be removed in v5 of Transformers. Use `HF_HOME` instead. warnings.warn( Loading pipeline components...: 0%| | 0/7 [00:00<?, ?it/s] Loading pipeline components...: 14%|#4 | 1/7 [00:01<00:06, 1.06s/it] Loading pipeline components...: 29%|##8 | 2/7 [00:03<00:10, 2.13s/it] Loading pipeline components...: 57%|#####7 | 4/7 [00:13<00:11, 3.93s/it] Loading pipeline components...: 71%|#######1 | 5/7 [00:14<00:06, 3.01s/it] Loading pipeline components...: 100%|##########| 7/7 [00:15<00:00, 1.68s/it] Loading pipeline components...: 100%|##########| 7/7 [00:15<00:00, 2.18s/it] 0%| | 0/20 [00:00<?, ?it/s]\n\nALTERNATIVES\n\nAlternative 1 · Failed\n\nManual image generation failed (legacy): E:\\MetroForgeData\\Python\\diffusers-native\\Lib\\site-packages\\transformers\\utils\\hub.py:128: FutureWarning: Using `TRANSFORMERS_CACHE` is deprecated and will be removed in v5 of Transformers. Use `HF_HOME` instead. warnings.warn( Loading pipeline components...: 0%| | 0/7 [00:00<?, ?it/s] Loading pipeline components...: 14%|#4 | 1/7 [00:01<00:06, 1.06s/it] Loading pipeline components...: 29%|##8 | 2/7 [00:03<00:10, 2.13s/it] Loading pipeline components...: 57%|#####7 | 4/7 [00:13<00:11, 3.93s/it] Loading pipeline components...: 71%|#######1 | 5/7 [00:14<00:06, 3.01s/it] Loading pipeline components...: 100%|##########| 7/7 [00:15<00:00, 1.68s/it] Loading pipeline components...: 100%|##########| 7/7 [00:15<00:00, 2.18s/it] 0%| | 0/20 [00:00<?, ?it/s]\n\nSELECTED ARTWORK\nAsset\nSelect an alternative\nWhere used\n—\nVersion history\nSelect artwork to view its history"
+}

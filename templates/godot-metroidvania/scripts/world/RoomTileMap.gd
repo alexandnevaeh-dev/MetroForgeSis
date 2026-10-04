@@ -964,6 +964,10 @@ func _spawn_stormglass_platform_trims() -> void:
 			continue
 		var rect := collider.shape as RectangleShape2D
 		var center: Vector2 = child.position + collider.position
+		# Internal room headers are walls, not horizontal balconies. Masonry still dresses
+		# their full collider; do not attach floating corbels or a short platform lip.
+		if rect.size.y > tile_size * 2:
+			continue
 		_add_stormglass_platform_supports(supports, center, rect.size)
 		_add_stormglass_platform_trim(holder, texture, center, rect.size)
 	_spawn_stormglass_floor_strip(holder, parent)
@@ -978,6 +982,14 @@ func _add_stormglass_platform_trim(holder: Node2D, texture: Texture2D, center: V
 	var target_width := maxf(collision_size.x, float(tile_size * 3))
 	var target_height := minf(80.0, maxf(52.0, collision_size.y * 2.15))
 	sprite.scale = Vector2(target_width / float(texture.get_width()), target_height / float(texture.get_height()))
+	if _castle_gallery_enabled():
+		# Repeat carved material at its original proportions instead of stretching one
+		# short ornament across an entire storey. This is a surface, not a scene plate.
+		var material_scale := target_height / float(texture.get_height())
+		sprite.region_enabled = true
+		sprite.region_rect = Rect2(0, 0, target_width / material_scale, texture.get_height())
+		sprite.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+		sprite.scale = Vector2.ONE * material_scale
 	# The normalized asset is bottom-aligned; overlap the collision body so the
 	# bright stone lip lands exactly on its top edge and hides placeholder tiles.
 	sprite.position = Vector2(center.x, center.y - collision_size.y * 0.5 + target_height * 0.5 - 9.0)

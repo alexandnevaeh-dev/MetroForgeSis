@@ -20,13 +20,23 @@ func _ready() -> void:
 		return
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(QA))
 	var original := FileAccess.get_file_as_string(PROFILE)
-	check("valid gallery profile is read", Decor.spatial_settings("room_001") == {"panoramaHeight": 1024.0})
+	var original_profile: Dictionary = JSON.parse_string(original)
+	var expected_height := float(original_profile["panoramaHeight"])
+	var expected_settings := {"panoramaHeight": expected_height}
+	if original_profile.has("stoneGrade"):
+		expected_settings["stoneGrade"] = original_profile["stoneGrade"]
+	check("valid gallery profile is read", Decor.spatial_settings("room_001") == expected_settings)
 	check("other rooms keep legacy framing", Decor.spatial_settings("room_000").is_empty())
-	for value in ["1024", [], {}, null, 511, 1537]:
+	for value in ["1024", [], {}, null, 255, 1537]:
 		var file := FileAccess.open(PROFILE, FileAccess.WRITE)
 		file.store_string(JSON.stringify({"version": 1, "rooms": ["room_001"], "panoramaHeight": value}))
 		file.close()
 		check("invalid height is refused: " + JSON.stringify(value), Decor.spatial_settings("room_001").is_empty())
+	for grade in [null, [], [1, 1], [1, 1, 1, 1], ["1", 1, 1], [true, 1, 1], [-0.1, 1, 1], [1, 1, 1.01]]:
+		var file := FileAccess.open(PROFILE, FileAccess.WRITE)
+		file.store_string(JSON.stringify({"version": 1, "rooms": ["room_001"], "panoramaHeight": 256, "stoneGrade": grade}))
+		file.close()
+		check("invalid grading is refused: " + JSON.stringify(grade), Decor.spatial_settings("room_001").is_empty())
 	var restore := FileAccess.open(PROFILE, FileAccess.WRITE)
 	restore.store_string(original)
 	restore.close()
@@ -46,12 +56,13 @@ func _ready() -> void:
 	for node in room.get_node("StormglassDecor").get_children():
 		if String(node.name).begins_with("CastleInteriorBayBand_"):
 			bands.append(rect_data(node))
-	check("two native interior bands", bands.size() == 2)
-	check("lower native band meets gallery floor", absf(bands[0].y - 448.0) < 0.01 and absf(bands[0].height - 1024.0) < 0.01 and absf(bands[0].width - 4096.0) < 0.01)
-	check("upper band continues the same world scale", absf(bands[1].y + 576.0) < 0.01 and absf(bands[0].tileWidth - bands[1].tileWidth) < 0.01)
+	check("native interior band count matches world scale", bands.size() == ceili(1472.0 / expected_height))
+	check("lower native band meets gallery floor", absf(bands[0].y - (1472.0 - expected_height)) < 0.01 and absf(bands[0].height - expected_height) < 0.01 and absf(bands[0].width - 4096.0) < 0.01)
+	check("upper band continues the same world scale", absf(bands[1].y - (1472.0 - expected_height * 2.0)) < 0.01 and absf(bands[0].tileWidth - bands[1].tileWidth) < 0.01)
 	check("horizontal native mirror repetition", bands.all(func(band): return band.repeat == CanvasItem.TEXTURE_REPEAT_MIRROR))
 	check("upper band uses native depth opacity", absf(bands[1].opacity - bands[0].opacity * 0.68) < 0.0001)
-	check("native stone material grading", absf(bands[0].tint[0] - 0.86) < 0.00001 and absf(bands[0].tint[1] - 0.90) < 0.00001 and absf(bands[0].tint[2] - 0.96) < 0.00001)
+	var expected_grade: Array = original_profile.get("stoneGrade", [0.86, 0.90, 0.96])
+	check("native stone material grading", absf(bands[0].tint[0] - float(expected_grade[0])) < 0.00001 and absf(bands[0].tint[1] - float(expected_grade[1])) < 0.00001 and absf(bands[0].tint[2] - float(expected_grade[2])) < 0.00001)
 	check("eighteen stone balcony corbels", room.get_node("StormglassPlatformSupports").get_child_count() == 18)
 	if await Guard.await_post_draw(self):
 		get_viewport().get_texture().get_image().save_png(QA + "/native-gallery.png")

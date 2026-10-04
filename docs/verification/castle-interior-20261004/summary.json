@@ -1,0 +1,150 @@
+{
+  "status": "verified-three-storey-development-progress",
+  "productionReady": false,
+  "parent": "b9ea93ab72f83661c68579fceb00ee9856aecd2e",
+  "release": "E:\\MetroForgeData\\Releases\\MetroForge-castle-interior-20261004-v7",
+  "workshopUiChecks": 29,
+  "roomsUiChecks": 14,
+  "apiKeysUiChecks": 44,
+  "unitChecks": 168,
+  "controlledNativeBackdropChecks": 27,
+  "storeyInputChecks": 12,
+  "generation": {
+    "portable": "v5",
+    "provider": "diffusers",
+    "executionMetadata": {
+      "computeBackend": "cuda",
+      "actualDevice": "cuda",
+      "offloadStrategy": "model",
+      "executionPath": "diffusers_torch_cuda",
+      "timings": {
+        "totalMs": 290615
+      },
+      "effectiveConditioningMode": null,
+      "effectiveConditioningStrength": null,
+      "effectivePrompt": "Flat dark gothic masonry wall, side elevation, small weathered stone blocks, recessed arches, no floor, no stairs, no perspective, no objects. Art style: modern HD pixel art. For Stormglass Reliquary - Side-view Test. Side-view game, consistent horizontal ground plane and lighting. Environment matching the game camera and biome architecture.",
+      "effectiveNegativePrompt": "blurry, low quality, text, watermark",
+      "effectiveSteps": 20,
+      "effectiveGuidance": 5,
+      "effectiveWidth": 1024,
+      "effectiveHeight": 576
+    },
+    "imagePlan": {
+      "profile": "BACKGROUND",
+      "width": 1024,
+      "height": 576,
+      "sourceWidth": 1024,
+      "sourceHeight": 576,
+      "transparent": false,
+      "grounded": false
+    },
+    "files": [
+      {
+        "path": "assets/generated/flat_dark_gothic_masonry_wall_side_eleva_eb32e0f8-15a6-4d8c-8d79-b57c3ed379e8.png",
+        "sha256": "f3993a0af927d68367b9579b7ff5af14c4eb4842b5f0971dafa8987f95c0e5e4"
+      },
+      {
+        "path": "assets/generated/flat_dark_gothic_masonry_wall_side_eleva_eb32e0f8-15a6-4d8c-8d79-b57c3ed379e8_source.png",
+        "sha256": "89da83fcbdb73223630844471e6570309c51968f5db25f50737410ce8efa3602"
+      }
+    ]
+  },
+  "nativeJourney": {
+    "passed": true,
+    "transitions": 40,
+    "uniqueRooms": 35,
+    "bosses": [
+      "boss_000",
+      "boss_001",
+      "boss_002",
+      "boss_final"
+    ],
+    "abilities": [
+      "dash",
+      "double_jump",
+      "wall_slide",
+      "wall_jump",
+      "ground_slam",
+      "air_dash"
+    ],
+    "clearedArenaReturns": [
+      {
+        "room": "room_008",
+        "boss": "boss_000",
+        "observations": 2,
+        "passed": true,
+        "cleared": {
+          "bossPresent": false,
+          "defeatedBosses": [
+            "boss_000"
+          ],
+          "exitsOpen": true,
+          "music": "biome_0",
+          "room": "room_008",
+          "tMs": 75940
+        }
+      },
+      {
+        "room": "room_018",
+        "boss": "boss_001",
+        "observations": 2,
+        "passed": true,
+        "cleared": {
+          "bossPresent": false,
+          "defeatedBosses": [
+            "boss_000",
+            "boss_001"
+          ],
+          "exitsOpen": true,
+          "music": "biome_0",
+          "room": "room_018",
+          "tMs": 129677
+        }
+      },
+      {
+        "room": "room_028",
+        "boss": "boss_002",
+        "observations": 2,
+        "passed": true,
+        "cleared": {
+          "bossPresent": false,
+          "defeatedBosses": [
+            "boss_000",
+            "boss_001",
+            "boss_002"
+          ],
+          "exitsOpen": true,
+          "music": "biome_0",
+          "room": "room_028",
+          "tMs": 192086
+        }
+      }
+    ],
+    "warnings": [
+      "WARNING: ObjectDB instances leaked at exit (run with --verbose for details)."
+    ]
+  },
+  "gallery": {
+    "room": "room_001",
+    "storeys": 3,
+    "chambers": 8,
+    "doorwayHeaders": 3,
+    "composition": "single continuous image, source height 0.75",
+    "purposefulPierLights": 2,
+    "unchangedSiblingGeometry": 39,
+    "visualReview": {
+      "compositionImproved": true,
+      "finalArtAccepted": false,
+      "capturedAssetSha256": "f3993a0af927d68367b9579b7ff5af14c4eb4842b5f0971dafa8987f95c0e5e4",
+      "inspection": "Viewed native left/middle/right, middle/upper, centered overview and actual-input upper/loft/downstairs captures. One continuous cropped wall, no pasted whole-scene repeats, uniform carved balcony material and grounded lights. Three floors and chamber doorway openings are visible.",
+      "sourceHeightFraction": 0.75,
+      "limits": [
+        "Background remains a large arcade composition; finer per-chamber detail and enclosure remain ongoing.",
+        "Eight named spaces are architectural circulation, not eight unique furnished asset sets.",
+        "Other 39 rooms retain previous geometry/dressing; enemy/boss art and crisp animation still need distinct replacements."
+      ],
+      "scope": "Agent composition review of captured candidate, not user approval or final whole-castle quality."
+    }
+  },
+  "limits": "One authored wing, not whole-castle completion. Names and architectural landmarks are not distinct furnished sets. No automatic chamber generation or chamber authoring UI yet. Other rooms retain prior dressing. Distinct enemy/boss art and animation, native Unity and Unreal acceptance remain ongoing. ObjectDB exit warning is retained; Dummy audio is not listening acceptance. Raw generated images remain private pending model provenance admission."
+}

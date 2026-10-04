@@ -1,0 +1,158 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\castle-art-review\\reports\\game-tests\\20261004-castle-art-ui\\1791120214043",
+  "project": "E:\\MetroForgeData\\GitHubUpload\\20261004\\castle-art-review\\reports\\game-tests\\20261004-castle-art-ui\\1791120214043\\games\\stormglass-castle",
+  "executable": "E:/MetroForgeData/Releases/MetroForge-castle-art-20261004-v1/MetroForge.exe",
+  "checks": [
+    {
+      "label": "local generation settings saved by the application",
+      "passed": true
+    },
+    {
+      "label": "background detail is hidden for actor and item roles",
+      "passed": true
+    },
+    {
+      "label": "existing standard canvas remains the default",
+      "passed": true
+    },
+    {
+      "label": "detail selector supports native keyboard selection",
+      "passed": true
+    },
+    {
+      "label": "real IPC refuses invalid detail before changing the registry",
+      "passed": true
+    },
+    {
+      "label": "detail selector locks while generation is busy",
+      "passed": true
+    },
+    {
+      "label": "capture stays hidden: 01-cuda-generation.png",
+      "passed": true
+    },
+    {
+      "label": "one new image is saved alongside the existing castle artwork",
+      "passed": true
+    },
+    {
+      "label": "local SDXL reports actual CUDA execution without fallback",
+      "passed": true
+    },
+    {
+      "label": "native source request uses 1024 by 576 at twenty steps",
+      "passed": true
+    },
+    {
+      "label": "the game retains full background detail",
+      "passed": true
+    },
+    {
+      "label": "interior plate is fully opaque",
+      "passed": true
+    },
+    {
+      "label": "all prior assets, room records and native scripts are preserved",
+      "passed": true
+    },
+    {
+      "label": "actual top-down registry remains separate and unchanged",
+      "passed": true
+    },
+    {
+      "label": "the workshop shows saved dimensions and actual generation device",
+      "passed": true
+    },
+    {
+      "label": "capture stays hidden: 02-detailed-background.png",
+      "passed": true
+    },
+    {
+      "label": "real Apply persists the detailed image across the castle biome",
+      "passed": true
+    },
+    {
+      "label": "real Undo restores the previous background selection",
+      "passed": true
+    },
+    {
+      "label": "gallery uses the shared modular preview with the new plate",
+      "passed": true
+    },
+    {
+      "label": "capture stays hidden: 03-detailed-gallery-editor.png",
+      "passed": true
+    },
+    {
+      "label": "capture stays hidden: failure.png",
+      "passed": true
+    }
+  ],
+  "captures": [
+    "01-cuda-generation.png",
+    "02-detailed-background.png",
+    "03-detailed-gallery-editor.png",
+    "failure.png"
+  ],
+  "pageErrors": [],
+  "scope": "Actual packaged UI and saved project, one local CUDA generation, preview/save/undo/reapply. Native gameplay and visual acceptance are separate.",
+  "uiText": "LIBRARY\n\nAsset workshop\n\nCreate artwork in your game's style. Compare alternatives, inspect usage, and restore previous versions.\n\nART DIRECTION\nProject\nStormglass Reliquary - Side-view Test\n\nStormglass Reliquary - Side-view Test · side view metroidvania. Artwork stays in this project's asset set. Switching projects clears this selection.\n\nPrompt\nAsset type\nCharacter concept\nPlayer\nEnemy\nBoss\nNPC\nPortrait\nWeapon\nItem\nProp\nTileset source\nTile\nBackground\nUI icon\nUI panel\nEffect texture\nProvider mode\nFREE ONLY\nLOCAL ONLY\nHYBRID FREE\nCUSTOM\nNVIDIA ONLY\nOFFLINE\nFASTEST\nHIGHEST QUALITY\nLOW VRAM\nLOWEST COST\nBALANCED\nCOMMERCIAL SAFE\nAlternatives\n1\n2\n3\n4\nSeed\nBackground detail\nStandard - 640 × 360\nDetailed - 1024 × 576\nNew alternatives use this size. Replacements keep the selected image's dimensions.\nGenerate alternative\nReplace selected\n\nAlternatives create new assets. Replace updates one registered image and saves its previous version. Animation sheets need the animation workflow.\n\n1 of 1 alternatives saved to this project.\n\nALTERNATIVES\n\nAlternative 1 · diffusers\n\nGame image 1024 × 576 · Source request 1024 × 576 · Opaque canvas\n\nGenerated on cuda\n\nInspect alternative 1\n\nRestart the game preview and validate the updated artwork.\n\nSELECTED ARTWORK\nAsset\ngothic_interior_receding_stone_arcade_sm_f0f9d43e-8269-4998-8260-0c62087adb70\nWhere used\nNo references reported\nVersion history\nNo earlier versions yet",
+  "asset": {
+    "id": "gothic_interior_receding_stone_arcade_sm_f0f9d43e-8269-4998-8260-0c62087adb70",
+    "path": "assets/generated/gothic_interior_receding_stone_arcade_sm_f0f9d43e-8269-4998-8260-0c62087adb70.png",
+    "provider": "diffusers",
+    "modelId": "E:/Metroforge/Recovery-Audit/models/sdxl-base-1.0",
+    "executionMetadata": {
+      "computeBackend": "cuda",
+      "actualDevice": "cuda",
+      "offloadStrategy": "model",
+      "executionPath": "diffusers_torch_cuda",
+      "timings": {
+        "totalMs": 326693
+      },
+      "effectiveConditioningMode": null,
+      "effectiveConditioningStrength": null,
+      "effectivePrompt": "Gothic interior, receding stone arcade, small teal windows, amber sconces, orthographic gallery, no characters or text. Art style: modern HD pixel art. For Stormglass Reliquary - Side-view Test. Side-view game, consistent horizontal ground plane and lighting. Environment matching the game camera and biome architecture.",
+      "effectiveNegativePrompt": "blurry, low quality, text, watermark",
+      "effectiveSteps": 20,
+      "effectiveGuidance": 5,
+      "effectiveWidth": 1024,
+      "effectiveHeight": 576
+    },
+    "imagePlan": {
+      "profile": "BACKGROUND",
+      "width": 1024,
+      "height": 576,
+      "sourceWidth": 1024,
+      "sourceHeight": 576,
+      "transparent": false,
+      "grounded": false
+    },
+    "fallbackGenerated": false,
+    "critiquePassed": true,
+    "critiqueScore": 70,
+    "sourceType": "compiled",
+    "sourcePath": "assets/generated/gothic_interior_receding_stone_arcade_sm_f0f9d43e-8269-4998-8260-0c62087adb70_source.png",
+    "fallbackDepth": 0,
+    "selectedProvider": "diffusers",
+    "selectedModel": "E:/Metroforge/Recovery-Audit/models/sdxl-base-1.0",
+    "requestedCapability": "IMAGE_GENERATION",
+    "productionAllowed": true,
+    "promptHash": "68811cca5ece9620",
+    "requestedProvider": "diffusers",
+    "generationTimestamp": "2026-10-04T13:36:41.220Z",
+    "generationBackend": "legacy",
+    "maturity": "QA_REVIEW",
+    "productionReady": false,
+    "type": "texture",
+    "license": "Local diffusion — model license unverified",
+    "commercialUse": "unknown",
+    "manual": true,
+    "prompt": "Gothic interior, receding stone arcade, small teal windows, amber sconces, orthographic gallery, no characters or text",
+    "seed": 20261004,
+    "dirty": false
+  },
+  "passed": false,
+  "error": "page.waitForFunction: Timeout 30000ms exceeded.\n    at E:\\MetroForgeData\\GitHubUpload\\20261004\\castle-art-review\\scripts\\verify-castle-art-ui.mjs:290:14",
+  "uiAtFailure": "WORLD\n\nRoom Editor\n\nBrowse rooms, inspect geometry, and paint tiles with an explicit save.\n\nProject\nStormglass Reliquary - Side-view Test\nCLEAN\nAI\nMic\nRun\nVisual\nCollision\nEntities\nNavigation\nProgression\nDebug\nHIERARCHY\n⌕\n\n40 of 40\n\nroom_000\ntutorial\nroom_001\ncombat\nroom_002\ntraversal\nroom_003\nability_shrine\nroom_004\ncombat\nroom_005\ntraversal\nroom_006\nsave\nroom_007\nsecret\nroom_008\nminiboss\nroom_009\nability_gate\nroom_010\ntutorial\nroom_011\ncombat\nLAYERS\nTiles\n●\nCollision\n○\nEntities\n○\nNavigation\n○\nProgression\n○\nDebug\n○\nTOOLS\nSELECT\nPAINT\nERASE\n\nPaint or erase tiles in Visual mode.\n\nTILE PALETTE\nbiome_0\n\nSwitch to Visual layer to paint with the selected tile.\n\nroom_001\nvisual\nSnap On\n−\n100%\n+\nFit\nPlay Preview\nSaved tiles\nSelect Paint or Erase to edit\nSave Tilemap\nDiscard draft\n347 occupied cells\nGrid: 32px\nSnap On\nSize: 128 × 48 tiles\nCells: 347\nCollision: 13\nroom_001\nPREVIEW\nCASTLE BIOME BACKGROUND\n\nOne interior across all 40 rooms in biome_0.\n\nBackground\nOriginal castle interior\npixel_art_gothic_castle_hall_vaulted_arc_a1d1376f-0bb2-4f17-8b52-a51400c129ae · 640×360\nfar · 960×540\nforeground · 960×540\nmid · 960×320\nnear · 960×320\noverlay · 640×360\nfar_5c3b7b4c69 · 960×540\nforeground_26f8774788 · 960×540\nmid_d65b27d2ee · 960×320\nnear_2a20854106 · 960×320\noverlay_a9ab8a1c18 · 640×360\nfar_534fbe01cc · 960×540\nforeground_0881589a4f · 960×540\nmid_a592828c97 · 960×320\nnear_2b4a40bc50 · 960×320\noverlay_a7d2c67d05 · 640×360\nfar_8604048d07 · 960×540\nforeground_339c10d190 · 960×540\nmid_3c5adcac1e · 960×320\nnear_6558267d25 · 960×320\noverlay_784f23677a · 640×360\nancient_ruins · 1672×941\ndrowned_monastery · 1672×941\nreliquary_interior · 1672×941\nstorm_ice_heights · 1672×941\nsunken_halls · 1672×941\ngothic_interior_receding_stone_arcade_sm_f0f9d43e-8269-4998-8260-0c62087adb70 · 1024×576\nOpacity\n\n1 rooms use repeating interior bays at a fixed 1024px height. Vertical framing applies to other rooms.\n\nVertical framing\nAlign to floor\nCenter\nAlign to ceiling\nApply background\nUndo background\n\nBackground applied across 40 castle rooms. Restart the game preview.\n\nReload background settings\nROOM\nName\nroom_001\nID\nroom_001\nArchetype\ncombat\nDimensions\n128 × 48 tiles · 4096×1536px\nBiome\nbiome_0\nroom_001_enemy_00\nroom_001_enemy_01\nroom_001_enemy_02\nbiome_0\nCONTENTS\nEnemies (4)\nNPCs (0)\nCollectibles (0)\nEntity placements (5)\nPainted cells (347)\nWeak floors (0)\nConnections (2)\nCONNECTIONS\nleft → room_000\nright → room_002\nACTIONS\nUndo saved room change\nRedo saved room change\nPlace enemy\nDuplicate\nDelete\nAdd Enemy\nRemove last enemy\nRegenerate Encounter\nRegenerate Room\nWorld Editor\nDungeon"
+}

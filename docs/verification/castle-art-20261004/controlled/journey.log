@@ -1,0 +1,382 @@
+WorkerThreadPool: 12 threads, 3 max low-priority.
+Godot Engine v4.6.stable.official.89cea1439 - https://godotengine.org
+TextServer: Added interface "Dummy"
+TextServer: Added interface "ICU / HarfBuzz / Graphite (Built-in)"
+Unrecognized output string "misc2" in mapping:
+030000000d0f00000202000000000000,Horipad O Nintendo Switch 2 Controller,a:b1,b:b0,back:b8,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,dpup:h0.1,guide:b12,leftshoulder:b4,leftstick:b10,lefttrigger:b6,leftx:a0,lefty:a1,misc1:b13,misc2:b14,rightshoulder:b5,rightstick:b11,righttrigger:b7,rightx:a2,righty:a3,start:b9,x:b3,y:b2,platform:Windows,
+Unrecognized output string "misc2" in mapping:
+030000000d0f00009601000000000000,Horipad Steam,a:b0,b:b1,back:b10,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,dpup:h0.1,guide:b12,leftshoulder:b6,leftstick:b13,lefttrigger:b8,leftx:a0,lefty:a1,misc2:b2,paddle1:b5,paddle2:b15,paddle3:b18,paddle4:b19,rightshoulder:b7,rightstick:b14,righttrigger:b9,rightx:a3,righty:a4,start:b11,x:b3,y:b4,platform:Windows,
+Unrecognized output string "misc2" in mapping:
+030000007e0500006920000000000000,Nintendo Switch 2 Pro Controller,a:b0,b:b1,back:b14,dpdown:b8,dpleft:b10,dpright:b9,dpup:b11,guide:b16,leftshoulder:b12,leftstick:b15,lefttrigger:b13,leftx:a0,lefty:a1~,misc1:b17,misc2:b20,paddle1:b18,paddle2:b19,rightshoulder:b4,rightstick:b7,righttrigger:b5,rightx:a2,righty:a3~,start:b6,x:b2,y:b3,platform:Windows,
+Native OpenGL API detected: 3.3: NVIDIA - NVIDIA GeForce RTX 5060 Laptop GPU
+NVAPI: Init OK!
+NVAPI: Profile not found, creating...
+NVAPI: Application not found in profile, creating...
+NVAPI: Error creating application: NVAPI_EXECUTABLE_ALREADY_IN_USE(code -167)
+SDL: Gamepad XInput Controller connected
+SDL: Init OK!
+Using "winink" pen tablet driver...
+Shader 'CanvasSdfShaderGLES3' SHA256: b9718faec1782e5139496d2dae083d936043d0ecabeda65c5b92a07a17cecd33
+Shader 'SkeletonShaderGLES3' SHA256: fb9cbf15b48ee6c34a0db09b1896bee95a3a97aa97bdb1f282d72d6c694e2598
+Shader 'ParticlesShaderGLES3' SHA256: 7f716ee166e21861b8520b9f89a20de535771da43208854a301cf9abef9d7976
+Shader 'ParticlesCopyShaderGLES3' SHA256: 600cbaed1622baa5605373f4ec7000f6d5408861f0e6c60ae661a72984253aaa
+Shader 'CopyShaderGLES3' SHA256: ed8e55364f14bb9ab8eefb454c7bdade67784e645da98fc16e505c129cca684c
+Shader 'CubemapFilterShaderGLES3' SHA256: 41c0d056700d50be72cdd7db1582bfe81ad8d3fa0f5880fe9f23ea3d65ba9ef2
+Shader 'GlowShaderGLES3' SHA256: ba54af943a5836ab39fe344ac11dc58a0ccb0e583ebab014f25afd3d47ccca1b
+Shader 'PostShaderGLES3' SHA256: ea6892c99544cb86fd31c8c3d9f620c09c101bd2d39cdf770c020dfa4592bc60
+Shader 'FeedShaderGLES3' SHA256: a3fc826c42d91c276958c4e2f002e2e17eaf9d57d2cd66096fdc4c8469300a23
+Shader 'CanvasShaderGLES3' SHA256: 8b38bf424986f92785129212b0f265252240ac5ec2f61539412bf72938914d1f
+Shader 'CanvasOcclusionShaderGLES3' SHA256: b111f488b3881a5dc9091f30be4555c19fc88ab4efa80b3b8b990ff2efeb00b8
+Shader 'SceneShaderGLES3' SHA256: ebd945223a7f218efd2f3fbbd1e74a9065db379ed973b36de7de688ab0cc74ee
+Shader 'SkyShaderGLES3' SHA256: 1b23e2e8fd7716c22bf0bc433327281beec7b3812d64872a9bd0d5ba2cb984eb
+OpenGL API 3.3.0 NVIDIA 617.14 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 5060 Laptop GPU
+
+TextServer: Primary interface set to: "ICU / HarfBuzz / Graphite (Built-in)".
+CORE API HASH: 3663110324
+EDITOR API HASH: 835956462
+SceneTreeFTI: traversal method DEFAULT
+Loading resource: res://scripts/core/StudioRuntimeBridge.gd
+Loading resource: res://scripts/core/GameManager.gd
+Loading resource: res://scripts/core/DialogueManager.gd
+Loading resource: res://scripts/core/ShopManager.gd
+Loading resource: res://scripts/core/QualityPresentation.gd
+MbedTLS: Some X509 certificates could not be parsed (1 certificates skipped).
+Loaded system CA certificates
+Loading resource: res://scenes/test/CastleBackdropValidation.tscn
+Loading resource: res://scripts/test/CastleBackdropValidation.gd
+Loading resource: res://assets/vfx/hit_spark.png
+Loading resource: res://.godot/imported/hit_spark.png-b5856c705e2806b5c32dda31e1022359.ctex
+Loading resource: res://assets/vfx/death_puff.png
+Loading resource: res://.godot/imported/death_puff.png-eaf796bf7957cf9b0ee482dcd63f611b.ctex
+Loading resource: res://assets/vfx/dash_trail.png
+Loading resource: res://.godot/imported/dash_trail.png-ce20a167c7418a8d94e0d4e148f9ffa4.ctex
+Loading resource: res://assets/vfx/pickup_spark.png
+Loading resource: res://.godot/imported/pickup_spark.png-dd9b20db8cdebb35e61d0034e0a2aa5b.ctex
+Loading resource: res://assets/vfx/ability_unlock.png
+Loading resource: res://.godot/imported/ability_unlock.png-343e87f205cd55b185f45c42603d3a5b.ctex
+Loading resource: res://assets/vfx/boss_phase_shift.png
+Loading resource: res://.godot/imported/boss_phase_shift.png-a8af2af2accd860801926283ec6dc434.ctex
+Loading resource: res://assets/vfx/area_burst.png
+Loading resource: res://.godot/imported/area_burst.png-6397c336594483b5ba8cf7cbf30ca9f3.ctex
+Loading resource: res://assets/vfx/slam_shock.png
+Loading resource: res://.godot/imported/slam_shock.png-950e009079a8c838f42e5d3e32bd2140.ctex
+Loading resource: res://assets/vfx/landing_dust.png
+Loading resource: res://.godot/imported/landing_dust.png-9b9d5126a1271146aab4be248493225c.ctex
+CASTLE_BACKDROP_CHECK {"label":"valid gallery profile is read","passed":true}
+CASTLE_BACKDROP_CHECK {"label":"other rooms keep legacy framing","passed":true}
+CASTLE_BACKDROP_CHECK {"label":"invalid height is refused: \"1024\"","passed":true}
+CASTLE_BACKDROP_CHECK {"label":"invalid height is refused: []","passed":true}
+CASTLE_BACKDROP_CHECK {"label":"invalid height is refused: {}","passed":true}
+CASTLE_BACKDROP_CHECK {"label":"invalid height is refused: null","passed":true}
+CASTLE_BACKDROP_CHECK {"label":"invalid height is refused: 255","passed":true}
+CASTLE_BACKDROP_CHECK {"label":"invalid height is refused: 1537","passed":true}
+CASTLE_BACKDROP_CHECK {"label":"invalid grading is refused: null","passed":true}
+CASTLE_BACKDROP_CHECK {"label":"invalid grading is refused: []","passed":true}
+CASTLE_BACKDROP_CHECK {"label":"invalid grading is refused: [1,1]","passed":true}
+CASTLE_BACKDROP_CHECK {"label":"invalid grading is refused: [1,1,1,1]","passed":true}
+CASTLE_BACKDROP_CHECK {"label":"invalid grading is refused: [\"1\",1,1]","passed":true}
+CASTLE_BACKDROP_CHECK {"label":"invalid grading is refused: [true,1,1]","passed":true}
+CASTLE_BACKDROP_CHECK {"label":"invalid grading is refused: [-0.1,1,1]","passed":true}
+CASTLE_BACKDROP_CHECK {"label":"invalid grading is refused: [1,1,1.01]","passed":true}
+CASTLE_BACKDROP_CHECK {"label":"profile bytes restored exactly","passed":true}
+Loading resource: res://scenes/world/World.tscn
+Loading resource: res://scripts/world/WorldManager.gd
+Loading resource: res://scripts/UI/GameHUD.gd
+Loading resource: res://scenes/world/PauseMenu.tscn
+Loading resource: res://scripts/UI/PauseMenu.gd
+Loading resource: res://scripts/UI/WorldMapPanel.gd
+Loading resource: res://scripts/UI/InventoryPanel.gd
+Loading resource: res://scripts/UI/QuestPanel.gd
+Loading resource: res://scenes/world/ShopOverlay.tscn
+Loading resource: res://scripts/UI/ShopOverlay.gd
+Loading resource: res://scenes/world/DialogueOverlay.tscn
+Loading resource: res://scripts/UI/DialogueOverlay.gd
+Loading resource: res://scripts/UI/MinimapPanel.gd
+Loading resource: res://scripts/UI/QuestTrackerPanel.gd
+Loading resource: res://scripts/world/TransitionFader.gd
+Loading resource: res://assets/ui/menu_panel.png
+Loading resource: res://.godot/imported/menu_panel.png-1393021852b7260100c0276fa6376346.ctex
+Loading resource: res://assets/ui/menu_button.png
+Loading resource: res://.godot/imported/menu_button.png-52f6d44214399ad22f5069c113bc42b3.ctex
+Loading resource: res://assets/ui/dialogue_ornament.png
+Loading resource: res://.godot/imported/dialogue_ornament.png-8f1c12d3a54979bec571e7b3a379cb83.ctex
+Loading resource: res://assets/ui/hud_frame.png
+Loading resource: res://.godot/imported/hud_frame.png-45678590d6970cc2f82e42ea90e4ada2.ctex
+Loading resource: res://assets/ui/health_meter.png
+Loading resource: res://.godot/imported/health_meter.png-125cded0a1323ef3405b0f10827cd84b.ctex
+load_threaded_get_status(): No threaded load for resource path 'res://scenes/rooms/room_000.tscn' has been initiated or its result has already been collected.
+Loading resource: res://scenes/rooms/room_000.tscn
+Loading resource: res://scenes/player/Player.tscn
+Loading resource: res://scripts/player/PlayerController.gd
+Loading resource: res://scripts/core/AnimatedAssetSprite.gd
+Loading resource: res://scripts/player/CameraDirector.gd
+Loading resource: res://scripts/core/ActorSockets.gd
+Loading resource: res://scenes/enemies/Enemy.tscn
+Loading resource: res://scripts/AI/EnemyController.gd
+Loading resource: res://scenes/bosses/Boss.tscn
+Loading resource: res://scripts/AI/BossController.gd
+Loading resource: res://scenes/world/AbilityPickup.tscn
+Loading resource: res://scripts/world/AbilityPickup.gd
+Loading resource: res://scripts/core/WorldPropSprite.gd
+Loading resource: res://scenes/world/RoomTransition.tscn
+Loading resource: res://scripts/world/RoomTransition.gd
+Loading resource: res://scripts/world/RoomTileMap.gd
+Loading resource: res://assets/tilesets/biome_0/source.png
+Loading resource: res://.godot/imported/source.png-06030092214da38ab31b18538e54d209.ctex
+Loading resource: res://assets/characters/player_walk.png
+Loading resource: res://.godot/imported/player_walk.png-d859f324b180e620b35176465490dc5b.ctex
+Loading resource: res://assets/characters/player_run.png
+Loading resource: res://.godot/imported/player_run.png-5e1ce216cbd5012d226154b2ece4de96.ctex
+Loading resource: res://assets/characters/player_attack.png
+Loading resource: res://.godot/imported/player_attack.png-4863c0bf2c0460d3acf05ba44fde6f12.ctex
+Loading resource: res://assets/characters/player_hurt.png
+Loading resource: res://.godot/imported/player_hurt.png-c4194612d851672462e70be083dfc07f.ctex
+Loading resource: res://assets/characters/player_death.png
+Loading resource: res://.godot/imported/player_death.png-c449be6e42ed0b63a564aca0303227d9.ctex
+Loading resource: res://assets/characters/player_idle.png
+Loading resource: res://.godot/imported/player_idle.png-57ac0c2f07b9c78d58884a3ea75b7817.ctex
+Loading resource: res://assets/characters/player_walk.png
+Loading resource: res://.godot/imported/player_walk.png-d859f324b180e620b35176465490dc5b.ctex
+Loading resource: res://assets/characters/player_jump_start.png
+Loading resource: res://.godot/imported/player_jump_start.png-31b8f78669a8f177025dfe4f1c97a7c8.ctex
+Loading resource: res://assets/characters/player_jump.png
+Loading resource: res://.godot/imported/player_jump.png-9a86ba95e37eabc7f640245357b986c1.ctex
+Loading resource: res://assets/characters/player_fall.png
+Loading resource: res://.godot/imported/player_fall.png-94cc22ab1c11bd32466bca9f5ab527db.ctex
+Loading resource: res://assets/characters/player_land.png
+Loading resource: res://.godot/imported/player_land.png-bf586b100a0da4f0aa95acb11fbc1f7d.ctex
+Loading resource: res://assets/characters/player_dash.png
+Loading resource: res://.godot/imported/player_dash.png-7ae88d1d170590815fc6d555ac1c1b62.ctex
+Loading resource: res://assets/characters/player_air_dash.png
+Loading resource: res://.godot/imported/player_air_dash.png-a17aeeea7ab8931b27ac07da8a9a7ff2.ctex
+Loading resource: res://assets/characters/player_double_jump.png
+Loading resource: res://.godot/imported/player_double_jump.png-2618f84677f00029c0b113f21f999b50.ctex
+Loading resource: res://assets/characters/player_wall_slide.png
+Loading resource: res://.godot/imported/player_wall_slide.png-5768614b71e9b3e0872f45ce5135734d.ctex
+Loading resource: res://assets/characters/player_wall_jump.png
+Loading resource: res://.godot/imported/player_wall_jump.png-30d156fc0d137391c640850602e5d41b.ctex
+Loading resource: res://assets/characters/player_swim.png
+Loading resource: res://.godot/imported/player_swim.png-183785111f8e5e270807e4b8d3b4c206.ctex
+Loading resource: res://assets/characters/player_swim_idle.png
+Loading resource: res://.godot/imported/player_swim_idle.png-5e9711526bd3abf4e7493d936b3c405c.ctex
+Loading resource: res://assets/characters/player_attack_2.png
+Loading resource: res://.godot/imported/player_attack_2.png-1c3f75e251b4adc983f5963fc1194ace.ctex
+Loading resource: res://assets/characters/player_attack_3.png
+Loading resource: res://.godot/imported/player_attack_3.png-a90ac90177309dd41c23d7a196b1ecc5.ctex
+Loading resource: res://assets/characters/player_ground_slam_start.png
+Loading resource: res://.godot/imported/player_ground_slam_start.png-35670b6c1cb5778bb4084d6cda5fca78.ctex
+Loading resource: res://assets/characters/player_ground_slam_fall.png
+Loading resource: res://.godot/imported/player_ground_slam_fall.png-1ad4ff118b2f4c88029b7f2bd3933c92.ctex
+Loading resource: res://assets/characters/player_ground_slam_impact.png
+Loading resource: res://.godot/imported/player_ground_slam_impact.png-df1883c04ae51799d954a523995e2d38.ctex
+Loading resource: res://assets/characters/player_grapple.png
+Loading resource: res://.godot/imported/player_grapple.png-c9312f27489134016e09b62924ccfc54.ctex
+Loading resource: res://assets/characters/player_phase.png
+Loading resource: res://.godot/imported/player_phase.png-3f765db36d4f954395040195c665afcc.ctex
+Loading resource: res://assets/characters/player_respawn.png
+Loading resource: res://.godot/imported/player_respawn.png-6711506d9e2421b29e0cf23ea3d836b5.ctex
+Loading resource: res://assets/characters/player_interact.png
+Loading resource: res://.godot/imported/player_interact.png-321dc2368f547749c59501183d04f4c3.ctex
+Loading resource: res://assets/characters/player_ability_acquire.png
+Loading resource: res://.godot/imported/player_ability_acquire.png-4b16c2516cf783e3158a3cf5318c7b80.ctex
+Loading resource: res://assets/characters/player_idle.png
+Loading resource: res://.godot/imported/player_idle.png-57ac0c2f07b9c78d58884a3ea75b7817.ctex
+Loading resource: res://assets/characters/player_attack_2.png
+Loading resource: res://.godot/imported/player_attack_2.png-1c3f75e251b4adc983f5963fc1194ace.ctex
+Loading resource: res://assets/characters/player_attack_3.png
+Loading resource: res://.godot/imported/player_attack_3.png-a90ac90177309dd41c23d7a196b1ecc5.ctex
+Loading resource: res://scripts/shaders/sprite_foot_clean.gdshader
+Loading resource: res://scripts/shaders/water_surface.gdshader
+Loading resource: res://audio/music/biome_0.wav
+Loading resource: res://.godot/imported/biome_0.wav-dec2867ebdec0d665572c802462d1119.sample
+load_threaded_get_status(): No threaded load for resource path 'res://scenes/rooms/room_001.tscn' has been initiated or its result has already been collected.
+Loading resource: res://scenes/rooms/room_001.tscn
+Loading resource: res://scenes/enemies/Enemy.tscn
+Loading resource: res://scenes/bosses/Boss.tscn
+Loading resource: res://scenes/world/AbilityPickup.tscn
+Loading resource: res://assets/generated/gothic_interior_receding_stone_arcade_sm_e215fda0-9708-46bf-a62f-a5851260aee1.png
+Loading resource: res://.godot/imported/gothic_interior_receding_stone_arcade_sm_e215fda0-9708-46bf-a62f-a5851260aee1.png-3db1097db393b74c1cca7604f4a7962a.ctex
+Loading resource: res://assets/architecture/stormglass/grand_arch.png
+Loading resource: res://.godot/imported/grand_arch.png-bbb331e701178580510abba54df8b711.ctex
+Loading resource: res://assets/architecture/stormglass/lancet_window.png
+Loading resource: res://.godot/imported/lancet_window.png-3642fd83cc2a6e3acfe8ce957ed723e4.ctex
+Loading resource: res://assets/architecture/stormglass/platform.png
+Loading resource: res://.godot/imported/platform.png-f1f7065b9e15933c1a5d1e0e91e52a28.ctex
+Loading resource: res://assets/architecture/stormglass/floor_strip.png
+Loading resource: res://.godot/imported/floor_strip.png-3127571388846079ee6d000228c9a69d.ctex
+Loading resource: res://assets/architecture/stormglass/masonry-fill-v1.png
+Loading resource: res://.godot/imported/masonry-fill-v1.png-b0bc6873819f98ede79f29241bbc08d0.ctex
+Loading resource: res://assets/props/biome_0/biome_0_prop_0.png
+Loading resource: res://.godot/imported/biome_0_prop_0.png-73e40292eac12b3c1912a289dc9715a2.ctex
+Loading resource: res://assets/props/biome_0/biome_0_prop_5.png
+Loading resource: res://.godot/imported/biome_0_prop_5.png-bfec1b2adaa6e97f9e107371a92144db.ctex
+Loading resource: res://assets/architecture/stormglass/conditions/intact_altar.png
+Loading resource: res://.godot/imported/intact_altar.png-6ca4c844dc7363eabcb769b898816701.ctex
+Loading resource: res://assets/architecture/stormglass/conditions/intact_sconce.png
+Loading resource: res://.godot/imported/intact_sconce.png-0f16d2700ed93c13f6b96399cfaf19ac.ctex
+Loading resource: res://assets/architecture/stormglass/conditions/intact_banner.png
+Loading resource: res://.godot/imported/intact_banner.png-957bc4f953d63ff3ad3e1b8e2937c018.ctex
+CASTLE_BACKDROP_CHECK {"label":"legacy background native rectangle retained","passed":true}
+Loading resource: res://assets/characters/player_walk.png
+Loading resource: res://.godot/imported/player_walk.png-d859f324b180e620b35176465490dc5b.ctex
+Loading resource: res://assets/characters/player_run.png
+Loading resource: res://.godot/imported/player_run.png-5e1ce216cbd5012d226154b2ece4de96.ctex
+Loading resource: res://assets/characters/player_attack.png
+Loading resource: res://.godot/imported/player_attack.png-4863c0bf2c0460d3acf05ba44fde6f12.ctex
+Loading resource: res://assets/characters/player_hurt.png
+Loading resource: res://.godot/imported/player_hurt.png-c4194612d851672462e70be083dfc07f.ctex
+Loading resource: res://assets/characters/player_death.png
+Loading resource: res://.godot/imported/player_death.png-c449be6e42ed0b63a564aca0303227d9.ctex
+Loading resource: res://assets/characters/player_idle.png
+Loading resource: res://.godot/imported/player_idle.png-57ac0c2f07b9c78d58884a3ea75b7817.ctex
+Loading resource: res://assets/characters/player_walk.png
+Loading resource: res://.godot/imported/player_walk.png-d859f324b180e620b35176465490dc5b.ctex
+Loading resource: res://assets/characters/player_jump_start.png
+Loading resource: res://.godot/imported/player_jump_start.png-31b8f78669a8f177025dfe4f1c97a7c8.ctex
+Loading resource: res://assets/characters/player_jump.png
+Loading resource: res://.godot/imported/player_jump.png-9a86ba95e37eabc7f640245357b986c1.ctex
+Loading resource: res://assets/characters/player_fall.png
+Loading resource: res://.godot/imported/player_fall.png-94cc22ab1c11bd32466bca9f5ab527db.ctex
+Loading resource: res://assets/characters/player_land.png
+Loading resource: res://.godot/imported/player_land.png-bf586b100a0da4f0aa95acb11fbc1f7d.ctex
+Loading resource: res://assets/characters/player_dash.png
+Loading resource: res://.godot/imported/player_dash.png-7ae88d1d170590815fc6d555ac1c1b62.ctex
+Loading resource: res://assets/characters/player_air_dash.png
+Loading resource: res://.godot/imported/player_air_dash.png-a17aeeea7ab8931b27ac07da8a9a7ff2.ctex
+Loading resource: res://assets/characters/player_double_jump.png
+Loading resource: res://.godot/imported/player_double_jump.png-2618f84677f00029c0b113f21f999b50.ctex
+Loading resource: res://assets/characters/player_wall_slide.png
+Loading resource: res://.godot/imported/player_wall_slide.png-5768614b71e9b3e0872f45ce5135734d.ctex
+Loading resource: res://assets/characters/player_wall_jump.png
+Loading resource: res://.godot/imported/player_wall_jump.png-30d156fc0d137391c640850602e5d41b.ctex
+Loading resource: res://assets/characters/player_swim.png
+Loading resource: res://.godot/imported/player_swim.png-183785111f8e5e270807e4b8d3b4c206.ctex
+Loading resource: res://assets/characters/player_swim_idle.png
+Loading resource: res://.godot/imported/player_swim_idle.png-5e9711526bd3abf4e7493d936b3c405c.ctex
+Loading resource: res://assets/characters/player_attack_2.png
+Loading resource: res://.godot/imported/player_attack_2.png-1c3f75e251b4adc983f5963fc1194ace.ctex
+Loading resource: res://assets/characters/player_attack_3.png
+Loading resource: res://.godot/imported/player_attack_3.png-a90ac90177309dd41c23d7a196b1ecc5.ctex
+Loading resource: res://assets/characters/player_ground_slam_start.png
+Loading resource: res://.godot/imported/player_ground_slam_start.png-35670b6c1cb5778bb4084d6cda5fca78.ctex
+Loading resource: res://assets/characters/player_ground_slam_fall.png
+Loading resource: res://.godot/imported/player_ground_slam_fall.png-1ad4ff118b2f4c88029b7f2bd3933c92.ctex
+Loading resource: res://assets/characters/player_ground_slam_impact.png
+Loading resource: res://.godot/imported/player_ground_slam_impact.png-df1883c04ae51799d954a523995e2d38.ctex
+Loading resource: res://assets/characters/player_grapple.png
+Loading resource: res://.godot/imported/player_grapple.png-c9312f27489134016e09b62924ccfc54.ctex
+Loading resource: res://assets/characters/player_phase.png
+Loading resource: res://.godot/imported/player_phase.png-3f765db36d4f954395040195c665afcc.ctex
+Loading resource: res://assets/characters/player_respawn.png
+Loading resource: res://.godot/imported/player_respawn.png-6711506d9e2421b29e0cf23ea3d836b5.ctex
+Loading resource: res://assets/characters/player_interact.png
+Loading resource: res://.godot/imported/player_interact.png-321dc2368f547749c59501183d04f4c3.ctex
+Loading resource: res://assets/characters/player_ability_acquire.png
+Loading resource: res://.godot/imported/player_ability_acquire.png-4b16c2516cf783e3158a3cf5318c7b80.ctex
+Loading resource: res://assets/characters/player_idle.png
+Loading resource: res://.godot/imported/player_idle.png-57ac0c2f07b9c78d58884a3ea75b7817.ctex
+Loading resource: res://assets/characters/player_attack_2.png
+Loading resource: res://.godot/imported/player_attack_2.png-1c3f75e251b4adc983f5963fc1194ace.ctex
+Loading resource: res://assets/characters/player_attack_3.png
+Loading resource: res://.godot/imported/player_attack_3.png-a90ac90177309dd41c23d7a196b1ecc5.ctex
+Loading resource: res://assets/enemies/enemy_001_walk.png
+Loading resource: res://.godot/imported/enemy_001_walk.png-9cbabe5661b8752cdaff4753e2200256.ctex
+Loading resource: res://assets/enemies/enemy_001_run.png
+Loading resource: res://.godot/imported/enemy_001_run.png-4f611f7bb5a2ffde06b28c823530eb5c.ctex
+Loading resource: res://assets/enemies/enemy_001_attack.png
+Loading resource: res://.godot/imported/enemy_001_attack.png-43df2e5cdc90afbedaa0ede27bd2b2a6.ctex
+Loading resource: res://assets/enemies/enemy_001_hurt.png
+Loading resource: res://.godot/imported/enemy_001_hurt.png-8ccb5c6ff3b9e5c8f7713b8ee2725438.ctex
+Loading resource: res://assets/enemies/enemy_001_death.png
+Loading resource: res://.godot/imported/enemy_001_death.png-c9638a17eaf8fe038817d01d778ae7fe.ctex
+Loading resource: res://assets/enemies/enemy_000_idle.png
+Loading resource: res://.godot/imported/enemy_000_idle.png-76c61c9d6383a2667495b6e586abbcc6.ctex
+Loading resource: res://assets/enemies/enemy_001_idle.png
+Loading resource: res://.godot/imported/enemy_001_idle.png-461999063ed7a36ddceb5572d9b5c3a6.ctex
+Loading resource: res://assets/enemies/enemy_003_walk.png
+Loading resource: res://.godot/imported/enemy_003_walk.png-31ec4746ecb454e7afa9832c4f11e414.ctex
+Loading resource: res://assets/enemies/enemy_003_run.png
+Loading resource: res://.godot/imported/enemy_003_run.png-3a7f8727d7cd9338960b1853bfd0e231.ctex
+Loading resource: res://assets/enemies/enemy_003_attack.png
+Loading resource: res://.godot/imported/enemy_003_attack.png-11c997b149bbeb70239df287692e50e4.ctex
+Loading resource: res://assets/enemies/enemy_003_hurt.png
+Loading resource: res://.godot/imported/enemy_003_hurt.png-ea273e1b5959e6ae7ff75c890bf6f91f.ctex
+Loading resource: res://assets/enemies/enemy_003_death.png
+Loading resource: res://.godot/imported/enemy_003_death.png-51d8008f5327815029b710c95713c548.ctex
+Loading resource: res://assets/enemies/enemy_000_idle.png
+Loading resource: res://.godot/imported/enemy_000_idle.png-76c61c9d6383a2667495b6e586abbcc6.ctex
+Loading resource: res://assets/enemies/enemy_003_idle.png
+Loading resource: res://.godot/imported/enemy_003_idle.png-b7c9d489347aea559ce55176ea954503.ctex
+Loading resource: res://assets/enemies/enemy_003_fly.png
+Loading resource: res://.godot/imported/enemy_003_fly.png-a844831a3cacd8a9564321c32f75da44.ctex
+Loading resource: res://assets/enemies/enemy_005_walk.png
+Loading resource: res://.godot/imported/enemy_005_walk.png-9a0c2c4fff06839f969b24c99bd17a41.ctex
+Loading resource: res://assets/enemies/enemy_005_run.png
+Loading resource: res://.godot/imported/enemy_005_run.png-84e01ee174d2cac6724fba96fee7defc.ctex
+Loading resource: res://assets/enemies/enemy_005_attack.png
+Loading resource: res://.godot/imported/enemy_005_attack.png-71ede53e45690480d31b3b9c86b22069.ctex
+Loading resource: res://assets/enemies/enemy_005_hurt.png
+Loading resource: res://.godot/imported/enemy_005_hurt.png-75ac49e7467cd5dd0d58cd7fc95475b1.ctex
+Loading resource: res://assets/enemies/enemy_005_death.png
+Loading resource: res://.godot/imported/enemy_005_death.png-fc49f7da908acde264d919c3217da531.ctex
+Loading resource: res://assets/enemies/enemy_000_idle.png
+Loading resource: res://.godot/imported/enemy_000_idle.png-76c61c9d6383a2667495b6e586abbcc6.ctex
+Loading resource: res://assets/enemies/enemy_005_idle.png
+Loading resource: res://.godot/imported/enemy_005_idle.png-00bc4b00441a6d6dda7f57a475102c10.ctex
+Loading resource: res://assets/enemies/enemy_007_walk.png
+Loading resource: res://.godot/imported/enemy_007_walk.png-7b26fee389d5320e0a48561296249b8c.ctex
+Loading resource: res://assets/enemies/enemy_007_run.png
+Loading resource: res://.godot/imported/enemy_007_run.png-20effc5da70f2e083362ca5f0705b4ce.ctex
+Loading resource: res://assets/enemies/enemy_007_attack.png
+Loading resource: res://.godot/imported/enemy_007_attack.png-463753e2a1f96f247ab8f15b598e951b.ctex
+Loading resource: res://assets/enemies/enemy_007_hurt.png
+Loading resource: res://.godot/imported/enemy_007_hurt.png-031436a48b5cb00187cf312b8f648dd8.ctex
+Loading resource: res://assets/enemies/enemy_007_death.png
+Loading resource: res://.godot/imported/enemy_007_death.png-d92672976f26cb6f83e5b943e0535283.ctex
+Loading resource: res://assets/enemies/enemy_000_idle.png
+Loading resource: res://.godot/imported/enemy_000_idle.png-76c61c9d6383a2667495b6e586abbcc6.ctex
+Loading resource: res://assets/enemies/enemy_007_idle.png
+Loading resource: res://.godot/imported/enemy_007_idle.png-a72680aeb6e731cf5ac6dce6be4fe528.ctex
+Loading resource: res://scripts/shaders/water_surface.gdshader
+load_threaded_get_status(): No threaded load for resource path 'res://scenes/rooms/room_002.tscn' has been initiated or its result has already been collected.
+Loading resource: res://scenes/rooms/room_002.tscn
+Loading resource: res://scenes/bosses/Boss.tscn
+Loading resource: res://scenes/world/AbilityPickup.tscn
+Loading resource: res://assets/generated/gothic_interior_receding_stone_arcade_sm_e215fda0-9708-46bf-a62f-a5851260aee1.png
+Loading resource: res://.godot/imported/gothic_interior_receding_stone_arcade_sm_e215fda0-9708-46bf-a62f-a5851260aee1.png-3db1097db393b74c1cca7604f4a7962a.ctex
+Loading resource: res://assets/architecture/stormglass/grand_arch.png
+Loading resource: res://.godot/imported/grand_arch.png-bbb331e701178580510abba54df8b711.ctex
+Loading resource: res://assets/architecture/stormglass/lancet_window.png
+Loading resource: res://.godot/imported/lancet_window.png-3642fd83cc2a6e3acfe8ce957ed723e4.ctex
+Loading resource: res://assets/architecture/stormglass/platform.png
+Loading resource: res://.godot/imported/platform.png-f1f7065b9e15933c1a5d1e0e91e52a28.ctex
+Loading resource: res://assets/architecture/stormglass/masonry-fill-v1.png
+Loading resource: res://.godot/imported/masonry-fill-v1.png-b0bc6873819f98ede79f29241bbc08d0.ctex
+Loading resource: res://assets/architecture/stormglass/floor_strip.png
+Loading resource: res://.godot/imported/floor_strip.png-3127571388846079ee6d000228c9a69d.ctex
+Loading resource: res://assets/props/biome_0/biome_0_prop_8.png
+Loading resource: res://.godot/imported/biome_0_prop_8.png-b15de6f6b4655c20288f53adf905da33.ctex
+Loading resource: res://assets/props/biome_0/biome_0_prop_0.png
+Loading resource: res://.godot/imported/biome_0_prop_0.png-73e40292eac12b3c1912a289dc9715a2.ctex
+Loading resource: res://assets/props/biome_0/biome_0_prop_5.png
+Loading resource: res://.godot/imported/biome_0_prop_5.png-bfec1b2adaa6e97f9e107371a92144db.ctex
+Loading resource: res://assets/architecture/stormglass/conditions/intact_banner.png
+Loading resource: res://.godot/imported/intact_banner.png-957bc4f953d63ff3ad3e1b8e2937c018.ctex
+Loading resource: res://assets/architecture/stormglass/conditions/intact_statue.png
+Loading resource: res://.godot/imported/intact_statue.png-3890a75d234b6e7db92c409a02ef8504.ctex
+Loading resource: res://assets/architecture/stormglass/conditions/intact_sconce.png
+Loading resource: res://.godot/imported/intact_sconce.png-0f16d2700ed93c13f6b96399cfaf19ac.ctex
+CASTLE_BACKDROP_CHECK {"label":"native interior band count matches world scale","passed":true}
+CASTLE_BACKDROP_CHECK {"label":"lower native band meets gallery floor","passed":true}
+CASTLE_BACKDROP_CHECK {"label":"upper band continues the same world scale","passed":true}
+CASTLE_BACKDROP_CHECK {"label":"horizontal native mirror repetition","passed":true}
+CASTLE_BACKDROP_CHECK {"label":"upper band uses native depth opacity","passed":true}
+CASTLE_BACKDROP_CHECK {"label":"native stone material grading","passed":true}
+CASTLE_BACKDROP_CHECK {"label":"eighteen stone balcony corbels","passed":true}
+XR: Clearing primary interface
+XR: Removed interface "Native mobile"
+XR: Removed interface "OpenXR"
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+   at: cleanup (core/object/object.cpp:2641)
+Leaked instance: RefCounted:9223372167314410291 - Reference count: 0
+Hint: Leaked instances typically happen when nodes are removed from the scene tree (with `remove_child()`) but not freed (with `free()` or `queue_free()`).

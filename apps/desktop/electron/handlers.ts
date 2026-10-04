@@ -1414,6 +1414,7 @@ export function registerIpcHandlers(cwd: string): void {
         assetType: string;
         assetId?: string;
         operation?: 'create' | 'replace';
+        backgroundDetail?: 'standard' | 'detailed';
         seed?: number;
         generationMode?: GenerationMode;
         variants?: number;
@@ -1446,6 +1447,7 @@ export function registerIpcHandlers(cwd: string): void {
             operation: request.operation,
             seed: request.seed,
             generationMode: request.generationMode,
+            backgroundDetail: request.backgroundDetail,
             nvidiaImageModel,
             hardwareProfile: hw.profile,
             providerEnabled: parseProviderEnabledMap(prefs),
@@ -1464,6 +1466,7 @@ export function registerIpcHandlers(cwd: string): void {
             operation: 'create',
             seed: request.seed === undefined ? undefined : (request.seed + i * 997) % 2147483648,
             generationMode: request.generationMode,
+            backgroundDetail: request.backgroundDetail,
             nvidiaImageModel,
             hardwareProfile: hw.profile,
             providerEnabled: parseProviderEnabledMap(prefs),

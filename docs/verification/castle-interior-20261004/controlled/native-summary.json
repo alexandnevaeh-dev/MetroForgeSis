@@ -1,0 +1,139 @@
+{
+  "code": 0,
+  "base": "E:\\MetroForgeData\\TestArtifacts\\castle-interior-controlled-20261004-v4",
+  "scriptErrors": false,
+  "nativeErrors": [],
+  "warnings": [
+    "WARNING: ObjectDB instances leaked at exit (run with --verbose for details)."
+  ],
+  "scope": "Controlled native backdrop and malformed-profile checks with forced room loads; not gameplay traversal",
+  "nvidia": true,
+  "castleBackdrop": {
+    "captures": [
+      "res://qa/castle-continuity/gallery-640.png",
+      "res://qa/castle-continuity/gallery-2048.png",
+      "res://qa/castle-continuity/gallery-3456.png",
+      "res://qa/castle-continuity/gallery-middle.png",
+      "res://qa/castle-continuity/gallery-upper.png",
+      "res://qa/castle-continuity/gallery-overview.png"
+    ],
+    "checks": [
+      {
+        "label": "continuous profile is read",
+        "passed": true
+      },
+      {
+        "label": "unselected rooms preserve their framing",
+        "passed": true
+      },
+      {
+        "label": "invalid composition is refused: null",
+        "passed": true
+      },
+      {
+        "label": "invalid composition is refused: false",
+        "passed": true
+      },
+      {
+        "label": "invalid composition is refused: {}",
+        "passed": true
+      },
+      {
+        "label": "invalid composition is refused: \"repeat\"",
+        "passed": true
+      },
+      {
+        "label": "invalid composition is refused: 3",
+        "passed": true
+      },
+      {
+        "label": "authored profile restored exactly",
+        "passed": true
+      },
+      {
+        "label": "other rooms still use a single legacy panorama",
+        "passed": true
+      },
+      {
+        "label": "exactly one continuous gallery plate",
+        "passed": true
+      },
+      {
+        "label": "no whole-scene bay bands",
+        "passed": true
+      },
+      {
+        "label": "source framing never repeats outside the original image",
+        "passed": true
+      },
+      {
+        "label": "one composition covers the entire room width",
+        "passed": true
+      },
+      {
+        "label": "unbroken plate meets the collision floor",
+        "passed": true
+      },
+      {
+        "label": "no anisotropic stretching",
+        "passed": true
+      },
+      {
+        "label": "continuous material grade matches authored RGB",
+        "passed": true
+      },
+      {
+        "label": "gallery has no modulo-selected condition decals",
+        "passed": true
+      },
+      {
+        "label": "exactly two intentional pier lights",
+        "passed": true
+      },
+      {
+        "label": "light has real floor support: AuthoredStormglassProp_00_00",
+        "passed": true
+      },
+      {
+        "label": "light sits beside architecture: AuthoredStormglassProp_00_00",
+        "passed": true
+      },
+      {
+        "label": "light clears combat sightline and door margins: AuthoredStormglassProp_00_00",
+        "passed": true
+      },
+      {
+        "label": "light has real floor support: AuthoredStormglassProp_00_01",
+        "passed": true
+      },
+      {
+        "label": "light sits beside architecture: AuthoredStormglassProp_00_01",
+        "passed": true
+      },
+      {
+        "label": "light clears combat sightline and door margins: AuthoredStormglassProp_00_01",
+        "passed": true
+      },
+      {
+        "label": "all three storeys have named internal chambers",
+        "passed": true
+      },
+      {
+        "label": "balcony supports follow the real storey surfaces",
+        "passed": true
+      },
+      {
+        "label": "internal room doorway headers are real collision",
+        "passed": true
+      }
+    ],
+    "passed": true,
+    "plate": {
+      "height": 1728,
+      "width": 4096,
+      "x": 0,
+      "y": -256
+    },
+    "scope": "Controlled native room loads, invalid-mode checks, scenery support and camera captures; not normal-input traversal or final art approval."
+  }
+}

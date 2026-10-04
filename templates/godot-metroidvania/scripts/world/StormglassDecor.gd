@@ -1,5 +1,7 @@
 extends Node2D
 
+const CASTLE_SPATIAL_PROFILE_VERSION := 4
+
 @export var room_width: int = 2048
 @export var room_height: int = 1152
 @export var tile_size: int = 32
@@ -31,6 +33,7 @@ const CONDITION_LABELS := ["intact_nave", "flooded_undercroft", "collapsed_archi
 func _ready() -> void:
 	_spawn_authored_panorama()
 	_spawn_authored_architecture()
+	_spawn_interior_chambers()
 	call_deferred("_spawn_authored_props")
 	call_deferred("_spawn_condition_decals")
 	queue_redraw()
@@ -74,9 +77,56 @@ static func spatial_settings(id: String) -> Dictionary:
 	if typeof(raw_height) not in [TYPE_INT, TYPE_FLOAT]:
 		return {}
 	var height := float(raw_height)
-	if not rooms is Array or id not in rooms or not is_finite(height) or height < 512.0 or height > 1536.0:
+	if not rooms is Array or id not in rooms or not is_finite(height) or height < 256.0 or height > 1536.0:
 		return {}
-	return {"panoramaHeight": height}
+	var result := {"panoramaHeight": height}
+	if config.has("panoramaMode"):
+		var mode: Variant = config["panoramaMode"]
+		if not mode is String or mode not in ["continuous", "modular"]:
+			return {}
+		result["panoramaMode"] = mode
+	if config.has("sourceHeightFraction"):
+		var fraction: Variant = config["sourceHeightFraction"]
+		if result.get("panoramaMode", "modular") != "continuous" or typeof(fraction) not in [TYPE_INT, TYPE_FLOAT] or not is_finite(float(fraction)) or float(fraction) < 0.25 or float(fraction) > 1.0:
+			return {}
+		result["sourceHeightFraction"] = float(fraction)
+	if config.has("stoneGrade"):
+		var grade: Variant = config["stoneGrade"]
+		if not grade is Array or grade.size() != 3:
+			return {}
+		for channel in grade:
+			if typeof(channel) not in [TYPE_INT, TYPE_FLOAT] or not is_finite(float(channel)) or float(channel) < 0.0 or float(channel) > 1.0:
+				return {}
+		result["stoneGrade"] = grade.duplicate()
+	return result
+
+
+func _spawn_continuous_panorama(texture: Texture2D, background_path: String, settings: Dictionary, spatial: Dictionary) -> void:
+	# One room-space composition. Never repeat or mirror a complete painted scene.
+	var sprite := Sprite2D.new()
+	sprite.name = "ContinuousCastlePanorama"
+	sprite.texture = texture
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sprite.texture_repeat = CanvasItem.TEXTURE_REPEAT_DISABLED
+	var source_height := float(texture.get_height()) * float(spatial.get("sourceHeightFraction", 1.0))
+	if source_height < texture.get_height():
+		sprite.region_enabled = true
+		sprite.region_rect = Rect2(0.0, 0.0, float(texture.get_width()), source_height)
+	var cover := maxf(float(room_width) / texture.get_width(), float(room_height) / source_height)
+	sprite.scale = Vector2.ONE * cover
+	var plate_height := source_height * cover
+	var floor_y := float(room_height - tile_size * 2)
+	sprite.position = Vector2(room_width * 0.5, plate_height * 0.5 + (floor_y - plate_height) * float(settings.get("anchorY", 1.0)))
+	sprite.z_as_relative = false
+	sprite.z_index = -70
+	var grade: Array = spatial.get("stoneGrade", [0.86, 0.90, 0.96])
+	sprite.modulate = Color(float(grade[0]), float(grade[1]), float(grade[2]), float(settings.get("opacity", 0.85)))
+	sprite.set_meta("castle_base", background_path)
+	sprite.set_meta("interior_continuity", true)
+	add_child(sprite)
+	var fallback := get_parent().get_node_or_null("Background") as CanvasItem
+	if fallback:
+		fallback.visible = false
 
 
 func _spawn_modular_panorama(texture: Texture2D, background_path: String, settings: Dictionary, spatial: Dictionary) -> void:
@@ -101,7 +151,8 @@ func _spawn_modular_panorama(texture: Texture2D, background_path: String, settin
 		sprite.z_as_relative = false
 		sprite.z_index = -70
 		var opacity := float(settings.get("opacity", 0.85)) * (1.0 if band_index == 0 else 0.68)
-		sprite.modulate = Color(0.86, 0.90, 0.96, opacity)
+		var grade: Array = spatial.get("stoneGrade", [0.86, 0.90, 0.96])
+		sprite.modulate = Color(float(grade[0]), float(grade[1]), float(grade[2]), opacity)
 		sprite.set_meta("panorama_world_height", band_height)
 		sprite.set_meta("castle_base", background_path)
 		add_child(sprite)
@@ -125,7 +176,10 @@ func _spawn_authored_panorama() -> void:
 		return
 	var spatial := spatial_settings(room_id)
 	if not spatial.is_empty():
-		_spawn_modular_panorama(texture, background_path, settings, spatial)
+		if spatial.get("panoramaMode", "modular") == "continuous":
+			_spawn_continuous_panorama(texture, background_path, settings, spatial)
+		else:
+			_spawn_modular_panorama(texture, background_path, settings, spatial)
 		return
 	var sprite := Sprite2D.new()
 	sprite.name = "AuthoredStormglassPanorama"
@@ -245,6 +299,45 @@ func _spawn_authored_architecture() -> void:
 	_spawn_authored_windows(floor_y)
 
 
+func _spawn_interior_chambers() -> void:
+	# Opt-in authored room plan. Real floors and doorway headers live in the compiled scene;
+	# these matching arches give each upstairs/downstairs chamber its architectural identity.
+	var path := "res://data/visual/castle-interiors.json"
+	if not FileAccess.file_exists(path):
+		return
+	var raw: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+	if not raw is Dictionary or raw.get("version", 0) != 1 or not raw.get("rooms") is Dictionary:
+		return
+	var plan: Variant = raw["rooms"].get(room_id)
+	if not plan is Dictionary or not plan.get("sections") is Array:
+		return
+	var texture := load("res://assets/architecture/stormglass/grand_arch.png") as Texture2D
+	if texture == null:
+		return
+	for section: Variant in plan["sections"]:
+		if not section is Dictionary or section.get("storey", "lower") == "lower":
+			continue
+		if not section.get("x") is float or not section.get("width") is float or not section.get("floorY") is float:
+			continue
+		var floor_y := float(section["floorY"])
+		var x := float(section["x"]) + float(section["width"]) * 0.5
+		if not is_finite(x) or not is_finite(floor_y) or x < 0 or x > room_width or floor_y < 400 or floor_y > room_height:
+			continue
+		var sprite := Sprite2D.new()
+		sprite.name = "InteriorChamber_" + String(section.get("id", "room"))
+		sprite.texture = texture
+		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		var scale_to_world := 360.0 / texture.get_height()
+		sprite.scale = Vector2.ONE * scale_to_world
+		sprite.position = Vector2(x, floor_y - 180.0 + _texture_bottom_inset(texture) * scale_to_world)
+		sprite.z_as_relative = false
+		sprite.z_index = -1
+		sprite.modulate = Color(0.76, 0.83, 0.96, 0.76)
+		sprite.set_meta("chamber_name", section.get("name", "Chamber"))
+		sprite.set_meta("storey", section.get("storey", ""))
+		add_child(sprite)
+
+
 func _spawn_authored_windows(floor_y: float) -> void:
 	var path := "res://assets/architecture/stormglass/lancet_window.png"
 	if not ResourceLoader.exists(path):
@@ -284,6 +377,9 @@ func _spawn_authored_windows(floor_y: float) -> void:
 
 
 func _spawn_condition_decals() -> void:
+	# The continuous gallery is dressed around its authored piers, without modulo-picked decals.
+	if room_id == "room_001" and spatial_settings(room_id).get("panoramaMode", "modular") == "continuous":
+		return
 	# Each ten-room district keeps the same castle shell while a small authored decal family
 	# communicates its physical condition. Decals are selected deterministically per room so
 	# adjacent spaces share materials without repeating the same landmark composition.
@@ -430,6 +526,10 @@ func _spawn_authored_props() -> void:
 					occupied = true
 			if not occupied:
 				placement_specs.append({"prop": 0 if int(cluster_x / 420) % 2 == 0 else 5, "x": fraction, "scale": 0.74})
+	if room_id == "room_001" and spatial_settings(room_id).get("panoramaMode", "modular") == "continuous":
+		# Two lights sit beside the main arcade piers. Bell debris and detached column caps
+		# do not belong in this intact gallery; leave its traversal and combat floor open.
+		placement_specs = [{"prop": 0, "x": 0.21, "scale": 0.78}, {"prop": 0, "x": 0.80, "scale": 0.78}]
 	var fallback_floor_y := float(room_height - tile_size * 2)
 	for placement_index in range(placement_specs.size()):
 		var spec: Dictionary = placement_specs[placement_index]
@@ -465,6 +565,9 @@ func _spawn_authored_props() -> void:
 				x,
 				surface_y - float(texture.get_height()) * uniform_scale * 0.5 + bottom_inset * uniform_scale,
 			)
+		sprite.set_meta("dressing_role", "pier_light" if room_id == "room_001" and spatial_settings(room_id).get("panoramaMode", "modular") == "continuous" else "legacy")
+		if sprite.get_meta("dressing_role") == "pier_light":
+			sprite.z_index = -1
 		add_child(sprite)
 
 

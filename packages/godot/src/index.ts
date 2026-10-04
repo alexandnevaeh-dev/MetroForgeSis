@@ -1,7 +1,19 @@
-export { GodotProjectAssembler, getTemplatePath, overlayAuthoredVisualPolish, applyAuthoredOverlayProvenance, isRollbackOnlyTemplatePath, stripRollbackOnlyAssets } from './assembler.js';
+export {
+  GodotProjectAssembler,
+  getTemplatePath,
+  overlayAuthoredVisualPolish,
+  applyAuthoredOverlayProvenance,
+  isRollbackOnlyTemplatePath,
+  stripRollbackOnlyAssets,
+} from './assembler.js';
 export { assembleQuantumProject } from './quantum-assembler.js';
 export type { QuantumAssemblyInput, QuantumAssemblyResult } from './quantum-assembler.js';
-export type { AssemblyInput, AssemblyResult, RecompileRoomsInput, RecompileRoomsResult } from './assembler.js';
+export type {
+  AssemblyInput,
+  AssemblyResult,
+  RecompileRoomsInput,
+  RecompileRoomsResult,
+} from './assembler.js';
 export {
   deriveRoomIds,
   resolvePublishedArchetype,
@@ -29,7 +41,12 @@ export type {
   EntityPlacement,
   EntityKind,
 } from './room-assembler.js';
-export { buildRoomTileCells, buildRoomShellColliders, floorTopPx, SIDE_DOOR_ROWS } from './tile-layout.js';
+export {
+  buildRoomTileCells,
+  buildRoomShellColliders,
+  floorTopPx,
+  SIDE_DOOR_ROWS,
+} from './tile-layout.js';
 export {
   composePlayableVisuals,
   composeBossArena,
@@ -51,13 +68,21 @@ export type {
   PlatformVisualStrategy,
   PresentationRoomInput,
 } from './composition/index.js';
-export { measureRoomLayout, layoutsTooSimilar, roomSetHasExcessDuplicates } from './room-variety.js';
+export {
+  measureRoomLayout,
+  layoutsTooSimilar,
+  roomSetHasExcessDuplicates,
+} from './room-variety.js';
 export type { RoomLayoutMetrics } from './room-variety.js';
 export { composeEnvironment, biomeCompositionRule } from './environment-composition.js';
 export type { EnvironmentCompositionSpec, CompositionLayer } from './environment-composition.js';
 export { compileGodotTerrainSet } from './terrain-set.js';
 export { EXTERNAL_VISUAL_PACKS, loadExternalVisualPack } from './external-visual-pack.js';
-export type { ExternalVisualPackId, ExternalVisualPackManifest, ExternalVisualPackAsset } from './external-visual-pack.js';
+export type {
+  ExternalVisualPackId,
+  ExternalVisualPackManifest,
+  ExternalVisualPackAsset,
+} from './external-visual-pack.js';
 export {
   expandFoundryTextureAliases,
   remapTileCellsForFoundry,
@@ -69,3 +94,4 @@ export {
 
 export { parseRoomSceneCollision } from './scene-collision.js';
 export type { SceneCollision, SceneCollisionRect } from './scene-collision.js';
+export { buildCastleInteriorLayout } from './castle-interior-layout.js';

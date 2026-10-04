@@ -1,0 +1,139 @@
+{
+  "status": "verified-development-progress",
+  "productionReady": false,
+  "parent": "b9ea93ab72f83661c68579fceb00ee9856aecd2e",
+  "release": "E:\\MetroForgeData\\Releases\\MetroForge-castle-art-20261004-v2",
+  "workshopUiChecks": 28,
+  "apiKeysUiChecks": 44,
+  "unitChecks": 132,
+  "controlledNativeBackdropChecks": 25,
+  "generation": {
+    "provider": "diffusers",
+    "model": "E:/Metroforge/Recovery-Audit/models/sdxl-base-1.0",
+    "executionMetadata": {
+      "computeBackend": "cuda",
+      "actualDevice": "cuda",
+      "offloadStrategy": "model",
+      "executionPath": "diffusers_torch_cuda",
+      "timings": {
+        "totalMs": 395804
+      },
+      "effectiveConditioningMode": null,
+      "effectiveConditioningStrength": null,
+      "effectivePrompt": "Gothic interior, receding stone arcade, small teal windows, amber sconces, orthographic gallery, no characters or text. Art style: modern HD pixel art. For Stormglass Reliquary - Side-view Test. Side-view game, consistent horizontal ground plane and lighting. Environment matching the game camera and biome architecture.",
+      "effectiveNegativePrompt": "blurry, low quality, text, watermark",
+      "effectiveSteps": 20,
+      "effectiveGuidance": 5,
+      "effectiveWidth": 1024,
+      "effectiveHeight": 576
+    },
+    "imagePlan": {
+      "profile": "BACKGROUND",
+      "width": 1024,
+      "height": 576,
+      "sourceWidth": 1024,
+      "sourceHeight": 576,
+      "transparent": false,
+      "grounded": false
+    },
+    "files": [
+      {
+        "path": "assets/generated/gothic_interior_receding_stone_arcade_sm_e215fda0-9708-46bf-a62f-a5851260aee1.png",
+        "sha256": "10e8929e83903f5133353727b7851804664ca40ed2cd9bae698571d44fd7beb3"
+      },
+      {
+        "path": "assets/generated/gothic_interior_receding_stone_arcade_sm_e215fda0-9708-46bf-a62f-a5851260aee1_source.png",
+        "sha256": "486ff0dcc83143c6581fa71e30f6c34b84c2b89ac2dcce58044b2319c34c51ae"
+      }
+    ]
+  },
+  "nativeJourney": {
+    "passed": true,
+    "transitions": 40,
+    "uniqueRooms": 35,
+    "bosses": [
+      "boss_000",
+      "boss_001",
+      "boss_002",
+      "boss_final"
+    ],
+    "abilities": [
+      "dash",
+      "double_jump",
+      "wall_slide",
+      "wall_jump",
+      "ground_slam",
+      "air_dash"
+    ],
+    "clearedArenaReturns": [
+      {
+        "room": "room_008",
+        "boss": "boss_000",
+        "observations": 2,
+        "passed": true,
+        "cleared": {
+          "bossPresent": false,
+          "defeatedBosses": [
+            "boss_000"
+          ],
+          "exitsOpen": true,
+          "music": "biome_0",
+          "room": "room_008",
+          "tMs": 86333
+        }
+      },
+      {
+        "room": "room_018",
+        "boss": "boss_001",
+        "observations": 2,
+        "passed": true,
+        "cleared": {
+          "bossPresent": false,
+          "defeatedBosses": [
+            "boss_000",
+            "boss_001"
+          ],
+          "exitsOpen": true,
+          "music": "biome_0",
+          "room": "room_018",
+          "tMs": 148859
+        }
+      },
+      {
+        "room": "room_028",
+        "boss": "boss_002",
+        "observations": 2,
+        "passed": true,
+        "cleared": {
+          "bossPresent": false,
+          "defeatedBosses": [
+            "boss_000",
+            "boss_001",
+            "boss_002"
+          ],
+          "exitsOpen": true,
+          "music": "biome_0",
+          "room": "room_028",
+          "tMs": 232854
+        }
+      }
+    ],
+    "warnings": [
+      "WARNING: ObjectDB instances leaked at exit (run with --verbose for details)."
+    ]
+  },
+  "gallery": {
+    "room": "room_001",
+    "width": 4096,
+    "height": 1536,
+    "panoramaHeight": 256,
+    "stoneGrade": [
+      0.54,
+      0.67,
+      0.84
+    ],
+    "unchangedSiblingGeometry": 39
+  },
+  "retainedFailure": "First actual CUDA UI run passed 21 checks but failed an outer-window versus content-width wait. Repaired harness completed 28 checks with a fresh actual CUDA generation. A subsequent incorrect source-path startup also exited before launching the app; its output is retained in the execution history.",
+  "limits": "One fresh original backdrop and shared scale/grading controls, not a complete castle redesign. Repeated background bands remain visible. Existing prop and guardian art/animations require further work. Native ObjectDB exit warning remains; dummy audio is not listening acceptance. No fresh top-down, Unity or Unreal acceptance. Model license/provenance admission remains open before redistribution of generated game assets."
+}

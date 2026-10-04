@@ -1,0 +1,68 @@
+WorkerThreadPool: 12 threads, 3 max low-priority.
+Godot Engine v4.6.stable.official.89cea1439 - https://godotengine.org
+TextServer: Added interface "Dummy"
+TextServer: Added interface "ICU / HarfBuzz / Graphite (Built-in)"
+Unrecognized output string "misc2" in mapping:
+030000000d0f00000202000000000000,Horipad O Nintendo Switch 2 Controller,a:b1,b:b0,back:b8,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,dpup:h0.1,guide:b12,leftshoulder:b4,leftstick:b10,lefttrigger:b6,leftx:a0,lefty:a1,misc1:b13,misc2:b14,rightshoulder:b5,rightstick:b11,righttrigger:b7,rightx:a2,righty:a3,start:b9,x:b3,y:b2,platform:Windows,
+Unrecognized output string "misc2" in mapping:
+030000000d0f00009601000000000000,Horipad Steam,a:b0,b:b1,back:b10,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,dpup:h0.1,guide:b12,leftshoulder:b6,leftstick:b13,lefttrigger:b8,leftx:a0,lefty:a1,misc2:b2,paddle1:b5,paddle2:b15,paddle3:b18,paddle4:b19,rightshoulder:b7,rightstick:b14,righttrigger:b9,rightx:a3,righty:a4,start:b11,x:b3,y:b4,platform:Windows,
+Unrecognized output string "misc2" in mapping:
+030000007e0500006920000000000000,Nintendo Switch 2 Pro Controller,a:b0,b:b1,back:b14,dpdown:b8,dpleft:b10,dpright:b9,dpup:b11,guide:b16,leftshoulder:b12,leftstick:b15,lefttrigger:b13,leftx:a0,lefty:a1~,misc1:b17,misc2:b20,paddle1:b18,paddle2:b19,rightshoulder:b4,rightstick:b7,righttrigger:b5,rightx:a2,righty:a3~,start:b6,x:b2,y:b3,platform:Windows,
+Native OpenGL API detected: 3.3: NVIDIA - NVIDIA GeForce RTX 5060 Laptop GPU
+NVAPI: Init OK!
+NVAPI: Profile not found, creating...
+NVAPI: Application not found in profile, creating...
+NVAPI: Error creating application: NVAPI_EXECUTABLE_ALREADY_IN_USE(code -167)
+SDL: Gamepad XInput Controller connected
+SDL: Init OK!
+Using "winink" pen tablet driver...
+Shader 'CanvasSdfShaderGLES3' SHA256: b9718faec1782e5139496d2dae083d936043d0ecabeda65c5b92a07a17cecd33
+Shader 'SkeletonShaderGLES3' SHA256: fb9cbf15b48ee6c34a0db09b1896bee95a3a97aa97bdb1f282d72d6c694e2598
+Shader 'ParticlesShaderGLES3' SHA256: 7f716ee166e21861b8520b9f89a20de535771da43208854a301cf9abef9d7976
+Shader 'ParticlesCopyShaderGLES3' SHA256: 600cbaed1622baa5605373f4ec7000f6d5408861f0e6c60ae661a72984253aaa
+Shader 'CopyShaderGLES3' SHA256: ed8e55364f14bb9ab8eefb454c7bdade67784e645da98fc16e505c129cca684c
+Shader 'CubemapFilterShaderGLES3' SHA256: 41c0d056700d50be72cdd7db1582bfe81ad8d3fa0f5880fe9f23ea3d65ba9ef2
+Shader 'GlowShaderGLES3' SHA256: ba54af943a5836ab39fe344ac11dc58a0ccb0e583ebab014f25afd3d47ccca1b
+Shader 'PostShaderGLES3' SHA256: ea6892c99544cb86fd31c8c3d9f620c09c101bd2d39cdf770c020dfa4592bc60
+Shader 'FeedShaderGLES3' SHA256: a3fc826c42d91c276958c4e2f002e2e17eaf9d57d2cd66096fdc4c8469300a23
+Shader 'CanvasShaderGLES3' SHA256: 8b38bf424986f92785129212b0f265252240ac5ec2f61539412bf72938914d1f
+Shader 'CanvasOcclusionShaderGLES3' SHA256: b111f488b3881a5dc9091f30be4555c19fc88ab4efa80b3b8b990ff2efeb00b8
+Shader 'SceneShaderGLES3' SHA256: ebd945223a7f218efd2f3fbbd1e74a9065db379ed973b36de7de688ab0cc74ee
+Shader 'SkyShaderGLES3' SHA256: 1b23e2e8fd7716c22bf0bc433327281beec7b3812d64872a9bd0d5ba2cb984eb
+OpenGL API 3.3.0 NVIDIA 617.14 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 5060 Laptop GPU
+
+TextServer: Primary interface set to: "ICU / HarfBuzz / Graphite (Built-in)".
+CORE API HASH: 3663110324
+EDITOR API HASH: 835956462
+SceneTreeFTI: traversal method DEFAULT
+Loading resource: res://scripts/core/StudioRuntimeBridge.gd
+Loading resource: res://scripts/core/GameManager.gd
+Loading resource: res://scripts/core/DialogueManager.gd
+Loading resource: res://scripts/core/ShopManager.gd
+Loading resource: res://scripts/core/QualityPresentation.gd
+MbedTLS: Some X509 certificates could not be parsed (1 certificates skipped).
+Loaded system CA certificates
+Loading resource: res://scenes/test/CastleContinuityValidation.tscn
+Loading resource: res://scripts/test/CastleContinuityValidation.gd
+SCRIPT ERROR: Parse Error: Cannot infer the type of "path" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/test/CastleContinuityValidation.gd:86)
+ERROR: Failed to load script "res://scripts/test/CastleContinuityValidation.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript.cpp:2907)
+Loading resource: res://assets/vfx/hit_spark.png
+Loading resource: res://.godot/imported/hit_spark.png-b5856c705e2806b5c32dda31e1022359.ctex
+Loading resource: res://assets/vfx/death_puff.png
+Loading resource: res://.godot/imported/death_puff.png-eaf796bf7957cf9b0ee482dcd63f611b.ctex
+Loading resource: res://assets/vfx/dash_trail.png
+Loading resource: res://.godot/imported/dash_trail.png-ce20a167c7418a8d94e0d4e148f9ffa4.ctex
+Loading resource: res://assets/vfx/pickup_spark.png
+Loading resource: res://.godot/imported/pickup_spark.png-dd9b20db8cdebb35e61d0034e0a2aa5b.ctex
+Loading resource: res://assets/vfx/ability_unlock.png
+Loading resource: res://.godot/imported/ability_unlock.png-343e87f205cd55b185f45c42603d3a5b.ctex
+Loading resource: res://assets/vfx/boss_phase_shift.png
+Loading resource: res://.godot/imported/boss_phase_shift.png-a8af2af2accd860801926283ec6dc434.ctex
+Loading resource: res://assets/vfx/area_burst.png
+Loading resource: res://.godot/imported/area_burst.png-6397c336594483b5ba8cf7cbf30ca9f3.ctex
+Loading resource: res://assets/vfx/slam_shock.png
+Loading resource: res://.godot/imported/slam_shock.png-950e009079a8c838f42e5d3e32bd2140.ctex
+Loading resource: res://assets/vfx/landing_dust.png
+Loading resource: res://.godot/imported/landing_dust.png-9b9d5126a1271146aab4be248493225c.ctex

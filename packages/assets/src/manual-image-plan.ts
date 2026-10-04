@@ -13,7 +13,18 @@ export interface ManualImagePlan {
 }
 
 /** Manual artwork has its own canvas contract; runtime sprite-sheet compilation is unchanged. */
-export function manualImagePlan(type: string, id: string, existing?: Buffer): ManualImagePlan {
+export function manualImagePlan(
+  type: string,
+  id: string,
+  existing?: Buffer,
+  backgroundDetail?: 'standard' | 'detailed',
+): ManualImagePlan {
+  if (backgroundDetail !== undefined) {
+    if (!['standard', 'detailed'].includes(backgroundDetail))
+      throw new Error('Choose standard or detailed background artwork');
+    if (type !== 'background' || existing)
+      throw new Error('Background detail applies only to new background images');
+  }
   const roles: Record<string, [ImageGenerationProfile, number, number, boolean, boolean]> = {
     player_sprite: ['CHARACTER', 64, 64, true, true],
     enemy: ['ENEMY', 64, 64, true, true],
@@ -34,6 +45,10 @@ export function manualImagePlan(type: string, id: string, existing?: Buffer): Ma
   const role = roles[type];
   if (!role) throw new Error(`Unsupported manual artwork type: ${type}`);
   let [profile, width, height, transparent, grounded] = role;
+  if (backgroundDetail === 'detailed') {
+    width = 1024;
+    height = 576;
+  }
   if (existing) ({ width, height } = decodePngRgba(existing));
   if (width < 1 || height < 1 || width > 4096 || height > 4096 || width * height > 16_777_216) {
     throw new Error('Artwork canvas must be between 1 and 4096 pixels per side');
@@ -41,8 +56,8 @@ export function manualImagePlan(type: string, id: string, existing?: Buffer): Ma
   // Match canvas proportions without the legacy fourfold upscale of large background plates.
   const longest = Math.min(1024, Math.max(profile === 'BACKGROUND' ? 1024 : 512, width, height));
   const ratio = longest / Math.max(width, height);
-  const sourceWidth = Math.max(8, Math.round(width * ratio / 8) * 8);
-  const sourceHeight = Math.max(8, Math.round(height * ratio / 8) * 8);
+  const sourceWidth = Math.max(8, Math.round((width * ratio) / 8) * 8);
+  const sourceHeight = Math.max(8, Math.round((height * ratio) / 8) * 8);
   return { profile, width, height, sourceWidth, sourceHeight, transparent, grounded };
 }
 
@@ -50,8 +65,10 @@ export function compileManualImage(source: Buffer, plan: ManualImagePlan): Buffe
   // Opaque architecture, portraits and concept plates never pass through chroma knockout.
   const input = plan.transparent ? knockoutVfxBackground(source) : source;
   const compiled = new PixelArtProcessor().process(input, {
-    targetWidth: plan.width, targetHeight: plan.height,
-    skipQuantize: true, fitOpaque: plan.grounded,
+    targetWidth: plan.width,
+    targetHeight: plan.height,
+    skipQuantize: true,
+    fitOpaque: plan.grounded,
     preserveAlphaGradient: plan.profile === 'VFX_TEXTURE' || !plan.transparent,
   }).buffer;
   const { rgba } = decodePngRgba(compiled);
