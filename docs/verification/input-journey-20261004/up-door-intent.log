@@ -1,0 +1,7 @@
+Godot Engine v4.6.stable.official.89cea1439 - https://godotengine.org
+
+UP_DOOR_INTENT_PASS checks=9 scope=controlled_native_input_regression
+WARNING: res://scenes/world/RoomTransition.tscn:3 - ext_resource, invalid UID: uid://c4qljc72w0bc2 - using text path instead: res://scripts/world/RoomTransition.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://scripts/test/UpDoorIntentTest.gd:19)

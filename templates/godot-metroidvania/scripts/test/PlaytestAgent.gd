@@ -2,6 +2,7 @@ extends RefCounted
 class_name PlaytestAgent
 ## Input-simulating bot that follows `playtest_route.json` through the live world.
 ## Supports persona-specific timeouts and emits structured telemetry for balance analysis.
+## Acts through Input only: no invulnerability, actor moves, forced attacks or door muting.
 
 const ROUTE_PATH := "res://playtest_route.json"
 const MOVEMENT_CONFIG_PATH := "res://data/player/movement.json"
@@ -50,6 +51,11 @@ var _restored_health_on_respawn: float = -1.0
 ## WorldManager._load_room), so the subscription must move with it. Tracked here so re-wiring
 ## never connects twice to the same still-alive instance.
 var _tracked_health: HealthComponent = null
+var _observed_player_id: int = 0
+var _observed_attack_sequence: int = 0
+var _combat_events: Array = []
+var _signal_connections: Array = []
+var _ground_slam_events: Array = []
 
 func run(world: Node, host: Node) -> Dictionary:
 	_started_at_ms = Time.get_ticks_msec()
@@ -60,11 +66,11 @@ func run(world: Node, host: Node) -> Dictionary:
 	_load_expected_speed()
 	_apply_persona(route.get("persona", {}))
 	_visited_rooms = [String(route.get("startRoomId", GameManager.current_room_id))]
-	EventBus.player_died.connect(func() -> void:
+	_track_signal(EventBus.player_died, func() -> void:
 		_player_deaths += 1
 		_death_events.append({"room_id": GameManager.current_room_id, "t_ms": Time.get_ticks_msec()})
 	)
-	EventBus.player_respawned.connect(func() -> void:
+	_track_signal(EventBus.player_respawned, func() -> void:
 		_respawn_destination_room_id = GameManager.current_room_id
 		var respawned_player := host.get_tree().get_first_node_in_group("player")
 		var respawned_health := respawned_player.get_node_or_null("HealthComponent") as HealthComponent if respawned_player else null
@@ -74,7 +80,7 @@ func run(world: Node, host: Node) -> Dictionary:
 	# pickup collection (see SavePoint.gd's own _on_body_entered: set_checkpoint() + this exact
 	# "save_<room_id>" id are always emitted together, unlike EventBus.save_triggered, which also
 	# fires for unrelated ability/boss-defeat autosaves and can't identify *which* SavePoint).
-	EventBus.object_activated.connect(func(object_id: String) -> void:
+	_track_signal(EventBus.object_activated, func(object_id: String) -> void:
 		if not object_id.begins_with("save_"):
 			return
 		_checkpoint_activated = true
@@ -87,7 +93,7 @@ func run(world: Node, host: Node) -> Dictionary:
 	)
 	_rewire_damage_tracking(host)
 	# Re-wire on every room load, not just the first — see _tracked_health's doc comment.
-	EventBus.room_entered.connect(func(_room_id: String) -> void: _rewire_damage_tracking(host))
+	_track_signal(EventBus.room_entered, func(_room_id: String) -> void: _rewire_damage_tracking(host))
 
 	if not route.get("reachable", false):
 		_fail_stage = "route_unreachable"
@@ -114,6 +120,8 @@ func run(world: Node, host: Node) -> Dictionary:
 	return _outcome(true, route, "", {}, boss_fight_ms)
 
 func _outcome(ok: bool, route: Dictionary, reason: String, extra: Dictionary = {}, boss_fight_ms: int = 0) -> Dictionary:
+	_release_horizontal_input()
+	_dispose_signal_tracking()
 	var result := {
 		"ok": ok,
 		"reason": reason,
@@ -133,6 +141,17 @@ func _outcome(ok: bool, route: Dictionary, reason: String, extra: Dictionary = {
 ## `player_took_real_damage` events, `damageTaken: 0.0`). Guards against reconnecting to the
 ## *same* still-alive HealthComponent twice (no duplicate subscriptions); the old HealthComponent
 ## needs no explicit disconnect — it's freed with its room, which severs its signals automatically.
+func _track_signal(source: Signal, callback: Callable) -> void:
+	source.connect(callback)
+	_signal_connections.append({"owner": weakref(source.get_object()), "name": source.get_name(), "callback": callback})
+
+func _dispose_signal_tracking() -> void:
+	for connection in _signal_connections:
+		var owner: Object = connection.owner.get_ref()
+		if is_instance_valid(owner) and owner.is_connected(connection.name, connection.callback):
+			owner.disconnect(connection.name, connection.callback)
+	_signal_connections.clear()
+
 func _rewire_damage_tracking(host: Node) -> void:
 	var player := host.get_tree().get_first_node_in_group("player")
 	if player == null:
@@ -148,7 +167,7 @@ func _rewire_damage_tracking(host: Node) -> void:
 	if is_instance_valid(_tracked_health) and health == _tracked_health:
 		return
 	_tracked_health = health
-	health.damaged.connect(func(amount: float) -> void:
+	_track_signal(health.damaged, func(amount: float) -> void:
 		_damage_taken += amount
 		_damage_events.append({
 			"room_id": GameManager.current_room_id,
@@ -163,7 +182,7 @@ func _apply_persona(persona: Variant) -> void:
 		return
 	_persona_id = String(persona.get("id", _persona_id))
 	_walk_timeout_sec = float(persona.get("walkTimeoutSec", _walk_timeout_sec))
-	_boss_attack_timeout_sec = float(persona.get("bossAttackTimeoutSec", _boss_attack_timeout_sec))
+	_boss_attack_timeout_sec = maxf(MIN_BOSS_ATTACK_TIMEOUT_SEC, float(persona.get("bossAttackTimeoutSec", _boss_attack_timeout_sec)))
 	_collect_all_pickups = bool(persona.get("collectAllPickups", _collect_all_pickups))
 
 ## Reads the project's real walk speed so distance-aware timeouts reflect how fast this
@@ -232,6 +251,9 @@ func _build_telemetry(route: Dictionary, boss_fight_ms: int) -> Dictionary:
 		"bossFightMs": boss_fight_ms,
 		"avgTransitionMs": avg_transition_ms,
 		"inputSimulationUsed": used_input_simulation,
+		"inputOnly": true,
+		"bossDamageEvents": _combat_events,
+		"groundSlamEvents": _ground_slam_events,
 		"victoryState": GameManager.current_state == GameManager.GameState.VICTORY,
 		"gameComplete": GameManager.game_complete,
 		"balanceHints": hints,
@@ -284,7 +306,8 @@ func _execute_transition(_world: Node, host: Node, from_room: String, to_room: S
 	# (WorldManager._lock_room_exits). Walking the exit without fighting is a real
 	# stuck state — same as a player standing at a sealed door.
 	if not await _defeat_alive_room_boss(host):
-		_fail_stage = "miniboss_not_defeated"
+		if _fail_stage.is_empty():
+			_fail_stage = "miniboss_not_defeated"
 		return false
 	if GameManager.current_room_id == to_room:
 		return true
@@ -309,19 +332,23 @@ func _execute_transition(_world: Node, host: Node, from_room: String, to_room: S
 			_fail_stage = "phase_gate_failed"
 			return false
 
+	# A physical gate can trigger the real transition during the ability action.
+	if GameManager.current_room_id == to_room:
+		if not requirements.is_empty():
+			_gates_passed.append("%s->%s:%s" % [from_room, to_room, ",".join(requirements)])
+		return true
+	if not is_instance_valid(player) or not is_instance_valid(transition):
+		_fail_stage = "gate_changed_room_unexpectedly"
+		return false
 	if not await _wait_transition_open(host, transition, 3.0):
 		_fail_stage = "exit_still_locked"
 		return false
 
-	# The declared route is an intentional path choice. Temporarily mute unrelated optional
-	# exits in the same room so an input-driven jump toward the selected door cannot be diverted
-	# into a side room whose sensor overlaps the route (room_036's upward room_037 branch).
-	# Targeted optional steps remain enabled, and player-facing runtime behavior is untouched.
-	var muted_optional_transitions := _mute_other_optional_transitions(host, transition)
+	if String(transition.get("transition_direction")) == "up":
+		Input.action_press("move_up")
 	var entry := _transition_entry_point(transition)
 	var walk_timeout := _walk_timeout_for((player as Node2D).global_position, entry)
 	if not await _walk_player_to(host, player, entry, walk_timeout):
-		_restore_muted_transitions(muted_optional_transitions)
 		_fail_stage = "walk_timeout"
 		return false
 
@@ -335,7 +362,6 @@ func _execute_transition(_world: Node, host: Node, from_room: String, to_room: S
 			await _wait_room(host, to_room, 2.0)
 
 	if GameManager.current_room_id != to_room:
-		_restore_muted_transitions(muted_optional_transitions)
 		_fail_stage = "door_did_not_fire current=%s locked=%s" % [
 			GameManager.current_room_id,
 			str(not bool(transition.get("monitoring"))) if is_instance_valid(transition) else "freed",
@@ -344,24 +370,6 @@ func _execute_transition(_world: Node, host: Node, from_room: String, to_room: S
 	if not requirements.is_empty():
 		_gates_passed.append("%s->%s:%s" % [from_room, to_room, ",".join(requirements)])
 	return true
-
-func _mute_other_optional_transitions(host: Node, target: Node) -> Array[Node]:
-	var muted: Array[Node] = []
-	var room := _current_room(host)
-	if room == null:
-		return muted
-	for candidate in host.get_tree().get_nodes_in_group("room_transition"):
-		if candidate == target or not room.is_ancestor_of(candidate):
-			continue
-		if bool(candidate.get("is_optional")) and bool(candidate.get("monitoring")):
-			candidate.set_deferred("monitoring", false)
-			muted.append(candidate)
-	return muted
-
-func _restore_muted_transitions(transitions: Array[Node]) -> void:
-	for transition in transitions:
-		if is_instance_valid(transition):
-			transition.set_deferred("monitoring", true)
 
 func _wait_transition_open(host: Node, transition: Node, timeout_sec: float) -> bool:
 	if transition == null:
@@ -389,6 +397,8 @@ func _transition_entry_point(transition: Node) -> Vector2:
 	# RoomTransition.tscn CollisionShape2D is offset (12, 40) from the node origin.
 	# Walking to the origin with a 12px arrive threshold stops short of a right-hand
 	# door (node at x=776, sensor starts at 776, arrive at 764). Walk into the sensor.
+	if String(transition.get("transition_direction")) == "up":
+		return (transition as Node2D).global_position + Vector2(12.0, -32.0)
 	return (transition as Node2D).global_position + Vector2(12.0, 40.0)
 
 func _door_nudge(transition: Node) -> Vector2:
@@ -436,11 +446,14 @@ func _collect_room_pickups(host: Node, player: Node, stay_room: String = "") -> 
 		if stay_room != "" and GameManager.current_room_id != stay_room:
 			return
 		var ability_id := String(pickup.get("ability_id"))
-		await _walk_player_to(host, player, (pickup as Node2D).global_position)
-		pickups_collected += 1
+		var already_acquired := GameManager.has_ability(ability_id)
+		if not await _walk_player_to(host, player, (pickup as Node2D).global_position):
+			return
 		await host.get_tree().physics_frame
 		if not ability_id.is_empty() and GameManager.has_ability(ability_id) and not _abilities_acquired.has(ability_id):
 			_abilities_acquired.append(ability_id)
+			if not already_acquired:
+				pickups_collected += 1
 		# Checkpoint activation is now tracked from the real EventBus.object_activated("save_...")
 		# signal SavePoint.gd emits on an actual touch (see run()'s connection above) — no longer
 		# incidentally inferred from "collected a pickup in a room that also has a SavePoint",
@@ -450,40 +463,53 @@ func _collect_room_pickups(host: Node, player: Node, stay_room: String = "") -> 
 func _perform_ground_slam_gate(host: Node, player: Node, transition: Node) -> bool:
 	if not GameManager.has_ability("ground_slam") or not is_instance_valid(player):
 		return false
-	var weak_floor := _current_room(host).get_node_or_null("WeakFloor_%s" % String(transition.get("target_room_id")))
+	var from_room := String(GameManager.current_room_id)
+	var target_room := String(transition.get("target_room_id"))
+	var save_key := "%s:%s" % [from_room, target_room]
+	var weak_floor := _current_room(host).get_node_or_null("WeakFloor_%s" % target_room)
 	if weak_floor == null:
+		return SaveManager.is_floor_broken(save_key) and await _wait_room(host, target_room, 3.0)
+	var approach := (weak_floor as Node2D).global_position + Vector2(0, -40)
+	if not await _walk_player_to(host, player, approach, _walk_timeout_for((player as Node2D).global_position, approach)):
 		return false
-	if not await _walk_player_to(host, player, (weak_floor as Node2D).global_position + Vector2(0, -40), 3.0):
-		return false
-	Input.action_press("jump")
-	var airborne := false
-	for _tick in range(45):
+	_release_horizontal_input()
+	# Settle normally on the floor before jumping; approaching may finish while falling.
+	for _tick in range(120):
+		if SaveManager.is_floor_broken(save_key):
+			break
 		if not is_instance_valid(player):
-			Input.action_release("jump")
 			return false
-		if not (player as CharacterBody2D).is_on_floor() and (player as CharacterBody2D).velocity.y < -10.0:
-			airborne = true
+		if (player as CharacterBody2D).is_on_floor():
 			break
 		await host.get_tree().physics_frame
-	Input.action_release("jump")
-	if not airborne:
-		return false
-	Input.action_press("move_down")
-	await host.get_tree().physics_frame
-	# The test coroutine resumes before the player child processes this tick.
-	# Observe the real just-pressed edge after the following physics tick.
-	await host.get_tree().physics_frame
-	var ability_controller := player.get_node_or_null("AbilityController") as AbilityController
-	if ability_controller == null or not ability_controller.is_slamming:
+	if not SaveManager.is_floor_broken(save_key):
+		Input.action_press("jump")
+		var airborne := false
+		for _tick in range(45):
+			await host.get_tree().physics_frame
+			if not is_instance_valid(player):
+				Input.action_release("jump")
+				return false
+			if not (player as CharacterBody2D).is_on_floor() and (player as CharacterBody2D).velocity.y < -10.0:
+				airborne = true
+				break
+		Input.action_release("jump")
+		if not airborne:
+			return false
+		Input.action_press("move_down")
+		# A short jump may land and finish its slam in two ticks. The persisted real break
+		# event is authoritative; requiring is_slamming afterwards falsely rejects it.
+		for _tick in range(90):
+			await host.get_tree().physics_frame
+			if SaveManager.is_floor_broken(save_key):
+				break
 		Input.action_release("move_down")
+	if not SaveManager.is_floor_broken(save_key):
 		return false
-	for _tick in range(90):
-		if not is_instance_valid(weak_floor):
-			Input.action_release("move_down")
-			return true
-		await host.get_tree().physics_frame
-	Input.action_release("move_down")
-	return not is_instance_valid(weak_floor)
+	_ground_slam_events.append({"from": from_room, "to": target_room, "saveKey": save_key, "tMs": Time.get_ticks_msec()})
+	print("JOURNEY_GROUND_SLAM " + JSON.stringify(_ground_slam_events.back()))
+	_release_horizontal_input()
+	return await _wait_room(host, target_room, 3.0)
 
 func _perform_phase_gate(host: Node, player: Node, transition: Node) -> bool:
 	if not GameManager.has_ability("phase") or not is_instance_valid(player):
@@ -518,161 +544,117 @@ func _perform_phase_gate(host: Node, player: Node, transition: Node) -> bool:
 	_release_horizontal_input()
 	return false
 
-## The boss room's own RoomTransition triggers are locked while its boss is alive (see
-## WorldManager._lock_room_exits), so this no longer needs to defend against a wandering walk
-## tearing down the room mid-fight — but it still guards every reference with is_instance_valid()
-## since a real player death (which also frees and rebuilds the room, same as a transition would)
-## remains possible regardless.
-const MIN_BOSS_ATTACK_TIMEOUT_SEC := 45.0
+## A defeated signal is required. A freed boss during room teardown is not a victory.
+const MIN_BOSS_ATTACK_TIMEOUT_SEC := 120.0
 
 func _defeat_final_boss(host: Node, boss_id: String) -> bool:
-	var player := host.get_tree().get_first_node_in_group("player")
-	if player == null:
-		return false
-
 	var room := _current_room(host)
-	if room == null:
+	var boss := room.get_node_or_null("Boss") as Node2D if room else null
+	if boss == null or String(boss.get("boss_id")) != boss_id:
+		_fail_stage = "expected_boss_missing"
 		return false
-
-	var boss := room.get_node_or_null("Boss")
-	if boss == null or boss.boss_id != boss_id:
+	var boss_health := boss.get_node_or_null("HealthComponent") as HealthComponent
+	if boss_health == null:
 		return false
-
-	var boss_health: HealthComponent = boss.get_node("HealthComponent")
-	var boss_hurtbox: HurtboxComponent = boss.get_node_or_null("HurtboxComponent")
-	var player_attack: HitboxComponent = player.get_node_or_null("AttackHitbox")
-	if player_attack == null or boss_hurtbox == null:
-		return false
-
-	# The full-route agent validates the real player attack -> hitbox -> hurtbox -> health ->
-	# death/unlock pipeline. Boss movement and attack selection are covered independently by the
-	# runtime combat suite. Freeze presentation here so a mobile boss cannot spend the entire
-	# bounded proof fight walking out of the small authored melee hit window; the previous run
-	# reached room_018 and fired 33 real attacks without landing enough hits to unlock its exit.
-	if boss.has_method("freeze_presentation"):
-		boss.call("freeze_presentation")
-
-	# This bot doesn't fully dodge every boss attack the way AcceptancePlaytest does, so a
-	# death mid-fight triggers GameManager's respawn flow, which reloads the room (destroying
-	# this room's Boss instance) without the boss ever actually dying. Full health + temporary
-	# invulnerability removes that failure mode from what this gate is trying to prove: can the
-	# boss itself be beaten within its timeout (damage pipeline + death → VICTORY).
-	var player_health: HealthComponent = player.get_node_or_null("HealthComponent")
-	var player_hurtbox: HurtboxComponent = player.get_node_or_null("HurtboxComponent")
-	if player_health:
-		player_health.reset_health()
-		player_health.invulnerable = true
-	# Invulnerability alone still allows Hurtbox → knockback, which shoves the bot out of
-	# melee every slam and prevents sustained DPS. Make the hurtbox non-monitorable for the
-	# proof fight so knockback/projectiles don't eject the bot from range.
-	var hurtbox_layer := 0
-	if player_hurtbox:
-		hurtbox_layer = player_hurtbox.collision_layer
-		player_hurtbox.collision_layer = 0
-
-	# Real wall-clock time, not accumulated physics delta: this loop's own _walk_player_to call
-	# can itself take several seconds of real time (up to its own internal timeout), plus a
-	# further attack-recovery wait — crediting only one physics frame's delta per outer
-	# iteration undercounted real elapsed time by roughly two orders of magnitude, so the nominal
-	# timeout was never actually enforced in practice.
-	var timeout_sec := maxf(_boss_attack_timeout_sec, MIN_BOSS_ATTACK_TIMEOUT_SEC)
+	var expected_room := String(GameManager.current_room_id)
+	var observed := {"defeated": false}
+	var on_defeated := func(id: String) -> void:
+		if id == boss_id and GameManager.current_room_id == expected_room:
+			observed.defeated = true
+	var on_damage := func(amount: float) -> void:
+		_combat_events.append({"boss": boss_id, "damage": amount, "remaining": boss_health.current_health, "tMs": Time.get_ticks_msec()})
+	EventBus.boss_defeated.connect(on_defeated)
+	boss_health.damaged.connect(on_damage)
 	var start_ms := Time.get_ticks_msec()
-	var boss_health_depleted := false
-	while Time.get_ticks_msec() - start_ms < int(timeout_sec * 1000.0):
+	var deadline := start_ms + int(maxf(_boss_attack_timeout_sec, MIN_BOSS_ATTACK_TIMEOUT_SEC) * 1000.0)
+	var next_log := start_ms
+	while Time.get_ticks_msec() < deadline and not observed.defeated:
+		var player := host.get_tree().get_first_node_in_group("player") as CharacterBody2D
+		var health := player.get_node_or_null("HealthComponent") as HealthComponent if player else null
+		if player == null or health == null or not health.is_alive() or GameManager.current_room_id != expected_room:
+			_fail_stage = "player_died_or_left_boss_room"
+			break
 		if not is_instance_valid(boss) or not is_instance_valid(boss_health):
-			# HealthComponent's death handling frees the boss on defeat — a freed reference here
-			# is the win condition, not a bug; stop the loop rather than touch it again.
-			boss_health_depleted = true
+			_fail_stage = "boss_freed_without_defeat_signal"
 			break
-		if boss_health.current_health <= 0.0 or GameManager.current_state == GameManager.GameState.VICTORY:
-			# BossController._on_died() plays a real death animation and awaits it before
-			# emitting boss_defeated/freeing the boss, so defeat is no longer synchronous with
-			# health reaching 0 — fall through to the bounded wait below instead of declaring
-			# victory before that async sequence has actually finished.
-			boss_health_depleted = true
-			break
-		if not is_instance_valid(player) or not is_instance_valid(player_attack):
-			# A real player death also frees and rebuilds the room (same teardown path a
-			# transition would use) — that's this loop's failure mode, not a crash to propagate.
-			break
-
-		# Skip telegraph retreat while invulnerable — dodging ate most of the 45s budget and
-		# left only ~21 swings, which is too few when some miss. The gate proves the boss can
-		# be beaten, not that the bot can perfect-dodge.
-
-		# _perform_attack() positions AttackHitbox via ActorSockets weapon_tip (~30px) plus the
-		# shape's local offset. A 60px standoff + 12px arrive slop put the swing past the boss
-		# hurtbox edge on some frames; 42px keeps the authored reach overlapping reliably.
-		const ATTACK_REACH := 42.0
-		var approach_dir: float = 1.0 if boss.global_position.x >= player.global_position.x else -1.0
-		var approach_target: Vector2 = boss.global_position - Vector2(approach_dir * ATTACK_REACH, 0.0)
-		# A single missed approach (the boss stepped away, a hazard blocked the path) isn't a
-		# reason to give up on the whole fight — only running out of real time budget is.
-		await _walk_player_to(host, player, approach_target, 2.0)
-		if not is_instance_valid(player) or not is_instance_valid(player_attack):
-			break
-		# Hold movement toward the boss so PlayerController updates `facing` from real input
-		# (just_pressed attack path reads facing). Prefer Input-driven attack over call() so
-		# _attack_cooldown / _attack_seq stay coherent with the authored hitbox window.
+		_observe_attack(player)
+		if Time.get_ticks_msec() >= next_log:
+			next_log = Time.get_ticks_msec() + 5000
+			print("JOURNEY_COMBAT " + JSON.stringify({"boss": boss_id, "bossHealth": boss_health.current_health, "playerHealth": health.current_health, "distance": boss.position.x - player.position.x, "attacks": attacks_performed, "phase": boss.get("_phase"), "playerY": player.position.y, "bossY": boss.position.y}))
+		if boss_health.current_health <= 0.0:
+			_release_horizontal_input()
+			Input.action_release("attack")
+			await host.get_tree().physics_frame
+			continue
+		var sprite := boss.get_node_or_null("Sprite") as AnimatedSprite2D
+		var telegraph := bool(boss.get("_telegraph_active"))
+		# Early windup permits an attack; late windup and active attacks require dodging.
+		var danger := bool(boss.get("_attack_busy")) or (telegraph and (sprite == null or sprite.frame >= 3))
+		var dx := boss.global_position.x - player.global_position.x
+		var toward := 1.0 if dx >= 0.0 else -1.0
+		var direction := 0.0
+		if danger and absf(dx) < 145.0:
+			direction = -toward
+		elif not danger and (absf(dx) > 56.0 or int(player.get("facing")) != int(toward)):
+			direction = toward
+		_set_horizontal(direction)
+		if danger:
+			Input.action_release("attack")
+			if player.is_on_floor() and (not telegraph or (sprite and sprite.frame >= 3)):
+				Input.action_press("jump")
+			if absf(dx) < 100.0 and GameManager.has_ability("dash"):
+				Input.action_press("dash")
+		elif absf(dx) <= 80.0:
+			Input.action_press("attack")
 		used_input_simulation = true
-		if approach_dir > 0.0:
-			Input.action_press("move_right")
-			Input.action_release("move_left")
-		else:
-			Input.action_press("move_left")
-			Input.action_release("move_right")
-		if player.get("facing") != null:
-			player.facing = int(approach_dir)
-		# No Input dash during the swing: DashAbility translates the body out of melee before
-		# the frame-synced hitbox activates. Normal 10-damage hits are enough with invulnerability
-		# keeping the bot alive for the full timeout.
-		var health_before_swing := boss_health.current_health
-		Input.action_press("attack")
-		# Drive the real attack entry so cooldown gates rapid re-fire (calling _perform_attack
-		# every frame used to bump `_attack_seq` and cancel the pending hitbox activate).
-		if player.has_method("_perform_attack"):
-			var cooldown := float(player.get("_attack_cooldown")) if player.get("_attack_cooldown") != null else 0.0
-			if cooldown <= 0.0:
-				player.call("_perform_attack")
-				attacks_performed += 1
-		else:
-			player_attack.activate()
-			attacks_performed += 1
-		# Wait through the authored hit window (~0.17 on / ~0.28 off at 6f@18fps).
-		await host.get_tree().create_timer(0.45).timeout
-		Input.action_release("attack")
-		_release_horizontal_input()
+		# Hold through the player's own physics tick; all cooldowns/hit windows remain authored.
 		await host.get_tree().physics_frame
-		# A transition into a wide arena can leave the player outside melee range when the first
-		# bounded approach expires. Preserve the real combat pipeline for the proof: if the authored
-		# swing missed, move only the test hitbox onto the live boss hurtbox for one physics frame.
-		# This never calls take_damage directly and cannot mask a broken hitbox/hurtbox connection.
-		if is_instance_valid(boss_health) and is_instance_valid(boss_hurtbox) and boss_health.current_health >= health_before_swing:
-			player_attack.global_position = boss_hurtbox.global_position
-			player_attack.activate()
-			await host.get_tree().physics_frame
-			await host.get_tree().physics_frame
-			player_attack.deactivate()
+		await host.get_tree().physics_frame
+		if is_instance_valid(player):
+			_observe_attack(player)
+		Input.action_release("attack")
+		Input.action_release("jump")
+		Input.action_release("dash")
+		await host.get_tree().physics_frame
+	_release_horizontal_input()
+	Input.action_release("attack")
+	if EventBus.boss_defeated.is_connected(on_defeated):
+		EventBus.boss_defeated.disconnect(on_defeated)
+	if is_instance_valid(boss_health) and boss_health.damaged.is_connected(on_damage):
+		boss_health.damaged.disconnect(on_damage)
+	if not observed.defeated and _fail_stage == "":
+		_fail_stage = "ordinary_boss_combat_timeout"
+	return observed.defeated and (boss_id != "boss_final" or GameManager.current_state == GameManager.GameState.VICTORY)
 
-	if player_health and is_instance_valid(player_health):
-		player_health.invulnerable = false
-	if player_hurtbox and is_instance_valid(player_hurtbox):
-		player_hurtbox.collision_layer = hurtbox_layer
+func _set_horizontal(direction: float) -> void:
+	if direction > 0:
+		Input.action_press("move_right")
+		Input.action_release("move_left")
+	elif direction < 0:
+		Input.action_press("move_left")
+		Input.action_release("move_right")
+	else:
+		Input.action_release("move_left")
+		Input.action_release("move_right")
 
-	if boss_health_depleted:
-		var death_wait_start := Time.get_ticks_msec()
-		while Time.get_ticks_msec() - death_wait_start < 3000:
-			if not is_instance_valid(boss_health) or GameManager.current_state == GameManager.GameState.VICTORY:
-				break
-			await host.get_tree().process_frame
+func _observe_attack(player: Node) -> void:
+	var sequence := int(player.get("_attack_seq"))
+	if _observed_player_id != player.get_instance_id():
+		_observed_player_id = player.get_instance_id()
+		_observed_attack_sequence = sequence
+	elif sequence > _observed_attack_sequence:
+		attacks_performed += sequence - _observed_attack_sequence
+		_observed_attack_sequence = sequence
 
-	if boss_id == "boss_final" or boss_id.begins_with("final"):
-		return not is_instance_valid(boss_health) or GameManager.current_state == GameManager.GameState.VICTORY
-	# Miniboss door-lock (WorldManager._lock_room_exits) fires on HealthComponent.died at HP 0.
-	# The node may still exist during the death animation; the exit is already unsealed.
-	if not is_instance_valid(boss_health):
-		return true
-	return boss_health.current_health <= 0.0
+func _near_enemy(host: Node, body: CharacterBody2D, direction: float) -> bool:
+	for enemy in host.get_tree().get_nodes_in_group("enemies"):
+		if not is_instance_valid(enemy) or not (enemy is Node2D):
+			continue
+		var health := enemy.get_node_or_null("HealthComponent") as HealthComponent
+		var distance := (enemy as Node2D).global_position - body.global_position
+		if health and health.is_alive() and absf(distance.y) < 64.0 and distance.x * direction >= -12.0 and absf(distance.x) < 90.0:
+			return true
+	return false
 
 func _walk_player_to(host: Node, player: Node, target: Vector2, timeout_sec: float = -1.0) -> bool:
 	if not (player is CharacterBody2D):
@@ -684,6 +666,8 @@ func _walk_player_to(host: Node, player: Node, target: Vector2, timeout_sec: flo
 	if timeout_sec < 0.0:
 		timeout_sec = _walk_timeout_for(body.global_position, target)
 	var elapsed := 0.0
+	var initial_room := String(GameManager.current_room_id)
+	var travel_tick := 0
 	# Seventeenth-session fix: the jump trigger below was purely height-based (only presses jump
 	# when the target sits well above the current position) — it never fires for a *horizontal*
 	# gap or a low step between two platforms at roughly the same height. Real traversal-challenge
@@ -708,8 +692,15 @@ func _walk_player_to(host: Node, player: Node, target: Vector2, timeout_sec: flo
 	while elapsed < timeout_sec:
 		if not is_instance_valid(body):
 			_release_horizontal_input()
-			# The walk target (a door) likely fired and the old room's player was freed.
-			return true
+			return GameManager.current_room_id != initial_room and GameManager.current_state == GameManager.GameState.PLAYING
+		var health := body.get_node_or_null("HealthComponent") as HealthComponent
+		if health == null or not health.is_alive():
+			_release_horizontal_input()
+			Input.action_release("attack")
+			_fail_stage = "player_not_alive"
+			return false
+		_observe_attack(body)
+		travel_tick += 1
 		var delta := host.get_physics_process_delta_time()
 		elapsed += delta
 		var dx := target.x - body.global_position.x
@@ -747,6 +738,10 @@ func _walk_player_to(host: Node, player: Node, target: Vector2, timeout_sec: flo
 			# the movement upgrade the route has already collected.
 			if GameManager.has_ability("dash") or GameManager.has_ability("air_dash"):
 				dash_pulse_frames = 1
+		if _near_enemy(host, body, move_direction) and travel_tick % 3 != 0:
+			Input.action_press("attack")
+		else:
+			Input.action_release("attack")
 		was_grounded = grounded
 		if dx_abs > last_dx_abs - 1.0 and grounded:
 			stall_frames += 1
@@ -776,8 +771,8 @@ func _walk_player_to(host: Node, player: Node, target: Vector2, timeout_sec: flo
 
 	_release_horizontal_input()
 	if not is_instance_valid(body):
-		return true
-	var reached_x := absf(target.x - body.global_position.x) < 24.0
+		return GameManager.current_room_id != initial_room and GameManager.current_state == GameManager.GameState.PLAYING
+	var reached_x := absf(target.x - body.global_position.x) < 24.0 and absf(target.y - body.global_position.y) < 48.0
 	if not reached_x:
 		print("PLAYTEST_WALK_TIMEOUT player=%s target=%s delta=%s" % [
 			str(body.global_position), str(target), str(target - body.global_position)
@@ -797,9 +792,11 @@ func _has_ground_ahead(body: CharacterBody2D, direction: float) -> bool:
 	return not body.get_world_2d().direct_space_state.intersect_ray(query).is_empty()
 
 func _release_horizontal_input() -> void:
+	Input.action_release("attack")
 	Input.action_release("move_left")
 	Input.action_release("move_right")
 	Input.action_release("move_down")
+	Input.action_release("move_up")
 	Input.action_release("jump")
 	Input.action_release("dash")
 

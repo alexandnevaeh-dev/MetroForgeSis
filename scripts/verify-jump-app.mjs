@@ -8,7 +8,7 @@ import {_electron} from 'playwright';
 const repo=resolve(dirname(fileURLToPath(import.meta.url)),'..'),executable=process.argv[2];assert.ok(executable);
 const output=join(repo,'reports/game-tests/20261004-jump-app',String(Date.now()));
 for(const dir of ['temp','data','appdata','localappdata','workspace','games'])mkdirSync(join(output,dir),{recursive:true});writeFileSync(join(output,'empty.env'),'');
-const previous='E:/MetroForgeData/Releases/MetroForge-actor-animation-20261004-v4/UserData/games';
+const previous=process.argv[3] ?? 'E:/MetroForgeData/Releases/MetroForge-actor-animation-20261004-v4/UserData/games';
 cpSync(previous,join(output,'games'),{recursive:true});
 const castle=join(output,'games/stormglass-castle');
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');

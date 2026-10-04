@@ -600,7 +600,8 @@ describe('generateRoomScene weak floors', () => {
     expect(scene).toContain('WeakFloor.tscn');
     expect(scene).toContain('FloorLeft');
     expect(scene).toContain('FloorRight');
-    expect(scene).toContain('position = Vector2(400, 536)');
+    // WeakFloor's collision shape starts at its origin; match the neighbouring floor top.
+    expect(scene).toContain('position = Vector2(400, 504)');
   });
 
   it('uses valid resource references without fake uid:// names', () => {

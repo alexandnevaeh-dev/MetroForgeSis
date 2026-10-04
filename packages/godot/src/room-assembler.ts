@@ -1770,7 +1770,7 @@ centered = true
     const wf = weakFloors[0]!;
     scene += `
 [node name="WeakFloor_${wf.targetRoomId}" parent="." instance=ExtResource("11_weakfloor")]
-position = Vector2(${wf.x}, ${floorY})
+position = Vector2(${wf.x}, ${floorTop})
 floor_width = ${wf.width}
 target_room_id = "${wf.targetRoomId}"
 

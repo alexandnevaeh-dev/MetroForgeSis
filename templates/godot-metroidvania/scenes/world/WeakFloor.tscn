@@ -13,6 +13,6 @@ position = Vector2(0, 16)
 shape = SubResource("RectangleShape2D_weak")
 
 [node name="Visual" type="ColorRect" parent="."]
-offset_top = -16.0
-offset_bottom = 16.0
+offset_top = 0.0
+offset_bottom = 32.0
 color = Color(0.55, 0.42, 0.32, 0.95)

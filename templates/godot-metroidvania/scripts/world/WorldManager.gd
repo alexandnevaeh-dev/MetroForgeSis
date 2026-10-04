@@ -141,15 +141,20 @@ func _lock_room_exits(room: Node, boss_health: HealthComponent) -> void:
 		transition.monitoring = false
 	if not is_instance_valid(boss_health):
 		return
-	boss_health.died.connect(func() -> void:
+	# Health reaching zero starts the authored death clip. Keep doors sealed until the
+	# controller emits its real completion event, so a dodge cannot tear that clip down.
+	var boss_id := String(boss_health.get_parent().get("boss_id"))
+	var unlock := func(defeated_id: String) -> void:
+		if defeated_id != boss_id:
+			return
 		for transition in transitions:
 			if is_instance_valid(transition):
 				transition.monitoring = true
-				# Enabling monitoring does not emit body_entered for a player already
-				# standing in the door (e.g. crushed against a sealed exit as the boss dies).
-				if transition.has_method("_on_body_entered"):
-					for body in transition.get_overlapping_bodies():
-						transition.call("_on_body_entered", body)
+	EventBus.boss_defeated.connect(unlock)
+	# A checkpoint reload can remove an undefeated arena. Disconnect its listener too.
+	room.tree_exiting.connect(func() -> void:
+		if EventBus.boss_defeated.is_connected(unlock):
+			EventBus.boss_defeated.disconnect(unlock)
 	, CONNECT_ONE_SHOT)
 
 func _room_transitions(room: Node) -> Array:

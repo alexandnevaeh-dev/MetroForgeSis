@@ -66,7 +66,7 @@ const STORMGLASS_ROOMS = [
   ['Restored Reliquary', 'transition'],
 ];
 
-function applyStormglassBlueprint(topology, gameContent) {
+export function applyStormglassBlueprint(topology, gameContent) {
   if (topology.roomIds.length !== STORMGLASS_ROOMS.length)
     throw new Error(`Stormglass blueprint requires ${STORMGLASS_ROOMS.length} rooms`);
   const grants = new Map([
@@ -128,7 +128,7 @@ function applyStormglassBlueprint(topology, gameContent) {
       optional,
       bidirectional,
       kind: optional ? 'shortcut' : 'normal',
-      ...(transition || requirement ? { transition: transition ?? 'right' } : {}),
+      ...(transition || requirement ? { transition: transition ?? (requirement === 'ground_slam' ? 'down' : 'right') } : {}),
       metadata: optional ? { loopType: 'secret_return' } : {},
     });
   };

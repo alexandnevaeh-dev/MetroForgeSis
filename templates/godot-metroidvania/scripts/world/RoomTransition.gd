@@ -33,7 +33,10 @@ func _ready() -> void:
 func _draw() -> void:
 	# Authored room thresholds communicate exits. Keep the transition Area2D invisible so its
 	# compact collision rectangle cannot turn into an oversized arch when the camera zooms in.
-	pass
+	if transition_direction == "up":
+		var tint := Color(0.65, 0.88, 0.95, 0.9)
+		draw_polyline(PackedVector2Array([Vector2(4, 28), Vector2(12, 20), Vector2(20, 28)]), tint, 2.0, true)
+		draw_string(ThemeDB.fallback_font, Vector2(-4, 44), "W / ↑", HORIZONTAL_ALIGNMENT_LEFT, -1.0, 12, tint)
 
 ## Godot does not re-emit body_entered for a body already overlapping when a transition becomes
 ## eligible. This covers vertical direction changes and horizontal doors entered during spawn
@@ -70,7 +73,7 @@ func _try_transition(body: Node2D) -> bool:
 			return false
 	if transition_direction == "down" and not _player_is_descending(body):
 		return false
-	if transition_direction == "up" and not _player_is_ascending(body):
+	if transition_direction == "up" and (not Input.is_action_pressed("move_up") or not _player_is_ascending(body)):
 		return false
 	var world_manager := get_tree().get_first_node_in_group("world_manager")
 	if world_manager and world_manager.has_method("transition_to_room"):
@@ -81,7 +84,8 @@ func _try_transition(body: Node2D) -> bool:
 ## Vertical exits are holes you fall through or climb into, not doorways you walk past.
 ## room-assembler.ts places 'up' on the walk line (floorY - 80) and 'down' *below* the floor
 ## (floorY + 96) so a pit/weak-floor fall can hit the sensor without intercepting walkers.
-## 'up' still needs an ascending check because its sensor sits at walking height.
+## 'up' requires an explicit Up input as well as ascent. Combat dodges and ordinary
+## traversal jumps must not enter a shortcut simply by crossing its walk-height sensor.
 ##
 ## Measured on a real 4-zone/40-room generation: 4 of 40 rooms had the 'down' shape (it blocked
 ## access to the room holding the double_jump pickup), and the 'up' shape broke the critical path
