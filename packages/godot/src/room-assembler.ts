@@ -2075,12 +2075,13 @@ export function recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult
       const storedPaint = roomsData[roomId];
       const authoredCells = override?.tileCells ?? (storedPaint?.tileCellsAuthored ? storedPaint.tileCells : undefined);
       if (authoredCells !== undefined) {
-        // Hand-edited cells (room editor) have no matching auto-generated collision geometry —
-        // clear it rather than risk mismatched/floating platform or pit collision.
+        // A new paint override invalidates generated geometry. A stored authored
+        // record may also own explicit collision surfaces (Stormglass/undo): keep
+        // those on ordinary recompilation so restoring tiles restores traversal.
         opts.tileCells = authoredCells;
         opts.tileCellsAuthored = true;
-        opts.platforms = [];
-        opts.pits = [];
+        opts.platforms = override?.tileCells !== undefined ? [] : storedPaint?.platforms ?? [];
+        opts.pits = override?.tileCells !== undefined ? [] : storedPaint?.pits ?? [];
       }
       // Saved NPC membership is authored state, including an intentionally empty room.
       if (existingRecord?.npcs !== undefined) {

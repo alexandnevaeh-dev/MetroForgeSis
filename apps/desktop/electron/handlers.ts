@@ -1748,6 +1748,8 @@ export function registerIpcHandlers(cwd: string): void {
       if (result.success) {
         if (previous) recordRoomEdit(projectPath, patch.roomId, previous, `Edit room ${patch.roomId}`);
         markProjectClean(projectPath);
+      } else {
+        markProjectDirty(projectPath, `Room ${patch.roomId} save failed; draft retained`);
       }
       return result;
     },

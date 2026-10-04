@@ -168,6 +168,8 @@ export interface RoomEditPatch {
   height?: number;
   archetype?: string;
   tileCells?: Array<{ x: number; y: number; col: number; row: number }>;
+  /** Saved cells observed when tile painting started; guards against stale writes. */
+  tileCellsBase?: Array<{ x: number; y: number; col: number; row: number }>;
   enemies?: string[];
   npcs?: string[];
   entityPlacements?: EntityPlacement[];
@@ -201,10 +203,12 @@ function validateRoomPatch(patch: RoomEditPatch): string[] {
     const ids = patch[field];
     if (ids !== undefined && (!Array.isArray(ids) || ids.some((id) => typeof id !== 'string' || !id.trim()))) return [`Room ${field} must contain nonempty identifiers`];
   }
-  if (patch.tileCells !== undefined) {
-    if (!Array.isArray(patch.tileCells)) return ['Painted tiles must be an array'];
+  if (patch.tileCellsBase !== undefined && patch.tileCells === undefined) return ['A tile base requires painted tiles'];
+  for (const field of ['tileCells', 'tileCellsBase'] as const) {
+    if (patch[field] === undefined) continue;
+    if (!Array.isArray(patch[field])) return ['Painted tiles must be an array'];
     const positions = new Set<string>();
-    for (const cell of patch.tileCells) {
+    for (const cell of patch[field]!) {
       if (!cell || ['x', 'y', 'col', 'row'].some((key) => {
         const value = cell[key as keyof typeof cell];
         return !Number.isSafeInteger(value) || value < 0;
@@ -307,6 +311,15 @@ function applyRoomEditUnchecked(
     return { success: false, errors: [`Room ${patch.roomId} not found`] };
   }
 
+  if (patch.tileCellsBase !== undefined) {
+    const sorted = (cells: NonNullable<RoomEditPatch['tileCells']>) =>
+      cells.map(({ x, y, col, row }) => ({ x, y, col, row })).sort((a, b) => a.y - b.y || a.x - b.x);
+    const saved = Array.isArray(existing.tileCells) ? existing.tileCells as NonNullable<RoomEditPatch['tileCells']> : [];
+    if (JSON.stringify(sorted(saved)) !== JSON.stringify(sorted(patch.tileCellsBase))) {
+      return { success: false, errors: ['Saved room tiles changed. Your draft is retained; reload the room and discard the draft before editing again.'] };
+    }
+  }
+
   if (options?.regenerate || options?.restoreRecord) {
     if (options.restoreRecord) roomsData[patch.roomId] = structuredClone(options.restoreRecord);
     else if (options.regenerate === 'geometry') {
@@ -334,6 +347,14 @@ function applyRoomEditUnchecked(
     });
     const errors = [...rebuilt.errors];
     if (!rebuilt.success && !errors.length) errors.push('Room regeneration failed');
+    // Compilation normalizes derived records (including platforms/metrics). Undo
+    // must restore the full authored snapshot after compiling its native scene.
+    if (options.restoreRecord && rebuilt.success && errors.length === 0) {
+      const roomsPath = join(projectPath, 'data', 'rooms', 'rooms.json');
+      const compiled = JSON.parse(readFileSync(roomsPath, 'utf-8')) as { rooms: Record<string, unknown> };
+      compiled.rooms[patch.roomId] = structuredClone(options.restoreRecord);
+      writeFileSync(roomsPath, JSON.stringify(compiled, null, 2));
+    }
     return { success: rebuilt.success && !errors.length, errors, recompiledRooms: rebuilt.recompiled, message: `Room ${patch.roomId} ${options.restoreRecord ? "restored" : "regenerated"}` };
   }
 

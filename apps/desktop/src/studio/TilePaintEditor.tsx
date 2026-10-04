@@ -1,12 +1,9 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Badge, Button, EmptyState, Panel } from './ui/index.js';
 
-export interface TileCell {
-  x: number;
-  y: number;
-  col: number;
-  row: number;
-}
+import { tileDrafts, tileDraftKey, type TileCell, type TileDraft } from './tile-drafts.js';
+import type { CastleBackgroundPreview } from './BiomeBackgroundEditor.js';
+export type { TileCell } from './tile-drafts.js';
 
 export type TileCoord = { col: number; row: number };
 
@@ -21,7 +18,9 @@ interface TilePalettePanelProps {
 }
 
 function useTilesetArtwork(projectPath: string, biomeId: string) {
-  const [artwork, setArtwork] = useState<{ url: string; width: number; height: number } | null>(null);
+  const [artwork, setArtwork] = useState<{ url: string; width: number; height: number } | null>(
+    null,
+  );
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
     let cancelled = false;
@@ -35,13 +34,22 @@ function useTilesetArtwork(projectPath: string, biomeId: string) {
         image.src = preview.dataUrl;
         await image.decode();
         if (!cancelled && image.naturalWidth > 0 && image.naturalHeight > 0) {
-          setArtwork({ url: preview.dataUrl, width: image.naturalWidth, height: image.naturalHeight });
+          setArtwork({
+            url: preview.dataUrl,
+            width: image.naturalWidth,
+            height: image.naturalHeight,
+          });
         }
-      } catch { /* Missing/failed artwork remains visibly unavailable. */ }
-      finally { if (!cancelled) setLoaded(true); }
+      } catch {
+        /* Missing/failed artwork remains visibly unavailable. */
+      } finally {
+        if (!cancelled) setLoaded(true);
+      }
     }
     void load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [projectPath, biomeId]);
   return { artwork, loaded };
 }
@@ -112,7 +120,7 @@ export function TilePalettePanel({
   );
 }
 
-export type TilePaintTool = 'paint' | 'erase';
+export type TilePaintTool = 'select' | 'paint' | 'erase';
 
 interface TilePaintEditorProps {
   projectPath: string;
@@ -123,10 +131,16 @@ interface TilePaintEditorProps {
   tileSize?: number;
   initialCells?: TileCell[];
   selectedTile: TileCoord;
-  /** Paint places the selected atlas tile; erase removes cells. */
   tool?: TilePaintTool;
+  background?: CastleBackgroundPreview | null;
+  collisionRects?: Array<{ x: number; y: number; w: number; h: number }>;
+  zoom?: number;
+  fit?: boolean;
   onSaved?: () => void | Promise<void>;
 }
+
+const EMPTY_CELLS: TileCell[] = [];
+const EMPTY_RECTS: NonNullable<TilePaintEditorProps['collisionRects']> = [];
 
 export function TilePaintEditor({
   projectPath,
@@ -135,176 +149,287 @@ export function TilePaintEditor({
   width,
   height,
   tileSize = 16,
-  initialCells = [],
+  initialCells = EMPTY_CELLS,
   selectedTile,
-  tool = 'paint',
+  tool = 'select',
+  background,
+  collisionRects = EMPTY_RECTS,
+  zoom = 100,
+  fit = true,
   onSaved,
 }: TilePaintEditorProps) {
   const { artwork, loaded } = useTilesetArtwork(projectPath, biomeId);
   const atlasId = useId();
+  const gridId = useId();
+  const instructionsId = useId();
+  const actionButton = useRef<HTMLDivElement>(null);
   const [focusedCell, setFocusedCell] = useState({ x: 0, y: 0 });
-  const [cells, setCells] = useState<TileCell[]>(initialCells);
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const pending = useRef(false);
-  const mounted = useRef(true);
-  useEffect(() => {
-    mounted.current = true;
-    return () => { mounted.current = false; };
-  }, []);
-
-
-  useEffect(() => {
-    setCells(initialCells);
-  }, [roomId, initialCells]);
-
-  const cols = Math.floor(width / tileSize);
-  const rows = Math.floor(height / tileSize);
-  useEffect(() => {
-    setFocusedCell((cell) => ({ x: Math.max(0, Math.min(cols - 1, cell.x)), y: Math.max(0, Math.min(rows - 1, cell.y)) }));
-  }, [cols, rows]);
-
-  const cellKey = (x: number, y: number) => `${x},${y}`;
-  const cellMap = useMemo(() => {
-    const map = new Map<string, TileCell>();
-    for (const c of cells) map.set(cellKey(c.x, c.y), c);
-    return map;
-  }, [cells]);
-
-  const applyTool = useCallback(
-    (x: number, y: number) => {
-      if (pending.current) return;
-      setCells((prev) => {
-        const without = prev.filter((c) => !(c.x === x && c.y === y));
-        if (tool === 'erase') return without;
-        without.push({ x, y, col: selectedTile.col, row: selectedTile.row });
-        return without;
-      });
-    },
-    [selectedTile, tool],
+  const key = tileDraftKey(projectPath, roomId);
+  const initial = useMemo<TileDraft>(
+    () => ({
+      cells: initialCells,
+      base: initialCells,
+      dirty: false,
+      busy: false,
+      conflict: false,
+      message: null,
+    }),
+    [key, initialCells],
   );
+  const draft = useSyncExternalStore(tileDrafts.subscribe, () => tileDrafts.get(key) ?? initial);
+  useEffect(() => {
+    tileDrafts.load(key, initialCells);
+  }, [key, initialCells]);
+  useEffect(() => {
+    // A failed pending save may have skipped a newer saved snapshot. Reconcile
+    // retained drafts after the lock clears; a successful save already owns its
+    // acknowledged cells and must not be reset by React's prior render snapshot.
+    if (!draft.busy && draft.dirty) tileDrafts.load(key, initialCells);
+  }, [key, initialCells, draft.busy, draft.dirty]);
+  const cols = Math.max(1, Math.floor(width / tileSize));
+  const rows = Math.max(1, Math.floor(height / tileSize));
+  useEffect(() => {
+    setFocusedCell((cell) => ({
+      x: Math.max(0, Math.min(cols - 1, cell.x)),
+      y: Math.max(0, Math.min(rows - 1, cell.y)),
+    }));
+  }, [key, cols, rows]);
 
+  const applyTool = (x: number, y: number) => {
+    const current = tileDrafts.get(key);
+    if (tool === 'select' || current.busy) return;
+    if (tool === 'paint' && !artwork) return;
+    const cells = current.cells.filter((cell) => cell.x !== x || cell.y !== y);
+    if (tool === 'paint') cells.push({ x, y, ...selectedTile });
+    tileDrafts.edit(key, cells);
+  };
   const save = async () => {
-    if (pending.current || !window.metroforge?.updateRoom) return;
-    pending.current = true;
-    setBusy(true);
-    setMessage(null);
+    if (!window.metroforge?.updateRoom) return;
+    const snapshot = tileDrafts.beginSave(key);
+    if (!snapshot) return;
     try {
-      const result = await window.metroforge.updateRoom(projectPath, { roomId, tileCells: cells });
-      if (!mounted.current) return;
+      const result = await window.metroforge.updateRoom(projectPath, {
+        roomId,
+        tileCells: snapshot.cells,
+        tileCellsBase: snapshot.base,
+      });
       if (result.error || result.success === false) {
-        setMessage(result.error || result.errors?.join('; ') || 'Save failed. Your painted tiles are still here; try again.');
-      } else {
-        try {
-          await onSaved?.();
-          if (mounted.current) setMessage('Tilemap saved and room recompiled');
-        } catch (error) {
-          if (mounted.current) setMessage(`Tilemap saved, but the room preview could not refresh: ${error instanceof Error ? error.message : String(error)}`);
-        }
+        tileDrafts.finishSave(
+          key,
+          null,
+          result.error ||
+            result.errors?.join('; ') ||
+            'Save failed. Your draft is retained; try again.',
+        );
+        return;
       }
+      let message = 'Tilemap saved and room recompiled. Restart preview to apply.';
+      try {
+        await onSaved?.();
+      } catch (error) {
+        message = `Tiles saved, but preview refresh failed: ${error instanceof Error ? error.message : String(error)}`;
+      }
+      tileDrafts.finishSave(key, snapshot.cells, message);
     } catch (error) {
-      if (mounted.current) setMessage(`Could not save tilemap: ${error instanceof Error ? error.message : String(error)}`);
-    } finally {
-      pending.current = false;
-      if (mounted.current) setBusy(false);
+      tileDrafts.finishSave(
+        key,
+        null,
+        `Could not save tiles. Draft retained: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   };
-
-  const scale = Math.min(1, 640 / width);
+  const canApply = tool !== 'select' && !draft.busy && (tool === 'erase' || !!artwork);
+  const cover = background ? Math.max(width / background.width, height / background.height) : 1;
+  const scale = (0.55 * zoom) / 100;
 
   return (
-    <div className="tile-paint">
-      <div className="mf-panel-head">
-        <h3 className="mf-panel-title">{tool === 'erase' ? 'Erase' : 'Paint'} · {biomeId}</h3>
-        <span className="hint mono">
-          {tool === 'erase' ? 'remove cells' : `tile ${selectedTile.col},${selectedTile.row}`}
+    <div className="tile-paint room-tile-workspace" aria-busy={draft.busy}>
+      <div className="room-tile-workspace-heading">
+        <Badge tone={draft.dirty ? 'warning' : 'muted'}>
+          {draft.dirty ? 'Unsaved tiles' : 'Saved tiles'}
+        </Badge>
+        <span className="hint">
+          {tool === 'select'
+            ? 'Select Paint or Erase to edit'
+            : `${tool === 'erase' ? 'Erase' : 'Paint'} · tile ${selectedTile.col},${selectedTile.row}`}
         </span>
       </div>
-      <p className="hint">Arrow keys move between cells. Enter or Space applies the selected tool.</p>
-      {!artwork && <p className="hint" role="status">{loaded ? 'Tileset artwork unavailable. Showing occupied cells.' : 'Loading tileset artwork…'}</p>}
-      <div
-        className="tile-canvas-wrap"
-        style={{ width: width * scale, height: height * scale, overflow: 'auto' }}
-      >
+      {tool !== 'select' && (
+        <p className="hint" id={instructionsId}>
+          Click a cell to edit. On the cell button, arrows move; Enter or Space applies the tool.
+          Drafts stay here during navigation.
+        </p>
+      )}
+      {!artwork && (
+        <p className="hint" role="status">
+          {loaded
+            ? 'Tileset unavailable. Occupied cells are shown; painting is disabled.'
+            : 'Loading tileset artwork…'}
+        </p>
+      )}
+      <div className="room-canvas-wrap room-canvas-fill room-canvas-pixelated">
         <svg
-          width={width * scale}
-          height={height * scale}
+          className="room-canvas room-tile-canvas"
+          aria-label={`${roomId} saved geometry and ${draft.dirty ? 'draft' : 'saved'} tiles`}
+          width={fit ? '100%' : width * scale}
+          height={fit ? undefined : height * scale}
           viewBox={`0 0 ${width} ${height}`}
-          style={{ imageRendering: 'pixelated' }}
+          style={fit ? { aspectRatio: width / height, display: 'block' } : undefined}
+          onPointerDown={(event) => {
+            if (!canApply || event.button !== 0) return;
+            const matrix = event.currentTarget.getScreenCTM();
+            if (!matrix) return;
+            const point = event.currentTarget.createSVGPoint();
+            point.x = event.clientX;
+            point.y = event.clientY;
+            const local = point.matrixTransform(matrix.inverse());
+            const x = Math.max(0, Math.min(cols - 1, Math.floor(local.x / tileSize)));
+            const y = Math.max(0, Math.min(rows - 1, Math.floor(local.y / tileSize)));
+            setFocusedCell({ x, y });
+            applyTool(x, y);
+            actionButton.current
+              ?.querySelector<HTMLButtonElement>('[data-cell-action]')
+              ?.focus({ preventScroll: true });
+          }}
         >
-          {artwork && <defs><image id={atlasId} href={artwork.url} width={artwork.width} height={artwork.height} /></defs>}
-          <rect x={0} y={0} width={width} height={height} fill="var(--canvas-bg, #0f172a)" />
-          {Array.from({ length: cols * rows }).map((_, i) => {
-            const x = i % cols;
-            const y = Math.floor(i / cols);
-            const cell = cellMap.get(cellKey(x, y));
-            const px = x * tileSize;
-            const py = y * tileSize;
-            return (
-              <g
-                key={i}
-                className="tile-paint-cell"
-                role="button"
-                aria-label={`Cell ${x + 1}, ${y + 1}: ${cell ? 'painted' : 'empty'}. ${tool === 'erase' ? 'Erase' : 'Paint'}`}
-                aria-disabled={busy}
-                tabIndex={focusedCell.x === x && focusedCell.y === y ? 0 : -1}
-                data-tile-cell={`${x},${y}`}
-                onFocus={() => setFocusedCell({ x, y })}
-                onClick={(event) => { event.currentTarget.focus(); applyTool(x, y); }}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    applyTool(x, y);
-                    return;
-                  }
-                  let nextX = x;
-                  let nextY = y;
-                  if (event.key === 'ArrowLeft') nextX--;
-                  else if (event.key === 'ArrowRight') nextX++;
-                  else if (event.key === 'ArrowUp') nextY--;
-                  else if (event.key === 'ArrowDown') nextY++;
-                  else return;
-                  event.preventDefault();
-                  nextX = Math.max(0, Math.min(cols - 1, nextX));
-                  nextY = Math.max(0, Math.min(rows - 1, nextY));
-                  event.currentTarget.ownerSVGElement?.querySelector<SVGElement>(`[data-tile-cell="${nextX},${nextY}"]`)?.focus();
-                }}
-              >
-                <rect
-                  x={px}
-                  y={py}
+          <defs>
+            {artwork && (
+              <image
+                id={atlasId}
+                href={artwork.url}
+                width={artwork.width}
+                height={artwork.height}
+              />
+            )}
+            <pattern id={gridId} width={tileSize} height={tileSize} patternUnits="userSpaceOnUse">
+              <path
+                d={`M ${tileSize} 0 L 0 0 0 ${tileSize}`}
+                fill="none"
+                stroke="var(--border-strong)"
+                strokeWidth="0.5"
+              />
+            </pattern>
+          </defs>
+          <rect className="room-floor" width={width} height={height} />
+          {background && (
+            <image
+              className="room-scene-background"
+              aria-label="Saved castle background"
+              href={background.dataUrl}
+              x={(width - background.width * cover) * 0.5}
+              y={(height - tileSize * 2 - background.height * cover) * background.anchorY}
+              width={background.width * cover}
+              height={background.height * cover}
+              opacity={background.opacity}
+            />
+          )}
+          {collisionRects.map((rect, i) => (
+            <rect
+              key={`geometry-${i}`}
+              className="room-occupancy room-tile-geometry"
+              x={rect.x}
+              y={rect.y}
+              width={rect.w}
+              height={rect.h}
+            />
+          ))}
+          {draft.cells.map((cell) => (
+            <g key={`${cell.x},${cell.y}`} data-tile-cell={`${cell.x},${cell.y}`}>
+              {artwork ? (
+                <svg
+                  x={cell.x * tileSize}
+                  y={cell.y * tileSize}
                   width={tileSize}
                   height={tileSize}
-                  fill={cell ? '#475569' : '#1e293b'}
-                  stroke="#334155"
-                  strokeWidth={0.5}
-                  style={{ cursor: tool === 'erase' ? 'cell' : 'crosshair' }}
+                  viewBox={`${cell.col * tileSize} ${cell.row * tileSize} ${tileSize} ${tileSize}`}
+                  overflow="hidden"
+                >
+                  <use href={`#${atlasId}`} />
+                </svg>
+              ) : (
+                <rect
+                  className="room-paint"
+                  x={cell.x * tileSize}
+                  y={cell.y * tileSize}
+                  width={tileSize}
+                  height={tileSize}
                 />
-                {cell && artwork && (
-                  <svg
-                    pointerEvents="none"
-                    x={px} y={py} width={tileSize} height={tileSize}
-                    viewBox={`${cell.col * tileSize} ${cell.row * tileSize} ${tileSize} ${tileSize}`}
-                    overflow="hidden"
-                  >
-                    <use href={`#${atlasId}`} />
-                  </svg>
-                )}
-                <rect className="tile-paint-focus" pointerEvents="none" x={px + 1} y={py + 1} width={tileSize - 2} height={tileSize - 2} fill="none" />
-              </g>
-            );
-          })}
+              )}
+            </g>
+          ))}
+          <rect pointerEvents="none" width={width} height={height} fill={`url(#${gridId})`} />
+          {tool !== 'select' && (
+            <rect
+              className="room-tile-cursor"
+              pointerEvents="none"
+              x={focusedCell.x * tileSize + 1}
+              y={focusedCell.y * tileSize + 1}
+              width={tileSize - 2}
+              height={tileSize - 2}
+              fill="none"
+            />
+          )}
         </svg>
       </div>
-      <div className="row">
-        <Button variant="primary" size="sm" onClick={() => void save()} disabled={busy}>
-          {busy ? 'Saving…' : 'Save Tilemap'}
+      <div className="row room-tile-actions" ref={actionButton}>
+        {tool !== 'select' && (
+          <Button
+            data-cell-action
+            size="sm"
+            disabled={!canApply}
+            aria-describedby={instructionsId}
+            onClick={() => applyTool(focusedCell.x, focusedCell.y)}
+            onKeyDown={(event) => {
+              if (event.nativeEvent.isComposing || event.keyCode === 229) {
+                if (event.key === 'Enter' || event.key === ' ') event.preventDefault();
+                return;
+              }
+              const directions: Record<string, [number, number]> = {
+                ArrowLeft: [-1, 0],
+                ArrowRight: [1, 0],
+                ArrowUp: [0, -1],
+                ArrowDown: [0, 1],
+              };
+              const direction = directions[event.key];
+              if (!direction) return;
+              event.preventDefault();
+              setFocusedCell((cell) => ({
+                x: Math.max(0, Math.min(cols - 1, cell.x + direction[0])),
+                y: Math.max(0, Math.min(rows - 1, cell.y + direction[1])),
+              }));
+            }}
+          >
+            {tool === 'erase' ? 'Erase' : 'Paint'} cell {focusedCell.x + 1}, {focusedCell.y + 1}
+          </Button>
+        )}
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => void save()}
+          disabled={draft.busy || !draft.dirty || draft.conflict}
+        >
+          {draft.busy ? 'Saving…' : 'Save Tilemap'}
         </Button>
-        <Button size="sm" onClick={() => setCells([])} disabled={busy}>
-          Clear
+        <Button
+          size="sm"
+          onClick={() => tileDrafts.discard(key, initialCells)}
+          disabled={draft.busy || !draft.dirty}
+        >
+          Discard draft
         </Button>
+        <span className="hint mono">{draft.cells.length} occupied cells</span>
       </div>
-      {message && <p className="hint" role="status">{message}</p>}
+      {draft.conflict && (
+        <p className="hint" role="alert">
+          Saved tiles changed while this draft was open. Discard the draft to load the current saved
+          tiles before editing again.
+        </p>
+      )}
+      {draft.message && (
+        <p className="hint" role="status">
+          {draft.message}
+        </p>
+      )}
     </div>
   );
 }

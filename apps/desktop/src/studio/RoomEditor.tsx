@@ -251,7 +251,7 @@ export function RoomEditor() {
         compact
         eyebrow="World"
         title="Room Editor"
-        description="View modes · layers/tools · canvas · inspector. Authored geometry only."
+        description="Browse rooms, inspect geometry, and paint tiles with an explicit save."
         actions={
           <>
             <ProjectSelect />
@@ -488,66 +488,16 @@ export function RoomEditor() {
               ) : viewMode === 'visual' && selectedProject?.engine === 'unity' ? (
                 <UnityRoomGeometry key={`${selectedPath}:${selected.id}`} projectPath={selectedPath} roomId={selected.id} width={selected.width ?? 800} height={selected.height ?? 600} zoom={zoom} gridSnap={gridSnap} tileSize={tileSize} />
               ) : viewMode === 'visual' ? (
-                <>
-                  {!hasGeometry && (
-                    <EmptyViewport
-                      title="No authored geometry yet"
-                      description="This room has no tileCells, collision rects, weak floors, or connections. Paint tiles below or regenerate the room — the canvas will not invent tiles or enemies."
-                      meta={
-                        <dl className="settings-dl empty-viewport-dl">
-                          <dt>Room</dt>
-                          <dd className="mono">{selected.id}</dd>
-                          <dt>Archetype</dt>
-                          <dd>{selected.archetype ?? '—'}</dd>
-                          <dt>Size</dt>
-                          <dd>
-                            {widthTiles} × {heightTiles} @ {tileSize}px
-                          </dd>
-                          <dt>Biome</dt>
-                          <dd>{selected.biomeId ?? '—'}</dd>
-                        </dl>
-                      }
-                      actions={
-                        <>
-                          <Button
-                            size="sm"
-                            onClick={() =>
-                              runRoomAction(() =>
-                                window.metroforge!.regenerateRoom!(selectedPath, selected.id, 'full'),
-                              )
-                            }
-                          >
-                            Regenerate Room
-                          </Button>
-                          <Button size="sm" onClick={() => navigate('Studio')}>
-                            Generation Studio
-                          </Button>
-                        </>
-                      }
-                    />
-                  )}
-                  {hasGeometry && (
-                    <div
-                      className="room-canvas-zoom"
-                      style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top left' }}
-                    >
-                      <RoomCanvasPreview background={activeBackground} room={selected} layer={viewMode} collision={collision} fill fit={fitRoom} />
-                    </div>
-                  )}
                   <TilePaintEditor
                     key={`${selectedPath}:${selected.id}`}
-                    projectPath={selectedPath}
-                    roomId={selected.id}
-                    biomeId={selected.biomeId ?? 'biome_0'}
-                    tileSize={tileSize}
-                    width={selected.width ?? 800}
-                    height={selected.height ?? 600}
-                    initialCells={selected.tileCells ?? []}
-                    selectedTile={selectedTile}
-                    tool={paintTool === 'erase' ? 'erase' : 'paint'}
+                    projectPath={selectedPath} roomId={selected.id}
+                    biomeId={selected.biomeId ?? 'biome_0'} tileSize={tileSize}
+                    width={selected.width ?? 800} height={selected.height ?? 600}
+                    initialCells={selected.tileCells} selectedTile={selectedTile}
+                    tool={paintTool} background={activeBackground}
+                    collisionRects={collision?.rects} zoom={zoom} fit={fitRoom}
                     onSaved={() => loadRooms(selectedPath)}
                   />
-                </>
               ) : !hasGeometry && viewMode !== 'entities' ? (
                 <EmptyViewport
                   title={`No ${viewMode} geometry`}

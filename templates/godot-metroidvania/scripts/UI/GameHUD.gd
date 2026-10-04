@@ -28,7 +28,15 @@ func _ready() -> void:
 	_style_minimap()
 	_apply_hud_mode()
 	var margin := $HUD/MarginContainer as Control
+	margin.grow_horizontal = Control.GROW_DIRECTION_END
 	margin.grow_vertical = Control.GROW_DIRECTION_END
+	margin.size.x = 264
+	var stack := $HUD/MarginContainer/VBox as VBoxContainer
+	stack.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for label in [ability_label, currency_label, collectible_label]:
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		label.custom_minimum_size.x = 0
 	margin.resized.connect(_fit_hud_frame)
 	_fit_hud_frame.call_deferred()
 
@@ -39,6 +47,8 @@ func _fit_hud_frame() -> void:
 	var margin := $HUD/MarginContainer as Control
 	hud_frame_panel.position = margin.position - Vector2(8, 6)
 	hud_frame_panel.size = margin.size + Vector2(16, 12)
+	var quests := $HUD/QuestTrackerPanel as Control
+	quests.position.y = margin.position.y + margin.size.y + 18
 
 ## Real UI-foundry textures (assets/ui/hud_frame.png, assets/ui/health_meter.png) are generated
 ## from this game's actual biome palette by generateUiPanel() in packages/assets/src/ui-foundry.ts
@@ -197,7 +207,7 @@ func _update_abilities() -> void:
 		var sid := String(id)
 		if sid.begins_with("test_"):
 			continue
-		raw.append(sid)
+		raw.append(sid.replace("_", " ").capitalize())
 	var abilities := ", ".join(raw)
 	ability_label.text = abilities if abilities else ""
 	# Sixteenth-session fix: currency/collectible labels already hide themselves when empty

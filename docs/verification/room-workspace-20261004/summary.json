@@ -1,0 +1,90 @@
+{
+  "status": "verified-development-progress",
+  "productionReady": false,
+  "release": "E:/MetroForgeData/Releases/MetroForge-room-workspace-20261004-v5",
+  "parent": "5ae81e261dea911db08645e0a0ac2c670af85835",
+  "roomsUiChecks": 28,
+  "apiKeysUiChecks": 44,
+  "navigationUiChecks": 24,
+  "unitChecks": 96,
+  "controlledNativeHudChecks": 19,
+  "nativeJourney": {
+    "passed": true,
+    "transitions": 40,
+    "uniqueRooms": 35,
+    "bosses": [
+      "boss_000",
+      "boss_001",
+      "boss_002",
+      "boss_final"
+    ],
+    "abilities": [
+      "dash",
+      "double_jump",
+      "wall_slide",
+      "wall_jump",
+      "ground_slam",
+      "air_dash"
+    ],
+    "clearedArenaReturns": [
+      {
+        "room": "room_008",
+        "boss": "boss_000",
+        "observations": 2,
+        "passed": true,
+        "cleared": {
+          "bossPresent": false,
+          "defeatedBosses": [
+            "boss_000"
+          ],
+          "exitsOpen": true,
+          "music": "biome_0",
+          "room": "room_008",
+          "tMs": 74171
+        }
+      },
+      {
+        "room": "room_018",
+        "boss": "boss_001",
+        "observations": 2,
+        "passed": true,
+        "cleared": {
+          "bossPresent": false,
+          "defeatedBosses": [
+            "boss_000",
+            "boss_001"
+          ],
+          "exitsOpen": true,
+          "music": "biome_0",
+          "room": "room_018",
+          "tMs": 127371
+        }
+      },
+      {
+        "room": "room_028",
+        "boss": "boss_002",
+        "observations": 2,
+        "passed": true,
+        "cleared": {
+          "bossPresent": false,
+          "defeatedBosses": [
+            "boss_000",
+            "boss_001",
+            "boss_002"
+          ],
+          "exitsOpen": true,
+          "music": "biome_0",
+          "room": "room_028",
+          "tMs": 198648
+        }
+      }
+    ],
+    "nativeErrors": [],
+    "warnings": [
+      "WARNING: ObjectDB instances leaked at exit (run with --verbose for details)."
+    ]
+  },
+  "mediaUnchanged": 632,
+  "referenceRoomRedesign": "specified, not implemented or accepted in this release",
+  "scope": "Actual portable app/IPC and Godot 4.6 NVIDIA native input traversal. Controlled HUD fixtures seed ability states; native journey earns all six. Dummy audio, no listening acceptance. No new provider inference, top-down, Unity or Unreal acceptance."
+}
