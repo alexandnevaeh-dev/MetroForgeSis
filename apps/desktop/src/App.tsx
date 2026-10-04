@@ -66,7 +66,9 @@ function TopCommandBar({
           className="topbar-icon-btn"
           onClick={onToggleSidebar}
           title={sidebarCollapsed ? 'Expand nav (Ctrl+B)' : 'Collapse nav (Ctrl+B)'}
-          aria-label={sidebarCollapsed ? 'Expand navigation (Ctrl+B)' : 'Collapse navigation (Ctrl+B)'}
+          aria-label={
+            sidebarCollapsed ? 'Expand navigation (Ctrl+B)' : 'Collapse navigation (Ctrl+B)'
+          }
           aria-pressed={sidebarCollapsed}
         >
           <span className="topbar-hamburger" aria-hidden="true" />
@@ -110,7 +112,12 @@ function TopCommandBar({
       </div>
 
       <div className="topbar-actions">
-        <button type="button" className="topbar-action topbar-jump" onClick={onOpenPalette} title="Jump (Ctrl+K)">
+        <button
+          type="button"
+          className="topbar-action topbar-jump"
+          onClick={onOpenPalette}
+          title="Jump (Ctrl+K)"
+        >
           <span className="topbar-jump-label">Jump</span>
           <kbd>Ctrl+K</kbd>
         </button>
@@ -145,7 +152,9 @@ function TopCommandBar({
           Story
         </button>
         <HealthPopover bridgeReady={bridgeReady} onOpenProviders={() => onNavigate('Providers')} />
-        <button type="button" className="topbar-action" onClick={() => onNavigate('API Keys')}>API Keys</button>
+        <button type="button" className="topbar-action" onClick={() => onNavigate('API Keys')}>
+          API Keys
+        </button>
       </div>
     </header>
   );
@@ -156,7 +165,9 @@ export function App() {
   const [version, setVersion] = useState('MetroForge');
   const [bridgeReady, setBridgeReady] = useState<boolean | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  useEffect(() => { document.title = `${activeNav} — MetroForge`; }, [activeNav]);
+  useEffect(() => {
+    document.title = `${activeNav} — MetroForge`;
+  }, [activeNav]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(max-width: 1449px)').matches,
   );
@@ -168,7 +179,10 @@ export function App() {
       return;
     }
     setBridgeReady(true);
-    bridge.getVersion().then(setVersion).catch(() => {});
+    bridge
+      .getVersion()
+      .then(setVersion)
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -189,11 +203,14 @@ export function App() {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if (event.isComposing || event.keyCode === 229) return;
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
         setPaletteOpen((open) => !open);
         return;
       }
+      // A modal owns navigation keys; background shortcuts must not change its project or route.
+      if (event.target instanceof Element && event.target.closest('dialog[open]')) return;
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') {
         event.preventDefault();
         setSidebarCollapsed((c) => !c);
@@ -215,7 +232,9 @@ export function App() {
 
   return (
     <StudioProvider onNavigate={setActiveNav}>
-      <div className={`app forge-shell${sidebarCollapsed ? ' sidebar-collapsed' : ''}${activeNav === 'Assets' ? ' asset-workspace' : ''}`}>
+      <div
+        className={`app forge-shell${sidebarCollapsed ? ' sidebar-collapsed' : ''}${activeNav === 'Assets' ? ' asset-workspace' : ''}`}
+      >
         <a className="skip-link" href="#studio-main">
           Skip to workspace
         </a>
@@ -290,7 +309,11 @@ export function App() {
         {activeNav !== 'Assets' && <ForgeAssistPanel activeNav={activeNav} />}
         {activeNav !== 'API Keys' && activeNav !== 'Assets' && <ForgeActivityDrawer />}
         <StatusBar version={version} bridgeReady={bridgeReady} activeNav={activeNav} />
-        <GoToPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} onSelect={setActiveNav} />
+        <GoToPalette
+          open={paletteOpen}
+          onClose={() => setPaletteOpen(false)}
+          onSelect={setActiveNav}
+        />
       </div>
     </StudioProvider>
   );

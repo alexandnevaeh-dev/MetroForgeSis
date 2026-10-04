@@ -1,0 +1,77 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\navigation-review\\reports\\game-tests\\20261004-jump-app\\1791105562285",
+  "executable": "E:/MetroForgeData/Releases/MetroForge-navigation-20261004-v2/MetroForge.exe",
+  "executableSha256": "1925f358e7f0e9675a5ac4198fb076613f0db318da56d388799a97be74a5b19c",
+  "checks": [
+    {
+      "label": "real app search opens with correct modal semantics and input focus",
+      "passed": true
+    },
+    {
+      "label": "background route and sidebar shortcuts respect the open modal",
+      "passed": true
+    },
+    {
+      "label": "global shortcut ignores composition",
+      "passed": true
+    },
+    {
+      "label": "real room IPC indexes the final boss room",
+      "passed": true
+    },
+    {
+      "label": "capture remains hidden: jump-castle-room.png",
+      "passed": true
+    },
+    {
+      "label": "Enter navigates into the actual selected room editor",
+      "passed": true
+    },
+    {
+      "label": "close returns focus to Jump",
+      "passed": true
+    },
+    {
+      "label": "capture remains hidden: selected-room-before-keyboard.png",
+      "passed": true
+    },
+    {
+      "label": "externally selected room is visible and exposes its true list position",
+      "passed": false
+    }
+  ],
+  "errors": [],
+  "captures": [
+    "jump-castle-room.png",
+    "selected-room-before-keyboard.png"
+  ],
+  "scope": "Real portable MetroForge with copied, separate castle and Quantum games: Jump routes, project switching, real room/asset indexing, modal/IME shortcuts, narrow and short layout. No inference or gameplay claim.",
+  "roomList": {
+    "scrollTop": 1790,
+    "clientHeight": 238,
+    "list": {
+      "x": 223,
+      "y": 316.28125,
+      "width": 139,
+      "height": 240,
+      "top": 316.28125,
+      "right": 362,
+      "bottom": 556.28125,
+      "left": 223
+    },
+    "option": {
+      "x": 228,
+      "y": 507.28125,
+      "width": 118,
+      "height": 54.546875,
+      "top": 507.28125,
+      "right": 346,
+      "bottom": 561.828125,
+      "left": 228
+    },
+    "position": "39",
+    "size": "40"
+  },
+  "passed": false,
+  "error": "AssertionError [ERR_ASSERTION]: externally selected room is visible and exposes its true list position\n    at check (file:///E:/MetroForgeData/GitHubUpload/20261004/navigation-review/scripts/verify-jump-app.mjs:18:72)\n    at file:///E:/MetroForgeData/GitHubUpload/20261004/navigation-review/scripts/verify-jump-app.mjs:34:2"
+}

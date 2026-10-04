@@ -1,10 +1,11 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type {
   ButtonHTMLAttributes,
   CSSProperties,
   HTMLAttributes,
   InputHTMLAttributes,
   ReactNode,
+  RefObject,
   SelectHTMLAttributes,
   TableHTMLAttributes,
   TextareaHTMLAttributes,
@@ -73,10 +74,7 @@ export function ButtonStrip({
 
 /* ── Inputs ── */
 
-export function Input({
-  className = '',
-  ...props
-}: InputHTMLAttributes<HTMLInputElement>) {
+export function Input({ className = '', ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return <input className={['mf-input', className].filter(Boolean).join(' ')} {...props} />;
 }
 
@@ -96,15 +94,25 @@ export function TextArea({
   className = '',
   ...props
 }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea className={['mf-input', 'mf-textarea', 'resize-none', className].filter(Boolean).join(' ')} {...props} />;
+  return (
+    <textarea
+      className={['mf-input', 'mf-textarea', 'resize-none', className].filter(Boolean).join(' ')}
+      {...props}
+    />
+  );
 }
 
 export function SearchField({
   className = '',
   onClear,
+  inputRef,
   ...props
-}: InputHTMLAttributes<HTMLInputElement> & { onClear?: () => void }) {
-  const input = useRef<HTMLInputElement>(null);
+}: InputHTMLAttributes<HTMLInputElement> & {
+  onClear?: () => void;
+  inputRef?: RefObject<HTMLInputElement>;
+}) {
+  const ownInput = useRef<HTMLInputElement>(null);
+  const input = inputRef ?? ownInput;
   return (
     <div
       className={['mf-search', onClear ? 'mf-search-clearable' : '', className]
@@ -135,6 +143,76 @@ export function SearchField({
 
 /* ── Panel compound ── */
 
+/** Native dialog supplies background inertness and keyboard focus containment. */
+export function Modal({
+  open,
+  onClose,
+  labelledBy,
+  describedBy,
+  initialFocus,
+  className = '',
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  labelledBy: string;
+  describedBy?: string;
+  initialFocus?: RefObject<HTMLElement>;
+  className?: string;
+  children: ReactNode;
+}) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const node = dialog.current;
+    if (!node) return;
+    if (!open) {
+      if (node.open) node.close();
+      return;
+    }
+    const previous = document.activeElement;
+    node.showModal();
+    initialFocus?.current?.focus({ preventScroll: true });
+    return () => {
+      node.close();
+      if (previous instanceof HTMLElement && previous.isConnected)
+        previous.focus({ preventScroll: true });
+    };
+  }, [open, initialFocus]);
+  return (
+    <dialog
+      ref={dialog}
+      className={className}
+      aria-labelledby={labelledBy}
+      aria-describedby={describedBy}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape' && !event.nativeEvent.isComposing && event.keyCode !== 229) {
+          event.preventDefault();
+          event.stopPropagation();
+          onClose();
+        }
+      }}
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) {
+          const box = event.currentTarget.getBoundingClientRect();
+          if (
+            event.clientX < box.left ||
+            event.clientX > box.right ||
+            event.clientY < box.top ||
+            event.clientY > box.bottom
+          )
+            onClose();
+        }
+      }}
+    >
+      {open ? children : null}
+    </dialog>
+  );
+}
+
 export function PanelHeader({
   title,
   actions,
@@ -162,7 +240,11 @@ export function PanelBody({
   scroll?: boolean;
 }) {
   return (
-    <div className={['mf-panel-body', scroll ? 'mf-panel-body-scroll' : '', className].filter(Boolean).join(' ')}>
+    <div
+      className={['mf-panel-body', scroll ? 'mf-panel-body-scroll' : '', className]
+        .filter(Boolean)
+        .join(' ')}
+    >
       {children}
     </div>
   );
@@ -197,7 +279,11 @@ export function Panel({
 }) {
   const levelClass = level === 0 ? 'panel' : level === 2 ? 'panel-l2' : 'panel-l1';
   return (
-    <div className={[levelClass, 'mf-panel', fill ? 'mf-panel-fill' : '', className].filter(Boolean).join(' ')}>
+    <div
+      className={[levelClass, 'mf-panel', fill ? 'mf-panel-fill' : '', className]
+        .filter(Boolean)
+        .join(' ')}
+    >
       {(title || actions) && <PanelHeader title={title} actions={actions} />}
       {children}
       {footer ? <PanelFooter>{footer}</PanelFooter> : null}
@@ -219,20 +305,21 @@ export function InspectorPanel({
   empty?: ReactNode;
 }) {
   return (
-    <aside className={['panel', 'editor-inspector', 'mf-inspector', className].filter(Boolean).join(' ')}>
+    <aside
+      className={['panel', 'editor-inspector', 'mf-inspector', className].filter(Boolean).join(' ')}
+    >
       <PanelHeader title={title} actions={actions} />
       <div className="mf-inspector-body">{empty ?? children}</div>
     </aside>
   );
 }
 
-export function Toolbar({
-  children,
-  className = '',
-  ...props
-}: HTMLAttributes<HTMLDivElement>) {
+export function Toolbar({ children, className = '', ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={['mf-toolbar', 'editor-toolbar', className].filter(Boolean).join(' ')} {...props}>
+    <div
+      className={['mf-toolbar', 'editor-toolbar', className].filter(Boolean).join(' ')}
+      {...props}
+    >
       {children}
     </div>
   );
@@ -299,7 +386,13 @@ export function StatusBadge({
   const tone = statusToTone(kind);
   return (
     <span
-      className={['mf-status-badge', `mf-status-${kind.toLowerCase()}`, `mf-badge-${tone}`, 'mf-badge', className]
+      className={[
+        'mf-status-badge',
+        `mf-status-${kind.toLowerCase()}`,
+        `mf-badge-${tone}`,
+        'mf-badge',
+        className,
+      ]
         .filter(Boolean)
         .join(' ')}
       data-status={kind}
@@ -318,7 +411,11 @@ export function Badge({
   children: ReactNode;
   className?: string;
 }) {
-  return <span className={['mf-badge', `mf-badge-${tone}`, className].filter(Boolean).join(' ')}>{children}</span>;
+  return (
+    <span className={['mf-badge', `mf-badge-${tone}`, className].filter(Boolean).join(' ')}>
+      {children}
+    </span>
+  );
 }
 
 export function Metric({
@@ -357,7 +454,10 @@ export function EmptyState({
   className?: string;
 }) {
   return (
-    <div className={['empty-state', 'mf-empty', 'panel-l1', className].filter(Boolean).join(' ')} role="status">
+    <div
+      className={['empty-state', 'mf-empty', 'panel-l1', className].filter(Boolean).join(' ')}
+      role="status"
+    >
       <p className="mf-empty-title type-section-title">{title}</p>
       {description ? <p className="hint type-body-secondary">{description}</p> : null}
       {actions ? <div className="row">{actions}</div> : null}
@@ -377,7 +477,10 @@ export function ErrorState({
   className?: string;
 }) {
   return (
-    <div className={['mf-error-state', 'panel-l1', className].filter(Boolean).join(' ')} role="alert">
+    <div
+      className={['mf-error-state', 'panel-l1', className].filter(Boolean).join(' ')}
+      role="alert"
+    >
       <StatusBadge status="FAIL" />
       <p className="mf-empty-title type-section-title">{title}</p>
       {description ? <p className="hint type-body-secondary">{description}</p> : null}
@@ -396,7 +499,11 @@ export function LoadingState({
   className?: string;
 }) {
   return (
-    <div className={['mf-loading-state', 'panel-l1', className].filter(Boolean).join(' ')} role="status" aria-busy="true">
+    <div
+      className={['mf-loading-state', 'panel-l1', className].filter(Boolean).join(' ')}
+      role="status"
+      aria-busy="true"
+    >
       <StatusBadge status="RUNNING">RUNNING</StatusBadge>
       <p className="mf-empty-title type-section-title">{title}</p>
       {description ? <p className="hint type-body-secondary">{description}</p> : null}
@@ -566,7 +673,7 @@ export function EditorWorkspace({
   className?: string;
 }) {
   const variantClass =
-    variant === 'world'  ? 'world-workspace' : variant === 'dungeon' ? 'dungeon-workspace' : '';
+    variant === 'world' ? 'world-workspace' : variant === 'dungeon' ? 'dungeon-workspace' : '';
   return (
     <div className={['editor-workspace', variantClass, className].filter(Boolean).join(' ')}>
       {children}
@@ -598,7 +705,11 @@ export function EditorViewport({
   footer?: ReactNode;
 }) {
   return (
-    <div className={['panel', 'editor-canvas', 'editor-canvas-fill', className].filter(Boolean).join(' ')}>
+    <div
+      className={['panel', 'editor-canvas', 'editor-canvas-fill', className]
+        .filter(Boolean)
+        .join(' ')}
+    >
       {toolbar}
       <div className="editor-viewport-body">{children}</div>
       {footer ? <div className="editor-canvas-footer">{footer}</div> : null}
@@ -669,29 +780,64 @@ export function EditorWorkbench({
       const saved = JSON.parse(localStorage.getItem(storageKey) ?? 'null');
       if (Array.isArray(saved) && saved.length === 2 && saved.every(Number.isFinite))
         return [Math.min(380, Math.max(180, saved[0])), Math.min(420, Math.max(220, saved[1]))];
-    } catch { /* Defaults remain usable when browser storage is unavailable. */ }
+    } catch {
+      /* Defaults remain usable when browser storage is unavailable. */
+    }
     return [220, 300];
   });
-  const drag = useRef<{side: number; x: number; width: number} | null>(null);
+  const drag = useRef<{ side: number; x: number; width: number } | null>(null);
   const resize = (side: number, value: number) => {
-    setPanes(current => {
+    setPanes((current) => {
       const next: [number, number] = [...current];
       const available = (root.current?.clientWidth ?? 1000) - current[1 - side]! - 300;
-      next[side] = Math.max(side === 0 ? 180 : 220, Math.min(side === 0 ? 380 : 420, available, value));
-      try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch { /* Optional preference. */ }
+      next[side] = Math.max(
+        side === 0 ? 180 : 220,
+        Math.min(side === 0 ? 380 : 420, available, value),
+      );
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(next));
+      } catch {
+        /* Optional preference. */
+      }
       return next;
     });
   };
   const separator = (side: number) => (
-    <div role="separator" aria-orientation="vertical" tabIndex={0}
+    <div
+      role="separator"
+      aria-orientation="vertical"
+      tabIndex={0}
       aria-label={side === 0 ? 'Resize scene browser' : 'Resize inspector'}
-      aria-valuemin={side === 0 ? 180 : 220} aria-valuemax={side === 0 ? 380 : 420} aria-valuenow={panes[side]}
+      aria-valuemin={side === 0 ? 180 : 220}
+      aria-valuemax={side === 0 ? 380 : 420}
+      aria-valuenow={panes[side]}
       className={`editor-pane-divider editor-pane-divider-${side}`}
-      onPointerDown={event => { drag.current = {side, x: event.clientX, width: panes[side]!}; event.currentTarget.setPointerCapture(event.pointerId); }}
-      onPointerMove={event => { const active = drag.current; if(active?.side === side) resize(side, active.width + (event.clientX - active.x) * (side === 0 ? 1 : -1)); }}
-      onPointerUp={() => { drag.current = null; }} onPointerCancel={() => { drag.current = null; }}
+      onPointerDown={(event) => {
+        drag.current = { side, x: event.clientX, width: panes[side]! };
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }}
+      onPointerMove={(event) => {
+        const active = drag.current;
+        if (active?.side === side)
+          resize(side, active.width + (event.clientX - active.x) * (side === 0 ? 1 : -1));
+      }}
+      onPointerUp={() => {
+        drag.current = null;
+      }}
+      onPointerCancel={() => {
+        drag.current = null;
+      }}
       onDoubleClick={() => resize(side, side === 0 ? 220 : 300)}
-      onKeyDown={event => { if(event.key === 'ArrowLeft' || event.key === 'ArrowRight') {event.preventDefault(); resize(side, panes[side]! + (event.key === 'ArrowRight' ? 16 : -16) * (side === 0 ? 1 : -1));} }} />
+      onKeyDown={(event) => {
+        if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+          event.preventDefault();
+          resize(
+            side,
+            panes[side]! + (event.key === 'ArrowRight' ? 16 : -16) * (side === 0 ? 1 : -1),
+          );
+        }
+      }}
+    />
   );
   const variantClass =
     variant === 'world'
@@ -702,10 +848,31 @@ export function EditorWorkbench({
           ? 'preview-workspace'
           : '';
   return (
-    <div ref={root} style={{'--editor-left-width': `${panes[0]}px`, '--editor-right-width': `${panes[1]}px`} as CSSProperties}
-      className={['editor-workspace', 'editor-workbench', variant === 'default' ? 'editor-workbench-resizable' : '', variantClass, className].filter(Boolean).join(' ')}>
+    <div
+      ref={root}
+      style={
+        {
+          '--editor-left-width': `${panes[0]}px`,
+          '--editor-right-width': `${panes[1]}px`,
+        } as CSSProperties
+      }
+      className={[
+        'editor-workspace',
+        'editor-workbench',
+        variant === 'default' ? 'editor-workbench-resizable' : '',
+        variantClass,
+        className,
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
       {children}
-      {variant === 'default' && <>{separator(0)}{separator(1)}</>}
+      {variant === 'default' && (
+        <>
+          {separator(0)}
+          {separator(1)}
+        </>
+      )}
     </div>
   );
 }
@@ -722,7 +889,11 @@ export function EditorCanvas({
   footer?: ReactNode;
 }) {
   return (
-    <EditorViewport className={['editor-canvas-shell', className].filter(Boolean).join(' ')} toolbar={toolbar} footer={footer}>
+    <EditorViewport
+      className={['editor-canvas-shell', className].filter(Boolean).join(' ')}
+      toolbar={toolbar}
+      footer={footer}
+    >
       {children}
     </EditorViewport>
   );
@@ -769,7 +940,11 @@ export function EditorPropertyGroup({
   className?: string;
 }) {
   return (
-    <PropertySection title={title} actions={actions} className={['editor-prop-group', className].filter(Boolean).join(' ')}>
+    <PropertySection
+      title={title}
+      actions={actions}
+      className={['editor-prop-group', className].filter(Boolean).join(' ')}
+    >
       {children}
     </PropertySection>
   );
@@ -781,7 +956,12 @@ export function EditorPropertyRow(props: {
   hint?: ReactNode;
   className?: string;
 }) {
-  return <PropertyRow {...props} className={['editor-prop-row', props.className ?? ''].filter(Boolean).join(' ')} />;
+  return (
+    <PropertyRow
+      {...props}
+      className={['editor-prop-row', props.className ?? ''].filter(Boolean).join(' ')}
+    />
+  );
 }
 
 export function EditorDock({
@@ -800,7 +980,13 @@ export function EditorDock({
   return (
     <div className={['editor-dock', 'panel', className].filter(Boolean).join(' ')}>
       {tabs && activeTab && onTabChange ? (
-        <EditorTabs items={tabs} value={activeTab} onChange={onTabChange} label="Dock" className="editor-dock-tabs" />
+        <EditorTabs
+          items={tabs}
+          value={activeTab}
+          onChange={onTabChange}
+          label="Dock"
+          className="editor-dock-tabs"
+        />
       ) : null}
       <div className="editor-dock-body">{children}</div>
     </div>
@@ -820,7 +1006,15 @@ export function EditorTabs({
   label?: string;
   className?: string;
 }) {
-  return <SegmentedTabs items={items} value={value} onChange={onChange} label={label} className={className} />;
+  return (
+    <SegmentedTabs
+      items={items}
+      value={value}
+      onChange={onChange}
+      label={label}
+      className={className}
+    />
+  );
 }
 
 export function EditorToolButton({
@@ -849,7 +1043,12 @@ export function EditorEmptyState(props: {
   actions?: ReactNode;
   className?: string;
 }) {
-  return <EmptyViewport {...props} className={['editor-empty-state', props.className ?? ''].filter(Boolean).join(' ')} />;
+  return (
+    <EmptyViewport
+      {...props}
+      className={['editor-empty-state', props.className ?? ''].filter(Boolean).join(' ')}
+    />
+  );
 }
 
 export function EditorZoomControls({
@@ -870,14 +1069,26 @@ export function EditorZoomControls({
   className?: string;
 }) {
   return (
-    <div className={['editor-zoom-controls', 'row', className].filter(Boolean).join(' ')} role="group" aria-label="Zoom">
-      <Button size="sm" onClick={() => onZoomChange(Math.max(min, zoom - step))} aria-label="Zoom out">
+    <div
+      className={['editor-zoom-controls', 'row', className].filter(Boolean).join(' ')}
+      role="group"
+      aria-label="Zoom"
+    >
+      <Button
+        size="sm"
+        onClick={() => onZoomChange(Math.max(min, zoom - step))}
+        aria-label="Zoom out"
+      >
         −
       </Button>
       <span className="mono hint" aria-live="polite">
         {zoom}%
       </span>
-      <Button size="sm" onClick={() => onZoomChange(Math.min(max, zoom + step))} aria-label="Zoom in">
+      <Button
+        size="sm"
+        onClick={() => onZoomChange(Math.min(max, zoom + step))}
+        aria-label="Zoom in"
+      >
         +
       </Button>
       {onFit ? (
@@ -899,7 +1110,10 @@ export function EditorStatusBadge({
   className?: string;
 }) {
   return (
-    <StatusBadge status={status} className={['editor-status-badge', className].filter(Boolean).join(' ')}>
+    <StatusBadge
+      status={status}
+      className={['editor-status-badge', className].filter(Boolean).join(' ')}
+    >
       {children}
     </StatusBadge>
   );
@@ -918,11 +1132,7 @@ export function AiOpsWorkbench({
 }) {
   return (
     <div
-      className={[
-        'ai-ops-workbench',
-        variant !== 'default' ? `ai-ops-${variant}` : '',
-        className,
-      ]
+      className={['ai-ops-workbench', variant !== 'default' ? `ai-ops-${variant}` : '', className]
         .filter(Boolean)
         .join(' ')}
     >
@@ -941,7 +1151,11 @@ export function AiOpsSummary({
   title?: ReactNode;
 }) {
   return (
-    <div className={['ai-ops-summary', 'panel-l1', className].filter(Boolean).join(' ')} role="region" aria-label={typeof title === 'string' ? title : 'Summary'}>
+    <div
+      className={['ai-ops-summary', 'panel-l1', className].filter(Boolean).join(' ')}
+      role="region"
+      aria-label={typeof title === 'string' ? title : 'Summary'}
+    >
       {title ? <div className="ai-ops-summary-title type-label">{title}</div> : null}
       <div className="ai-ops-summary-metrics">{children}</div>
     </div>
@@ -970,7 +1184,9 @@ export function AiOpsContext({
   className?: string;
 }) {
   return (
-    <aside className={['ai-ops-context', 'panel-l1', 'mf-panel', className].filter(Boolean).join(' ')}>
+    <aside
+      className={['ai-ops-context', 'panel-l1', 'mf-panel', className].filter(Boolean).join(' ')}
+    >
       {(title || actions) && <PanelHeader title={title} actions={actions} />}
       <div className="ai-ops-context-body">{children}</div>
     </aside>
@@ -991,7 +1207,9 @@ export function AiOpsPrimary({
   className?: string;
 }) {
   return (
-    <section className={['ai-ops-primary', 'panel-l1', 'mf-panel', className].filter(Boolean).join(' ')}>
+    <section
+      className={['ai-ops-primary', 'panel-l1', 'mf-panel', className].filter(Boolean).join(' ')}
+    >
       {(title || actions) && <PanelHeader title={title} actions={actions} />}
       {toolbar ? <div className="ai-ops-primary-toolbar mf-toolbar">{toolbar}</div> : null}
       <div className="ai-ops-primary-body">{children}</div>
@@ -1058,7 +1276,12 @@ export function HealthDot({
       ? 'ok'
       : s === 'degraded' || s === 'warn' || s === 'warning' || s === 'checking'
         ? 'warn'
-        : s === 'unavailable' || s === 'offline' || s === 'fail' || s === 'failed' || s === 'error' || s === 'disabled'
+        : s === 'unavailable' ||
+            s === 'offline' ||
+            s === 'fail' ||
+            s === 'failed' ||
+            s === 'error' ||
+            s === 'disabled'
           ? 'error'
           : '';
   return (
@@ -1079,13 +1302,27 @@ export function RejectionTagBadge({
   className?: string;
 }) {
   return (
-    <span className={['mf-badge', 'mf-badge-muted', 'rejection-tag', 'mono', className].filter(Boolean).join(' ')} data-tag={code}>
+    <span
+      className={['mf-badge', 'mf-badge-muted', 'rejection-tag', 'mono', className]
+        .filter(Boolean)
+        .join(' ')}
+      data-tag={code}
+    >
       {label ?? code}
     </span>
   );
 }
 
 /** Compact labelled checkbox for inspector forms. */
-export function Checkbox({ label, className = '', ...props }: InputHTMLAttributes<HTMLInputElement> & { label: ReactNode }) {
-  return <label className={['mf-checkbox-row', className].filter(Boolean).join(' ')}><input {...props} type="checkbox" /><span>{label}</span></label>;
+export function Checkbox({
+  label,
+  className = '',
+  ...props
+}: InputHTMLAttributes<HTMLInputElement> & { label: ReactNode }) {
+  return (
+    <label className={['mf-checkbox-row', className].filter(Boolean).join(' ')}>
+      <input {...props} type="checkbox" />
+      <span>{label}</span>
+    </label>
+  );
 }

@@ -1761,6 +1761,9 @@ textarea {
   scrollbar-width: thin;
 }
 
+.virtualized-room-list .room-item-wrap { height: 48px; padding: 0; display: flex; align-items: stretch; }
+.virtualized-room-list .room-item-wrap > .room-item { justify-content: center; }
+
 .editor-left-rail .virtualized-room-list {
   height: min(240px, 32vh);
 }
@@ -1957,18 +1960,13 @@ textarea {
   padding: 0.05rem 0.28rem;
 }
 
-.goto-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  justify-content: center;
-  padding-top: 12vh;
-  z-index: 30;
-}
-
 .goto-palette {
-  width: min(560px, 92vw);
+  width: min(640px, calc(100vw - 32px));
+  max-width: none;
+  max-height: calc(100dvh - min(10vh, 72px) - 16px);
+  margin: min(10vh, 72px) auto auto;
+  padding: 0;
+  color: var(--text-primary);
   background: var(--bg-surface-raised);
   border: 1px solid var(--border-normal);
   border-radius: var(--radius-lg);
@@ -1976,39 +1974,34 @@ textarea {
   overflow: hidden;
 }
 
+.goto-palette[open] { display: flex; flex-direction: column; }
+.goto-palette::backdrop { background: var(--overlay-backdrop, rgba(0, 0, 0, 0.65)); }
+.goto-heading { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem; border-bottom: 1px solid var(--border-subtle); }
+.goto-heading > div { min-width: 0; }
+.goto-heading h2 { margin: 0; font-size: 1.1rem; }
+.goto-heading p { margin: .25rem 0 0; color: var(--text-secondary); overflow-wrap: anywhere; }
+.goto-heading button { flex: none; }
+.goto-palette .mf-search { margin: .8rem 1rem .6rem; flex-shrink: 0; }
+.goto-scopes { display: flex; flex-shrink: 0; flex-wrap: wrap; gap: .25rem; padding: 0 1rem .65rem; border-bottom: 1px solid var(--border-subtle); }
+.goto-scopes button[aria-pressed="true"] { background: var(--accent-muted); color: var(--text-primary); border-color: var(--accent); }
+.goto-results { overflow-y: auto; min-height: 0; scrollbar-gutter: stable; }
+.goto-group-label { display: flex; justify-content: space-between; gap: .5rem; margin: 0; padding: .65rem 1rem .35rem; color: var(--text-secondary); }
+.goto-group-label span { font-weight: normal; text-align: right; text-transform: none; }
+.goto-palette .goto-option { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: .75rem; border: 0; border-radius: 0; padding: .6rem 1rem; background: transparent; text-align: left; }
+.goto-palette .goto-option[aria-selected="true"], .goto-palette .goto-option:hover { background: var(--accent-muted); box-shadow: inset 3px 0 var(--accent); }
+.goto-row-copy { display: flex; flex-direction: column; gap: .2rem; min-width: 0; overflow-wrap: anywhere; }
+.goto-row-copy strong { color: var(--text-primary); font-weight: 600; }
+.goto-row-copy > span { font-size: .72rem; color: var(--text-secondary); }
+.goto-row-kind { flex: none; font-size: .68rem; color: var(--text-secondary); }
+.goto-recovery { display: flex; flex-shrink: 0; align-items: center; gap: .75rem; padding: .65rem 1rem; border-bottom: 1px solid var(--border-subtle); }
+.goto-recovery > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.goto-recovery button { flex: none; }
+.goto-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem; flex-shrink: 0; padding: .6rem 1rem; border-top: 1px solid var(--border-subtle); color: var(--text-secondary); font-size: .72rem; }
+
 .goto-empty {
   margin: 0;
   padding: 0.85rem 1rem;
   color: var(--muted);
-}
-
-.goto-palette input {
-  border: none;
-  border-bottom: 1px solid var(--border-subtle);
-  border-radius: 0;
-  padding: 0.85rem 1rem;
-  background: var(--bg-elevated);
-}
-
-.goto-palette ul {
-  list-style: none;
-  max-height: 320px;
-  overflow: auto;
-}
-
-.goto-palette button {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  background: none;
-  border: none;
-  border-radius: 0;
-  padding: 0.55rem 1rem;
-}
-
-.goto-palette button:hover,
-.goto-palette button:focus-visible {
-  background: var(--accent-muted);
 }
 
 .anim-viewport {
@@ -2260,10 +2253,6 @@ textarea {
   background: var(--accent-muted);
   border-color: transparent;
   color: var(--text);
-}
-
-.goto-active {
-  background: var(--accent-muted);
 }
 
 .form-grid {

@@ -1,0 +1,163 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\navigation-review\\reports\\game-tests\\20261004-jump-frontend\\1791105942897",
+  "scope": "Actual React Jump component and shared native-dialog controls in hidden Electron, controlled IPC failures/races; no generation or gameplay claim",
+  "checks": [
+    {
+      "label": "opening focuses the searchable combobox",
+      "passed": true
+    },
+    {
+      "label": "modal is in the native top layer",
+      "passed": true
+    },
+    {
+      "label": "background focus is blocked while modal is open",
+      "passed": true
+    },
+    {
+      "label": "room results render while asset read is still pending",
+      "passed": true
+    },
+    {
+      "label": "asset rejection keeps successful room results",
+      "passed": true
+    },
+    {
+      "label": "duplicate retry submits one read per category",
+      "passed": true
+    },
+    {
+      "label": "existing rooms stay readable during retry",
+      "passed": true
+    },
+    {
+      "label": "scope identifies selected category and bounds large lists",
+      "passed": true
+    },
+    {
+      "label": "multiword search matches category and ID across fields",
+      "passed": true
+    },
+    {
+      "label": "clear restores results and returns input focus",
+      "passed": true
+    },
+    {
+      "label": "empty search explains recovery",
+      "passed": true
+    },
+    {
+      "label": "empty navigation cannot activate an undefined item",
+      "passed": true
+    },
+    {
+      "label": "IME confirmation does not activate a result",
+      "passed": true
+    },
+    {
+      "label": "Enter opens the selected actual asset",
+      "passed": true
+    },
+    {
+      "label": "close restores opener focus",
+      "passed": true
+    },
+    {
+      "label": "duplicate project names retain distinct paths and DOM identity",
+      "passed": true
+    },
+    {
+      "label": "project activation switches by path",
+      "passed": true
+    },
+    {
+      "label": "late previous-project responses cannot replace new results",
+      "passed": true
+    },
+    {
+      "label": "keyboard selection remains fully visible in the scrolling list",
+      "passed": true
+    },
+    {
+      "label": "Escape closes a nonempty search and restores focus to the opener",
+      "passed": true
+    },
+    {
+      "label": "narrow short viewport keeps search and footer reachable",
+      "passed": true
+    },
+    {
+      "label": "test window stays hidden",
+      "passed": true
+    },
+    {
+      "label": "Tab stays inside modal 0",
+      "passed": true
+    },
+    {
+      "label": "Tab stays inside modal 1",
+      "passed": true
+    },
+    {
+      "label": "Tab stays inside modal 2",
+      "passed": true
+    },
+    {
+      "label": "Tab stays inside modal 3",
+      "passed": true
+    },
+    {
+      "label": "Tab stays inside modal 4",
+      "passed": true
+    },
+    {
+      "label": "Tab stays inside modal 5",
+      "passed": true
+    },
+    {
+      "label": "Tab stays inside modal 6",
+      "passed": true
+    },
+    {
+      "label": "Tab stays inside modal 7",
+      "passed": true
+    },
+    {
+      "label": "Tab stays inside modal 8",
+      "passed": true
+    },
+    {
+      "label": "Tab stays inside modal 9",
+      "passed": true
+    },
+    {
+      "label": "Tab stays inside modal 10",
+      "passed": true
+    },
+    {
+      "label": "Tab stays inside modal 11",
+      "passed": true
+    },
+    {
+      "label": "closing during a read ignores late response",
+      "passed": true
+    },
+    {
+      "label": "no renderer errors during failure, races and unmount",
+      "passed": true
+    },
+    {
+      "label": "tested sources stayed unchanged",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "sourceHashes": {
+    "apps/desktop/src/studio/GoToPalette.tsx": "d39b83703f2abfb5ddc788aa193d84a59910ca33a8a6451f0ace7e8f3b818fdd",
+    "apps/desktop/src/studio/ui/index.tsx": "7fb42c3fc4f58379a07d690393468b7b650a7d960a22d3e2249c84b65ba10fbc",
+    "apps/desktop/src/studio/StudioContext.tsx": "0cb92d683f0d6f835fa3f7e069e3edf824b6e216f18c4a203a98b9939caa7920",
+    "apps/desktop/src/styles.css": "2b08f7b00be012be11e62379f6f251904a4236d1c424b2a6c761eb4774f5ee9c",
+    "scripts/verify-jump-frontend.mjs": "2719e97a0340a716bff68c646e9da0ca3e0eb74897d5e8db57c445435b3becf7"
+  },
+  "passed": true
+}
