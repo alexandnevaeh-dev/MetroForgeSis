@@ -1908,6 +1908,7 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 			push_warning("visual slice capture: no player in %s" % String(room_id))
 			continue
 		var actual_biome := String(info.get("biomeId", ""))
+		var expected_castle_base: String = preload("res://scripts/world/StormglassDecor.gd").castle_background_path(actual_biome)
 		var room_index := maxi(0, String(room_id).trim_prefix("room_").to_int())
 		var region_id := "region_%d" % int(room_index / 10)
 		var loaded_room := world.get("_current_room") as Node
@@ -1983,7 +1984,7 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 					stormglass_condition_families_seen[condition_label] = true
 				stormglass_condition_metadata_matches_rooms = stormglass_condition_metadata_matches_rooms \
 					and int(condition_holder.get_meta("condition_district", -1)) == expected_district \
-					and String(condition_holder.get_meta("castle_base", "")) == "res://assets/backgrounds/stormglass/reliquary_interior.png"
+					and String(condition_holder.get_meta("castle_base", "")) == expected_castle_base
 				for decal in condition_holder.get_children():
 					if decal.name.begins_with("ConditionDecal_"):
 						condition_decal_count += 1
@@ -1994,7 +1995,7 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 			stormglass_rooms_share_castle_interior = stormglass_rooms_share_castle_interior \
 				and panorama != null \
 				and panorama.texture != null \
-				and panorama.texture.resource_path == "res://assets/backgrounds/stormglass/reliquary_interior.png" \
+				and panorama.texture.resource_path == expected_castle_base \
 				and bool(panorama.get_meta("interior_continuity", false))
 		if actual_biome == "biome_0" and String(room_id) in [
 			"room_000", "room_001", "room_002", "room_003", "room_004",

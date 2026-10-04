@@ -1,0 +1,959 @@
+Godot Engine v4.6.stable.official.89cea1439 - https://godotengine.org
+
+TRANSITION_PROFILE from=room_000 to=room_002 physics_wait_ms=0.00 resource_ms=13.16 instantiate_ms=98.88 presentation_ms=0.70 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=124.44
+STORMGLASS_VERTICAL_CAMERA view=967.11x544.00 zoom=1.985 room=room_002
+TRANSITION_PROFILE from=room_002 to=room_007 physics_wait_ms=0.00 resource_ms=3.70 instantiate_ms=40.14 presentation_ms=0.65 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=51.57
+STORMGLASS_COMPACT_CAMERA view=967.11x544.00 zoom=1.985 room=room_007
+TRANSITION_PROFILE from=room_007 to=room_000 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=29.86 presentation_ms=0.61 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=37.33
+WARNING: AudioManager: SFX file not found: res://audio/sfx/this_sfx_id_does_not_exist_and_should_just_warn.wav
+   at: push_warning (core/variant/variant_utility.cpp:1034)
+   GDScript backtrace (most recent call first):
+       [0] _load_sfx (res://scripts/core/AudioManager.gd:157)
+       [1] play_sfx (res://scripts/core/AudioManager.gd:91)
+       [2] _check_audio (res://scripts/test/RuntimeSmokeTest.gd:469)
+       [3] _ready (res://scripts/test/RuntimeSmokeTest.gd:57)
+       [4] _check_stormglass_vertical_camera (res://scripts/test/RuntimeSmokeTest.gd:403)
+TRANSITION_PROFILE from=room_000 to=room_001 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=102.08 presentation_ms=0.70 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=111.33
+TRANSITION_PROFILE from=room_001 to=room_000 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=31.09 presentation_ms=0.62 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=45.70
+TRANSITION_PROFILE from=room_000 to=room_008 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=120.60 presentation_ms=4.85 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=146.28
+TRANSITION_PROFILE from=room_008 to=room_000 physics_wait_ms=0.00 resource_ms=0.00 instantiate_ms=29.88 presentation_ms=0.72 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=30.92
+METROFORGE_RUNTIME_READY project=Stormglass Reliquary - Side-view Test scene=res://scenes/test/RuntimeSmokeTest.tscn player=Player room=room_000
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=spawn empty_image
+FOOT_PROBE tag=baseline modulate=0.900,0.920,0.960
+FOOT_PROBE player_pos=112.0,704.0
+FOOT_PROBE sprite_mat=
+FOOT_PROBE idle_tex class=AtlasTexture path=
+FOOT_PROBE idle_contact exact_red=0 exact_cream=0 size=64x64
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=spawn_novfx empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=spawn_nosprite empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=spawn_nolight empty_image
+TRANSITION_PROFILE from=room_000 to=room_000 physics_wait_ms=0.00 resource_ms=0.00 instantiate_ms=30.75 presentation_ms=0.60 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=31.76
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=gothic_room_000 empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=biome_0 empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=region_0 empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_tutorial empty_image
+TRANSITION_PROFILE from=room_000 to=room_001 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=63.01 presentation_ms=0.64 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=82.48
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=gothic_room_001 empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_combat empty_image
+TRANSITION_PROFILE from=room_001 to=room_002 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=45.64 presentation_ms=0.67 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=58.88
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=gothic_room_002 empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_traversal empty_image
+TRANSITION_PROFILE from=room_002 to=room_003 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=31.76 presentation_ms=0.66 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=38.00
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=gothic_room_003 empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_ability_shrine empty_image
+TRANSITION_PROFILE from=room_003 to=room_004 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=116.96 presentation_ms=3.90 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=126.52
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=gothic_room_004 empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_combat empty_image
+TRANSITION_PROFILE from=room_004 to=room_005 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=57.24 presentation_ms=0.68 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=63.34
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=gothic_room_005 empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_traversal empty_image
+TRANSITION_PROFILE from=room_005 to=room_006 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=59.51 presentation_ms=0.69 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=72.88
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=gothic_room_006 empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_save empty_image
+TRANSITION_PROFILE from=room_006 to=room_007 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=31.04 presentation_ms=0.64 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=44.15
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=gothic_room_007 empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_secret empty_image
+TRANSITION_PROFILE from=room_007 to=room_008 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=47.70 presentation_ms=5.07 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=63.16
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=gothic_room_008 empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_miniboss empty_image
+TRANSITION_PROFILE from=room_008 to=room_009 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=29.06 presentation_ms=1.37 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=43.15
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=gothic_room_009 empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_ability_gate empty_image
+TRANSITION_PROFILE from=room_009 to=room_010 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=31.06 presentation_ms=0.70 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=37.56
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=region_1 empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_tutorial empty_image
+TRANSITION_PROFILE from=room_010 to=room_011 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=131.96 presentation_ms=0.72 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=137.92
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_combat empty_image
+TRANSITION_PROFILE from=room_011 to=room_012 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=59.28 presentation_ms=0.68 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=79.67
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_traversal empty_image
+TRANSITION_PROFILE from=room_012 to=room_013 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=30.61 presentation_ms=0.70 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=37.01
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_ability_shrine empty_image
+TRANSITION_PROFILE from=room_013 to=room_014 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=111.13 presentation_ms=3.93 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=120.84
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_combat empty_image
+TRANSITION_PROFILE from=room_014 to=room_015 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=63.71 presentation_ms=0.68 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=77.18
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_traversal empty_image
+TRANSITION_PROFILE from=room_015 to=room_016 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=56.26 presentation_ms=0.72 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=62.69
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_save empty_image
+TRANSITION_PROFILE from=room_016 to=room_017 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=44.15 presentation_ms=0.64 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=57.38
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_secret empty_image
+TRANSITION_PROFILE from=room_017 to=room_018 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=127.35 presentation_ms=6.17 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=143.68
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_miniboss empty_image
+TRANSITION_PROFILE from=room_018 to=room_019 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=30.75 presentation_ms=0.71 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=37.28
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_ability_gate empty_image
+TRANSITION_PROFILE from=room_019 to=room_020 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=33.79 presentation_ms=0.62 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=39.76
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=region_2 empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_tutorial empty_image
+TRANSITION_PROFILE from=room_020 to=room_021 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=64.40 presentation_ms=0.66 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=76.72
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_combat empty_image
+TRANSITION_PROFILE from=room_021 to=room_022 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=45.35 presentation_ms=0.70 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=51.90
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_traversal empty_image
+TRANSITION_PROFILE from=room_022 to=room_023 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=30.95 presentation_ms=0.68 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=37.25
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_ability_shrine empty_image
+TRANSITION_PROFILE from=room_023 to=room_024 physics_wait_ms=0.00 resource_ms=0.03 instantiate_ms=66.10 presentation_ms=3.93 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=89.74
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_combat empty_image
+TRANSITION_PROFILE from=room_024 to=room_025 physics_wait_ms=0.00 resource_ms=0.03 instantiate_ms=35.87 presentation_ms=0.69 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=49.43
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_ability_gate empty_image
+TRANSITION_PROFILE from=room_025 to=room_026 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=53.73 presentation_ms=0.67 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=58.66
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_save empty_image
+TRANSITION_PROFILE from=room_026 to=room_027 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=30.43 presentation_ms=0.60 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=36.70
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_secret empty_image
+TRANSITION_PROFILE from=room_027 to=room_028 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=122.23 presentation_ms=4.77 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=136.46
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_miniboss empty_image
+TRANSITION_PROFILE from=room_028 to=room_029 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=31.34 presentation_ms=0.78 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=44.90
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_ability_gate empty_image
+TRANSITION_PROFILE from=room_029 to=room_030 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=35.01 presentation_ms=0.68 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=41.47
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=region_3 empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_tutorial empty_image
+TRANSITION_PROFILE from=room_030 to=room_031 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=74.88 presentation_ms=0.69 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=87.62
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_combat empty_image
+TRANSITION_PROFILE from=room_031 to=room_032 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=52.77 presentation_ms=0.74 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=59.19
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_traversal empty_image
+TRANSITION_PROFILE from=room_032 to=room_033 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=31.02 presentation_ms=0.68 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=50.99
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_ability_shrine empty_image
+TRANSITION_PROFILE from=room_033 to=room_034 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=70.59 presentation_ms=3.78 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=80.16
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_combat empty_image
+TRANSITION_PROFILE from=room_034 to=room_035 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=56.68 presentation_ms=0.70 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=63.09
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_traversal empty_image
+TRANSITION_PROFILE from=room_035 to=room_036 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=55.23 presentation_ms=0.70 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=61.71
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_save empty_image
+TRANSITION_PROFILE from=room_036 to=room_037 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=34.20 presentation_ms=0.63 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=40.66
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_secret empty_image
+TRANSITION_PROFILE from=room_037 to=room_038 physics_wait_ms=0.00 resource_ms=0.04 instantiate_ms=208.71 presentation_ms=4.53 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=235.95
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_boss empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_boss_combat empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_boss_combat empty_image
+TRANSITION_PROFILE from=room_038 to=room_039 physics_wait_ms=0.00 resource_ms=0.03 instantiate_ms=31.60 presentation_ms=1.35 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=44.91
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=slice_transition empty_image
+TRANSITION_PROFILE from=room_039 to=room_000 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=44.47 presentation_ms=0.94 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=51.11
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=player_idle empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=player_run empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=player_jump empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=player_landing empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=player_combat empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=combat_action empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=player_dash empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=dash empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=ability_pickup empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=ability empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=exploration empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=npc_dialogue empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=gameplay empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=boss_death empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=victory empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=combat empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=boss empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=boss_phase_1 empty_image
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=boss_phase_2 empty_image
+TRANSITION_PROFILE from=room_000 to=room_009 physics_wait_ms=0.00 resource_ms=0.04 instantiate_ms=32.17 presentation_ms=0.65 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=44.58
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=ability_gate empty_image
+METROFORGE_RUNTIME_NOTE ability 'dash' granted via direct GameManager call — no AbilityPickup for this ability exists in room 'room_009' (setup step, not gameplay-verified)
+TRANSITION_PROFILE from=room_009 to=room_010 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=51.03 presentation_ms=0.64 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=52.83
+TRANSITION_PROFILE from=room_010 to=room_025 physics_wait_ms=0.00 resource_ms=0.00 instantiate_ms=29.43 presentation_ms=0.64 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=39.12
+METROFORGE_RUNTIME_NOTE ability 'ground_slam' granted via direct GameManager call for the breakable-wall check (setup step, not gameplay-verified)
+TRANSITION_PROFILE from=room_025 to=room_027 physics_wait_ms=0.00 resource_ms=0.03 instantiate_ms=57.96 presentation_ms=0.62 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=59.63
+TRANSITION_PROFILE from=room_027 to=room_025 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=35.10 presentation_ms=0.65 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=56.56
+TRANSITION_PROFILE from=room_025 to=room_025 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=40.90 presentation_ms=0.77 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=44.21
+TRANSITION_PROFILE from=room_025 to=room_007 physics_wait_ms=0.00 resource_ms=0.00 instantiate_ms=31.28 presentation_ms=0.62 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=32.20
+SHORTCUT_PROBE before room=room_007 target=room_008 direction=right player=(112.0, 704.0) door=(1464.0, 672.0) shape=(1476.0, 712.0)
+TRANSITION_PROFILE from=room_007 to=room_008 physics_wait_ms=0.00 resource_ms=0.03 instantiate_ms=67.08 presentation_ms=6.20 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=77.95
+SHORTCUT_PROBE after current=room_008 arrived=true player_valid=false player=freed
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:106)
+   GDScript backtrace (most recent call first):
+       [0] _capture_named_screenshot (res://scripts/test/RuntimeSmokeTest.gd:1465)
+       [1] await_frames (res://scripts/test/CaptureGuard.gd:46)
+CAPTURE_STRATEGY_HEADLESS_TEXTURE_NULL shot=checkpoint empty_image
+TRANSITION_PROFILE from=room_000 to=room_000 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=31.41 presentation_ms=0.69 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=48.96
+WARNING: SaveManager: save file is corrupt or unreadable
+   at: push_warning (core/variant/variant_utility.cpp:1034)
+   GDScript backtrace (most recent call first):
+       [0] _load_save_file (res://scripts/core/SaveManager.gd:145)
+       [1] load_game (res://scripts/core/SaveManager.gd:117)
+       [2] _check_save_backup_recovery (res://scripts/test/RuntimeSmokeTest.gd:793)
+       [3] _ready (res://scripts/test/RuntimeSmokeTest.gd:160)
+       [4] _check_player_death_respawn (res://scripts/test/RuntimeSmokeTest.gd:905)
+SMOKE_TEST_RESULTS_BEGIN
+PASS: autoload_game_manager_exists
+PASS: autoload_event_bus_exists
+PASS: autoload_save_manager_exists
+PASS: autoload_audio_manager_exists
+PASS: autoload_progression_manager_exists
+PASS: autoload_settings_manager_exists
+PASS: autoload_quest_manager_exists
+PASS: autoload_vfx_manager_exists
+PASS: stormglass_blueprint_has_40_rooms
+PASS: stormglass_enemy_roster_uses_one_continuous_biome
+PASS: stormglass_enemy_roster_names_are_unique
+PASS: stormglass_blueprint_archetypes_match
+PASS: stormglass_blueprint_dimensions_match
+PASS: stormglass_combat_rooms_have_4_to_6_enemies
+PASS: stormglass_traversal_rooms_have_2_to_3_enemies
+PASS: stormglass_encounters_clear_door_safety_zones
+PASS: stormglass_encounter_instance_ids_are_unique
+PASS: stormglass_enemy_placements_match_room_biome
+PASS: stormglass_blueprint_guardian_arenas_match
+PASS: enemy_000_uses_detailed_gothic_art
+PASS: enemy_001_uses_detailed_gothic_art
+PASS: enemy_002_uses_detailed_gothic_art
+PASS: enemy_003_uses_detailed_gothic_art
+PASS: enemy_004_uses_detailed_gothic_art
+PASS: enemy_005_uses_detailed_gothic_art
+PASS: enemy_006_uses_detailed_gothic_art
+PASS: enemy_007_uses_detailed_gothic_art
+PASS: enemy_008_uses_detailed_gothic_art
+PASS: enemy_009_uses_detailed_gothic_art
+PASS: enemy_010_uses_detailed_gothic_art
+PASS: enemy_011_uses_detailed_gothic_art
+PASS: enemy_012_uses_detailed_gothic_art
+PASS: enemy_013_uses_detailed_gothic_art
+PASS: enemy_014_uses_detailed_gothic_art
+PASS: enemy_015_uses_detailed_gothic_art
+PASS: enemy_016_uses_detailed_gothic_art
+PASS: enemy_017_uses_detailed_gothic_art
+PASS: enemy_018_uses_detailed_gothic_art
+PASS: enemy_019_uses_detailed_gothic_art
+PASS: boss_000_uses_detailed_gothic_art
+PASS: boss_001_uses_detailed_gothic_art
+PASS: boss_002_uses_detailed_gothic_art
+PASS: boss_003_uses_detailed_gothic_art
+PASS: rooms_directory_exists
+PASS: room_scenes_exist
+PASS: all_room_scenes_load_cleanly
+PASS: enemies_instantiate
+PASS: boss_instantiates
+PASS: ability_pickup_exists_in_world
+PASS: npc_exists_in_world
+PASS: world_scene_loads
+PASS: world_manager_initializes
+PASS: current_room_recorded
+PASS: stormglass_gothic_authored_prop_family_has_12_assets
+PASS: stormglass_decor_instantiates_in_opening_room
+PASS: stormglass_opening_room_places_authored_gothic_props
+PASS: stormglass_opening_room_has_collision_matched_surface_holder
+PASS: stormglass_opening_room_dresses_every_platform_collider
+PASS: stormglass_opening_room_dresses_floor_collider
+PASS: stormglass_opening_floor_has_painted_foundation
+PASS: stormglass_foundation_matches_floor_without_collision_changes
+PASS: stormglass_save_shrine_uses_authored_castle_art
+PASS: stormglass_save_shrine_keeps_authored_world_scale
+PASS: stormglass_save_shrine_visible_base_meets_anchor
+PASS: stormglass_save_shrine_stays_grounded_while_idle
+PASS: stormglass_gothic_placeholder_tile_faces_are_hidden
+PASS: stormglass_vertical_room_preserves_30x17_tile_gameplay_scale
+PASS: stormglass_compact_room_camera_does_not_expose_void
+PASS: audio_manager_music_playing_after_room_entry
+PASS: audio_manager_plays_sfx
+PASS: audio_manager_missing_sfx_does_not_crash
+PASS: audio_manager_music_uses_music_bus
+PASS: audio_manager_sfx_uses_sfx_bus
+PASS: generated_music_room_data_parses
+PASS: generated_music_has_biome_0
+PASS: generated_music_has_boss
+PASS: staged_encounter_combat_room_exists
+PASS: staged_encounter_initial_group_is_partial
+PASS: staged_encounter_advancing_wakes_later_group
+PASS: boss_room_plays_boss_music
+PASS: leaving_boss_restores_biome_music
+PASS: pause_menu_present_in_world
+PASS: game_manager_pause_actually_pauses_tree
+PASS: game_manager_resume_actually_unpauses_tree
+PASS: pause_menu_open_shows_ui
+PASS: pause_menu_open_sets_paused_game_state
+PASS: pause_menu_settings_panel_opens
+PASS: pause_menu_settings_sliders_wired
+PASS: pause_menu_map_panel_opens
+PASS: world_map_view_present
+PASS: map_manager_has_graph
+PASS: map_manager_tracks_discovered_rooms
+PASS: pause_menu_close_hides_ui_and_resumes
+PASS: settings_manager_can_write
+PASS: settings_manager_can_read
+PASS: settings_reload_restores_screen_shake
+PASS: settings_reload_restores_master_volume
+PASS: player_exists
+PASS: player_spawns_at_valid_location
+PASS: player_movement_controller_initialized
+PASS: player_has_health_component
+PASS: player_has_hurtbox
+PASS: player_has_attack_hitbox
+PASS: camera_exists_and_current
+PASS: camera_position_is_finite
+PASS: camera_within_room_bounds
+PASS: camera_idle_stays_near_player_anchor
+PASS: camera_shake_returns_to_target
+SOFT_FAIL: gameplay_screenshot_spawn
+SOFT_FAIL: gameplay_screenshot_spawn_novfx
+SOFT_FAIL: gameplay_screenshot_spawn_nosprite
+SOFT_FAIL: gameplay_screenshot_spawn_nolight
+PASS: player_sprite_ground_contact_aligned
+PASS: player_has_attack_animation
+PASS: player_has_hurt_animation
+PASS: player_has_idle_animation
+PASS: player_has_death_animation
+PASS: player_has_run_or_walk_animation
+PASS: player_idle_is_not_walk_frame_1
+SOFT_FAIL: gameplay_screenshot_gothic_room_000
+SOFT_FAIL: gameplay_screenshot_biome_0
+SOFT_FAIL: gameplay_screenshot_region_0
+SOFT_FAIL: gameplay_screenshot_slice_tutorial
+SOFT_FAIL: gameplay_screenshot_gothic_room_001
+SOFT_FAIL: gameplay_screenshot_slice_combat
+SOFT_FAIL: gameplay_screenshot_gothic_room_002
+SOFT_FAIL: gameplay_screenshot_slice_traversal
+SOFT_FAIL: gameplay_screenshot_gothic_room_003
+SOFT_FAIL: gameplay_screenshot_slice_ability_shrine
+SOFT_FAIL: gameplay_screenshot_gothic_room_004
+SOFT_FAIL: gameplay_screenshot_slice_combat
+SOFT_FAIL: gameplay_screenshot_gothic_room_005
+SOFT_FAIL: gameplay_screenshot_slice_traversal
+SOFT_FAIL: gameplay_screenshot_gothic_room_006
+SOFT_FAIL: gameplay_screenshot_slice_save
+SOFT_FAIL: gameplay_screenshot_gothic_room_007
+SOFT_FAIL: gameplay_screenshot_slice_secret
+SOFT_FAIL: gameplay_screenshot_gothic_room_008
+SOFT_FAIL: gameplay_screenshot_slice_miniboss
+SOFT_FAIL: gameplay_screenshot_gothic_room_009
+SOFT_FAIL: gameplay_screenshot_slice_ability_gate
+SOFT_FAIL: gameplay_screenshot_region_1
+SOFT_FAIL: gameplay_screenshot_slice_tutorial
+SOFT_FAIL: gameplay_screenshot_slice_combat
+SOFT_FAIL: gameplay_screenshot_slice_traversal
+SOFT_FAIL: gameplay_screenshot_slice_ability_shrine
+SOFT_FAIL: gameplay_screenshot_slice_combat
+SOFT_FAIL: gameplay_screenshot_slice_traversal
+SOFT_FAIL: gameplay_screenshot_slice_save
+SOFT_FAIL: gameplay_screenshot_slice_secret
+SOFT_FAIL: gameplay_screenshot_slice_miniboss
+SOFT_FAIL: gameplay_screenshot_slice_ability_gate
+SOFT_FAIL: gameplay_screenshot_region_2
+SOFT_FAIL: gameplay_screenshot_slice_tutorial
+SOFT_FAIL: gameplay_screenshot_slice_combat
+SOFT_FAIL: gameplay_screenshot_slice_traversal
+SOFT_FAIL: gameplay_screenshot_slice_ability_shrine
+SOFT_FAIL: gameplay_screenshot_slice_combat
+SOFT_FAIL: gameplay_screenshot_slice_ability_gate
+SOFT_FAIL: gameplay_screenshot_slice_save
+SOFT_FAIL: gameplay_screenshot_slice_secret
+SOFT_FAIL: gameplay_screenshot_slice_miniboss
+SOFT_FAIL: gameplay_screenshot_slice_ability_gate
+SOFT_FAIL: gameplay_screenshot_region_3
+SOFT_FAIL: gameplay_screenshot_slice_tutorial
+SOFT_FAIL: gameplay_screenshot_slice_combat
+SOFT_FAIL: gameplay_screenshot_slice_traversal
+SOFT_FAIL: gameplay_screenshot_slice_ability_shrine
+SOFT_FAIL: gameplay_screenshot_slice_combat
+SOFT_FAIL: gameplay_screenshot_slice_traversal
+SOFT_FAIL: gameplay_screenshot_slice_save
+SOFT_FAIL: gameplay_screenshot_slice_secret
+SOFT_FAIL: gameplay_screenshot_slice_boss
+SOFT_FAIL: gameplay_screenshot_slice_boss_combat
+SOFT_FAIL: gameplay_screenshot_slice_boss_combat
+SOFT_FAIL: gameplay_screenshot_slice_transition
+PASS: stormglass_visual_slice_uses_one_continuous_biome
+PASS: stormglass_visual_slice_captures_four_connected_regions
+PASS: visual_slice_captures_all_ten_authored_gothic_rooms
+PASS: stormglass_visual_slice_checks_all_40_room_surfaces
+PASS: stormglass_all_masonry_exactly_matches_real_collision
+PASS: stormglass_all_rooms_hide_placeholder_tile_layers
+PASS: stormglass_all_rooms_match_platform_art_to_collision
+PASS: stormglass_all_elevated_platforms_have_physical_supports
+PASS: stormglass_all_existing_floor_colliders_are_dressed
+PASS: stormglass_all_existing_floors_have_painted_foundations
+PASS: stormglass_water_zones_use_authored_panorama_visuals
+PASS: stormglass_all_40_rooms_share_one_castle_interior_background
+PASS: stormglass_all_40_rooms_have_two_authored_condition_decals
+PASS: stormglass_condition_metadata_matches_each_room_district
+PASS: stormglass_platform_materials_match_castle_condition
+PASS: stormglass_visual_slice_covers_four_castle_condition_families
+SOFT_FAIL: gameplay_screenshot_player_idle
+SOFT_FAIL: gameplay_screenshot_player_run
+SOFT_FAIL: gameplay_screenshot_player_jump
+SOFT_FAIL: gameplay_screenshot_player_landing
+SOFT_FAIL: gameplay_screenshot_player_combat
+SOFT_FAIL: gameplay_screenshot_combat_action
+SOFT_FAIL: gameplay_screenshot_player_dash
+SOFT_FAIL: gameplay_screenshot_dash
+SOFT_FAIL: gameplay_screenshot_ability_pickup
+PASS: ability_pickup_can_be_triggered
+SOFT_FAIL: gameplay_screenshot_ability
+PASS: npc_sprite_is_animated
+PASS: npc_conversation_has_one_speaker
+PASS: unrelated_npc_does_not_talk
+SOFT_FAIL: gameplay_screenshot_exploration
+SOFT_FAIL: gameplay_screenshot_npc_dialogue
+PASS: npc_interaction_can_be_triggered
+PASS: npc_returns_to_idle_after_conversation
+SOFT_FAIL: gameplay_screenshot_gameplay
+SOFT_FAIL: gameplay_screenshot_boss_death
+SOFT_FAIL: gameplay_screenshot_victory
+PASS: final_boss_defeat_triggers_victory_state
+PASS: final_boss_defeat_sets_game_complete_flag
+PASS: final_boss_defeat_emits_game_completed
+PASS: final_boss_defeat_shows_victory_overlay
+PASS: final_boss_defeat_tracks_progression
+PASS: quest_data_parses
+PASS: quest_data_nonempty
+PASS: quest_objective_exists
+PASS: quest_manager_reports_available_before_accept
+PASS: quest_can_be_accepted
+PASS: hud_quest_tracker_reads_active_quests
+PASS: quest_completes_from_real_gameplay_signal
+PASS: quest_completion_grants_currency_reward
+PASS: quest_completion_grants_item_reward
+PASS: item_data_parses
+PASS: item_pickup_scene_loads
+PASS: item_pickup_currency_can_be_triggered
+PASS: item_pickup_consumable_can_be_triggered
+PASS: item_pickup_relic_raises_max_health
+PASS: item_pickup_relic_tracked_in_inventory
+PASS: item_pickup_charm_raises_attack
+PASS: item_pickup_weapon_tracked_in_inventory
+PASS: weapon_is_equipped
+PASS: weapon_unequip_lowers_attack
+PASS: weapon_re_equip_restores_attack
+PASS: quest_item_tracked_in_inventory
+PASS: quest_item_is_not_equippable
+PASS: quest_item_does_not_change_attack
+PASS: item_pickup_collectible_tracked_in_inventory
+PASS: collectible_is_not_equippable
+PASS: collectible_found_count_increases
+PASS: collectible_total_count_positive
+PASS: collectible_does_not_change_attack
+PASS: inventory_view_present
+PASS: inventory_view_has_script
+PASS: inventory_click_unequips_weapon_slot
+PASS: inventory_display_marks_equipped_items
+PASS: game_hud_present_in_world
+PASS: health_bar_visible_inside_viewport
+PASS: hud_frame_contains_health_bar
+PASS: currency_label_present
+PASS: collectible_label_present
+PASS: currency_hud_reflects_real_state
+PASS: collectible_hud_reflects_real_state
+PASS: hud_minimap_present
+PASS: hud_quest_tracker_present
+PASS: hud_quest_tracker_script_attached
+PASS: hud_minimap_uses_map_manager_graph
+PASS: hud_minimap_has_stormglass_frame
+PASS: hud_quest_tracker_entries_are_active
+PASS: enemy_data_parses
+PASS: enemy_data_nonempty
+PASS: enemy_scene_loads
+PASS: enemy_reads_real_generated_stats
+PASS: enemy_contact_hitbox_active_for_melee_type
+PASS: enemy_melee_contact_damage_works
+PASS: player_attack_actually_damages_enemy
+PASS: enemy_plays_hurt_animation_on_hit
+PASS: enemy_has_attack_animation
+PASS: enemy_has_run_animation
+PASS: enemy_plays_run_animation
+PASS: enemy_plays_attack_animation
+PASS: enemy_contact_hitbox_inactive_for_projectile_type
+PASS: enemy_projectile_attack_spawns_projectile
+PASS: enemy_burst_spawns_three_projectiles
+PASS: enemy_beam_spawns_piercing_projectile
+PASS: enemy_beam_is_piercing
+PASS: enemy_beam_is_stationary
+PASS: enemy_area_spawns_radial_projectiles
+PASS: enemy_summon_spawns_minion
+PASS: enemy_summon_minion_flagged
+PASS: enemy_summon_minion_uses_melee_contact
+PASS: enemy_trap_activates_contact_hitbox
+PASS: enemy_fly_moves_horizontally
+PASS: enemy_hover_moves_slower_than_fly
+PASS: enemy_charge_boosts_speed
+PASS: enemy_teleport_changes_position
+PASS: enemy_burrow_hides
+PASS: enemy_burrow_disables_hurtbox
+SOFT_FAIL: gameplay_screenshot_combat
+PASS: boss_data_parses
+PASS: boss_data_nonempty
+PASS: every_generated_boss_placed_in_its_real_arena
+PASS: every_placed_boss_has_correct_boss_id
+PASS: boss_scene_loads_for_attack_check
+PASS: boss_phase_data_has_telegraph
+PASS: boss_has_run_animation
+PASS: boss_plays_run_animation
+PASS: boss_slam_activates_melee_hitbox
+PASS: boss_has_attack_animation
+PASS: boss_plays_attack_animation
+PASS: stormglass_final_boss_is_tempest_abbot
+PASS: stormglass_tempest_abbot_has_ten_eight_frame_clips
+PASS: boss_projectile_attack_spawns_projectile
+PASS: boss_area_burst_spawns_multiple_projectiles
+PASS: player_attack_actually_damages_boss
+PASS: boss_plays_hurt_animation_on_hit
+SOFT_FAIL: gameplay_screenshot_boss
+PASS: boss_weakness_bonus_damage_applies_while_dashing
+SOFT_FAIL: gameplay_screenshot_boss_phase_1
+SOFT_FAIL: gameplay_screenshot_boss_phase_2
+PASS: boss_phase_presentation_changes_sprite
+PASS: ability_gate_found_in_generated_world
+PASS: player_persists_across_room_transition
+PASS: camera_exists_and_current
+PASS: camera_position_is_finite
+PASS: camera_within_room_bounds
+PASS: camera_idle_stays_near_player_anchor
+PASS: ability_gate_node_present_after_navigation
+SOFT_FAIL: gameplay_screenshot_ability_gate
+PASS: ability_gate_blocks_without_ability
+PASS: ability_gate_opens_after_unlock
+PASS: breakable_wall_found_in_generated_world
+PASS: breakable_wall_node_present
+PASS: breakable_wall_starts_solid
+PASS: breakable_wall_blocks_before_ability
+PASS: breakable_wall_survives_without_ability
+PASS: breakable_wall_breaks_with_ability
+PASS: breakable_wall_stays_broken_after_room_reentry
+PASS: broken_floor_save_written
+PASS: broken_floor_save_loaded
+PASS: breakable_wall_stays_broken_after_save_load
+PASS: shortcut_found_in_generated_world
+PASS: shortcut_leads_to_declared_room
+PASS: save_point_scene_loads
+PASS: save_point_writes_save_file
+PASS: save_point_heals_player_to_full
+PASS: save_reload_succeeds
+PASS: save_reload_restores_checkpoint_room
+PASS: save_reload_restores_defeated_bosses
+PASS: save_reload_restores_abilities
+PASS: player_controller_wires_health_died_signal
+PASS: death_overlay_shows_on_player_died
+PASS: death_overlay_hides_on_player_respawned
+SOFT_FAIL: gameplay_screenshot_checkpoint
+PASS: player_death_leaves_game_state_playing
+PASS: player_death_respawns_at_checkpoint_room
+PASS: player_death_respawn_preserves_earned_abilities
+PASS: player_exists_after_death_respawn
+PASS: save_manager_can_write
+PASS: save_manager_can_read
+PASS: save_migration_v1_loads
+PASS: save_migration_v1_restores_abilities
+PASS: save_migration_v1_restores_room
+PASS: save_migration_v1_adds_max_health
+PASS: save_migration_v1_rewrites_save_file
+PASS: save_backup_write_creates_backup
+PASS: save_backup_corrupt_primary
+PASS: save_manager_loads_from_backup
+PASS: save_backup_restores_abilities
+PASS: save_slot_0_occupied_after_write
+PASS: save_slot_1_starts_empty
+PASS: save_slot_1_occupied_after_write
+PASS: save_manager_has_any_save
+PASS: save_slot_0_load_keeps_dash
+PASS: save_slots_do_not_share_progress
+PASS: save_slot_1_load_keeps_double_jump
+PASS: title_scene_loads
+PASS: title_files_button_present
+PASS: title_file_select_panel_present
+PASS: title_three_slot_buttons_present
+SMOKE_TEST_RESULTS_END
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+   at: cleanup (core/object/object.cpp:2641)
+ERROR: 2 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:810)

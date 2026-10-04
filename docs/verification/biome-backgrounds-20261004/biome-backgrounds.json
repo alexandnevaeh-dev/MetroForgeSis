@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "biomes": {
+    "biome_0": {
+      "assetId": "pixel_art_gothic_castle_hall_vaulted_arc_a1d1376f-0bb2-4f17-8b52-a51400c129ae",
+      "path": "assets/generated/pixel_art_gothic_castle_hall_vaulted_arc_a1d1376f-0bb2-4f17-8b52-a51400c129ae.png",
+      "opacity": 0.9,
+      "anchorY": 1
+    }
+  }
+}

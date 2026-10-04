@@ -1,0 +1,72 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\biome-backgrounds-review\\reports\\game-tests\\20261004-biome-background-ui\\1791095353521",
+  "project": "E:\\MetroForgeData\\TestArtifacts\\biome-backgrounds-final-20261004\\games\\stormglass-castle",
+  "scope": "Real portable Electron app: select the exact previously CUDA-generated background for the forty-room Godot Stormglass castle, preview, save, undo, stale-edit refusal and reload. A controlled validation sentinel checks invalidation; it is not engine acceptance. No new inference or gameplay in this UI check.",
+  "checks": [
+    {
+      "label": "inspector identifies all forty affected castle rooms",
+      "passed": true
+    },
+    {
+      "label": "original background remains default before editing",
+      "passed": true
+    },
+    {
+      "label": "preview displays the exact admitted CUDA image",
+      "passed": true
+    },
+    {
+      "label": "real IPC installs configurable panorama logic",
+      "passed": true
+    },
+    {
+      "label": "real IPC saves the background and floor framing",
+      "passed": true
+    },
+    {
+      "label": "rapid duplicate save produces one command",
+      "passed": true
+    },
+    {
+      "label": "real UI undo returns the original background",
+      "passed": true
+    },
+    {
+      "label": "undo restores exact previous castle renderer bytes",
+      "passed": true
+    },
+    {
+      "label": "stale UI save preserves current settings",
+      "passed": true
+    },
+    {
+      "label": "reload recovers after stale edit",
+      "passed": true
+    },
+    {
+      "label": "apply invalidates previous game acceptance",
+      "passed": true
+    },
+    {
+      "label": "geometry, DNA, registry and artwork are unchanged",
+      "passed": true
+    },
+    {
+      "label": "real app remains hidden during automation",
+      "passed": true
+    },
+    {
+      "label": "no renderer errors",
+      "passed": true
+    }
+  ],
+  "captures": [
+    "castle-background-inspector.png"
+  ],
+  "pageErrors": [],
+  "packaged": {
+    "executable": "E:/MetroForgeData/Releases/MetroForge-castle-backgrounds-20261004-v3/MetroForge.exe",
+    "sha256": "1925f358e7f0e9675a5ac4198fb076613f0db318da56d388799a97be74a5b19c"
+  },
+  "passed": true
+}

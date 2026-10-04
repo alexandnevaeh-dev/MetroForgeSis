@@ -1,0 +1,140 @@
+Godot Engine v4.6.stable.official.89cea1439 - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 617.14 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 5060 Laptop GPU
+
+PASS: independent expected image path supplied
+PASS: playable world has a player
+PASS: player moves using actual game input
+PASS: player remains alive after movement
+PASS: forty castle rooms retained
+PASS: room_000 uses exact selected artwork
+PASS: room_000 plate meets floor framing
+PASS: room_000 honors chosen opacity
+PASS: room_000 renders a native framebuffer
+PASS: room_000 capture saved
+PASS: room_001 uses exact selected artwork
+PASS: room_001 plate meets floor framing
+PASS: room_001 honors chosen opacity
+PASS: room_002 uses exact selected artwork
+PASS: room_002 plate meets floor framing
+PASS: room_002 honors chosen opacity
+PASS: room_003 uses exact selected artwork
+PASS: room_003 plate meets floor framing
+PASS: room_003 honors chosen opacity
+PASS: room_004 uses exact selected artwork
+PASS: room_004 plate meets floor framing
+PASS: room_004 honors chosen opacity
+PASS: room_005 uses exact selected artwork
+PASS: room_005 plate meets floor framing
+PASS: room_005 honors chosen opacity
+PASS: room_006 uses exact selected artwork
+PASS: room_006 plate meets floor framing
+PASS: room_006 honors chosen opacity
+PASS: room_007 uses exact selected artwork
+PASS: room_007 plate meets floor framing
+PASS: room_007 honors chosen opacity
+PASS: room_008 uses exact selected artwork
+PASS: room_008 plate meets floor framing
+PASS: room_008 honors chosen opacity
+PASS: room_009 uses exact selected artwork
+PASS: room_009 plate meets floor framing
+PASS: room_009 honors chosen opacity
+PASS: room_010 uses exact selected artwork
+PASS: room_010 plate meets floor framing
+PASS: room_010 honors chosen opacity
+PASS: room_010 renders a native framebuffer
+PASS: room_010 capture saved
+PASS: room_011 uses exact selected artwork
+PASS: room_011 plate meets floor framing
+PASS: room_011 honors chosen opacity
+PASS: room_012 uses exact selected artwork
+PASS: room_012 plate meets floor framing
+PASS: room_012 honors chosen opacity
+PASS: room_013 uses exact selected artwork
+PASS: room_013 plate meets floor framing
+PASS: room_013 honors chosen opacity
+PASS: room_014 uses exact selected artwork
+PASS: room_014 plate meets floor framing
+PASS: room_014 honors chosen opacity
+PASS: room_015 uses exact selected artwork
+PASS: room_015 plate meets floor framing
+PASS: room_015 honors chosen opacity
+PASS: room_016 uses exact selected artwork
+PASS: room_016 plate meets floor framing
+PASS: room_016 honors chosen opacity
+PASS: room_017 uses exact selected artwork
+PASS: room_017 plate meets floor framing
+PASS: room_017 honors chosen opacity
+PASS: room_018 uses exact selected artwork
+PASS: room_018 plate meets floor framing
+PASS: room_018 honors chosen opacity
+PASS: room_019 uses exact selected artwork
+PASS: room_019 plate meets floor framing
+PASS: room_019 honors chosen opacity
+PASS: room_020 uses exact selected artwork
+PASS: room_020 plate meets floor framing
+PASS: room_020 honors chosen opacity
+PASS: room_020 renders a native framebuffer
+PASS: room_020 capture saved
+PASS: room_021 uses exact selected artwork
+PASS: room_021 plate meets floor framing
+PASS: room_021 honors chosen opacity
+PASS: room_022 uses exact selected artwork
+PASS: room_022 plate meets floor framing
+PASS: room_022 honors chosen opacity
+PASS: room_023 uses exact selected artwork
+PASS: room_023 plate meets floor framing
+PASS: room_023 honors chosen opacity
+PASS: room_024 uses exact selected artwork
+PASS: room_024 plate meets floor framing
+PASS: room_024 honors chosen opacity
+PASS: room_025 uses exact selected artwork
+PASS: room_025 plate meets floor framing
+PASS: room_025 honors chosen opacity
+PASS: room_026 uses exact selected artwork
+PASS: room_026 plate meets floor framing
+PASS: room_026 honors chosen opacity
+PASS: room_027 uses exact selected artwork
+PASS: room_027 plate meets floor framing
+PASS: room_027 honors chosen opacity
+PASS: room_028 uses exact selected artwork
+PASS: room_028 plate meets floor framing
+PASS: room_028 honors chosen opacity
+PASS: room_029 uses exact selected artwork
+PASS: room_029 plate meets floor framing
+PASS: room_029 honors chosen opacity
+PASS: room_030 uses exact selected artwork
+PASS: room_030 plate meets floor framing
+PASS: room_030 honors chosen opacity
+PASS: room_030 renders a native framebuffer
+PASS: room_030 capture saved
+PASS: room_031 uses exact selected artwork
+PASS: room_031 plate meets floor framing
+PASS: room_031 honors chosen opacity
+PASS: room_032 uses exact selected artwork
+PASS: room_032 plate meets floor framing
+PASS: room_032 honors chosen opacity
+PASS: room_033 uses exact selected artwork
+PASS: room_033 plate meets floor framing
+PASS: room_033 honors chosen opacity
+PASS: room_034 uses exact selected artwork
+PASS: room_034 plate meets floor framing
+PASS: room_034 honors chosen opacity
+PASS: room_035 uses exact selected artwork
+PASS: room_035 plate meets floor framing
+PASS: room_035 honors chosen opacity
+PASS: room_036 uses exact selected artwork
+PASS: room_036 plate meets floor framing
+PASS: room_036 honors chosen opacity
+PASS: room_037 uses exact selected artwork
+PASS: room_037 plate meets floor framing
+PASS: room_037 honors chosen opacity
+PASS: room_038 uses exact selected artwork
+PASS: room_038 plate meets floor framing
+PASS: room_038 honors chosen opacity
+PASS: room_039 uses exact selected artwork
+PASS: room_039 plate meets floor framing
+PASS: room_039 honors chosen opacity
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+   at: cleanup (core/object/object.cpp:2641)
+ERROR: 1 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:810)

@@ -1,0 +1,41 @@
+{
+  "parent": "1f5fcb2eb99fe645d0b075559e8fc320d7371e20",
+  "release": "E:/MetroForgeData/Releases/MetroForge-castle-backgrounds-20261004-v3",
+  "regressionTests": 36,
+  "uiChecks": 14,
+  "libraryChecks": 12,
+  "selectedNativeChecks": 133,
+  "defaultNativeSmokeChecks": 456,
+  "sourceHashes": {
+    "packages/generation/src/biome-background.ts": "10d7836a3eb748555ccd690352e3da8c7ca0d0a137b8d4ebbdb254bc004ac7a4",
+    "packages/generation/src/biome-background.test.ts": "89bfe7cc97ee9306ba9bdc94e0f24472e0e25a2a786a41e97c74a0620cf84194",
+    "packages/generation/src/index.ts": "505566f167fe22696e3c604b143b340e7a99f0c10fae4c481f57a2439e0ff3c8",
+    "apps/desktop/electron/handlers.ts": "c533bb8833ad0c551b5c6b7da2562952428c3c7f10b9ec6c1571b48fb42c6cf0",
+    "apps/desktop/electron/preload.ts": "8a35a372de6c9af30afb70b52148e9cc93c34495740b44b94bdde365bfc9fbd6",
+    "apps/desktop/src/studio/metroforge-api.ts": "63ab61afafff94449749a1324fdb6ce116090fc9f2fda65ee82f6e509960aab7",
+    "apps/desktop/src/studio/RoomEditor.tsx": "6ac4a9f198a8fcb411d61b34ae2cc1e8ff3d3249a11d6eadc335fc41ca508aa5",
+    "apps/desktop/src/studio/BiomeBackgroundEditor.tsx": "969df2e25314ac4eaf977d4136f6a3d7c98db1b4ed96d75a3f558aafae7b132b",
+    "templates/godot-metroidvania/scripts/world/StormglassDecor.gd": "fa7450dc01c2a0f78de3d4ee4fe1897cb3654e144e108c03a5d7b792f21dc2a4",
+    "templates/godot-metroidvania/scripts/test/RuntimeSmokeTest.gd": "ad931ca2963bd72c29f87dc715c3a847b7837aafc82c37df60e631d5e6071028",
+    "scripts/verify-biome-background-ui.mjs": "9b560616e490c99666be57584fdbb0455ca9f9752ed0de8705e5c41be5192f14",
+    "templates/godot-metroidvania/scripts/test/BiomeBackgroundTest.gd": "9b3505553b9ae2102cb1e1875f7647d3f3764d2e31ab21100ac7775af259f18d",
+    "templates/godot-metroidvania/scenes/test/BiomeBackgroundTest.tscn": "9541a37ef578d608eadc2f7858683c716aa1b16a027f52ecdeb71c4bfd418575",
+    "scripts/verify-castle-library.mjs": "0e5d05a60b9b838ba19821204008772bd1ea178b61fcffc0535ca9ef99244242"
+  },
+  "artwork": "Exact prior real-app CUDA-generated image; no new inference in this frame.",
+  "selectedNativeScope": "Native GPU forty-room plate continuity and framing diagnostic; real spawn movement input. Rooms after spawn are force-loaded, not traversed. No new inference or complete game acceptance.",
+  "defaultNativeScope": "456 GPU smoke checks passed; earlier headless run passed 292 functional checks and reported 82 unavailable screenshot probes. GPU repeat supplies real framebuffers.",
+  "quantumFilesPreserved": 310,
+  "productionReady": false,
+  "remaining": [
+    "Foreground prop placement and scale",
+    "Enemy and boss animation quality",
+    "Complete input-driven castle traversal",
+    "Unity and Unreal native acceptance",
+    "Broader application and generation performance"
+  ],
+  "knownDiagnostics": [
+    "Nonfatal Godot shutdown resource leak diagnostics remain."
+  ],
+  "originalIndexSha256": "0803c77a5996b93d6e975dfa41ab9ceb9e7f078881faf88bcf265d7af7fb3918"
+}

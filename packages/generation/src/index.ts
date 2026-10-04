@@ -153,3 +153,5 @@ export { readEditableLoot, saveEditableLoot, createEditableLoot, saveEditableLoo
 export { readEditableTerrain, saveEditableTerrain } from './terrain-edit-service.js';
 
 export { readTopDownPropAsset } from './topdown-prop-asset.js';
+export { readBiomeBackground, saveBiomeBackground, undoBiomeBackground } from './biome-background.js';
+export type { BiomeBackgroundSnapshot, BiomeBackground } from './biome-background.js';

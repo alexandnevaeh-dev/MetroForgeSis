@@ -19,6 +19,9 @@ import {
   saveEditableLoot,
   createEditableLoot,
   saveEditableLootSource,
+  readBiomeBackground,
+  saveBiomeBackground,
+  undoBiomeBackground,
   readEditableTerrain,
   saveEditableTerrain,
   readEditableItems,
@@ -1920,6 +1923,19 @@ export function registerIpcHandlers(cwd: string): void {
     if (typeof sourceId !== 'string' || sourceId.length > 1000 || (tableId !== null && (typeof tableId !== 'string' || tableId.length > 1000)))
       throw new Error('Invalid loot assignment');
     return { ...saveEditableLootSource(projectPath, sourceId, tableId, revision), runtimeSupported: detectProjectEngine(projectPath) === 'godot' };
+  });
+
+  ipcMain.handle('read-biome-background', async (_event, projectPath: string, biomeId: string) => {
+    assertReadableProjectPath(projectPath, cwd);
+    return readBiomeBackground(projectPath, biomeId);
+  });
+  ipcMain.handle('save-biome-background', async (_event, projectPath: string, biomeId: string, value: Parameters<typeof saveBiomeBackground>[2], revision: string) => {
+    assertProjectPath(projectPath, cwd);
+    return saveBiomeBackground(projectPath, biomeId, value, revision);
+  });
+  ipcMain.handle('undo-biome-background', async (_event, projectPath: string, biomeId: string, revision: string) => {
+    assertProjectPath(projectPath, cwd);
+    return undoBiomeBackground(projectPath, biomeId, revision);
   });
 
   ipcMain.handle('read-editable-terrain', async (_event, projectPath: string, asset: string) => {

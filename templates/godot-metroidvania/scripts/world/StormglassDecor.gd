@@ -34,13 +34,40 @@ func _ready() -> void:
 	queue_redraw()
 
 
+static func background_settings(biome: String) -> Dictionary:
+	var file := FileAccess.open("res://data/visual/biome-backgrounds.json", FileAccess.READ)
+	if file == null:
+		return {}
+	var config: Variant = JSON.parse_string(file.get_as_text())
+	if not config is Dictionary or config.get("version", 0) != 1 or not config.get("biomes") is Dictionary:
+		return {}
+	var value: Variant = config["biomes"].get(biome, {})
+	if not value is Dictionary:
+		return {}
+	var path := String(value.get("path", ""))
+	if not path.begins_with("assets/") or not path.ends_with(".png") or path.contains("..") or path.contains("\\") or not ResourceLoader.exists("res://" + path):
+		return {}
+	var opacity := float(value.get("opacity", 0.85))
+	var anchor := float(value.get("anchorY", 1.0))
+	if not is_finite(opacity) or opacity < 0.1 or opacity > 1.0 or not is_finite(anchor) or anchor < 0.0 or anchor > 1.0:
+		return {}
+	return value
+
+
+static func castle_background_path(biome: String) -> String:
+	var settings := background_settings(biome)
+	return "res://" + String(settings["path"]) if not settings.is_empty() else CASTLE_INTERIOR_PANORAMA
+
+
 func _spawn_authored_panorama() -> void:
 	var room_index := maxi(0, room_id.trim_prefix("room_").to_int())
 	# All 40 rooms use the same castle interior mass. District identity is expressed by
 	# condition overlays and lighting, so the world never cuts to an unrelated exterior vista.
-	if not ResourceLoader.exists(CASTLE_INTERIOR_PANORAMA):
+	var settings := background_settings(biome_id)
+	var background_path := castle_background_path(biome_id)
+	if not ResourceLoader.exists(background_path):
 		return
-	var texture := load(CASTLE_INTERIOR_PANORAMA) as Texture2D
+	var texture := load(background_path) as Texture2D
 	if texture == null or texture.get_width() <= 0 or texture.get_height() <= 0:
 		return
 	var sprite := Sprite2D.new()
@@ -56,10 +83,17 @@ func _spawn_authored_panorama() -> void:
 	)
 	sprite.scale = Vector2.ONE * cover_scale
 	sprite.position = Vector2(room_width * 0.5, room_height * 0.5)
-	sprite.modulate = _district_panorama_tint(int(room_index / 10))
+	if settings.is_empty():
+		sprite.modulate = _district_panorama_tint(int(room_index / 10))
+	else:
+		var floor_y := float(room_height - tile_size * 2)
+		var plate_height := float(texture.get_height()) * cover_scale
+		sprite.position.y = plate_height * 0.5 + (floor_y - plate_height) * float(settings["anchorY"])
+		sprite.modulate = Color(1.0, 1.0, 1.0, float(settings["opacity"]))
+		sprite.set_meta("background_asset_id", String(settings.get("assetId", "")))
 	sprite.set_meta("interior_continuity", true)
 	sprite.set_meta("district_index", int(room_index / 10))
-	sprite.set_meta("castle_base", CASTLE_INTERIOR_PANORAMA)
+	sprite.set_meta("castle_base", background_path)
 	# Stormglass supplies its own full-room plate. Hide the assembler fallback rectangle so it
 	# cannot cover the panorama when generic far/mid/near plates are intentionally absent.
 	var room := get_parent()
@@ -206,7 +240,7 @@ func _spawn_condition_decals() -> void:
 	holder.z_index = -1
 	holder.set_meta("condition_district", district_index)
 	holder.set_meta("condition_label", CONDITION_LABELS[district_index])
-	holder.set_meta("castle_base", CASTLE_INTERIOR_PANORAMA)
+	holder.set_meta("castle_base", castle_background_path(biome_id))
 	add_child(holder)
 	var primary_index := room_index % family.size()
 	var accent_index := (primary_index + 2) % family.size()

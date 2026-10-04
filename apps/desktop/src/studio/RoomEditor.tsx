@@ -1,3 +1,4 @@
+import { BiomeBackgroundEditor } from './BiomeBackgroundEditor.js';
 import { TopDownPropPicker } from './TopDownPropPicker.js';
 import { TopDownPropViewport } from './TopDownPropViewport.js';
 import { TopDownPropInspector, type TopDownEditorProp } from './TopDownPropInspector.js';
@@ -277,7 +278,8 @@ export function RoomEditor() {
           <EditorWorkbench className="room-editor-workspace">
             <aside className="editor-left-rail">
               <Panel level={1} title="Hierarchy">
-                <SearchField onClear={() => setQuery('')}
+                <SearchField
+              onClear={() => setQuery('')}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Filter rooms…"
@@ -633,6 +635,7 @@ export function RoomEditor() {
                       <p className="hint">No geometry thumbnail — room has no authored tiles/collision yet.</p>
                     )}
                   </InspectorSection>
+                  <BiomeBackgroundEditor key={JSON.stringify([selectedPath, selected.biomeId])} projectPath={selectedPath} biomeId={selected.biomeId ?? "biome_0"} />
                   <InspectorSection title="Room">
                     <dl className="settings-dl">
                       <dt>Name</dt>

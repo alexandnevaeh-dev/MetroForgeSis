@@ -1,0 +1,539 @@
+{
+  "checks": [
+    {
+      "label": "independent expected image path supplied",
+      "passed": true
+    },
+    {
+      "label": "playable world has a player",
+      "passed": true
+    },
+    {
+      "label": "player moves using actual game input",
+      "passed": true
+    },
+    {
+      "label": "player remains alive after movement",
+      "passed": true
+    },
+    {
+      "label": "forty castle rooms retained",
+      "passed": true
+    },
+    {
+      "label": "room_000 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_000 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_000 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_000 renders a native framebuffer",
+      "passed": true
+    },
+    {
+      "label": "room_000 capture saved",
+      "passed": true
+    },
+    {
+      "label": "room_001 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_001 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_001 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_002 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_002 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_002 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_003 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_003 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_003 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_004 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_004 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_004 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_005 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_005 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_005 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_006 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_006 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_006 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_007 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_007 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_007 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_008 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_008 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_008 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_009 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_009 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_009 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_010 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_010 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_010 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_010 renders a native framebuffer",
+      "passed": true
+    },
+    {
+      "label": "room_010 capture saved",
+      "passed": true
+    },
+    {
+      "label": "room_011 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_011 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_011 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_012 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_012 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_012 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_013 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_013 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_013 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_014 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_014 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_014 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_015 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_015 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_015 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_016 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_016 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_016 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_017 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_017 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_017 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_018 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_018 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_018 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_019 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_019 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_019 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_020 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_020 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_020 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_020 renders a native framebuffer",
+      "passed": true
+    },
+    {
+      "label": "room_020 capture saved",
+      "passed": true
+    },
+    {
+      "label": "room_021 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_021 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_021 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_022 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_022 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_022 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_023 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_023 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_023 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_024 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_024 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_024 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_025 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_025 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_025 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_026 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_026 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_026 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_027 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_027 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_027 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_028 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_028 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_028 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_029 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_029 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_029 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_030 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_030 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_030 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_030 renders a native framebuffer",
+      "passed": true
+    },
+    {
+      "label": "room_030 capture saved",
+      "passed": true
+    },
+    {
+      "label": "room_031 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_031 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_031 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_032 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_032 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_032 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_033 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_033 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_033 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_034 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_034 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_034 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_035 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_035 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_035 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_036 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_036 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_036 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_037 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_037 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_037 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_038 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_038 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_038 honors chosen opacity",
+      "passed": true
+    },
+    {
+      "label": "room_039 uses exact selected artwork",
+      "passed": true
+    },
+    {
+      "label": "room_039 plate meets floor framing",
+      "passed": true
+    },
+    {
+      "label": "room_039 honors chosen opacity",
+      "passed": true
+    }
+  ],
+  "expectedBackground": "assets/generated/pixel_art_gothic_castle_hall_vaulted_arc_a1d1376f-0bb2-4f17-8b52-a51400c129ae.png",
+  "passed": true,
+  "scope": "Native GPU forty-room plate continuity and framing diagnostic; real spawn movement input. Rooms after spawn are force-loaded, not traversed. No new inference or complete game acceptance."
+}
