@@ -1,0 +1,141 @@
+Godot Engine v4.6.stable.official.89cea1439 - https://godotengine.org
+
+PASS: enemy_000 lethal hit starts death rather than hurt
+PASS: enemy_000 terminal clip resets locomotion speed scaling
+PASS: enemy_000 further hit cannot interrupt death
+PASS: enemy_000 completes the entire death frame sequence
+PASS: enemy_000 kill event follows the authored clip once
+PASS: enemy_000 dead actor is removed
+PASS: enemy_001 lethal hit starts death rather than hurt
+PASS: enemy_001 terminal clip resets locomotion speed scaling
+PASS: enemy_001 further hit cannot interrupt death
+PASS: enemy_001 completes the entire death frame sequence
+PASS: enemy_001 kill event follows the authored clip once
+PASS: enemy_001 dead actor is removed
+PASS: enemy_002 lethal hit starts death rather than hurt
+PASS: enemy_002 terminal clip resets locomotion speed scaling
+PASS: enemy_002 further hit cannot interrupt death
+PASS: enemy_002 completes the entire death frame sequence
+PASS: enemy_002 kill event follows the authored clip once
+PASS: enemy_002 dead actor is removed
+PASS: enemy_003 lethal hit starts death rather than hurt
+PASS: enemy_003 terminal clip resets locomotion speed scaling
+PASS: enemy_003 further hit cannot interrupt death
+PASS: enemy_003 completes the entire death frame sequence
+PASS: enemy_003 kill event follows the authored clip once
+PASS: enemy_003 dead actor is removed
+PASS: enemy_004 lethal hit starts death rather than hurt
+PASS: enemy_004 terminal clip resets locomotion speed scaling
+PASS: enemy_004 further hit cannot interrupt death
+PASS: enemy_004 completes the entire death frame sequence
+PASS: enemy_004 kill event follows the authored clip once
+PASS: enemy_004 dead actor is removed
+PASS: enemy_005 lethal hit starts death rather than hurt
+PASS: enemy_005 terminal clip resets locomotion speed scaling
+PASS: enemy_005 further hit cannot interrupt death
+PASS: enemy_005 completes the entire death frame sequence
+PASS: enemy_005 kill event follows the authored clip once
+PASS: enemy_005 dead actor is removed
+PASS: enemy_006 lethal hit starts death rather than hurt
+PASS: enemy_006 terminal clip resets locomotion speed scaling
+PASS: enemy_006 further hit cannot interrupt death
+PASS: enemy_006 completes the entire death frame sequence
+PASS: enemy_006 kill event follows the authored clip once
+PASS: enemy_006 dead actor is removed
+PASS: enemy_007 lethal hit starts death rather than hurt
+PASS: enemy_007 terminal clip resets locomotion speed scaling
+PASS: enemy_007 further hit cannot interrupt death
+PASS: enemy_007 completes the entire death frame sequence
+PASS: enemy_007 kill event follows the authored clip once
+PASS: enemy_007 dead actor is removed
+PASS: enemy_008 lethal hit starts death rather than hurt
+PASS: enemy_008 terminal clip resets locomotion speed scaling
+PASS: enemy_008 further hit cannot interrupt death
+PASS: enemy_008 completes the entire death frame sequence
+PASS: enemy_008 kill event follows the authored clip once
+PASS: enemy_008 dead actor is removed
+PASS: enemy_009 lethal hit starts death rather than hurt
+PASS: enemy_009 terminal clip resets locomotion speed scaling
+PASS: enemy_009 further hit cannot interrupt death
+PASS: enemy_009 completes the entire death frame sequence
+PASS: enemy_009 kill event follows the authored clip once
+PASS: enemy_009 dead actor is removed
+PASS: enemy_010 lethal hit starts death rather than hurt
+PASS: enemy_010 terminal clip resets locomotion speed scaling
+PASS: enemy_010 further hit cannot interrupt death
+PASS: enemy_010 completes the entire death frame sequence
+PASS: enemy_010 kill event follows the authored clip once
+PASS: enemy_010 dead actor is removed
+PASS: enemy_011 lethal hit starts death rather than hurt
+PASS: enemy_011 terminal clip resets locomotion speed scaling
+PASS: enemy_011 further hit cannot interrupt death
+PASS: enemy_011 completes the entire death frame sequence
+PASS: enemy_011 kill event follows the authored clip once
+PASS: enemy_011 dead actor is removed
+PASS: enemy_012 lethal hit starts death rather than hurt
+PASS: enemy_012 terminal clip resets locomotion speed scaling
+PASS: enemy_012 further hit cannot interrupt death
+PASS: enemy_012 completes the entire death frame sequence
+PASS: enemy_012 kill event follows the authored clip once
+PASS: enemy_012 dead actor is removed
+PASS: enemy_013 lethal hit starts death rather than hurt
+PASS: enemy_013 terminal clip resets locomotion speed scaling
+PASS: enemy_013 further hit cannot interrupt death
+PASS: enemy_013 completes the entire death frame sequence
+PASS: enemy_013 kill event follows the authored clip once
+PASS: enemy_013 dead actor is removed
+PASS: enemy_014 lethal hit starts death rather than hurt
+PASS: enemy_014 terminal clip resets locomotion speed scaling
+PASS: enemy_014 further hit cannot interrupt death
+PASS: enemy_014 completes the entire death frame sequence
+PASS: enemy_014 kill event follows the authored clip once
+PASS: enemy_014 dead actor is removed
+PASS: enemy_015 lethal hit starts death rather than hurt
+PASS: enemy_015 terminal clip resets locomotion speed scaling
+PASS: enemy_015 further hit cannot interrupt death
+PASS: enemy_015 completes the entire death frame sequence
+PASS: enemy_015 kill event follows the authored clip once
+PASS: enemy_015 dead actor is removed
+PASS: enemy_016 lethal hit starts death rather than hurt
+PASS: enemy_016 terminal clip resets locomotion speed scaling
+PASS: enemy_016 further hit cannot interrupt death
+PASS: enemy_016 completes the entire death frame sequence
+PASS: enemy_016 kill event follows the authored clip once
+PASS: enemy_016 dead actor is removed
+PASS: enemy_017 lethal hit starts death rather than hurt
+PASS: enemy_017 terminal clip resets locomotion speed scaling
+PASS: enemy_017 further hit cannot interrupt death
+PASS: enemy_017 completes the entire death frame sequence
+PASS: enemy_017 kill event follows the authored clip once
+PASS: enemy_017 dead actor is removed
+PASS: enemy_018 lethal hit starts death rather than hurt
+PASS: enemy_018 terminal clip resets locomotion speed scaling
+PASS: enemy_018 further hit cannot interrupt death
+PASS: enemy_018 completes the entire death frame sequence
+PASS: enemy_018 kill event follows the authored clip once
+PASS: enemy_018 dead actor is removed
+PASS: enemy_019 lethal hit starts death rather than hurt
+PASS: enemy_019 terminal clip resets locomotion speed scaling
+PASS: enemy_019 further hit cannot interrupt death
+PASS: enemy_019 completes the entire death frame sequence
+PASS: enemy_019 kill event follows the authored clip once
+PASS: enemy_019 dead actor is removed
+PASS: enemy_000 lethal hit starts death rather than hurt
+PASS: enemy_000 terminal clip resets locomotion speed scaling
+PASS: enemy_000 further hit cannot interrupt death
+PASS: enemy_000 completes the entire death frame sequence
+PASS: enemy_000 kill event follows the authored clip once
+PASS: enemy_000 dead actor is removed
+PASS: enemy_000 lethal hit starts death rather than hurt
+PASS: enemy_000 terminal clip resets locomotion speed scaling
+PASS: enemy_000 further hit cannot interrupt death
+PASS: paused death retains its frame and does not notify
+PASS: enemy_000 completes the entire death frame sequence
+PASS: enemy_000 kill event follows the authored clip once
+PASS: enemy_000 dead actor is removed
+PASS: missing death clip still notifies once
+PASS: missing death clip cannot leave a dead enemy in the world
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+   at: cleanup (core/object/object.cpp:2641)
+ERROR: 2 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:810)

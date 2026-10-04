@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('metroforge', {
+  importGameSetAssets: (projectPath: string) => ipcRenderer.invoke('import-game-set-assets', projectPath) as Promise<{ success: boolean; added?: number; skipped?: number; excludedQa?: number; error?: string }>,
   getVersion: () => ipcRenderer.invoke('get-version') as Promise<string>,
   getConfig: () => ipcRenderer.invoke('get-config'),
   getCredentialStatus: () => ipcRenderer.invoke('get-credential-status'),

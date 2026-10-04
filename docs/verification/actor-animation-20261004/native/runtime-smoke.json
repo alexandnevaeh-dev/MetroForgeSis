@@ -1,0 +1,1832 @@
+{
+  "passed": true,
+  "galleryChecks": 67,
+  "runtimeSmokeChecks": 456,
+  "checks": [
+    {
+      "label": "autoload_game_manager_exists",
+      "passed": true
+    },
+    {
+      "label": "autoload_event_bus_exists",
+      "passed": true
+    },
+    {
+      "label": "autoload_save_manager_exists",
+      "passed": true
+    },
+    {
+      "label": "autoload_audio_manager_exists",
+      "passed": true
+    },
+    {
+      "label": "autoload_progression_manager_exists",
+      "passed": true
+    },
+    {
+      "label": "autoload_settings_manager_exists",
+      "passed": true
+    },
+    {
+      "label": "autoload_quest_manager_exists",
+      "passed": true
+    },
+    {
+      "label": "autoload_vfx_manager_exists",
+      "passed": true
+    },
+    {
+      "label": "stormglass_blueprint_has_40_rooms",
+      "passed": true
+    },
+    {
+      "label": "stormglass_enemy_roster_uses_one_continuous_biome",
+      "passed": true
+    },
+    {
+      "label": "stormglass_enemy_roster_names_are_unique",
+      "passed": true
+    },
+    {
+      "label": "stormglass_blueprint_archetypes_match",
+      "passed": true
+    },
+    {
+      "label": "stormglass_blueprint_dimensions_match",
+      "passed": true
+    },
+    {
+      "label": "stormglass_combat_rooms_have_4_to_6_enemies",
+      "passed": true
+    },
+    {
+      "label": "stormglass_traversal_rooms_have_2_to_3_enemies",
+      "passed": true
+    },
+    {
+      "label": "stormglass_encounters_clear_door_safety_zones",
+      "passed": true
+    },
+    {
+      "label": "stormglass_encounter_instance_ids_are_unique",
+      "passed": true
+    },
+    {
+      "label": "stormglass_enemy_placements_match_room_biome",
+      "passed": true
+    },
+    {
+      "label": "stormglass_blueprint_guardian_arenas_match",
+      "passed": true
+    },
+    {
+      "label": "enemy_000_uses_detailed_gothic_art",
+      "passed": true
+    },
+    {
+      "label": "enemy_001_uses_detailed_gothic_art",
+      "passed": true
+    },
+    {
+      "label": "enemy_002_uses_detailed_gothic_art",
+      "passed": true
+    },
+    {
+      "label": "enemy_003_uses_detailed_gothic_art",
+      "passed": true
+    },
+    {
+      "label": "enemy_004_uses_detailed_gothic_art",
+      "passed": true
+    },
+    {
+      "label": "enemy_005_uses_detailed_gothic_art",
+      "passed": true
+    },
+    {
+      "label": "enemy_006_uses_detailed_gothic_art",
+      "passed": true
+    },
+    {
+      "label": "enemy_007_uses_detailed_gothic_art",
+      "passed": true
+    },
+    {
+      "label": "enemy_008_uses_detailed_gothic_art",
+      "passed": true
+    },
+    {
+      "label": "enemy_009_uses_detailed_gothic_art",
+      "passed": true
+    },
+    {
+      "label": "enemy_010_uses_detailed_gothic_art",
+      "passed": true
+    },
+    {
+      "label": "enemy_011_uses_detailed_gothic_art",
+      "passed": true
+    },
+    {
+      "label": "enemy_012_uses_detailed_gothic_art",
+      "passed": true
+    },
+    {
+      "label": "enemy_013_uses_detailed_gothic_art",
+      "passed": true
+    },
+    {
+      "label": "enemy_014_uses_detailed_gothic_art",
+      "passed": true
+    },
+    {
+      "label": "enemy_015_uses_detailed_gothic_art",
+      "passed": true
+    },
+    {
+      "label": "enemy_016_uses_detailed_gothic_art",
+      "passed": true
+    },
+    {
+      "label": "enemy_017_uses_detailed_gothic_art",
+      "passed": true
+    },
+    {
+      "label": "enemy_018_uses_detailed_gothic_art",
+      "passed": true
+    },
+    {
+      "label": "enemy_019_uses_detailed_gothic_art",
+      "passed": true
+    },
+    {
+      "label": "boss_000_uses_detailed_gothic_art",
+      "passed": true
+    },
+    {
+      "label": "boss_001_uses_detailed_gothic_art",
+      "passed": true
+    },
+    {
+      "label": "boss_002_uses_detailed_gothic_art",
+      "passed": true
+    },
+    {
+      "label": "boss_003_uses_detailed_gothic_art",
+      "passed": true
+    },
+    {
+      "label": "rooms_directory_exists",
+      "passed": true
+    },
+    {
+      "label": "room_scenes_exist",
+      "passed": true
+    },
+    {
+      "label": "all_room_scenes_load_cleanly",
+      "passed": true
+    },
+    {
+      "label": "enemies_instantiate",
+      "passed": true
+    },
+    {
+      "label": "boss_instantiates",
+      "passed": true
+    },
+    {
+      "label": "ability_pickup_exists_in_world",
+      "passed": true
+    },
+    {
+      "label": "npc_exists_in_world",
+      "passed": true
+    },
+    {
+      "label": "world_scene_loads",
+      "passed": true
+    },
+    {
+      "label": "world_manager_initializes",
+      "passed": true
+    },
+    {
+      "label": "current_room_recorded",
+      "passed": true
+    },
+    {
+      "label": "stormglass_gothic_authored_prop_family_has_12_assets",
+      "passed": true
+    },
+    {
+      "label": "stormglass_decor_instantiates_in_opening_room",
+      "passed": true
+    },
+    {
+      "label": "stormglass_opening_room_places_authored_gothic_props",
+      "passed": true
+    },
+    {
+      "label": "stormglass_opening_room_has_collision_matched_surface_holder",
+      "passed": true
+    },
+    {
+      "label": "stormglass_opening_room_dresses_every_platform_collider",
+      "passed": true
+    },
+    {
+      "label": "stormglass_opening_room_dresses_floor_collider",
+      "passed": true
+    },
+    {
+      "label": "stormglass_opening_floor_has_painted_foundation",
+      "passed": true
+    },
+    {
+      "label": "stormglass_foundation_matches_floor_without_collision_changes",
+      "passed": true
+    },
+    {
+      "label": "stormglass_save_shrine_uses_authored_castle_art",
+      "passed": true
+    },
+    {
+      "label": "stormglass_save_shrine_keeps_authored_world_scale",
+      "passed": true
+    },
+    {
+      "label": "stormglass_save_shrine_visible_base_meets_anchor",
+      "passed": true
+    },
+    {
+      "label": "stormglass_save_shrine_stays_grounded_while_idle",
+      "passed": true
+    },
+    {
+      "label": "stormglass_gothic_placeholder_tile_faces_are_hidden",
+      "passed": true
+    },
+    {
+      "label": "stormglass_vertical_room_preserves_30x17_tile_gameplay_scale",
+      "passed": true
+    },
+    {
+      "label": "stormglass_compact_room_camera_does_not_expose_void",
+      "passed": true
+    },
+    {
+      "label": "audio_manager_music_playing_after_room_entry",
+      "passed": true
+    },
+    {
+      "label": "audio_manager_plays_sfx",
+      "passed": true
+    },
+    {
+      "label": "audio_manager_missing_sfx_does_not_crash",
+      "passed": true
+    },
+    {
+      "label": "audio_manager_music_uses_music_bus",
+      "passed": true
+    },
+    {
+      "label": "audio_manager_sfx_uses_sfx_bus",
+      "passed": true
+    },
+    {
+      "label": "generated_music_room_data_parses",
+      "passed": true
+    },
+    {
+      "label": "generated_music_has_biome_0",
+      "passed": true
+    },
+    {
+      "label": "generated_music_has_boss",
+      "passed": true
+    },
+    {
+      "label": "staged_encounter_combat_room_exists",
+      "passed": true
+    },
+    {
+      "label": "staged_encounter_initial_group_is_partial",
+      "passed": true
+    },
+    {
+      "label": "staged_encounter_advancing_wakes_later_group",
+      "passed": true
+    },
+    {
+      "label": "boss_room_plays_boss_music",
+      "passed": true
+    },
+    {
+      "label": "leaving_boss_restores_biome_music",
+      "passed": true
+    },
+    {
+      "label": "pause_menu_present_in_world",
+      "passed": true
+    },
+    {
+      "label": "game_manager_pause_actually_pauses_tree",
+      "passed": true
+    },
+    {
+      "label": "game_manager_resume_actually_unpauses_tree",
+      "passed": true
+    },
+    {
+      "label": "pause_menu_open_shows_ui",
+      "passed": true
+    },
+    {
+      "label": "pause_menu_open_sets_paused_game_state",
+      "passed": true
+    },
+    {
+      "label": "pause_menu_settings_panel_opens",
+      "passed": true
+    },
+    {
+      "label": "pause_menu_settings_sliders_wired",
+      "passed": true
+    },
+    {
+      "label": "pause_menu_map_panel_opens",
+      "passed": true
+    },
+    {
+      "label": "world_map_view_present",
+      "passed": true
+    },
+    {
+      "label": "map_manager_has_graph",
+      "passed": true
+    },
+    {
+      "label": "map_manager_tracks_discovered_rooms",
+      "passed": true
+    },
+    {
+      "label": "pause_menu_close_hides_ui_and_resumes",
+      "passed": true
+    },
+    {
+      "label": "settings_manager_can_write",
+      "passed": true
+    },
+    {
+      "label": "settings_manager_can_read",
+      "passed": true
+    },
+    {
+      "label": "settings_reload_restores_screen_shake",
+      "passed": true
+    },
+    {
+      "label": "settings_reload_restores_master_volume",
+      "passed": true
+    },
+    {
+      "label": "player_exists",
+      "passed": true
+    },
+    {
+      "label": "player_spawns_at_valid_location",
+      "passed": true
+    },
+    {
+      "label": "player_movement_controller_initialized",
+      "passed": true
+    },
+    {
+      "label": "player_has_health_component",
+      "passed": true
+    },
+    {
+      "label": "player_has_hurtbox",
+      "passed": true
+    },
+    {
+      "label": "player_has_attack_hitbox",
+      "passed": true
+    },
+    {
+      "label": "camera_exists_and_current",
+      "passed": true
+    },
+    {
+      "label": "camera_position_is_finite",
+      "passed": true
+    },
+    {
+      "label": "camera_within_room_bounds",
+      "passed": true
+    },
+    {
+      "label": "camera_idle_stays_near_player_anchor",
+      "passed": true
+    },
+    {
+      "label": "camera_shake_returns_to_target",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_spawn",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_spawn_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_spawn_novfx",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_spawn_novfx_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_spawn_nosprite",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_spawn_nosprite_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_spawn_nolight",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_spawn_nolight_visible",
+      "passed": true
+    },
+    {
+      "label": "player_sprite_ground_contact_aligned",
+      "passed": true
+    },
+    {
+      "label": "player_has_attack_animation",
+      "passed": true
+    },
+    {
+      "label": "player_has_hurt_animation",
+      "passed": true
+    },
+    {
+      "label": "player_has_idle_animation",
+      "passed": true
+    },
+    {
+      "label": "player_has_death_animation",
+      "passed": true
+    },
+    {
+      "label": "player_has_run_or_walk_animation",
+      "passed": true
+    },
+    {
+      "label": "player_idle_is_not_walk_frame_1",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_gothic_room_000",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_gothic_room_000_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_biome_0",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_biome_0_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_region_0",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_region_0_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_tutorial",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_tutorial_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_gothic_room_001",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_gothic_room_001_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_combat",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_combat_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_gothic_room_002",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_gothic_room_002_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_traversal",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_traversal_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_gothic_room_003",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_gothic_room_003_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_ability_shrine",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_ability_shrine_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_gothic_room_004",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_gothic_room_004_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_combat",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_combat_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_gothic_room_005",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_gothic_room_005_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_traversal",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_traversal_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_gothic_room_006",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_gothic_room_006_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_save",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_save_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_gothic_room_007",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_gothic_room_007_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_secret",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_secret_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_gothic_room_008",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_gothic_room_008_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_miniboss",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_miniboss_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_gothic_room_009",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_gothic_room_009_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_ability_gate",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_ability_gate_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_region_1",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_region_1_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_tutorial",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_tutorial_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_combat",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_combat_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_traversal",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_traversal_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_ability_shrine",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_ability_shrine_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_combat",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_combat_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_traversal",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_traversal_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_save",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_save_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_secret",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_secret_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_miniboss",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_miniboss_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_ability_gate",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_ability_gate_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_region_2",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_region_2_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_tutorial",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_tutorial_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_combat",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_combat_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_traversal",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_traversal_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_ability_shrine",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_ability_shrine_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_combat",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_combat_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_ability_gate",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_ability_gate_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_save",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_save_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_secret",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_secret_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_miniboss",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_miniboss_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_ability_gate",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_ability_gate_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_region_3",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_region_3_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_tutorial",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_tutorial_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_combat",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_combat_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_traversal",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_traversal_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_ability_shrine",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_ability_shrine_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_combat",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_combat_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_traversal",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_traversal_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_save",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_save_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_secret",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_secret_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_boss",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_boss_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_boss_combat",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_boss_combat_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_boss_combat",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_boss_combat_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_transition",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_slice_transition_visible",
+      "passed": true
+    },
+    {
+      "label": "stormglass_visual_slice_uses_one_continuous_biome",
+      "passed": true
+    },
+    {
+      "label": "stormglass_visual_slice_captures_four_connected_regions",
+      "passed": true
+    },
+    {
+      "label": "visual_slice_captures_all_ten_authored_gothic_rooms",
+      "passed": true
+    },
+    {
+      "label": "stormglass_visual_slice_checks_all_40_room_surfaces",
+      "passed": true
+    },
+    {
+      "label": "stormglass_all_masonry_exactly_matches_real_collision",
+      "passed": true
+    },
+    {
+      "label": "stormglass_all_rooms_hide_placeholder_tile_layers",
+      "passed": true
+    },
+    {
+      "label": "stormglass_all_rooms_match_platform_art_to_collision",
+      "passed": true
+    },
+    {
+      "label": "stormglass_all_elevated_platforms_have_physical_supports",
+      "passed": true
+    },
+    {
+      "label": "stormglass_all_existing_floor_colliders_are_dressed",
+      "passed": true
+    },
+    {
+      "label": "stormglass_all_existing_floors_have_painted_foundations",
+      "passed": true
+    },
+    {
+      "label": "stormglass_water_zones_use_authored_panorama_visuals",
+      "passed": true
+    },
+    {
+      "label": "stormglass_all_40_rooms_share_one_castle_interior_background",
+      "passed": true
+    },
+    {
+      "label": "stormglass_all_40_rooms_have_two_authored_condition_decals",
+      "passed": true
+    },
+    {
+      "label": "stormglass_condition_metadata_matches_each_room_district",
+      "passed": true
+    },
+    {
+      "label": "stormglass_platform_materials_match_castle_condition",
+      "passed": true
+    },
+    {
+      "label": "stormglass_visual_slice_covers_four_castle_condition_families",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_player_idle",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_player_idle_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_player_run",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_player_run_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_player_jump",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_player_jump_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_player_landing",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_player_landing_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_player_combat",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_player_combat_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_combat_action",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_combat_action_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_player_dash",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_player_dash_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_dash",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_dash_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_ability_pickup",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_ability_pickup_visible",
+      "passed": true
+    },
+    {
+      "label": "ability_pickup_can_be_triggered",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_ability",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_ability_visible",
+      "passed": true
+    },
+    {
+      "label": "npc_sprite_is_animated",
+      "passed": true
+    },
+    {
+      "label": "npc_conversation_has_one_speaker",
+      "passed": true
+    },
+    {
+      "label": "unrelated_npc_does_not_talk",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_exploration",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_exploration_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_npc_dialogue",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_npc_dialogue_visible",
+      "passed": true
+    },
+    {
+      "label": "npc_interaction_can_be_triggered",
+      "passed": true
+    },
+    {
+      "label": "npc_returns_to_idle_after_conversation",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_gameplay",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_gameplay_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_boss_death",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_boss_death_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_victory",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_victory_visible",
+      "passed": true
+    },
+    {
+      "label": "final_boss_defeat_triggers_victory_state",
+      "passed": true
+    },
+    {
+      "label": "final_boss_defeat_sets_game_complete_flag",
+      "passed": true
+    },
+    {
+      "label": "final_boss_defeat_emits_game_completed",
+      "passed": true
+    },
+    {
+      "label": "final_boss_defeat_shows_victory_overlay",
+      "passed": true
+    },
+    {
+      "label": "final_boss_defeat_tracks_progression",
+      "passed": true
+    },
+    {
+      "label": "quest_data_parses",
+      "passed": true
+    },
+    {
+      "label": "quest_data_nonempty",
+      "passed": true
+    },
+    {
+      "label": "quest_objective_exists",
+      "passed": true
+    },
+    {
+      "label": "quest_manager_reports_available_before_accept",
+      "passed": true
+    },
+    {
+      "label": "quest_can_be_accepted",
+      "passed": true
+    },
+    {
+      "label": "hud_quest_tracker_reads_active_quests",
+      "passed": true
+    },
+    {
+      "label": "quest_completes_from_real_gameplay_signal",
+      "passed": true
+    },
+    {
+      "label": "quest_completion_grants_currency_reward",
+      "passed": true
+    },
+    {
+      "label": "quest_completion_grants_item_reward",
+      "passed": true
+    },
+    {
+      "label": "item_data_parses",
+      "passed": true
+    },
+    {
+      "label": "item_pickup_scene_loads",
+      "passed": true
+    },
+    {
+      "label": "item_pickup_currency_can_be_triggered",
+      "passed": true
+    },
+    {
+      "label": "item_pickup_consumable_can_be_triggered",
+      "passed": true
+    },
+    {
+      "label": "item_pickup_relic_raises_max_health",
+      "passed": true
+    },
+    {
+      "label": "item_pickup_relic_tracked_in_inventory",
+      "passed": true
+    },
+    {
+      "label": "item_pickup_charm_raises_attack",
+      "passed": true
+    },
+    {
+      "label": "item_pickup_weapon_tracked_in_inventory",
+      "passed": true
+    },
+    {
+      "label": "weapon_is_equipped",
+      "passed": true
+    },
+    {
+      "label": "weapon_unequip_lowers_attack",
+      "passed": true
+    },
+    {
+      "label": "weapon_re_equip_restores_attack",
+      "passed": true
+    },
+    {
+      "label": "quest_item_tracked_in_inventory",
+      "passed": true
+    },
+    {
+      "label": "quest_item_is_not_equippable",
+      "passed": true
+    },
+    {
+      "label": "quest_item_does_not_change_attack",
+      "passed": true
+    },
+    {
+      "label": "item_pickup_collectible_tracked_in_inventory",
+      "passed": true
+    },
+    {
+      "label": "collectible_is_not_equippable",
+      "passed": true
+    },
+    {
+      "label": "collectible_found_count_increases",
+      "passed": true
+    },
+    {
+      "label": "collectible_total_count_positive",
+      "passed": true
+    },
+    {
+      "label": "collectible_does_not_change_attack",
+      "passed": true
+    },
+    {
+      "label": "inventory_view_present",
+      "passed": true
+    },
+    {
+      "label": "inventory_view_has_script",
+      "passed": true
+    },
+    {
+      "label": "inventory_click_unequips_weapon_slot",
+      "passed": true
+    },
+    {
+      "label": "inventory_display_marks_equipped_items",
+      "passed": true
+    },
+    {
+      "label": "game_hud_present_in_world",
+      "passed": true
+    },
+    {
+      "label": "health_bar_visible_inside_viewport",
+      "passed": true
+    },
+    {
+      "label": "hud_frame_contains_health_bar",
+      "passed": true
+    },
+    {
+      "label": "currency_label_present",
+      "passed": true
+    },
+    {
+      "label": "collectible_label_present",
+      "passed": true
+    },
+    {
+      "label": "capture_currency_hidden",
+      "passed": true
+    },
+    {
+      "label": "capture_collectibles_hidden",
+      "passed": true
+    },
+    {
+      "label": "hud_minimap_present",
+      "passed": true
+    },
+    {
+      "label": "hud_quest_tracker_present",
+      "passed": true
+    },
+    {
+      "label": "hud_quest_tracker_script_attached",
+      "passed": true
+    },
+    {
+      "label": "hud_minimap_uses_map_manager_graph",
+      "passed": true
+    },
+    {
+      "label": "hud_minimap_has_stormglass_frame",
+      "passed": true
+    },
+    {
+      "label": "hud_quest_tracker_entries_are_active",
+      "passed": true
+    },
+    {
+      "label": "enemy_data_parses",
+      "passed": true
+    },
+    {
+      "label": "enemy_data_nonempty",
+      "passed": true
+    },
+    {
+      "label": "enemy_scene_loads",
+      "passed": true
+    },
+    {
+      "label": "enemy_reads_real_generated_stats",
+      "passed": true
+    },
+    {
+      "label": "enemy_contact_hitbox_active_for_melee_type",
+      "passed": true
+    },
+    {
+      "label": "enemy_melee_contact_damage_works",
+      "passed": true
+    },
+    {
+      "label": "player_attack_actually_damages_enemy",
+      "passed": true
+    },
+    {
+      "label": "enemy_plays_hurt_animation_on_hit",
+      "passed": true
+    },
+    {
+      "label": "enemy_has_attack_animation",
+      "passed": true
+    },
+    {
+      "label": "enemy_has_run_animation",
+      "passed": true
+    },
+    {
+      "label": "enemy_plays_run_animation",
+      "passed": true
+    },
+    {
+      "label": "enemy_plays_attack_animation",
+      "passed": true
+    },
+    {
+      "label": "enemy_contact_hitbox_inactive_for_projectile_type",
+      "passed": true
+    },
+    {
+      "label": "enemy_projectile_attack_spawns_projectile",
+      "passed": true
+    },
+    {
+      "label": "enemy_burst_spawns_three_projectiles",
+      "passed": true
+    },
+    {
+      "label": "enemy_beam_spawns_piercing_projectile",
+      "passed": true
+    },
+    {
+      "label": "enemy_beam_is_piercing",
+      "passed": true
+    },
+    {
+      "label": "enemy_beam_is_stationary",
+      "passed": true
+    },
+    {
+      "label": "enemy_area_spawns_radial_projectiles",
+      "passed": true
+    },
+    {
+      "label": "enemy_summon_spawns_minion",
+      "passed": true
+    },
+    {
+      "label": "enemy_summon_minion_flagged",
+      "passed": true
+    },
+    {
+      "label": "enemy_summon_minion_uses_melee_contact",
+      "passed": true
+    },
+    {
+      "label": "enemy_trap_activates_contact_hitbox",
+      "passed": true
+    },
+    {
+      "label": "enemy_fly_moves_horizontally",
+      "passed": true
+    },
+    {
+      "label": "enemy_hover_moves_slower_than_fly",
+      "passed": true
+    },
+    {
+      "label": "enemy_charge_boosts_speed",
+      "passed": true
+    },
+    {
+      "label": "enemy_teleport_changes_position",
+      "passed": true
+    },
+    {
+      "label": "enemy_burrow_hides",
+      "passed": true
+    },
+    {
+      "label": "enemy_burrow_disables_hurtbox",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_combat",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_combat_visible",
+      "passed": true
+    },
+    {
+      "label": "boss_data_parses",
+      "passed": true
+    },
+    {
+      "label": "boss_data_nonempty",
+      "passed": true
+    },
+    {
+      "label": "every_generated_boss_placed_in_its_real_arena",
+      "passed": true
+    },
+    {
+      "label": "every_placed_boss_has_correct_boss_id",
+      "passed": true
+    },
+    {
+      "label": "boss_scene_loads_for_attack_check",
+      "passed": true
+    },
+    {
+      "label": "boss_phase_data_has_telegraph",
+      "passed": true
+    },
+    {
+      "label": "boss_has_run_animation",
+      "passed": true
+    },
+    {
+      "label": "boss_plays_run_animation",
+      "passed": true
+    },
+    {
+      "label": "boss_slam_activates_melee_hitbox",
+      "passed": true
+    },
+    {
+      "label": "boss_has_attack_animation",
+      "passed": true
+    },
+    {
+      "label": "boss_plays_attack_animation",
+      "passed": true
+    },
+    {
+      "label": "stormglass_final_boss_is_tempest_abbot",
+      "passed": true
+    },
+    {
+      "label": "stormglass_tempest_abbot_has_ten_eight_frame_clips",
+      "passed": true
+    },
+    {
+      "label": "boss_projectile_attack_spawns_projectile",
+      "passed": true
+    },
+    {
+      "label": "boss_area_burst_spawns_multiple_projectiles",
+      "passed": true
+    },
+    {
+      "label": "player_attack_actually_damages_boss",
+      "passed": true
+    },
+    {
+      "label": "boss_plays_hurt_animation_on_hit",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_boss",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_boss_visible",
+      "passed": true
+    },
+    {
+      "label": "boss_weakness_bonus_damage_applies_while_dashing",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_boss_phase_1",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_boss_phase_1_visible",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_boss_phase_2",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_boss_phase_2_visible",
+      "passed": true
+    },
+    {
+      "label": "boss_phase_presentation_changes_sprite",
+      "passed": true
+    },
+    {
+      "label": "ability_gate_found_in_generated_world",
+      "passed": true
+    },
+    {
+      "label": "player_persists_across_room_transition",
+      "passed": true
+    },
+    {
+      "label": "camera_exists_and_current",
+      "passed": true
+    },
+    {
+      "label": "camera_position_is_finite",
+      "passed": true
+    },
+    {
+      "label": "camera_within_room_bounds",
+      "passed": true
+    },
+    {
+      "label": "camera_idle_stays_near_player_anchor",
+      "passed": true
+    },
+    {
+      "label": "ability_gate_node_present_after_navigation",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_ability_gate",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_ability_gate_visible",
+      "passed": true
+    },
+    {
+      "label": "ability_gate_blocks_without_ability",
+      "passed": true
+    },
+    {
+      "label": "ability_gate_opens_after_unlock",
+      "passed": true
+    },
+    {
+      "label": "breakable_wall_found_in_generated_world",
+      "passed": true
+    },
+    {
+      "label": "breakable_wall_node_present",
+      "passed": true
+    },
+    {
+      "label": "breakable_wall_starts_solid",
+      "passed": true
+    },
+    {
+      "label": "breakable_wall_blocks_before_ability",
+      "passed": true
+    },
+    {
+      "label": "breakable_wall_survives_without_ability",
+      "passed": true
+    },
+    {
+      "label": "breakable_wall_breaks_with_ability",
+      "passed": true
+    },
+    {
+      "label": "breakable_wall_stays_broken_after_room_reentry",
+      "passed": true
+    },
+    {
+      "label": "broken_floor_save_written",
+      "passed": true
+    },
+    {
+      "label": "broken_floor_save_loaded",
+      "passed": true
+    },
+    {
+      "label": "breakable_wall_stays_broken_after_save_load",
+      "passed": true
+    },
+    {
+      "label": "shortcut_found_in_generated_world",
+      "passed": true
+    },
+    {
+      "label": "shortcut_leads_to_declared_room",
+      "passed": true
+    },
+    {
+      "label": "save_point_scene_loads",
+      "passed": true
+    },
+    {
+      "label": "save_point_writes_save_file",
+      "passed": true
+    },
+    {
+      "label": "save_point_heals_player_to_full",
+      "passed": true
+    },
+    {
+      "label": "save_reload_succeeds",
+      "passed": true
+    },
+    {
+      "label": "save_reload_restores_checkpoint_room",
+      "passed": true
+    },
+    {
+      "label": "save_reload_restores_defeated_bosses",
+      "passed": true
+    },
+    {
+      "label": "save_reload_restores_abilities",
+      "passed": true
+    },
+    {
+      "label": "player_controller_wires_health_died_signal",
+      "passed": true
+    },
+    {
+      "label": "death_overlay_shows_on_player_died",
+      "passed": true
+    },
+    {
+      "label": "death_overlay_hides_on_player_respawned",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_checkpoint",
+      "passed": true
+    },
+    {
+      "label": "gameplay_screenshot_checkpoint_visible",
+      "passed": true
+    },
+    {
+      "label": "player_death_leaves_game_state_playing",
+      "passed": true
+    },
+    {
+      "label": "player_death_respawns_at_checkpoint_room",
+      "passed": true
+    },
+    {
+      "label": "player_death_respawn_preserves_earned_abilities",
+      "passed": true
+    },
+    {
+      "label": "player_exists_after_death_respawn",
+      "passed": true
+    },
+    {
+      "label": "save_manager_can_write",
+      "passed": true
+    },
+    {
+      "label": "save_manager_can_read",
+      "passed": true
+    },
+    {
+      "label": "save_migration_v1_loads",
+      "passed": true
+    },
+    {
+      "label": "save_migration_v1_restores_abilities",
+      "passed": true
+    },
+    {
+      "label": "save_migration_v1_restores_room",
+      "passed": true
+    },
+    {
+      "label": "save_migration_v1_adds_max_health",
+      "passed": true
+    },
+    {
+      "label": "save_migration_v1_rewrites_save_file",
+      "passed": true
+    },
+    {
+      "label": "save_backup_write_creates_backup",
+      "passed": true
+    },
+    {
+      "label": "save_backup_corrupt_primary",
+      "passed": true
+    },
+    {
+      "label": "save_manager_loads_from_backup",
+      "passed": true
+    },
+    {
+      "label": "save_backup_restores_abilities",
+      "passed": true
+    },
+    {
+      "label": "save_slot_0_occupied_after_write",
+      "passed": true
+    },
+    {
+      "label": "save_slot_1_starts_empty",
+      "passed": true
+    },
+    {
+      "label": "save_slot_1_occupied_after_write",
+      "passed": true
+    },
+    {
+      "label": "save_manager_has_any_save",
+      "passed": true
+    },
+    {
+      "label": "save_slot_0_load_keeps_dash",
+      "passed": true
+    },
+    {
+      "label": "save_slots_do_not_share_progress",
+      "passed": true
+    },
+    {
+      "label": "save_slot_1_load_keeps_double_jump",
+      "passed": true
+    },
+    {
+      "label": "title_scene_loads",
+      "passed": true
+    },
+    {
+      "label": "title_files_button_present",
+      "passed": true
+    },
+    {
+      "label": "title_file_select_panel_present",
+      "passed": true
+    },
+    {
+      "label": "title_three_slot_buttons_present",
+      "passed": true
+    }
+  ],
+  "scope": "Real offscreen NVIDIA authored-clip gallery plus existing functional/capture smoke suite. Gallery controllers are frozen; smoke later rooms are force-loaded. Not full input-driven game traversal or final visual approval."
+}

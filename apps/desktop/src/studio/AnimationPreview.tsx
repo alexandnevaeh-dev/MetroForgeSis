@@ -48,10 +48,11 @@ export function AnimationPreview({ asset, frame, playing, onToggle, onStep, onSe
   return <div className="anim-preview">
     <div className="anim-viewport"><canvas ref={canvas} role="img" aria-label={asset.id + ', frame ' + (frame % count + 1)} /></div>
     <div className="row">
-      <Button type="button" onClick={onToggle}>{playing ? 'Pause' : 'Play'}</Button>
+      <Button type="button" onClick={onToggle}>{playing ? 'Pause' : asset.loop === false && frame >= count - 1 ? 'Replay' : 'Play'}</Button>
       <Button type="button" onClick={onStep}>Frame step</Button>
       <label>Frame<Input type="range" min={0} max={count - 1} step={1} value={frame % count} aria-label="Animation frame" aria-valuetext={`Frame ${frame % count + 1} of ${count}`} onChange={(event) => onSeek(Number(event.currentTarget.value))} /></label>
       <span>Frame {frame % count + 1}/{count}</span>
     </div>
+    <p className="hint" aria-label="Animation timing">{asset.fps ? `${asset.fps} fps · ${(count / asset.fps).toFixed(2)}s` : 'Authored timing unavailable; preview uses 8 fps'} · {asset.loop === false ? 'Plays once' : asset.loop === true ? 'Loops' : 'Loop metadata unavailable; preview loops'}</p>
   </div>;
 }

@@ -1,4 +1,5 @@
 extends CharacterBody2D
+const ClipPlayback := preload("res://scripts/core/ActorClipPlayback.gd")
 ## Stats and behavior read from the real generated data/enemies/enemies.json at runtime (same
 ## pattern QuestManager/ItemPickup use for their own data), keyed by enemy_id — previously every
 ## enemy used identical hardcoded Enemy.tscn defaults regardless of what content.ts actually
@@ -52,6 +53,7 @@ var _base_collision_mask: int = 1
 var _hurt_timer: float = 0.0
 var _summons: Array = []
 var _awakened: bool = false
+var _dying: bool = false
 
 @onready var health: HealthComponent = $HealthComponent
 @onready var hurtbox: HurtboxComponent = $HurtboxComponent
@@ -391,6 +393,8 @@ func _process_trap_attack(delta: float) -> void:
 	_spring_trap()
 
 func _play_move(anim: String) -> void:
+	if _dying:
+		return
 	if sprite == null or sprite.sprite_frames == null:
 		return
 	if not sprite.sprite_frames.has_animation(anim):
@@ -408,6 +412,8 @@ func _play_move(anim: String) -> void:
 	sprite.play(anim)
 
 func _play_attack_animation() -> void:
+	if _dying:
+		return
 	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("attack"):
 		sprite.speed_scale = 1.0
 		sprite.play("attack")
@@ -492,20 +498,39 @@ func _prune_summons() -> void:
 	_summons = alive
 
 func _on_hit_received(damage: float, knockback: Vector2) -> void:
+	if _dying or not health.is_alive():
+		return
 	_awakened = true
 	health.take_damage(damage)
+	# died emits synchronously. Never replace a newly started terminal clip with hurt.
+	if _dying or not health.is_alive():
+		return
 	velocity = knockback
 	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("hurt"):
+		sprite.speed_scale = 1.0
 		sprite.play("hurt")
 		_hurt_timer = HURT_FLASH_DURATION
 
 func _on_died() -> void:
+	if _dying:
+		return
+	_dying = true
+	_hurt_timer = 0.0
+	velocity = Vector2.ZERO
+	health.invulnerable = true
+	set_deferred("collision_layer", 0)
+	if hurtbox:
+		hurtbox.set_deferred("monitoring", false)
+		hurtbox.set_deferred("monitorable", false)
 	contact_hitbox.deactivate()
 	if not is_minion:
 		preload("res://scripts/core/LootSpawner.gd").spawn_for_enemy.call_deferred(get_parent(), global_position, _load_enemy_definition(enemy_id))
 	set_physics_process(false)
 	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("death"):
+		sprite.speed_scale = 1.0
+		sprite.sprite_frames.set_animation_loop("death", false)
 		sprite.play("death")
-		await sprite.animation_finished
+		if not await ClipPlayback.finish_terminal_clip(self, sprite, &"death"):
+			return
 	EventBus.enemy_killed.emit(enemy_id)
 	queue_free()

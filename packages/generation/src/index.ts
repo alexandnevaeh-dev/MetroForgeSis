@@ -157,3 +157,4 @@ export { readBiomeBackground, saveBiomeBackground, undoBiomeBackground } from '.
 export type { BiomeBackgroundSnapshot, BiomeBackground } from './biome-background.js';
 
 export { readGodotRoomCollision } from './room-collision.js';
+export { importGameSetAssets } from './game-set-import.js';

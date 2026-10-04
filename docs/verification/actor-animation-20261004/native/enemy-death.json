@@ -1,0 +1,768 @@
+{
+  "checks": [
+    {
+      "label": "enemy_000 lethal hit starts death rather than hurt",
+      "passed": true
+    },
+    {
+      "label": "enemy_000 terminal clip resets locomotion speed scaling",
+      "passed": true
+    },
+    {
+      "label": "enemy_000 further hit cannot interrupt death",
+      "passed": true
+    },
+    {
+      "label": "enemy_000 completes the entire death frame sequence",
+      "passed": true
+    },
+    {
+      "label": "enemy_000 kill event follows the authored clip once",
+      "passed": true
+    },
+    {
+      "label": "enemy_000 dead actor is removed",
+      "passed": true
+    },
+    {
+      "label": "enemy_001 lethal hit starts death rather than hurt",
+      "passed": true
+    },
+    {
+      "label": "enemy_001 terminal clip resets locomotion speed scaling",
+      "passed": true
+    },
+    {
+      "label": "enemy_001 further hit cannot interrupt death",
+      "passed": true
+    },
+    {
+      "label": "enemy_001 completes the entire death frame sequence",
+      "passed": true
+    },
+    {
+      "label": "enemy_001 kill event follows the authored clip once",
+      "passed": true
+    },
+    {
+      "label": "enemy_001 dead actor is removed",
+      "passed": true
+    },
+    {
+      "label": "enemy_002 lethal hit starts death rather than hurt",
+      "passed": true
+    },
+    {
+      "label": "enemy_002 terminal clip resets locomotion speed scaling",
+      "passed": true
+    },
+    {
+      "label": "enemy_002 further hit cannot interrupt death",
+      "passed": true
+    },
+    {
+      "label": "enemy_002 completes the entire death frame sequence",
+      "passed": true
+    },
+    {
+      "label": "enemy_002 kill event follows the authored clip once",
+      "passed": true
+    },
+    {
+      "label": "enemy_002 dead actor is removed",
+      "passed": true
+    },
+    {
+      "label": "enemy_003 lethal hit starts death rather than hurt",
+      "passed": true
+    },
+    {
+      "label": "enemy_003 terminal clip resets locomotion speed scaling",
+      "passed": true
+    },
+    {
+      "label": "enemy_003 further hit cannot interrupt death",
+      "passed": true
+    },
+    {
+      "label": "enemy_003 completes the entire death frame sequence",
+      "passed": true
+    },
+    {
+      "label": "enemy_003 kill event follows the authored clip once",
+      "passed": true
+    },
+    {
+      "label": "enemy_003 dead actor is removed",
+      "passed": true
+    },
+    {
+      "label": "enemy_004 lethal hit starts death rather than hurt",
+      "passed": true
+    },
+    {
+      "label": "enemy_004 terminal clip resets locomotion speed scaling",
+      "passed": true
+    },
+    {
+      "label": "enemy_004 further hit cannot interrupt death",
+      "passed": true
+    },
+    {
+      "label": "enemy_004 completes the entire death frame sequence",
+      "passed": true
+    },
+    {
+      "label": "enemy_004 kill event follows the authored clip once",
+      "passed": true
+    },
+    {
+      "label": "enemy_004 dead actor is removed",
+      "passed": true
+    },
+    {
+      "label": "enemy_005 lethal hit starts death rather than hurt",
+      "passed": true
+    },
+    {
+      "label": "enemy_005 terminal clip resets locomotion speed scaling",
+      "passed": true
+    },
+    {
+      "label": "enemy_005 further hit cannot interrupt death",
+      "passed": true
+    },
+    {
+      "label": "enemy_005 completes the entire death frame sequence",
+      "passed": true
+    },
+    {
+      "label": "enemy_005 kill event follows the authored clip once",
+      "passed": true
+    },
+    {
+      "label": "enemy_005 dead actor is removed",
+      "passed": true
+    },
+    {
+      "label": "enemy_006 lethal hit starts death rather than hurt",
+      "passed": true
+    },
+    {
+      "label": "enemy_006 terminal clip resets locomotion speed scaling",
+      "passed": true
+    },
+    {
+      "label": "enemy_006 further hit cannot interrupt death",
+      "passed": true
+    },
+    {
+      "label": "enemy_006 completes the entire death frame sequence",
+      "passed": true
+    },
+    {
+      "label": "enemy_006 kill event follows the authored clip once",
+      "passed": true
+    },
+    {
+      "label": "enemy_006 dead actor is removed",
+      "passed": true
+    },
+    {
+      "label": "enemy_007 lethal hit starts death rather than hurt",
+      "passed": true
+    },
+    {
+      "label": "enemy_007 terminal clip resets locomotion speed scaling",
+      "passed": true
+    },
+    {
+      "label": "enemy_007 further hit cannot interrupt death",
+      "passed": true
+    },
+    {
+      "label": "enemy_007 completes the entire death frame sequence",
+      "passed": true
+    },
+    {
+      "label": "enemy_007 kill event follows the authored clip once",
+      "passed": true
+    },
+    {
+      "label": "enemy_007 dead actor is removed",
+      "passed": true
+    },
+    {
+      "label": "enemy_008 lethal hit starts death rather than hurt",
+      "passed": true
+    },
+    {
+      "label": "enemy_008 terminal clip resets locomotion speed scaling",
+      "passed": true
+    },
+    {
+      "label": "enemy_008 further hit cannot interrupt death",
+      "passed": true
+    },
+    {
+      "label": "enemy_008 completes the entire death frame sequence",
+      "passed": true
+    },
+    {
+      "label": "enemy_008 kill event follows the authored clip once",
+      "passed": true
+    },
+    {
+      "label": "enemy_008 dead actor is removed",
+      "passed": true
+    },
+    {
+      "label": "enemy_009 lethal hit starts death rather than hurt",
+      "passed": true
+    },
+    {
+      "label": "enemy_009 terminal clip resets locomotion speed scaling",
+      "passed": true
+    },
+    {
+      "label": "enemy_009 further hit cannot interrupt death",
+      "passed": true
+    },
+    {
+      "label": "enemy_009 completes the entire death frame sequence",
+      "passed": true
+    },
+    {
+      "label": "enemy_009 kill event follows the authored clip once",
+      "passed": true
+    },
+    {
+      "label": "enemy_009 dead actor is removed",
+      "passed": true
+    },
+    {
+      "label": "enemy_010 lethal hit starts death rather than hurt",
+      "passed": true
+    },
+    {
+      "label": "enemy_010 terminal clip resets locomotion speed scaling",
+      "passed": true
+    },
+    {
+      "label": "enemy_010 further hit cannot interrupt death",
+      "passed": true
+    },
+    {
+      "label": "enemy_010 completes the entire death frame sequence",
+      "passed": true
+    },
+    {
+      "label": "enemy_010 kill event follows the authored clip once",
+      "passed": true
+    },
+    {
+      "label": "enemy_010 dead actor is removed",
+      "passed": true
+    },
+    {
+      "label": "enemy_011 lethal hit starts death rather than hurt",
+      "passed": true
+    },
+    {
+      "label": "enemy_011 terminal clip resets locomotion speed scaling",
+      "passed": true
+    },
+    {
+      "label": "enemy_011 further hit cannot interrupt death",
+      "passed": true
+    },
+    {
+      "label": "enemy_011 completes the entire death frame sequence",
+      "passed": true
+    },
+    {
+      "label": "enemy_011 kill event follows the authored clip once",
+      "passed": true
+    },
+    {
+      "label": "enemy_011 dead actor is removed",
+      "passed": true
+    },
+    {
+      "label": "enemy_012 lethal hit starts death rather than hurt",
+      "passed": true
+    },
+    {
+      "label": "enemy_012 terminal clip resets locomotion speed scaling",
+      "passed": true
+    },
+    {
+      "label": "enemy_012 further hit cannot interrupt death",
+      "passed": true
+    },
+    {
+      "label": "enemy_012 completes the entire death frame sequence",
+      "passed": true
+    },
+    {
+      "label": "enemy_012 kill event follows the authored clip once",
+      "passed": true
+    },
+    {
+      "label": "enemy_012 dead actor is removed",
+      "passed": true
+    },
+    {
+      "label": "enemy_013 lethal hit starts death rather than hurt",
+      "passed": true
+    },
+    {
+      "label": "enemy_013 terminal clip resets locomotion speed scaling",
+      "passed": true
+    },
+    {
+      "label": "enemy_013 further hit cannot interrupt death",
+      "passed": true
+    },
+    {
+      "label": "enemy_013 completes the entire death frame sequence",
+      "passed": true
+    },
+    {
+      "label": "enemy_013 kill event follows the authored clip once",
+      "passed": true
+    },
+    {
+      "label": "enemy_013 dead actor is removed",
+      "passed": true
+    },
+    {
+      "label": "enemy_014 lethal hit starts death rather than hurt",
+      "passed": true
+    },
+    {
+      "label": "enemy_014 terminal clip resets locomotion speed scaling",
+      "passed": true
+    },
+    {
+      "label": "enemy_014 further hit cannot interrupt death",
+      "passed": true
+    },
+    {
+      "label": "enemy_014 completes the entire death frame sequence",
+      "passed": true
+    },
+    {
+      "label": "enemy_014 kill event follows the authored clip once",
+      "passed": true
+    },
+    {
+      "label": "enemy_014 dead actor is removed",
+      "passed": true
+    },
+    {
+      "label": "enemy_015 lethal hit starts death rather than hurt",
+      "passed": true
+    },
+    {
+      "label": "enemy_015 terminal clip resets locomotion speed scaling",
+      "passed": true
+    },
+    {
+      "label": "enemy_015 further hit cannot interrupt death",
+      "passed": true
+    },
+    {
+      "label": "enemy_015 completes the entire death frame sequence",
+      "passed": true
+    },
+    {
+      "label": "enemy_015 kill event follows the authored clip once",
+      "passed": true
+    },
+    {
+      "label": "enemy_015 dead actor is removed",
+      "passed": true
+    },
+    {
+      "label": "enemy_016 lethal hit starts death rather than hurt",
+      "passed": true
+    },
+    {
+      "label": "enemy_016 terminal clip resets locomotion speed scaling",
+      "passed": true
+    },
+    {
+      "label": "enemy_016 further hit cannot interrupt death",
+      "passed": true
+    },
+    {
+      "label": "enemy_016 completes the entire death frame sequence",
+      "passed": true
+    },
+    {
+      "label": "enemy_016 kill event follows the authored clip once",
+      "passed": true
+    },
+    {
+      "label": "enemy_016 dead actor is removed",
+      "passed": true
+    },
+    {
+      "label": "enemy_017 lethal hit starts death rather than hurt",
+      "passed": true
+    },
+    {
+      "label": "enemy_017 terminal clip resets locomotion speed scaling",
+      "passed": true
+    },
+    {
+      "label": "enemy_017 further hit cannot interrupt death",
+      "passed": true
+    },
+    {
+      "label": "enemy_017 completes the entire death frame sequence",
+      "passed": true
+    },
+    {
+      "label": "enemy_017 kill event follows the authored clip once",
+      "passed": true
+    },
+    {
+      "label": "enemy_017 dead actor is removed",
+      "passed": true
+    },
+    {
+      "label": "enemy_018 lethal hit starts death rather than hurt",
+      "passed": true
+    },
+    {
+      "label": "enemy_018 terminal clip resets locomotion speed scaling",
+      "passed": true
+    },
+    {
+      "label": "enemy_018 further hit cannot interrupt death",
+      "passed": true
+    },
+    {
+      "label": "enemy_018 completes the entire death frame sequence",
+      "passed": true
+    },
+    {
+      "label": "enemy_018 kill event follows the authored clip once",
+      "passed": true
+    },
+    {
+      "label": "enemy_018 dead actor is removed",
+      "passed": true
+    },
+    {
+      "label": "enemy_019 lethal hit starts death rather than hurt",
+      "passed": true
+    },
+    {
+      "label": "enemy_019 terminal clip resets locomotion speed scaling",
+      "passed": true
+    },
+    {
+      "label": "enemy_019 further hit cannot interrupt death",
+      "passed": true
+    },
+    {
+      "label": "enemy_019 completes the entire death frame sequence",
+      "passed": true
+    },
+    {
+      "label": "enemy_019 kill event follows the authored clip once",
+      "passed": true
+    },
+    {
+      "label": "enemy_019 dead actor is removed",
+      "passed": true
+    },
+    {
+      "label": "enemy_000 lethal hit starts death rather than hurt",
+      "passed": true
+    },
+    {
+      "label": "enemy_000 terminal clip resets locomotion speed scaling",
+      "passed": true
+    },
+    {
+      "label": "enemy_000 further hit cannot interrupt death",
+      "passed": true
+    },
+    {
+      "label": "enemy_000 completes the entire death frame sequence",
+      "passed": true
+    },
+    {
+      "label": "enemy_000 kill event follows the authored clip once",
+      "passed": true
+    },
+    {
+      "label": "enemy_000 dead actor is removed",
+      "passed": true
+    },
+    {
+      "label": "enemy_000 lethal hit starts death rather than hurt",
+      "passed": true
+    },
+    {
+      "label": "enemy_000 terminal clip resets locomotion speed scaling",
+      "passed": true
+    },
+    {
+      "label": "enemy_000 further hit cannot interrupt death",
+      "passed": true
+    },
+    {
+      "label": "paused death retains its frame and does not notify",
+      "passed": true
+    },
+    {
+      "label": "enemy_000 completes the entire death frame sequence",
+      "passed": true
+    },
+    {
+      "label": "enemy_000 kill event follows the authored clip once",
+      "passed": true
+    },
+    {
+      "label": "enemy_000 dead actor is removed",
+      "passed": true
+    },
+    {
+      "label": "missing death clip still notifies once",
+      "passed": true
+    },
+    {
+      "label": "missing death clip cannot leave a dead enemy in the world",
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "rows": [
+    {
+      "deathFramesSeen": 8,
+      "enemy": "enemy_000",
+      "expectedFrames": 8,
+      "expectedMs": 800.0,
+      "killEvents": 1,
+      "observedMs": 854,
+      "pauseMs": 0,
+      "weighted": false
+    },
+    {
+      "deathFramesSeen": 8,
+      "enemy": "enemy_001",
+      "expectedFrames": 8,
+      "expectedMs": 800.0,
+      "killEvents": 1,
+      "observedMs": 862,
+      "pauseMs": 0,
+      "weighted": false
+    },
+    {
+      "deathFramesSeen": 8,
+      "enemy": "enemy_002",
+      "expectedFrames": 8,
+      "expectedMs": 800.0,
+      "killEvents": 1,
+      "observedMs": 863,
+      "pauseMs": 0,
+      "weighted": false
+    },
+    {
+      "deathFramesSeen": 8,
+      "enemy": "enemy_003",
+      "expectedFrames": 8,
+      "expectedMs": 800.0,
+      "killEvents": 1,
+      "observedMs": 856,
+      "pauseMs": 0,
+      "weighted": false
+    },
+    {
+      "deathFramesSeen": 8,
+      "enemy": "enemy_004",
+      "expectedFrames": 8,
+      "expectedMs": 800.0,
+      "killEvents": 1,
+      "observedMs": 857,
+      "pauseMs": 0,
+      "weighted": false
+    },
+    {
+      "deathFramesSeen": 8,
+      "enemy": "enemy_005",
+      "expectedFrames": 8,
+      "expectedMs": 800.0,
+      "killEvents": 1,
+      "observedMs": 855,
+      "pauseMs": 0,
+      "weighted": false
+    },
+    {
+      "deathFramesSeen": 8,
+      "enemy": "enemy_006",
+      "expectedFrames": 8,
+      "expectedMs": 800.0,
+      "killEvents": 1,
+      "observedMs": 877,
+      "pauseMs": 0,
+      "weighted": false
+    },
+    {
+      "deathFramesSeen": 8,
+      "enemy": "enemy_007",
+      "expectedFrames": 8,
+      "expectedMs": 800.0,
+      "killEvents": 1,
+      "observedMs": 855,
+      "pauseMs": 0,
+      "weighted": false
+    },
+    {
+      "deathFramesSeen": 8,
+      "enemy": "enemy_008",
+      "expectedFrames": 8,
+      "expectedMs": 800.0,
+      "killEvents": 1,
+      "observedMs": 862,
+      "pauseMs": 0,
+      "weighted": false
+    },
+    {
+      "deathFramesSeen": 8,
+      "enemy": "enemy_009",
+      "expectedFrames": 8,
+      "expectedMs": 800.0,
+      "killEvents": 1,
+      "observedMs": 862,
+      "pauseMs": 0,
+      "weighted": false
+    },
+    {
+      "deathFramesSeen": 8,
+      "enemy": "enemy_010",
+      "expectedFrames": 8,
+      "expectedMs": 800.0,
+      "killEvents": 1,
+      "observedMs": 855,
+      "pauseMs": 0,
+      "weighted": false
+    },
+    {
+      "deathFramesSeen": 8,
+      "enemy": "enemy_011",
+      "expectedFrames": 8,
+      "expectedMs": 800.0,
+      "killEvents": 1,
+      "observedMs": 863,
+      "pauseMs": 0,
+      "weighted": false
+    },
+    {
+      "deathFramesSeen": 8,
+      "enemy": "enemy_012",
+      "expectedFrames": 8,
+      "expectedMs": 800.0,
+      "killEvents": 1,
+      "observedMs": 855,
+      "pauseMs": 0,
+      "weighted": false
+    },
+    {
+      "deathFramesSeen": 8,
+      "enemy": "enemy_013",
+      "expectedFrames": 8,
+      "expectedMs": 800.0,
+      "killEvents": 1,
+      "observedMs": 870,
+      "pauseMs": 0,
+      "weighted": false
+    },
+    {
+      "deathFramesSeen": 8,
+      "enemy": "enemy_014",
+      "expectedFrames": 8,
+      "expectedMs": 800.0,
+      "killEvents": 1,
+      "observedMs": 856,
+      "pauseMs": 0,
+      "weighted": false
+    },
+    {
+      "deathFramesSeen": 8,
+      "enemy": "enemy_015",
+      "expectedFrames": 8,
+      "expectedMs": 800.0,
+      "killEvents": 1,
+      "observedMs": 855,
+      "pauseMs": 0,
+      "weighted": false
+    },
+    {
+      "deathFramesSeen": 8,
+      "enemy": "enemy_016",
+      "expectedFrames": 8,
+      "expectedMs": 800.0,
+      "killEvents": 1,
+      "observedMs": 863,
+      "pauseMs": 0,
+      "weighted": false
+    },
+    {
+      "deathFramesSeen": 8,
+      "enemy": "enemy_017",
+      "expectedFrames": 8,
+      "expectedMs": 800.0,
+      "killEvents": 1,
+      "observedMs": 856,
+      "pauseMs": 0,
+      "weighted": false
+    },
+    {
+      "deathFramesSeen": 8,
+      "enemy": "enemy_018",
+      "expectedFrames": 8,
+      "expectedMs": 800.0,
+      "killEvents": 1,
+      "observedMs": 856,
+      "pauseMs": 0,
+      "weighted": false
+    },
+    {
+      "deathFramesSeen": 8,
+      "enemy": "enemy_019",
+      "expectedFrames": 8,
+      "expectedMs": 800.0,
+      "killEvents": 1,
+      "observedMs": 870,
+      "pauseMs": 0,
+      "weighted": false
+    },
+    {
+      "deathFramesSeen": 8,
+      "enemy": "enemy_000",
+      "expectedFrames": 8,
+      "expectedMs": 900.0,
+      "killEvents": 1,
+      "observedMs": 966,
+      "pauseMs": 0,
+      "weighted": true
+    },
+    {
+      "deathFramesSeen": 8,
+      "enemy": "enemy_000",
+      "expectedFrames": 8,
+      "expectedMs": 952.0,
+      "killEvents": 1,
+      "observedMs": 1008,
+      "pauseMs": 152,
+      "weighted": false
+    }
+  ],
+  "scope": "Real enemy hurtbox lifecycle across the generated roster; direct test hits, not input-driven combat or visual acceptance."
+}

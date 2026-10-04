@@ -32,3 +32,13 @@ The signature is a compact moss-backed vitality and field-tool cluster with ambe
 The top-down woodland test uses an opt-in 3D diorama with its existing animated pixel sprites. HD-2D style requests enable `data/visual/hd2d.json` through the Godot assembler. HD2DWorldPresenter maps the authoritative 2D tiles, positions, sprite frames, prop anchors and boss aiming lines into the 3D view; gameplay collision stays in the original controller. Nearest filtering preserves sprite edges. Timber houses, textured roof geometry, lights, shadows and restrained fog give the hamlet depth. Forward+ supports glow and ambient occlusion; Compatibility uses the same geometry without those effects.
 
 Maintain the shared woodland palette and bottom-ground anchors. Player casting has twelve authored poses at 24fps in each of eight facings; movement, combat, hit and death keep their complete strips. The renderer must use the current source frame, with no independent animation timer. The sixteen-area Verdant Oath test remains draft artwork; runtime success is not a finished graphics or performance certificate.
+
+
+## Asset gallery registration and animation playback
+The gallery imports existing PNGs from the selected project GAME_SET.json inventory through guarded IPC. Imports verify artwork hashes and genre identity, retain the registry before-image and expose inline success or errors; repeating an import preserves registry bytes. Existing generation provenance remains unchanged. Newly admitted artwork has unverified provider and license information and is not production-approved. Artwork stays in its own game set.
+
+Animation preview uses authored clip FPS, frame count and loop flags. Attacks, hits and deaths that play once hold their final frame and offer Replay; looping clips retain Play/Pause, frame step and keyboard seeking. Special boss attack and telegraph clips use the corresponding sidecar metadata. Assets failed to load show Retry assets. Shared Button and existing studio tokens own appearance.
+
+Asset review uses the full workspace width and height; the generic assist panel and activity drawer remain on other routes. New Game/Generation remain available in navigation. Animation previews cap visual height at 240px while retaining crisp nearest display, with timing controls directly below. The Animation tab filters authored animation records across player, enemy and boss categories.
+
+Long asset IDs and paths wrap inside their inspector. Below 1200px the header project selector can shrink while creation modes retain usable labels, preventing overlap with Jump and application actions. Real packaged checks cover import rejection/retry, preserved artwork, authored clip playback and 1000px gallery controls.

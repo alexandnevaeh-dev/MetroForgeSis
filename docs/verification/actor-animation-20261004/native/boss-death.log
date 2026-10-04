@@ -1,0 +1,4 @@
+Godot Engine v4.6.stable.official.89cea1439 - https://godotengine.org
+
+BOSS_DEATH_LIFECYCLE_PATH: E:/MetroForgeData/TestArtifacts/actor-animation-20261004/candidate/appdata/Godot/app_userdata/Stormglass Reliquary - Side-view Test/boss_death_lifecycle_telemetry.json
+BOSS_DEATH_LIFECYCLE: {"boss_freed_before_clip":false,"death_anim_frames":158,"defeated_delay_ms":1093,"expected_death_ms":1000,"failure_stage":"","hurt_after_lethal":false,"test_passed":true,"victory":true}

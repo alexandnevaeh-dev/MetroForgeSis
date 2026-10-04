@@ -20,6 +20,7 @@ import {
   createEditableLoot,
   saveEditableLootSource,
   readGodotRoomCollision,
+  importGameSetAssets,
   readBiomeBackground,
   saveBiomeBackground,
   undoBiomeBackground,
@@ -1390,6 +1391,12 @@ export function registerIpcHandlers(cwd: string): void {
     scanAudioDir('audio/music', 'Music');
 
     return results;
+  });
+
+  ipcMain.handle('import-game-set-assets', async (_event, projectPath: string) => {
+    assertProjectPath(projectPath, cwd);
+    try { return importGameSetAssets(projectPath); }
+    catch (error) { return { success: false, error: error instanceof Error ? error.message : String(error) }; }
   });
 
   ipcMain.handle('get-asset-preview', async (_event, projectPath: string, relPath: string) => {

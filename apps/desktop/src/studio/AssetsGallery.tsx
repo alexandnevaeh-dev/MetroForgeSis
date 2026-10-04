@@ -43,14 +43,33 @@ function ProjectAssetsGallery() {
   useEffect(() => { setRestoreStatus(''); }, [selectedPath, selected?.id]);
   const [backfillBusy, setBackfillBusy] = useState(false);
   const [backfillMessage, setBackfillMessage] = useState<string | null>(null);
+  const [importBusy, setImportBusy] = useState(false), [importMessage, setImportMessage] = useState(''), [importError, setImportError] = useState(''), [loadError, setLoadError] = useState('');
+  const importLocked = useRef(false), mounted = useRef(false), loadSequence = useRef(0);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; loadSequence.current++; }; }, []);
 
   const reloadAssets = () => {
     if (!selectedPath || !window.metroforge?.listAssets) return;
     setLoading(true);
-    window.metroforge
+    setLoadError('');
+    const ticket = ++loadSequence.current;
+    return window.metroforge
       .listAssets(selectedPath)
-      .then((list) => setAssets(list))
-      .finally(() => setLoading(false));
+      .then((list) => { if (mounted.current && ticket === loadSequence.current) setAssets(list); })
+      .catch((error: unknown) => { if (mounted.current && ticket === loadSequence.current) setLoadError(`Assets could not be loaded: ${error instanceof Error ? error.message : String(error)}`); })
+      .finally(() => { if (mounted.current && ticket === loadSequence.current) setLoading(false); });
+  };
+
+  const importAssets = async () => {
+    if (importLocked.current || !selectedPath || !window.metroforge?.importGameSetAssets) return;
+    importLocked.current = true; setImportBusy(true); setImportMessage(''); setImportError('');
+    try {
+      const result = await window.metroforge.importGameSetAssets(selectedPath);
+      if (!mounted.current) return;
+      if (!result.success) { setImportError(result.error ?? 'Game-set assets could not be imported'); return; }
+      setImportMessage((result.added ? `Imported ${result.added} assets. Artwork stayed in place; license and production status remain unverified.` : 'No new assets to import.') + (result.excludedQa ? ` Excluded ${result.excludedQa} diagnostic QA sheets.` : ''));
+      await reloadAssets();
+    } catch (error) { if (mounted.current) setImportError(error instanceof Error ? error.message : String(error)); }
+    finally { importLocked.current = false; if (mounted.current) setImportBusy(false); }
   };
 
   useEffect(() => {
@@ -121,7 +140,9 @@ function ProjectAssetsGallery() {
     const startTime = performance.now();
     let handle = 0;
     const tick = (now: number) => {
-      setAnimFrame(previewFrameAtTime(startFrame, now - startTime, frames, selected.fps));
+      const nextFrame = previewFrameAtTime(startFrame, now - startTime, frames, selected.fps, selected.loop !== false);
+      setAnimFrame(nextFrame);
+      if (selected.loop === false && nextFrame === frames - 1) { setAnimPlaying(false); return; }
       handle = window.requestAnimationFrame(tick);
     };
     handle = window.requestAnimationFrame(tick);
@@ -144,7 +165,7 @@ function ProjectAssetsGallery() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return classified.filter((a) => {
-      if (category !== 'All' && a.category !== category) return false;
+      if (category === 'Animation' ? !a.isAnimation : category !== 'All' && a.category !== category) return false;
       if (!q) return true;
       return (
         a.id.toLowerCase().includes(q) ||
@@ -159,6 +180,7 @@ function ProjectAssetsGallery() {
     const map = new Map<string, number>();
     for (const asset of classified) {
       map.set(asset.category, (map.get(asset.category) ?? 0) + 1);
+      if (asset.isAnimation && asset.category !== 'Animation') map.set('Animation', (map.get('Animation') ?? 0) + 1);
     }
     return map;
   }, [classified]);
@@ -185,11 +207,15 @@ function ProjectAssetsGallery() {
           placeholder="Search id, path, provider, prompt…"
           aria-label="Search assets"
         />
-        <Button disabled={!selectedPath || backfillBusy} onClick={() => void runBackfill()}>
+        <Button disabled={!selectedPath || backfillBusy || importBusy} onClick={() => void runBackfill()}>
           {backfillBusy ? 'Backfilling…' : 'Backfill maturity'}
         </Button>
+        <Button disabled={!selectedPath || backfillBusy || importBusy} aria-busy={importBusy} title="Register existing PNGs from this project's game-set inventory. Artwork files stay in place." onClick={() => void importAssets()}>{importBusy ? 'Importing assets…' : 'Import game-set assets'}</Button>
       </div>
       {backfillMessage && <p className="hint">{backfillMessage}</p>}
+      {importMessage && <p className="hint" role="status">{importMessage}</p>}
+      {importError && <p role="alert">{importError}</p>}
+      {loadError && <div role="alert">{loadError} <Button disabled={loading} onClick={() => void reloadAssets()}>Retry assets</Button></div>}
 
       <Tabs
         className="category-bar"
@@ -259,7 +285,7 @@ function ProjectAssetsGallery() {
                   frame={animFrame}
                   playing={animPlaying}
                   onSeek={(frame) => { setAnimPlaying(false); setAnimFrame(frame); }}
-                  onToggle={() => setAnimPlaying((p) => !p)}
+                  onToggle={() => { if (!animPlaying && selected.loop === false && animFrame >= (selected.frameCount ?? 1) - 1) setAnimFrame(0); setAnimPlaying((p) => !p); }}
                   onStep={() => { setAnimPlaying(false); setAnimFrame((f) => (f + 1) % Math.max(1, selected.frameCount ?? 1)); }}
                 />
               ) : selected.dataUrl ? (

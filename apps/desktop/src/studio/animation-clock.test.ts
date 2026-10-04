@@ -14,4 +14,11 @@ describe('animation preview clock', () => {
     expect(previewFrameAtTime(2, -10, 8, 12)).toBe(2);
     expect(previewFrameAtTime(2, 100, 0, 12)).toBe(0);
   });
+  it('holds the last frame of a one-shot and resumes from a manually selected frame', () => {
+    expect(previewFrameAtTime(0, 750, 8, 8, false)).toBe(6);
+    expect(previewFrameAtTime(0, 2000, 8, 8, false)).toBe(7);
+    expect(previewFrameAtTime(5, 250, 8, 8, false)).toBe(7);
+    expect(previewFrameAtTime(-1, 10000, 8, 8, false)).toBe(7);
+    expect(previewFrameAtTime(NaN, 250, 8, 8, false)).toBe(2);
+  });
 });

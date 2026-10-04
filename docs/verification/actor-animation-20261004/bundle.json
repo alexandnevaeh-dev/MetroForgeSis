@@ -1,0 +1,27 @@
+{
+  "release": "E:/MetroForgeData/Releases/MetroForge-actor-animation-20261004-v4",
+  "castleFiles": 1886,
+  "castleArtFiles": 1271,
+  "castleArtworkByteIdentical": true,
+  "registeredPngs": 612,
+  "addedRegistryAssets": 611,
+  "excludedDiagnosticQa": 9,
+  "quantumFiles": 310,
+  "quantumByteIdentical": true,
+  "quantumGameplayRerun": false,
+  "uiChecks": 37,
+  "enemyChecks": 135,
+  "galleryChecks": 67,
+  "runtimeSmokeChecks": 456,
+  "bossLifecycle": {
+    "boss_freed_before_clip": false,
+    "death_anim_frames": 158,
+    "defeated_delay_ms": 1093,
+    "expected_death_ms": 1000,
+    "failure_stage": "",
+    "hurt_after_lethal": false,
+    "test_passed": true,
+    "victory": true
+  },
+  "productionReady": false
+}

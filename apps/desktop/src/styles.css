@@ -965,11 +965,12 @@ textarea {
   border-radius: var(--radius-sm);
 }
 
-.asset-inspector-title {
+.asset-detail .asset-inspector-title {
   margin: 0;
   font-size: 0.92rem;
   text-transform: none;
   letter-spacing: 0;
+  overflow-wrap: anywhere;
 }
 
 .asset-inspector-dl {
@@ -983,6 +984,11 @@ textarea {
 
 .asset-inspector-dl dd {
   padding-bottom: 0.28rem;
+  overflow-wrap: anywhere;
+}
+.asset-inspector-dl code {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .asset-where-used {
@@ -2014,6 +2020,9 @@ textarea {
   display: block;
   width: 100%;
   height: auto;
+  max-height: 240px;
+  object-fit: contain;
+  image-rendering: pixelated;
 }
 
 .zoom-preview {
@@ -4119,6 +4128,10 @@ select {
 }
 
 @media (max-width: 1199px) {
+  .topbar-project .project-select {
+    min-width: 120px;
+    flex-shrink: 1;
+  }
   .app:not(.sidebar-collapsed) {
     grid-template-columns: var(--sidebar-w-collapsed) minmax(0, 1fr);
   }
@@ -4205,6 +4218,9 @@ select {
 }
 .app.forge-shell.sidebar-collapsed {
   grid-template-columns: var(--sidebar-w-collapsed) minmax(0, 1fr) minmax(200px, var(--forge-inspector-w));
+}
+.app.forge-shell.asset-workspace .content {
+  grid-column: 2 / -1;
 }
 .app.forge-shell .status-bar {
   grid-row: 4;

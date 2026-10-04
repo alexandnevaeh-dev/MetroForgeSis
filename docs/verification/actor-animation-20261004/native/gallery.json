@@ -1,0 +1,516 @@
+{
+  "checks": [
+    {
+      "label": "gallery roster is available",
+      "passed": true
+    },
+    {
+      "label": "player idle keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "player walk keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "player run keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "player attack keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "player hurt keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "player death keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_000 idle keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_000 walk keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_000 run keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_000 attack keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_000 hurt keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_000 death keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_004 idle keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_004 walk keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_004 run keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_004 attack keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_004 hurt keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_004 death keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_008 idle keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_008 walk keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_008 run keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_008 attack keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_008 hurt keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_008 death keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_012 idle keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_012 walk keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_012 run keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_012 attack keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_012 hurt keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_012 death keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_016 idle keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_016 walk keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_016 run keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_016 attack keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_016 hurt keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "enemy_016 death keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "boss_000 idle keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "boss_000 walk keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "boss_000 run keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "boss_000 attack keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "boss_000 hurt keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "boss_000 death keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "boss_final idle keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "boss_final walk keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "boss_final run keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "boss_final attack keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "boss_final hurt keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "boss_final death keeps authored frames, timing and loop",
+      "passed": true
+    },
+    {
+      "label": "native idle gallery saved",
+      "passed": true
+    },
+    {
+      "label": "native walk gallery saved",
+      "passed": true
+    },
+    {
+      "label": "native run gallery saved",
+      "passed": true
+    },
+    {
+      "label": "native attack gallery saved",
+      "passed": true
+    },
+    {
+      "label": "native hurt gallery saved",
+      "passed": true
+    },
+    {
+      "label": "native death gallery saved",
+      "passed": true
+    },
+    {
+      "label": "native telegraph gallery saved",
+      "passed": true
+    },
+    {
+      "label": "native attack_projectile gallery saved",
+      "passed": true
+    },
+    {
+      "label": "native attack_burst gallery saved",
+      "passed": true
+    },
+    {
+      "label": "native recovery gallery saved",
+      "passed": true
+    },
+    {
+      "label": "player advances through multiple real run frames",
+      "passed": true
+    },
+    {
+      "label": "enemy_000 advances through multiple real run frames",
+      "passed": true
+    },
+    {
+      "label": "enemy_004 advances through multiple real run frames",
+      "passed": true
+    },
+    {
+      "label": "enemy_008 advances through multiple real run frames",
+      "passed": true
+    },
+    {
+      "label": "enemy_012 advances through multiple real run frames",
+      "passed": true
+    },
+    {
+      "label": "enemy_016 advances through multiple real run frames",
+      "passed": true
+    },
+    {
+      "label": "boss_000 advances through multiple real run frames",
+      "passed": true
+    },
+    {
+      "label": "boss_final advances through multiple real run frames",
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "runFrames": [
+    {
+      "boss_000": 1,
+      "boss_final": 1,
+      "enemy_000": 1,
+      "enemy_004": 1,
+      "enemy_008": 1,
+      "enemy_012": 1,
+      "enemy_016": 1,
+      "player": 1
+    },
+    {
+      "boss_000": 2,
+      "boss_final": 2,
+      "enemy_000": 2,
+      "enemy_004": 2,
+      "enemy_008": 2,
+      "enemy_012": 2,
+      "enemy_016": 2,
+      "player": 2
+    },
+    {
+      "boss_000": 3,
+      "boss_final": 3,
+      "enemy_000": 3,
+      "enemy_004": 3,
+      "enemy_008": 3,
+      "enemy_012": 3,
+      "enemy_016": 3,
+      "player": 4
+    },
+    {
+      "boss_000": 4,
+      "boss_final": 4,
+      "enemy_000": 4,
+      "enemy_004": 4,
+      "enemy_008": 4,
+      "enemy_012": 4,
+      "enemy_016": 4,
+      "player": 6
+    },
+    {
+      "boss_000": 5,
+      "boss_final": 5,
+      "enemy_000": 6,
+      "enemy_004": 6,
+      "enemy_008": 6,
+      "enemy_012": 6,
+      "enemy_016": 6,
+      "player": 7
+    },
+    {
+      "boss_000": 6,
+      "boss_final": 6,
+      "enemy_000": 7,
+      "enemy_004": 7,
+      "enemy_008": 7,
+      "enemy_012": 7,
+      "enemy_016": 7,
+      "player": 0
+    },
+    {
+      "boss_000": 7,
+      "boss_final": 7,
+      "enemy_000": 0,
+      "enemy_004": 0,
+      "enemy_008": 0,
+      "enemy_012": 0,
+      "enemy_016": 0,
+      "player": 2
+    },
+    {
+      "boss_000": 0,
+      "boss_final": 0,
+      "enemy_000": 1,
+      "enemy_004": 1,
+      "enemy_008": 1,
+      "enemy_012": 1,
+      "enemy_016": 1,
+      "player": 3
+    },
+    {
+      "boss_000": 2,
+      "boss_final": 2,
+      "enemy_000": 2,
+      "enemy_004": 2,
+      "enemy_008": 2,
+      "enemy_012": 2,
+      "enemy_016": 2,
+      "player": 5
+    },
+    {
+      "boss_000": 3,
+      "boss_final": 3,
+      "enemy_000": 4,
+      "enemy_004": 4,
+      "enemy_008": 4,
+      "enemy_012": 4,
+      "enemy_016": 4,
+      "player": 6
+    },
+    {
+      "boss_000": 4,
+      "boss_final": 4,
+      "enemy_000": 5,
+      "enemy_004": 5,
+      "enemy_008": 5,
+      "enemy_012": 5,
+      "enemy_016": 5,
+      "player": 0
+    },
+    {
+      "boss_000": 5,
+      "boss_final": 5,
+      "enemy_000": 6,
+      "enemy_004": 6,
+      "enemy_008": 6,
+      "enemy_012": 6,
+      "enemy_016": 6,
+      "player": 1
+    },
+    {
+      "boss_000": 6,
+      "boss_final": 6,
+      "enemy_000": 7,
+      "enemy_004": 7,
+      "enemy_008": 7,
+      "enemy_012": 7,
+      "enemy_016": 7,
+      "player": 3
+    },
+    {
+      "boss_000": 7,
+      "boss_final": 7,
+      "enemy_000": 0,
+      "enemy_004": 0,
+      "enemy_008": 0,
+      "enemy_012": 0,
+      "enemy_016": 0,
+      "player": 4
+    },
+    {
+      "boss_000": 0,
+      "boss_final": 0,
+      "enemy_000": 1,
+      "enemy_004": 1,
+      "enemy_008": 1,
+      "enemy_012": 1,
+      "enemy_016": 1,
+      "player": 6
+    },
+    {
+      "boss_000": 1,
+      "boss_final": 1,
+      "enemy_000": 3,
+      "enemy_004": 3,
+      "enemy_008": 3,
+      "enemy_012": 3,
+      "enemy_016": 3,
+      "player": 7
+    },
+    {
+      "boss_000": 2,
+      "boss_final": 2,
+      "enemy_000": 4,
+      "enemy_004": 4,
+      "enemy_008": 4,
+      "enemy_012": 4,
+      "enemy_016": 4,
+      "player": 1
+    },
+    {
+      "boss_000": 3,
+      "boss_final": 3,
+      "enemy_000": 5,
+      "enemy_004": 5,
+      "enemy_008": 5,
+      "enemy_012": 5,
+      "enemy_016": 5,
+      "player": 2
+    },
+    {
+      "boss_000": 4,
+      "boss_final": 4,
+      "enemy_000": 6,
+      "enemy_004": 6,
+      "enemy_008": 6,
+      "enemy_012": 6,
+      "enemy_016": 6,
+      "player": 3
+    },
+    {
+      "boss_000": 6,
+      "boss_final": 6,
+      "enemy_000": 7,
+      "enemy_004": 7,
+      "enemy_008": 7,
+      "enemy_012": 7,
+      "enemy_016": 7,
+      "player": 5
+    },
+    {
+      "boss_000": 7,
+      "boss_final": 7,
+      "enemy_000": 1,
+      "enemy_004": 1,
+      "enemy_008": 1,
+      "enemy_012": 1,
+      "enemy_016": 1,
+      "player": 6
+    },
+    {
+      "boss_000": 0,
+      "boss_final": 0,
+      "enemy_000": 2,
+      "enemy_004": 2,
+      "enemy_008": 2,
+      "enemy_012": 2,
+      "enemy_016": 2,
+      "player": 0
+    },
+    {
+      "boss_000": 1,
+      "boss_final": 1,
+      "enemy_000": 3,
+      "enemy_004": 3,
+      "enemy_008": 3,
+      "enemy_012": 3,
+      "enemy_016": 3,
+      "player": 1
+    },
+    {
+      "boss_000": 2,
+      "boss_final": 2,
+      "enemy_000": 4,
+      "enemy_004": 4,
+      "enemy_008": 4,
+      "enemy_012": 4,
+      "enemy_016": 4,
+      "player": 3
+    }
+  ],
+  "scope": "Real NVIDIA framebuffer gallery of the player, five authored enemy families, Bell Warden and Tempest Abbot. Controllers are frozen; this reviews loaded clips and playback, not combat AI or visual approval."
+}

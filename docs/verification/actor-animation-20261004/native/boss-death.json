@@ -1,0 +1,10 @@
+{
+  "boss_freed_before_clip": false,
+  "death_anim_frames": 158,
+  "defeated_delay_ms": 1093,
+  "expected_death_ms": 1000,
+  "failure_stage": "",
+  "hurt_after_lethal": false,
+  "test_passed": true,
+  "victory": true
+}

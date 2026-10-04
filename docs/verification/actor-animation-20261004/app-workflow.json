@@ -1,0 +1,189 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\actor-animation-review\\reports\\game-tests\\20261004-actor-animation-ui\\1791102705957",
+  "project": "E:\\MetroForgeData\\TestArtifacts\\actor-animation-20261004\\ui-v4\\games\\stormglass-castle",
+  "checks": [
+    {
+      "label": "import failure is visible and preserves the registry",
+      "passed": true
+    },
+    {
+      "label": "failed import leaves a usable retry",
+      "passed": true
+    },
+    {
+      "label": "real import registers the complete game-set artwork inventory",
+      "passed": true
+    },
+    {
+      "label": "existing generation records are preserved",
+      "passed": true
+    },
+    {
+      "label": "import retains unverified license and production status",
+      "passed": true
+    },
+    {
+      "label": "real import retains the exact registry before-image",
+      "passed": true
+    },
+    {
+      "label": "second import is byte-preserving and idempotent",
+      "passed": true
+    },
+    {
+      "label": "all inventoried artwork bytes are preserved",
+      "passed": true
+    },
+    {
+      "label": "real IPC reads exact special-clip metadata: attack_burst",
+      "passed": true
+    },
+    {
+      "label": "real IPC reads exact special-clip metadata: attack_projectile",
+      "passed": true
+    },
+    {
+      "label": "real IPC reads exact special-clip metadata: recovery",
+      "passed": true
+    },
+    {
+      "label": "real IPC reads exact special-clip metadata: telegraph",
+      "passed": true
+    },
+    {
+      "label": "Animation filter includes player, enemy and boss clips",
+      "passed": true
+    },
+    {
+      "label": "one-shot holds its final frame: attack_projectile",
+      "passed": true
+    },
+    {
+      "label": "one-shot does not wrap after completion: attack_projectile",
+      "passed": true
+    },
+    {
+      "label": "Replay restarts from the opening frame: attack_projectile",
+      "passed": true
+    },
+    {
+      "label": "capture remains hidden: boss-projectile-one-shot.png",
+      "passed": true
+    },
+    {
+      "label": "one-shot holds its final frame: attack_burst",
+      "passed": true
+    },
+    {
+      "label": "one-shot does not wrap after completion: attack_burst",
+      "passed": true
+    },
+    {
+      "label": "Replay restarts from the opening frame: attack_burst",
+      "passed": true
+    },
+    {
+      "label": "one-shot holds its final frame: recovery",
+      "passed": true
+    },
+    {
+      "label": "one-shot does not wrap after completion: recovery",
+      "passed": true
+    },
+    {
+      "label": "Replay restarts from the opening frame: recovery",
+      "passed": true
+    },
+    {
+      "label": "telegraph loops through real frames using authored timing",
+      "passed": true
+    },
+    {
+      "label": "manual step works after pause",
+      "passed": true
+    },
+    {
+      "label": "seek selects the requested frame",
+      "passed": true
+    },
+    {
+      "label": "looping timing is labeled accurately",
+      "passed": true
+    },
+    {
+      "label": "long asset paths fit inside the inspector",
+      "passed": true
+    },
+    {
+      "label": "preview extracts detailed authored 160px boss frames",
+      "passed": true
+    },
+    {
+      "label": "asset review has dedicated workspace space",
+      "passed": true
+    },
+    {
+      "label": "capture remains hidden: boss-telegraph-controls.png",
+      "passed": true
+    },
+    {
+      "label": "narrow header separates project and mode controls from actions",
+      "passed": true
+    },
+    {
+      "label": "narrow gallery retains animation controls without document overflow",
+      "passed": true
+    },
+    {
+      "label": "capture remains hidden: animation-gallery-narrow.png",
+      "passed": true
+    },
+    {
+      "label": "gallery preserves game definitions and controller bytes",
+      "passed": true
+    },
+    {
+      "label": "playback preserves the imported registry",
+      "passed": true
+    },
+    {
+      "label": "no renderer exceptions",
+      "passed": true
+    }
+  ],
+  "captures": [
+    "boss-projectile-one-shot.png",
+    "boss-telegraph-controls.png",
+    "animation-gallery-narrow.png"
+  ],
+  "errors": [],
+  "scope": "Actual portable MetroForge game-set registration through the gallery, then authored boss clip playback, one-shot completion/replay, loop/pause/step/seek and narrower layout. Existing PNGs and gameplay preserved. No inference or gameplay acceptance.",
+  "import": {
+    "added": 611,
+    "artworkFiles": 612,
+    "commandId": "eed03219-0dcb-4847-a49e-70bc83a042eb"
+  },
+  "loopTrace": [
+    0,
+    1,
+    2,
+    4,
+    5,
+    6,
+    7,
+    1,
+    2,
+    3,
+    4,
+    6,
+    7,
+    1,
+    5
+  ],
+  "hiddenCaptureCadence": "Real capturePage(stayHidden, stayAwake) samples while native hidden RAF would otherwise throttle; the app clock is unchanged.",
+  "packaged": {
+    "executable": "E:\\MetroForgeData\\Releases\\MetroForge-actor-animation-20261004-v4\\MetroForge.exe",
+    "sha256": "1925f358e7f0e9675a5ac4198fb076613f0db318da56d388799a97be74a5b19c"
+  },
+  "passed": true
+}

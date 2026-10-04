@@ -1,4 +1,5 @@
 extends CharacterBody2D
+const ClipPlayback := preload("res://scripts/core/ActorClipPlayback.gd")
 ## Stats AND attack behavior read from the real generated data/bosses/bosses.json at runtime
 ## (same pattern EnemyController/QuestManager/ItemPickup use), keyed by boss_id — previously
 ## every boss used Boss.tscn's hardcoded 200 HP / single phase / melee-only attack regardless of
@@ -354,6 +355,8 @@ func _apply_phase_presentation() -> void:
 	grow.tween_property(self, "scale", target_scale, 0.4).set_trans(Tween.TRANS_BACK)
 
 func _on_died() -> void:
+	if _dying:
+		return
 	_dying = true
 	_frozen = true
 	_attack_busy = true
@@ -367,22 +370,13 @@ func _on_died() -> void:
 		hurtbox.set_deferred("monitorable", false)
 	if attack_hitbox:
 		attack_hitbox.deactivate()
-	var death_sec := 0.0
 	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("death"):
+		sprite.speed_scale = 1.0
+		sprite.sprite_frames.set_animation_loop("death", false)
 		_play_named("death")
 		if sprite.animation != "death":
 			sprite.play("death")
-		var frames := sprite.sprite_frames
-		var fps := frames.get_animation_speed("death")
-		var count := frames.get_frame_count("death")
-		if fps > 0.0 and count > 0:
-			death_sec = float(count) / fps
-		# Clip length only — animation_finished has failed to resume in this runtime.
-		# No extra hold after the last frame; victory emits as soon as the clip is done.
-		var deadline := Time.get_ticks_msec() + int((death_sec + 0.05) * 1000.0)
-		while Time.get_ticks_msec() < deadline and is_inside_tree():
-			if sprite.animation != "death":
-				sprite.play("death")
-			await get_tree().process_frame
+		if not await ClipPlayback.finish_terminal_clip(self, sprite, &"death"):
+			return
 	EventBus.boss_defeated.emit(boss_id)
 	queue_free()

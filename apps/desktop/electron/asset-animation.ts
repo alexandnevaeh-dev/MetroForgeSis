@@ -19,7 +19,7 @@ export function resolveAssetAnimation(
   metadata: Record<string, unknown>,
   readSidecar: (path: string) => unknown,
 ): AssetAnimationMetadata {
-  const match = path.replace(/\\/g, '/').match(/^(.*)_(jump_start|wall_slide|wall_jump|attack_2|attack_3|idle|walk|run|jump|fall|land|dash|swim|attack|hurt|death)\.png$/i);
+  const match = path.replace(/\\/g, '/').match(/^(.*?)_(attack_projectile|attack_burst|jump_start|wall_slide|wall_jump|attack_2|attack_3|air_dash|telegraph|recovery|locomotion|idle|walk|run|jump|fall|land|dash|swim|attack|hurt|death|fly|hover|talk|listen)\.png$/i);
   let clip: Record<string, unknown> = {};
   if (match) {
     try {

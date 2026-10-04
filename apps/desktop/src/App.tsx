@@ -215,7 +215,7 @@ export function App() {
 
   return (
     <StudioProvider onNavigate={setActiveNav}>
-      <div className={`app forge-shell${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}>
+      <div className={`app forge-shell${sidebarCollapsed ? ' sidebar-collapsed' : ''}${activeNav === 'Assets' ? ' asset-workspace' : ''}`}>
         <a className="skip-link" href="#studio-main">
           Skip to workspace
         </a>
@@ -287,8 +287,8 @@ export function App() {
           {activeNav === 'Export' && <ExportScreen />}
           {activeNav === 'Settings' && <SettingsScreen />}
         </main>
-        <ForgeAssistPanel activeNav={activeNav} />
-        {activeNav !== 'API Keys' && <ForgeActivityDrawer />}
+        {activeNav !== 'Assets' && <ForgeAssistPanel activeNav={activeNav} />}
+        {activeNav !== 'API Keys' && activeNav !== 'Assets' && <ForgeActivityDrawer />}
         <StatusBar version={version} bridgeReady={bridgeReady} activeNav={activeNav} />
         <GoToPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} onSelect={setActiveNav} />
       </div>

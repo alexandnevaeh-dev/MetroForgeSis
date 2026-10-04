@@ -19,4 +19,14 @@ describe('gallery animation metadata', () => {
     expect(resolveAssetAnimation('player_walk.png', { frameCount: -1, fps: NaN }, () => ({ walk: { frameCount: 10, fps: 10 } })))
       .toMatchObject({ frameCount: 10, fps: 10 });
   });
+  it('reads boss, flying enemy and NPC clips from their exact sidecar keys', () => {
+    for (const name of ['attack_projectile', 'attack_burst', 'telegraph', 'recovery', 'locomotion', 'fly', 'hover', 'talk', 'listen', 'air_dash']) {
+      let resource = '';
+      const result = resolveAssetAnimation('assets/bosses/boss_final_' + name + '.png', {}, path => {
+        resource = path; return { [name]: { frameCount: 8, fps: 11, loop: name === 'fly' } };
+      });
+      expect(resource).toBe('assets/bosses/boss_final_animations.json');
+      expect(result).toMatchObject({ isAnimation: true, frameCount: 8, fps: 11, loop: name === 'fly' });
+    }
+  });
 });

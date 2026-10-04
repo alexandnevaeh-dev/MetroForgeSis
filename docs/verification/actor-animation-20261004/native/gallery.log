@@ -1,0 +1,70 @@
+Godot Engine v4.6.stable.official.89cea1439 - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 617.14 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 5060 Laptop GPU
+
+PASS: gallery roster is available
+PASS: player idle keeps authored frames, timing and loop
+PASS: player walk keeps authored frames, timing and loop
+PASS: player run keeps authored frames, timing and loop
+PASS: player attack keeps authored frames, timing and loop
+PASS: player hurt keeps authored frames, timing and loop
+PASS: player death keeps authored frames, timing and loop
+PASS: enemy_000 idle keeps authored frames, timing and loop
+PASS: enemy_000 walk keeps authored frames, timing and loop
+PASS: enemy_000 run keeps authored frames, timing and loop
+PASS: enemy_000 attack keeps authored frames, timing and loop
+PASS: enemy_000 hurt keeps authored frames, timing and loop
+PASS: enemy_000 death keeps authored frames, timing and loop
+PASS: enemy_004 idle keeps authored frames, timing and loop
+PASS: enemy_004 walk keeps authored frames, timing and loop
+PASS: enemy_004 run keeps authored frames, timing and loop
+PASS: enemy_004 attack keeps authored frames, timing and loop
+PASS: enemy_004 hurt keeps authored frames, timing and loop
+PASS: enemy_004 death keeps authored frames, timing and loop
+PASS: enemy_008 idle keeps authored frames, timing and loop
+PASS: enemy_008 walk keeps authored frames, timing and loop
+PASS: enemy_008 run keeps authored frames, timing and loop
+PASS: enemy_008 attack keeps authored frames, timing and loop
+PASS: enemy_008 hurt keeps authored frames, timing and loop
+PASS: enemy_008 death keeps authored frames, timing and loop
+PASS: enemy_012 idle keeps authored frames, timing and loop
+PASS: enemy_012 walk keeps authored frames, timing and loop
+PASS: enemy_012 run keeps authored frames, timing and loop
+PASS: enemy_012 attack keeps authored frames, timing and loop
+PASS: enemy_012 hurt keeps authored frames, timing and loop
+PASS: enemy_012 death keeps authored frames, timing and loop
+PASS: enemy_016 idle keeps authored frames, timing and loop
+PASS: enemy_016 walk keeps authored frames, timing and loop
+PASS: enemy_016 run keeps authored frames, timing and loop
+PASS: enemy_016 attack keeps authored frames, timing and loop
+PASS: enemy_016 hurt keeps authored frames, timing and loop
+PASS: enemy_016 death keeps authored frames, timing and loop
+PASS: boss_000 idle keeps authored frames, timing and loop
+PASS: boss_000 walk keeps authored frames, timing and loop
+PASS: boss_000 run keeps authored frames, timing and loop
+PASS: boss_000 attack keeps authored frames, timing and loop
+PASS: boss_000 hurt keeps authored frames, timing and loop
+PASS: boss_000 death keeps authored frames, timing and loop
+PASS: boss_final idle keeps authored frames, timing and loop
+PASS: boss_final walk keeps authored frames, timing and loop
+PASS: boss_final run keeps authored frames, timing and loop
+PASS: boss_final attack keeps authored frames, timing and loop
+PASS: boss_final hurt keeps authored frames, timing and loop
+PASS: boss_final death keeps authored frames, timing and loop
+PASS: native idle gallery saved
+PASS: native walk gallery saved
+PASS: native run gallery saved
+PASS: native attack gallery saved
+PASS: native hurt gallery saved
+PASS: native death gallery saved
+PASS: native telegraph gallery saved
+PASS: native attack_projectile gallery saved
+PASS: native attack_burst gallery saved
+PASS: native recovery gallery saved
+PASS: player advances through multiple real run frames
+PASS: enemy_000 advances through multiple real run frames
+PASS: enemy_004 advances through multiple real run frames
+PASS: enemy_008 advances through multiple real run frames
+PASS: enemy_012 advances through multiple real run frames
+PASS: enemy_016 advances through multiple real run frames
+PASS: boss_000 advances through multiple real run frames
+PASS: boss_final advances through multiple real run frames

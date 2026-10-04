@@ -463,6 +463,7 @@ export type MetroforgeBridge = {
     seed?: number;
   }) => Promise<GenerateAssetResponse>;
   listRooms: (projectPath: string) => Promise<Array<Record<string, unknown> & { id: string }>>;
+  importGameSetAssets: (projectPath: string) => Promise<{ success: boolean; added?: number; skipped?: number; excludedQa?: number; error?: string }>;
   updateRoom: (
     projectPath: string,
     patch: Record<string, unknown>,
