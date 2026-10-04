@@ -1,0 +1,43 @@
+{
+  "scope": "Asset workshop frontend and artwork preservation",
+  "regressionTests": 43,
+  "uiChecks": 90,
+  "assetUiChecks": 34,
+  "frontendChecks": 17,
+  "creationChecks": 33,
+  "libraryChecks": 6,
+  "strictUiFindings": 0,
+  "portable": "E:/MetroForgeData/Releases/MetroForge-assets-20261004-v5/MetroForge.exe",
+  "nativeWaypoints": 161,
+  "nativeHp": 76,
+  "bundledGameFiles": 310,
+  "sourceHashes": {
+    "packages/generation/src/manual-asset.ts": "9d933d69f18191b3a32a12eead29bfe6b36c9562d0d357c249fc693388a13612",
+    "packages/generation/src/manual-asset.test.ts": "af97568bc1aba031b86d291eedbad27d9b64274fdc72de5989f55d2c2951ef91",
+    "packages/generation/src/asset-history.ts": "f2279e51f68c273c4ded9f775c29b773ab6e68d908bbc9b4802f2fdbdd391a93",
+    "packages/generation/src/asset-history.test.ts": "7faa4b6b9206db97fe53f20319d7ba79474709216c33e85cc2ee294bd27f61eb",
+    "packages/assets/src/asset-pipeline.ts": "d8713225ed161155fffa3142e55130a8adbab45acba3016b1557640ff3508cc0",
+    "apps/desktop/electron/handlers.ts": "c06496af03752ebda6aa9f73c30b8ad4adb008bd162f248a3adb1520b9136ecd",
+    "apps/desktop/src/studio/GenerateAsset.tsx": "41186ed4f6cf7d4b33f93cfc8ee04c774fe016eb2fa153acc8f68d2cf2b7409a",
+    "apps/desktop/src/studio/metroforge-api.ts": "7ac6f99cfed7f762155984aff243be069e1f178f4d7156d8d9a19e72d40967c8",
+    "UX-CONTRACT.md": "fb125a655301948d56fe128454dcebef0b3c9a9b29c2f4f6034b4c6178bf84e3",
+    "packages/generation/src/asset-files.ts": "8f244a94df43262cbc4c46155c769757ed54234616ab55eda9b93bd68d7667de",
+    "packages/generation/src/manual-asset-promotion.test.ts": "322f021f10f49a0dc9d8d92e787975b9dcc5ad11d6bf9fb5f7a82c4e2dcda0d5",
+    "packages/assets/src/index.ts": "d22367404e23a65457f4185c392d4b745dc0b1811ccd28d424921e13b41a6414",
+    "apps/desktop/src/studio/StudioContext.tsx": "0cb92d683f0d6f835fa3f7e069e3edf824b6e216f18c4a203a98b9939caa7920",
+    "scripts/verify-assets-frontend.mjs": "1ee286d75db2ef6df728605b064d6ef9476128416f9caee4940840ce6e2038ca",
+    "packages/assets/src/manual-image-prompt.test.ts": "f177eebfcb383e3797a43c4dc28ef055a482083d5f2b9a8b452b3b8cffd5c27d",
+    "packages/generation/src/asset-files.test.ts": "bc531a8510e35171a56335e11ebec118059535554fd96b5a15893b365226d574",
+    "scripts/verify-assets-ui.mjs": "ad35e8ac77d7341e1821b0c19c99739119ebf0e6c896cb35992aeb12ad5483f8",
+    "apps/desktop/src/styles.css": "72b359d83cc1e40837cba0d87c4f87d500a46e5036fb62ab579908836d9cdd6c",
+    "scripts/verify-bundled-demo.mjs": "9a1c0d4c2ddebc785eabd3f5b8ab3d044b7426c6f15ffbdc27df91c72b1b3110",
+    "apps/desktop/src/studio/AssetsGallery.tsx": "2588dd2bad6c8c3c6ce51701426b98fe52d52d126ad9d95371d4795f4d82be5b"
+  },
+  "productionReady": false,
+  "limits": [
+    "Controlled ComfyUI HTTP server returns synthetic test tiles; this proves IPC and file workflows, not live NVIDIA/hosted inference or image quality.",
+    "Unity StreamingAssets copies are synchronized in file fixtures; no new Unity Editor or Unreal validation in this increment.",
+    "Fresh LOCAL_ONLY Quantum generation uses deterministic template art. Final art, animation, audio, biome expansion and durable full-world saves remain ongoing.",
+    "Promotion rolls back in-process write failures; it is not a crash-safe multi-file transaction."
+  ]
+}

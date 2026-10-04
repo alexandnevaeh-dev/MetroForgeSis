@@ -1,11 +1,13 @@
-import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { AssetPipeline, type GeneratedAsset } from '@metroforge/assets';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { AssetPipeline, derivedSourceRelPath, type GeneratedAsset } from '@metroforge/assets';
 import { licenseFieldsForProvider } from '@metroforge/ai';
 import { GameDNASchema, type DesignBible, type StyleBible } from '@metroforge/schemas';
-import { loadConfig } from '@metroforge/shared';
-import { recordAssetVersion } from './asset-history.js';
-import { descendantRelPaths, markDescendantsDirty, defaultCharacterLineageEdges } from './artifact-lineage.js';
+import { loadConfig, genreSupports } from '@metroforge/shared';
+import { listAssetHistory, type AssetVersionRecord } from './asset-history.js';
+import { randomUUID } from 'node:crypto';
+import { assertAssetId, assetFile, fileBytes, sameBytes, commitAssetFiles, invalidateAssetValidation, lockAssetMutation } from './asset-files.js';
+import { markDescendantsDirty, defaultCharacterLineageEdges } from './artifact-lineage.js';
 
 export type ManualAssetType =
   | 'character_concept'
@@ -31,6 +33,8 @@ export interface ManualAssetRequest {
   description: string;
   assetType: ManualAssetType;
   assetId?: string;
+  operation?: 'create' | 'replace';
+  providerEnabled?: Record<string, boolean>;
   seed?: number;
   mode?: ManualGenerationMode;
   generationMode?: import('@metroforge/shared').GenerationMode;
@@ -94,172 +98,154 @@ function slugifyAssetId(description: string): string {
 }
 
 export async function generateManualAsset(request: ManualAssetRequest): Promise<ManualAssetResult> {
-  const errors: string[] = [];
   const warnings: string[] = [];
-
-  const dnaPath = join(request.projectPath, 'game_dna.json');
-  if (!existsSync(dnaPath)) {
-    return { success: false, errors: ['game_dna.json not found — select a generated project'], warnings };
-  }
-
-  const gameDna = GameDNASchema.parse(JSON.parse(readFileSync(dnaPath, 'utf-8')));
-  let artBible: DesignBible['art'] | undefined;
-  const biblePath = join(request.projectPath, 'design_bible.json');
-  if (existsSync(biblePath)) {
-    try {
-      const bible = JSON.parse(readFileSync(biblePath, 'utf-8')) as DesignBible;
-      artBible = bible.art;
-    } catch {
-      warnings.push('design_bible.json unreadable — using Game DNA style only');
-    }
-  }
-  let styleBible: StyleBible | undefined;
-  const stylePath = join(request.projectPath, 'style_bible.json');
-  if (existsSync(stylePath)) {
-    try {
-      styleBible = JSON.parse(readFileSync(stylePath, 'utf-8')) as StyleBible;
-    } catch {
-      warnings.push('style_bible.json unreadable — using Game DNA style only');
-    }
-  }
-
-  const config = loadConfig();
-  const assetId = request.assetId ?? slugifyAssetId(request.description);
-  const relPath = inferAssetPath(request.assetType, assetId);
-  const seed = request.seed ?? Math.floor(Math.random() * 1_000_000);
-
-  let asset: GeneratedAsset;
+  let release: (() => void) | undefined;
   try {
-    const pipeline = new AssetPipeline();
-    asset = await pipeline.generateManual({
-      gameDna,
-      artBible,
-      styleBible,
-      description: request.description,
-      assetType: request.assetType,
-      assetId,
-      relPath,
-      outputDir: request.projectPath,
-      seed,
-      mode: request.generationMode ?? 'HYBRID_FREE',
-      comfyuiUrl: process.env.COMFYUI_BASE_URL,
-      diffusersPython: process.env.DIFFUSERS_PYTHON,
-      diffusersModelId: process.env.DIFFUSERS_MODEL_ID,
-      nvidiaApiKey: process.env.NVIDIA_API_KEY,
+    if (!request.description?.trim() || request.description.length > 8000) throw new Error('Enter a prompt of 1–8000 characters');
+    const types = ['character_concept', 'player_sprite', 'enemy', 'boss', 'npc', 'portrait', 'weapon', 'item', 'prop', 'tileset', 'tile', 'background', 'ui_icon', 'ui_panel', 'vfx_texture'];
+    if (!types.includes(request.assetType)) throw new Error('Unknown asset type');
+    if (request.seed !== undefined && (!Number.isSafeInteger(request.seed) || request.seed < 0 || request.seed > 2147483647)) throw new Error('Seed must be a whole number from 0 to 2147483647');
+    if (request.operation && !['create', 'replace'].includes(request.operation)) throw new Error('Unknown artwork operation');
+    if (request.generationMode && !['FREE_ONLY', 'LOCAL_ONLY', 'HYBRID_FREE', 'CUSTOM', 'NVIDIA_ONLY', 'OFFLINE', 'FASTEST', 'HIGHEST_QUALITY', 'LOW_VRAM', 'LOWEST_COST', 'BALANCED', 'COMMERCIAL_SAFE'].includes(request.generationMode)) throw new Error('Unknown generation mode');
+    release = lockAssetMutation(request.projectPath);
+    const watched = new Map<string, Buffer | null>();
+    const watch = (path: string) => { const full = assetFile(request.projectPath, path); watched.set(full, fileBytes(full)); return full; };
+    const dnaPath = watch('game_dna.json');
+    if (!existsSync(dnaPath)) throw new Error('game_dna.json not found — select a generated project');
+    const gameDna = GameDNASchema.parse(JSON.parse(readFileSync(dnaPath, 'utf8')));
+    let artBible: DesignBible['art'] | undefined;
+    const biblePath = watch('design_bible.json');
+    if (existsSync(biblePath)) {
+      try { artBible = (JSON.parse(readFileSync(biblePath, 'utf8')) as DesignBible).art; }
+      catch { warnings.push('Design bible unreadable — using Game DNA style only'); }
+    }
+    let styleBible: StyleBible | undefined;
+    const stylePath = watch('style_bible.json');
+    if (existsSync(stylePath)) {
+      try { styleBible = JSON.parse(readFileSync(stylePath, 'utf8')) as StyleBible; }
+      catch { warnings.push('Style bible unreadable — using Game DNA style only'); }
+    }
+    const manifestPath = watch('generation_manifest.json');
+    const manifest = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, 'utf8')) as ManualManifest : { artifacts: [] };
+    if (!Array.isArray(manifest.artifacts)) throw new Error('Asset registry is invalid; repair it before generating artwork');
+    const assetId = request.assetId ?? `${slugifyAssetId(request.description)}_${randomUUID()}`;
+    assertAssetId(assetId);
+    const versions = listAssetHistory(request.projectPath, assetId);
+    const matches = manifest.artifacts.filter(a => a.id === assetId);
+    if (matches.length > 1) throw new Error('Asset ID is ambiguous in this project');
+    // Existing callers with an explicit ID retain replacement semantics; new UI states intent explicitly.
+    const replacing = request.operation === 'replace' || (!request.operation && matches.length === 1);
+    const registered = matches[0];
+    if (replacing && !registered) throw new Error('Select a registered asset to replace');
+    if (!replacing && registered) throw new Error('Asset ID already exists; create an alternative with a new ID');
+    if (replacing && (Number(registered!.frameCount ?? 1) > 1 || /animation|sheet/i.test(String(registered!.type ?? '')))) {
+      throw new Error('Animation sheets must be rebuilt with the animation workflow; a single image cannot replace them');
+    }
+    const relPath = replacing ? String(registered!.path ?? '') : inferAssetPath(request.assetType, assetId);
+    if (!relPath.startsWith('assets/') || !relPath.endsWith('.png')) throw new Error('Only registered PNG artwork within assets/ can be replaced');
+    if (manifest.artifacts.some(a => a.id !== assetId && a.path === relPath)) throw new Error('Artwork path is shared by multiple asset IDs');
+    const target = watch(relPath);
+    if (replacing && !existsSync(target)) throw new Error('Registered artwork is missing; repair it before replacement');
+    if (!replacing && existsSync(target)) throw new Error('Artwork path already exists; existing files were preserved');
+    const sourceRel = derivedSourceRelPath(relPath);
+    const source = watch(sourceRel);
+    if (!replacing && existsSync(source)) throw new Error('Source artwork already exists; existing files were preserved');
+    const runtimeRel = `Assets/StreamingAssets/${relPath}`;
+    const runtime = watch(runtimeRel);
+    if (existsSync(runtime) && !sameBytes(fileBytes(target), fileBytes(runtime))) throw new Error('Asset runtime copies differ; reconcile them before replacing');
+    const runtimeSource = watch(`Assets/StreamingAssets/${sourceRel}`);
+    if (existsSync(runtimeSource) && !sameBytes(fileBytes(source), fileBytes(runtimeSource))) throw new Error('Source runtime copies differ; reconcile them before replacing');
+    watch('validation_report.json');
+    const stageRel = `.metroforge/manual-art/${randomUUID()}`;
+    const stage = assetFile(request.projectPath, stageRel);
+    mkdirSync(stage, { recursive: true });
+    for (const [path, bytes] of [[relPath, fileBytes(target)], [sourceRel, fileBytes(source)]] as const) {
+      if (bytes) { const staged = assetFile(stage, path); mkdirSync(dirname(staged), { recursive: true }); writeFileSync(staged, bytes); }
+    }
+    const config = loadConfig();
+    const seed = request.seed ?? Math.floor(Math.random() * 1_000_000);
+    const asset = await new AssetPipeline().generateManual({
+      gameDna, artBible, styleBible, description: request.description, assetType: request.assetType,
+      assetId, relPath, outputDir: stage, seed, mode: request.generationMode ?? 'HYBRID_FREE',
+      comfyuiUrl: process.env.COMFYUI_BASE_URL, diffusersPython: process.env.DIFFUSERS_PYTHON,
+      diffusersModelId: process.env.DIFFUSERS_MODEL_ID, nvidiaApiKey: process.env.NVIDIA_API_KEY,
       nvidiaApiBaseUrl: process.env.NVIDIA_API_BASE_URL,
       nvidiaImageModel: request.nvidiaImageModel ?? process.env.NVIDIA_IMAGE_MODEL,
       huggingfaceApiKey: process.env.HUGGINGFACE_API_KEY ?? process.env.HF_TOKEN,
-      huggingfaceImageModel: process.env.HF_IMAGE_MODEL,
-      automatic1111Url: process.env.AUTOMATIC1111_BASE_URL,
-      stabilityApiKey: process.env.STABILITY_API_KEY,
-      deepaiApiKey: process.env.DEEPAI_API_KEY,
-      replicateApiToken: process.env.REPLICATE_API_TOKEN,
-      pollinationsBaseUrl: process.env.POLLINATIONS_BASE_URL,
-      pollinationsModel: process.env.POLLINATIONS_IMAGE_MODEL,
-      pollinationsApiKey: process.env.POLLINATIONS_API_KEY,
-      enablePollinations: process.env.POLLINATIONS_ENABLED === 'true',
-      ollamaBaseUrl: config.ollamaBaseUrl,
-      hardwareProfile: request.hardwareProfile,
+      huggingfaceImageModel: process.env.HF_IMAGE_MODEL, automatic1111Url: process.env.AUTOMATIC1111_BASE_URL,
+      stabilityApiKey: process.env.STABILITY_API_KEY, deepaiApiKey: process.env.DEEPAI_API_KEY,
+      replicateApiToken: process.env.REPLICATE_API_TOKEN, pollinationsBaseUrl: process.env.POLLINATIONS_BASE_URL,
+      pollinationsModel: process.env.POLLINATIONS_IMAGE_MODEL, pollinationsApiKey: process.env.POLLINATIONS_API_KEY,
+      enablePollinations: process.env.POLLINATIONS_ENABLED === 'true', ollamaBaseUrl: config.ollamaBaseUrl,
+      hardwareProfile: request.hardwareProfile, providerEnabled: request.providerEnabled,
     });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return {
-      success: false,
-      errors: [message],
-      warnings,
-    };
-  }
-
-  if (asset.fallbackGenerated) {
-    return {
-      success: false,
-      asset,
-      errors: [
-        asset.fallbackReason ??
-          'Manual Generator refused procedural placeholder — image provider failed or unavailable',
-      ],
-      warnings,
-    };
-  }
-
-  mkdirSync(dirname(join(request.projectPath, relPath)), { recursive: true });
-  const targetFull = join(request.projectPath, relPath);
-  if (existsSync(targetFull)) {
-    recordAssetVersion(request.projectPath, assetId, {
-      path: relPath,
-      prompt: request.description,
-      seed,
-      manual: true,
-    });
-  }
-  writeFileSync(targetFull, asset.buffer);
-
-  const characterId = characterLineageRootFor(request.assetType, assetId);
-  let dirtyReason = '';
-  const dirtyIds = new Set<string>();
-  if (characterId) {
-    const invalidation = markDescendantsDirty(defaultCharacterLineageEdges(characterId), characterId);
-    dirtyReason = invalidation.reason;
-    warnings.push(invalidation.reason);
-    for (const descendant of descendantRelPaths(characterId)) {
-      dirtyIds.add(descendant.id);
-      const full = join(request.projectPath, descendant.path);
-      if (existsSync(full)) {
-        try {
-          unlinkSync(full);
-        } catch {
-          warnings.push(`Could not remove stale descendant ${descendant.path}`);
-        }
-      }
+    if (asset.fallbackGenerated) throw new Error(asset.fallbackReason ?? 'Image provider failed; existing artwork was preserved');
+    if (asset.id !== assetId || asset.path !== relPath || !asset.buffer?.length) throw new Error('Image provider returned an unexpected asset');
+    if (asset.sourcePath && asset.sourcePath !== sourceRel) throw new Error('Image provider returned an unexpected source path');
+    for (const [path, before] of watched) {
+      assetFile(request.projectPath, path.slice(resolve(request.projectPath).length + 1).replace(/\\/g, '/'));
+      if (!sameBytes(before, fileBytes(path))) throw new Error('Project changed while artwork was generating; existing files were preserved. Retry with the current project.');
     }
-  }
-
-  const manifestPath = join(request.projectPath, 'generation_manifest.json');
-  if (existsSync(manifestPath)) {
-    try {
-      const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8')) as {
-        artifacts?: Array<Record<string, unknown>>;
-      };
-      const artifacts = manifest.artifacts ?? [];
-      const idx = artifacts.findIndex((a) => a.id === assetId);
-      const license = licenseFieldsForProvider(asset.provider);
-      const entry = {
-        id: assetId,
-        path: relPath,
-        type: 'texture',
-        provider: asset.provider,
-        modelId: asset.modelId,
-        fallbackGenerated: asset.fallbackGenerated,
-        critiquePassed: asset.critiquePassed,
-        critiqueScore: asset.critiqueScore,
-        maturity: asset.maturity,
-        productionReady: asset.productionReady,
-        sourceType: asset.sourceType,
-        sourcePath: asset.sourcePath,
-        selectedProvider: asset.selectedProvider ?? asset.provider,
-        selectedModel: asset.selectedModel ?? asset.modelId,
-        requestedCapability: asset.requestedCapability ?? 'IMAGE_GENERATION',
-        productionAllowed: asset.productionAllowed,
-        ...license,
-        manual: true,
-        prompt: request.description,
-        seed,
-      };
-      if (idx >= 0) artifacts[idx] = { ...artifacts[idx], ...entry };
-      else artifacts.push(entry);
-      if (dirtyIds.size > 0) {
-        for (const row of artifacts) {
-          const id = String(row.id ?? '');
-          if (!dirtyIds.has(id) && !dirtyIds.has(`${id}_sheet`)) continue;
-          row.dirty = true;
-          row.dirtyReason = dirtyReason;
-        }
-      }
-      writeFileSync(manifestPath, JSON.stringify({ ...manifest, artifacts }, null, 2));
-    } catch {
-      warnings.push('Could not update generation_manifest.json');
+    const writes = new Map<string, Buffer>();
+    if (replacing) {
+      const version = Math.max(0, ...versions.map(v => v.version)) + 1;
+      if (!Number.isSafeInteger(version)) throw new Error('Asset history is invalid');
+      const backupRel = `.metroforge/asset_history/${assetId}_v${version}.png`;
+      const backup = assetFile(request.projectPath, backupRel);
+      if (existsSync(backup)) throw new Error('History backup already exists; existing versions were preserved');
+      writes.set(backup, fileBytes(target)!);
+      const sourceBackupRel = `.metroforge/asset_history/${assetId}_v${version}_source.png`;
+      const sourceBackup = assetFile(request.projectPath, sourceBackupRel);
+      if (existsSync(sourceBackup)) throw new Error('Source history backup already exists');
+      if (existsSync(source)) writes.set(sourceBackup, fileBytes(source)!);
+      manifest.assetHistory = { ...manifest.assetHistory, [assetId]: [...versions, {
+        version, path: relPath, backupPath: backupRel, timestamp: new Date().toISOString(),
+        artifact: { ...registered },
+        sourcePath: existsSync(source) ? sourceRel : undefined,
+        sourceBackupPath: existsSync(source) ? sourceBackupRel : undefined,
+        prompt: typeof registered!.prompt === 'string' ? registered!.prompt : undefined,
+        seed: typeof registered!.seed === 'number' ? registered!.seed : undefined,
+        provider: typeof registered!.provider === 'string' ? registered!.provider : undefined, manual: true,
+      }] };
     }
-  }
+    writes.set(target, asset.buffer);
+    if (existsSync(runtime)) writes.set(runtime, asset.buffer);
+    if (asset.sourcePath) {
+      const sourceBytes = fileBytes(assetFile(stage, asset.sourcePath));
+      if (!sourceBytes) throw new Error('Generated source artwork is missing');
+      writes.set(source, sourceBytes);
+      if (existsSync(runtimeSource)) writes.set(runtimeSource, sourceBytes);
+    }
+    const { buffer: _buffer, ...metadata } = asset;
+    const entry = { ...registered, ...metadata, type: registered?.type ?? 'texture', ...licenseFieldsForProvider(asset.provider),
+      manual: true, prompt: request.description, seed, dirty: false, dirtyReason: undefined };
+    if (replacing) manifest.artifacts[manifest.artifacts.indexOf(registered!)] = entry;
+    else manifest.artifacts.push(entry);
+    if (replacing) {
+      const explicitEdges = manifest.artifacts.flatMap(row => Array.isArray(row.parentArtifactIds)
+        ? row.parentArtifactIds.filter((id): id is string => typeof id === 'string').map(parentId => ({ parentId, childId: String(row.id), reason: 'derived_artwork' })) : []);
+      const legacyEdges = characterLineageRootFor(request.assetType, assetId) && !genreSupports(gameDna.archetype, 'supportsFreePlanarMovement')
+        ? defaultCharacterLineageEdges(assetId) : [];
+      const invalidation = markDescendantsDirty([...explicitEdges, ...legacyEdges], assetId);
+      const ids = new Set(invalidation.dirtyIds);
+      for (const row of manifest.artifacts) {
+        if (!ids.has(String(row.id)) && !ids.has(`${String(row.id)}_sheet`)) continue;
+        row.dirty = true; row.productionReady = false; row.dirtyReason = invalidation.reason;
+      }
+      if (ids.size) warnings.push('Derived animations need rebuilding. Existing sheets and poses have been preserved.');
+    }
+    writes.set(manifestPath, Buffer.from(JSON.stringify(manifest, null, 2)));
+    invalidateAssetValidation(request.projectPath, writes);
+    commitAssetFiles(writes);
+    warnings.push('Restart the game preview and validate the updated artwork.');
+    return { success: true, asset, errors: [], warnings };
+  } catch (error) {
+    return { success: false, errors: [error instanceof Error ? error.message : String(error)], warnings };
+  } finally { release?.(); }
+}
 
-  return { success: true, asset, errors, warnings };
+interface ManualManifest {
+  artifacts: Array<Record<string, unknown>>;
+  assetHistory?: Record<string, AssetVersionRecord[]>;
+  [key: string]: unknown;
 }

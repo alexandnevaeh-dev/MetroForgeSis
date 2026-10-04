@@ -452,6 +452,7 @@ export type MetroforgeBridge = {
     generationMode?: string;
     variants?: number;
     assetId?: string;
+    operation?: 'create' | 'replace';
     seed?: number;
   }) => Promise<GenerateAssetResponse>;
   listRooms: (projectPath: string) => Promise<Array<Record<string, unknown> & { id: string }>>;

@@ -3311,6 +3311,12 @@ textarea {
   gap: 0.55rem;
   min-height: calc(100vh - 11rem);
 }
+.generate-asset-layout > .panel {
+  min-width: 0;
+}
+.generate-asset-layout .settings-dl dd {
+  overflow-wrap: anywhere;
+}
 @media (max-width: 1440px) {
   .dashboard-kpi-row {
     grid-template-columns: 1fr;

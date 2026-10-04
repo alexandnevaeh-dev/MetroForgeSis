@@ -1,0 +1,36 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\manual-assets-review\\reports\\game-tests\\20261004-assets-demo\\1791089622352",
+  "scope": "Read-only final portable Projects library proof; game files must remain unchanged. Does not launch or replay the native game.",
+  "checks": [
+    {
+      "label": "bundled game appears in actual Projects library",
+      "passed": true
+    },
+    {
+      "label": "library labels the correct separate Quantum genre",
+      "passed": true
+    },
+    {
+      "label": "Play action is available for the bundled game",
+      "passed": true
+    },
+    {
+      "label": "app remains hidden during library verification",
+      "passed": true
+    },
+    {
+      "label": "library inspection preserves every bundled game file",
+      "passed": true
+    },
+    {
+      "label": "no renderer errors",
+      "passed": true
+    }
+  ],
+  "captures": [
+    "bundled-demo-library.png"
+  ],
+  "passed": true,
+  "packaged": "E:/MetroForgeData/Releases/MetroForge-assets-20261004-v5/MetroForge.exe",
+  "gameFiles": 310
+}

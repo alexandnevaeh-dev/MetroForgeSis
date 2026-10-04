@@ -55,4 +55,40 @@ describe('asset-history', () => {
     expect(readFileSync(runtime, 'utf8')).toBe('runtime edit');
     expect(readFileSync(join(projectPath, 'assets', 'test.png'), 'utf8')).toBe('library edit');
   });
+
+  it('keeps the current artwork as a restorable version when restoring an older one', () => {
+    recordAssetVersion(projectPath, 'test_asset', { path: 'assets/test.png' });
+    writeFileSync(join(projectPath, 'assets/test.png'), 'v2');
+    expect(restoreAssetVersion(projectPath, 'test_asset', 1).success).toBe(true);
+    expect(listAssetHistory(projectPath, 'test_asset')).toHaveLength(2);
+    expect(restoreAssetVersion(projectPath, 'test_asset', 2).success).toBe(true);
+    expect(readFileSync(join(projectPath, 'assets/test.png'), 'utf8')).toBe('v2');
+  });
+
+  it('refuses traversal and missing source files without registering versions', () => {
+    expect(() => recordAssetVersion(projectPath, '../escape', { path: 'assets/test.png' })).toThrow();
+    expect(() => recordAssetVersion(projectPath, 'test_asset', { path: '../escape.png' })).toThrow();
+    expect(() => recordAssetVersion(projectPath, 'test_asset', { path: 'assets/missing.png' })).toThrow('missing');
+    expect(listAssetHistory(projectPath, 'test_asset')).toEqual([]);
+  });
+
+  it('preserves corrupt history and rejects tampered restoration paths', () => {
+    writeFileSync(join(projectPath, 'generation_manifest.json'), '{broken');
+    expect(() => listAssetHistory(projectPath, 'test_asset')).toThrow();
+    expect(restoreAssetVersion(projectPath, 'test_asset', 1).success).toBe(false);
+    writeFileSync(join(projectPath, 'generation_manifest.json'), JSON.stringify({ artifacts: [], assetHistory: {
+      test_asset: [{ version: 1, path: '../escape.png', backupPath: '.metroforge/asset_history/test.png' }],
+    } }));
+    expect(restoreAssetVersion(projectPath, 'test_asset', 1).success).toBe(false);
+    expect(readFileSync(join(projectPath, 'assets/test.png'), 'utf8')).toBe('v1');
+  });
+
+  it('reads legacy scene IDs without constructing filenames and rejects malformed version lists', () => {
+    expect(listAssetHistory(projectPath, 'Player.tscn')).toEqual([]);
+    expect(listAssetHistory(projectPath, 'constructor')).toEqual([]);
+    writeFileSync(join(projectPath, 'generation_manifest.json'), JSON.stringify({ artifacts: [], assetHistory: { test_asset: 'broken' } }));
+    expect(() => listAssetHistory(projectPath, 'test_asset')).toThrow('history is invalid');
+    expect(restoreAssetVersion(projectPath, 'test_asset', 1).success).toBe(false);
+    expect(readFileSync(join(projectPath, 'assets/test.png'), 'utf8')).toBe('v1');
+  });
 });

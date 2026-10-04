@@ -498,6 +498,7 @@ export { nvidiaModelForImageTask, NVIDIA_FLUX_KONTEXT, NVIDIA_FLUX_DEV } from '.
 export {
   AssetPipeline,
   derivedSourceRelPath,
+  buildManualImagePrompt,
   compiledSpriteFrameSize,
   VFX_TEXTURES,
   proceduralProductionIntent,

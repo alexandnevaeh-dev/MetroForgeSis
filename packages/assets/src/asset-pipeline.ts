@@ -1027,11 +1027,18 @@ function checkpointFullPath(outputDir: string, relPath: string): string {
   return join(outputDir, relPath.replace(/\//g, sep));
 }
 
-function buildManualImagePrompt(description: string, styleHint: string, gameTitle: string): string {
+export function buildManualImagePrompt(description: string, styleHint: string, gameTitle: string, archetype: GameDNA['archetype'] = 'SIDE_VIEW_METROIDVANIA', assetType = 'player_sprite'): string {
   const title = sanitizeImagePromptText(gameTitle) || 'this game';
   const style = sanitizeImagePromptText(styleHint) || 'pixel art';
   const desc = sanitizeImagePromptText(description) || 'game sprite';
-  return `${desc}. Art style: ${style}. Pixel art for ${title}.`;
+  const projection = genreSupports(archetype, 'supportsFreePlanarMovement')
+    ? 'Top-down game, overhead three-quarter view, consistent ground plane and lighting.'
+    : 'Side-view game, consistent horizontal ground plane and lighting.';
+  const role = ['player_sprite', 'enemy', 'boss', 'npc', 'character_concept'].includes(assetType)
+    ? 'Single full-body character, clear silhouette, feet aligned to the ground, no contact sheet.'
+    : assetType === 'background' ? 'Environment matching the game camera and biome architecture.'
+      : 'Game asset matching the camera, scale and material detail of this project.';
+  return `${desc}. Art style: ${style}. For ${title}. ${projection} ${role}`;
 }
 
 function loadCheckpoint(outputDir: string, relPath: string): Buffer | null {
@@ -1255,7 +1262,9 @@ export class AssetPipeline {
 
     const authoredKit = resolveAuthoredSideViewKit({profile:options.profile,gameDna:options.gameDna,characterVisualDna:options.characterVisualDna});
     const useCourierKit = authoredKit !== null;
-    const useCanopyActors = shouldUseCanopyEnvironment(options.gameDna) && !imageGen;
+    // A still-image provider must not replace complete compatible pose families
+    // with synthetic motion derived from a single generated frame.
+    const useCanopyActors = shouldUseCanopyEnvironment(options.gameDna);
     const canopyAsset = (id: string,path: string,buffer: Buffer): GeneratedAsset => ({
       id,path,buffer,provider:'metroforge-canopy-procedural-v3',fallbackGenerated:false,
       critiquePassed:false,critiqueScore:0,sourceType:'procedural',maturity:'QA_REVIEW',
@@ -2362,7 +2371,7 @@ export class AssetPipeline {
 
       const authoredMasonry =
         !cachedTileset && authoredKit ? loadAuthoredKitTileset(authoredKit, b, tileSize) : null;
-      let canopyAtlas = !cachedTileset && !imageGen && shouldUseCanopyEnvironment(options.gameDna)
+      let canopyAtlas = !cachedTileset && shouldUseCanopyEnvironment(options.gameDna)
         ? canopyTerrainV2() : null;
 
       if (cachedTileset) {
@@ -4196,6 +4205,7 @@ export class AssetPipeline {
    */
   private async generateVfxTextureAsset(opts: {
     spec: VfxSpec;
+    relPath?: string;
     outputDir: string;
     seed: number;
     imageGen: ImageGenerator | null;
@@ -4207,7 +4217,7 @@ export class AssetPipeline {
     allowProceduralFallback?: boolean;
     extraDescription?: string;
   }): Promise<GeneratedAsset> {
-    const vfxPath = `assets/vfx/${opts.spec.id}.png`;
+    const vfxPath = opts.relPath ?? `assets/vfx/${opts.spec.id}.png`;
     if (opts.resume) {
       const cached = loadCheckpoint(opts.outputDir, vfxPath);
       if (cached) {
@@ -4658,6 +4668,7 @@ export class AssetPipeline {
       };
       return this.generateVfxTextureAsset({
         spec: { ...spec, prompt: opts.description || spec.prompt },
+        relPath: opts.relPath,
         outputDir: opts.outputDir,
         seed: opts.seed,
         imageGen,
@@ -4714,8 +4725,9 @@ export class AssetPipeline {
     }
     const { width, height } = frame;
 
-    const styleHint =
-      opts.artBible?.characterGuidelines.player ?? opts.gameDna.identity.visualStyle;
+    const actor = ['player_sprite', 'enemy', 'boss', 'npc', 'character_concept'].includes(opts.assetType);
+    const styleHint = [opts.gameDna.identity.visualStyle,
+      actor ? opts.artBible?.characterGuidelines.player : undefined].filter(Boolean).join('. ');
     const prompt = applyStylePrompt(
       opts.styleBible,
       opts.assetType === 'tileset' || opts.assetType === 'tile'
@@ -4727,7 +4739,7 @@ export class AssetPipeline {
               opts.assetType === 'portrait'
             ? 'UI'
             : 'CHARACTER',
-      buildManualImagePrompt(opts.description, styleHint, opts.gameDna.identity.title),
+      buildManualImagePrompt(opts.description, styleHint, opts.gameDna.identity.title, opts.gameDna.archetype, opts.assetType),
     );
 
     const sourceCandidate = join(opts.outputDir, derivedSourceRelPath(opts.relPath));

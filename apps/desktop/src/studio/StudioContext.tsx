@@ -135,6 +135,7 @@ export function StudioProvider({
 
   const setSelectedPath = useCallback((path: string) => {
     setSelectedPathState(path);
+    setGeneratorPrefill(null);
     try {
       if (path) sessionStorage.setItem(STORAGE_KEY, path);
       else sessionStorage.removeItem(STORAGE_KEY);

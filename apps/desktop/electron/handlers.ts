@@ -1400,6 +1400,7 @@ export function registerIpcHandlers(cwd: string): void {
         description: string;
         assetType: string;
         assetId?: string;
+        operation?: 'create' | 'replace';
         seed?: number;
         generationMode?: GenerationMode;
         variants?: number;
@@ -1410,7 +1411,18 @@ export function registerIpcHandlers(cwd: string): void {
       const hw = new HardwareProfiler().profile();
       const nvidiaImageModel =
         prefs[APP_SETTING_KEYS.nvidiaImageModel]?.trim() || process.env.NVIDIA_IMAGE_MODEL;
-      const variantCount = Math.min(Math.max(request.variants ?? 1, 1), 4);
+      const variantCount = request.variants ?? 1;
+      if (!Number.isInteger(variantCount) || variantCount < 1 || variantCount > 4) {
+        return { success: false, errors: ['Choose 1–4 variants'], warnings: [] };
+      }
+      if (request.assetId && variantCount > 1) {
+        return { success: false, errors: ['Replacement produces one image; generate alternatives separately'], warnings: [] };
+      }
+      const publicResult = (result: Awaited<ReturnType<typeof generateManualAsset>>) => {
+        if (!result.asset) return result;
+        const { buffer: _buffer, ...asset } = result.asset;
+        return { ...result, asset };
+      };
       const runOne = () =>
         workerPool.run('image', () =>
           generateManualAsset({
@@ -1418,12 +1430,14 @@ export function registerIpcHandlers(cwd: string): void {
             description: request.description,
             assetType: request.assetType as import('@metroforge/generation').ManualAssetType,
             assetId: request.assetId,
+            operation: request.operation,
             seed: request.seed,
             generationMode: request.generationMode,
             nvidiaImageModel,
             hardwareProfile: hw.profile,
+            providerEnabled: parseProviderEnabledMap(prefs),
           }),
-        );
+        ).then(publicResult);
       if (variantCount === 1) {
         return runOne();
       }
@@ -1434,14 +1448,15 @@ export function registerIpcHandlers(cwd: string): void {
             projectPath: request.projectPath,
             description: request.description,
             assetType: request.assetType as import('@metroforge/generation').ManualAssetType,
-            assetId: `${request.assetId ?? 'variant'}_${i + 1}`,
-            seed: (request.seed ?? Date.now()) + i * 997,
+            operation: 'create',
+            seed: request.seed === undefined ? undefined : (request.seed + i * 997) % 2147483648,
             generationMode: request.generationMode,
             nvidiaImageModel,
             hardwareProfile: hw.profile,
+            providerEnabled: parseProviderEnabledMap(prefs),
           }),
         );
-        variants.push(result);
+        variants.push(publicResult(result));
       }
       return { success: variants.every((v) => v.success), variants };
     },

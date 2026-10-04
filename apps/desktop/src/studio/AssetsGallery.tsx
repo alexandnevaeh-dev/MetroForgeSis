@@ -15,6 +15,11 @@ import { useStudio } from './StudioContext.js';
 import { Badge, Button, EmptyState, SearchField, Tabs } from './ui/index.js';
 
 export function AssetsGallery() {
+  const { selectedPath } = useStudio();
+  return <ProjectAssetsGallery key={selectedPath} />;
+}
+
+function ProjectAssetsGallery() {
   const { selectedPath, hasActiveProject, openRoom, openGenerator, focusAssetId } = useStudio();
   const [assets, setAssets] = useState<AssetRecord[]>([]);
   const [category, setCategory] = useState('All');
@@ -75,16 +80,28 @@ export function AssetsGallery() {
   };
 
   useEffect(() => {
+    let cancelled = false;
     if (!selectedPath || !selected || !window.metroforge?.getAssetUsages) {
       setUsages(null);
+      setHistory([]);
       return;
     }
-    window.metroforge.getAssetUsages(selectedPath, selected.id).then((u) => setUsages(u?.usedIn ?? null));
+    window.metroforge.getAssetUsages(selectedPath, selected.id).then((u) => {
+      if (!cancelled) setUsages(u?.usedIn ?? null);
+    }).catch(() => { if (!cancelled) setUsages(null); });
     window.metroforge.getAssetHistory?.(selectedPath, selected.id).then((h) => {
+      if (cancelled) return;
       setHistory(h ?? []);
       setCompareVersion(null);
       setCompareUrl(null);
+    }).catch((error: unknown) => {
+      if (cancelled) return;
+      setHistory([]);
+      setCompareVersion(null);
+      setCompareUrl(null);
+      setRestoreStatus(`Version history unavailable: ${error instanceof Error ? error.message : String(error)}`);
     });
+    return () => { cancelled = true; };
   }, [selectedPath, selected?.id]);
 
   useEffect(() => {
@@ -161,7 +178,8 @@ export function AssetsGallery() {
       {hasActiveProject && (
         <>
       <div className="toolbar">
-        <SearchField onClear={() => setQuery('')}
+        <SearchField
+              onClear={() => setQuery('')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search id, path, provider, prompt…"
@@ -313,7 +331,7 @@ export function AssetsGallery() {
                   </dd>
                 </>
               )}
-              {history.length > 0 && (
+              {(history.length > 0 || restoreStatus) && (
                 <>
                   <dt>Version History</dt>
                   <dd className="version-list">
