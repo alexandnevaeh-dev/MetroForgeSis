@@ -1763,7 +1763,9 @@ export function registerIpcHandlers(cwd: string): void {
     };
   });
 
-  ipcMain.handle('list-generation-queue', () => generationQueue.list());
+  ipcMain.handle('list-generation-queue', () => generationQueue.list().map(({ id, type, status, label, createdAt, error }) => ({
+    id, type, status, label, createdAt, error,
+  })));
 
   ipcMain.handle('cancel-generation-job', async (_event, jobId: string) => ({
     cancelled: generationQueue.cancel(jobId),

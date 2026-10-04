@@ -474,7 +474,7 @@ export type MetroforgeBridge = {
   listGenerationQueue: () => Promise<
     Array<{ id: string; type: string; status: string; label: string; createdAt: string; error?: string }>
   >;
-  cancelGenerationJob: (jobId: string) => Promise<unknown>;
+  cancelGenerationJob: (jobId: string) => Promise<{ cancelled: boolean }>;
   revealProjectFolder: (projectPath: string) => Promise<unknown>;
   onGenerationEvent: (callback: (event: Record<string, unknown>) => void) => () => void;
   onGenerationProgress: (

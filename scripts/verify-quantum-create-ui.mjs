@@ -133,6 +133,8 @@ try {
   check('double click started exactly one job', proof.events.filter(event => event.type === 'GenerationStarted').length === 1);
   const completed = proof.events.find(event => event.type === 'GenerationCompleted');
   check('normal IPC returned runtime-validated success', completed?.validationPassed === true && completed.validationLevel === 'RUNTIME_VALIDATED');
+  const queueSummary = await page.evaluate(() => window.metroforge.listGenerationQueue());
+  check('queue IPC exposes only display summary fields without internal payloads', queueSummary.length > 0 && queueSummary.every(job => Object.keys(job).every(key => ['id', 'type', 'status', 'label', 'createdAt', 'error'].includes(key))));
   check('app reports passing tests only after actual validation', proof.resultText.includes('Tests passed'));
   check('completed progress contains one final row per phase', await page.evaluate(() => {
     const phases = [...document.querySelectorAll('.phase-name')].map(element => element.textContent);
