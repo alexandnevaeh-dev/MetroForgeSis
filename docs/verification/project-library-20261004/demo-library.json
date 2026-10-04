@@ -1,5 +1,5 @@
 {
-  "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\project-library-review\\reports\\game-tests\\20261004-library-demo",
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\project-library-review\\reports\\game-tests\\20261004-library-demo-confirmed",
   "release": "E:/MetroForgeData/Releases/MetroForge-library-20261004-v2",
   "scope": "Read-only real packaged UI opens the byte-verified copied demo from its launch library; no engine launch or paid generation",
   "checks": [
