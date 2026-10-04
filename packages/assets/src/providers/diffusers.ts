@@ -7,6 +7,21 @@ import { GenerationCancelledError, throwIfCancelled, getResourceRoot, getRepoRoo
 import { conditioningPayload } from '../image-conditioning.js';
 export type { ImageGenRequest, ImageGenResult };
 
+/** Keep tokenizer diagnostics out of the generation error shown in the workshop. */
+export function diffusersGenerationError(message: string): string {
+  const prefix = 'Prompt exceeds model token budget: ';
+  if (!message.startsWith(prefix)) return message;
+  try {
+    const budget = JSON.parse(message.slice(prefix.length)) as PromptBudgetResult;
+    const side = budget.positive?.overflow ? budget.positive : budget.negative?.overflow ? budget.negative : undefined;
+    if (side && Number.isFinite(side.tokenCount) && Number.isFinite(side.maxTokens)) {
+      const label = side === budget.positive ? 'prompt' : 'negative prompt';
+      return `The ${label} uses ${side.tokenCount} tokens; this model allows ${side.maxTokens}. Shorten the description or project style and retry. No artwork was replaced.`;
+    }
+  } catch { /* A malformed diagnostic still gets a useful, bounded message. */ }
+  return 'The prompt exceeds this model’s text limit. Shorten the description or project style and retry. No artwork was replaced.';
+}
+
 export interface DiffusersConfig {
   pythonPath?: string;
   workerPath?: string;
@@ -319,7 +334,9 @@ export class DiffusersProvider implements ImageGenerator {
         // caller's declared inferenceSteps and what actually runs can silently diverge, which
         // would make generationRequestHash() (built from the *requested* steps) lie about the
         // *executed* steps. Unset requests keep exactly the previous behavior.
-        steps: request.inferenceSteps ?? Number(process.env.METROFORGE_OPENVINO_STEPS ?? 6),
+        steps: request.inferenceSteps ?? (backend === 'openvino_gpu'
+          ? Number(process.env.METROFORGE_OPENVINO_STEPS ?? 6)
+          : /turbo/i.test(this.modelId) ? 4 : 20),
         openvino_device: process.env.METROFORGE_OPENVINO_DEVICE ?? 'GPU',
         diagnostic_path: process.env.METROFORGE_OPENVINO_DIAGNOSTIC_PATH,
         ...(request.conditioning ? conditioningPayload(request.conditioning) : {}),
@@ -329,7 +346,7 @@ export class DiffusersProvider implements ImageGenerator {
       : await this.runWorker(payload, { timeoutMs: backend === 'cpu' ? this.cpuTimeoutMs : this.gpuTimeoutMs, signal: request.signal });
 
     if (!res.ok || !res.image_base64) {
-      throw new Error(res.error ?? 'Diffusers worker failed');
+      throw new Error(diffusersGenerationError(res.error ?? 'Diffusers worker failed'));
     }
 
     return {

@@ -45,23 +45,25 @@ export class LegacyAssetGenerationGateway implements AssetGenerationGateway {
     }
     try {
       throwIfCancelled(request.signal);
-      const profile: ImageGenerationProfile = ASSET_TYPE_TO_PROFILE[request.assetType] ?? 'CONCEPT_ART';
+      const profile: ImageGenerationProfile = request.imageProfile ?? ASSET_TYPE_TO_PROFILE[request.assetType] ?? 'CONCEPT_ART';
       const result = await this.imageGen.generateImage({
         profile,
         prompt: sanitizeImagePromptText(request.prompt),
         negativePrompt: request.negativePrompt ? sanitizeImagePromptText(request.negativePrompt) : undefined,
-        width: request.width * 4,
-        height: request.height * 4,
+        width: request.sourceWidth ?? request.width * 4,
+        height: request.sourceHeight ?? request.height * 4,
         seed: request.seed,
         signal: request.signal,
         conditioning: request.conditioning,
       });
+      if (result.fallbackGenerated) throw new Error('Image provider returned a procedural placeholder');
       return {
         ok: true,
         backend: this.backend,
         buffer: result.image,
         provider: result.provider,
         modelId: result.modelId,
+        executionMetadata: result.executionMetadata,
         qaPassed: true,
         qaScore: 70,
         fallbackDepth: 0,

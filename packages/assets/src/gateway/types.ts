@@ -1,5 +1,6 @@
 import type { FoundryAssetType } from '@metroforge/schemas';
 import type { ImageConditioning } from '../types/image-gen.js';
+import type { ImageGenerationProfile } from '../types/vision.js';
 
 /** Which generation backend actually produced (or attempted to produce) an asset. */
 export type AssetGenerationBackendId = 'legacy' | 'foundry';
@@ -38,6 +39,10 @@ export interface AssetGenerationRequest {
    *  Preserved on the canonical request so LegacyAssetGenerationGateway stays behaviorally
    *  identical to the pre-migration inline call for every existing caller that sets it. */
   conditioning?: ImageConditioning;
+  /** Explicit manual-art role and bounded inference canvas. Other callers retain legacy defaults. */
+  imageProfile?: ImageGenerationProfile;
+  sourceWidth?: number;
+  sourceHeight?: number;
 }
 
 export interface AssetGenerationLicense {
@@ -52,6 +57,7 @@ export interface AssetGenerationSuccess {
   buffer: Buffer;
   provider: string;
   modelId?: string;
+  executionMetadata?: Record<string, unknown>;
   /** Foundry's own QA verdict — captured for observability/provenance. Does NOT replace
    *  AssetPipeline's existing deterministic-checks + VLM critique, which still run downstream
    *  on whatever bytes a gateway returns, exactly as they did before this integration existed. */

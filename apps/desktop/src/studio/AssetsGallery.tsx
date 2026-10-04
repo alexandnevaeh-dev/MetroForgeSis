@@ -410,7 +410,7 @@ function ProjectAssetsGallery() {
                 onClick={() =>
                   openGenerator({
                     description: selected.prompt || `Regenerate ${selected.id} in this project's art style.`,
-                    assetType: categoryToAssetType(selected.category),
+                    assetType: profileToAssetType(selected.imagePlan?.profile) ?? categoryToAssetType(selected.category),
                     assetId: selected.id,
                   })
                 }
@@ -434,6 +434,16 @@ function ProjectAssetsGallery() {
 }
 
 export { categorizeAssetPath };
+
+function profileToAssetType(profile?: string): string | undefined {
+  const types: Record<string, string> = {
+    CHARACTER: 'player_sprite', ENEMY: 'enemy', BOSS: 'boss', NPC: 'npc',
+    CONCEPT_ART: 'character_concept', PORTRAIT: 'portrait', WEAPON: 'weapon', ITEM: 'item',
+    ENVIRONMENT: 'prop', BACKGROUND: 'background', TILE_SOURCE: 'tileset',
+    ICON: 'ui_icon', UI_ART: 'ui_panel', VFX_TEXTURE: 'vfx_texture',
+  };
+  return profile ? types[profile] : undefined;
+}
 
 function categoryToAssetType(category: string): string {
   switch (category) {

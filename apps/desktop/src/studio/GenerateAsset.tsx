@@ -45,6 +45,8 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
   const [error, setError] = useState('');
   const [history, setHistory] = useState<Array<{ version: number; timestamp: string; provider?: string }>>([]);
   const [usages, setUsages] = useState<Array<{ type: string; id: string; detail?: string }>>([]);
+  const [historyUnavailable, setHistoryUnavailable] = useState(false);
+  const [usageUnavailable, setUsageUnavailable] = useState(false);
   const mounted = useRef(true);
   const action = useRef(false);
   const inspection = useRef(0);
@@ -61,13 +63,19 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
       if (!id || (assetId && id !== assetId)) throw new Error('Artwork is not registered in this project. Refresh the library before replacing it.');
       const [preview, versions, used] = await Promise.all([
         window.metroforge.getAssetPreview(projectPath, assetPath),
-        window.metroforge.getAssetHistory(projectPath, id), window.metroforge.getAssetUsages(projectPath, id),
+        window.metroforge.getAssetHistory(projectPath, id)
+          .then(records => ({ records, unavailable: false }))
+          .catch(() => ({ records: [], unavailable: true })),
+        window.metroforge.getAssetUsages(projectPath, id)
+          .then(result => ({ usedIn: result?.usedIn ?? [], unavailable: false }))
+          .catch(() => ({ usedIn: [], unavailable: true })),
       ]);
       if (!current()) return;
       setSelected({ id, path: assetPath }); setPreviewUrl(preview?.dataUrl ?? null);
-      setHistory(versions ?? []); setUsages(used?.usedIn ?? []);
+      setHistory(versions.records ?? []); setUsages(used.usedIn);
+      setHistoryUnavailable(versions.unavailable); setUsageUnavailable(used.unavailable);
     } catch (err) {
-      if (current()) { setSelected(null); setPreviewUrl(null); setHistory([]); setUsages([]); setError(err instanceof Error ? err.message : String(err)); }
+      if (current()) { setSelected(null); setPreviewUrl(null); setHistory([]); setUsages([]); setHistoryUnavailable(false); setUsageUnavailable(false); setError(err instanceof Error ? err.message : String(err)); }
     } finally { if (current()) setInspecting(false); }
   };
 
@@ -157,6 +165,8 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
       {results.length === 0 && <p className="hint">Describe your next asset, then generate an alternative to preview it here.</p>}
       {results.map((result, index) => <div key={`${result.asset?.id ?? 'failed'}-${index}`} className={result.success ? 'result success' : 'result error'}>
         <p>Alternative {index + 1} · {result.success ? result.asset?.provider ?? 'Saved' : 'Failed'}</p>
+        {result.success && result.asset?.imagePlan && <p className="hint">Game image {result.asset.imagePlan.width} × {result.asset.imagePlan.height} · Source request {result.asset.imagePlan.sourceWidth} × {result.asset.imagePlan.sourceHeight} · {result.asset.imagePlan.transparent ? 'Transparent' : 'Opaque'} canvas</p>}
+        {result.success && result.asset?.executionMetadata?.actualDevice && <p className="hint">Generated on {result.asset.executionMetadata.actualDevice}</p>}
         {result.success && result.asset && <Button aria-pressed={selected?.id === result.asset.id} disabled={busy || inspecting} onClick={() => void inspectAsset(result.asset!.path, result.asset!.id)}>Inspect alternative {index + 1}</Button>}
         {!result.success && <p>{result.errors?.join(' ') ?? 'No image was saved.'}</p>}
         {result.warnings?.map((warning, n) => <p key={n} className="hint">{warning}</p>)}
@@ -167,8 +177,8 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
     <aside className="panel form-stack">
       <h3>Selected artwork</h3>
       <dl className="settings-dl"><dt>Asset</dt><dd>{selected?.id ?? 'Select an alternative'}</dd><dt>Where used</dt><dd>
-        {usages.length ? usages.map(u => u.type.toLowerCase().includes('room') ? <Button key={`${u.type}-${u.id}`} variant="ghost" onClick={() => openRoom(u.id)}>{u.detail ?? u.id}</Button> : <span key={`${u.type}-${u.id}`}>{u.detail ?? u.id} </span>) : selected ? 'No references reported' : '—'}
-      </dd><dt>Version history</dt><dd>{history.length === 0 && (selected ? 'No earlier versions yet' : 'Select artwork to view its history')}
+        {usageUnavailable ? <span role="status">Usage information unavailable. Artwork can still be inspected.</span> : usages.length ? usages.map(u => u.type.toLowerCase().includes('room') ? <Button key={`${u.type}-${u.id}`} variant="ghost" onClick={() => openRoom(u.id)}>{u.detail ?? u.id}</Button> : <span key={`${u.type}-${u.id}`}>{u.detail ?? u.id} </span>) : selected ? 'No references reported' : '—'}
+      </dd><dt>Version history</dt><dd>{historyUnavailable ? <span role="status">Version history unavailable. Refresh the project and retry.</span> : history.length === 0 && (selected ? 'No earlier versions yet' : 'Select artwork to view its history')}
         {history.map(h => <div key={h.version} className="row"><span>Version {h.version} · {new Date(h.timestamp).toLocaleString()}</span><Button size="sm" disabled={busy || inspecting} onClick={() => void restoreVersion(h.version)}>Restore version {h.version}</Button></div>)}
       </dd></dl>
     </aside>

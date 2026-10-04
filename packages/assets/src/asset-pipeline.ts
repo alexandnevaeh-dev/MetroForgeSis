@@ -55,6 +55,7 @@ import {
 } from './player-animation-spec.js';
 import { BOSS_ANIMATION_SPEC, buildBossAnimationSidecar } from './boss-animation-spec.js';
 import { PixelArtProcessor } from './pixel-art-processor.js';
+import { manualImagePlan, compileManualImage, type ManualImagePlan } from './manual-image-plan.js';
 import {
   generateParallaxStrip,
   farPlateLooksLikeOutdoorLandscape,
@@ -150,6 +151,8 @@ export interface GeneratedAsset {
    *  (ImageGenResult.modelId) — absent for procedural/checkpoint/pixel-art-processor assets,
    *  which genuinely have no underlying model to name. */
   modelId?: string;
+  executionMetadata?: Record<string, unknown>;
+  imagePlan?: ManualImagePlan;
   fallbackGenerated: boolean;
   critiquePassed: boolean;
   critiqueScore: number;
@@ -1034,9 +1037,14 @@ export function buildManualImagePrompt(description: string, styleHint: string, g
   const projection = genreSupports(archetype, 'supportsFreePlanarMovement')
     ? 'Top-down game, overhead three-quarter view, consistent ground plane and lighting.'
     : 'Side-view game, consistent horizontal ground plane and lighting.';
-  const role = ['player_sprite', 'enemy', 'boss', 'npc', 'character_concept'].includes(assetType)
-    ? 'Single full-body character, clear silhouette, feet aligned to the ground, no contact sheet.'
+  const role = ['player_sprite', 'enemy', 'boss', 'npc'].includes(assetType)
+    ? 'Single full-body character, clear silhouette, feet aligned to the ground, isolated on flat magenta, no contact sheet.'
     : assetType === 'background' ? 'Environment matching the game camera and biome architecture.'
+      : assetType === 'portrait' ? 'Detailed head and shoulders portrait filling the canvas.'
+      : assetType === 'character_concept' ? 'Detailed full-body character concept illustration, no contact sheet.'
+      : assetType === 'prop' ? 'One complete grounded prop, isolated on flat magenta, no surrounding scene.'
+      : ['weapon', 'item', 'ui_icon', 'vfx_texture'].includes(assetType) ? 'One centered isolated asset on flat magenta, no text or surrounding scene.'
+      : assetType === 'ui_panel' ? 'One clean interface panel filling the canvas, no text, isolated on flat magenta.'
       : 'Game asset matching the camera, scale and material detail of this project.';
   return `${desc}. Art style: ${style}. For ${title}. ${projection} ${role}`;
 }
@@ -4372,6 +4380,7 @@ export class AssetPipeline {
      *  no effect there). Without this, FREE_ONLY/LOCAL_ONLY/COMMERCIAL_SAFE would silently never
      *  reach Foundry routing for a migrated call site. */
     mode?: GenerationMode;
+    manualPlan?: ManualImagePlan;
   }): Promise<GeneratedAsset> {
     if (opts.resume) {
       const cached = loadCheckpoint(opts.outputDir, opts.path);
@@ -4393,6 +4402,7 @@ export class AssetPipeline {
     let provider = 'procedural';
     let fallback = true;
     let modelId: string | undefined;
+    let executionMetadata: Record<string, unknown> | undefined;
     let fallbackErrorMessage: string | undefined;
     let foundryQaPassed: boolean | undefined;
     let foundryQaScore: number | undefined;
@@ -4423,7 +4433,10 @@ export class AssetPipeline {
         seed: opts.seed,
         visualStyle: opts.artDirection,
         pixelArt: true,
-        transparentBackground: true,
+        transparentBackground: opts.manualPlan?.transparent ?? true,
+        imageProfile: opts.manualPlan?.profile,
+        sourceWidth: opts.manualPlan?.sourceWidth,
+        sourceHeight: opts.manualPlan?.sourceHeight,
         commercialUseRequired: opts.mode === 'COMMERCIAL_SAFE',
         freeOnly: opts.mode === 'FREE_ONLY',
         localOnly: opts.mode === 'LOCAL_ONLY' || opts.mode === 'OFFLINE',
@@ -4434,6 +4447,7 @@ export class AssetPipeline {
         buffer = outcome.buffer;
         provider = outcome.provider;
         modelId = outcome.modelId;
+        executionMetadata = outcome.executionMetadata;
         fallback = false;
         if (outcome.backend === 'foundry') {
           foundryQaPassed = outcome.qaPassed;
@@ -4467,8 +4481,10 @@ export class AssetPipeline {
       writeCheckpoint(opts.outputDir, sourcePath, buffer);
     }
 
-    const spriteSource = fallback ? buffer : knockoutVfxBackground(buffer);
-    const processed = this.compileActorFrame(
+    const spriteSource = fallback || opts.manualPlan ? buffer : knockoutVfxBackground(buffer);
+    const processed = opts.manualPlan
+      ? { buffer: compileManualImage(buffer, opts.manualPlan) }
+      : this.compileActorFrame(
       spriteSource,
       opts.spec.width,
       opts.spec.height,
@@ -4476,10 +4492,11 @@ export class AssetPipeline {
     );
 
     const det = runDeterministicAssetChecks(processed.buffer, opts.spec.width, opts.spec.height);
+    if (opts.manualPlan && !det.passed) throw new Error('Generated artwork failed image validation');
     let critiquePassed = det.passed;
     let critiqueScore = 70;
 
-    if (opts.vlmAvailable) {
+    if (opts.vlmAvailable && (!opts.manualPlan || ['CHARACTER', 'ENEMY', 'BOSS', 'NPC'].includes(opts.profile))) {
       throwIfCancelled(opts.signal);
       const assetType =
         opts.profile === 'BOSS' ? 'boss' : opts.profile === 'ENEMY' ? 'enemy' : 'character';
@@ -4504,6 +4521,8 @@ export class AssetPipeline {
       buffer: processed.buffer,
       provider,
       modelId,
+      executionMetadata,
+      imagePlan: opts.manualPlan,
       fallbackGenerated: fallback,
       critiquePassed,
       critiqueScore,
@@ -4631,6 +4650,8 @@ export class AssetPipeline {
     providerEnabled?: Record<string, boolean>;
   }): Promise<GeneratedAsset> {
     const tileSize = opts.gameDna.technical.tileSize;
+    const existingFullPath = join(opts.outputDir, opts.relPath);
+    const plan = manualImagePlan(opts.assetType, opts.assetId, existsSync(existingFullPath) ? readFileSync(existingFullPath) : undefined);
     const negativePrompt = applyStyleNegativePrompt(
       opts.styleBible,
       opts.artBible?.negativePrompts.join(', '),
@@ -4657,73 +4678,16 @@ export class AssetPipeline {
       providerEnabled: opts.providerEnabled,
     });
 
-    if (opts.assetType === 'vfx_texture') {
-      const spec = VFX_TEXTURES.find((v) => v.id === opts.assetId) ?? {
-        id: opts.assetId,
-        size: 24,
-        core: [255, 240, 180, 255] as [number, number, number, number],
-        edge: [255, 80, 40, 0] as [number, number, number, number],
-        style: 'burst' as const,
-        prompt: opts.description,
-      };
-      return this.generateVfxTextureAsset({
-        spec: { ...spec, prompt: opts.description || spec.prompt },
-        relPath: opts.relPath,
-        outputDir: opts.outputDir,
-        seed: opts.seed,
-        imageGen,
-        styleBible: opts.styleBible,
-        artBible: opts.artBible,
-        gameDna: opts.gameDna,
-        allowProceduralFallback: false,
-      });
-    }
     const vlm = createVisionCritic({
       ollamaBaseUrl: opts.ollamaBaseUrl,
       nvidiaApiKey: opts.nvidiaApiKey,
       nvidiaApiBaseUrl: opts.nvidiaApiBaseUrl,
       nvidiaVisionModel: opts.nvidiaVisionModel,
     });
-    const vlmAvailable = await vlm.isAvailable();
+    const vlmAvailable = ['CHARACTER', 'ENEMY', 'BOSS', 'NPC'].includes(plan.profile) && await vlm.isAvailable();
 
-    let profile: ImageGenerationProfile = 'CHARACTER';
-    let frame = compiledSpriteFrameSize('character');
-    let shape: SpriteSpec['shape'] = 'humanoid';
-
-    switch (opts.assetType) {
-      case 'enemy':
-        profile = 'ENEMY';
-        frame = compiledSpriteFrameSize('enemy');
-        shape = 'enemy';
-        break;
-      case 'npc':
-        profile = 'CHARACTER';
-        frame = compiledSpriteFrameSize('npc');
-        shape = 'humanoid';
-        break;
-      case 'boss':
-        profile = 'BOSS';
-        frame = compiledSpriteFrameSize(
-          opts.assetId === 'boss_final' || opts.assetId.includes('final') ? 'boss_final' : 'boss',
-        );
-        shape = 'boss';
-        break;
-      case 'weapon':
-      case 'item':
-      case 'prop':
-        frame = compiledSpriteFrameSize('item');
-        shape = 'item';
-        break;
-      case 'tileset':
-      case 'tile':
-        profile = 'TILE_SOURCE';
-        frame = compiledSpriteFrameSize('tileset');
-        shape = 'tile';
-        break;
-      default:
-        break;
-    }
-    const { width, height } = frame;
+    const { profile, width, height } = plan;
+    const shape: SpriteSpec['shape'] = plan.grounded ? 'humanoid' : 'item';
 
     const actor = ['player_sprite', 'enemy', 'boss', 'npc', 'character_concept'].includes(opts.assetType);
     const styleHint = [opts.gameDna.identity.visualStyle,
@@ -4743,7 +4707,6 @@ export class AssetPipeline {
     );
 
     const sourceCandidate = join(opts.outputDir, derivedSourceRelPath(opts.relPath));
-    const existingFullPath = join(opts.outputDir, opts.relPath);
     const conditioningPath = existsSync(sourceCandidate)
       ? sourceCandidate
       : existsSync(existingFullPath)
@@ -4752,66 +4715,6 @@ export class AssetPipeline {
     const conditioning: ImageConditioning | undefined = conditioningPath
       ? { mode: 'ip_adapter', image: readFileSync(conditioningPath), strength: 0.55 }
       : undefined;
-
-    if (opts.assetType === 'tileset' || opts.assetType === 'tile') {
-      let tileBuffer = generateTilesetSource(opts.seed, 128);
-      let provider = 'procedural';
-      let fallback = true;
-      let modelId: string | undefined;
-      if (imageGen) {
-        try {
-          const result = await imageGen.generateImage({
-            profile: 'TILE_SOURCE',
-            prompt: sanitizeImagePromptText(prompt),
-            negativePrompt: negativePrompt ? sanitizeImagePromptText(negativePrompt) : undefined,
-            width: 128,
-            height: 128,
-            seed: opts.seed,
-            conditioning,
-          });
-          tileBuffer = result.image;
-          fallback = result.fallbackGenerated;
-          provider = fallback ? 'procedural' : imageGen.id;
-          modelId = fallback ? undefined : result.modelId;
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          throw new Error(`Manual image generation failed (${imageGen.id}): ${msg}`);
-        }
-      } else {
-        throw new Error(
-          'Manual image generation requires a healthy image provider (NVIDIA / ComfyUI / Diffusers) — none available',
-        );
-      }
-      if (fallback) {
-        throw new Error(
-          'Manual image generation returned a procedural placeholder — refusing silent SUCCESS',
-        );
-      }
-      const processed = this.pixelArt.process(tileBuffer, {
-        targetWidth: 128,
-        targetHeight: 128,
-        tileSize,
-      });
-      writeCheckpoint(opts.outputDir, opts.relPath, processed.buffer);
-      return withMaturity({
-        id: opts.assetId,
-        path: opts.relPath,
-        buffer: processed.buffer,
-        provider,
-        modelId,
-        fallbackGenerated: fallback,
-        critiquePassed: true,
-        critiqueScore: 80,
-        fallbackDepth: fallback ? 1 : 0,
-        fallbackReason: fallback
-          ? 'Image provider unavailable or failed — procedural placeholder'
-          : undefined,
-        selectedProvider: provider,
-        selectedModel: modelId,
-        requestedCapability: 'IMAGE_GENERATION',
-        productionAllowed: !fallback,
-      });
-    }
 
     return this.generateSprite({
       id: opts.assetId,
@@ -4835,6 +4738,8 @@ export class AssetPipeline {
       outputDir: opts.outputDir,
       conditioning,
       allowProceduralFallback: false,
+      mode: opts.mode,
+      manualPlan: plan,
     });
   }
 }

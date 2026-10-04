@@ -72,6 +72,7 @@ export type GenerationPhaseState = {
 };
 
 export type AssetListItem = {
+  imagePlan?: GeneratedAssetRef['imagePlan'];
   propAsset?: { image: string; layout: Record<string, unknown> };
   propAssetError?: string;
   id: string;
@@ -98,6 +99,8 @@ export type GeneratedAssetRef = {
   path: string;
   provider?: string;
   modelId?: string;
+  imagePlan?: { profile: string; width: number; height: number; sourceWidth: number; sourceHeight: number; transparent: boolean };
+  executionMetadata?: { actualDevice?: string; computeBackend?: string };
   fallbackGenerated?: boolean;
   critiquePassed?: boolean;
   critiqueScore?: number;

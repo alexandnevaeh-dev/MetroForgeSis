@@ -2,7 +2,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
-import { DiffusersProvider } from './diffusers.js';
+import { DiffusersProvider, diffusersGenerationError } from './diffusers.js';
 import { generationRequestHash, buildGenerationSpecification } from '../pipeline-v2/production-capacity.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -12,6 +12,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const STUB_WORKER = join(__dirname, '__fixtures__', 'stub_diffusers_worker.py');
 
 function resolveTestPython(): string | undefined {
+  if (process.env.METROFORGE_TEST_PYTHON) return process.env.METROFORGE_TEST_PYTHON;
   const candidates = process.platform === 'win32' ? ['python', 'py'] : ['python3', 'python'];
   for (const candidate of candidates) {
     try {
@@ -25,6 +26,18 @@ function resolveTestPython(): string | undefined {
 }
 
 const testPython = resolveTestPython();
+
+describe('actionable local generation errors', () => {
+  it('shows token counts and a retry instruction without echoing private prompt diagnostics', () => {
+    const message = diffusersGenerationError('Prompt exceeds model token budget: ' + JSON.stringify({positive:{overflow:true,tokenCount:84,maxTokens:77,text:'private description'},modelPath:'private path'}));
+    expect(message).toContain('84 tokens'); expect(message).toContain('allows 77'); expect(message).toContain('Shorten');
+    expect(message).not.toContain('private'); expect(message).not.toContain('{');
+  });
+  it('handles malformed tokenizer details and preserves other provider errors', () => {
+    expect(diffusersGenerationError('Prompt exceeds model token budget: broken')).toContain('Shorten');
+    expect(diffusersGenerationError('Model is missing')).toBe('Model is missing');
+  });
+});
 
 function stubProvider(overrides: { generationTimeoutMs?: number } = {}) {
   return new DiffusersProvider({
@@ -40,10 +53,16 @@ describe.skipIf(!testPython)('DiffusersProvider — inferenceSteps precedence (r
     expect(result.executionMetadata?.effectiveSteps).toBe(17);
   });
 
-  it('falls back to the existing default (6) when inferenceSteps is not set — unchanged prior behavior', async () => {
+  it('uses twenty steps for a non-distilled model when inferenceSteps is not set', async () => {
     const provider = stubProvider();
     const result = await provider.generateImage({ profile: 'CHARACTER', prompt: 'p', width: 8, height: 8, seed: 1 });
-    expect(result.executionMetadata?.effectiveSteps).toBe(6);
+    expect(result.executionMetadata?.effectiveSteps).toBe(20);
+  });
+
+  it('keeps the four-step default for distilled Turbo models', async () => {
+    const provider = new DiffusersProvider({pythonPath:testPython,workerPath:STUB_WORKER,modelId:'sdxl-turbo',device:'cuda'});
+    const result = await provider.generateImage({profile:'BACKGROUND',prompt:'p',width:8,height:8,seed:1});
+    expect(result.executionMetadata?.effectiveSteps).toBe(4);
   });
 
   it('rejects a discrepancy: the worker-reported effective steps must be inspectable against what was requested', async () => {

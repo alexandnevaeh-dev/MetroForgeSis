@@ -1,0 +1,257 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\manual-profiles-review\\reports\\game-tests\\20261004-assets-ui\\1791092629172",
+  "scope": "Hidden portable app UI with real IPC, staged files, registry, history and Unity mirrors. Controlled loopback ComfyUI returns synthetic tiles: no live GPU/hosted inference, finished-art or gameplay acceptance.",
+  "checks": [
+    {
+      "label": "provider preferences saved through real IPC",
+      "passed": true
+    },
+    {
+      "label": "app generated and registered two distinct alternatives",
+      "passed": true
+    },
+    {
+      "label": "creation preserves the registered original",
+      "passed": true
+    },
+    {
+      "label": "second identical batch preserves first outputs and creates fresh IDs",
+      "passed": true
+    },
+    {
+      "label": "a different successful alternative can be selected",
+      "passed": true
+    },
+    {
+      "label": "long registered IDs wrap within the inspector",
+      "passed": true
+    },
+    {
+      "label": "app stays hidden: 01-asset-alternatives.png",
+      "passed": true
+    },
+    {
+      "label": "replacement retains the registered nested path",
+      "passed": true
+    },
+    {
+      "label": "history contains original bytes rather than provider checkpoint bytes",
+      "passed": true
+    },
+    {
+      "label": "matching Unity mirror is updated",
+      "passed": true
+    },
+    {
+      "label": "artwork change invalidates previous runtime acceptance",
+      "passed": true
+    },
+    {
+      "label": "app stays hidden: 02-registered-replacement.png",
+      "passed": true
+    },
+    {
+      "label": "UI restores original image and Unity mirror",
+      "passed": true
+    },
+    {
+      "label": "restore also restores the original provider and license metadata",
+      "passed": true
+    },
+    {
+      "label": "restore preserves displaced generated artwork in another history version",
+      "passed": true
+    },
+    {
+      "label": "app stays hidden: 03-restored-history.png",
+      "passed": true
+    },
+    {
+      "label": "real provider failure unlocks retry and leaves registry unchanged",
+      "passed": true
+    },
+    {
+      "label": "malformed variant count is rejected through IPC",
+      "passed": true
+    },
+    {
+      "label": "asset IPC returns metadata without binary image buffers",
+      "passed": true
+    },
+    {
+      "label": "changing genre clears replacement selection",
+      "passed": true
+    },
+    {
+      "label": "top-down generation writes only its own project asset set",
+      "passed": true
+    },
+    {
+      "label": "provider prompts use the project camera and preserve style",
+      "passed": true
+    },
+    {
+      "label": "actual narrow app has no horizontal document overflow",
+      "passed": true
+    },
+    {
+      "label": "app stays hidden: 04-workshop-narrow.png",
+      "passed": true
+    },
+    {
+      "label": "image provider can be disabled in application settings",
+      "passed": true
+    },
+    {
+      "label": "disabled provider is not dispatched by manual generation",
+      "passed": true
+    },
+    {
+      "label": "library displays malformed-history failure without a renderer crash",
+      "passed": true
+    },
+    {
+      "label": "no renderer errors",
+      "passed": true
+    },
+    {
+      "label": "packaged application matches tested build: dist/assets/main.js",
+      "passed": true
+    },
+    {
+      "label": "packaged application matches tested build: dist-electron/handlers.js",
+      "passed": true
+    },
+    {
+      "label": "packaged asset module matches tested build: manual-asset.js",
+      "passed": true
+    },
+    {
+      "label": "packaged asset module matches tested build: asset-files.js",
+      "passed": true
+    },
+    {
+      "label": "packaged asset module matches tested build: asset-history.js",
+      "passed": true
+    },
+    {
+      "label": "packaged asset module matches tested build: asset-pipeline.js",
+      "passed": true
+    }
+  ],
+  "captures": [
+    "01-asset-alternatives.png",
+    "02-registered-replacement.png",
+    "03-restored-history.png",
+    "04-workshop-narrow.png"
+  ],
+  "pageErrors": [],
+  "requests": [
+    {
+      "path": "/system_stats"
+    },
+    {
+      "path": "/prompt",
+      "prompt": "seamless pixel art game tileset texture, Detailed worn castle masonry, coherent stone floor and walls. Art style: Detailed HD pixel art. For Castle asset test. Side-view game, consistent horizontal ground plane and lighting. Game asset matching the camera, scale and material detail of this project. | blurry, low quality, text, watermark"
+    },
+    {
+      "path": "/history/1"
+    },
+    {
+      "path": "/view?filename=controlled-output.png&subfolder=&type=output"
+    },
+    {
+      "path": "/system_stats"
+    },
+    {
+      "path": "/prompt",
+      "prompt": "seamless pixel art game tileset texture, Detailed worn castle masonry, coherent stone floor and walls. Art style: Detailed HD pixel art. For Castle asset test. Side-view game, consistent horizontal ground plane and lighting. Game asset matching the camera, scale and material detail of this project. | blurry, low quality, text, watermark"
+    },
+    {
+      "path": "/history/2"
+    },
+    {
+      "path": "/view?filename=controlled-output.png&subfolder=&type=output"
+    },
+    {
+      "path": "/system_stats"
+    },
+    {
+      "path": "/prompt",
+      "prompt": "seamless pixel art game tileset texture, Detailed worn castle masonry, coherent stone floor and walls. Art style: Detailed HD pixel art. For Castle asset test. Side-view game, consistent horizontal ground plane and lighting. Game asset matching the camera, scale and material detail of this project. | blurry, low quality, text, watermark"
+    },
+    {
+      "path": "/history/3"
+    },
+    {
+      "path": "/view?filename=controlled-output.png&subfolder=&type=output"
+    },
+    {
+      "path": "/system_stats"
+    },
+    {
+      "path": "/prompt",
+      "prompt": "seamless pixel art game tileset texture, Detailed worn castle masonry, coherent stone floor and walls. Art style: Detailed HD pixel art. For Castle asset test. Side-view game, consistent horizontal ground plane and lighting. Game asset matching the camera, scale and material detail of this project. | blurry, low quality, text, watermark"
+    },
+    {
+      "path": "/history/4"
+    },
+    {
+      "path": "/view?filename=controlled-output.png&subfolder=&type=output"
+    },
+    {
+      "path": "/system_stats"
+    },
+    {
+      "path": "/upload/image"
+    },
+    {
+      "path": "/prompt",
+      "prompt": "seamless pixel art game tileset texture, Detailed castle masonry, grounded and coherent. Art style: Detailed HD pixel art. For Castle asset test. Side-view game, consistent horizontal ground plane and lighting. Game asset matching the camera, scale and material detail of this project. | blurry, low quality, text, watermark"
+    },
+    {
+      "path": "/history/5"
+    },
+    {
+      "path": "/view?filename=controlled-output.png&subfolder=&type=output"
+    },
+    {
+      "path": "/system_stats"
+    },
+    {
+      "path": "/prompt",
+      "prompt": "seamless pixel art game tileset texture, Detailed castle masonry, grounded and coherent. Art style: Detailed HD pixel art. For Castle asset test. Side-view game, consistent horizontal ground plane and lighting. Game asset matching the camera, scale and material detail of this project. | blurry, low quality, text, watermark"
+    },
+    {
+      "path": "/system_stats"
+    },
+    {
+      "path": "/prompt",
+      "prompt": "seamless pixel art game tileset texture, test. Art style: Detailed HD pixel art. For Castle asset test. Side-view game, consistent horizontal ground plane and lighting. Game asset matching the camera, scale and material detail of this project. | blurry, low quality, text, watermark"
+    },
+    {
+      "path": "/history/6"
+    },
+    {
+      "path": "/view?filename=controlled-output.png&subfolder=&type=output"
+    },
+    {
+      "path": "/system_stats"
+    },
+    {
+      "path": "/prompt",
+      "prompt": "seamless pixel art game tileset texture, Top-down woodland stone path, rich HD pixel art. Art style: Detailed HD pixel art. For Woodland asset test. Top-down game, overhead three-quarter view, consistent ground plane and lighting. Game asset matching the camera, scale and material detail of this project. | blurry, low quality, text, watermark"
+    },
+    {
+      "path": "/history/7"
+    },
+    {
+      "path": "/view?filename=controlled-output.png&subfolder=&type=output"
+    }
+  ],
+  "packaged": {
+    "executable": "E:/MetroForgeData/Releases/MetroForge-art-profiles-20261004-v5/MetroForge.exe",
+    "sha256": "1925f358e7f0e9675a5ac4198fb076613f0db318da56d388799a97be74a5b19c"
+  },
+  "passed": true
+}

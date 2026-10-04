@@ -24,6 +24,7 @@ export type GenerationState = {
 };
 
 export type AssetRecord = {
+  imagePlan?: { profile: string };
   id: string;
   path: string;
   category: string;
