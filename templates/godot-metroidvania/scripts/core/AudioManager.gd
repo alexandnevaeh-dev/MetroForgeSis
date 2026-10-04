@@ -40,6 +40,7 @@ var _sfx_pool_cursor := 0
 var _voice_player: AudioStreamPlayer
 var _music_player: AudioStreamPlayer
 var _current_music_id: String = ""
+var _quit_requested: bool = false
 var _sfx_cache: Dictionary = {}
 var _missing_sfx_warned: Dictionary = {}
 var _last_played_frame: Dictionary = {}
@@ -56,6 +57,7 @@ const SFX_ALIASES := {
 func _ready() -> void:
 	# Dialogue and menus pause gameplay; their audio and music must remain active.
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	get_tree().auto_accept_quit = false
 	_ensure_buses()
 	for i in range(SFX_POOL_SIZE):
 		var player := AudioStreamPlayer.new()
@@ -77,7 +79,7 @@ func _ready() -> void:
 ## one per call, and silently no-ops (with a one-time warning) if the file wasn't generated
 ## rather than crashing — a project shouldn't fail to run because one SFX is missing.
 func play_sfx(sfx_name: String) -> void:
-	if sfx_name.is_empty():
+	if _quit_requested or sfx_name.is_empty():
 		return
 
 	# Collapse truly simultaneous duplicate triggers (e.g. several hits landing the same
@@ -102,7 +104,7 @@ func play_sfx(sfx_name: String) -> void:
 ## biome ids in exploration rooms, "boss" in boss arenas). No-ops if that track is
 ## already playing, so same-biome room transitions don't restart the loop.
 func play_music(track_id: String, loop: bool = true) -> void:
-	if track_id.is_empty():
+	if _quit_requested or track_id.is_empty():
 		return
 	if track_id == _current_music_id and _music_player.playing:
 		return
@@ -127,8 +129,39 @@ func play_music(track_id: String, loop: bool = true) -> void:
 	_music_player.play()
 
 func stop_music() -> void:
-	_music_player.stop()
+	if is_instance_valid(_music_player):
+		_music_player.stop()
+		_music_player.stream = null
 	_current_music_id = ""
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		request_quit()
+
+func request_quit(exit_code: int = 0) -> void:
+	if _quit_requested:
+		return
+	_quit_requested = true
+	stop_all_audio()
+	# Allow the mixer to retire looping playback before SceneTree destroys players.
+	# This also runs while paused and ignores hit-stop's Engine.time_scale.
+	await get_tree().create_timer(0.2, true, false, true).timeout
+	get_tree().quit(exit_code)
+
+func _exit_tree() -> void:
+	stop_all_audio()
+
+func stop_all_audio() -> void:
+	stop_music()
+	if is_instance_valid(_voice_player):
+		_voice_player.stop()
+		_voice_player.stream = null
+	for player in _sfx_pool:
+		if is_instance_valid(player):
+			player.stop()
+			player.stream = null
+	_sfx_cache.clear()
+	_last_played_frame.clear()
 
 func get_current_music_id() -> String:
 	return _current_music_id
@@ -189,7 +222,7 @@ func stop_dialogue_voice() -> void:
 
 func play_dialogue_voice(voice_path: String) -> void:
 	stop_dialogue_voice()
-	if voice_path.is_empty() or not ResourceLoader.exists(voice_path):
+	if _quit_requested or voice_path.is_empty() or not ResourceLoader.exists(voice_path):
 		return
 	var stream := load(voice_path) as AudioStream
 	if stream == null:

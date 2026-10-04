@@ -1,0 +1,207 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "project": "E:\\MetroForgeData\\TestArtifacts\\shutdown-backtracking-20261004\\audio-regression-v1\\request-quit",
+      "name": "import",
+      "code": 0,
+      "errors": [],
+      "passed": true
+    },
+    {
+      "project": "E:\\MetroForgeData\\TestArtifacts\\shutdown-backtracking-20261004\\audio-regression-v1\\request-quit",
+      "name": "run",
+      "code": 0,
+      "errors": [],
+      "passed": true,
+      "proof": {
+        "checks": [
+          {
+            "label": "window close interception enabled",
+            "passed": true
+          },
+          {
+            "label": "music starts",
+            "passed": true
+          },
+          {
+            "label": "music id tracked",
+            "passed": true
+          },
+          {
+            "label": "music playback active",
+            "passed": true
+          },
+          {
+            "label": "same track reuses player",
+            "passed": true
+          },
+          {
+            "label": "SFX cache populated",
+            "passed": true
+          },
+          {
+            "label": "voice is one shot",
+            "passed": true
+          },
+          {
+            "label": "voice resource is independent",
+            "passed": true
+          },
+          {
+            "label": "stop clears track id",
+            "passed": true
+          },
+          {
+            "label": "stop clears stream",
+            "passed": true
+          },
+          {
+            "label": "stop clears playback",
+            "passed": true
+          },
+          {
+            "label": "music restarts after stop",
+            "passed": true
+          },
+          {
+            "label": "shutdown latched",
+            "passed": true
+          },
+          {
+            "label": "shutdown clears music",
+            "passed": true
+          },
+          {
+            "label": "shutdown clears voice",
+            "passed": true
+          },
+          {
+            "label": "shutdown clears cache",
+            "passed": true
+          },
+          {
+            "label": "shutdown clears SFX pool",
+            "passed": true
+          },
+          {
+            "label": "shutdown blocks late music",
+            "passed": true
+          },
+          {
+            "label": "shutdown blocks late voice",
+            "passed": true
+          },
+          {
+            "label": "shutdown blocks late SFX",
+            "passed": true
+          }
+        ],
+        "mode": "request-quit",
+        "passed": true,
+        "scope": "Native controlled AudioManager lifecycle with real game WAVs and Dummy audio; notification simulated in Godot, no OS window input or listening acceptance."
+      }
+    },
+    {
+      "project": "E:\\MetroForgeData\\TestArtifacts\\shutdown-backtracking-20261004\\audio-regression-v1\\paused-close",
+      "name": "import",
+      "code": 0,
+      "errors": [],
+      "passed": true
+    },
+    {
+      "project": "E:\\MetroForgeData\\TestArtifacts\\shutdown-backtracking-20261004\\audio-regression-v1\\paused-close",
+      "name": "run",
+      "code": 0,
+      "errors": [],
+      "passed": true,
+      "proof": {
+        "checks": [
+          {
+            "label": "window close interception enabled",
+            "passed": true
+          },
+          {
+            "label": "music starts",
+            "passed": true
+          },
+          {
+            "label": "music id tracked",
+            "passed": true
+          },
+          {
+            "label": "music playback active",
+            "passed": true
+          },
+          {
+            "label": "same track reuses player",
+            "passed": true
+          },
+          {
+            "label": "SFX cache populated",
+            "passed": true
+          },
+          {
+            "label": "voice is one shot",
+            "passed": true
+          },
+          {
+            "label": "voice resource is independent",
+            "passed": true
+          },
+          {
+            "label": "stop clears track id",
+            "passed": true
+          },
+          {
+            "label": "stop clears stream",
+            "passed": true
+          },
+          {
+            "label": "stop clears playback",
+            "passed": true
+          },
+          {
+            "label": "music restarts after stop",
+            "passed": true
+          },
+          {
+            "label": "shutdown latched",
+            "passed": true
+          },
+          {
+            "label": "shutdown clears music",
+            "passed": true
+          },
+          {
+            "label": "shutdown clears voice",
+            "passed": true
+          },
+          {
+            "label": "shutdown clears cache",
+            "passed": true
+          },
+          {
+            "label": "shutdown clears SFX pool",
+            "passed": true
+          },
+          {
+            "label": "shutdown blocks late music",
+            "passed": true
+          },
+          {
+            "label": "shutdown blocks late voice",
+            "passed": true
+          },
+          {
+            "label": "shutdown blocks late SFX",
+            "passed": true
+          }
+        ],
+        "mode": "paused-close",
+        "passed": true,
+        "scope": "Native controlled AudioManager lifecycle with real game WAVs and Dummy audio; notification simulated in Godot, no OS window input or listening acceptance."
+      }
+    }
+  ]
+}

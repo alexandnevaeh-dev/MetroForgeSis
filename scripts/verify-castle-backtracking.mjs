@@ -11,7 +11,7 @@ if (!process.argv.includes('--import')) {
     'Preserve completed run evidence; use a new candidate',
   );
   assert.ok(
-    !existsSync(join(project, 'qa/input-journey/proof.json')),
+    !existsSync(join(project, 'qa/backtracking/proof.json')),
     'Preserve existing native proof',
   );
 }
@@ -39,7 +39,7 @@ const args = process.argv.includes('--import')
       '-10000,-10000',
       '--resolution',
       '1280x720',
-      'res://scenes/test/CastleJourneyValidation.tscn',
+      'res://scenes/test/CastleBacktrackingValidation.tscn',
     ];
 const child = spawn(godot, args, { env, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
 let log = '';
@@ -47,7 +47,7 @@ console.log(
   JSON.stringify({
     pid: child.pid,
     base,
-    mode: process.argv.includes('--import') ? 'import' : 'real-nvidia-journey',
+    mode: process.argv.includes('--import') ? 'import' : 'controlled-backtracking',
   }),
 );
 for (const pipe of [child.stdout, child.stderr])
@@ -59,7 +59,7 @@ for (const pipe of [child.stdout, child.stderr])
       log,
     );
     for (const line of text.split(/\r?\n/))
-      if (/JOURNEY_|Parse Error|SCRIPT ERROR|Using Device:/.test(line)) console.log(line);
+      if (/BACKTRACKING_|Parse Error|SCRIPT ERROR|Using Device:/.test(line)) console.log(line);
   });
 const watchdog = setTimeout(() => {
   console.error('Owned native journey timed out at 15 minutes');
@@ -81,32 +81,12 @@ const result = {
   warnings: log.split(/\r?\n/).filter((line) => /^WARNING:/.test(line)),
   scope: process.argv.includes('--import')
     ? 'Headless syntax/cache import only'
-    : 'Actual native GPU route, not an assisted hitbox or forced-room suite',
+    : 'Controlled save/load and arena restoration; forced room loads and seeded defeat records, not gameplay traversal',
 };
 if (!process.argv.includes('--import')) {
   result.nvidia = /Using Device: NVIDIA - NVIDIA GeForce RTX 5060 Laptop GPU/.test(log);
-  const proof = join(project, 'qa/input-journey/proof.json');
-  if (existsSync(proof)) result.journey = JSON.parse(readFileSync(proof, 'utf8'));
-  const route = JSON.parse(readFileSync(join(project, 'playtest_route.json'), 'utf8'));
-  if (route.validationScope?.includes('return through the first three cleared guardian arenas')) {
-    const guardians = [
-      ['room_008', 'boss_000'],
-      ['room_018', 'boss_001'],
-      ['room_028', 'boss_002'],
-    ];
-    result.returnVisits = guardians.map(([room, boss]) => {
-      const visits = (result.journey?.roomStates ?? []).filter((row) => row.room === room);
-      const cleared = visits.slice(1).find((row) => row.defeatedBosses.includes(boss));
-      return {
-        room,
-        boss,
-        observations: visits.length,
-        passed: !!cleared && !cleared.bossPresent && cleared.exitsOpen && cleared.music !== 'boss',
-        cleared,
-      };
-    });
-    result.returnVisitsPassed = result.returnVisits.every((row) => row.passed);
-  }
+  const proof = join(project, 'qa/backtracking/proof.json');
+  if (existsSync(proof)) result.backtracking = JSON.parse(readFileSync(proof, 'utf8'));
 }
 writeFileSync(
   join(base, process.argv.includes('--import') ? 'import-summary.json' : 'native-summary.json'),
@@ -117,15 +97,15 @@ console.log(
     base,
     code,
     scriptErrors: result.scriptErrors,
-    passed: result.journey?.passed,
-    steps: result.journey?.outcome.steps,
+    passed: result.backtracking?.passed,
+    steps: result.backtracking?.outcome?.steps,
   }),
 );
 process.exitCode =
   code === 0 &&
   !result.scriptErrors &&
   result.nativeErrors.length === 0 &&
-  result.returnVisitsPassed !== false &&
-  (process.argv.includes('--import') || (result.nvidia === true && result.journey?.passed === true))
+  (process.argv.includes('--import') ||
+    (result.nvidia === true && result.backtracking?.passed === true))
     ? 0
     : 1;

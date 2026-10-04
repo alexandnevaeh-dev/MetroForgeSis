@@ -8,6 +8,7 @@ var agent: PlaytestAgent
 var world: Node2D
 var samples: Array = []
 var captures: Array = []
+var room_states: Array = []
 var next_sample: int = 0
 var capturing: bool = false
 var started: int = 0
@@ -33,7 +34,7 @@ func _ready() -> void:
 		await get_tree().process_frame
 	await _capture("end")
 	var result := {"scope": "Actual NVIDIA gameplay with normal fades/hit-stop and Input-only walking, jumping, attacks and dodges. Bot observations are read-only; no human or final art acceptance claim.",
-		"passed": bool(outcome.get("ok", false)), "outcome": outcome, "samples": samples, "captures": captures,
+		"passed": bool(outcome.get("ok", false)), "outcome": outcome, "samples": samples, "captures": captures, "roomStates": room_states,
 		"renderer": RenderingServer.get_current_rendering_method(), "elapsedMs": Time.get_ticks_msec() - started,
 		"bossesDefeated": ProgressionManager.get_defeated_bosses(), "abilities": ProgressionManager.get_unlocked_abilities()}
 	_write_json("proof.json", result)
@@ -45,7 +46,7 @@ func _ready() -> void:
 	agent = null
 	await get_tree().process_frame
 	await get_tree().process_frame
-	get_tree().quit(0 if result.passed else 1)
+	AudioManager.request_quit(0 if result.passed else 1)
 
 func _process(_delta: float) -> void:
 	if Time.get_ticks_msec() < next_sample:
@@ -67,6 +68,15 @@ func _room_entered(id: String) -> void:
 	var boss := get_tree().get_first_node_in_group("bosses")
 	if boss and boss.has_node("HealthComponent"):
 		boss.get_node("HealthComponent").died.connect(_capture_death.bind(String(boss.get("boss_id"))), CONNECT_ONE_SHOT)
+	# Snapshot synchronously: a legitimate return can leave again within 0.5 seconds.
+	# Waiting for the presentation capture first silently loses those room visits.
+	var room: Node = world._current_room if world else null
+	var current_boss: Node = room.get_node_or_null("Boss") if room else null
+	var doors: Array = world._room_transitions(room) if room else []
+	room_states.append({"room": id, "tMs": Time.get_ticks_msec() - started,
+		"bossPresent": current_boss != null, "defeatedBosses": ProgressionManager.get_defeated_bosses(),
+		"exitsOpen": not doors.is_empty() and doors.all(func(door): return door.monitoring),
+		"music": AudioManager.get_current_music_id()})
 	await get_tree().create_timer(0.5).timeout
 	if GameManager.current_room_id == id:
 		await _capture(id)

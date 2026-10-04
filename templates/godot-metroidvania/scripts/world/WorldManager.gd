@@ -90,6 +90,12 @@ func _load_room(room_id: String, spawn_side: String = "left") -> void:
 
 	var t_inst := Time.get_ticks_usec()
 	_current_room = packed.instantiate()
+	# Resolve persisted defeat before add_child runs any boss AI or collision setup.
+	# A cleared arena stays traversable after backtracking and checkpoint reloads.
+	var restored_boss := _current_room.get_node_or_null("Boss")
+	if restored_boss and String(restored_boss.get("boss_id")) in ProgressionManager.get_defeated_bosses():
+		_current_room.remove_child(restored_boss)
+		restored_boss.free()
 	add_child(_current_room)
 	last_transition_profile["instantiate_ms"] = (Time.get_ticks_usec() - t_inst) / 1000.0
 
@@ -313,7 +319,7 @@ func _apply_room_containment(player: Node, room_id: String) -> void:
 
 func _on_room_entered(room_id: String) -> void:
 	var room_info: Dictionary = _room_data.get(room_id, {})
-	if String(room_info.get("archetype", "")) == "boss":
+	if String(room_info.get("archetype", "")) == "boss" and _current_room and _current_room.get_node_or_null("Boss") != null:
 		AudioManager.play_music("boss")
 		return
 	var biome_id: String = room_info.get("biomeId", "biome_0")

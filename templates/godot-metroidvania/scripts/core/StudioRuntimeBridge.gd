@@ -33,7 +33,12 @@ func _process(_delta: float) -> void:
 	if _peer.get_status() != StreamPeerTCP.STATUS_CONNECTED:
 		if _authenticated:
 			# A Studio-owned preview must not survive its controlling session.
-			get_tree().quit()
+			set_process(false)
+			var audio := get_node_or_null("/root/AudioManager")
+			if audio and audio.has_method("request_quit"):
+				audio.request_quit()
+			else:
+				get_tree().quit()
 		return
 	if not _auth_sent:
 		_send({"cmd": "auth", "token": _token, "role": "runtime"})

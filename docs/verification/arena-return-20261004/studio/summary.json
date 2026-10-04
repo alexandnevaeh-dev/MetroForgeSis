@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "withAudio": true,
+      "passed": true,
+      "authentications": 1,
+      "nativeErrors": [],
+      "scope": "Actual loopback Studio auth/disconnect with production bridge; headless Dummy audio, no listening or visual claim"
+    },
+    {
+      "withAudio": false,
+      "passed": true,
+      "authentications": 1,
+      "nativeErrors": [],
+      "scope": "Actual loopback Studio auth/disconnect with production bridge; headless Dummy audio, no listening or visual claim"
+    }
+  ]
+}
