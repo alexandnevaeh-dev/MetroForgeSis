@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ModelCatalogService } from './model-catalog.js';
 import { ModelRegistry } from './registry.js';
-import {
-  reconcileCatalogEntries,
-  reconcileModelCatalog,
-} from './catalog-reconciliation.js';
+import { reconcileCatalogEntries, reconcileModelCatalog } from './catalog-reconciliation.js';
 
 describe('catalog reconciliation', () => {
   it('marks hosted NVIDIA models routable only when the provider is live-enabled', () => {
@@ -52,11 +49,13 @@ describe('catalog reconciliation', () => {
     expect(row?.routable).toBe(true);
     expect(row?.liveListed).toBe(true);
 
-    const staleIds = new Map<string, Set<string>>([['nvidia', new Set(['model/that-does-not-exist'])]]);
+    const staleIds = new Map<string, Set<string>>([
+      ['nvidia', new Set(['model/that-does-not-exist'])],
+    ]);
     const stale = reconcileCatalogEntries(catalog, models, staleIds, new Set(['nvidia']), {
       providerHealthById: new Map([['nvidia', 'healthy']]),
     }).find((m) => m.id === nvidiaEntry!.id);
-    expect(stale?.routable).toBe(true);
+    expect(stale?.routable).toBe(false);
     expect(stale?.liveListed).toBe(false);
   });
 
@@ -64,16 +63,10 @@ describe('catalog reconciliation', () => {
     const catalog = new ModelCatalogService();
     const models = new ModelRegistry();
     models.load(reconcileModelCatalog(catalog, new Set(['nvidia'])));
-    const reconciled = reconcileCatalogEntries(
-      catalog,
-      models,
-      new Map(),
-      new Set(['nvidia']),
-      {
-        hardware: { totalRamMb: 65536, vramMb: 512 },
-        providerHealthById: new Map([['nvidia', 'healthy']]),
-      },
-    );
+    const reconciled = reconcileCatalogEntries(catalog, models, new Map(), new Set(['nvidia']), {
+      hardware: { totalRamMb: 65536, vramMb: 512 },
+      providerHealthById: new Map([['nvidia', 'healthy']]),
+    });
     const hosted = reconciled.find((m) => m.provider === 'nvidia' && !m.local);
     expect(hosted).toBeDefined();
     expect(hosted?.hardwareCompatible).toBe(true);

@@ -26,10 +26,10 @@ function jsonResponse(body: unknown, status = 200) {
   };
 }
 
-function withScratchDir<T>(fn: (dataDir: string) => T): T {
+async function withScratchDir<T>(fn: (dataDir: string) => T): Promise<T> {
   const dataDir = mkdtempSync(join(tmpdir(), 'metroforge-model-scout-'));
   try {
-    return fn(dataDir);
+    return await fn(dataDir);
   } finally {
     rmSync(dataDir, { recursive: true, force: true });
   }
@@ -52,7 +52,10 @@ describe('ModelScout — Ollama scouting', () => {
   it('marks a catalog model installed on an exact Ollama tag match', async () => {
     await withScratchDir(async (dataDir) => {
       const scout = new ModelScout(dataDir);
-      const ollamaModel = scout.getCatalog().list().find((m) => m.provider === 'ollama');
+      const ollamaModel = scout
+        .getCatalog()
+        .list()
+        .find((m) => m.provider === 'ollama');
       expect(ollamaModel).toBeDefined();
 
       vi.stubGlobal(
@@ -72,7 +75,10 @@ describe('ModelScout — Ollama scouting', () => {
   it('matches an Ollama tag suffix (name.startsWith(`${id}:`))', async () => {
     await withScratchDir(async (dataDir) => {
       const scout = new ModelScout(dataDir);
-      const ollamaModel = scout.getCatalog().list().find((m) => m.provider === 'ollama');
+      const ollamaModel = scout
+        .getCatalog()
+        .list()
+        .find((m) => m.provider === 'ollama');
       expect(ollamaModel).toBeDefined();
 
       vi.stubGlobal(
@@ -89,10 +95,16 @@ describe('ModelScout — Ollama scouting', () => {
   it('leaves Ollama models uninstalled when Ollama reports no matching tag', async () => {
     await withScratchDir(async (dataDir) => {
       const scout = new ModelScout(dataDir);
-      const ollamaModel = scout.getCatalog().list().find((m) => m.provider === 'ollama');
+      const ollamaModel = scout
+        .getCatalog()
+        .list()
+        .find((m) => m.provider === 'ollama');
       expect(ollamaModel).toBeDefined();
 
-      vi.stubGlobal('fetch', vi.fn(async () => jsonResponse({ models: [{ name: 'unrelated-model' }] })));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => jsonResponse({ models: [{ name: 'unrelated-model' }] })),
+      );
 
       await scout.refresh({ sources: ['ollama'] });
 
@@ -121,11 +133,14 @@ describe('ModelScout — Ollama scouting', () => {
   it('discovers nothing from Ollama on a non-OK HTTP response, without throwing', async () => {
     await withScratchDir(async (dataDir) => {
       const scout = new ModelScout(dataDir);
-      vi.stubGlobal('fetch', vi.fn(async () => jsonResponse({}, 503)));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => jsonResponse({}, 503)),
+      );
 
       const report = await scout.refresh({ sources: ['ollama'] });
 
-      expect(report.errors).toEqual([]);
+      expect(report.errors).toEqual(['Ollama scout failed: HTTP 503']);
       expect(report.modelsDiscovered).toBe(0);
     });
   });
@@ -168,7 +183,10 @@ describe('ModelScout — report bookkeeping', () => {
   it('threads mergeDiscovered add/update counts into the report', async () => {
     await withScratchDir(async (dataDir) => {
       const scout = new ModelScout(dataDir);
-      const ollamaModel = scout.getCatalog().list().find((m) => m.provider === 'ollama');
+      const ollamaModel = scout
+        .getCatalog()
+        .list()
+        .find((m) => m.provider === 'ollama');
       expect(ollamaModel).toBeDefined();
 
       // Exactly one existing model reported installed by Ollama (an update, not an add) —
@@ -181,7 +199,10 @@ describe('ModelScout — report bookkeeping', () => {
 
       const report = await scout.refresh({ sources: ['ollama'] });
 
-      const ollamaModelCount = scout.getCatalog().list().filter((m) => m.provider === 'ollama').length;
+      const ollamaModelCount = scout
+        .getCatalog()
+        .list()
+        .filter((m) => m.provider === 'ollama').length;
       expect(report.modelsDiscovered).toBe(ollamaModelCount);
       expect(report.modelsUpdated).toBe(ollamaModelCount);
       expect(report.modelsAdded).toBe(0);
@@ -216,24 +237,31 @@ describe('ModelScout — hardware-aware router preferences', () => {
     metalAvailable: false,
   };
 
-  it('boosts cpu-friendly/low-resource models and penalizes high-RAM models on LOW_RESOURCE hardware', async () => {
+  it('retains authored priorities across repeated refreshes on LOW_RESOURCE hardware', async () => {
     await withScratchDir(async (dataDir) => {
       vi.spyOn(HardwareProfiler.prototype, 'profile').mockReturnValue(lowResourceProfile);
 
       const scout = new ModelScout(dataDir);
-      const cpuFriendly = scout.getCatalog().list().find((m) => m.tags.includes('cpu-friendly'));
-      const heavy = scout.getCatalog().list().find((m) => (m.recommendedRamMb ?? 0) > 16384);
+      const cpuFriendly = scout
+        .getCatalog()
+        .list()
+        .find((m) => m.tags.includes('cpu-friendly'));
+      const heavy = scout
+        .getCatalog()
+        .list()
+        .find((m) => (m.recommendedRamMb ?? 0) > 16384);
 
       const cpuFriendlyBefore = cpuFriendly?.priority;
       const heavyBefore = heavy?.priority;
 
       await scout.refresh({ sources: ['local'] });
+      await scout.refresh({ sources: ['local'] });
 
       if (cpuFriendly) {
-        expect(scout.getCatalog().get(cpuFriendly.id)!.priority).toBeGreaterThan(cpuFriendlyBefore!);
+        expect(scout.getCatalog().get(cpuFriendly.id)!.priority).toBe(cpuFriendlyBefore!);
       }
       if (heavy) {
-        expect(scout.getCatalog().get(heavy.id)!.priority).toBeLessThanOrEqual(heavyBefore!);
+        expect(scout.getCatalog().get(heavy.id)!.priority).toBe(heavyBefore!);
       }
     });
   });

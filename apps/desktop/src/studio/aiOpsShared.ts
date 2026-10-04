@@ -146,6 +146,7 @@ export function computeHardwareFit(
     return 'RAM blocked';
   }
   const needVram = model.minVramMb ?? model.recommendedVramMb;
+  if (needRam === undefined && needVram === undefined) return 'Unknown';
   if (needVram && needVram > 0) {
     if (!hardware.vramMb || hardware.vramMb < needVram * 0.85) return 'Low VRAM';
   }

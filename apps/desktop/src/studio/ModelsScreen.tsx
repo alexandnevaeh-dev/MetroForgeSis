@@ -2,11 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ScreenHeader } from './ScreenHeader.js';
 import { useStudio } from './StudioContext.js';
 import type { CatalogModel, HardwareSnapshot } from './metroforge-api.js';
-import {
-  computeHardwareFit,
-  formatMbAsGb,
-  type HardwareFitKind,
-} from './aiOpsShared.js';
+import { computeHardwareFit, formatMbAsGb, type HardwareFitKind } from './aiOpsShared.js';
 import {
   AiOpsBody,
   AiOpsContext,
@@ -28,6 +24,9 @@ import {
 
 const ROW_HEIGHT = 40;
 const OVERSCAN = 8;
+const modelKey = (model: Pick<CatalogModel, 'provider' | 'id'>) =>
+  JSON.stringify([model.provider, model.id]);
+const configurableProviders = new Set(['ollama', 'lmstudio', 'together', 'cerebras', 'mistral']);
 
 function modelAvailabilityLabel(
   model: CatalogModel,
@@ -43,8 +42,9 @@ function modelAvailabilityLabel(
 
 function modelAvailabilityDetail(model: CatalogModel): string {
   const label = modelAvailabilityLabel(model);
-  if (label === 'ROUTABLE') return 'Live-routable: provider healthy/degraded, hardware OK, in router';
-  if (label === 'HARDWARE') return 'Catalog eligible but blocked by local RAM/VRAM (hosted models skip VRAM)';
+  if (label === 'ROUTABLE')
+    return 'Available candidate. The provider uses its saved model; generation mode and fallback rules still apply.';
+  if (label === 'HARDWARE') return 'Local RAM or VRAM is below this model’s declared requirements.';
   if (label === 'RUNTIME') return 'Provider offline, disabled, or unconfigured for live route';
   if (model.providerEnabled === false) return 'Provider disabled or not configured';
   if (model.liveListed === false) return 'Not listed by live provider /models';
@@ -92,33 +92,54 @@ export function ModelsScreen() {
   const [routableFilter, setRoutableFilter] = useState<'all' | 'yes' | 'no'>('all');
   const [fitFilter, setFitFilter] = useState<'all' | HardwareFitKind>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const mounted = useRef(false);
+  const loadLock = useRef(false);
+  const actionLock = useRef(false);
+  const [savingModel, setSavingModel] = useState(false);
   const [scouting, setScouting] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [downloadMessage, setDownloadMessage] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    if (!window.metroforge) return;
+    if (loadLock.current) return;
+    loadLock.current = true;
+    if (mounted.current) {
+      setLoading(true);
+      setLoadError(null);
+    }
     try {
+      if (!window.metroforge) throw new Error('Desktop connection unavailable');
       const [list, hw] = await Promise.all([
         window.metroforge.listModels(),
         window.metroforge.getHardwareProfile(),
       ]);
-      if (list) setModels(list);
-      if (hw) setHardware(hw);
+      if (mounted.current) {
+        setModels(list);
+        setHardware(hw);
+      }
     } catch {
-      /* empty catalog */
+      if (mounted.current)
+        setLoadError(
+          'Could not refresh the model catalog. Your last loaded models are retained. Check provider connections and try again.',
+        );
+    } finally {
+      loadLock.current = false;
+      if (mounted.current) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    mounted.current = true;
     void load();
+    return () => {
+      mounted.current = false;
+    };
   }, [load]);
 
-  const providers = useMemo(
-    () => [...new Set(models.map((m) => m.provider))].sort(),
-    [models],
-  );
+  const providers = useMemo(() => [...new Set(models.map((m) => m.provider))].sort(), [models]);
   const capabilities = useMemo(
     () => [...new Set(models.flatMap((m) => m.capabilities ?? []))].sort(),
     [models],
@@ -132,7 +153,10 @@ export function ModelsScreen() {
     const q = query.trim().toLowerCase();
     return models.filter((model) => {
       if (providerFilter !== 'all' && model.provider !== providerFilter) return false;
-      if (capabilityFilter !== 'all' && !(model.capabilities ?? []).includes(capabilityFilter as never)) {
+      if (
+        capabilityFilter !== 'all' &&
+        !(model.capabilities ?? []).includes(capabilityFilter as never)
+      ) {
         return false;
       }
       if (modalityFilter !== 'all' && model.modality !== modalityFilter) return false;
@@ -164,29 +188,88 @@ export function ModelsScreen() {
     fitFilter,
   ]);
 
-  const selected = filtered.find((model) => model.id === selectedId) ?? filtered[0] ?? null;
+  const selected = filtered.find((model) => modelKey(model) === selectedId) ?? filtered[0] ?? null;
 
   const handleScout = async () => {
+    if (actionLock.current || loadLock.current || !window.metroforge) return;
+    actionLock.current = true;
     setScouting(true);
-    await window.metroforge?.scoutModels({ benchmark: false });
-    await load();
-    setScouting(false);
-  };
-
-  const handleDownload = async (modelId: string) => {
-    if (!window.metroforge?.downloadModel) return;
-    setDownloadingId(modelId);
     setDownloadError(null);
     setDownloadMessage(null);
-    const result = await window.metroforge.downloadModel(modelId);
-    setDownloadingId(null);
-    if (result.success) {
-      setDownloadMessage(result.message ?? `Installed ${modelId}`);
+    try {
+      const report = await window.metroforge.scoutModels({ benchmark: false });
+      if (!mounted.current) return;
+      setDownloadMessage(
+        `Checked ${report.sourcesChecked.length} sources: ${report.modelsAdded} added, ${report.modelsUpdated} updated. No generation requests were sent.`,
+      );
+      if (report.errors.length) setDownloadError(report.errors.join(' '));
       await load();
-    } else {
-      setDownloadError(result.error ?? `Download failed for ${modelId}`);
+    } catch {
+      if (mounted.current)
+        setDownloadError(
+          'Catalog discovery failed. Check provider connections or the saved catalog, then retry.',
+        );
+    } finally {
+      actionLock.current = false;
+      if (mounted.current) setScouting(false);
     }
   };
+
+  const handleDownload = async (model: CatalogModel) => {
+    if (actionLock.current || loadLock.current || !window.metroforge) return;
+    actionLock.current = true;
+    setDownloadingId(modelKey(model));
+    setDownloadError(null);
+    setDownloadMessage(null);
+    try {
+      const result = await window.metroforge.downloadModel(model.id, model.provider);
+      if (!mounted.current) return;
+      if (result.success) {
+        setDownloadMessage(result.message ?? `Installed ${model.name} from ${model.provider}`);
+        await load();
+      } else setDownloadError(result.error ?? `Download failed for ${model.name}`);
+    } catch {
+      if (mounted.current)
+        setDownloadError('The model download failed. Check its provider and retry.');
+    } finally {
+      actionLock.current = false;
+      if (mounted.current) setDownloadingId(null);
+    }
+  };
+
+  const handleSetModel = async (model: CatalogModel) => {
+    if (
+      actionLock.current ||
+      loadLock.current ||
+      !window.metroforge ||
+      !model.routable ||
+      !configurableProviders.has(model.provider)
+    )
+      return;
+    actionLock.current = true;
+    setSavingModel(true);
+    setDownloadError(null);
+    setDownloadMessage(null);
+    try {
+      const key = `app.${model.provider}.model`;
+      const result = await window.metroforge.setAppSettings({ [key]: model.id });
+      if (!result.success || result.saved[key] !== model.id)
+        throw new Error('Setting not acknowledged');
+      if (mounted.current)
+        setDownloadMessage(
+          `${model.provider} will use ${model.name} when that provider is chosen for a new generation request. Generation mode and fallback rules still apply. No request was sent.`,
+        );
+    } catch {
+      if (mounted.current)
+        setDownloadError(
+          'Could not save the provider model. Your current setting is unchanged or unconfirmed; retry or check Settings → Runtime.',
+        );
+    } finally {
+      actionLock.current = false;
+      if (mounted.current) setSavingModel(false);
+    }
+  };
+  const busy = loading || scouting || savingModel || downloadingId !== null;
 
   const routableCount = models.filter((m) => m.routable).length;
   const installedCount = models.filter((m) => m.installed).length;
@@ -197,7 +280,9 @@ export function ModelsScreen() {
   const starterInstalled = useMemo(() => {
     const pack = hardware?.starterPack ?? [];
     return pack.map((id) => {
-      const hit = models.find((m) => m.id === id || m.id.endsWith(`/${id}`) || m.name === id);
+      const hit = models.find(
+        (m) => m.local && (m.id === id || m.id.endsWith(`/${id}`) || m.name === id),
+      );
       return { id, installed: Boolean(hit?.installed) };
     });
   }, [hardware, models]);
@@ -210,24 +295,43 @@ export function ModelsScreen() {
         description="Registered models, local availability, hardware compatibility, licensing, and routing eligibility."
         compact
         actions={
-          <Button variant="primary" onClick={handleScout} disabled={scouting}>
-            {scouting ? 'Scouting…' : 'Refresh Catalog'}
+          <Button
+            variant="primary"
+            onClick={handleScout}
+            disabled={busy}
+            aria-busy={scouting || loading}
+          >
+            Refresh Catalog
           </Button>
         }
       />
 
+      {loadError && (
+        <div className="result error" role="alert">
+          {loadError}{' '}
+          <Button disabled={busy} onClick={() => void load()}>
+            Retry catalog
+          </Button>
+        </div>
+      )}
       <AiOpsWorkbench variant="models">
         <AiOpsSummary title="Catalog">
           <Metric label="Models" value={models.length} />
           <Metric label="Routable" value={routableCount} tone="success" />
           <Metric label="Installed" value={installedCount} />
-          <Metric label="Blocked" value={blockedCount} tone={blockedCount ? 'warning' : 'default'} />
+          <Metric
+            label="Blocked"
+            value={blockedCount}
+            tone={blockedCount ? 'warning' : 'default'}
+          />
           {hardware ? (
             <Metric
               label="Profile"
               value={hardware.profile}
               tone={profileTone(hardware.profile)}
-              hint={hardware.profile === 'LOW_RESOURCE' ? 'Prefer starter-pack local models' : undefined}
+              hint={
+                hardware.profile === 'LOW_RESOURCE' ? 'Prefer starter-pack local models' : undefined
+              }
             />
           ) : null}
         </AiOpsSummary>
@@ -246,7 +350,9 @@ export function ModelsScreen() {
                   <dt>RAM</dt>
                   <dd className="mono">{formatMbAsGb(hardware.totalRamMb)}</dd>
                   <dt>VRAM</dt>
-                  <dd className="mono">{hardware.vramMb != null ? formatMbAsGb(hardware.vramMb) : '—'}</dd>
+                  <dd className="mono">
+                    {hardware.vramMb != null ? formatMbAsGb(hardware.vramMb) : '—'}
+                  </dd>
                   <dt>GPU</dt>
                   <dd>
                     {hardware.gpuModel
@@ -254,7 +360,9 @@ export function ModelsScreen() {
                       : '—'}
                   </dd>
                   <dt>CPU</dt>
-                  <dd className="mono">{hardware.cpuCores != null ? `${hardware.cpuCores} cores` : '—'}</dd>
+                  <dd className="mono">
+                    {hardware.cpuCores != null ? `${hardware.cpuCores} cores` : '—'}
+                  </dd>
                   <dt>Tier</dt>
                   <dd>{hardware.profile}</dd>
                 </dl>
@@ -266,7 +374,9 @@ export function ModelsScreen() {
                         <li key={entry.id}>
                           <span aria-hidden="true">{entry.installed ? '✓' : '○'}</span>
                           <code className="mono">{entry.id}</code>
-                          <span className="hint">{entry.installed ? 'installed' : 'recommended'}</span>
+                          <span className="hint">
+                            {entry.installed ? 'installed' : 'recommended'}
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -274,7 +384,10 @@ export function ModelsScreen() {
                 ) : null}
               </>
             ) : (
-              <EmptyState title="Hardware unavailable" description="getHardwareProfile returned no snapshot." />
+              <EmptyState
+                title="Hardware unavailable"
+                description="getHardwareProfile returned no snapshot."
+              />
             )}
           </AiOpsContext>
 
@@ -287,7 +400,8 @@ export function ModelsScreen() {
             }
             toolbar={
               <>
-                <SearchField onClear={() => setQuery('')}
+                <SearchField
+                  onClear={() => setQuery('')}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search models…"
@@ -375,10 +489,20 @@ export function ModelsScreen() {
           >
             {filtered.length === 0 ? (
               <EmptyState
-                title="No matching models"
+                title={
+                  loading
+                    ? 'Loading models'
+                    : loadError
+                      ? 'Catalog unavailable'
+                      : 'No matching models'
+                }
                 description={
                   models.length === 0
-                    ? 'listModels returned an empty catalog. Refresh after configuring providers.'
+                    ? loading
+                      ? 'Checking your catalog and provider connections…'
+                      : loadError
+                        ? 'Retry the catalog read to see your models.'
+                        : 'Refresh after configuring providers in API Keys and Settings → Runtime.'
                     : 'Try changing provider, capability, license, or hardware filters.'
                 }
               />
@@ -386,14 +510,21 @@ export function ModelsScreen() {
               <VirtualizedModelTable
                 models={filtered}
                 hardware={hardware}
-                selectedId={selected?.id}
+                selectedId={selected ? modelKey(selected) : undefined}
                 onSelect={setSelectedId}
                 downloadingId={downloadingId}
-                onDownload={handleDownload}
               />
             )}
-            {downloadMessage && <p className="hint">{downloadMessage}</p>}
-            {downloadError && <p className="result error">{downloadError}</p>}
+            {downloadMessage && (
+              <p className="hint" role="status">
+                {downloadMessage}
+              </p>
+            )}
+            {downloadError && (
+              <p className="result error" role="alert">
+                {downloadError}
+              </p>
+            )}
           </AiOpsPrimary>
 
           <AiOpsInspector
@@ -424,7 +555,10 @@ export function ModelsScreen() {
                   <PropertyRow label="Installed">{installedLabel(selected)}</PropertyRow>
                   <PropertyRow label="Locality">{selected.local ? 'local' : 'hosted'}</PropertyRow>
                   <PropertyRow label="Health">
-                    <HealthDot status={selected.health ?? 'unknown'} label={selected.health ?? 'unknown'} />
+                    <HealthDot
+                      status={selected.health ?? 'unknown'}
+                      label={selected.health ?? 'unknown'}
+                    />
                   </PropertyRow>
                 </PropertySection>
                 <PropertySection title="License">
@@ -436,19 +570,21 @@ export function ModelsScreen() {
                 <PropertySection title="Hardware">
                   <PropertyRow label="Required RAM">
                     <span className="mono">
-                      {selected.minRamMb ?? selected.recommendedRamMb
+                      {(selected.minRamMb ?? selected.recommendedRamMb)
                         ? formatMbAsGb(selected.minRamMb ?? selected.recommendedRamMb)
                         : '—'}
                     </span>
                   </PropertyRow>
                   <PropertyRow label="Required VRAM">
                     <span className="mono">
-                      {selected.minVramMb ?? selected.recommendedVramMb
+                      {(selected.minVramMb ?? selected.recommendedVramMb)
                         ? formatMbAsGb(selected.minVramMb ?? selected.recommendedVramMb)
                         : '—'}
                     </span>
                   </PropertyRow>
-                  {hardware && (selected.minVramMb || selected.recommendedVramMb) && selected.local ? (
+                  {hardware &&
+                  (selected.minVramMb || selected.recommendedVramMb) &&
+                  selected.local ? (
                     <PropertyRow label="VRAM">
                       <span className="mono">
                         {formatMbAsGb(hardware.vramMb ?? 0)} / ~
@@ -483,16 +619,33 @@ export function ModelsScreen() {
                   <PropertyRow label="Speed">{selected.estimatedSpeed ?? '—'}</PropertyRow>
                 </PropertySection>
                 <PropertySection title="Actions">
+                  <p className="hint">
+                    Setting a model affects new requests to its provider. Model discovery does not
+                    verify output quality or commercial licensing.
+                  </p>
                   <div className="row">
                     <Button onClick={() => navigate('Routing')}>Open Routing Inspector</Button>
                     <Button onClick={() => navigate('Providers')}>Providers</Button>
+                    <Button onClick={() => navigate('Settings')}>Runtime settings</Button>
+                    {selected.modality === 'text' &&
+                    configurableProviders.has(selected.provider) ? (
+                      <Button
+                        variant="primary"
+                        disabled={busy || !selected.routable}
+                        aria-busy={savingModel}
+                        onClick={() => void handleSetModel(selected)}
+                      >
+                        Set provider model
+                      </Button>
+                    ) : null}
                     {selected.downloadable && !selected.installed ? (
                       <Button
                         variant="primary"
-                        disabled={downloadingId === selected.id}
-                        onClick={() => void handleDownload(selected.id)}
+                        disabled={busy}
+                        aria-busy={downloadingId === modelKey(selected)}
+                        onClick={() => void handleDownload(selected)}
                       >
-                        {downloadingId === selected.id ? 'Installing…' : 'Install / Get'}
+                        Install / Get
                       </Button>
                     ) : null}
                   </div>
@@ -512,14 +665,12 @@ function VirtualizedModelTable({
   selectedId,
   onSelect,
   downloadingId,
-  onDownload,
 }: {
   models: CatalogModel[];
   hardware: HardwareSnapshot | null;
   selectedId?: string;
   onSelect: (id: string) => void;
   downloadingId: string | null;
-  onDownload: (id: string) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
@@ -556,18 +707,25 @@ function VirtualizedModelTable({
         tabIndex={0}
         role="listbox"
         aria-label="Model catalog"
-        aria-activedescendant={selectedId ? `model-row-${selectedId}` : undefined}
+        aria-activedescendant={
+          visible.some((model) => modelKey(model) === selectedId)
+            ? `model-row-${models.findIndex((model) => modelKey(model) === selectedId)}`
+            : undefined
+        }
         onScroll={() => {
           if (ref.current) setScrollTop(ref.current.scrollTop);
         }}
         onKeyDown={(event) => {
           if (!models.length) return;
-          const current = Math.max(0, models.findIndex((m) => m.id === selectedId));
+          const current = Math.max(
+            0,
+            models.findIndex((m) => modelKey(m) === selectedId),
+          );
           if (event.key === 'ArrowDown') {
             event.preventDefault();
             const next = models[Math.min(models.length - 1, current + 1)];
             if (next) {
-              onSelect(next.id);
+              onSelect(modelKey(next));
               ref.current?.scrollTo({ top: Math.min(models.length - 1, current + 1) * ROW_HEIGHT });
             }
           }
@@ -575,18 +733,18 @@ function VirtualizedModelTable({
             event.preventDefault();
             const prev = models[Math.max(0, current - 1)];
             if (prev) {
-              onSelect(prev.id);
+              onSelect(modelKey(prev));
               ref.current?.scrollTo({ top: Math.max(0, current - 1) * ROW_HEIGHT });
             }
           }
           if (event.key === 'Home') {
             event.preventDefault();
-            onSelect(models[0]!.id);
+            onSelect(modelKey(models[0]!));
             ref.current?.scrollTo({ top: 0 });
           }
           if (event.key === 'End') {
             event.preventDefault();
-            onSelect(models[models.length - 1]!.id);
+            onSelect(modelKey(models[models.length - 1]!));
             ref.current?.scrollTo({ top: (models.length - 1) * ROW_HEIGHT });
           }
         }}
@@ -598,14 +756,26 @@ function VirtualizedModelTable({
             const fit = computeHardwareFit(model, hardware);
             return (
               <button
-                key={model.id}
-                id={`model-row-${model.id}`}
+                key={modelKey(model)}
+                id={`model-row-${row}`}
                 type="button"
                 role="option"
-                aria-selected={selectedId === model.id}
-                className={selectedId === model.id ? 'virtualized-row selected' : 'virtualized-row'}
-                style={{ position: 'absolute', top: row * ROW_HEIGHT, left: 0, right: 0, height: ROW_HEIGHT - 2 }}
-                onClick={() => onSelect(model.id)}
+                tabIndex={-1}
+                aria-selected={selectedId === modelKey(model)}
+                className={
+                  selectedId === modelKey(model) ? 'virtualized-row selected' : 'virtualized-row'
+                }
+                style={{
+                  position: 'absolute',
+                  top: row * ROW_HEIGHT,
+                  left: 0,
+                  right: 0,
+                  height: ROW_HEIGHT - 2,
+                }}
+                onClick={() => {
+                  onSelect(modelKey(model));
+                  ref.current?.focus();
+                }}
               >
                 <span title={model.id}>{model.name}</span>
                 <span className="mono">{model.provider}</span>
@@ -636,14 +806,10 @@ function VirtualizedModelTable({
                 <span>
                   {model.downloadable && !model.installed ? (
                     <span
-                      role="presentation"
                       className="model-get-action"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onDownload(model.id);
-                      }}
+                      title="Select this model and install from its details"
                     >
-                      {downloadingId === model.id ? '…' : 'Get'}
+                      {downloadingId === modelKey(model) ? 'Installing' : 'Details'}
                     </span>
                   ) : (
                     <Badge tone={availabilityTone(avail)} className="mf-badge-inline">

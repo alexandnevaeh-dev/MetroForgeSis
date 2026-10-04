@@ -4,11 +4,15 @@ import { ModelCatalogService, rankModelsForCapability } from './model-catalog.js
 import { HardwareProfiler } from './hardware-profiler.js';
 import { ModelBenchmarkService } from './model-benchmark.js';
 import type { ScoutReport, ModelCapability } from '@metroforge/schemas';
+import { ModelEntrySchema } from '@metroforge/schemas';
+import type { TextGenerationProvider } from './types.js';
 
 export interface ScoutOptions {
   sources?: ('ollama' | 'huggingface' | 'builtin' | 'local')[];
   runBenchmarks?: boolean;
   ollamaBaseUrl?: string;
+  /** Already-configured providers; discovery never changes credentials or enablement. */
+  providers?: TextGenerationProvider[];
 }
 
 export class ModelScout {
@@ -44,7 +48,9 @@ export class ModelScout {
           ...(await this.scoutOllama(options.ollamaBaseUrl ?? 'http://localhost:11434')),
         );
       } catch (err) {
-        report.errors.push(`Ollama scout failed: ${err instanceof Error ? err.message : String(err)}`);
+        report.errors.push(
+          `Ollama scout failed: ${err instanceof Error ? err.message : String(err)}`,
+        );
       }
     }
 
@@ -52,6 +58,54 @@ export class ModelScout {
       report.sourcesChecked.push('local');
       discovered.push(...this.scoutLocalInstalled());
     }
+
+    const chatProviders = (options.providers ?? []).filter(
+      (provider) =>
+        provider.enabled && ['lmstudio', 'together', 'cerebras', 'mistral'].includes(provider.id),
+    );
+    const results = await Promise.all(
+      chatProviders.map(async (provider) => {
+        report.sourcesChecked.push(provider.id);
+        try {
+          const ids = await provider.listModels();
+          return ids.map((id) => {
+            const existing = this.catalog.get(id, provider.id);
+            return existing
+              ? { ...existing, health: provider.health, lastScoutedAt: new Date().toISOString() }
+              : ModelEntrySchema.parse({
+                  id,
+                  name: id,
+                  provider: provider.id,
+                  modality: 'text',
+                  capabilities: [
+                    'TEXT_GENERATION',
+                    'CODE_GENERATION',
+                    'NARRATIVE',
+                    'JSON_GENERATION',
+                  ],
+                  local: provider.local,
+                  enabled: true,
+                  costClass: provider.costClass,
+                  license: 'Unverified — review model license and provider terms',
+                  commercialUse: 'unknown',
+                  modelSource: 'provider',
+                  runtime: provider.id,
+                  executionTargets: [provider.local ? 'LOCAL_SERVICE' : 'REMOTE_API'],
+                  installed: false,
+                  health: provider.health,
+                  priority: provider.priority,
+                  tags: ['discovered', 'license-unverified'],
+                });
+          });
+        } catch {
+          report.errors.push(
+            `${provider.name} discovery unavailable. Check its connection, key and model server in Settings.`,
+          );
+          return [];
+        }
+      }),
+    );
+    discovered.push(...results.flat());
 
     report.modelsDiscovered = discovered.length;
     const { added, updated } = this.catalog.mergeDiscovered(discovered);
@@ -78,7 +132,7 @@ export class ModelScout {
       }
     }
 
-    this.updateRouterPreferences();
+    // Apply hardware preferences during ranking, never by repeatedly changing saved priorities.
     this.catalog.save();
 
     report.completedAt = new Date().toISOString();
@@ -87,7 +141,7 @@ export class ModelScout {
 
   private async scoutOllama(baseUrl: string): Promise<ModelEntry[]> {
     const res = await fetch(`${baseUrl}/api/tags`, { signal: AbortSignal.timeout(5000) });
-    if (!res.ok) return [];
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     const data = (await res.json()) as { models?: { name: string }[] };
     const installed = new Set((data.models ?? []).map((m) => m.name));
@@ -97,7 +151,7 @@ export class ModelScout {
       .filter((m) => m.provider === 'ollama')
       .map((m) => {
         const isInstalled = [...installed].some(
-          (name) => name === m.id || name.startsWith(`${m.id}:`) || m.id.startsWith(name),
+          (name) => name === m.id || (!m.id.includes(':') && name === `${m.id}:latest`),
         );
         return {
           ...m,
@@ -113,26 +167,6 @@ export class ModelScout {
       .list()
       .filter((m) => m.runtime === 'native' || m.provider === 'metroforge')
       .map((m) => ({ ...m, installed: true, health: 'healthy' as const }));
-  }
-
-  private updateRouterPreferences(): void {
-    const hw = this.hardware.profile();
-    for (const model of this.catalog.list()) {
-      if (!this.hardware.canRunModel(model) && model.priority > 10) {
-        model.priority = Math.max(10, model.priority - 30);
-      }
-    }
-
-    if (hw.profile === 'LOW_RESOURCE') {
-      for (const model of this.catalog.list()) {
-        if (model.tags.includes('low-resource') || model.tags.includes('cpu-friendly')) {
-          model.priority += 15;
-        }
-        if ((model.recommendedRamMb ?? 0) > 16384) {
-          model.priority = Math.max(5, model.priority - 20);
-        }
-      }
-    }
   }
 
   getRecommendedForCapability(

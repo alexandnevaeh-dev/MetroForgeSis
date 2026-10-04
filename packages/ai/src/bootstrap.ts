@@ -3,12 +3,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { GenerationMode } from '@metroforge/shared';
 import { isProviderUserEnabled, textConnectionValue } from '@metroforge/shared/provider-toggles';
-import {
-  ProviderRegistry,
-  ModelRegistry,
-  CapabilityRouter,
-  FallbackManager,
-} from './registry.js';
+import { ProviderRegistry, ModelRegistry, CapabilityRouter, FallbackManager } from './registry.js';
 import { ModelCatalogService } from './model-catalog.js';
 import { createGenerationRouter, type GenerationRouter } from './generation-router.js';
 import { reconcileModelCatalog } from './catalog-reconciliation.js';
@@ -41,6 +36,8 @@ function loadProviderDefaults(): Record<string, ProviderDefaultsEntry> {
 }
 
 export interface ProviderBootstrapConfig {
+  /** Catalog and user model state for this app session. */
+  dataDir?: string;
   mode: GenerationMode;
   ollamaBaseUrl: string;
   ollamaDefaultModel?: string;
@@ -54,7 +51,7 @@ export interface ProviderBootstrapConfig {
   providerEnabled?: Record<string, boolean>;
   /** Avoid live provider probes in deterministic tests and offline planning. */
   skipHealthChecks?: boolean;
-  connectionSettings?: Record<string,string>;
+  connectionSettings?: Record<string, string>;
   togetherApiKey?: string;
   cerebrasApiKey?: string;
   mistralApiKey?: string;
@@ -77,11 +74,15 @@ export async function bootstrapProviders(
   const models = new ModelRegistry();
   const providerDefaults = loadProviderDefaults();
   const userEnabled = (id: string) => isProviderUserEnabled(config.providerEnabled, id);
-  const connection = (key: string) => textConnectionValue(key, config.connectionSettings, process.env);
+  const connection = (key: string) =>
+    textConnectionValue(key, config.connectionSettings, process.env);
 
   const ollama = new OllamaProvider({
     baseUrl: config.connectionSettings?.['app.ollama.baseUrl']?.trim() || config.ollamaBaseUrl,
-    defaultModel: config.connectionSettings?.['app.ollama.model']?.trim() || config.ollamaDefaultModel || connection('app.ollama.model'),
+    defaultModel:
+      config.connectionSettings?.['app.ollama.model']?.trim() ||
+      config.ollamaDefaultModel ||
+      connection('app.ollama.model'),
     enabled: (providerDefaults.ollama?.enabled ?? true) && userEnabled('ollama'),
     priority: providerDefaults.ollama?.priority,
   });
@@ -91,30 +92,47 @@ export async function bootstrapProviders(
   registry.register(ollama);
 
   const lmstudio = new CompatibleChatProvider({
-    id:'lmstudio', name:'LM Studio', local:true,
-    baseUrl:connection('app.lmstudio.baseUrl'), model:connection('app.lmstudio.model'),
-    apiKey:config.lmstudioApiKey ?? process.env.LMSTUDIO_API_KEY,
-    enabled:userEnabled('lmstudio'), license:'Model-dependent; review the loaded model license',
+    id: 'lmstudio',
+    name: 'LM Studio',
+    local: true,
+    baseUrl: connection('app.lmstudio.baseUrl'),
+    model: connection('app.lmstudio.model'),
+    apiKey: config.lmstudioApiKey ?? process.env.LMSTUDIO_API_KEY,
+    enabled: userEnabled('lmstudio'),
+    license: 'Model-dependent; review the loaded model license',
   });
-  if (config.skipHealthChecks) lmstudio.health = 'degraded'; else await lmstudio.initialize();
+  if (config.skipHealthChecks) lmstudio.health = 'degraded';
+  else await lmstudio.initialize();
   registry.register(lmstudio);
 
   if (modeRegistersHostedProviders(config.mode)) {
     const hosted = [
       new CompatibleChatProvider({
-        id:'together', name:'Together AI', baseUrl:'https://api.together.ai/v1',
-        model:connection('app.together.model'), apiKey:config.togetherApiKey ?? process.env.TOGETHER_API_KEY,
-        enabled:userEnabled('together'), license:'Together AI terms and model-dependent license',
+        id: 'together',
+        name: 'Together AI',
+        baseUrl: 'https://api.together.ai/v1',
+        model: connection('app.together.model'),
+        apiKey: config.togetherApiKey ?? process.env.TOGETHER_API_KEY,
+        enabled: userEnabled('together'),
+        license: 'Together AI terms and model-dependent license',
       }),
       new CompatibleChatProvider({
-        id:'cerebras', name:'Cerebras', baseUrl:'https://api.cerebras.ai/v1',
-        model:connection('app.cerebras.model'), apiKey:config.cerebrasApiKey ?? process.env.CEREBRAS_API_KEY,
-        enabled:userEnabled('cerebras'), license:'Cerebras terms and model-dependent license',
+        id: 'cerebras',
+        name: 'Cerebras',
+        baseUrl: 'https://api.cerebras.ai/v1',
+        model: connection('app.cerebras.model'),
+        apiKey: config.cerebrasApiKey ?? process.env.CEREBRAS_API_KEY,
+        enabled: userEnabled('cerebras'),
+        license: 'Cerebras terms and model-dependent license',
       }),
       new CompatibleChatProvider({
-        id:'mistral', name:'Mistral AI', baseUrl:'https://api.mistral.ai/v1',
-        model:connection('app.mistral.model'), apiKey:config.mistralApiKey ?? process.env.MISTRAL_API_KEY,
-        enabled:userEnabled('mistral'), license:'Mistral AI terms and model-dependent license',
+        id: 'mistral',
+        name: 'Mistral AI',
+        baseUrl: 'https://api.mistral.ai/v1',
+        model: connection('app.mistral.model'),
+        apiKey: config.mistralApiKey ?? process.env.MISTRAL_API_KEY,
+        enabled: userEnabled('mistral'),
+        license: 'Mistral AI terms and model-dependent license',
       }),
       new GeminiProvider({
         apiKey: config.geminiApiKey,
@@ -166,7 +184,7 @@ export async function bootstrapProviders(
     }
   }
 
-  const catalog = new ModelCatalogService();
+  const catalog = new ModelCatalogService(config.dataDir);
   models.load(reconcileModelCatalog(catalog, new Set(registry.listEnabled().map((p) => p.id))));
 
   const router = new CapabilityRouter(registry, models);

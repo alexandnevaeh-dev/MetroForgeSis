@@ -261,6 +261,7 @@ async function textBootstrapConfig(
 ): Promise<Parameters<typeof bootstrapProviders>[0]> {
   const prefs = await loadAppPreferences(dataDir);
   return {
+    dataDir,
     mode,
     ollamaBaseUrl,
     connectionSettings: prefs,
@@ -730,15 +731,18 @@ export function registerIpcHandlers(cwd: string): void {
     }));
   });
 
-  ipcMain.handle('download-model', async (_event, modelId: string) => {
+  ipcMain.handle('download-model', async (_event, modelId: string, provider?: string) => {
     if (typeof modelId !== 'string' || !modelId.trim()) {
       return { success: false, error: 'Model id is required' };
     }
 
     const catalog = new ModelCatalogService(dataDir);
-    const model = catalog.get(modelId);
+    if (provider !== undefined && (typeof provider !== 'string' || !provider.trim())) {
+      return { success: false, error: 'Provider id is required' };
+    }
+    const model = catalog.get(modelId, provider);
     if (!model) {
-      return { success: false, error: `Model not found: ${modelId}` };
+      return { success: false, error: `Model not found or ambiguous: ${modelId}. Select its provider.` };
     }
 
     const modelsDir = join(dataDir, 'models');
@@ -750,7 +754,7 @@ export function registerIpcHandlers(cwd: string): void {
 
     try {
       await downloadManager.download(model, { modelId, approved: true });
-      catalog.markInstalled(modelId, plan.targetPath);
+      catalog.markInstalled(modelId, plan.targetPath, model.provider);
       catalog.save();
       return {
         success: true,
@@ -774,12 +778,16 @@ export function registerIpcHandlers(cwd: string): void {
 
   ipcMain.handle('scout-models', async (_event, opts?: { benchmark?: boolean }) => {
     const config = loadConfig();
+    const scoutDataDir = config.dataDir || join(cwd, '.metroforge');
+    const scoutConfig = await textBootstrapConfig(scoutDataDir, 'HYBRID_FREE', config.ollamaBaseUrl);
+    const { registry } = await bootstrapProviders({ ...scoutConfig, skipHealthChecks: true });
     const { ModelScout } = await import('@metroforge/ai');
-    const scout = new ModelScout(config.dataDir || join(cwd, '.metroforge'));
+    const scout = new ModelScout(scoutDataDir);
     return scout.refresh({
-      sources: ['ollama', 'local'],
+      sources: registry.get('ollama')?.enabled ? ['ollama', 'local'] : ['local'],
       runBenchmarks: opts?.benchmark,
-      ollamaBaseUrl: config.ollamaBaseUrl,
+      ollamaBaseUrl: scoutConfig.connectionSettings?.['app.ollama.baseUrl']?.trim() || config.ollamaBaseUrl,
+      providers: registry.listEnabled(),
     });
   });
 

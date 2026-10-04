@@ -1,6 +1,7 @@
 import type { ModelEntry } from '@metroforge/schemas';
 import type { HardwareProfile } from '@metroforge/schemas';
 import type { ModelCatalogService } from './model-catalog.js';
+import { modelIdentity } from './model-catalog.js';
 import { CAPABILITY_TO_AI_CAPABILITY } from './generation-router.js';
 import type { ModelMetadata, ProviderHealth } from './types.js';
 import type { ProviderRegistry, ModelRegistry } from './registry.js';
@@ -29,6 +30,10 @@ export function reconcileModelCatalog(
         : providerLiveEnabled.has(entry.provider),
       costClass: entry.costClass,
       license: entry.license,
+      commercialUse: entry.commercialUse,
+      estimatedSpeed: entry.estimatedSpeed,
+      estimatedQuality: entry.estimatedQuality,
+      minVramMb: entry.minVramMb,
       contextWindow: entry.contextWindow ?? null,
       supportsTools: entry.supportsTools,
       supportsVision: entry.supportsVision,
@@ -47,7 +52,7 @@ export interface ReconciledCatalogEntry extends ModelEntry {
   runtimeEligible: boolean;
   /** Hardware fits for local models; always true for hosted/remote (VRAM not applied). */
   hardwareCompatible: boolean;
-  /** True when this model is selectable by CapabilityRouter right now. */
+  /** Available catalog candidate; actual dispatch uses the provider's configured model. */
   routable: boolean;
   /** True when the model's provider is registered and enabled in this bootstrap. */
   providerEnabled: boolean;
@@ -79,7 +84,8 @@ function normalizeProviderHealth(
   if (s === 'disabled') return 'disabled';
   if (s === 'unconfigured' || s === 'not_configured') return 'unconfigured';
   if (s === 'offline') return 'offline';
-  if (s === 'unavailable' || s === 'unhealthy' || s === 'error' || s === 'fail') return 'unavailable';
+  if (s === 'unavailable' || s === 'unhealthy' || s === 'error' || s === 'fail')
+    return 'unavailable';
   return undefined;
 }
 
@@ -88,14 +94,16 @@ export async function fetchLiveModelIdsByProvider(
   registry: ProviderRegistry,
 ): Promise<Map<string, Set<string>>> {
   const out = new Map<string, Set<string>>();
-  for (const provider of registry.listEnabled()) {
-    try {
-      const ids = await provider.listModels();
-      out.set(provider.id, new Set(ids));
-    } catch {
-      /* provider listModels already degrades gracefully — skip on throw */
-    }
-  }
+  await Promise.all(
+    registry.listEnabled().map(async (provider) => {
+      try {
+        const ids = await provider.listModels();
+        out.set(provider.id, new Set(ids));
+      } catch {
+        /* provider listModels already degrades gracefully — skip on throw */
+      }
+    }),
+  );
   return out;
 }
 
@@ -113,7 +121,12 @@ export function reconcileCatalogEntries(
   providerLiveEnabled: Set<string>,
   options: ReconcileCatalogOptions = {},
 ): ReconciledCatalogEntry[] {
-  const routableById = new Map(models.list().filter((m) => m.enabled).map((m) => [m.id, m]));
+  const routableById = new Map(
+    models
+      .list()
+      .filter((m) => m.enabled)
+      .map((m) => [modelIdentity(m), m]),
+  );
   const hw = options.hardware;
 
   return catalog.list().map((entry) => {
@@ -127,11 +140,13 @@ export function reconcileCatalogEntries(
       providerHealth !== 'disabled' &&
       providerHealth !== 'unconfigured';
     const hardwareCompatible = computeHardwareCompatible(entry, hw);
-    const inRouter = routableById.has(entry.id);
-    const routable = inRouter && runtimeEligible && hardwareCompatible;
+    const inRouter = routableById.has(modelIdentity(entry));
     const liveSet = liveModelIdsByProvider.get(entry.provider);
     const liveListed =
-      liveSet == null ? null : liveSet.has(entry.id) || liveSet.has(entry.id.split('/').pop() ?? '');
+      liveSet == null
+        ? null
+        : liveSet.has(entry.id) || liveSet.has(entry.id.split('/').pop() ?? '');
+    const routable = inRouter && runtimeEligible && hardwareCompatible && liveListed !== false;
 
     return {
       ...entry,
@@ -149,7 +164,9 @@ export function reconcileCatalogEntries(
   });
 }
 
-function dedupeCapabilities(capabilities: ModelEntry['capabilities']): ModelMetadata['capabilities'] {
+function dedupeCapabilities(
+  capabilities: ModelEntry['capabilities'],
+): ModelMetadata['capabilities'] {
   const seen = new Set<ModelMetadata['capabilities'][number]>();
   for (const c of capabilities) {
     const mapped = CAPABILITY_TO_AI_CAPABILITY[c];

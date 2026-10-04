@@ -1,5 +1,5 @@
 import type { ExternalVisualPackId } from '@metroforge/godot';
-import type { ModelEntry } from '@metroforge/schemas';
+import type { ModelEntry, ScoutReport } from '@metroforge/schemas';
 import type { PlacementSaveSnapshot } from '@metroforge/generation';
 
 export type LivePlacementInspection = {
@@ -267,7 +267,7 @@ export type MetroforgeBridge = {
     }[]
   >;
   listModels: (filter?: { capability?: string; installed?: boolean }) => Promise<CatalogModel[]>;
-  downloadModel: (modelId: string) => Promise<{
+  downloadModel: (modelId: string, provider?: string) => Promise<{
     success: boolean;
     targetPath?: string;
     adapter?: string;
@@ -275,7 +275,7 @@ export type MetroforgeBridge = {
     error?: string;
   }>;
   getHardwareProfile: () => Promise<HardwareSnapshot>;
-  scoutModels: (opts?: { benchmark?: boolean }) => Promise<unknown>;
+  scoutModels: (opts?: { benchmark?: boolean }) => Promise<ScoutReport>;
   explainModelRouting: (capability: string) => Promise<ModelRoutingExplanation>;
   getOverworldMap: (projectPath: string) => Promise<OverworldMapPreview>;
   getDungeonGraph: (projectPath: string, dungeonId?: string) => Promise<DungeonGraphPreview>;

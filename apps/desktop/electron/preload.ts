@@ -22,8 +22,8 @@ contextBridge.exposeInMainWorld('metroforge', {
         }
       >
     >,
-  downloadModel: (modelId: string) =>
-    ipcRenderer.invoke('download-model', modelId) as Promise<{
+  downloadModel: (modelId: string, provider?: string) =>
+    ipcRenderer.invoke('download-model', modelId, provider) as Promise<{
       success: boolean;
       targetPath?: string;
       adapter?: string;
