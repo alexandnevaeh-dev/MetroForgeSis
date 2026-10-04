@@ -10,6 +10,10 @@ export const CREDENTIAL_KEYS = {
   stability: 'STABILITY_API_KEY',
   deepai: 'DEEPAI_API_KEY',
   replicate: 'REPLICATE_API_TOKEN',
+  together: 'TOGETHER_API_KEY',
+  cerebras: 'CEREBRAS_API_KEY',
+  mistral: 'MISTRAL_API_KEY',
+  lmstudio: 'LMSTUDIO_API_KEY',
 } as const;
 export type CredentialId = keyof typeof CREDENTIAL_KEYS;
 type Cipher = {

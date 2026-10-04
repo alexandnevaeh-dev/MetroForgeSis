@@ -127,6 +127,11 @@ DefaultImporter:
         else { mkdirSync(dirname(artDest), { recursive: true }); writeFileSync(artDest, buffer); }
       };
 
+      // Native adapters receive the same versioned side-view default material.
+      // Generated project artwork may override these bytes below.
+      const castleMasonry = join(REPO_ROOT, 'templates', 'godot-metroidvania', 'assets', 'architecture', 'stormglass', 'masonry-fill-v1.png');
+      if (input.gameDna.archetype === 'SIDE_VIEW_METROIDVANIA' && existsSync(castleMasonry))
+        copyArt('assets/architecture/stormglass/masonry-fill-v1.png', readFileSync(castleMasonry));
       if (input.textureFiles) {
         for (const [rel, buffer] of input.textureFiles) {
           if (rel.endsWith('.png') || rel.endsWith('.json')) copyArt(rel, buffer);

@@ -12,6 +12,7 @@ import { readdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve as resolvePath, basename, dirname } from 'node:path';
 import { getVersionString } from '@metroforge/core';
 import { loadConfig, resolveGeneratedGamesPath, isPathWithinRoot, type GameArchetype, parseProviderEnabledMap, isProviderEnabledSettingKey } from '@metroforge/shared';
+import { validateTextConnectionSetting, textConnectionValue } from '@metroforge/shared/provider-toggles';
 import {
   GenerationPipeline,
   readEditableLoot,
@@ -262,6 +263,7 @@ async function textBootstrapConfig(
   return {
     mode,
     ollamaBaseUrl,
+    connectionSettings: prefs,
     geminiApiKey: process.env.GEMINI_API_KEY,
     groqApiKey: process.env.GROQ_API_KEY,
     openrouterApiKey: process.env.OPENROUTER_API_KEY,
@@ -436,6 +438,7 @@ export function registerIpcHandlers(cwd: string): void {
           ...payload,
           cwd,
           providerEnabled: parseProviderEnabledMap(prefs),
+          textConnectionSettings: prefs,
           nvidiaImageModel:
             prefs[APP_SETTING_KEYS.nvidiaImageModel]?.trim() || process.env.NVIDIA_IMAGE_MODEL,
           hardwareProfile: hw.profile,
@@ -523,7 +526,7 @@ export function registerIpcHandlers(cwd: string): void {
       hwConfig.profile,
     );
     const visionCritic = createVisionCritic({
-      ollamaBaseUrl: config.ollamaBaseUrl,
+      ollamaBaseUrl: textConnectionValue('app.ollama.baseUrl', prefs, process.env),
       nvidiaApiKey: process.env.NVIDIA_API_KEY,
       nvidiaApiBaseUrl: process.env.NVIDIA_API_BASE_URL,
     });
@@ -545,7 +548,7 @@ export function registerIpcHandlers(cwd: string): void {
         sourceLabel: godotResolved.sourceLabel,
         version: godotResolved.version,
       },
-      ollamaBaseUrl: config.ollamaBaseUrl,
+      ollamaBaseUrl: textConnectionValue('app.ollama.baseUrl', prefs, process.env),
       repoRoot: cwd,
       nvidiaImageModel,
       concurrency: workerPool.getLimits(),
@@ -583,6 +586,7 @@ export function registerIpcHandlers(cwd: string): void {
           allowed.has(key as (typeof APP_SETTING_KEYS)[keyof typeof APP_SETTING_KEYS]) ||
           isProviderEnabledSettingKey(key)
         ) {
+          validateTextConnectionSetting(key, String(value));
           filtered[key] = String(value);
         }
       }

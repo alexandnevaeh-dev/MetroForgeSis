@@ -12,11 +12,18 @@ import {
   isProviderUserEnabled,
   parseProviderEnabledMap,
   providerEnabledSettingKey,
+  TEXT_CONNECTION_FIELDS,
+  textConnectionValue,
+  validateTextConnectionSetting,
 } from '@metroforge/shared/provider-toggles';
-import { Badge, Button, ErrorState, LoadingState, Panel } from './ui/index.js';
+import { Badge, Button, Checkbox, ErrorState, Input, LoadingState, Panel } from './ui/index.js';
 
 const TEXT_LABELS: Record<string, string> = {
   ollama: 'Ollama (local)',
+  lmstudio: 'LM Studio (local)',
+  together: 'Together AI (hosted)',
+  cerebras: 'Cerebras (hosted)',
+  mistral: 'Mistral AI (hosted)',
   gemini: 'Google Gemini',
   groq: 'Groq',
   openrouter: 'OpenRouter',
@@ -67,6 +74,7 @@ export function SettingsScreen() {
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [providerToggles, setProviderToggles] = useState<Record<string, boolean>>({});
+  const [connections, setConnections] = useState<Record<string,string>>({});
   const [godotResolve, setGodotResolve] = useState<GodotResolveInfo | null>(null);
   const [godotTestMessage, setGodotTestMessage] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -91,6 +99,9 @@ export function SettingsScreen() {
     try {
       const cfg = await window.metroforge.getConfig();
       setConfig(cfg);
+      setConnections(Object.fromEntries(TEXT_CONNECTION_FIELDS.map(field => [
+        field.key, cfg.appPreferences?.[field.key] ?? (field.key === 'app.ollama.baseUrl' ? cfg.ollamaBaseUrl : ''),
+      ])));
       setForm({
         defaultMode: cfg.defaultMode,
         defaultProfile: cfg.defaultProfile,
@@ -129,6 +140,13 @@ export function SettingsScreen() {
     setSaving(true);
     setSaveMessage(null);
     try {
+      for (const field of TEXT_CONNECTION_FIELDS) {
+        try { validateTextConnectionSetting(field.key, connections[field.key] ?? ''); }
+        catch (error) {
+          document.getElementById('connection-'+field.env.toLowerCase())?.focus();
+          throw error;
+        }
+      }
       const providerSettings: Record<string, string> = {};
       for (const [id, enabled] of Object.entries(providerToggles)) {
         providerSettings[providerEnabledSettingKey(id)] = enabled ? 'true' : 'false';
@@ -144,6 +162,7 @@ export function SettingsScreen() {
         'app.concurrency.cpu': form.concurrencyCpu,
         'app.nvidia.imageModel': form.nvidiaImageModel.trim(),
         ...providerSettings,
+        ...connections,
       });
       const refreshed = await window.metroforge.getConfig();
       setConfig(refreshed);
@@ -152,7 +171,7 @@ export function SettingsScreen() {
       } else {
         setGodotResolve(refreshed.godotResolve ?? null);
       }
-      setSaveMessage('Preferences saved. Concurrency and Godot path apply immediately for Doctor / Play / Export.');
+      setSaveMessage('Preferences saved. Server and model settings apply to new generation jobs. Check provider health before generating.');
     } catch (err) {
       setSaveMessage(String(err));
     } finally {
@@ -163,7 +182,7 @@ export function SettingsScreen() {
   const testGodot = async () => {
     setGodotTestMessage(null);
     if (!window.metroforge?.resolveGodot) {
-      setGodotTestMessage('resolveGodot IPC unavailable â€” rebuild desktop preload.');
+      setGodotTestMessage('resolveGodot IPC unavailable — rebuild desktop preload.');
       return;
     }
     // Persist current field first so Test uses the typed preference.
@@ -176,7 +195,7 @@ export function SettingsScreen() {
     const resolved = await window.metroforge.resolveGodot(selectedPath);
     setGodotResolve(resolved);
     if (!resolved.path) {
-      setGodotTestMessage('Godot not found via preference â†’ project â†’ env â†’ PATH â†’ known paths.');
+      setGodotTestMessage('Godot not found via preference → project → env → PATH → known paths.');
       return;
     }
     if (!resolved.version) {
@@ -185,7 +204,7 @@ export function SettingsScreen() {
       );
       return;
     }
-    setGodotTestMessage(`OK Â· ${resolved.version} Â· ${resolved.sourceLabel} Â· ${resolved.path}`);
+    setGodotTestMessage(`OK · ${resolved.version} · ${resolved.sourceLabel} · ${resolved.path}`);
   };
 
   const diagnosticsLines = useMemo(() => {
@@ -195,10 +214,10 @@ export function SettingsScreen() {
       `Repo: ${config.repoRoot}`,
       `Generated games: ${config.generatedGamesDir}`,
       `Ollama URL: ${config.ollamaBaseUrl}`,
-      `Godot: ${godotResolve?.path ?? config.godotExecutable ?? 'â€”'} (${godotResolve?.sourceLabel ?? 'â€”'})`,
+      `Godot: ${godotResolve?.path ?? config.godotExecutable ?? '—'} (${godotResolve?.sourceLabel ?? '—'})`,
       `Default mode: ${config.defaultMode}`,
       `Default profile: ${config.defaultProfile}`,
-      `NVIDIA image model id: ${form.nvidiaImageModel.trim() || config.nvidiaImageModel || 'â€”'}`,
+      `NVIDIA image model id: ${form.nvidiaImageModel.trim() || config.nvidiaImageModel || '—'}`,
       `Keys present: NVIDIA=${config.envKeys.nvidiaApiKey ? 'yes' : 'no'} GEMINI=${config.envKeys.geminiApiKey ? 'yes' : 'no'} GROQ=${config.envKeys.groqApiKey ? 'yes' : 'no'} OPENROUTER=${config.envKeys.openrouterApiKey ? 'yes' : 'no'} HF=${config.envKeys.huggingfaceApiKey ? 'yes' : 'no'} COMFY=${config.envKeys.comfyuiUrl ? 'yes' : 'no'} DIFFUSERS=${config.envKeys.diffusersPython ? 'yes' : 'no'} A1111=${config.envKeys.automatic1111Url ? 'yes' : 'no'} STABILITY=${config.envKeys.stabilityApiKey ? 'yes' : 'no'} DEEPAI=${config.envKeys.deepaiApiKey ? 'yes' : 'no'} REPLICATE=${config.envKeys.replicateApiToken ? 'yes' : 'no'}`,
     ];
   }, [config, form.nvidiaImageModel, godotResolve]);
@@ -208,7 +227,7 @@ export function SettingsScreen() {
       <ScreenHeader
         eyebrow="Ship"
         title="Settings"
-        description="App preferences persist in the MetroForge database. API keys remain in .env (presence only below). Project gates live on project.json."
+        description="Choose generation defaults, model servers and runtime paths. Manage encrypted credentials in API Keys."
         actions={
           <>
             <ProjectSelect />
@@ -216,12 +235,12 @@ export function SettingsScreen() {
               Providers
             </Button>
             <Button variant="primary" disabled={saving || !config} onClick={() => void savePreferences()}>
-              {saving ? 'Savingâ€¦' : 'Save'}
+              {saving ? 'Saving…' : 'Save'}
             </Button>
           </>
         }
       />
-      {loading && <LoadingState title="Loading settingsâ€¦" description="Reading desktop config from the live bridge." />}
+      {loading && <LoadingState title="Loading settings…" description="Reading desktop config from the live bridge." />}
       {error && <ErrorState title="Settings unavailable" description={error} />}
       {saveMessage && <p className="hint">{saveMessage}</p>}
 
@@ -241,7 +260,7 @@ export function SettingsScreen() {
               }}
             >
               {id}
-              {id === 'Providers' ? <span className="hint"> â†—</span> : null}
+              {id === 'Providers' ? <span className="hint"> ↗</span> : null}
             </button>
           ))}
         </nav>
@@ -311,37 +330,50 @@ export function SettingsScreen() {
                 Opt-out toggles in the app settings DB. Disabled providers stay out of bootstrap and probes. Keys stay
                 in the encrypted API Keys store or your existing <code>.env</code>.
               </p>
+              <h3>Text, code and narrative</h3>
               <div className="form-grid">
                 {TEXT_PROVIDER_TOGGLE_IDS.map((id) => (
-                  <label key={id} className="check-row">
-                    <input
-                      type="checkbox"
+                    <Checkbox key={id} label={TEXT_LABELS[id] ?? id} disabled={saving}
                       checked={providerToggles[id] !== false}
                       onChange={(e) =>
                         setProviderToggles((prev) => ({ ...prev, [id]: e.target.checked }))
                       }
                     />
-                    {TEXT_LABELS[id] ?? id}
-                  </label>
                 ))}
               </div>
+              <h3>Images and asset libraries</h3>
               <div className="form-grid" style={{ marginTop: '0.5rem' }}>
                 {IMAGE_PROVIDER_TOGGLE_IDS.map((id) => (
-                  <label key={id} className="check-row">
-                    <input
-                      type="checkbox"
+                    <Checkbox key={id} label={IMAGE_LABELS[id] ?? id} disabled={saving}
                       checked={providerToggles[id] !== false}
                       onChange={(e) =>
                         setProviderToggles((prev) => ({ ...prev, [id]: e.target.checked }))
                       }
                     />
-                    {IMAGE_LABELS[id] ?? id}
-                  </label>
                 ))}
               </div>
               <Button variant="secondary" onClick={() => navigate('Providers')}>
                 Open Providers health
               </Button>
+              <h4 className="mf-panel-title">Chat servers and models</h4>
+              <p className="hint">Local servers stay on this computer. Use the exact chat model name shown by your provider. Leave a model blank to use its default; LM Studio uses the model exposed by its server. Hosted providers may charge for generation.</p>
+              <div className="form-grid">
+                {TEXT_CONNECTION_FIELDS.map(field => {
+                  let validation = '';
+                  try { validateTextConnectionSetting(field.key, connections[field.key] ?? ''); } catch (error) { validation = (error as Error).message; }
+                  const id = 'connection-'+field.env.toLowerCase();
+                  return <div key={field.key}>
+                    <label htmlFor={id}>{field.label}</label>
+                    <Input id={id} value={connections[field.key] ?? ''} disabled={saving}
+                      placeholder={textConnectionValue(field.key)} aria-invalid={!!validation}
+                      aria-describedby={id+'-help'}
+                      onChange={event => setConnections(previous => ({...previous,[field.key]:event.target.value}))} />
+                    <p id={id+'-help'} className={validation ? 'result error' : 'hint'}>
+                      {validation || (field.localUrl ? 'Start the local model server before checking health.' : 'Blank uses the environment setting or built-in default.')}
+                    </p>
+                  </div>;
+                })}
+              </div>
             </Panel>
           )}
 
@@ -360,7 +392,7 @@ export function SettingsScreen() {
                   type="text"
                   value={form.godotExecutable}
                   onChange={(e) => setForm((f) => ({ ...f, godotExecutable: e.target.value }))}
-                  placeholder="Auto-detect (preference â†’ project â†’ env â†’ PATH â†’ known)"
+                  placeholder="Auto-detect (preference → project → env → PATH → known)"
                 />
               </label>
               <div className="row" style={{ marginTop: '0.5rem' }}>
@@ -374,7 +406,7 @@ export function SettingsScreen() {
               {godotTestMessage && <p className="hint mono">{godotTestMessage}</p>}
               {godotResolve && (
                 <p className="hint mono">
-                  Resolved: {godotResolve.path ?? 'â€”'} Â· {godotResolve.version ?? 'no version'} Â·{' '}
+                  Resolved: {godotResolve.path ?? '—'} · {godotResolve.version ?? 'no version'} ·{' '}
                   {godotResolve.sourceLabel}
                 </p>
               )}
@@ -456,7 +488,7 @@ export function SettingsScreen() {
 
           {category === 'Diagnostics' && config && (
             <Panel level={1} title="Diagnostics">
-              <p className="hint">Copy-safe summary â€” key presence only, never secret values.</p>
+              <p className="hint">Copy-safe summary — key presence only, never secret values.</p>
               <pre className="settings-diagnostics mono">{diagnosticsLines.join('\n')}</pre>
               <Button
                 onClick={() => {
@@ -470,38 +502,38 @@ export function SettingsScreen() {
               </h4>
               <ul className="check-list">
                 <li className={config.envKeys.nvidiaApiKey ? 'check-pass' : 'check-warn'}>
-                  NVIDIA_API_KEY â€” {config.envKeys.nvidiaApiKey ? 'configured' : 'not set'}
+                  NVIDIA_API_KEY — {config.envKeys.nvidiaApiKey ? 'configured' : 'not set'}
                 </li>
                 <li className={config.envKeys.geminiApiKey ? 'check-pass' : 'check-warn'}>
-                  GEMINI_API_KEY â€” {config.envKeys.geminiApiKey ? 'configured' : 'not set'}
+                  GEMINI_API_KEY — {config.envKeys.geminiApiKey ? 'configured' : 'not set'}
                 </li>
                 <li className={config.envKeys.groqApiKey ? 'check-pass' : 'check-warn'}>
-                  GROQ_API_KEY â€” {config.envKeys.groqApiKey ? 'configured' : 'not set'}
+                  GROQ_API_KEY — {config.envKeys.groqApiKey ? 'configured' : 'not set'}
                 </li>
                 <li className={config.envKeys.openrouterApiKey ? 'check-pass' : 'check-warn'}>
-                  OPENROUTER_API_KEY â€” {config.envKeys.openrouterApiKey ? 'configured' : 'not set'}
+                  OPENROUTER_API_KEY — {config.envKeys.openrouterApiKey ? 'configured' : 'not set'}
                 </li>
                 <li className={config.envKeys.huggingfaceApiKey ? 'check-pass' : 'check-warn'}>
-                  HUGGINGFACE_API_KEY â€” {config.envKeys.huggingfaceApiKey ? 'configured' : 'not set'}
+                  HUGGINGFACE_API_KEY — {config.envKeys.huggingfaceApiKey ? 'configured' : 'not set'}
                 </li>
                 <li className={config.envKeys.comfyuiUrl ? 'check-pass' : 'check-warn'}>
-                  COMFYUI_BASE_URL â€” {config.envKeys.comfyuiUrl ? 'configured' : 'not set'}
+                  COMFYUI_BASE_URL — {config.envKeys.comfyuiUrl ? 'configured' : 'not set'}
                 </li>
                 <li className={config.envKeys.diffusersPython ? 'check-pass' : 'check-warn'}>
-                  DIFFUSERS_PYTHON / DIFFUSERS_MODEL_ID â€”{' '}
+                  DIFFUSERS_PYTHON / DIFFUSERS_MODEL_ID —{' '}
                   {config.envKeys.diffusersPython ? 'configured' : 'not set'}
                 </li>
                 <li className={config.envKeys.automatic1111Url ? 'check-pass' : 'check-warn'}>
-                  AUTOMATIC1111_BASE_URL â€” {config.envKeys.automatic1111Url ? 'configured' : 'not set'}
+                  AUTOMATIC1111_BASE_URL — {config.envKeys.automatic1111Url ? 'configured' : 'not set'}
                 </li>
                 <li className={config.envKeys.stabilityApiKey ? 'check-pass' : 'check-warn'}>
-                  STABILITY_API_KEY â€” {config.envKeys.stabilityApiKey ? 'configured' : 'not set'}
+                  STABILITY_API_KEY — {config.envKeys.stabilityApiKey ? 'configured' : 'not set'}
                 </li>
                 <li className={config.envKeys.deepaiApiKey ? 'check-pass' : 'check-warn'}>
-                  DEEPAI_API_KEY â€” {config.envKeys.deepaiApiKey ? 'configured' : 'not set'}
+                  DEEPAI_API_KEY — {config.envKeys.deepaiApiKey ? 'configured' : 'not set'}
                 </li>
                 <li className={config.envKeys.replicateApiToken ? 'check-pass' : 'check-warn'}>
-                  REPLICATE_API_TOKEN â€” {config.envKeys.replicateApiToken ? 'configured' : 'not set'}
+                  REPLICATE_API_TOKEN — {config.envKeys.replicateApiToken ? 'configured' : 'not set'}
                 </li>
               </ul>
               <p className="hint">

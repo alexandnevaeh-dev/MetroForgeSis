@@ -6,6 +6,8 @@ import { mkdirSync, readFileSync, writeFileSync, renameSync, rmdirSync } from 'n
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
+import { createServer } from 'node:http';
+import { bootstrapProviders } from '../packages/ai/dist/bootstrap.js';
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const desktop = join(repo, 'apps/desktop');
@@ -26,6 +28,16 @@ const replacement = randomBytes(24).toString('hex');
 const third = randomBytes(24).toString('hex');
 const proof = { output, scope: 'Hidden real Electron, real IPC, Windows encryption, synthetic keys; no live authentication claim', checks: [], captures: [], pageErrors: [] };
 let app, page;
+const localRequests = [];
+const server = createServer(async (request,response) => {
+  let body=''; for await (const chunk of request) body+=chunk;
+  localRequests.push({path:request.url,method:request.method});
+  response.setHeader('Content-Type','application/json');
+  response.end(JSON.stringify(request.url === '/v1/models' ? {data:[{id:'metroforge-local-fixture'}]} :
+    {choices:[{message:{content:'{"title":"Local provider fixture"}'}}]}));
+});
+await new Promise(resolve => server.listen(0,'127.0.0.1',resolve));
+const localUrl='http://127.0.0.1:'+server.address().port+'/v1';
 const check = (label, passed) => { proof.checks.push({ label, passed: !!passed }); assert.ok(passed, label); };
 async function start() {
   app = await _electron.launch({ executablePath: packaged || require('electron'), args: packaged ? [] : [desktop], cwd: repo, env, timeout: 60000 });
@@ -53,7 +65,7 @@ async function capture(file) {
 const card = name => page.locator('.credential-card').filter({ has: page.getByRole('heading', { name, exact: true }) });
 try {
   await start();
-  check('eight supported providers have editable masked fields', await page.locator('.credential-card input[type=password]').count() === 8);
+  check('twelve supported providers have editable masked fields', await page.locator('.credential-card input[type=password]').count() === 12);
   check('existing environment credential has clear source', await card('Stability AI').getByText('From environment', { exact: true }).isVisible());
   await capture('01-api-keys.png');
   const input = card('Stability AI').locator('input');
@@ -100,6 +112,36 @@ try {
   await card('Stability AI').getByRole('button', { name: 'Confirm removal', exact: true }).click();
   await card('Stability AI').getByText('From environment', { exact: true }).waitFor();
   check('removal restores original environment key', await app.evaluate(({}, expected) => process.env.STABILITY_API_KEY === expected, inherited));
+  await page.getByRole('button',{name:'Local models',exact:true}).click();
+  check('local filter shows optional LM Studio token and key-free server guidance',await page.locator('.credential-card').count()===1 && await card('LM Studio').isVisible() && await page.getByText('Generate with models on your computer',{exact:true}).isVisible());
+  await page.getByRole('button',{name:'Open server and model settings',exact:true}).click();
+  await page.getByRole('button',{name:'Runtime',exact:true}).click();
+  await page.locator('#connection-lmstudio_base_url').waitFor();
+  const serverInput=page.locator('#connection-lmstudio_base_url');
+  await serverInput.fill('https://remote.example/v1');
+  check('local URL has associated validation and remote endpoints cannot be saved',await serverInput.getAttribute('aria-invalid')==='true');
+  check('main process also rejects remote local-server URLs',await page.evaluate(async()=>{try{await window.metroforge.setAppSettings({'app.lmstudio.baseUrl':'https://remote.example/v1'});return false;}catch{return true;}}));
+  await serverInput.fill(localUrl);
+  await page.locator('#connection-lmstudio_default_model').fill('metroforge-local-fixture');
+  await page.getByLabel('Ollama (local)',{exact:true}).uncheck();
+  await page.getByRole('button',{name:'Save',exact:true}).click();
+  await page.getByText('Preferences saved. Server and model settings apply to new generation jobs. Check provider health before generating.',{exact:true}).waitFor();
+  const cfg=await page.evaluate(()=>window.metroforge.getConfig());
+  check('server and model settings persist through actual IPC',cfg.appPreferences['app.lmstudio.baseUrl']===localUrl && cfg.appPreferences['app.lmstudio.model']==='metroforge-local-fixture');
+  const statuses=await page.evaluate(()=>window.metroforge.listProviders());
+  check('actual MetroForge provider health discovers the local model',statuses.some(row=>row.id==='lmstudio' && row.enabled && row.health==='healthy'));
+  const {generationRouter}=await bootstrapProviders({mode:'LOCAL_ONLY',ollamaBaseUrl:'http://127.0.0.1:11434',connectionSettings:cfg.appPreferences,providerEnabled:{ollama:false}});
+  const result=await generationRouter.generate({mode:'LOCAL_ONLY',capability:'JSON_GENERATION',prompt:'Plan a game'});
+  check('shared generation router calls the local HTTP server configured through the app',result.provider==='lmstudio' && result.modelId==='metroforge-local-fixture' && JSON.parse(result.result).title==='Local provider fixture');
+  check('local HTTP fixture saw model discovery and generation',localRequests.some(row=>row.path==='/v1/models') && localRequests.some(row=>row.path==='/v1/chat/completions' && row.method==='POST'));
+  await page.getByRole('heading',{name:'Settings',exact:true}).scrollIntoViewIfNeeded();
+  await capture('04-local-model-settings.png');
+  await page.locator('.topbar-actions button').filter({hasText:'API Keys'}).click();
+  await page.getByRole('button',{name:'Text & planning',exact:true}).click();
+  check('hosted text filter includes new providers and excludes image-only credentials',await card('Together AI').isVisible() && await card('Cerebras').isVisible() && await card('Mistral AI').isVisible() && await card('Stability AI').count()===0);
+  await card('Together AI').evaluate(element => element.scrollIntoView({block:'start'}));
+  await capture('05-hosted-text-providers.png');
+  await page.getByRole('button',{name:'All providers',exact:true}).click();
   await page.getByRole('heading', { name: 'API Keys', exact: true }).scrollIntoViewIfNeeded();
   await capture('03-connections-wide.png');
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setBounds({ width: 1000, height: 720 }));
@@ -120,6 +162,11 @@ try {
       check('packaged application matches tested source build: ' + file,
         readFileSync(join(desktop, file)).equals(readFileSync(join(dirname(packaged), 'resources/app', file))));
     }
+    for (const file of ['packages/ai/dist/bootstrap.js','packages/ai/dist/providers/compatible-chat.js','packages/shared/dist/provider-toggles.js','packages/generation/dist/pipeline.js']) {
+      const [,name,,...parts] = file.split('/');
+      check('packaged provider module matches isolated build: '+file,
+        readFileSync(join(repo,file)).equals(readFileSync(join(dirname(packaged),'resources/app/node_modules/@metroforge',name,'dist',...parts))));
+    }
   }
   proof.passed = true;
 } catch (error) {
@@ -127,6 +174,7 @@ try {
   process.exitCode = 1;
 } finally {
   if (app) await app.close();
+  await new Promise(resolve=>server.close(resolve));
   const serialized = JSON.stringify(proof, null, 2);
   assert.ok(![inherited, replacement, third].some(value => serialized.includes(value)));
   writeFileSync(join(output, 'proof.json'), serialized);

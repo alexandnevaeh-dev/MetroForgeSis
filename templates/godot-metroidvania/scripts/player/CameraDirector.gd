@@ -91,8 +91,13 @@ func apply_room_bounds(
 		# the full 20x40-tile room made the 96 px hero and authored enemies read as thumbnails.
 		# _snap_to_room follows and clamps the player vertically, so every platform remains
 		# reachable and visible without turning the shaft into a static overview map.
-		fit = minf(vp.x / STORMGLASS_VIEW_SIZE.x, vp.y / STORMGLASS_VIEW_SIZE.y)
-		fit = clampf(fit, contain, MAX_GAMEPLAY_ZOOM)
+		fit = maxf(cover, minf(vp.x / STORMGLASS_VIEW_SIZE.x, vp.y / STORMGLASS_VIEW_SIZE.y))
+		fit = clampf(fit, contain, maxf(MAX_GAMEPLAY_ZOOM, cover))
+	elif is_stormglass and archetype != "boss":
+		# Expanded halls scroll at the same readable actor scale as the shafts.
+		# Cover is the lower bound so a 2:1 alcove cannot expose void in a 16:9 view.
+		fit = maxf(cover, minf(vp.x / STORMGLASS_VIEW_SIZE.x, vp.y / STORMGLASS_VIEW_SIZE.y))
+		fit = clampf(fit, contain, maxf(MAX_GAMEPLAY_ZOOM, cover))
 	elif archetype == "boss":
 		# Stormglass production framing: the arena remains larger than one screen, but
 		# combat is read through a 34-tile-wide window rather than shrinking the player

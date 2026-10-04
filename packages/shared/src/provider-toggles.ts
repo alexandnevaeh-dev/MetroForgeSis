@@ -1,6 +1,10 @@
 /** Toggleable provider ids for Settings (text + image). */
 export const TOGGLEABLE_PROVIDER_IDS = [
   'ollama',
+  'lmstudio',
+  'together',
+  'cerebras',
+  'mistral',
   'gemini',
   'groq',
   'openrouter',
@@ -22,12 +26,44 @@ export type ToggleableProviderId = (typeof TOGGLEABLE_PROVIDER_IDS)[number];
 
 export const TEXT_PROVIDER_TOGGLE_IDS = [
   'ollama',
+  'lmstudio',
+  'together',
+  'cerebras',
+  'mistral',
   'gemini',
   'groq',
   'openrouter',
   'huggingface',
   'nvidia',
 ] as const satisfies readonly ToggleableProviderId[];
+
+/** Non-secret server/model preferences. Keys belong in the encrypted credential store. */
+export const TEXT_CONNECTION_FIELDS = [
+  { key:'app.ollama.baseUrl', label:'Ollama server URL', fallback:'http://127.0.0.1:11434', env:'OLLAMA_BASE_URL', localUrl:true },
+  { key:'app.ollama.model', label:'Ollama chat model', fallback:'qwen3-coder-next', env:'OLLAMA_DEFAULT_MODEL', localUrl:false },
+  { key:'app.lmstudio.baseUrl', label:'LM Studio server URL', fallback:'http://127.0.0.1:1234/v1', env:'LMSTUDIO_BASE_URL', localUrl:true },
+  { key:'app.lmstudio.model', label:'LM Studio chat model (blank uses the server model)', fallback:'', env:'LMSTUDIO_DEFAULT_MODEL', localUrl:false },
+  { key:'app.together.model', label:'Together AI chat model', fallback:'openai/gpt-oss-120b', env:'TOGETHER_DEFAULT_MODEL', localUrl:false },
+  { key:'app.cerebras.model', label:'Cerebras chat model', fallback:'gpt-oss-120b', env:'CEREBRAS_DEFAULT_MODEL', localUrl:false },
+  { key:'app.mistral.model', label:'Mistral chat model', fallback:'mistral-small-latest', env:'MISTRAL_DEFAULT_MODEL', localUrl:false },
+] as const;
+
+export function validateTextConnectionSetting(key: string, value: string): void {
+  const field = TEXT_CONNECTION_FIELDS.find(field => field.key === key);
+  if (!field) return;
+  if (value.length > 512 || /[\x00-\x1f\x7f]/.test(value)) throw new Error('Enter a server URL or model name of up to 512 characters.');
+  if (field.localUrl && value.trim()) {
+    let url: URL;
+    try { url = new URL(value.trim()); } catch { throw new Error('Enter a complete local server URL.'); }
+    if (!['http:','https:'].includes(url.protocol) || !['localhost','127.0.0.1','[::1]'].includes(url.hostname) || url.username || url.password || url.search || url.hash)
+      throw new Error('Local server URLs must use localhost, 127.0.0.1 or [::1], without credentials or query parameters.');
+  }
+}
+
+export function textConnectionValue(key: string, prefs?: Record<string,string>, env: Record<string,string|undefined> = {}): string {
+  const field = TEXT_CONNECTION_FIELDS.find(field => field.key === key);
+  return prefs?.[key]?.trim() || (field && env[field.env]?.trim()) || field?.fallback || '';
+}
 
 export const IMAGE_PROVIDER_TOGGLE_IDS = [
   'comfyui',

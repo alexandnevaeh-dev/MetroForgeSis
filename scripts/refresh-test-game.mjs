@@ -420,6 +420,12 @@ export function refreshTestGame({ genre, source, seed = 20260929, layoutStyle, p
     recordAsset('assets/characters/player.png', playerStill);
   }
   if (stormglass) {
+    const material = 'assets/architecture/stormglass/masonry-fill-v1.png';
+    const materialSource = join(root, 'templates', 'godot-metroidvania', material);
+    if (!existsSync(materialSource)) throw new Error('The current castle material is missing.');
+    mkdirSync(dirname(join(stage, material)), { recursive: true });
+    copyFileSync(materialSource, join(stage, material));
+    recordAsset(material, join(stage, material));
     // Source preservation intentionally copies the previous candidate's assets after assembly.
     // Re-author the common pickup here so an older cyan debug-bar sprite cannot survive refresh.
     const pickupPath = join(stage, 'assets', 'props', 'interact', 'pickup.png');

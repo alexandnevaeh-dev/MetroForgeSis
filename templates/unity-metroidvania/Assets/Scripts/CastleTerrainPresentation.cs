@@ -6,6 +6,7 @@ public static class CastleTerrainPresentation
 {
     private static readonly Dictionary<string, Sprite> Caps = new Dictionary<string, Sprite>();
     private static readonly Dictionary<string, Sprite> Masonry = new Dictionary<string, Sprite>();
+    private static readonly Dictionary<string, Sprite> Fill = new Dictionary<string, Sprite>();
     private static Sprite _foundation;
 
     public static bool Apply(string root, Transform solid, GameplayRect rect, SpriteRenderer renderer)
@@ -34,14 +35,31 @@ public static class CastleTerrainPresentation
             Caps[root] = cap;
         }
 
+        // Detailed opaque masonry follows the actual wall and floor footprint.
+        // Material scale never changes the physics transform or collider dimensions.
+        if (!Fill.TryGetValue(root, out var fill))
+        {
+            var texture = StreamingArtCache.GetTexture(root, "assets/architecture/stormglass/masonry-fill-v1.png", FilterMode.Point, TextureWrapMode.Repeat);
+            if (texture != null)
+            {
+                fill = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height),
+                    new Vector2(0.5f, 0.5f), texture.width / 128f, 0, SpriteMeshType.FullRect);
+                Fill[root] = fill;
+            }
+        }
+        var isWall = rect.height > rect.width * 1.35f;
+        if (isWall && fill == null) return false;
+
         // Opaque backing keeps decorative background stairs out of solid collision volumes.
         if (_foundation == null)
             _foundation = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 4, 4),
                 new Vector2(0.5f, 0.5f), 4f, 0, SpriteMeshType.FullRect);
-        renderer.sprite = _foundation;
-        renderer.drawMode = SpriteDrawMode.Sliced;
+        renderer.sprite = fill != null ? fill : _foundation;
+        renderer.drawMode = fill != null ? SpriteDrawMode.Tiled : SpriteDrawMode.Sliced;
+        renderer.tileMode = SpriteTileMode.Continuous;
         renderer.size = new Vector2(rect.width, rect.height);
-        renderer.color = new Color(0.075f, 0.095f, 0.13f, 1f);
+        renderer.color = fill != null ? new Color(0.75f, 0.8f, 0.86f, 1f) : new Color(0.075f, 0.095f, 0.13f, 1f);
+        if (isWall) return true;
 
         if (!Masonry.TryGetValue(root, out var masonry))
         {

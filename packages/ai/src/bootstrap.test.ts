@@ -10,6 +10,29 @@ import { bootstrapProviders } from './bootstrap.js';
 // so no amount of configuring NVIDIA_API_KEY could ever make an NVIDIA model reachable via
 // live routing (see docs/METROFORGE_CURRENT_BUILD.md §9).
 describe('bootstrapProviders — canonical model catalog reconciliation', () => {
+  it('registers key-free LM Studio with saved loopback settings and respects local-only routes', async () => {
+    const { registry, router } = await bootstrapProviders({
+      mode: 'LOCAL_ONLY', ollamaBaseUrl: 'http://127.0.0.1:11434', skipHealthChecks: true,
+      providerEnabled: { ollama: false },
+      connectionSettings: { 'app.lmstudio.baseUrl': 'http://127.0.0.1:1234/v1', 'app.lmstudio.model': 'fixture-chat' },
+      togetherApiKey: 'fixture-key',
+    });
+    expect(registry.get('lmstudio')?.enabled).toBe(true);
+    expect(registry.get('lmstudio')?.costClass).toBe('free');
+    expect(registry.get('together')).toBeUndefined();
+    expect(router.getCandidates({ task: 'plan', capability: 'json_generation', freeOnly: true, localOnly: true, qualityTarget: 'balanced' }).map(p => p.id)).toEqual(['lmstudio']);
+  });
+  it('routes enabled hosted chat providers while excluding disabled or paid providers from free routes', async () => {
+    const { registry, router } = await bootstrapProviders({
+      mode: 'BALANCED', ollamaBaseUrl: 'http://127.0.0.1:11434', skipHealthChecks: true,
+      providerEnabled: { ollama: false, lmstudio: false, cerebras: false },
+      togetherApiKey: 'fixture-key', cerebrasApiKey: 'fixture-key', mistralApiKey: 'fixture-key',
+    });
+    expect(registry.get('cerebras')?.enabled).toBe(false);
+    const context = { task: 'plan', capability: 'json_generation' as const, freeOnly: false, localOnly: false, qualityTarget: 'balanced' as const };
+    expect(router.getCandidates(context).map(p => p.id)).toEqual(['together', 'mistral']);
+    expect(router.getCandidates({ ...context, freeOnly: true })).toEqual([]);
+  });
   it('NVIDIA catalog models are NOT reachable via ModelRegistry when no key is configured', async () => {
     const { models } = await bootstrapProviders({
       mode: 'LOCAL_ONLY',

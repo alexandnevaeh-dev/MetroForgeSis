@@ -22,15 +22,15 @@ import { generateGameContent } from '@metroforge/procedural';
 import { GameDNASchema } from '@metroforge/schemas';
 
 describe('Stormglass level-design sizing contract', () => {
-  it('uses the approved close-framed dimensions for every production room family', () => {
-    expect(stormglassTargetRoomSize('tutorial', 32)).toEqual({ width: 960, height: 544 });
-    expect(stormglassTargetRoomSize('combat', 32)).toEqual({ width: 1152, height: 640 });
-    expect(stormglassTargetRoomSize('traversal', 32)).toEqual({ width: 640, height: 1280 });
-    expect(stormglassTargetRoomSize('ability_shrine', 32)).toEqual({ width: 896, height: 576 });
-    expect(stormglassTargetRoomSize('save', 32)).toEqual({ width: 768, height: 448 });
-    expect(stormglassTargetRoomSize('secret', 32)).toEqual({ width: 576, height: 320 });
-    expect(stormglassTargetRoomSize('miniboss', 32)).toEqual({ width: 1280, height: 704 });
-    expect(stormglassTargetRoomSize('boss', 32)).toEqual({ width: 1536, height: 768 });
+  it('matches reference side-view hall and shaft extents while keeping quiet chambers distinct', () => {
+    expect(stormglassTargetRoomSize('tutorial', 32)).toEqual({ width: 1792, height: 768 });
+    expect(stormglassTargetRoomSize('combat', 32)).toEqual({ width: 2048, height: 1536 });
+    expect(stormglassTargetRoomSize('traversal', 32)).toEqual({ width: 1600, height: 2304 });
+    expect(stormglassTargetRoomSize('ability_shrine', 32)).toEqual({ width: 1792, height: 1024 });
+    expect(stormglassTargetRoomSize('save', 32)).toEqual({ width: 1536, height: 768 });
+    expect(stormglassTargetRoomSize('secret', 32)).toEqual({ width: 1536, height: 768 });
+    expect(stormglassTargetRoomSize('miniboss', 32)).toEqual({ width: 2048, height: 1024 });
+    expect(stormglassTargetRoomSize('boss', 32)).toEqual({ width: 2304, height: 1152 });
   });
 });
 
@@ -376,7 +376,12 @@ describe('Stormglass opening-room geometry contract', () => {
       bossesByRoom: new Map(),
     } as import('../src/room-assembler.js').RoomAssemblyContext;
 
-    const room = buildRoomAssemblyOptions(roomId, index, ctx, stormglassDna, undefined, { value: 0 }, () => false);
+    const legacySizes: Record<string,[number,number]> = {
+      tutorial:[960,544],combat:[1152,640],traversal:[640,1280],ability_shrine:[896,576],
+      save:[768,448],secret:[576,320],miniboss:[1280,704],ability_gate:[960,544],
+    };
+    const [width,height] = legacySizes[archetypes[index]!]!;
+    const room = buildRoomAssemblyOptions(roomId, index, ctx, stormglassDna, undefined, { value: 0 }, () => false, {width,height});
 
     expect(room.tileSize).toBe(32);
     expect(room.platforms).toEqual(expected);

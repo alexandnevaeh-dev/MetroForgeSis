@@ -36,6 +36,7 @@ func _ready() -> void:
 		# the generic rear-wall painter. Spawn it from the shared ready path for every room.
 		call_deferred("_spawn_stormglass_decor")
 		call_deferred("_spawn_stormglass_platform_trims")
+		call_deferred("_spawn_stormglass_masonry")
 
 func _build_tilemap() -> void:
 	var source_path := "res://assets/tilesets/%s/source.png" % biome_id
@@ -867,6 +868,48 @@ func _spawn_pouring_bay() -> void:
 	parent.add_child(deco)
 
 
+func _spawn_stormglass_masonry() -> void:
+	## Paint the real collision rectangles, including split shell bodies around doors.
+	## Art is a child renderer; no collision objects or physics transforms are changed.
+	var parent := get_parent()
+	var path := "res://assets/architecture/stormglass/masonry-fill-v1.png"
+	if parent == null or not ResourceLoader.exists(path):
+		return
+	var texture := load(path) as Texture2D
+	if texture == null or texture.get_width() <= 0:
+		return
+	var scale_to_world := 128.0 / float(texture.get_width())
+	for body in parent.get_children():
+		if not body is StaticBody2D:
+			continue
+		var label := String(body.name)
+		if not (label == "Floor" or label.begins_with("FloorSeg") or label.begins_with("FloorSection_") or label.begins_with("Platform_") or label.begins_with("Shell") or label == "PaintedShell"):
+			continue
+		for collider in body.get_children():
+			if not collider is CollisionShape2D or collider.disabled or not collider.shape is RectangleShape2D:
+				continue
+			var name := "CollisionMatchedMasonry_" + String(collider.name)
+			if body.get_node_or_null(name) != null:
+				continue
+			var shape := collider.shape as RectangleShape2D
+			var face := Sprite2D.new()
+			face.name = name
+			face.texture = texture
+			face.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			face.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+			face.centered = true
+			face.region_enabled = true
+			face.region_rect = Rect2(Vector2.ZERO, shape.size / scale_to_world)
+			face.position = collider.position
+			face.rotation = collider.rotation
+			face.scale = collider.scale * scale_to_world
+			face.z_as_relative = false
+			face.z_index = 1
+			face.modulate = _stormglass_surface_tint().darkened(0.18)
+			face.set_meta("collision_path", String(collider.get_path()))
+			body.add_child(face)
+
+
 func _spawn_stormglass_decor() -> void:
 	var parent := get_parent()
 	if parent == null or parent.get_node_or_null("StormglassDecor") != null:
@@ -1012,6 +1055,9 @@ func _add_stormglass_floor_foundation(holder: Node2D, parent: Node, center: Vect
 	backing.name = "OpaqueStoneBacking"
 	backing.polygon = PackedVector2Array([Vector2.ZERO, Vector2(collision_size.x, 0), collision_size, Vector2(0, collision_size.y)])
 	backing.color = Color(0.075, 0.095, 0.13, 1)
+	# New opaque material on the real floor body provides the backing; keep the
+	# legacy solid color only when the optional generated texture is unavailable.
+	backing.visible = not ResourceLoader.exists("res://assets/architecture/stormglass/masonry-fill-v1.png")
 	foundation.add_child(backing)
 	# Repeat only the painted center span; the final segment crops horizontally.
 	# Render transforms never resize or add collision geometry.

@@ -45,6 +45,8 @@ pnpm metroforge scout
 
 Add hosted provider keys from **API Keys** in MetroForge's top bar or under **AI & Quality**. Keys saved there are encrypted for your Windows account in the configured application data directory. Existing `.env` keys remain supported; the interface shows their presence without retrieving their values. Check **Providers** to verify access and **Settings → Runtime** to enable providers.
 
+API Keys now includes Together AI, Cerebras, Mistral AI and optional LM Studio tokens. Filter the page by text, images or local models. Set Ollama/LM Studio loopback server URLs and chat-model names in **Settings → Runtime**; Ollama and ordinary LM Studio servers need no API key. These new connections generate plans, code and narrative. Hosted services remain excluded from free/local modes and may charge for requests. Model licenses depend on the selected model.
+
 Optional free-tier providers — keys can also be set in `.env`:
 
 | Provider | Env Variable |
@@ -55,7 +57,7 @@ Optional free-tier providers — keys can also be set in `.env`:
 | Hugging Face | `HUGGINGFACE_API_KEY` |
 
 Generation modes:
-- **LOCAL_ONLY** — Ollama only
+- **LOCAL_ONLY** — Ollama and LM Studio local chat models
 - **HYBRID_FREE** — Ollama first, fallback to configured free hosted APIs
 - **FREE_ONLY** — Free providers only
 - **CUSTOM** — All enabled providers by priority
@@ -89,7 +91,7 @@ Copy `.env.example` to `.env`. Product name is configurable via `METROFORGE_APP_
 ## Generation Modes
 
 - **FREE_ONLY** — Only free providers
-- **LOCAL_ONLY** — Local models only (Ollama)
+- **LOCAL_ONLY** — Local models only (Ollama and LM Studio)
 - **HYBRID_FREE** — Local first, fallback to free hosted APIs
 - **CUSTOM** — User-configured provider priority
 

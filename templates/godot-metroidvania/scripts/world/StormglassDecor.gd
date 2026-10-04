@@ -124,6 +124,16 @@ func _spawn_authored_architecture() -> void:
 				placements = [{"x": room_width * 0.5, "height": 470.0, "alpha": 0.84, "lift": 8.0}]
 			_:
 				placements = [{"x": room_width * 0.5, "height": 420.0, "alpha": 0.68, "lift": 8.0}]
+	# Add readable arcade bays throughout wider halls without enlarging existing assets.
+	# They remain scenery behind the actual collision surfaces and actors.
+	if room_width >= 1600 and room_archetype not in ["boss", "miniboss", "save", "ability_shrine"]:
+		for bay_x in range(320, room_width - 240, 480):
+			var occupied := false
+			for existing in placements:
+				if absf(float(existing["x"]) - float(bay_x)) < 240.0:
+					occupied = true
+			if not occupied:
+				placements.append({"x": float(bay_x), "height": 360.0, "alpha": 0.70, "lift": 0.0})
 	for placement_index in range(placements.size()):
 		var placement: Dictionary = placements[placement_index]
 		var sprite := Sprite2D.new()
@@ -206,6 +216,12 @@ func _spawn_condition_decals() -> void:
 		{"name": String(family[primary_index]), "x": primary_x, "scale": _condition_decal_scale(String(family[primary_index])), "role": "primary"},
 		{"name": String(family[accent_index]), "x": accent_x, "scale": _condition_decal_scale(String(family[accent_index])) * 0.82, "role": "accent"},
 	]
+	if room_width >= 1600:
+		for bay_x in range(320, room_width - 240, 512):
+			var fraction := float(bay_x) / float(room_width)
+			if absf(fraction - primary_x) > 0.12 and absf(fraction - accent_x) > 0.12:
+				var detail_name := String(family[(int(bay_x / 512) + room_index) % family.size()])
+				specs.append({"name": detail_name, "x": fraction, "scale": _condition_decal_scale(detail_name) * 0.72, "role": "detail"})
 	for index in range(specs.size()):
 		var spec: Dictionary = specs[index]
 		var decal_name := String(spec["name"])
@@ -235,6 +251,9 @@ func _spawn_condition_decals() -> void:
 			_:
 				var fallback_floor_y := float(room_height - tile_size * 2)
 				var surface_y := _support_surface_y(x, fallback_floor_y)
+				if not is_finite(surface_y):
+					sprite.queue_free()
+					continue
 				var bottom_inset := _texture_bottom_inset(texture)
 				sprite.position = Vector2(x, surface_y - float(texture.get_height()) * uniform_scale * 0.5 + bottom_inset * uniform_scale)
 				sprite.z_index = 0
@@ -311,6 +330,15 @@ func _spawn_authored_props() -> void:
 				placement_specs = [{"prop": 5, "x": 0.22, "scale": 0.82}, {"prop": 0, "x": 0.80, "scale": 0.82}]
 			_:
 				placement_specs = [{"prop": 5, "x": 0.24, "scale": 0.78}, {"prop": 0, "x": 0.76, "scale": 0.78}]
+	if room_width >= 1600 and room_archetype not in ["boss", "miniboss", "save", "ability_shrine"]:
+		for cluster_x in range(280, room_width - 240, 420):
+			var fraction := float(cluster_x) / float(room_width)
+			var occupied := false
+			for existing in placement_specs:
+				if absf(float(existing["x"]) * room_width - cluster_x) < 180.0:
+					occupied = true
+			if not occupied:
+				placement_specs.append({"prop": 0 if int(cluster_x / 420) % 2 == 0 else 5, "x": fraction, "scale": 0.74})
 	var fallback_floor_y := float(room_height - tile_size * 2)
 	for placement_index in range(placement_specs.size()):
 		var spec: Dictionary = placement_specs[placement_index]
@@ -336,6 +364,9 @@ func _spawn_authored_props() -> void:
 			sprite.position = Vector2(x, room_height * 0.43)
 		else:
 			var surface_y := _support_surface_y(x, fallback_floor_y)
+			if not is_finite(surface_y):
+				sprite.queue_free()
+				continue
 			var bottom_inset := _texture_bottom_inset(texture)
 			sprite.position = Vector2(
 				x,
@@ -356,7 +387,8 @@ func _support_surface_y(x: float, fallback_y: float) -> float:
 	query.collide_with_areas = false
 	var hit := get_world_2d().direct_space_state.intersect_ray(query)
 	if hit.is_empty():
-		return fallback_y
+		# No physical support means a pit. Skip floor-mounted art instead of hovering.
+		return NAN
 	return room.to_local(hit["position"]).y
 
 

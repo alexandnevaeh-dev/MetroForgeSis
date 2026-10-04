@@ -1,0 +1,15 @@
+# Provider connections and expanded castle candidate
+
+API Keys supports twelve credential types, with filtered text/image/local setup. LM Studio and Ollama use loopback URLs and model preferences from Settings > Runtime. Together AI, Cerebras and Mistral are hosted text/code/narrative providers; paid providers are excluded from free routes. A saved key does not prove live authentication, quota or model permissions.
+
+Validation: 170 isolated source tests, 44 actual packaged Electron checks, strict UI audit with zero findings, 292 required Godot headless checks and 78 Unity native terrain diagnostics. Packaged tests use synthetic keys with Windows encryption and a real loopback fixture server. Generation transport is exercised by the shared router in the host harness; this is not a fresh full-game generation through the Create screen or live authentication to the new hosted services.
+
+Stormglass remains one castle biome with four connected district conditions. The new separate candidate has 40 larger rooms and 696 asset files, with extra arcade bays and grounded decoration clusters. Examples: opening 1792x768, combat hall 2048x1536, shaft 1600x2304, boss 2304x1152. Movement geometry is regenerated, preserving explicit Studio size overrides; top-down assets are separate. Only the masonry texture is newly generated in this increment; the other authored assets and animation strips are reused.
+
+The opaque blue-gray masonry fill is generated artwork, SHA256 82b9db27e9f2f0b35cd7e1c4bc20e1c3c2ecf32be3a391ef5de519266c23688c. Prompt: production square front-facing weathered blue-gray limestone masonry, thin recessed mortar, chipped edges and restrained moss, uniform cool light, crisp detail, all surface opaque, no arches, characters, UI or perspective; match the existing Stormglass coping/arcade and native camera reference. Edge seamlessness has not been formally certified. Source image was immediately copied to the E: asset library and template.
+
+Unity images are real Camera.Render captures after explicit room warps, not normal-input traversal. The isolated Unity assembler reproduces the tested gameplay JSON and both terrain runtime sources exactly. Godot checks instantiate all 40 expanded rooms, bind terrain to actual collision rectangles, test camera bounds, and retain headless screenshot/audio limitations. The larger candidate is not promoted over current. Full traversal, richer vertical encounter design, NPC parity, performance and final animation/art approval remain pending. Existing Unity Editor Search startup exceptions persist; the diagnostic run exits successfully.
+
+Unreal native C++ validation remains pending the previously prepared administrator compiler/SDK installation. All evidence, candidate packages, caches and user data are on E:. The working Git index and alternate repositories are preserved.
+
+Provider protocol references: https://docs.together.ai/docs/inference/openai-compatibility ; https://inference-docs.cerebras.ai/resources/openai ; https://lmstudio.ai/docs/developer/openai-compat/chat-completions ; https://docs.mistral.ai/ .

@@ -570,37 +570,35 @@ function defaultRoomHeight(worldGraphArchetype: string | undefined, override?: n
 }
 
 /**
- * Stormglass uses a 32 px authoring grid and deliberately frames the player much closer than
- * MetroForge's generic multi-screen rooms. These dimensions are the production contract in
- * docs/STORMGLASS_LEVEL_DESIGN_SPEC.md. Keeping the map here, at the final assembly boundary,
- * prevents broad environment-archetype minimums from silently inflating every room back to the
- * old 64x39 prototype while leaving every other game family unchanged.
+ * Stormglass uses the same multi-screen scale as the other side-view reference levels.
+ * Camera framing and movement distances remain independent of room extents.
+ * Explicit Studio dimensions win; this changes newly generated Stormglass rooms only.
  */
 export function stormglassTargetRoomSize(
   worldGraphArchetype: string | undefined,
   tileSize: number,
 ): { width: number; height: number } {
   const tilesByArchetype: Record<string, readonly [number, number]> = {
-    tutorial: [30, 17],
-    combat: [36, 20],
-    traversal: [20, 40],
-    challenge: [28, 28],
-    ability_shrine: [28, 18],
-    ability_gate: [30, 17],
-    save: [24, 14],
-    npc: [26, 15],
-    shop: [26, 15],
-    secret: [18, 10],
-    treasure: [18, 10],
-    miniboss: [40, 22],
-    arena: [40, 22],
-    boss: [48, 24],
-    puzzle: [30, 20],
-    transition: [30, 17],
-    connector: [30, 17],
-    set_piece: [36, 22],
+    tutorial: [56, 24],
+    combat: [64, 48],
+    traversal: [50, 72],
+    challenge: [50, 72],
+    ability_shrine: [56, 32],
+    ability_gate: [64, 32],
+    save: [48, 24],
+    npc: [64, 40],
+    shop: [64, 40],
+    secret: [48, 24],
+    treasure: [48, 24],
+    miniboss: [64, 32],
+    arena: [64, 32],
+    boss: [72, 36],
+    puzzle: [64, 40],
+    transition: [56, 24],
+    connector: [56, 24],
+    set_piece: [96, 40],
   };
-  const [columns, rows] = tilesByArchetype[worldGraphArchetype ?? ''] ?? [30, 17];
+  const [columns, rows] = tilesByArchetype[worldGraphArchetype ?? ''] ?? [56, 24];
   return { width: columns * tileSize, height: rows * tileSize };
 }
 
@@ -764,7 +762,21 @@ export function buildRoomAssemblyOptions(
     biomeId: `biome_${biomeIndex}`,
   });
 
-  if (cleanStormglassRooms) applyStormglassOpeningGeometry(roomId, layout, tileSize);
+  if (cleanStormglassRooms) {
+    // The old opening platforms were authored in compact absolute coordinates.
+    // New halls use the shared movement-aware grammar rather than stretching jump gaps.
+    if (width < 1600) applyStormglassOpeningGeometry(roomId, layout, tileSize);
+    if (roomId === 'room_022' && width >= 1600) {
+      // Retain the proven continuous mandatory route through the Collapse Shaft.
+      const floorRow = Math.floor(height / tileSize) - 2;
+      for (const pit of layout.pits) {
+        for (let x = Math.floor(pit.x / tileSize); x < Math.ceil((pit.x + pit.width) / tileSize); x++) {
+          layout.cells.push({x,y:floorRow,col:4,row:3}, {x,y:floorRow+1,col:4,row:4});
+        }
+      }
+      layout.pits.splice(0, layout.pits.length);
+    }
+  }
 
   const foundryKit = overrides?.visualKit === 'foundry';
   const authoredParallax = overrides?.authoredParallax === true;

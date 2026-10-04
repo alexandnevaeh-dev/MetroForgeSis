@@ -29,7 +29,7 @@ for(const entry of readdirSync(origin,{withFileTypes:true})) {
  cpSync(join(origin,entry.name),join(portable,entry.name),{recursive:entry.isDirectory()});
 }
 const hashes=Object.fromEntries(['ConduitFoundry.exe','UnityPlayer.dll','ConduitFoundry_Data/Managed/Assembly-CSharp.dll','ConduitFoundry_Data/StreamingAssets/gameplay.json'].map(file=>[file,sha(join(portable,file))]));
-const sources=Object.fromEntries(['GameBootstrap','PlayerActor','EnemyActor','BossController','AcceptanceDriver'].map(name=>['templates/unity-metroidvania/Assets/Scripts/'+name+'.cs',sha(join(repo,'templates/unity-metroidvania/Assets/Scripts/'+name+'.cs'))]));
+const sources=Object.fromEntries(['GameBootstrap','CastleTerrainPresentation','PlayerActor','EnemyActor','BossController','AcceptanceDriver'].map(name=>['templates/unity-metroidvania/Assets/Scripts/'+name+'.cs',sha(join(repo,'templates/unity-metroidvania/Assets/Scripts/'+name+'.cs'))]));
 for(const [file,hash] of Object.entries(hashes))assert.equal(binding.artifacts.find(entry=>entry.path===file)?.sha256,hash,'Native artifact differs from the source-bound build: '+file);
 for(const [file,hash] of Object.entries(sources))assert.equal(binding.inputs.find(entry=>entry.path===file.replace('templates/unity-metroidvania/',''))?.sha256,hash,'Current template differs from the compiled source: '+file);
 const proof={output,origin,hashes,sources,bindingSha256:sha(bindingFile),binding,timeout,mode,scope:'Copied source-bound Unity Windows player; game-owned Input System events; no OS input, warps or health grants for traversal. Existing generic driver has separately labeled direct damage/save probes. Capture mode renders the actual native camera offscreen, not an OS window screenshot.',productionReady:false};

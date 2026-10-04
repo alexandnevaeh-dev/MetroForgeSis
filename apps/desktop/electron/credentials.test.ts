@@ -25,6 +25,16 @@ function setup(env: NodeJS.ProcessEnv = {}) {
   return { file, env, store: new CredentialStore(file, cipher, env) };
 }
 describe('encrypted credentials', () => {
+  it.each([['together', 'TOGETHER_API_KEY'], ['cerebras', 'CEREBRAS_API_KEY'], ['mistral', 'MISTRAL_API_KEY'], ['lmstudio', 'LMSTUDIO_API_KEY']])('restores and removes the %s credential independently', (id, variable) => {
+    const { store, file } = setup();
+    store.save(id, 'fixture-token-123');
+    const env: NodeJS.ProcessEnv = {};
+    const restarted = new CredentialStore(file, cipher, env);
+    expect(env[variable]).toBe('fixture-token-123');
+    expect(readFileSync(file).includes(Buffer.from('fixture-token-123'))).toBe(false);
+    restarted.remove(id);
+    expect(env[variable]).toBeUndefined();
+  });
   it('persists ciphertext, returns presence only, and restores keys after restart', () => {
     const { store, file, env } = setup();
     const status = store.save('nvidia', 'test-secret-123');

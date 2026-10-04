@@ -17,6 +17,13 @@ export const APP_SETTING_KEYS = {
   concurrencyCpu: 'app.concurrency.cpu',
   /** NVIDIA NIM image model id; overrides NVIDIA_IMAGE_MODEL when set. */
   nvidiaImageModel: 'app.nvidia.imageModel',
+  ollamaBaseUrl: 'app.ollama.baseUrl',
+  ollamaModel: 'app.ollama.model',
+  lmstudioBaseUrl: 'app.lmstudio.baseUrl',
+  lmstudioModel: 'app.lmstudio.model',
+  togetherModel: 'app.together.model',
+  cerebrasModel: 'app.cerebras.model',
+  mistralModel: 'app.mistral.model',
 } as const;
 
 export class SettingsRepository {

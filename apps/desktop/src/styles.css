@@ -4378,6 +4378,7 @@ select {
 .room-background-disclosure[open] > summary { color: var(--text-primary); }
 
 .mf-checkbox-row { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.settings-screen .form-grid .mf-checkbox-row { display: flex; align-items: center; }
 .mf-checkbox-row input[type='checkbox'] { width: 16px; height: 16px; min-height: 0; padding: 0; margin: 0; flex: 0 0 16px; accent-color: var(--forge-accent); }
 .terrain-appearance-fields { border: 0; padding: 8px 0; margin: 0; min-width: 0; display: grid; gap: 8px; }
 .terrain-appearance-fields legend { color: var(--forge-text-muted); padding: 0; }
@@ -4418,6 +4419,8 @@ select {
 .credentials-intro .mf-badge { flex-shrink: 0; }
 .credentials-feedback { min-height: 2.6em; margin: var(--forge-space-4) 0; }
 .credentials-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: var(--forge-space-4); }
+.credentials-filters { flex-wrap: wrap; gap: var(--forge-space-2); margin-bottom: var(--forge-space-4); }
+.credentials-local-guide { padding: var(--forge-space-5); margin-bottom: var(--forge-space-4); border-left: 3px solid var(--forge-copper); }
 .credential-card { padding: var(--forge-space-5); min-width: 0; }
 .credential-card header { display: flex; align-items: center; flex-wrap: wrap; gap: var(--forge-space-2); justify-content: space-between; }
 .credential-card h3 { margin: 0; font-size: 1rem; }

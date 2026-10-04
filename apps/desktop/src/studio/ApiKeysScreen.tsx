@@ -13,6 +13,10 @@ const PROVIDERS = [
   { id: 'stability', name: 'Stability AI', purpose: 'Image generation · paid provider' },
   { id: 'deepai', name: 'DeepAI', purpose: 'Image generation · paid provider' },
   { id: 'replicate', name: 'Replicate', purpose: 'Hosted image generation · paid provider' },
+  { id: 'together', name: 'Together AI', purpose: 'Hosted open-source chat models · paid provider' },
+  { id: 'cerebras', name: 'Cerebras', purpose: 'Fast hosted chat models · provider quota applies' },
+  { id: 'mistral', name: 'Mistral AI', purpose: 'Game planning, code and narrative · provider quota applies' },
+  { id: 'lmstudio', name: 'LM Studio', purpose: 'Optional token for a local server that requires authentication' },
 ] as const;
 
 /** Kept mounted by the shell: unfinished keys survive navigation in memory only. */
@@ -26,6 +30,7 @@ export function ApiKeysScreen({ active }: { active: boolean }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
   const [message, setMessage] = useState('');
+  const [filter, setFilter] = useState('All providers');
   const lock = useRef(false);
 
   const load = useCallback(async () => {
@@ -142,9 +147,24 @@ export function ApiKeysScreen({ active }: { active: boolean }) {
             ? 'Unsaved input stays here while you navigate. Save or discard it before closing MetroForge.'
             : 'Key presence does not guarantee a successful connection. Local generation can run without hosted API keys.')}
       </p>
+      <div className="row credentials-filters" role="group" aria-label="Provider type">
+        {['All providers','Text & planning','Images','Local models'].map(label => (
+          <Button key={label} aria-pressed={filter === label} variant={filter === label ? 'primary' : 'secondary'} onClick={() => setFilter(label)}>{label}</Button>
+        ))}
+      </div>
+      {(filter === 'All providers' || filter === 'Local models') && (
+        <div className="panel credentials-local-guide">
+          <h3>Generate with models on your computer</h3>
+          <p className="hint">Ollama and LM Studio can generate game plans, code and narrative locally. Start your model server, then set its URL and chat model in Settings → Runtime. LM Studio normally needs no key; add a token only if authentication is enabled on your server.</p>
+          <Button onClick={() => navigate('Settings')}>Open server and model settings</Button>
+        </div>
+      )}
       {status && (
         <div className="credentials-grid">
-          {PROVIDERS.map((provider) => {
+          {PROVIDERS.filter(provider => filter === 'All providers' ||
+            (filter === 'Local models' ? provider.id === 'lmstudio' :
+              filter === 'Images' ? ['nvidia','huggingface','stability','deepai','replicate'].includes(provider.id) :
+              !['stability','deepai','replicate','lmstudio'].includes(provider.id))).map((provider) => {
             const entry = status.entries.find((entry) => entry.id === provider.id);
             const value = drafts[provider.id] || '';
             const invalid =

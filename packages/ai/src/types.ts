@@ -10,6 +10,7 @@ export type AICapability =
 export type ProviderHealth = 'healthy' | 'degraded' | 'unavailable';
 
 export interface TextGenerationRequest {
+  signal?: AbortSignal;
   prompt: string;
   systemPrompt?: string;
   temperature?: number;

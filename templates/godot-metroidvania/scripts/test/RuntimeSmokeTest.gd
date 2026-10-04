@@ -178,10 +178,10 @@ func _check_stormglass_level_blueprint() -> void:
 		"tutorial", "combat", "traversal", "ability_shrine", "combat", "traversal", "save", "secret", "boss", "transition",
 	]
 	var expected_sizes := {
-		"tutorial": Vector2i(30, 17), "combat": Vector2i(36, 20), "traversal": Vector2i(20, 40),
-		"ability_shrine": Vector2i(28, 18), "ability_gate": Vector2i(30, 17), "save": Vector2i(24, 14),
-		"secret": Vector2i(18, 10), "miniboss": Vector2i(40, 22), "boss": Vector2i(48, 24),
-		"transition": Vector2i(30, 17),
+		"tutorial": Vector2i(56, 24), "combat": Vector2i(64, 48), "traversal": Vector2i(50, 72),
+		"ability_shrine": Vector2i(56, 32), "ability_gate": Vector2i(64, 32), "save": Vector2i(48, 24),
+		"secret": Vector2i(48, 24), "miniboss": Vector2i(64, 32), "boss": Vector2i(72, 36),
+		"transition": Vector2i(56, 24),
 	}
 	var rooms_file := FileAccess.open("res://data/rooms/rooms.json", FileAccess.READ)
 	var rooms_json := JSON.new()
@@ -393,7 +393,11 @@ func _check_stormglass_vertical_camera(world: Node) -> void:
 	])
 	_check(
 		"stormglass_compact_room_camera_does_not_expose_void",
-		camera != null and view.x <= 576.0 + 2.0 and view.y <= 320.0 + 2.0
+		# Studio overrides can preserve the old alcove or enlarge it. Pin the view to
+		# the actual generated bounds rather than the previous 18x10-tile default.
+		camera != null and camera.has_method("get_room_size") \
+			and view.x <= camera.get_room_size().x + 2.0 \
+			and view.y <= camera.get_room_size().y + 2.0
 	)
 	await world.transition_to_room(previous_room if not previous_room.is_empty() else "room_000", "authored")
 	await get_tree().process_frame
@@ -1879,6 +1883,8 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 	var stormglass_condition_decals_present := true
 	var stormglass_condition_metadata_matches_rooms := true
 	var stormglass_surface_materials_match_districts := true
+	var stormglass_masonry_matches_collision := true
+	var stormglass_masonry_rectangles_checked := 0
 	var stormglass_condition_families_seen: Dictionary = {}
 	var enemy_aliases := {
 		"enemy_000": "enemy_A",
@@ -1907,6 +1913,23 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 		var loaded_room := world.get("_current_room") as Node
 		if actual_biome == "biome_0" and loaded_room != null:
 			stormglass_surface_rooms_checked += 1
+			for body in loaded_room.get_children():
+				var label := String(body.name)
+				if not body is StaticBody2D or not (label == "Floor" or label.begins_with("FloorSeg") or label.begins_with("FloorSection_") or label.begins_with("Platform_") or label.begins_with("Shell") or label == "PaintedShell"):
+					continue
+				for collider in body.get_children():
+					if not collider is CollisionShape2D or collider.disabled or not collider.shape is RectangleShape2D:
+						continue
+					stormglass_masonry_rectangles_checked += 1
+					var face := body.get_node_or_null("CollisionMatchedMasonry_" + String(collider.name)) as Sprite2D
+					stormglass_masonry_matches_collision = stormglass_masonry_matches_collision and face != null
+					if face != null:
+						stormglass_masonry_matches_collision = stormglass_masonry_matches_collision \
+							and face.texture != null and face.texture.get_width() == 1254 \
+							and face.position.is_equal_approx(collider.position) \
+							and (face.region_rect.size * face.scale).is_equal_approx(collider.shape.size * collider.scale) \
+							and is_equal_approx(face.rotation, collider.rotation) \
+							and String(face.get_meta("collision_path", "")) == String(collider.get_path())
 			var ground := loaded_room.get_node_or_null("Ground") as CanvasItem
 			var rear_wall := loaded_room.get_node_or_null("RearWall") as CanvasItem
 			stormglass_placeholder_layers_hidden = stormglass_placeholder_layers_hidden \
@@ -1967,7 +1990,7 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 						stormglass_condition_metadata_matches_rooms = stormglass_condition_metadata_matches_rooms \
 							and int(decal.get_meta("condition_district", -1)) == expected_district
 			stormglass_condition_decals_present = stormglass_condition_decals_present \
-				and condition_holder != null and condition_decal_count == 2
+				and condition_holder != null and condition_decal_count >= 2 and condition_decal_count <= 8
 			stormglass_rooms_share_castle_interior = stormglass_rooms_share_castle_interior \
 				and panorama != null \
 				and panorama.texture != null \
@@ -2018,6 +2041,7 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 	_check("stormglass_visual_slice_captures_four_connected_regions", captured_regions.size() == 4)
 	_check("visual_slice_captures_all_ten_authored_gothic_rooms", captured_gothic_opening_rooms.size() == 10)
 	_check("stormglass_visual_slice_checks_all_40_room_surfaces", stormglass_surface_rooms_checked == 40)
+	_check("stormglass_all_masonry_exactly_matches_real_collision", stormglass_masonry_rectangles_checked >= 40 and stormglass_masonry_matches_collision)
 	_check("stormglass_all_rooms_hide_placeholder_tile_layers", stormglass_placeholder_layers_hidden)
 	_check("stormglass_all_rooms_match_platform_art_to_collision", stormglass_platform_trims_match_collision)
 	_check("stormglass_all_elevated_platforms_have_physical_supports", stormglass_platform_supports_match_collision)

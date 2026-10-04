@@ -124,6 +124,7 @@ export interface GenerateOptions {
   signal?: AbortSignal;
   /** Per-provider Settings toggles (missing ⇒ enabled). */
   providerEnabled?: Record<string, boolean>;
+  textConnectionSettings?: Record<string,string>;
   /** Override NVIDIA_IMAGE_MODEL (Settings prefs / CLI). */
   nvidiaImageModel?: string;
   /** When LOW_RESOURCE, prefer remote image providers over local VRAM runtimes. */
@@ -416,6 +417,7 @@ export class GenerationPipeline {
         nvidiaApiKey: process.env.NVIDIA_API_KEY,
         nvidiaApiBaseUrl: process.env.NVIDIA_API_BASE_URL,
         providerEnabled: options.providerEnabled,
+        connectionSettings: options.textConnectionSettings,
       });
 
       // Routes through the canonical GenerationRouter facade (capability in, text out) rather
