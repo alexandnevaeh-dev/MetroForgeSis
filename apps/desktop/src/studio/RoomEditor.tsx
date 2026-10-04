@@ -1,3 +1,4 @@
+import { CastleBackdrop } from './CastleBackdrop.js';
 import { BiomeBackgroundEditor, type CastleBackgroundPreview } from './BiomeBackgroundEditor.js';
 import { TopDownPropPicker } from './TopDownPropPicker.js';
 import { TopDownPropViewport } from './TopDownPropViewport.js';
@@ -913,11 +914,8 @@ function RoomCanvasPreview({
   const tileSize = collision?.tileSize ?? room.tileSize ?? TILE;
   const w = room.width ?? 800;
   const h = room.height ?? 600;
-  const cover = background ? Math.max(w / background.width, h / background.height) : 1;
   const showBackdrop = !!background && (layer === 'visual' || layer === 'entities');
-  const backdrop = background && showBackdrop ? <image className="room-scene-background" aria-label="Saved castle background" href={background.dataUrl}
-    x={(w - background.width * cover) * 0.5} y={(h - tileSize * 2 - background.height * cover) * background.anchorY}
-    width={background.width * cover} height={background.height * cover} opacity={background.opacity} /> : null;
+  const backdrop = showBackdrop ? <CastleBackdrop background={background} roomId={room.id} width={w} height={h} tileSize={tileSize} /> : null;
   const scale = mini ? 0.18 : fill ? 0.55 : 0.35;
   const showTiles = layer === 'visual' || layer === 'collision';
   const showNav = layer === 'visual' || layer === 'navigation' || layer === 'progression';

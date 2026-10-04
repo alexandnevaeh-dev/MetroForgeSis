@@ -61,6 +61,57 @@ static func castle_background_path(biome: String) -> String:
 	return "res://" + String(settings["path"]) if not settings.is_empty() else CASTLE_INTERIOR_PANORAMA
 
 
+# Opt-in room profile keeps established exports unchanged while a replacement is tested.
+static func spatial_settings(id: String) -> Dictionary:
+	var file := FileAccess.open("res://data/visual/castle-spatial-profile.json", FileAccess.READ)
+	if file == null:
+		return {}
+	var config: Variant = JSON.parse_string(file.get_as_text())
+	if not config is Dictionary or config.get("version", 0) != 1:
+		return {}
+	var rooms: Variant = config.get("rooms", [])
+	var raw_height: Variant = config.get("panoramaHeight", 1024.0)
+	if typeof(raw_height) not in [TYPE_INT, TYPE_FLOAT]:
+		return {}
+	var height := float(raw_height)
+	if not rooms is Array or id not in rooms or not is_finite(height) or height < 512.0 or height > 1536.0:
+		return {}
+	return {"panoramaHeight": height}
+
+
+func _spawn_modular_panorama(texture: Texture2D, background_path: String, settings: Dictionary, spatial: Dictionary) -> void:
+	# Horizontal mirror repetition fills longer halls at the same world scale. Separate
+	# upper bands suggest castle storeys without mirroring floors upside down in shafts.
+	var band_height := float(spatial["panoramaHeight"])
+	var scale_to_world := band_height / float(texture.get_height())
+	var floor_y := float(room_height - tile_size * 2)
+	var band_bottom := floor_y
+	var band_index := 0
+	while band_bottom > 0.0:
+		var sprite := Sprite2D.new()
+		sprite.name = "CastleInteriorBayBand_%02d" % band_index
+		sprite.texture = texture
+		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		sprite.texture_repeat = CanvasItem.TEXTURE_REPEAT_MIRROR
+		sprite.region_enabled = true
+		sprite.region_rect = Rect2(0, 0, float(room_width) / scale_to_world, float(texture.get_height()))
+		sprite.centered = true
+		sprite.scale = Vector2.ONE * scale_to_world
+		sprite.position = Vector2(room_width * 0.5, band_bottom - band_height * 0.5)
+		sprite.z_as_relative = false
+		sprite.z_index = -70
+		var opacity := float(settings.get("opacity", 0.85)) * (1.0 if band_index == 0 else 0.68)
+		sprite.modulate = Color(0.86, 0.90, 0.96, opacity)
+		sprite.set_meta("panorama_world_height", band_height)
+		sprite.set_meta("castle_base", background_path)
+		add_child(sprite)
+		band_bottom -= band_height
+		band_index += 1
+	var fallback := get_parent().get_node_or_null("Background") as CanvasItem
+	if fallback:
+		fallback.visible = false
+
+
 func _spawn_authored_panorama() -> void:
 	var room_index := maxi(0, room_id.trim_prefix("room_").to_int())
 	# All 40 rooms use the same castle interior mass. District identity is expressed by
@@ -71,6 +122,10 @@ func _spawn_authored_panorama() -> void:
 		return
 	var texture := load(background_path) as Texture2D
 	if texture == null or texture.get_width() <= 0 or texture.get_height() <= 0:
+		return
+	var spatial := spatial_settings(room_id)
+	if not spatial.is_empty():
+		_spawn_modular_panorama(texture, background_path, settings, spatial)
 		return
 	var sprite := Sprite2D.new()
 	sprite.name = "AuthoredStormglassPanorama"

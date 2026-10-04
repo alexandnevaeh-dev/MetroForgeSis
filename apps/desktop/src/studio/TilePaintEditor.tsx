@@ -1,3 +1,4 @@
+import { CastleBackdrop } from './CastleBackdrop.js';
 import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Badge, Button, EmptyState, Panel } from './ui/index.js';
 
@@ -239,7 +240,6 @@ export function TilePaintEditor({
     }
   };
   const canApply = tool !== 'select' && !draft.busy && (tool === 'erase' || !!artwork);
-  const cover = background ? Math.max(width / background.width, height / background.height) : 1;
   const scale = (0.55 * zoom) / 100;
 
   return (
@@ -311,18 +311,13 @@ export function TilePaintEditor({
             </pattern>
           </defs>
           <rect className="room-floor" width={width} height={height} />
-          {background && (
-            <image
-              className="room-scene-background"
-              aria-label="Saved castle background"
-              href={background.dataUrl}
-              x={(width - background.width * cover) * 0.5}
-              y={(height - tileSize * 2 - background.height * cover) * background.anchorY}
-              width={background.width * cover}
-              height={background.height * cover}
-              opacity={background.opacity}
-            />
-          )}
+          <CastleBackdrop
+            background={background}
+            roomId={roomId}
+            width={width}
+            height={height}
+            tileSize={tileSize}
+          />
           {collisionRects.map((rect, i) => (
             <rect
               key={`geometry-${i}`}

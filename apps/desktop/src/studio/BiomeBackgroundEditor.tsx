@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import type { BiomeBackgroundSnapshot } from '@metroforge/generation';
+import type { BiomeBackgroundSnapshot, CastleSpatialProfile } from '@metroforge/generation';
 import { Button, ButtonStrip, Input, InspectorSection, Select } from './ui/index.js';
 
-export interface CastleBackgroundPreview { projectPath: string; biomeId: string; dataUrl: string; width: number; height: number; opacity: number; anchorY: number }
+export interface CastleBackgroundPreview { projectPath: string; biomeId: string; dataUrl: string; width: number; height: number; opacity: number; anchorY: number; spatialProfile?: CastleSpatialProfile | null }
 export function BiomeBackgroundEditor({ projectPath, biomeId, onPreview }: { projectPath: string; biomeId: string; onPreview?: (value: CastleBackgroundPreview | null) => void }) {
   const [state, setState] = useState<BiomeBackgroundSnapshot | null>(null);
   const [assetId, setAssetId] = useState('');
@@ -38,7 +38,7 @@ export function BiomeBackgroundEditor({ projectPath, biomeId, onPreview }: { pro
     const saved = state?.settings;
     const option = state?.options.find(row => row.id === saved?.assetId);
     if (saved && option && window.metroforge) void window.metroforge.getAssetPreview(projectPath, saved.path).then(result => {
-      if (current && result.dataUrl) onPreview({ projectPath, biomeId, dataUrl: result.dataUrl, width: option.width, height: option.height, opacity: saved.opacity, anchorY: saved.anchorY });
+      if (current && result.dataUrl) onPreview({ projectPath, biomeId, dataUrl: result.dataUrl, width: option.width, height: option.height, opacity: saved.opacity, anchorY: saved.anchorY, spatialProfile: state?.spatialProfile });
     }).catch(() => { if (current) setMessage('Saved background preview unavailable. Reload to retry.'); });
     return () => { current = false; };
   }, [projectPath, biomeId, state?.revision, onPreview]);
@@ -63,6 +63,7 @@ export function BiomeBackgroundEditor({ projectPath, biomeId, onPreview }: { pro
         <label>Background<Select aria-label="Castle background" value={assetId} disabled={busy} onChange={e => { setAssetId(e.target.value); setMessage(''); }}><option value="">Original castle interior</option>{state.options.map(option => <option key={option.id} value={option.id}>{option.id} · {option.width}×{option.height}</option>)}</Select></label>
         {image && <img className="detail-preview" src={image} alt="Castle background preview" />}
         <label>Opacity<Input aria-label="Background opacity" type="number" min="0.1" max="1" step="0.05" value={opacity} disabled={busy || !assetId} onChange={e => setOpacity(e.target.value)} /></label>
+        {state.spatialProfile && <p className="hint">{state.spatialProfile.rooms.length} rooms use repeating interior bays at a fixed {state.spatialProfile.panoramaHeight}px height. Vertical framing applies to other rooms.</p>}
         <label>Vertical framing<Select aria-label="Background vertical framing" value={anchorY} disabled={busy || !assetId} onChange={e => setAnchorY(e.target.value)}><option value="1">Align to floor</option><option value="0.5">Center</option><option value="0">Align to ceiling</option></Select></label>
         <ButtonStrip><Button variant="primary" disabled={busy || !dirty || !valid || !state.roomCount} onClick={() => void mutate(false)}>Apply background</Button><Button disabled={busy || !state.canUndo || dirty} onClick={() => void mutate(true)}>Undo background</Button></ButtonStrip>
       </>}

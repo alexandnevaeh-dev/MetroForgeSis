@@ -1,0 +1,93 @@
+import { useId } from 'react';
+import type { CastleBackgroundPreview } from './BiomeBackgroundEditor.js';
+
+/** Shared SVG counterpart of the native castle panorama; no room or asset mutations. */
+export function CastleBackdrop({
+  background,
+  roomId,
+  width,
+  height,
+  tileSize,
+}: {
+  background: CastleBackgroundPreview | null | undefined;
+  roomId: string;
+  width: number;
+  height: number;
+  tileSize: number;
+}) {
+  const id = useId().replaceAll(':', '');
+  if (!background) return null;
+  const profile = background.spatialProfile;
+  if (!profile?.rooms.includes(roomId)) {
+    const cover = Math.max(width / background.width, height / background.height);
+    return (
+      <image
+        className="room-scene-background"
+        aria-label="Saved castle background"
+        href={background.dataUrl}
+        x={(width - background.width * cover) * 0.5}
+        y={(height - tileSize * 2 - background.height * cover) * background.anchorY}
+        width={background.width * cover}
+        height={background.height * cover}
+        opacity={background.opacity}
+      />
+    );
+  }
+  const bandHeight = profile.panoramaHeight;
+  const tileWidth = (background.width * bandHeight) / background.height;
+  const floor = height - tileSize * 2;
+  const bands = Math.ceil(floor / bandHeight);
+  return (
+    <g
+      className="room-scene-background"
+      aria-label="Saved castle background"
+      data-castle-profile="modular"
+      data-band-height={bandHeight}
+      data-tile-width={tileWidth}
+    >
+      <defs>
+        <filter id={`${id}-stone-grade`} colorInterpolationFilters="sRGB">
+          <feColorMatrix
+            type="matrix"
+            values="0.86 0 0 0 0  0 0.90 0 0 0  0 0 0.96 0 0  0 0 0 1 0"
+          />
+        </filter>
+        {Array.from({ length: bands }, (_, index) => {
+          const y = floor - (index + 1) * bandHeight;
+          return (
+            <pattern
+              key={index}
+              id={`${id}-band-${index}`}
+              patternUnits="userSpaceOnUse"
+              x={0}
+              y={y}
+              width={tileWidth * 2}
+              height={bandHeight}
+            >
+              <image href={background.dataUrl} width={tileWidth} height={bandHeight} />
+              <image
+                href={background.dataUrl}
+                width={tileWidth}
+                height={bandHeight}
+                transform={`translate(${tileWidth * 2},0) scale(-1,1)`}
+              />
+            </pattern>
+          );
+        })}
+      </defs>
+      {Array.from({ length: bands }, (_, index) => (
+        <rect
+          key={index}
+          data-castle-band={index}
+          x={0}
+          y={floor - (index + 1) * bandHeight}
+          width={width}
+          height={bandHeight}
+          fill={`url(#${id}-band-${index})`}
+          filter={`url(#${id}-stone-grade)`}
+          opacity={background.opacity * (index === 0 ? 1 : 0.68)}
+        />
+      ))}
+    </g>
+  );
+}

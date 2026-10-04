@@ -88,3 +88,25 @@ describe('castle biome background editing', () => {
     expect(()=>readBiomeBackground(f.project,'biome_0')).toThrow('history'); expect(f.read('.metroforge/biome-background-history.json')).toContain('corrupt');
   });
 });
+
+
+describe('modular castle room profiles', () => {
+  const path = 'data/visual/castle-spatial-profile.json';
+  const supported = (f: ReturnType<typeof fixture>) => f.write('scripts/world/StormglassDecor.gd', 'extends Node2D\nconst PROFILE = "res://data/visual/castle-spatial-profile.json"\nconst BACKGROUND = "res://data/visual/biome-backgrounds.json"\n');
+  it('returns the authored room profile without modifying it', () => {
+    const f = fixture(); supported(f); const bytes = JSON.stringify({version:1,rooms:['room_001'],panoramaHeight:1024}); f.write(path, bytes);
+    expect(readBiomeBackground(f.project,'biome_0').spatialProfile).toEqual({rooms:['room_001'],panoramaHeight:1024}); expect(f.read(path)).toBe(bytes);
+  });
+  it.each([null, {}, {version:2,rooms:['room_001'],panoramaHeight:1024}, {version:1,rooms:'room_001',panoramaHeight:1024}, {version:1,rooms:['room_001','room_001'],panoramaHeight:1024}, {version:1,rooms:['../room_001'],panoramaHeight:1024}, {version:1,rooms:[1],panoramaHeight:1024}, {version:1,rooms:['room_001'],panoramaHeight:'1024'}, {version:1,rooms:['room_001'],panoramaHeight:[]}, {version:1,rooms:['room_001'],panoramaHeight:511}, {version:1,rooms:['room_001'],panoramaHeight:1537}])('preserves malformed profiles and refuses an inaccurate preview: %j', value => {
+    const f=fixture(); supported(f); const bytes=JSON.stringify(value);f.write(path,bytes); expect(()=>readBiomeBackground(f.project,'biome_0')).toThrow('profile is invalid');expect(f.read(path)).toBe(bytes);
+  });
+  it('tracks external profile changes in the save revision', () => {
+    const f=fixture();supported(f);const state=readBiomeBackground(f.project,'biome_0');f.write(path,JSON.stringify({version:1,rooms:['room_001'],panoramaHeight:768}));expect(()=>saveBiomeBackground(f.project,'biome_0',choice,state.revision)).toThrow('changed');expect(readBiomeBackground(f.project,'biome_0').settings).toBeNull();
+  });
+  it('requires a renderer that implements the profile', () => {
+    const f=fixture();f.write(path,JSON.stringify({version:1,rooms:['room_001'],panoramaHeight:1024}));expect(()=>readBiomeBackground(f.project,'biome_0')).toThrow('Refresh the castle runtime');
+  });
+  it('does not read side-view profiles for top-down projects', () => {
+    const f=fixture();f.write('game_dna.json','{"archetype":"TOP_DOWN_ACTION_ADVENTURE"}');f.write(path,'malformed');expect(readBiomeBackground(f.project,'biome_0')).toMatchObject({supported:false,spatialProfile:null});
+  });
+});

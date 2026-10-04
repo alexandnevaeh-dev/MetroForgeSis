@@ -7,15 +7,18 @@ import { assetFile, commitAssetFiles, fileBytes, invalidateAssetValidation, lock
 
 const CONFIG = 'data/visual/biome-backgrounds.json';
 const RUNTIME = 'scripts/world/StormglassDecor.gd';
+const SPATIAL = 'data/visual/castle-spatial-profile.json';
 const HISTORY = '.metroforge/biome-background-history.json';
 const hash = (bytes: Buffer | string) => createHash('sha256').update(bytes).digest('hex');
 export interface BiomeBackground { assetId: string; path: string; opacity: number; anchorY: number }
 interface Configuration { version: 1; biomes: Record<string, BiomeBackground> }
 interface Command { id: string; biomeId: string; before: string | null; afterHash: string; runtimeBefore?: string; runtimeAfterHash?: string }
 interface History { version: 1; undo: Command[]; events: Array<{ id: string; action: string; timestamp: string }> }
+export interface CastleSpatialProfile { rooms: string[]; panoramaHeight: number }
 export interface BiomeBackgroundSnapshot {
   supported: boolean; biomeId: string; roomCount: number; revision: string;
   settings: BiomeBackground | null; canUndo: boolean;
+  spatialProfile: CastleSpatialProfile | null;
   options: Array<{ id: string; path: string; width: number; height: number }>;
 }
 const emptyConfig = (): Configuration => ({ version: 1, biomes: {} });
@@ -52,6 +55,14 @@ function snapshot(project: string, biomeId: string) {
     const { width, height } = decodePngRgba(image);
     options.push({ id: row.id, path: row.path, width, height });
   }
+  const spatialRaw = supported ? watch(SPATIAL) : null;
+  let spatialProfile: CastleSpatialProfile | null = null;
+  if (spatialRaw) {
+    const value = JSON.parse(spatialRaw.toString('utf8'));
+    if (value?.version !== 1 || !Array.isArray(value.rooms) || value.rooms.some((id: unknown) => typeof id !== 'string' || !/^room_\d+$/.test(id)) || new Set(value.rooms).size !== value.rooms.length || typeof value.panoramaHeight !== 'number' || !Number.isFinite(value.panoramaHeight) || value.panoramaHeight < 512 || value.panoramaHeight > 1536) throw new Error('Castle room profile is invalid; existing settings were preserved');
+    if (!runtimeRaw?.toString('utf8').includes('res://data/visual/castle-spatial-profile.json')) throw new Error('Refresh the castle runtime before previewing its modular room profile');
+    spatialProfile = { rooms: [...value.rooms], panoramaHeight: value.panoramaHeight };
+  }
   const configRaw = watch(CONFIG);
   const config = parseConfig(configRaw);
   const historyRaw = watch(HISTORY);
@@ -61,7 +72,7 @@ function snapshot(project: string, biomeId: string) {
   if (settings && !options.some(option => option.id === settings.assetId && option.path === settings.path)) throw new Error('Selected background is no longer registered');
   watch('validation_report.json');
   const revision = hash(JSON.stringify([...watched].map(([path, bytes]) => [path, bytes ? hash(bytes) : null])));
-  const publicState: BiomeBackgroundSnapshot = { supported, biomeId, roomCount, revision, settings, options, canUndo: history.undo.at(-1)?.biomeId === biomeId };
+  const publicState: BiomeBackgroundSnapshot = { supported, biomeId, roomCount, revision, settings, options, spatialProfile, canUndo: history.undo.at(-1)?.biomeId === biomeId };
   return { config, configRaw, runtimeRaw, history, publicState };
 }
 /** Upgrade only the panorama functions and its continuity metadata, preserving other authored decoration. */

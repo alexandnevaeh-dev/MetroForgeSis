@@ -986,6 +986,9 @@ func _add_stormglass_platform_trim(holder: Node2D, texture: Texture2D, center: V
 
 
 func _add_stormglass_platform_supports(holder: Node2D, center: Vector2, collision_size: Vector2) -> void:
+	if _castle_gallery_enabled():
+		_add_castle_stone_corbels(holder, center, collision_size)
+		return
 	## Elevated walkways are suspended by paired iron chains. Thin alternating links
 	## keep the support readable without obscuring actors or the authored panorama.
 	var half_span := minf(collision_size.x * 0.34, maxf(28.0, collision_size.x * 0.5 - 18.0))
@@ -1010,6 +1013,35 @@ func _add_stormglass_platform_supports(holder: Node2D, center: Vector2, collisio
 		holder.add_child(chain)
 
 
+func _castle_gallery_enabled() -> bool:
+	var parent := get_parent()
+	var id := parent.scene_file_path.get_file().get_basename() if not parent.scene_file_path.is_empty() else String(parent.name)
+	var decor_script := load("res://scripts/world/StormglassDecor.gd")
+	return not decor_script.spatial_settings(id).is_empty()
+
+
+func _add_castle_stone_corbels(holder: Node2D, center: Vector2, collision_size: Vector2) -> void:
+	# Wall-mounted carved brackets meet the real platform underside. They are scenery,
+	# not new obstacles: the optional balcony and the lower route keep their clear air.
+	var texture := load("res://assets/architecture/stormglass/masonry-fill-v1.png") as Texture2D
+	var half_span := minf(collision_size.x * 0.32, maxf(16.0, collision_size.x * 0.5 - 18.0))
+	for side in [-1.0, 1.0]:
+		var corbel := Polygon2D.new()
+		corbel.name = "StoneCorbel_%d_%d_%s" % [int(center.y), int(center.x), "L" if side < 0.0 else "R"]
+		corbel.position = Vector2(center.x + half_span * side, center.y + collision_size.y * 0.5 - 2.0)
+		corbel.polygon = PackedVector2Array([Vector2(-20, 0), Vector2(20, 0), Vector2(16, 12), Vector2(5, 42), Vector2(-5, 42), Vector2(-16, 12)])
+		corbel.texture = texture
+		corbel.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		corbel.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+		var uv := PackedVector2Array()
+		for vertex in corbel.polygon:
+			uv.append((corbel.position + vertex) * (float(texture.get_width()) / 128.0))
+		corbel.uv = uv
+		corbel.color = _stormglass_surface_tint().darkened(0.1)
+		corbel.set_meta("supported_platform_top", center.y - collision_size.y * 0.5)
+		holder.add_child(corbel)
+
+
 func _spawn_stormglass_floor_strip(holder: Node2D, parent: Node) -> void:
 	var path := "res://assets/architecture/stormglass/floor_strip.png"
 	if not ResourceLoader.exists(path):
@@ -1029,6 +1061,12 @@ func _spawn_stormglass_floor_strip(holder: Node2D, parent: Node) -> void:
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	sprite.centered = true
 	sprite.scale = Vector2(rect.size.x / float(texture.get_width()), rect.size.y / float(texture.get_height()))
+	if _castle_gallery_enabled():
+		# Repeat the floor course instead of widening every stone to cover a long hall.
+		sprite.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+		sprite.region_enabled = true
+		sprite.region_rect = Rect2(0, 0, rect.size.x, float(texture.get_height()))
+		sprite.scale.x = 1.0
 	# Raise the decorative masonry into the collision body. The source's beveled
 	# walkable lip occupies its lower band; centering it on the body reads one tile low.
 	sprite.position = floor_body.position + collider.position + Vector2(0, -24.0)

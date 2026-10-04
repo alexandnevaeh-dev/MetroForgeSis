@@ -49,3 +49,7 @@ Long asset IDs and paths wrap inside their inspector. Below 1200px the header pr
 
 ## Rooms canvas ownership
 Rooms joins Assets in using the full authoring width, with its own hierarchy and inspector beside one scene canvas. The shared shell keeps project navigation and status; general assistant/activity panels remain available on their owning routes. Select displays actual saved geometry and atlas tiles. Paint and Erase retain the same saved biome framing and native grid, with a visible cursor and explicit draft/save state. Dense rooms use one SVG grid pattern and only occupied tile nodes, rather than a focusable DOM node for every empty cell. Existing runtime tokens and shared controls retain ownership.
+
+
+### Modular castle room previews
+The castle backdrop is owned by one shared SVG renderer across tile authoring, entity views and miniatures. Supported room profiles repeat and mirror horizontal interior bays at their authored world height, with dimmer upper storeys. Existing rooms retain their saved cover/framing behavior. Scene editing controls, global tokens and paint ownership remain unchanged.
