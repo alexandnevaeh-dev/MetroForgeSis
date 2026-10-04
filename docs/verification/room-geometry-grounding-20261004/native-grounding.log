@@ -1,0 +1,182 @@
+Godot Engine v4.6.stable.official.89cea1439 - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 617.14 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 5060 Laptop GPU
+
+PASS: floor furniture ignores a narrow raised platform
+PASS: floor furniture is refused over a pit
+PASS: wide furniture is refused when its center alone has support
+PASS: supported furniture remains allowed beside the pit
+PASS: detached bottom specks do not define the ground anchor
+PASS: visible footprint follows the main silhouette
+PASS: playable world has a player
+PASS: player moves using real game input
+PASS: player remains alive
+PASS: forty rooms have independent source-scene geometry
+PASS: room_000 editor collision matches all native static rectangles
+PASS: room_000 editor and native grid units agree
+PASS: room_000 main prop silhouettes have full floor support
+PASS: room_000 redundant foreground window is absent
+PASS: room_000 native capture saved
+PASS: room_001 editor collision matches all native static rectangles
+PASS: room_001 editor and native grid units agree
+PASS: room_001 main prop silhouettes have full floor support
+PASS: room_001 redundant foreground window is absent
+PASS: room_002 editor collision matches all native static rectangles
+PASS: room_002 editor and native grid units agree
+PASS: room_002 main prop silhouettes have full floor support
+PASS: room_002 redundant foreground window is absent
+PASS: room_002 native capture saved
+PASS: room_003 editor collision matches all native static rectangles
+PASS: room_003 editor and native grid units agree
+PASS: room_003 main prop silhouettes have full floor support
+PASS: room_003 redundant foreground window is absent
+PASS: room_004 editor collision matches all native static rectangles
+PASS: room_004 editor and native grid units agree
+PASS: room_004 main prop silhouettes have full floor support
+PASS: room_004 redundant foreground window is absent
+PASS: room_005 editor collision matches all native static rectangles
+PASS: room_005 editor and native grid units agree
+PASS: room_005 main prop silhouettes have full floor support
+PASS: room_005 redundant foreground window is absent
+PASS: room_006 editor collision matches all native static rectangles
+PASS: room_006 editor and native grid units agree
+PASS: room_006 main prop silhouettes have full floor support
+PASS: room_006 redundant foreground window is absent
+PASS: room_007 editor collision matches all native static rectangles
+PASS: room_007 editor and native grid units agree
+PASS: room_007 main prop silhouettes have full floor support
+PASS: room_007 redundant foreground window is absent
+PASS: room_008 editor collision matches all native static rectangles
+PASS: room_008 editor and native grid units agree
+PASS: room_008 main prop silhouettes have full floor support
+PASS: room_008 redundant foreground window is absent
+PASS: room_009 editor collision matches all native static rectangles
+PASS: room_009 editor and native grid units agree
+PASS: room_009 main prop silhouettes have full floor support
+PASS: room_009 redundant foreground window is absent
+PASS: room_010 editor collision matches all native static rectangles
+PASS: room_010 editor and native grid units agree
+PASS: room_010 main prop silhouettes have full floor support
+PASS: room_010 redundant foreground window is absent
+PASS: room_010 native capture saved
+PASS: room_011 editor collision matches all native static rectangles
+PASS: room_011 editor and native grid units agree
+PASS: room_011 main prop silhouettes have full floor support
+PASS: room_011 redundant foreground window is absent
+PASS: room_012 editor collision matches all native static rectangles
+PASS: room_012 editor and native grid units agree
+PASS: room_012 main prop silhouettes have full floor support
+PASS: room_012 redundant foreground window is absent
+PASS: room_013 editor collision matches all native static rectangles
+PASS: room_013 editor and native grid units agree
+PASS: room_013 main prop silhouettes have full floor support
+PASS: room_013 redundant foreground window is absent
+PASS: room_014 editor collision matches all native static rectangles
+PASS: room_014 editor and native grid units agree
+PASS: room_014 main prop silhouettes have full floor support
+PASS: room_014 redundant foreground window is absent
+PASS: room_015 editor collision matches all native static rectangles
+PASS: room_015 editor and native grid units agree
+PASS: room_015 main prop silhouettes have full floor support
+PASS: room_015 redundant foreground window is absent
+PASS: room_016 editor collision matches all native static rectangles
+PASS: room_016 editor and native grid units agree
+PASS: room_016 main prop silhouettes have full floor support
+PASS: room_016 redundant foreground window is absent
+PASS: room_017 editor collision matches all native static rectangles
+PASS: room_017 editor and native grid units agree
+PASS: room_017 main prop silhouettes have full floor support
+PASS: room_017 redundant foreground window is absent
+PASS: room_018 editor collision matches all native static rectangles
+PASS: room_018 editor and native grid units agree
+PASS: room_018 main prop silhouettes have full floor support
+PASS: room_018 redundant foreground window is absent
+PASS: room_019 editor collision matches all native static rectangles
+PASS: room_019 editor and native grid units agree
+PASS: room_019 main prop silhouettes have full floor support
+PASS: room_019 redundant foreground window is absent
+PASS: room_020 editor collision matches all native static rectangles
+PASS: room_020 editor and native grid units agree
+PASS: room_020 main prop silhouettes have full floor support
+PASS: room_020 redundant foreground window is absent
+PASS: room_020 native capture saved
+PASS: room_021 editor collision matches all native static rectangles
+PASS: room_021 editor and native grid units agree
+PASS: room_021 main prop silhouettes have full floor support
+PASS: room_021 redundant foreground window is absent
+PASS: room_022 editor collision matches all native static rectangles
+PASS: room_022 editor and native grid units agree
+PASS: room_022 main prop silhouettes have full floor support
+PASS: room_022 redundant foreground window is absent
+PASS: room_023 editor collision matches all native static rectangles
+PASS: room_023 editor and native grid units agree
+PASS: room_023 main prop silhouettes have full floor support
+PASS: room_023 redundant foreground window is absent
+PASS: room_024 editor collision matches all native static rectangles
+PASS: room_024 editor and native grid units agree
+PASS: room_024 main prop silhouettes have full floor support
+PASS: room_024 redundant foreground window is absent
+PASS: room_025 editor collision matches all native static rectangles
+PASS: room_025 editor and native grid units agree
+PASS: room_025 main prop silhouettes have full floor support
+PASS: room_025 redundant foreground window is absent
+PASS: room_026 editor collision matches all native static rectangles
+PASS: room_026 editor and native grid units agree
+PASS: room_026 main prop silhouettes have full floor support
+PASS: room_026 redundant foreground window is absent
+PASS: room_027 editor collision matches all native static rectangles
+PASS: room_027 editor and native grid units agree
+PASS: room_027 main prop silhouettes have full floor support
+PASS: room_027 redundant foreground window is absent
+PASS: room_028 editor collision matches all native static rectangles
+PASS: room_028 editor and native grid units agree
+PASS: room_028 main prop silhouettes have full floor support
+PASS: room_028 redundant foreground window is absent
+PASS: room_029 editor collision matches all native static rectangles
+PASS: room_029 editor and native grid units agree
+PASS: room_029 main prop silhouettes have full floor support
+PASS: room_029 redundant foreground window is absent
+PASS: room_030 editor collision matches all native static rectangles
+PASS: room_030 editor and native grid units agree
+PASS: room_030 main prop silhouettes have full floor support
+PASS: room_030 redundant foreground window is absent
+PASS: room_030 native capture saved
+PASS: room_031 editor collision matches all native static rectangles
+PASS: room_031 editor and native grid units agree
+PASS: room_031 main prop silhouettes have full floor support
+PASS: room_031 redundant foreground window is absent
+PASS: room_032 editor collision matches all native static rectangles
+PASS: room_032 editor and native grid units agree
+PASS: room_032 main prop silhouettes have full floor support
+PASS: room_032 redundant foreground window is absent
+PASS: room_033 editor collision matches all native static rectangles
+PASS: room_033 editor and native grid units agree
+PASS: room_033 main prop silhouettes have full floor support
+PASS: room_033 redundant foreground window is absent
+PASS: room_034 editor collision matches all native static rectangles
+PASS: room_034 editor and native grid units agree
+PASS: room_034 main prop silhouettes have full floor support
+PASS: room_034 redundant foreground window is absent
+PASS: room_035 editor collision matches all native static rectangles
+PASS: room_035 editor and native grid units agree
+PASS: room_035 main prop silhouettes have full floor support
+PASS: room_035 redundant foreground window is absent
+PASS: room_036 editor collision matches all native static rectangles
+PASS: room_036 editor and native grid units agree
+PASS: room_036 main prop silhouettes have full floor support
+PASS: room_036 redundant foreground window is absent
+PASS: room_037 editor collision matches all native static rectangles
+PASS: room_037 editor and native grid units agree
+PASS: room_037 main prop silhouettes have full floor support
+PASS: room_037 redundant foreground window is absent
+PASS: room_038 editor collision matches all native static rectangles
+PASS: room_038 editor and native grid units agree
+PASS: room_038 main prop silhouettes have full floor support
+PASS: room_038 redundant foreground window is absent
+PASS: room_039 editor collision matches all native static rectangles
+PASS: room_039 editor and native grid units agree
+PASS: room_039 main prop silhouettes have full floor support
+PASS: room_039 redundant foreground window is absent
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+   at: cleanup (core/object/object.cpp:2641)
+ERROR: 1 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:810)

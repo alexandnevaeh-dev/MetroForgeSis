@@ -155,3 +155,5 @@ export { readEditableTerrain, saveEditableTerrain } from './terrain-edit-service
 export { readTopDownPropAsset } from './topdown-prop-asset.js';
 export { readBiomeBackground, saveBiomeBackground, undoBiomeBackground } from './biome-background.js';
 export type { BiomeBackgroundSnapshot, BiomeBackground } from './biome-background.js';
+
+export { readGodotRoomCollision } from './room-collision.js';

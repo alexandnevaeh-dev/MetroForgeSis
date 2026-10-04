@@ -19,6 +19,7 @@ import {
   saveEditableLoot,
   createEditableLoot,
   saveEditableLootSource,
+  readGodotRoomCollision,
   readBiomeBackground,
   saveBiomeBackground,
   undoBiomeBackground,
@@ -1720,6 +1721,7 @@ export function registerIpcHandlers(cwd: string): void {
     return project.roomIds.map((id) => ({
       id,
       ...(project.roomsData[id] ?? {}),
+      tileSize: project.roomsData[id]?.tileSize ?? project.gameDna.technical?.tileSize,
     }));
   });
 
@@ -1991,6 +1993,7 @@ export function registerIpcHandlers(cwd: string): void {
         })),
       };
     }
+    if (detectProjectEngine(projectPath) === 'godot' && !existsSync(join(projectPath, 'data/world/overworld.json'))) return readGodotRoomCollision(projectPath, roomId);
     const overworld = readTopDownOverworld(projectPath);
     const area = overworld?.areas.find((a) => a.id === roomId);
     if (!area) return { error: `No collision data for room: ${roomId}` };

@@ -66,3 +66,6 @@ export {
   FOUNDRY_LETTERBOX_PAD,
   projectUsesFoundryVisualKit,
 } from './foundry-visual-pack.js';
+
+export { parseRoomSceneCollision } from './scene-collision.js';
+export type { SceneCollision, SceneCollisionRect } from './scene-collision.js';

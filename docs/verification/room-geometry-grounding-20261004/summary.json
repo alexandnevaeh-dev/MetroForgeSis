@@ -1,0 +1,51 @@
+{
+  "parent": "9440c3e47bccac30bf683547bf53bd7b7114c014",
+  "release": "E:/MetroForgeData/Releases/MetroForge-room-editor-grounding-20261004-v3",
+  "regressions": 82,
+  "uiChecks": 20,
+  "libraryChecks": 12,
+  "nativeGroundingChecks": 175,
+  "nativeRuntimeSmokeChecks": 456,
+  "rooms": 40,
+  "sourceSceneColliders": 308,
+  "sampledFloorProps": 181,
+  "sourceHashes": {
+    "packages/godot/src/index.ts": "e47365b8e5172461ec231fb3cac5958e2aba253d2ba9d85ff842c5153a99b4e6",
+    "packages/godot/src/scene-collision.ts": "8b54fb73b8f955429374d10a7fcffcf6b1fa0be2258407ef7e8e3cc1cd005116",
+    "packages/godot/src/scene-collision.test.ts": "45dd8bcb8d6f950c163a6589ce6faa6b92e8fd0568680096400159905a2c2c2a",
+    "packages/godot/src/room-assembler.ts": "b94d45b571fc195ff546a45192106737fbe2ecf1b78423c11b0c79d002850580",
+    "packages/generation/src/index.ts": "ac460a997fd67198a07e7d0289a59ff941d8e32e2cc2496f8a916243ea59bd00",
+    "packages/generation/src/room-collision.ts": "f895a89880f5f48a818b19b9f73aa4b04ffd78fe8d8a44e4f5a4463f4ed4077f",
+    "apps/desktop/electron/handlers.ts": "bea36b1727b18bff19c00e06358fb3a7e50c8d510d5c754f74d8573f45b9bc92",
+    "apps/desktop/src/studio/RoomEditor.tsx": "113fb7b3cf7f00bd4d2eaf6495f20bd8e56b4007b423dbf94f8aaf0b67091264",
+    "apps/desktop/src/studio/metroforge-api.ts": "1a67259c2010cd03d0e2dc1d1d2acb69708df35da76b9a7006a56686824dbf1b",
+    "templates/godot-metroidvania/scripts/world/StormglassDecor.gd": "9dd46be902de48000ab180bfe0067723d22ca8258a7f1fc5a51a4d2f50b0c7ca",
+    "packages/godot/src/room-assembler.test.ts": "918267728ede26b720de90fabbc691cf71612b069634498351a4b662c8d396f3",
+    "packages/generation/src/room-collision.test.ts": "a9a5de22f49f31a529f54698f855731f8e850209e348febe551f9226d9cdfbbc",
+    "apps/desktop/src/studio/BiomeBackgroundEditor.tsx": "58b217b0835194b0c95205b5ffd201d27fe864263838d06dc98b27e99a351965",
+    "scripts/prepare-room-geometry-test.mjs": "bb7dad73f940e494e9dd975aaad47dca52bbfe906f84d6eee525eca11a629e50",
+    "templates/godot-metroidvania/scripts/test/GroundingProbe.gd": "501e27d38cba6b242db3c373131cb56731ab01b2969b5cdc7000bc1765de8375",
+    "templates/godot-metroidvania/scripts/test/RoomGeometryGroundingTest.gd": "cfdda2b7db6ae6ab4337c293beafacd9436b6e5699428ec0b570071ec90450fa",
+    "templates/godot-metroidvania/scenes/test/RoomGeometryGroundingTest.tscn": "2c900df835e7eadd9c241381637a52a3b870b3b153d37e98f99fb268c2b51fc5",
+    "scripts/verify-room-geometry-ui.mjs": "7db19698f64b80faeadcb98ee421ad7730e5ef342eb4bc0b1f1a630db2d8994d",
+    "apps/desktop/src/styles.css": "d59ac4143355900f37afaff0e9960a3798292dc7f4635f63e962a874da22e119",
+    "DESIGN.md": "a6a7d422823e719e296607442a801e15d7718d6f7d92979eea7be9c8537616b0",
+    "UX-CONTRACT.md": "948a070295ee78057e0b3f02746241222c7fdc14aa83341b3dbcd5fe7381f222"
+  },
+  "castleArtworkFilesPreserved": 1271,
+  "quantumFilesPreserved": 310,
+  "quantumGameplayRerun": false,
+  "nativeScope": "Native NVIDIA render and collision/prop-grounding diagnostic; real spawn movement followed by force-loaded rooms. Not whole-game traversal or final visual acceptance.",
+  "productionReady": false,
+  "originalIndexSha256": "0803c77a5996b93d6e975dfa41ab9ceb9e7f078881faf88bcf265d7af7fb3918",
+  "knownDiagnostics": [
+    "Nonfatal Godot shutdown resource leak diagnostics remain."
+  ],
+  "remaining": [
+    "Complete input-driven castle traversal",
+    "Broader art composition and scale",
+    "Enemy and boss animation quality",
+    "Unity and Unreal native acceptance",
+    "Broader application and generation performance"
+  ]
+}

@@ -23,6 +23,8 @@ const CONDITION_DECAL_FAMILIES := [
 	["archive_bookcase", "archive_books", "archive_rubble", "archive_balcony"],
 	["frozen_bell", "frozen_gears", "frozen_icicles", "frozen_window"],
 ]
+static var _texture_metrics_cache: Dictionary = {}
+
 const CONDITION_LABELS := ["intact_nave", "flooded_undercroft", "collapsed_archive", "frozen_bell_tower"]
 
 
@@ -182,7 +184,7 @@ func _spawn_authored_architecture() -> void:
 		var target_height := float(placement["height"])
 		var uniform_scale := target_height / float(texture.get_height())
 		sprite.scale = Vector2.ONE * uniform_scale
-		sprite.position = Vector2(float(placement["x"]), floor_y - target_height * 0.5 + float(placement.get("lift", 8.0)))
+		sprite.position = Vector2(float(placement["x"]), floor_y - target_height * 0.5 + _texture_bottom_inset(texture) * uniform_scale)
 		sprite.modulate = Color(0.82, 0.88, 1.0, float(placement["alpha"]))
 		add_child(sprite)
 	_spawn_authored_windows(floor_y)
@@ -216,13 +218,13 @@ func _spawn_authored_windows(floor_y: float) -> void:
 		sprite.texture = texture
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		sprite.z_as_relative = false
-		sprite.z_index = -3
+		sprite.z_index = -20
 		sprite.centered = true
 		var window_height := float(spec["height"])
 		var uniform_scale := window_height / float(texture.get_height())
 		sprite.scale = Vector2.ONE * uniform_scale
 		sprite.position = Vector2(room_width * float(spec["x"]), floor_y - window_height * 0.5 - float(spec["lift"]))
-		sprite.modulate = Color(0.72, 0.82, 1.0, 0.88)
+		sprite.modulate = Color(0.72, 0.82, 1.0, 0.60)
 		add_child(sprite)
 
 
@@ -284,7 +286,7 @@ func _spawn_condition_decals() -> void:
 				sprite.z_index = -1
 			_:
 				var fallback_floor_y := float(room_height - tile_size * 2)
-				var surface_y := _support_surface_y(x, fallback_floor_y)
+				var surface_y := _support_surface_y(x, fallback_floor_y, _texture_half_width(texture) * uniform_scale)
 				if not is_finite(surface_y):
 					sprite.queue_free()
 					continue
@@ -394,10 +396,12 @@ func _spawn_authored_props() -> void:
 		sprite.scale = Vector2.ONE * uniform_scale
 		var x := room_width * float(spec["x"])
 		if prop_index == 4:
-			# Reliquary windows are wall-mounted landmarks rather than floor furniture.
-			sprite.position = Vector2(x, room_height * 0.43)
+			# The architecture pass already supplies recessed lancet windows; avoid a second
+			# unframed glass cutout in front of the player.
+			sprite.queue_free()
+			continue
 		else:
-			var surface_y := _support_surface_y(x, fallback_floor_y)
+			var surface_y := _support_surface_y(x, fallback_floor_y, _texture_half_width(texture) * uniform_scale)
 			if not is_finite(surface_y):
 				sprite.queue_free()
 				continue
@@ -409,35 +413,106 @@ func _spawn_authored_props() -> void:
 		add_child(sprite)
 
 
-func _support_surface_y(x: float, fallback_y: float) -> float:
+func _support_surface_y(x: float, fallback_y: float, half_width: float = 0.0) -> float:
 	var room := get_parent() as Node2D
 	if room == null:
-		return fallback_y
-	var query := PhysicsRayQueryParameters2D.create(
-		room.to_global(Vector2(x, maxf(0.0, fallback_y - 192.0))),
-		room.to_global(Vector2(x, float(room_height) + 64.0)),
-		1,
-	)
-	query.collide_with_areas = false
-	var hit := get_world_2d().direct_space_state.intersect_ray(query)
-	if hit.is_empty():
-		# No physical support means a pit. Skip floor-mounted art instead of hovering.
 		return NAN
-	return room.to_local(hit["position"]).y
+	# Floor furniture belongs on the main floor. A center-only ray used to select a tiny
+	# raised platform and leave most of a bookcase or altar suspended above playable air.
+	var excluded: Array[RID] = []
+	for body in room.get_children():
+		if body is StaticBody2D and not _is_primary_floor(body):
+			excluded.append(body.get_rid())
+	var samples := [-0.8, -0.4, 0.0, 0.4, 0.8] if half_width > 0.0 else [0.0]
+	var support_y := NAN
+	for fraction in samples:
+		var query := PhysicsRayQueryParameters2D.create(
+			room.to_global(Vector2(x + half_width * float(fraction), maxf(0.0, fallback_y - 192.0))),
+			room.to_global(Vector2(x + half_width * float(fraction), float(room_height) + 64.0)),
+			1,
+		)
+		query.collide_with_areas = false
+		query.exclude = excluded
+		var hit := get_world_2d().direct_space_state.intersect_ray(query)
+		if hit.is_empty() or not _is_primary_floor(hit.get("collider")):
+			return NAN
+		var y := room.to_local(hit["position"]).y
+		if is_finite(support_y) and absf(support_y - y) > 1.0:
+			return NAN
+		support_y = y
+	return support_y
+
+
+func _is_primary_floor(body: Object) -> bool:
+	return body is StaticBody2D and (String(body.name) in ["Floor", "FloorLeft", "FloorRight"] or String(body.name).begins_with("FloorSeg") or String(body.name).begins_with("FloorSection_"))
+
+
+func _texture_metrics(texture: Texture2D) -> Dictionary:
+	var key := texture.get_instance_id()
+	if _texture_metrics_cache.has(key):
+		return _texture_metrics_cache[key]
+	var image := texture.get_image()
+	if image == null or (image.is_compressed() and image.decompress() != OK):
+		return {"bottom_inset": 0.0, "half_width": float(texture.get_width()) * 0.5}
+	image.convert(Image.FORMAT_RGBA8)
+	var bytes := image.get_data()
+	var width := image.get_width()
+	var visited := PackedByteArray()
+	visited.resize(width * image.get_height())
+	var left := width
+	var right := -1
+	var bottom := -1
+	var largest := 0
+	# AI props may include disconnected scraps beneath the object. Ground the actual
+	# largest silhouette, not decorative specks that make the main body hover.
+	for seed in range(visited.size()):
+		if visited[seed] != 0 or bytes[seed * 4 + 3] < 31:
+			continue
+		var queue := PackedInt32Array([seed])
+		visited[seed] = 1
+		var head := 0
+		var part_left := width
+		var part_right := -1
+		var part_bottom := -1
+		while head < queue.size():
+			var pixel := queue[head]
+			head += 1
+			var x := pixel % width
+			var y := int(pixel / width)
+			part_left = mini(part_left, x)
+			part_right = maxi(part_right, x)
+			part_bottom = maxi(part_bottom, y)
+			for dy in range(-1, 2):
+				for dx in range(-1, 2):
+					var xx := x + dx
+					var yy := y + dy
+					if xx < 0 or yy < 0 or xx >= width or yy >= image.get_height():
+						continue
+					var neighbor := yy * width + xx
+					if visited[neighbor] == 0 and bytes[neighbor * 4 + 3] >= 31:
+						visited[neighbor] = 1
+						queue.append(neighbor)
+		if queue.size() > largest:
+			largest = queue.size()
+			left = part_left
+			right = part_right
+			bottom = part_bottom
+	var result := {
+		"bottom_inset": float(image.get_height() - 1 - bottom) if bottom >= 0 else 0.0,
+		"half_width": float(right - left + 1) * 0.5 if right >= left else float(width) * 0.5,
+	}
+	if _texture_metrics_cache.size() >= 128:
+		_texture_metrics_cache.clear()
+	_texture_metrics_cache[key] = result
+	return result
 
 
 func _texture_bottom_inset(texture: Texture2D) -> float:
-	var image := texture.get_image()
-	if image == null:
-		return 0.0
-	if image.is_compressed() and image.decompress() != OK:
-		return 0.0
-	image.convert(Image.FORMAT_RGBA8)
-	for y in range(image.get_height() - 1, -1, -1):
-		for x in range(image.get_width()):
-			if image.get_pixel(x, y).a >= 0.12:
-				return float(image.get_height() - 1 - y)
-	return 0.0
+	return float(_texture_metrics(texture)["bottom_inset"])
+
+
+func _texture_half_width(texture: Texture2D) -> float:
+	return float(_texture_metrics(texture)["half_width"])
 
 
 func _draw() -> void:

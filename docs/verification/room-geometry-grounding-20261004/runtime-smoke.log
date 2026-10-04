@@ -1,0 +1,632 @@
+Godot Engine v4.6.stable.official.89cea1439 - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 617.14 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 5060 Laptop GPU
+
+TRANSITION_PROFILE from=room_000 to=room_002 physics_wait_ms=0.00 resource_ms=4.71 instantiate_ms=89.81 presentation_ms=0.86 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=108.92
+STORMGLASS_VERTICAL_CAMERA view=967.11x544.00 zoom=1.985 room=room_002
+TRANSITION_PROFILE from=room_002 to=room_007 physics_wait_ms=0.00 resource_ms=2.55 instantiate_ms=37.28 presentation_ms=0.73 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=55.32
+STORMGLASS_COMPACT_CAMERA view=967.11x544.00 zoom=1.985 room=room_007
+TRANSITION_PROFILE from=room_007 to=room_000 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=36.03 presentation_ms=0.75 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=56.39
+WARNING: AudioManager: SFX file not found: res://audio/sfx/this_sfx_id_does_not_exist_and_should_just_warn.wav
+   at: push_warning (core/variant/variant_utility.cpp:1034)
+   GDScript backtrace (most recent call first):
+       [0] _load_sfx (res://scripts/core/AudioManager.gd:157)
+       [1] play_sfx (res://scripts/core/AudioManager.gd:91)
+       [2] _check_audio (res://scripts/test/RuntimeSmokeTest.gd:469)
+       [3] _ready (res://scripts/test/RuntimeSmokeTest.gd:57)
+       [4] _check_stormglass_vertical_camera (res://scripts/test/RuntimeSmokeTest.gd:403)
+TRANSITION_PROFILE from=room_000 to=room_001 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=137.50 presentation_ms=0.82 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=210.83
+TRANSITION_PROFILE from=room_001 to=room_000 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=33.42 presentation_ms=0.73 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=41.16
+TRANSITION_PROFILE from=room_000 to=room_008 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=138.47 presentation_ms=4.99 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=288.23
+TRANSITION_PROFILE from=room_008 to=room_000 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=35.37 presentation_ms=0.83 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=37.95
+METROFORGE_RUNTIME_READY project=Stormglass Reliquary - Side-view Test scene=res://scenes/test/RuntimeSmokeTest.tscn player=Player room=room_000
+CAPTURE_TELEMETRY shot=spawn strategy=windowed_gpu colors=93 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+FOOT_PROBE tag=baseline modulate=0.900,0.920,0.960
+FOOT_PROBE player_pos=112.0,704.0
+FOOT_PROBE sprite_mat=
+FOOT_PROBE idle_tex class=AtlasTexture path=
+FOOT_PROBE idle_contact exact_red=0 exact_cream=0 size=64x64
+CAPTURE_TELEMETRY shot=spawn_novfx strategy=windowed_gpu colors=93 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+CAPTURE_TELEMETRY shot=spawn_nosprite strategy=windowed_gpu colors=93 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+CAPTURE_TELEMETRY shot=spawn_nolight strategy=windowed_gpu colors=79 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+TRANSITION_PROFILE from=room_000 to=room_000 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=35.28 presentation_ms=0.71 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=44.45
+CAPTURE_TELEMETRY shot=gothic_room_000 strategy=windowed_gpu colors=93 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+CAPTURE_TELEMETRY shot=biome_0 strategy=windowed_gpu colors=93 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+CAPTURE_TELEMETRY shot=region_0 strategy=windowed_gpu colors=93 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+CAPTURE_TELEMETRY shot=slice_tutorial strategy=windowed_gpu colors=93 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+TRANSITION_PROFILE from=room_000 to=room_001 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=68.48 presentation_ms=0.82 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=71.31
+CAPTURE_TELEMETRY shot=gothic_room_001 strategy=windowed_gpu colors=86 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,1264 current=true tile=32 used=(0, 0):64x48
+CAPTURE_TELEMETRY shot=slice_combat strategy=windowed_gpu colors=88 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,1264 current=true tile=32 used=(0, 0):64x48
+TRANSITION_PROFILE from=room_001 to=room_002 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=50.35 presentation_ms=0.77 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=59.09
+CAPTURE_TELEMETRY shot=gothic_room_002 strategy=windowed_gpu colors=96 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,2032 current=true tile=32 used=(0, 0):50x72
+CAPTURE_TELEMETRY shot=slice_traversal strategy=windowed_gpu colors=95 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,2032 current=true tile=32 used=(0, 0):50x72
+TRANSITION_PROFILE from=room_002 to=room_003 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=34.47 presentation_ms=0.77 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=43.76
+CAPTURE_TELEMETRY shot=gothic_room_003 strategy=windowed_gpu colors=76 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,752 current=true tile=32 used=(0, 0):56x32
+CAPTURE_TELEMETRY shot=slice_ability_shrine strategy=windowed_gpu colors=75 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,752 current=true tile=32 used=(0, 0):56x32
+TRANSITION_PROFILE from=room_003 to=room_004 physics_wait_ms=0.00 resource_ms=0.03 instantiate_ms=124.08 presentation_ms=4.13 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=136.41
+CAPTURE_TELEMETRY shot=gothic_room_004 strategy=windowed_gpu colors=92 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,1264 current=true tile=32 used=(0, 0):64x48
+CAPTURE_TELEMETRY shot=slice_combat strategy=windowed_gpu colors=91 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,1264 current=true tile=32 used=(0, 0):64x48
+TRANSITION_PROFILE from=room_004 to=room_005 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=66.92 presentation_ms=0.83 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=76.05
+CAPTURE_TELEMETRY shot=gothic_room_005 strategy=windowed_gpu colors=86 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,2032 current=true tile=32 used=(0, 0):50x72
+CAPTURE_TELEMETRY shot=slice_traversal strategy=windowed_gpu colors=86 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,2032 current=true tile=32 used=(0, 0):50x72
+TRANSITION_PROFILE from=room_005 to=room_006 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=69.00 presentation_ms=0.75 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=71.82
+CAPTURE_TELEMETRY shot=gothic_room_006 strategy=windowed_gpu colors=107 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):48x24
+CAPTURE_TELEMETRY shot=slice_save strategy=windowed_gpu colors=107 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):48x24
+TRANSITION_PROFILE from=room_006 to=room_007 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=35.76 presentation_ms=0.76 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=44.72
+CAPTURE_TELEMETRY shot=gothic_room_007 strategy=windowed_gpu colors=90 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):48x24
+CAPTURE_TELEMETRY shot=slice_secret strategy=windowed_gpu colors=90 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):48x24
+TRANSITION_PROFILE from=room_007 to=room_008 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=53.11 presentation_ms=5.00 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=136.46
+CAPTURE_TELEMETRY shot=gothic_room_008 strategy=windowed_gpu colors=81 size=1920x1080 zoom=1.76 xform=1.76 view=1088x612 center=544,718 current=true tile=32 used=(0, 2):64x30
+CAPTURE_TELEMETRY shot=slice_miniboss strategy=windowed_gpu colors=80 size=1920x1080 zoom=1.76 xform=1.76 view=1088x612 center=544,718 current=true tile=32 used=(0, 2):64x30
+TRANSITION_PROFILE from=room_008 to=room_009 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=32.38 presentation_ms=1.49 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=42.86
+CAPTURE_TELEMETRY shot=gothic_room_009 strategy=windowed_gpu colors=92 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,752 current=true tile=32 used=(0, 0):64x32
+CAPTURE_TELEMETRY shot=slice_ability_gate strategy=windowed_gpu colors=92 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,752 current=true tile=32 used=(0, 0):64x32
+TRANSITION_PROFILE from=room_009 to=room_010 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=34.01 presentation_ms=0.73 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=43.10
+CAPTURE_TELEMETRY shot=region_1 strategy=windowed_gpu colors=81 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+CAPTURE_TELEMETRY shot=slice_tutorial strategy=windowed_gpu colors=81 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+TRANSITION_PROFILE from=room_010 to=room_011 physics_wait_ms=0.00 resource_ms=0.03 instantiate_ms=166.22 presentation_ms=0.80 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=169.37
+CAPTURE_TELEMETRY shot=slice_combat strategy=windowed_gpu colors=89 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,1264 current=true tile=32 used=(0, 0):64x48
+TRANSITION_PROFILE from=room_011 to=room_012 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=66.05 presentation_ms=0.78 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=69.39
+CAPTURE_TELEMETRY shot=slice_traversal strategy=windowed_gpu colors=88 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,2032 current=true tile=32 used=(0, 0):50x72
+TRANSITION_PROFILE from=room_012 to=room_013 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=34.21 presentation_ms=0.80 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=37.37
+CAPTURE_TELEMETRY shot=slice_ability_shrine strategy=windowed_gpu colors=73 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,752 current=true tile=32 used=(0, 0):56x32
+TRANSITION_PROFILE from=room_013 to=room_014 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=137.22 presentation_ms=3.88 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=149.45
+CAPTURE_TELEMETRY shot=slice_combat strategy=windowed_gpu colors=85 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,1264 current=true tile=32 used=(0, 0):64x48
+TRANSITION_PROFILE from=room_014 to=room_015 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=59.55 presentation_ms=0.79 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=68.72
+CAPTURE_TELEMETRY shot=slice_traversal strategy=windowed_gpu colors=91 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,2032 current=true tile=32 used=(0, 0):50x72
+TRANSITION_PROFILE from=room_015 to=room_016 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=65.75 presentation_ms=0.77 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=68.97
+CAPTURE_TELEMETRY shot=slice_save strategy=windowed_gpu colors=102 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):48x24
+TRANSITION_PROFILE from=room_016 to=room_017 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=34.24 presentation_ms=0.73 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=43.35
+CAPTURE_TELEMETRY shot=slice_secret strategy=windowed_gpu colors=88 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):48x24
+TRANSITION_PROFILE from=room_017 to=room_018 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=140.82 presentation_ms=4.99 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=174.06
+CAPTURE_TELEMETRY shot=slice_miniboss strategy=windowed_gpu colors=75 size=1920x1080 zoom=1.76 xform=1.76 view=1088x612 center=544,718 current=true tile=32 used=(0, 2):64x30
+TRANSITION_PROFILE from=room_018 to=room_019 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=35.02 presentation_ms=1.46 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=44.96
+CAPTURE_TELEMETRY shot=slice_ability_gate strategy=windowed_gpu colors=85 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,752 current=true tile=32 used=(0, 0):64x32
+TRANSITION_PROFILE from=room_019 to=room_020 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=34.34 presentation_ms=0.74 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=37.45
+CAPTURE_TELEMETRY shot=region_2 strategy=windowed_gpu colors=80 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+CAPTURE_TELEMETRY shot=slice_tutorial strategy=windowed_gpu colors=80 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+TRANSITION_PROFILE from=room_020 to=room_021 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=68.38 presentation_ms=0.79 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=77.61
+CAPTURE_TELEMETRY shot=slice_combat strategy=windowed_gpu colors=85 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,1264 current=true tile=32 used=(0, 0):64x48
+TRANSITION_PROFILE from=room_021 to=room_022 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=52.61 presentation_ms=0.77 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=55.69
+CAPTURE_TELEMETRY shot=slice_traversal strategy=windowed_gpu colors=89 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,2032 current=true tile=32 used=(0, 0):50x72
+TRANSITION_PROFILE from=room_022 to=room_023 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=34.28 presentation_ms=0.82 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=37.59
+CAPTURE_TELEMETRY shot=slice_ability_shrine strategy=windowed_gpu colors=68 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,752 current=true tile=32 used=(0, 0):56x32
+TRANSITION_PROFILE from=room_023 to=room_024 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=65.94 presentation_ms=4.10 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=72.36
+CAPTURE_TELEMETRY shot=slice_combat strategy=windowed_gpu colors=82 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,1264 current=true tile=32 used=(0, 0):64x48
+TRANSITION_PROFILE from=room_024 to=room_025 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=35.53 presentation_ms=0.77 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=44.66
+CAPTURE_TELEMETRY shot=slice_ability_gate strategy=windowed_gpu colors=75 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,752 current=true tile=32 used=(0, 0):64x32
+TRANSITION_PROFILE from=room_025 to=room_026 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=74.96 presentation_ms=0.83 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=78.08
+CAPTURE_TELEMETRY shot=slice_save strategy=windowed_gpu colors=100 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):48x24
+TRANSITION_PROFILE from=room_026 to=room_027 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=35.34 presentation_ms=0.72 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=38.39
+CAPTURE_TELEMETRY shot=slice_secret strategy=windowed_gpu colors=88 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):48x24
+TRANSITION_PROFILE from=room_027 to=room_028 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=140.85 presentation_ms=4.95 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=303.82
+CAPTURE_TELEMETRY shot=slice_miniboss strategy=windowed_gpu colors=72 size=1920x1080 zoom=1.76 xform=1.76 view=1088x612 center=544,718 current=true tile=32 used=(0, 2):64x30
+TRANSITION_PROFILE from=room_028 to=room_029 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=33.39 presentation_ms=1.45 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=43.17
+CAPTURE_TELEMETRY shot=slice_ability_gate strategy=windowed_gpu colors=80 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,752 current=true tile=32 used=(0, 0):64x32
+TRANSITION_PROFILE from=room_029 to=room_030 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=33.56 presentation_ms=0.72 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=42.60
+CAPTURE_TELEMETRY shot=region_3 strategy=windowed_gpu colors=87 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+CAPTURE_TELEMETRY shot=slice_tutorial strategy=windowed_gpu colors=87 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+TRANSITION_PROFILE from=room_030 to=room_031 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=77.60 presentation_ms=0.79 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=80.73
+CAPTURE_TELEMETRY shot=slice_combat strategy=windowed_gpu colors=92 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,1264 current=true tile=32 used=(0, 0):64x48
+TRANSITION_PROFILE from=room_031 to=room_032 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=49.05 presentation_ms=0.84 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=58.17
+CAPTURE_TELEMETRY shot=slice_traversal strategy=windowed_gpu colors=94 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,2032 current=true tile=32 used=(0, 0):50x72
+TRANSITION_PROFILE from=room_032 to=room_033 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=37.46 presentation_ms=0.88 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=46.80
+CAPTURE_TELEMETRY shot=slice_ability_shrine strategy=windowed_gpu colors=77 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,752 current=true tile=32 used=(0, 0):56x32
+TRANSITION_PROFILE from=room_033 to=room_034 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=78.55 presentation_ms=4.07 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=90.76
+CAPTURE_TELEMETRY shot=slice_combat strategy=windowed_gpu colors=91 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,1264 current=true tile=32 used=(0, 0):64x48
+TRANSITION_PROFILE from=room_034 to=room_035 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=61.45 presentation_ms=0.88 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=70.78
+CAPTURE_TELEMETRY shot=slice_traversal strategy=windowed_gpu colors=97 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,2032 current=true tile=32 used=(0, 0):50x72
+TRANSITION_PROFILE from=room_035 to=room_036 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=69.26 presentation_ms=0.79 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=78.61
+CAPTURE_TELEMETRY shot=slice_save strategy=windowed_gpu colors=110 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 2):48x22
+TRANSITION_PROFILE from=room_036 to=room_037 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=37.44 presentation_ms=0.74 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=46.22
+CAPTURE_TELEMETRY shot=slice_secret strategy=windowed_gpu colors=85 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):48x24
+TRANSITION_PROFILE from=room_037 to=room_038 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=254.62 presentation_ms=4.88 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=368.67
+CAPTURE_TELEMETRY shot=slice_boss strategy=windowed_gpu colors=78 size=1920x1080 zoom=1.76 xform=1.76 view=1088x612 center=544,846 current=true tile=32 used=(0, 0):72x36
+CAPTURE_TELEMETRY shot=slice_boss_combat strategy=windowed_gpu colors=78 size=1920x1080 zoom=1.76 xform=1.76 view=1088x612 center=544,846 current=true tile=32 used=(0, 0):72x36
+CAPTURE_TELEMETRY shot=slice_boss_combat strategy=windowed_gpu colors=78 size=1920x1080 zoom=1.76 xform=1.76 view=1088x612 center=544,846 current=true tile=32 used=(0, 0):72x36
+TRANSITION_PROFILE from=room_038 to=room_039 physics_wait_ms=0.00 resource_ms=0.02 instantiate_ms=33.43 presentation_ms=1.46 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=43.23
+CAPTURE_TELEMETRY shot=slice_transition strategy=windowed_gpu colors=89 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+TRANSITION_PROFILE from=room_039 to=room_000 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=34.62 presentation_ms=0.78 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=43.65
+CAPTURE_TELEMETRY shot=player_idle strategy=windowed_gpu colors=93 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+CAPTURE_TELEMETRY shot=player_run strategy=windowed_gpu colors=93 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+CAPTURE_TELEMETRY shot=player_jump strategy=windowed_gpu colors=93 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+CAPTURE_TELEMETRY shot=player_landing strategy=windowed_gpu colors=93 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+CAPTURE_TELEMETRY shot=player_combat strategy=windowed_gpu colors=93 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+CAPTURE_TELEMETRY shot=combat_action strategy=windowed_gpu colors=93 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+CAPTURE_TELEMETRY shot=player_dash strategy=windowed_gpu colors=93 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+CAPTURE_TELEMETRY shot=dash strategy=windowed_gpu colors=93 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+CAPTURE_TELEMETRY shot=ability_pickup strategy=windowed_gpu colors=93 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+CAPTURE_TELEMETRY shot=ability strategy=windowed_gpu colors=93 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+CAPTURE_TELEMETRY shot=exploration strategy=windowed_gpu colors=48 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+CAPTURE_TELEMETRY shot=npc_dialogue strategy=windowed_gpu colors=48 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+CAPTURE_TELEMETRY shot=gameplay strategy=windowed_gpu colors=93 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+CAPTURE_TELEMETRY shot=boss_death strategy=windowed_gpu colors=104 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+CAPTURE_TELEMETRY shot=victory strategy=windowed_gpu colors=18 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+CAPTURE_TELEMETRY shot=combat strategy=windowed_gpu colors=77 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=488,498 current=true tile=32 used=(0, 0):56x24
+CAPTURE_TELEMETRY shot=boss strategy=windowed_gpu colors=85 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+CAPTURE_TELEMETRY shot=boss_phase_1 strategy=windowed_gpu colors=84 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+CAPTURE_TELEMETRY shot=boss_phase_2 strategy=windowed_gpu colors=84 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,496 current=true tile=32 used=(0, 0):56x24
+TRANSITION_PROFILE from=room_000 to=room_009 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=34.23 presentation_ms=0.75 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=36.40
+CAPTURE_TELEMETRY shot=ability_gate strategy=windowed_gpu colors=92 size=1920x1080 zoom=1.99 xform=1.99 view=967x544 center=484,752 current=true tile=32 used=(0, 0):64x32
+METROFORGE_RUNTIME_NOTE ability 'dash' granted via direct GameManager call — no AbilityPickup for this ability exists in room 'room_009' (setup step, not gameplay-verified)
+TRANSITION_PROFILE from=room_009 to=room_010 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=46.24 presentation_ms=0.80 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=59.89
+TRANSITION_PROFILE from=room_010 to=room_025 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=32.64 presentation_ms=0.74 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=109.30
+METROFORGE_RUNTIME_NOTE ability 'ground_slam' granted via direct GameManager call for the breakable-wall check (setup step, not gameplay-verified)
+TRANSITION_PROFILE from=room_025 to=room_027 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=41.50 presentation_ms=0.71 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=42.62
+TRANSITION_PROFILE from=room_027 to=room_025 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=33.53 presentation_ms=0.74 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=34.51
+TRANSITION_PROFILE from=room_025 to=room_025 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=34.49 presentation_ms=0.74 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=46.84
+TRANSITION_PROFILE from=room_025 to=room_007 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=34.70 presentation_ms=0.79 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=43.46
+SHORTCUT_PROBE before room=room_007 target=room_008 direction=right player=(112.0, 704.0) door=(1464.0, 672.0) shape=(1476.0, 712.0)
+TRANSITION_PROFILE from=room_007 to=room_008 physics_wait_ms=0.00 resource_ms=0.03 instantiate_ms=74.71 presentation_ms=6.50 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=85.91
+SHORTCUT_PROBE after current=room_008 arrived=true player_valid=false player=freed
+CAPTURE_TELEMETRY shot=checkpoint strategy=windowed_gpu colors=82 size=1920x1080 zoom=1.76 xform=1.76 view=1088x612 center=544,718 current=true tile=32 used=(0, 2):64x30
+TRANSITION_PROFILE from=room_000 to=room_000 physics_wait_ms=0.00 resource_ms=0.01 instantiate_ms=33.31 presentation_ms=1.42 fade_out_ms=0.00 fade_out_remainder_ms=0.00 fade_in_ms=0.00 total_ms=43.06
+WARNING: SaveManager: save file is corrupt or unreadable
+   at: push_warning (core/variant/variant_utility.cpp:1034)
+   GDScript backtrace (most recent call first):
+       [0] _load_save_file (res://scripts/core/SaveManager.gd:145)
+       [1] load_game (res://scripts/core/SaveManager.gd:117)
+       [2] _check_save_backup_recovery (res://scripts/test/RuntimeSmokeTest.gd:793)
+       [3] _ready (res://scripts/test/RuntimeSmokeTest.gd:160)
+       [4] _check_player_death_respawn (res://scripts/test/RuntimeSmokeTest.gd:905)
+SMOKE_TEST_RESULTS_BEGIN
+PASS: autoload_game_manager_exists
+PASS: autoload_event_bus_exists
+PASS: autoload_save_manager_exists
+PASS: autoload_audio_manager_exists
+PASS: autoload_progression_manager_exists
+PASS: autoload_settings_manager_exists
+PASS: autoload_quest_manager_exists
+PASS: autoload_vfx_manager_exists
+PASS: stormglass_blueprint_has_40_rooms
+PASS: stormglass_enemy_roster_uses_one_continuous_biome
+PASS: stormglass_enemy_roster_names_are_unique
+PASS: stormglass_blueprint_archetypes_match
+PASS: stormglass_blueprint_dimensions_match
+PASS: stormglass_combat_rooms_have_4_to_6_enemies
+PASS: stormglass_traversal_rooms_have_2_to_3_enemies
+PASS: stormglass_encounters_clear_door_safety_zones
+PASS: stormglass_encounter_instance_ids_are_unique
+PASS: stormglass_enemy_placements_match_room_biome
+PASS: stormglass_blueprint_guardian_arenas_match
+PASS: enemy_000_uses_detailed_gothic_art
+PASS: enemy_001_uses_detailed_gothic_art
+PASS: enemy_002_uses_detailed_gothic_art
+PASS: enemy_003_uses_detailed_gothic_art
+PASS: enemy_004_uses_detailed_gothic_art
+PASS: enemy_005_uses_detailed_gothic_art
+PASS: enemy_006_uses_detailed_gothic_art
+PASS: enemy_007_uses_detailed_gothic_art
+PASS: enemy_008_uses_detailed_gothic_art
+PASS: enemy_009_uses_detailed_gothic_art
+PASS: enemy_010_uses_detailed_gothic_art
+PASS: enemy_011_uses_detailed_gothic_art
+PASS: enemy_012_uses_detailed_gothic_art
+PASS: enemy_013_uses_detailed_gothic_art
+PASS: enemy_014_uses_detailed_gothic_art
+PASS: enemy_015_uses_detailed_gothic_art
+PASS: enemy_016_uses_detailed_gothic_art
+PASS: enemy_017_uses_detailed_gothic_art
+PASS: enemy_018_uses_detailed_gothic_art
+PASS: enemy_019_uses_detailed_gothic_art
+PASS: boss_000_uses_detailed_gothic_art
+PASS: boss_001_uses_detailed_gothic_art
+PASS: boss_002_uses_detailed_gothic_art
+PASS: boss_003_uses_detailed_gothic_art
+PASS: rooms_directory_exists
+PASS: room_scenes_exist
+PASS: all_room_scenes_load_cleanly
+PASS: enemies_instantiate
+PASS: boss_instantiates
+PASS: ability_pickup_exists_in_world
+PASS: npc_exists_in_world
+PASS: world_scene_loads
+PASS: world_manager_initializes
+PASS: current_room_recorded
+PASS: stormglass_gothic_authored_prop_family_has_12_assets
+PASS: stormglass_decor_instantiates_in_opening_room
+PASS: stormglass_opening_room_places_authored_gothic_props
+PASS: stormglass_opening_room_has_collision_matched_surface_holder
+PASS: stormglass_opening_room_dresses_every_platform_collider
+PASS: stormglass_opening_room_dresses_floor_collider
+PASS: stormglass_opening_floor_has_painted_foundation
+PASS: stormglass_foundation_matches_floor_without_collision_changes
+PASS: stormglass_save_shrine_uses_authored_castle_art
+PASS: stormglass_save_shrine_keeps_authored_world_scale
+PASS: stormglass_save_shrine_visible_base_meets_anchor
+PASS: stormglass_save_shrine_stays_grounded_while_idle
+PASS: stormglass_gothic_placeholder_tile_faces_are_hidden
+PASS: stormglass_vertical_room_preserves_30x17_tile_gameplay_scale
+PASS: stormglass_compact_room_camera_does_not_expose_void
+PASS: audio_manager_music_playing_after_room_entry
+PASS: audio_manager_plays_sfx
+PASS: audio_manager_missing_sfx_does_not_crash
+PASS: audio_manager_music_uses_music_bus
+PASS: audio_manager_sfx_uses_sfx_bus
+PASS: generated_music_room_data_parses
+PASS: generated_music_has_biome_0
+PASS: generated_music_has_boss
+PASS: staged_encounter_combat_room_exists
+PASS: staged_encounter_initial_group_is_partial
+PASS: staged_encounter_advancing_wakes_later_group
+PASS: boss_room_plays_boss_music
+PASS: leaving_boss_restores_biome_music
+PASS: pause_menu_present_in_world
+PASS: game_manager_pause_actually_pauses_tree
+PASS: game_manager_resume_actually_unpauses_tree
+PASS: pause_menu_open_shows_ui
+PASS: pause_menu_open_sets_paused_game_state
+PASS: pause_menu_settings_panel_opens
+PASS: pause_menu_settings_sliders_wired
+PASS: pause_menu_map_panel_opens
+PASS: world_map_view_present
+PASS: map_manager_has_graph
+PASS: map_manager_tracks_discovered_rooms
+PASS: pause_menu_close_hides_ui_and_resumes
+PASS: settings_manager_can_write
+PASS: settings_manager_can_read
+PASS: settings_reload_restores_screen_shake
+PASS: settings_reload_restores_master_volume
+PASS: player_exists
+PASS: player_spawns_at_valid_location
+PASS: player_movement_controller_initialized
+PASS: player_has_health_component
+PASS: player_has_hurtbox
+PASS: player_has_attack_hitbox
+PASS: camera_exists_and_current
+PASS: camera_position_is_finite
+PASS: camera_within_room_bounds
+PASS: camera_idle_stays_near_player_anchor
+PASS: camera_shake_returns_to_target
+PASS: gameplay_screenshot_spawn
+PASS: gameplay_screenshot_spawn_visible
+PASS: gameplay_screenshot_spawn_novfx
+PASS: gameplay_screenshot_spawn_novfx_visible
+PASS: gameplay_screenshot_spawn_nosprite
+PASS: gameplay_screenshot_spawn_nosprite_visible
+PASS: gameplay_screenshot_spawn_nolight
+PASS: gameplay_screenshot_spawn_nolight_visible
+PASS: player_sprite_ground_contact_aligned
+PASS: player_has_attack_animation
+PASS: player_has_hurt_animation
+PASS: player_has_idle_animation
+PASS: player_has_death_animation
+PASS: player_has_run_or_walk_animation
+PASS: player_idle_is_not_walk_frame_1
+PASS: gameplay_screenshot_gothic_room_000
+PASS: gameplay_screenshot_gothic_room_000_visible
+PASS: gameplay_screenshot_biome_0
+PASS: gameplay_screenshot_biome_0_visible
+PASS: gameplay_screenshot_region_0
+PASS: gameplay_screenshot_region_0_visible
+PASS: gameplay_screenshot_slice_tutorial
+PASS: gameplay_screenshot_slice_tutorial_visible
+PASS: gameplay_screenshot_gothic_room_001
+PASS: gameplay_screenshot_gothic_room_001_visible
+PASS: gameplay_screenshot_slice_combat
+PASS: gameplay_screenshot_slice_combat_visible
+PASS: gameplay_screenshot_gothic_room_002
+PASS: gameplay_screenshot_gothic_room_002_visible
+PASS: gameplay_screenshot_slice_traversal
+PASS: gameplay_screenshot_slice_traversal_visible
+PASS: gameplay_screenshot_gothic_room_003
+PASS: gameplay_screenshot_gothic_room_003_visible
+PASS: gameplay_screenshot_slice_ability_shrine
+PASS: gameplay_screenshot_slice_ability_shrine_visible
+PASS: gameplay_screenshot_gothic_room_004
+PASS: gameplay_screenshot_gothic_room_004_visible
+PASS: gameplay_screenshot_slice_combat
+PASS: gameplay_screenshot_slice_combat_visible
+PASS: gameplay_screenshot_gothic_room_005
+PASS: gameplay_screenshot_gothic_room_005_visible
+PASS: gameplay_screenshot_slice_traversal
+PASS: gameplay_screenshot_slice_traversal_visible
+PASS: gameplay_screenshot_gothic_room_006
+PASS: gameplay_screenshot_gothic_room_006_visible
+PASS: gameplay_screenshot_slice_save
+PASS: gameplay_screenshot_slice_save_visible
+PASS: gameplay_screenshot_gothic_room_007
+PASS: gameplay_screenshot_gothic_room_007_visible
+PASS: gameplay_screenshot_slice_secret
+PASS: gameplay_screenshot_slice_secret_visible
+PASS: gameplay_screenshot_gothic_room_008
+PASS: gameplay_screenshot_gothic_room_008_visible
+PASS: gameplay_screenshot_slice_miniboss
+PASS: gameplay_screenshot_slice_miniboss_visible
+PASS: gameplay_screenshot_gothic_room_009
+PASS: gameplay_screenshot_gothic_room_009_visible
+PASS: gameplay_screenshot_slice_ability_gate
+PASS: gameplay_screenshot_slice_ability_gate_visible
+PASS: gameplay_screenshot_region_1
+PASS: gameplay_screenshot_region_1_visible
+PASS: gameplay_screenshot_slice_tutorial
+PASS: gameplay_screenshot_slice_tutorial_visible
+PASS: gameplay_screenshot_slice_combat
+PASS: gameplay_screenshot_slice_combat_visible
+PASS: gameplay_screenshot_slice_traversal
+PASS: gameplay_screenshot_slice_traversal_visible
+PASS: gameplay_screenshot_slice_ability_shrine
+PASS: gameplay_screenshot_slice_ability_shrine_visible
+PASS: gameplay_screenshot_slice_combat
+PASS: gameplay_screenshot_slice_combat_visible
+PASS: gameplay_screenshot_slice_traversal
+PASS: gameplay_screenshot_slice_traversal_visible
+PASS: gameplay_screenshot_slice_save
+PASS: gameplay_screenshot_slice_save_visible
+PASS: gameplay_screenshot_slice_secret
+PASS: gameplay_screenshot_slice_secret_visible
+PASS: gameplay_screenshot_slice_miniboss
+PASS: gameplay_screenshot_slice_miniboss_visible
+PASS: gameplay_screenshot_slice_ability_gate
+PASS: gameplay_screenshot_slice_ability_gate_visible
+PASS: gameplay_screenshot_region_2
+PASS: gameplay_screenshot_region_2_visible
+PASS: gameplay_screenshot_slice_tutorial
+PASS: gameplay_screenshot_slice_tutorial_visible
+PASS: gameplay_screenshot_slice_combat
+PASS: gameplay_screenshot_slice_combat_visible
+PASS: gameplay_screenshot_slice_traversal
+PASS: gameplay_screenshot_slice_traversal_visible
+PASS: gameplay_screenshot_slice_ability_shrine
+PASS: gameplay_screenshot_slice_ability_shrine_visible
+PASS: gameplay_screenshot_slice_combat
+PASS: gameplay_screenshot_slice_combat_visible
+PASS: gameplay_screenshot_slice_ability_gate
+PASS: gameplay_screenshot_slice_ability_gate_visible
+PASS: gameplay_screenshot_slice_save
+PASS: gameplay_screenshot_slice_save_visible
+PASS: gameplay_screenshot_slice_secret
+PASS: gameplay_screenshot_slice_secret_visible
+PASS: gameplay_screenshot_slice_miniboss
+PASS: gameplay_screenshot_slice_miniboss_visible
+PASS: gameplay_screenshot_slice_ability_gate
+PASS: gameplay_screenshot_slice_ability_gate_visible
+PASS: gameplay_screenshot_region_3
+PASS: gameplay_screenshot_region_3_visible
+PASS: gameplay_screenshot_slice_tutorial
+PASS: gameplay_screenshot_slice_tutorial_visible
+PASS: gameplay_screenshot_slice_combat
+PASS: gameplay_screenshot_slice_combat_visible
+PASS: gameplay_screenshot_slice_traversal
+PASS: gameplay_screenshot_slice_traversal_visible
+PASS: gameplay_screenshot_slice_ability_shrine
+PASS: gameplay_screenshot_slice_ability_shrine_visible
+PASS: gameplay_screenshot_slice_combat
+PASS: gameplay_screenshot_slice_combat_visible
+PASS: gameplay_screenshot_slice_traversal
+PASS: gameplay_screenshot_slice_traversal_visible
+PASS: gameplay_screenshot_slice_save
+PASS: gameplay_screenshot_slice_save_visible
+PASS: gameplay_screenshot_slice_secret
+PASS: gameplay_screenshot_slice_secret_visible
+PASS: gameplay_screenshot_slice_boss
+PASS: gameplay_screenshot_slice_boss_visible
+PASS: gameplay_screenshot_slice_boss_combat
+PASS: gameplay_screenshot_slice_boss_combat_visible
+PASS: gameplay_screenshot_slice_boss_combat
+PASS: gameplay_screenshot_slice_boss_combat_visible
+PASS: gameplay_screenshot_slice_transition
+PASS: gameplay_screenshot_slice_transition_visible
+PASS: stormglass_visual_slice_uses_one_continuous_biome
+PASS: stormglass_visual_slice_captures_four_connected_regions
+PASS: visual_slice_captures_all_ten_authored_gothic_rooms
+PASS: stormglass_visual_slice_checks_all_40_room_surfaces
+PASS: stormglass_all_masonry_exactly_matches_real_collision
+PASS: stormglass_all_rooms_hide_placeholder_tile_layers
+PASS: stormglass_all_rooms_match_platform_art_to_collision
+PASS: stormglass_all_elevated_platforms_have_physical_supports
+PASS: stormglass_all_existing_floor_colliders_are_dressed
+PASS: stormglass_all_existing_floors_have_painted_foundations
+PASS: stormglass_water_zones_use_authored_panorama_visuals
+PASS: stormglass_all_40_rooms_share_one_castle_interior_background
+PASS: stormglass_all_40_rooms_have_two_authored_condition_decals
+PASS: stormglass_condition_metadata_matches_each_room_district
+PASS: stormglass_platform_materials_match_castle_condition
+PASS: stormglass_visual_slice_covers_four_castle_condition_families
+PASS: gameplay_screenshot_player_idle
+PASS: gameplay_screenshot_player_idle_visible
+PASS: gameplay_screenshot_player_run
+PASS: gameplay_screenshot_player_run_visible
+PASS: gameplay_screenshot_player_jump
+PASS: gameplay_screenshot_player_jump_visible
+PASS: gameplay_screenshot_player_landing
+PASS: gameplay_screenshot_player_landing_visible
+PASS: gameplay_screenshot_player_combat
+PASS: gameplay_screenshot_player_combat_visible
+PASS: gameplay_screenshot_combat_action
+PASS: gameplay_screenshot_combat_action_visible
+PASS: gameplay_screenshot_player_dash
+PASS: gameplay_screenshot_player_dash_visible
+PASS: gameplay_screenshot_dash
+PASS: gameplay_screenshot_dash_visible
+PASS: gameplay_screenshot_ability_pickup
+PASS: gameplay_screenshot_ability_pickup_visible
+PASS: ability_pickup_can_be_triggered
+PASS: gameplay_screenshot_ability
+PASS: gameplay_screenshot_ability_visible
+PASS: npc_sprite_is_animated
+PASS: npc_conversation_has_one_speaker
+PASS: unrelated_npc_does_not_talk
+PASS: gameplay_screenshot_exploration
+PASS: gameplay_screenshot_exploration_visible
+PASS: gameplay_screenshot_npc_dialogue
+PASS: gameplay_screenshot_npc_dialogue_visible
+PASS: npc_interaction_can_be_triggered
+PASS: npc_returns_to_idle_after_conversation
+PASS: gameplay_screenshot_gameplay
+PASS: gameplay_screenshot_gameplay_visible
+PASS: gameplay_screenshot_boss_death
+PASS: gameplay_screenshot_boss_death_visible
+PASS: gameplay_screenshot_victory
+PASS: gameplay_screenshot_victory_visible
+PASS: final_boss_defeat_triggers_victory_state
+PASS: final_boss_defeat_sets_game_complete_flag
+PASS: final_boss_defeat_emits_game_completed
+PASS: final_boss_defeat_shows_victory_overlay
+PASS: final_boss_defeat_tracks_progression
+PASS: quest_data_parses
+PASS: quest_data_nonempty
+PASS: quest_objective_exists
+PASS: quest_manager_reports_available_before_accept
+PASS: quest_can_be_accepted
+PASS: hud_quest_tracker_reads_active_quests
+PASS: quest_completes_from_real_gameplay_signal
+PASS: quest_completion_grants_currency_reward
+PASS: quest_completion_grants_item_reward
+PASS: item_data_parses
+PASS: item_pickup_scene_loads
+PASS: item_pickup_currency_can_be_triggered
+PASS: item_pickup_consumable_can_be_triggered
+PASS: item_pickup_relic_raises_max_health
+PASS: item_pickup_relic_tracked_in_inventory
+PASS: item_pickup_charm_raises_attack
+PASS: item_pickup_weapon_tracked_in_inventory
+PASS: weapon_is_equipped
+PASS: weapon_unequip_lowers_attack
+PASS: weapon_re_equip_restores_attack
+PASS: quest_item_tracked_in_inventory
+PASS: quest_item_is_not_equippable
+PASS: quest_item_does_not_change_attack
+PASS: item_pickup_collectible_tracked_in_inventory
+PASS: collectible_is_not_equippable
+PASS: collectible_found_count_increases
+PASS: collectible_total_count_positive
+PASS: collectible_does_not_change_attack
+PASS: inventory_view_present
+PASS: inventory_view_has_script
+PASS: inventory_click_unequips_weapon_slot
+PASS: inventory_display_marks_equipped_items
+PASS: game_hud_present_in_world
+PASS: health_bar_visible_inside_viewport
+PASS: hud_frame_contains_health_bar
+PASS: currency_label_present
+PASS: collectible_label_present
+PASS: capture_currency_hidden
+PASS: capture_collectibles_hidden
+PASS: hud_minimap_present
+PASS: hud_quest_tracker_present
+PASS: hud_quest_tracker_script_attached
+PASS: hud_minimap_uses_map_manager_graph
+PASS: hud_minimap_has_stormglass_frame
+PASS: hud_quest_tracker_entries_are_active
+PASS: enemy_data_parses
+PASS: enemy_data_nonempty
+PASS: enemy_scene_loads
+PASS: enemy_reads_real_generated_stats
+PASS: enemy_contact_hitbox_active_for_melee_type
+PASS: enemy_melee_contact_damage_works
+PASS: player_attack_actually_damages_enemy
+PASS: enemy_plays_hurt_animation_on_hit
+PASS: enemy_has_attack_animation
+PASS: enemy_has_run_animation
+PASS: enemy_plays_run_animation
+PASS: enemy_plays_attack_animation
+PASS: enemy_contact_hitbox_inactive_for_projectile_type
+PASS: enemy_projectile_attack_spawns_projectile
+PASS: enemy_burst_spawns_three_projectiles
+PASS: enemy_beam_spawns_piercing_projectile
+PASS: enemy_beam_is_piercing
+PASS: enemy_beam_is_stationary
+PASS: enemy_area_spawns_radial_projectiles
+PASS: enemy_summon_spawns_minion
+PASS: enemy_summon_minion_flagged
+PASS: enemy_summon_minion_uses_melee_contact
+PASS: enemy_trap_activates_contact_hitbox
+PASS: enemy_fly_moves_horizontally
+PASS: enemy_hover_moves_slower_than_fly
+PASS: enemy_charge_boosts_speed
+PASS: enemy_teleport_changes_position
+PASS: enemy_burrow_hides
+PASS: enemy_burrow_disables_hurtbox
+PASS: gameplay_screenshot_combat
+PASS: gameplay_screenshot_combat_visible
+PASS: boss_data_parses
+PASS: boss_data_nonempty
+PASS: every_generated_boss_placed_in_its_real_arena
+PASS: every_placed_boss_has_correct_boss_id
+PASS: boss_scene_loads_for_attack_check
+PASS: boss_phase_data_has_telegraph
+PASS: boss_has_run_animation
+PASS: boss_plays_run_animation
+PASS: boss_slam_activates_melee_hitbox
+PASS: boss_has_attack_animation
+PASS: boss_plays_attack_animation
+PASS: stormglass_final_boss_is_tempest_abbot
+PASS: stormglass_tempest_abbot_has_ten_eight_frame_clips
+PASS: boss_projectile_attack_spawns_projectile
+PASS: boss_area_burst_spawns_multiple_projectiles
+PASS: player_attack_actually_damages_boss
+PASS: boss_plays_hurt_animation_on_hit
+PASS: gameplay_screenshot_boss
+PASS: gameplay_screenshot_boss_visible
+PASS: boss_weakness_bonus_damage_applies_while_dashing
+PASS: gameplay_screenshot_boss_phase_1
+PASS: gameplay_screenshot_boss_phase_1_visible
+PASS: gameplay_screenshot_boss_phase_2
+PASS: gameplay_screenshot_boss_phase_2_visible
+PASS: boss_phase_presentation_changes_sprite
+PASS: ability_gate_found_in_generated_world
+PASS: player_persists_across_room_transition
+PASS: camera_exists_and_current
+PASS: camera_position_is_finite
+PASS: camera_within_room_bounds
+PASS: camera_idle_stays_near_player_anchor
+PASS: ability_gate_node_present_after_navigation
+PASS: gameplay_screenshot_ability_gate
+PASS: gameplay_screenshot_ability_gate_visible
+PASS: ability_gate_blocks_without_ability
+PASS: ability_gate_opens_after_unlock
+PASS: breakable_wall_found_in_generated_world
+PASS: breakable_wall_node_present
+PASS: breakable_wall_starts_solid
+PASS: breakable_wall_blocks_before_ability
+PASS: breakable_wall_survives_without_ability
+PASS: breakable_wall_breaks_with_ability
+PASS: breakable_wall_stays_broken_after_room_reentry
+PASS: broken_floor_save_written
+PASS: broken_floor_save_loaded
+PASS: breakable_wall_stays_broken_after_save_load
+PASS: shortcut_found_in_generated_world
+PASS: shortcut_leads_to_declared_room
+PASS: save_point_scene_loads
+PASS: save_point_writes_save_file
+PASS: save_point_heals_player_to_full
+PASS: save_reload_succeeds
+PASS: save_reload_restores_checkpoint_room
+PASS: save_reload_restores_defeated_bosses
+PASS: save_reload_restores_abilities
+PASS: player_controller_wires_health_died_signal
+PASS: death_overlay_shows_on_player_died
+PASS: death_overlay_hides_on_player_respawned
+PASS: gameplay_screenshot_checkpoint
+PASS: gameplay_screenshot_checkpoint_visible
+PASS: player_death_leaves_game_state_playing
+PASS: player_death_respawns_at_checkpoint_room
+PASS: player_death_respawn_preserves_earned_abilities
+PASS: player_exists_after_death_respawn
+PASS: save_manager_can_write
+PASS: save_manager_can_read
+PASS: save_migration_v1_loads
+PASS: save_migration_v1_restores_abilities
+PASS: save_migration_v1_restores_room
+PASS: save_migration_v1_adds_max_health
+PASS: save_migration_v1_rewrites_save_file
+PASS: save_backup_write_creates_backup
+PASS: save_backup_corrupt_primary
+PASS: save_manager_loads_from_backup
+PASS: save_backup_restores_abilities
+PASS: save_slot_0_occupied_after_write
+PASS: save_slot_1_starts_empty
+PASS: save_slot_1_occupied_after_write
+PASS: save_manager_has_any_save
+PASS: save_slot_0_load_keeps_dash
+PASS: save_slots_do_not_share_progress
+PASS: save_slot_1_load_keeps_double_jump
+PASS: title_scene_loads
+PASS: title_files_button_present
+PASS: title_file_select_panel_present
+PASS: title_three_slot_buttons_present
+SMOKE_TEST_RESULTS_END
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+   at: cleanup (core/object/object.cpp:2641)
+ERROR: 1 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:810)

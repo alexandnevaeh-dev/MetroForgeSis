@@ -1,4 +1,4 @@
-import { BiomeBackgroundEditor } from './BiomeBackgroundEditor.js';
+import { BiomeBackgroundEditor, type CastleBackgroundPreview } from './BiomeBackgroundEditor.js';
 import { TopDownPropPicker } from './TopDownPropPicker.js';
 import { TopDownPropViewport } from './TopDownPropViewport.js';
 import { TopDownPropInspector, type TopDownEditorProp } from './TopDownPropInspector.js';
@@ -112,9 +112,10 @@ export function RoomEditor() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewModeId>('visual');
+  const [castleBackground, setCastleBackground] = useState<CastleBackgroundPreview | null>(null);
   const [collision, setCollision] = useState<RoomCollisionPreview | null>(null);
   const [zoom, setZoom] = useState(100);
-  const [fitRoom, setFitRoom] = useState(false);
+  const [fitRoom, setFitRoom] = useState(true);
   const [selectedTile, setSelectedTile] = useState<TileCoord>({ col: 0, row: 2 });
   const [terrainMaterial,setTerrainMaterial]=useState(1);
   const [paintTool, setPaintTool] = useState<PaintTool>('select');
@@ -196,6 +197,7 @@ export function RoomEditor() {
   }, [selected?.editingMode, viewMode]);
   useEffect(() => { setSelectedPropId(''); }, [selectedPath, selected?.id]);
   const activePropId = selected?.propPlacements?.some(prop => prop.id === selectedPropId) ? selectedPropId : selected?.propPlacements?.[0]?.id;
+  const activeBackground = castleBackground?.projectPath === selectedPath && castleBackground.biomeId === selected?.biomeId ? castleBackground : null;
   const hasGeometry = selected ? roomHasGeometry(selected, collision) : false;
   const placements: EntityPlacement[] = selected?.entityPlacements ?? [];
   const selectedPlacement = placements.find((p) => entityKey(p) === selectedEntityKey) ?? null;
@@ -239,9 +241,9 @@ export function RoomEditor() {
     }
   };
 
-  const widthTiles = selected ? Math.round((selected.width ?? 800) / (selected.tileSize ?? TILE)) : 0;
-  const heightTiles = selected ? Math.round((selected.height ?? 600) / (selected.tileSize ?? TILE)) : 0;
-  const tileSize = selected?.tileSize ?? collision?.tileSize ?? TILE;
+  const tileSize = collision?.tileSize ?? selected?.tileSize ?? TILE;
+  const widthTiles = selected ? Math.round((selected.width ?? 800) / tileSize) : 0;
+  const heightTiles = selected ? Math.round((selected.height ?? 600) / tileSize) : 0;
 
   return (
     <section className="workspace-screen room-editor-screen" aria-busy={isSaving}>
@@ -529,7 +531,7 @@ export function RoomEditor() {
                       className="room-canvas-zoom"
                       style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top left' }}
                     >
-                      <RoomCanvasPreview room={selected} layer={viewMode} collision={collision} fill fit={fitRoom} />
+                      <RoomCanvasPreview background={activeBackground} room={selected} layer={viewMode} collision={collision} fill fit={fitRoom} />
                     </div>
                   )}
                   <TilePaintEditor
@@ -568,7 +570,8 @@ export function RoomEditor() {
                       style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top left' }}
                     >
                       <RoomCanvasPreview
-                        room={selected}
+                        background={activeBackground}
+                    room={selected}
                         layer={viewMode}
                         collision={collision}
                         fill
@@ -629,13 +632,13 @@ export function RoomEditor() {
                   <InspectorSection title="Preview">
                     {hasGeometry ? (
                       <div className="room-mini-preview" aria-label="Room mini preview">
-                        <RoomCanvasPreview room={selected} layer="visual" collision={collision} mini />
+                        <RoomCanvasPreview background={activeBackground} room={selected} layer="visual" collision={collision} mini />
                       </div>
                     ) : (
                       <p className="hint">No geometry thumbnail — room has no authored tiles/collision yet.</p>
                     )}
                   </InspectorSection>
-                  <BiomeBackgroundEditor key={JSON.stringify([selectedPath, selected.biomeId])} projectPath={selectedPath} biomeId={selected.biomeId ?? "biome_0"} />
+                  <BiomeBackgroundEditor key={JSON.stringify([selectedPath, selected.biomeId])} projectPath={selectedPath} biomeId={selected.biomeId ?? "biome_0"} onPreview={setCastleBackground} />
                   <InspectorSection title="Room">
                     <dl className="settings-dl">
                       <dt>Name</dt>
@@ -930,6 +933,7 @@ function RoomCanvasPreview({
   room,
   layer,
   collision,
+  background,
   mini = false,
   fill = false,
   fit = false,
@@ -944,6 +948,7 @@ function RoomCanvasPreview({
   room: RoomRecord;
   layer: ViewModeId;
   collision?: RoomCollisionPreview | null;
+  background?: CastleBackgroundPreview | null;
   mini?: boolean;
   fill?: boolean;
   fit?: boolean;
@@ -955,8 +960,14 @@ function RoomCanvasPreview({
   setDragEntityKey?: (key: string | null) => void;
   gridSnap?: boolean;
 }) {
+  const tileSize = collision?.tileSize ?? room.tileSize ?? TILE;
   const w = room.width ?? 800;
   const h = room.height ?? 600;
+  const cover = background ? Math.max(w / background.width, h / background.height) : 1;
+  const showBackdrop = !!background && (layer === 'visual' || layer === 'entities');
+  const backdrop = background && showBackdrop ? <image className="room-scene-background" aria-label="Saved castle background" href={background.dataUrl}
+    x={(w - background.width * cover) * 0.5} y={(h - tileSize * 2 - background.height * cover) * background.anchorY}
+    width={background.width * cover} height={background.height * cover} opacity={background.opacity} /> : null;
   const scale = mini ? 0.18 : fill ? 0.55 : 0.35;
   const showTiles = layer === 'visual' || layer === 'collision';
   const showNav = layer === 'visual' || layer === 'navigation' || layer === 'progression';
@@ -975,8 +986,8 @@ function RoomCanvasPreview({
     let x = local.x;
     let y = local.y;
     if (gridSnap) {
-      x = Math.round(x / TILE) * TILE;
-      y = Math.round(y / TILE) * TILE;
+      x = Math.round(x / tileSize) * tileSize;
+      y = Math.round(y / tileSize) * tileSize;
     }
     return {
       x: Math.max(0, Math.min(w, Math.round(x))),
@@ -1008,14 +1019,15 @@ function RoomCanvasPreview({
           }}
         >
           <rect className="room-floor" x={0} y={0} width={w} height={h} />
+        {backdrop}
           {tileCells.map((cell, i) => (
             <rect
               key={`tile-${i}`}
               className="room-paint"
-              x={cell.x * TILE}
-              y={cell.y * TILE}
-              width={TILE}
-              height={TILE}
+              x={cell.x * tileSize}
+              y={cell.y * tileSize}
+              width={tileSize}
+              height={tileSize}
               opacity={0.35}
             />
           ))}
@@ -1061,10 +1073,11 @@ function RoomCanvasPreview({
         style={{ imageRendering: 'pixelated', ...(fit ? { aspectRatio: w / h, display: 'block' } : {}) }}
       >
         <rect className="room-floor" x={0} y={0} width={w} height={h} />
+        {backdrop}
         {hasPaint && (
           <defs>
-            <pattern id={`room-grid-${room.id}`} width={TILE} height={TILE} patternUnits="userSpaceOnUse">
-              <path d={`M ${TILE} 0 L 0 0 0 ${TILE}`} fill="none" stroke="rgba(128,140,160,0.25)" strokeWidth="0.5" />
+            <pattern id={`room-grid-${room.id}`} width={tileSize} height={tileSize} patternUnits="userSpaceOnUse">
+              <path d={`M ${tileSize} 0 L 0 0 0 ${tileSize}`} fill="none" stroke="rgba(128,140,160,0.25)" strokeWidth="0.5" />
             </pattern>
           </defs>
         )}
@@ -1075,13 +1088,15 @@ function RoomCanvasPreview({
             <rect
               key={`tile-${i}`}
               className={layer === 'collision' ? 'room-occupancy' : 'room-paint'}
-              x={cell.x * TILE}
-              y={cell.y * TILE}
-              width={TILE}
-              height={TILE}
+              x={cell.x * tileSize}
+              y={cell.y * tileSize}
+              width={tileSize}
+              height={tileSize}
             />
           ))}
-        {authoredRects.map((rect, i) => (
+        {authoredRects.map((rect, i) => rect.points ? (
+          <polygon key={`col-${i}`} className="room-occupancy" points={rect.points.map(p => `${p.x},${p.y}`).join(' ')} />
+        ) : (
           <rect
             key={`col-${i}`}
             className="room-occupancy"
@@ -1143,7 +1158,7 @@ function RoomCanvasPreview({
             ? authoredRects.length > 0
               ? 'Collision layer from getRoomCollision.'
               : 'Occupancy overlay from painted cells — authored collision unavailable for this room.'
-            : 'Visual preview from authored tileCells / connections / entity markers.'}
+            : showBackdrop ? 'Saved biome artwork with authored geometry and entity markers. Play Preview shows the complete game.' : 'Visual preview from authored tileCells / connections / entity markers.'}
         </p>
       )}
     </div>

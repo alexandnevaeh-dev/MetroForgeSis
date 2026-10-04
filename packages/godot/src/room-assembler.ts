@@ -144,6 +144,7 @@ export interface TileCell {
 }
 
 export interface PublishedRoomRecord {
+  tileSize: number;
   id: string;
   index: number;
   biomeId: string;
@@ -973,6 +974,7 @@ export function buildPublishedRoomRecord(
     worldArchetype: opts.worldGraphArchetype,
     width: opts.width,
     height: opts.height,
+    tileSize: opts.tileSize,
     connections: opts.connections.map((c) => ({
       direction: c.direction,
       targetRoomId: c.targetRoomId,

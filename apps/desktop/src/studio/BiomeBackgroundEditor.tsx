@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { BiomeBackgroundSnapshot } from '@metroforge/generation';
 import { Button, ButtonStrip, Input, InspectorSection, Select } from './ui/index.js';
 
-export function BiomeBackgroundEditor({ projectPath, biomeId }: { projectPath: string; biomeId: string }) {
+export interface CastleBackgroundPreview { projectPath: string; biomeId: string; dataUrl: string; width: number; height: number; opacity: number; anchorY: number }
+export function BiomeBackgroundEditor({ projectPath, biomeId, onPreview }: { projectPath: string; biomeId: string; onPreview?: (value: CastleBackgroundPreview | null) => void }) {
   const [state, setState] = useState<BiomeBackgroundSnapshot | null>(null);
   const [assetId, setAssetId] = useState('');
   const [opacity, setOpacity] = useState('0.85');
@@ -31,6 +32,16 @@ export function BiomeBackgroundEditor({ projectPath, biomeId }: { projectPath: s
     if (path && window.metroforge) void window.metroforge.getAssetPreview(projectPath, path).then(result => { if (current) setImage(result.dataUrl ?? ''); }).catch(() => { if (current) setMessage('Background preview unavailable. Reload to retry.'); });
     return () => { current = false; };
   }, [projectPath, assetId, state?.revision]);
+  useEffect(() => {
+    if (!onPreview) return;
+    let current = true; onPreview(null);
+    const saved = state?.settings;
+    const option = state?.options.find(row => row.id === saved?.assetId);
+    if (saved && option && window.metroforge) void window.metroforge.getAssetPreview(projectPath, saved.path).then(result => {
+      if (current && result.dataUrl) onPreview({ projectPath, biomeId, dataUrl: result.dataUrl, width: option.width, height: option.height, opacity: saved.opacity, anchorY: saved.anchorY });
+    }).catch(() => { if (current) setMessage('Saved background preview unavailable. Reload to retry.'); });
+    return () => { current = false; };
+  }, [projectPath, biomeId, state?.revision, onPreview]);
   const dirty = !!state && (assetId !== (state.settings?.assetId ?? '') || (assetId !== '' && (Number(opacity) !== state.settings?.opacity || Number(anchorY) !== state.settings?.anchorY)));
   const valid = Number.isFinite(Number(opacity)) && Number(opacity) >= 0.1 && Number(opacity) <= 1;
   const mutate = async (undo: boolean) => {

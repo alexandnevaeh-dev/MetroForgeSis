@@ -1,0 +1,16 @@
+{
+  "release": "E:/MetroForgeData/Releases/MetroForge-room-editor-grounding-20261004-v3",
+  "castleSource": "E:\\MetroForgeData\\TestArtifacts\\room-geometry-grounding-20261004\\games\\stormglass-castle",
+  "castleTarget": "E:\\MetroForgeData\\Releases\\MetroForge-room-editor-grounding-20261004-v3\\UserData\\games\\stormglass-castle",
+  "castleFiles": 1801,
+  "castleArtworkByteIdentical": true,
+  "castleArtFiles": 1271,
+  "quantumFiles": 310,
+  "quantumByteIdentical": true,
+  "quantumGameplayRerun": false,
+  "sourceSceneColliders": 308,
+  "nativeChecks": 175,
+  "nativeSmokeChecks": 456,
+  "uiChecks": 20,
+  "productionReady": false
+}

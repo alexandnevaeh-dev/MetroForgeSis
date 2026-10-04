@@ -239,7 +239,8 @@ export type RoomCollisionPreview = {
   tileSize?: number;
   widthTiles?: number;
   heightTiles?: number;
-  rects?: Array<{ x: number; y: number; w: number; h: number }>;
+  source?: 'godot_scene';
+  rects?: Array<{ path?: string; x: number; y: number; w: number; h: number; points?: Array<{x: number; y: number}> }>;
 };
 
 export type CredentialStatus = {

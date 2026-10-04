@@ -17,6 +17,7 @@ Reuse Button, Input, Select, InspectorSection and editor primitives from `apps/d
 The first top-down prop inspector has typecheck evidence only. Native UI interaction, narrow layout, keyboard operation and screenshot review remain required before calling it complete.
 
 ## Room workspace sizing
+The room canvas opens fitted to its available width. Zoom controls allow closer inspection. Room IDs and archetypes use separate lines in the shared hierarchy row; the inspector thumbnail contains the room rather than cropping its lower half. Saved castle background artwork sits behind authored geometry and markers; this is an editor composition, with complete runtime decoration available through Play Preview. Geometry, painting and snapping consume the actual scene tile size.
 RoomEditor uses its available content width as a container. At 720px and above hierarchy, canvas and inspector stay alongside one another; saved resizable pane widths resume at 1050px. Fixed-column layouts hide inactive resize separators. Actual Electron window sizes 1000, 1200 and 1500 verified without workspace horizontal overflow. Smaller layouts and broader workflow accessibility checks remain outstanding.
 
 ## Native top-down adventure HUD

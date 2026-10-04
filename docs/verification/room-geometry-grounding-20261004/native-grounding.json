@@ -1,0 +1,948 @@
+{
+  "checks": [
+    {
+      "label": "floor furniture ignores a narrow raised platform",
+      "passed": true
+    },
+    {
+      "label": "floor furniture is refused over a pit",
+      "passed": true
+    },
+    {
+      "label": "wide furniture is refused when its center alone has support",
+      "passed": true
+    },
+    {
+      "label": "supported furniture remains allowed beside the pit",
+      "passed": true
+    },
+    {
+      "label": "detached bottom specks do not define the ground anchor",
+      "passed": true
+    },
+    {
+      "label": "visible footprint follows the main silhouette",
+      "passed": true
+    },
+    {
+      "label": "playable world has a player",
+      "passed": true
+    },
+    {
+      "label": "player moves using real game input",
+      "passed": true
+    },
+    {
+      "label": "player remains alive",
+      "passed": true
+    },
+    {
+      "label": "forty rooms have independent source-scene geometry",
+      "passed": true
+    },
+    {
+      "label": "room_000 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_000 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_000 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_000 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_000 native capture saved",
+      "passed": true
+    },
+    {
+      "label": "room_001 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_001 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_001 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_001 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_002 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_002 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_002 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_002 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_002 native capture saved",
+      "passed": true
+    },
+    {
+      "label": "room_003 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_003 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_003 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_003 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_004 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_004 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_004 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_004 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_005 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_005 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_005 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_005 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_006 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_006 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_006 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_006 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_007 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_007 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_007 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_007 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_008 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_008 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_008 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_008 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_009 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_009 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_009 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_009 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_010 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_010 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_010 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_010 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_010 native capture saved",
+      "passed": true
+    },
+    {
+      "label": "room_011 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_011 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_011 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_011 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_012 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_012 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_012 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_012 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_013 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_013 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_013 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_013 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_014 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_014 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_014 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_014 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_015 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_015 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_015 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_015 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_016 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_016 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_016 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_016 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_017 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_017 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_017 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_017 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_018 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_018 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_018 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_018 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_019 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_019 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_019 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_019 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_020 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_020 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_020 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_020 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_020 native capture saved",
+      "passed": true
+    },
+    {
+      "label": "room_021 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_021 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_021 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_021 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_022 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_022 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_022 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_022 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_023 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_023 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_023 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_023 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_024 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_024 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_024 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_024 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_025 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_025 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_025 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_025 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_026 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_026 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_026 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_026 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_027 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_027 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_027 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_027 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_028 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_028 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_028 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_028 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_029 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_029 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_029 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_029 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_030 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_030 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_030 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_030 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_030 native capture saved",
+      "passed": true
+    },
+    {
+      "label": "room_031 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_031 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_031 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_031 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_032 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_032 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_032 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_032 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_033 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_033 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_033 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_033 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_034 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_034 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_034 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_034 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_035 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_035 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_035 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_035 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_036 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_036 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_036 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_036 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_037 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_037 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_037 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_037 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_038 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_038 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_038 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_038 redundant foreground window is absent",
+      "passed": true
+    },
+    {
+      "label": "room_039 editor collision matches all native static rectangles",
+      "passed": true
+    },
+    {
+      "label": "room_039 editor and native grid units agree",
+      "passed": true
+    },
+    {
+      "label": "room_039 main prop silhouettes have full floor support",
+      "passed": true
+    },
+    {
+      "label": "room_039 redundant foreground window is absent",
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "scope": "Native NVIDIA render and collision/prop-grounding diagnostic; real spawn movement followed by force-loaded rooms. Not whole-game traversal or final visual acceptance.",
+  "timings": [
+    {
+      "colliders": 13,
+      "groundedProps": 5,
+      "loadAndChecksMs": 115.558,
+      "room": "room_000"
+    },
+    {
+      "colliders": 6,
+      "groundedProps": 6,
+      "loadAndChecksMs": 206.207,
+      "room": "room_001"
+    },
+    {
+      "colliders": 8,
+      "groundedProps": 5,
+      "loadAndChecksMs": 165.937,
+      "room": "room_002"
+    },
+    {
+      "colliders": 6,
+      "groundedProps": 5,
+      "loadAndChecksMs": 156.893,
+      "room": "room_003"
+    },
+    {
+      "colliders": 6,
+      "groundedProps": 6,
+      "loadAndChecksMs": 239.159,
+      "room": "room_004"
+    },
+    {
+      "colliders": 9,
+      "groundedProps": 3,
+      "loadAndChecksMs": 144.019,
+      "room": "room_005"
+    },
+    {
+      "colliders": 7,
+      "groundedProps": 4,
+      "loadAndChecksMs": 142.698,
+      "room": "room_006"
+    },
+    {
+      "colliders": 7,
+      "groundedProps": 3,
+      "loadAndChecksMs": 112.041,
+      "room": "room_007"
+    },
+    {
+      "colliders": 12,
+      "groundedProps": 4,
+      "loadAndChecksMs": 241.674,
+      "room": "room_008"
+    },
+    {
+      "colliders": 6,
+      "groundedProps": 6,
+      "loadAndChecksMs": 113.569,
+      "room": "room_009"
+    },
+    {
+      "colliders": 13,
+      "groundedProps": 5,
+      "loadAndChecksMs": 119.735,
+      "room": "room_010"
+    },
+    {
+      "colliders": 6,
+      "groundedProps": 6,
+      "loadAndChecksMs": 276.693,
+      "room": "room_011"
+    },
+    {
+      "colliders": 9,
+      "groundedProps": 2,
+      "loadAndChecksMs": 100.089,
+      "room": "room_012"
+    },
+    {
+      "colliders": 6,
+      "groundedProps": 4,
+      "loadAndChecksMs": 118.951,
+      "room": "room_013"
+    },
+    {
+      "colliders": 6,
+      "groundedProps": 5,
+      "loadAndChecksMs": 239.067,
+      "room": "room_014"
+    },
+    {
+      "colliders": 8,
+      "groundedProps": 3,
+      "loadAndChecksMs": 162.468,
+      "room": "room_015"
+    },
+    {
+      "colliders": 5,
+      "groundedProps": 3,
+      "loadAndChecksMs": 97.645,
+      "room": "room_016"
+    },
+    {
+      "colliders": 6,
+      "groundedProps": 3,
+      "loadAndChecksMs": 113.306,
+      "room": "room_017"
+    },
+    {
+      "colliders": 12,
+      "groundedProps": 2,
+      "loadAndChecksMs": 182.021,
+      "room": "room_018"
+    },
+    {
+      "colliders": 6,
+      "groundedProps": 5,
+      "loadAndChecksMs": 122.482,
+      "room": "room_019"
+    },
+    {
+      "colliders": 13,
+      "groundedProps": 7,
+      "loadAndChecksMs": 241.719,
+      "room": "room_020"
+    },
+    {
+      "colliders": 6,
+      "groundedProps": 6,
+      "loadAndChecksMs": 170.421,
+      "room": "room_021"
+    },
+    {
+      "colliders": 8,
+      "groundedProps": 6,
+      "loadAndChecksMs": 224.512,
+      "room": "room_022"
+    },
+    {
+      "colliders": 6,
+      "groundedProps": 5,
+      "loadAndChecksMs": 194.53,
+      "room": "room_023"
+    },
+    {
+      "colliders": 6,
+      "groundedProps": 8,
+      "loadAndChecksMs": 281.956,
+      "room": "room_024"
+    },
+    {
+      "colliders": 8,
+      "groundedProps": 6,
+      "loadAndChecksMs": 180.919,
+      "room": "room_025"
+    },
+    {
+      "colliders": 5,
+      "groundedProps": 5,
+      "loadAndChecksMs": 234.642,
+      "room": "room_026"
+    },
+    {
+      "colliders": 6,
+      "groundedProps": 3,
+      "loadAndChecksMs": 111.322,
+      "room": "room_027"
+    },
+    {
+      "colliders": 12,
+      "groundedProps": 5,
+      "loadAndChecksMs": 303.102,
+      "room": "room_028"
+    },
+    {
+      "colliders": 6,
+      "groundedProps": 6,
+      "loadAndChecksMs": 167.697,
+      "room": "room_029"
+    },
+    {
+      "colliders": 13,
+      "groundedProps": 5,
+      "loadAndChecksMs": 145.048,
+      "room": "room_030"
+    },
+    {
+      "colliders": 6,
+      "groundedProps": 4,
+      "loadAndChecksMs": 110.521,
+      "room": "room_031"
+    },
+    {
+      "colliders": 8,
+      "groundedProps": 4,
+      "loadAndChecksMs": 155.25,
+      "room": "room_032"
+    },
+    {
+      "colliders": 6,
+      "groundedProps": 3,
+      "loadAndChecksMs": 60.483,
+      "room": "room_033"
+    },
+    {
+      "colliders": 6,
+      "groundedProps": 6,
+      "loadAndChecksMs": 190.285,
+      "room": "room_034"
+    },
+    {
+      "colliders": 8,
+      "groundedProps": 3,
+      "loadAndChecksMs": 168.426,
+      "room": "room_035"
+    },
+    {
+      "colliders": 10,
+      "groundedProps": 4,
+      "loadAndChecksMs": 202.421,
+      "room": "room_036"
+    },
+    {
+      "colliders": 6,
+      "groundedProps": 2,
+      "loadAndChecksMs": 64.159,
+      "room": "room_037"
+    },
+    {
+      "colliders": 6,
+      "groundedProps": 3,
+      "loadAndChecksMs": 900.487,
+      "room": "room_038"
+    },
+    {
+      "colliders": 6,
+      "groundedProps": 5,
+      "loadAndChecksMs": 136.518,
+      "room": "room_039"
+    }
+  ]
+}

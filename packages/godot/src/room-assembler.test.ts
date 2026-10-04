@@ -480,6 +480,7 @@ describe('room archetype fidelity', () => {
       const roomId = roomIds[i]!;
       const opts = buildRoomAssemblyOptions(roomId, i, ctx, mediumDna, content, counter, () => false);
       rooms[roomId] = buildPublishedRoomRecord(roomId, i, opts);
+      expect(rooms[roomId]!.tileSize).toBe(opts.tileSize);
     }
 
     const audit = auditRoomArchetypeFidelity(worldGraph, rooms);

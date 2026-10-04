@@ -1,0 +1,97 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\room-geometry-grounding-review\\reports\\game-tests\\20261004-room-geometry-ui\\1791099087966",
+  "project": "E:\\MetroForgeData\\TestArtifacts\\room-geometry-grounding-20261004\\games\\stormglass-castle",
+  "checks": [
+    {
+      "label": "real IPC returns all thirteen opening-room collision rectangles",
+      "passed": true
+    },
+    {
+      "label": "existing room records expose the native grid",
+      "passed": true
+    },
+    {
+      "label": "canvas displays exact saved background bytes",
+      "passed": true
+    },
+    {
+      "label": "canvas cover and floor framing agree with native room units",
+      "passed": true
+    },
+    {
+      "label": "room dimensions use fifty-six by twenty-four native cells",
+      "passed": true
+    },
+    {
+      "label": "grid pattern uses thirty-two pixel spacing",
+      "passed": true
+    },
+    {
+      "label": "default scene fits the available canvas width",
+      "passed": true
+    },
+    {
+      "label": "hierarchy labels have separate lines",
+      "passed": true
+    },
+    {
+      "label": "unsaved draft does not change the world canvas",
+      "passed": true
+    },
+    {
+      "label": "real Apply updates saved settings and the world canvas",
+      "passed": true
+    },
+    {
+      "label": "Undo restores exact previous background settings",
+      "passed": true
+    },
+    {
+      "label": "collision overlay draws exact native rectangles",
+      "passed": true
+    },
+    {
+      "label": "collision view stays readable without backdrop",
+      "passed": true
+    },
+    {
+      "label": "capture stays hidden: room-editor-native-grid.png",
+      "passed": true
+    },
+    {
+      "label": "keyboard room switching retains native scene collision",
+      "passed": true
+    },
+    {
+      "label": "narrow desktop retains the saved scene and controls",
+      "passed": true
+    },
+    {
+      "label": "narrow desktop has no document horizontal overflow",
+      "passed": true
+    },
+    {
+      "label": "capture stays hidden: room-editor-narrow.png",
+      "passed": true
+    },
+    {
+      "label": "room geometry and renderer bytes are preserved",
+      "passed": true
+    },
+    {
+      "label": "no renderer exceptions",
+      "passed": true
+    }
+  ],
+  "captures": [
+    "room-editor-native-grid.png",
+    "room-editor-narrow.png"
+  ],
+  "errors": [],
+  "scope": "Real packaged MetroForge Rooms UI and IPC: native-scene collision, 32px grid, exact saved background framing, draft separation, apply and undo, keyboard room switching and narrower desktop. No new inference or full native traversal.",
+  "packaged": {
+    "executable": "E:/MetroForgeData/Releases/MetroForge-room-editor-grounding-20261004-v3/MetroForge.exe",
+    "sha256": "1925f358e7f0e9675a5ac4198fb076613f0db318da56d388799a97be74a5b19c"
+  },
+  "passed": true
+}
