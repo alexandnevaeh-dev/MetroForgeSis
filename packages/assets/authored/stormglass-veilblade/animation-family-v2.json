@@ -1,0 +1,866 @@
+{
+  "family": "stormglass-veilblade-v2",
+  "status": "candidate",
+  "productionApproved": false,
+  "frameSize": [
+    64,
+    64
+  ],
+  "anchor": "bottom-center",
+  "baseSheets": {
+    "idle": {
+      "file": "veilblade-idle-v2.png",
+      "frameSize": [
+        64,
+        64
+      ],
+      "frameCount": 8,
+      "uniqueFrameCount": 8,
+      "frames": [
+        {
+          "index": 0,
+          "alphaBox": [
+            18,
+            4,
+            45,
+            62
+          ],
+          "digest": "dc082aaf877186c74a3c753cc76e2629a3806bacef93678a084b6e0e1269723e"
+        },
+        {
+          "index": 1,
+          "alphaBox": [
+            18,
+            4,
+            46,
+            62
+          ],
+          "digest": "ed74527adca81c49be533b7fdeecc43da2c40ce1d7b1d413b2ae6bd24d62f7b4"
+        },
+        {
+          "index": 2,
+          "alphaBox": [
+            18,
+            4,
+            46,
+            62
+          ],
+          "digest": "dc1aa07b4c3e092f15a1781cb9e8b8a778c3592f90780ea669e5073a1b2ef059"
+        },
+        {
+          "index": 3,
+          "alphaBox": [
+            18,
+            4,
+            46,
+            62
+          ],
+          "digest": "065e78807f7a5f0dde79fce8287c4448f7f24d4b63d785d0429329ffa6517aa7"
+        },
+        {
+          "index": 4,
+          "alphaBox": [
+            18,
+            4,
+            46,
+            62
+          ],
+          "digest": "1ff4a3936f45ac138ec4737829cf52f54aa23d372d39d0a2c4bbf449e2dbe8c2"
+        },
+        {
+          "index": 5,
+          "alphaBox": [
+            18,
+            4,
+            46,
+            62
+          ],
+          "digest": "9abcf34294af4d1e2d67f5a6f769d0dcb82d23f991b9c04f624f1a343bbb66d3"
+        },
+        {
+          "index": 6,
+          "alphaBox": [
+            18,
+            4,
+            46,
+            62
+          ],
+          "digest": "c27fd320b313261717108e43a9da87bce64c9f9f458d82caef74ef12929c662a"
+        },
+        {
+          "index": 7,
+          "alphaBox": [
+            18,
+            4,
+            46,
+            62
+          ],
+          "digest": "1d6317196b128e69e899730fb7bcc389cd591fdc0b23893c2f7f934847c8cf11"
+        }
+      ]
+    },
+    "walk": {
+      "file": "veilblade-walk-v2.png",
+      "frameSize": [
+        64,
+        64
+      ],
+      "frameCount": 8,
+      "uniqueFrameCount": 8,
+      "frames": [
+        {
+          "index": 0,
+          "alphaBox": [
+            18,
+            4,
+            46,
+            62
+          ],
+          "digest": "eea4b17c7ec858467f246677bdee719bbdd2e83102884dee42c761aaa7919271"
+        },
+        {
+          "index": 1,
+          "alphaBox": [
+            17,
+            4,
+            46,
+            62
+          ],
+          "digest": "0a1ec692333b95b8ca7e485f2c5326aebcb1787a71349ac071ca774ac57bb8ea"
+        },
+        {
+          "index": 2,
+          "alphaBox": [
+            17,
+            4,
+            46,
+            62
+          ],
+          "digest": "5c071d667cb09ee2a15c15540667d5d0f14ced19250004aa11734da1f0260f49"
+        },
+        {
+          "index": 3,
+          "alphaBox": [
+            17,
+            4,
+            46,
+            62
+          ],
+          "digest": "af1e374bfe1d8b54aeaf3df8a5a4a1a4c85af00b461effd993cf3ca1ef7b365a"
+        },
+        {
+          "index": 4,
+          "alphaBox": [
+            17,
+            4,
+            46,
+            62
+          ],
+          "digest": "944aa677502858bedbc112551c215902a9ad00c7f018c16bc8e0f6a6457b0a29"
+        },
+        {
+          "index": 5,
+          "alphaBox": [
+            17,
+            5,
+            46,
+            62
+          ],
+          "digest": "bf18f33d6ffe8b78dfda817f0d693c90d956255037d52610a027c6927174fb0d"
+        },
+        {
+          "index": 6,
+          "alphaBox": [
+            17,
+            4,
+            46,
+            62
+          ],
+          "digest": "20bbf3f4a1a15abd0eb210949e49f2bb2041059fff81bf3789bbe88de21a254f"
+        },
+        {
+          "index": 7,
+          "alphaBox": [
+            18,
+            5,
+            46,
+            62
+          ],
+          "digest": "1cccc9e1540c8e07c24947a5f5418398e6c8c5855fb4b75c23e48c068c71d37c"
+        }
+      ]
+    },
+    "run": {
+      "file": "veilblade-run-v2.png",
+      "frameSize": [
+        64,
+        64
+      ],
+      "frameCount": 8,
+      "uniqueFrameCount": 8,
+      "frames": [
+        {
+          "index": 0,
+          "alphaBox": [
+            12,
+            4,
+            52,
+            62
+          ],
+          "digest": "2ca28eab87565271afd45a9efc44b95cef45fcb2beb4842f22f9515dce47d2f0"
+        },
+        {
+          "index": 1,
+          "alphaBox": [
+            12,
+            5,
+            52,
+            62
+          ],
+          "digest": "9482c57d0b5b9c2e1bb5fafafb95c93262e759aa92d36c66e461cd56cdea3bce"
+        },
+        {
+          "index": 2,
+          "alphaBox": [
+            11,
+            6,
+            52,
+            62
+          ],
+          "digest": "2905e087a0ce7f263d37214a50a815cdd4a4e96f31390c3f68fddf3c7ff3d3b5"
+        },
+        {
+          "index": 3,
+          "alphaBox": [
+            10,
+            6,
+            53,
+            62
+          ],
+          "digest": "5d5ddb284dfc9c2430b9d7d2d8e696c3512e87498d4268ce65888d205cd2c116"
+        },
+        {
+          "index": 4,
+          "alphaBox": [
+            12,
+            6,
+            52,
+            62
+          ],
+          "digest": "8bc7ad4d1241b35eedaf9c46f898fb5b5c1d907b6f7e094adde0b84214d408fa"
+        },
+        {
+          "index": 5,
+          "alphaBox": [
+            12,
+            5,
+            51,
+            62
+          ],
+          "digest": "79382f2d3bcea7625508d7857a26d4303d19726ac95b289129ec16cf8083e149"
+        },
+        {
+          "index": 6,
+          "alphaBox": [
+            10,
+            12,
+            53,
+            62
+          ],
+          "digest": "ce2f10a475a9b4a7983ae47c124ac50c5c1ac5137589cd26fbb59647ad7e239d"
+        },
+        {
+          "index": 7,
+          "alphaBox": [
+            12,
+            6,
+            51,
+            62
+          ],
+          "digest": "9cf3b063dd3deefe4899f1d8789f801264a6142506a385a880c665657ee31ab3"
+        }
+      ]
+    },
+    "attack": {
+      "file": "veilblade-attack-v2.png",
+      "frameSize": [
+        64,
+        64
+      ],
+      "frameCount": 8,
+      "uniqueFrameCount": 8,
+      "frames": [
+        {
+          "index": 0,
+          "alphaBox": [
+            12,
+            10,
+            51,
+            62
+          ],
+          "digest": "f57da4c1bc1fcdd5e74fab9173ba15fb9d4a7bd8b3779627fc1fd7eef4f7e987"
+        },
+        {
+          "index": 1,
+          "alphaBox": [
+            11,
+            4,
+            52,
+            62
+          ],
+          "digest": "59e0b31775826932ab4dd60282a92c215aa062c361e9dfd09fc4ba34dc46bf59"
+        },
+        {
+          "index": 2,
+          "alphaBox": [
+            11,
+            6,
+            52,
+            62
+          ],
+          "digest": "e552a233a3e06052e7e861141a9f9964e9f4224422a963a5eac691fbe280e41e"
+        },
+        {
+          "index": 3,
+          "alphaBox": [
+            11,
+            8,
+            52,
+            62
+          ],
+          "digest": "9bcee8ce672d9c79f8987f26df438372d4cdbc6465d00d1a698caa25a7d51cb2"
+        },
+        {
+          "index": 4,
+          "alphaBox": [
+            11,
+            14,
+            52,
+            62
+          ],
+          "digest": "76fb2cb8f484bc3223400e7c2d574f3b90bf7065187e1004a1dcb6c5a17ccc48"
+        },
+        {
+          "index": 5,
+          "alphaBox": [
+            11,
+            13,
+            52,
+            62
+          ],
+          "digest": "5ead33fd2c488a1548a4a93b1f7d04caa17d028f275fc8613c755a6ea1381fbf"
+        },
+        {
+          "index": 6,
+          "alphaBox": [
+            11,
+            9,
+            52,
+            62
+          ],
+          "digest": "fbc195038445169597a3b390852afbd250e4c352a52356f40f929bd18e2c1ff5"
+        },
+        {
+          "index": 7,
+          "alphaBox": [
+            12,
+            6,
+            51,
+            62
+          ],
+          "digest": "66e778f682155da63bd3062fa0c39a46add6158111315a7bbd008d57c2fbff33"
+        }
+      ]
+    },
+    "airborne": {
+      "file": "veilblade-airborne-v2.png",
+      "frameSize": [
+        64,
+        64
+      ],
+      "frameCount": 8,
+      "uniqueFrameCount": 8,
+      "frames": [
+        {
+          "index": 0,
+          "alphaBox": [
+            14,
+            31,
+            50,
+            62
+          ],
+          "digest": "0f10d4976b40cb5e1c944f9d0f6689e1cd77cf37d69f4c4fc1f37d831330edb4"
+        },
+        {
+          "index": 1,
+          "alphaBox": [
+            12,
+            18,
+            52,
+            62
+          ],
+          "digest": "3a852d0f0da38a476ff7820f2adc41e54b90a44bbda94625cf9efea1dfbfeb7c"
+        },
+        {
+          "index": 2,
+          "alphaBox": [
+            12,
+            13,
+            51,
+            62
+          ],
+          "digest": "5ef196568d7a816ef86a924c3de411973debb81e22713adc6b85485efc8c9abb"
+        },
+        {
+          "index": 3,
+          "alphaBox": [
+            13,
+            15,
+            53,
+            62
+          ],
+          "digest": "3edaff3049386e588fd889ea0c599f0e82dfd3395a4347836d17950609f0ea1e"
+        },
+        {
+          "index": 4,
+          "alphaBox": [
+            10,
+            13,
+            53,
+            62
+          ],
+          "digest": "a1e6cce729ecce8a5bda64235378fe4f597d3469165c6ae9abda4b57b57e6c6a"
+        },
+        {
+          "index": 5,
+          "alphaBox": [
+            10,
+            4,
+            53,
+            62
+          ],
+          "digest": "d24c52eca3bd85e19da052119d65713ae9f694c30770a9f8286fbd74bb4dbdc1"
+        },
+        {
+          "index": 6,
+          "alphaBox": [
+            10,
+            5,
+            53,
+            62
+          ],
+          "digest": "694f825d3318e0d219f8013c2bb2d1f59ae99871a3896edceb3702a7af1c021e"
+        },
+        {
+          "index": 7,
+          "alphaBox": [
+            13,
+            33,
+            51,
+            62
+          ],
+          "digest": "d508b14fa1dd01de6770d92f7ef99f40ed43126225441d6a40886a665ade1a76"
+        }
+      ]
+    },
+    "dash": {
+      "file": "veilblade-dash-v2.png",
+      "frameSize": [
+        64,
+        64
+      ],
+      "frameCount": 8,
+      "uniqueFrameCount": 8,
+      "frames": [
+        {
+          "index": 0,
+          "alphaBox": [
+            4,
+            24,
+            60,
+            62
+          ],
+          "digest": "a6b6e86c943da31d662446295beaff2958416e895f5eaa34202ae3cd12a6b4a6"
+        },
+        {
+          "index": 1,
+          "alphaBox": [
+            2,
+            17,
+            62,
+            62
+          ],
+          "digest": "24a411bf7afd8fd128fd0fd81747dc2d227cf13747588df4303468048bc7dcb5"
+        },
+        {
+          "index": 2,
+          "alphaBox": [
+            2,
+            23,
+            62,
+            62
+          ],
+          "digest": "ea2b67afa2032f46970021254385701b5d6944ea17609e4874760b7aa632eed9"
+        },
+        {
+          "index": 3,
+          "alphaBox": [
+            2,
+            24,
+            62,
+            62
+          ],
+          "digest": "c6ed8448783671d47565e2d4291eb80d4c3bb246f30533bf41d2c352f4de78db"
+        },
+        {
+          "index": 4,
+          "alphaBox": [
+            2,
+            26,
+            62,
+            62
+          ],
+          "digest": "b506caaa341e25a9bafaba96a925d7868e3136e33d9eca05754922a4895cc0b0"
+        },
+        {
+          "index": 5,
+          "alphaBox": [
+            2,
+            18,
+            62,
+            62
+          ],
+          "digest": "ae46d343b2d5ba531f2ad40f12203b8696bdfe7d6d0b78f3ce759bdf6ff5bca8"
+        },
+        {
+          "index": 6,
+          "alphaBox": [
+            2,
+            13,
+            62,
+            62
+          ],
+          "digest": "a4ed2bf54eee087c2ed9f2a4873d11e87c553a43b6a8959bfc5da246f2f1c655"
+        },
+        {
+          "index": 7,
+          "alphaBox": [
+            4,
+            9,
+            60,
+            62
+          ],
+          "digest": "efcfb40c2f7076992493e29089128e5ace9f50337fcd30e60a4d9c6e9968c5df"
+        }
+      ]
+    },
+    "hurt": {
+      "file": "veilblade-hurt-v2.png",
+      "frameSize": [
+        64,
+        64
+      ],
+      "frameCount": 8,
+      "uniqueFrameCount": 8,
+      "frames": [
+        {
+          "index": 0,
+          "alphaBox": [
+            13,
+            4,
+            51,
+            62
+          ],
+          "digest": "1d1df066378b58f93526cf15232abdc190d3f21c1ddcc1db96faed24077e6875"
+        },
+        {
+          "index": 1,
+          "alphaBox": [
+            12,
+            8,
+            51,
+            62
+          ],
+          "digest": "dfe40d861c7f8c329ee0c1760f462e7c237883a420e761367b060bd36440bee2"
+        },
+        {
+          "index": 2,
+          "alphaBox": [
+            11,
+            8,
+            52,
+            62
+          ],
+          "digest": "0e5daad46ad27a080a488563447416b82bf29110594a7a9f532e208de3a97061"
+        },
+        {
+          "index": 3,
+          "alphaBox": [
+            11,
+            9,
+            53,
+            62
+          ],
+          "digest": "0ca35fb6c44ce7f38a94e966d5446530b59417662e9671fe36e12a7e488e8e0e"
+        },
+        {
+          "index": 4,
+          "alphaBox": [
+            11,
+            22,
+            53,
+            62
+          ],
+          "digest": "6783eb59e38e46d834a53077ec4f16288a06a51a335324dba0f37e320cfa337c"
+        },
+        {
+          "index": 5,
+          "alphaBox": [
+            11,
+            11,
+            52,
+            62
+          ],
+          "digest": "a16e98d2d5ca2d91aebde35fe2714aa88ce36ab9028f47d2768218931a3e8627"
+        },
+        {
+          "index": 6,
+          "alphaBox": [
+            12,
+            6,
+            52,
+            62
+          ],
+          "digest": "101b3b780121f9c4fc3af0ffa03f0e70f13e57c0ccaf10aed472eadff4550fc8"
+        },
+        {
+          "index": 7,
+          "alphaBox": [
+            12,
+            4,
+            52,
+            62
+          ],
+          "digest": "12095dce9ab577ceb132279484a72e7d75dd9a39214f19a8f055973295d5b8d1"
+        }
+      ]
+    },
+    "death": {
+      "file": "veilblade-death-v2.png",
+      "frameSize": [
+        64,
+        64
+      ],
+      "frameCount": 8,
+      "uniqueFrameCount": 8,
+      "frames": [
+        {
+          "index": 0,
+          "alphaBox": [
+            9,
+            4,
+            54,
+            62
+          ],
+          "digest": "646ed0ef166a8f448df3ac29408412077492069bf3f62e5a2daac2fe72ed62b1"
+        },
+        {
+          "index": 1,
+          "alphaBox": [
+            6,
+            12,
+            57,
+            62
+          ],
+          "digest": "70149e6d084aa8717f212868b5ec187ef6ce2eefa02b20088b390552335f66fd"
+        },
+        {
+          "index": 2,
+          "alphaBox": [
+            5,
+            19,
+            58,
+            62
+          ],
+          "digest": "58ae7fe2377120054e19e49ce8bad63ce47b27b4e54e3393b01decf30a260437"
+        },
+        {
+          "index": 3,
+          "alphaBox": [
+            5,
+            28,
+            58,
+            62
+          ],
+          "digest": "a5ef0979f95c529b6b0fc9a98671cc9ff31c7346dbfbef4f251a226e196506bc"
+        },
+        {
+          "index": 4,
+          "alphaBox": [
+            5,
+            31,
+            58,
+            62
+          ],
+          "digest": "e9dcb1eecb3d263a7f865f06e6f4390dccce9179a27ce59808c726438115b2da"
+        },
+        {
+          "index": 5,
+          "alphaBox": [
+            5,
+            40,
+            58,
+            62
+          ],
+          "digest": "5db3080e947dbfec676168373b21bfe768023d9eaf8e680e27ae123c1c6ee74e"
+        },
+        {
+          "index": 6,
+          "alphaBox": [
+            5,
+            43,
+            58,
+            62
+          ],
+          "digest": "24e01c6370996566fe484e652b808c4ff0575b2c721e4dab4bde54d197518ad7"
+        },
+        {
+          "index": 7,
+          "alphaBox": [
+            7,
+            44,
+            57,
+            62
+          ],
+          "digest": "eb4b1af7f262ab343feb17331d669048a5fd1c56584d6ee7864c49d0803bdc1c"
+        }
+      ]
+    }
+  },
+  "runtimeClips": {
+    "jump_start": {
+      "file": "veilblade-jump-start-v2.png",
+      "frameSize": [
+        64,
+        64
+      ],
+      "frameCount": 2,
+      "uniqueFrameCount": 2,
+      "frames": [
+        {
+          "index": 0,
+          "alphaBox": [
+            14,
+            31,
+            50,
+            62
+          ],
+          "digest": "0f10d4976b40cb5e1c944f9d0f6689e1cd77cf37d69f4c4fc1f37d831330edb4"
+        },
+        {
+          "index": 1,
+          "alphaBox": [
+            12,
+            18,
+            52,
+            62
+          ],
+          "digest": "3a852d0f0da38a476ff7820f2adc41e54b90a44bbda94625cf9efea1dfbfeb7c"
+        }
+      ]
+    },
+    "jump": {
+      "file": "veilblade-jump-v2.png",
+      "frameSize": [
+        64,
+        64
+      ],
+      "frameCount": 3,
+      "uniqueFrameCount": 3,
+      "frames": [
+        {
+          "index": 0,
+          "alphaBox": [
+            12,
+            13,
+            51,
+            62
+          ],
+          "digest": "5ef196568d7a816ef86a924c3de411973debb81e22713adc6b85485efc8c9abb"
+        },
+        {
+          "index": 1,
+          "alphaBox": [
+            13,
+            15,
+            53,
+            62
+          ],
+          "digest": "3edaff3049386e588fd889ea0c599f0e82dfd3395a4347836d17950609f0ea1e"
+        },
+        {
+          "index": 2,
+          "alphaBox": [
+            10,
+            13,
+            53,
+            62
+          ],
+          "digest": "a1e6cce729ecce8a5bda64235378fe4f597d3469165c6ae9abda4b57b57e6c6a"
+        }
+      ]
+    },
+    "fall": {
+      "file": "veilblade-fall-v2.png",
+      "frameSize": [
+        64,
+        64
+      ],
+      "frameCount": 2,
+      "uniqueFrameCount": 2,
+      "frames": [
+        {
+          "index": 0,
+          "alphaBox": [
+            10,
+            4,
+            53,
+            62
+          ],
+          "digest": "d24c52eca3bd85e19da052119d65713ae9f694c30770a9f8286fbd74bb4dbdc1"
+        },
+        {
+          "index": 1,
+          "alphaBox": [
+            10,
+            5,
+            53,
+            62
+          ],
+          "digest": "694f825d3318e0d219f8013c2bb2d1f59ae99871a3896edceb3702a7af1c021e"
+        }
+      ]
+    },
+    "land": {
+      "file": "veilblade-land-v2.png",
+      "frameSize": [
+        64,
+        64
+      ],
+      "frameCount": 1,
+      "uniqueFrameCount": 1,
+      "frames": [
+        {
+          "index": 0,
+          "alphaBox": [
+            13,
+            33,
+            51,
+            62
+          ],
+          "digest": "d508b14fa1dd01de6770d92f7ef99f40ed43126225441d6a40886a665ade1a76"
+        }
+      ]
+    }
+  }
+}

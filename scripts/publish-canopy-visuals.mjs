@@ -1,0 +1,57 @@
+import { appendFileSync, copyFileSync, existsSync, mkdirSync, readFileSync, realpathSync, renameSync, writeFileSync } from 'node:fs';
+import { resolve, join, sep } from 'node:path';
+import { createHash } from 'node:crypto';
+import { writeCanopyProvenance } from './lib/canopy-provenance.mjs';
+
+// Publish only the exact locally tested candidate; never silently overwrite a backup.
+const root=realpathSync(resolve('GeneratedGames/test-games/topdown'));
+const candidate=realpathSync(resolve(process.argv[2]??''));
+const report=realpathSync(resolve(process.argv[3]??''));
+const current=join(root,'current');
+const backup=join(root,'backups','20260930-canopy-visuals-v2');
+if(!root.toLowerCase().startsWith('e:\\')||!candidate.startsWith(root+sep)||!candidate.includes('candidate-canopy-'))throw Error('Expected a named E: top-down candidate');
+if(!report.startsWith(realpathSync(resolve('reports/game-tests'))+sep)||existsSync(backup))throw Error('Report must be local and backup must be new');
+if(!realpathSync(current).startsWith(root+sep)||!resolve(backup).startsWith(root+sep))throw Error('Move targets escaped top-down workspace');
+const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
+const tally=(file,marker)=>{
+  const body=readFileSync(join(report,file),'utf8');
+  const row={passed:(body.match(/^PASS:/gm)??[]).length,failed:(body.match(/^FAIL:/gm)??[]).length,softFailures:(body.match(/^SOFT_FAIL:/gm)??[]).length,logSha256:hash(body)};
+  if(!body.includes(marker)||row.failed||!row.passed||body.includes('SCRIPT ERROR:'))throw Error('Incomplete or failing native suite: '+file);
+  return row;
+};
+const visual=tally('final-visual.log','CANOPY_ACCEPTANCE_END');
+const runtime=tally('final-runtime.log','SMOKE_TEST_RESULTS_END');
+const route=tally('final-route.log','PLAYTEST_RESULTS_END');
+const telegraph=tally('boss-telegraph.log','CANOPY_TELEGRAPH_END');
+const routeBody=readFileSync(join(report,'final-route.log'),'utf8');
+const telemetry=JSON.parse(routeBody.split('PLAYTEST_TELEMETRY_BEGIN')[1].split('PLAYTEST_TELEMETRY_END')[0].trim());
+if(!telemetry.victoryReached||telemetry.transitionsCompleted!==10||telemetry.gatesOpened!==2||telemetry.failureReason)throw Error('Actual route did not reach victory');
+const captures=JSON.parse(readFileSync(join(candidate,'.qa/canopy/results.json')));
+if(captures.failures||captures.checks.length!==visual.passed||captures.movieFrames!==224)throw Error('Capture receipt does not match visual log');
+const game=JSON.parse(readFileSync(join(candidate,'GAME_SET.json')));
+const old=JSON.parse(readFileSync(join(current,'GAME_SET.json')));
+if(game.genre!=='topdown'||old.genre!=='topdown')throw Error('Game sets are not top-down');
+const assets=writeCanopyProvenance(candidate);
+const runtimePaths=['scripts/world/OverworldManager.gd','scripts/AI/BossController.gd','scripts/test/PlaytestAgent.gd','scripts/test/CanopyAcceptance.gd','scripts/test/CanopyBossTelegraphAcceptance.gd','data/world/overworld.json','game_dna.json'];
+const testedFiles=Object.fromEntries(runtimePaths.map(path=>[path,hash(readFileSync(join(candidate,path)))]));
+const oldHashes=new Map(old.assets.map(asset=>[asset.path,asset.sha256]));
+const changedAssets=game.assets.filter(asset=>oldHashes.get(asset.path)!==asset.sha256).map(asset=>asset.path);
+const sideManifest=resolve('GeneratedGames/test-games/metroidvania/current/GAME_SET.json');
+const sideHash=hash(readFileSync(sideManifest));
+const names=JSON.parse(readFileSync(join(candidate,'CANOPY_DESIGN.json'))).rooms.map(room=>room.id);
+for(const name of [...names,'hero-grounded'])copyFileSync(join(candidate,'.qa/canopy',name+'.png'),join(report,name+'.png'));
+const proof={testedCandidate:candidate,assets,testedFiles,visual,runtime,route,telegraph,telemetry,changedAssets,productionApproved:false};
+writeFileSync(join(report,'tested-candidate.json'),JSON.stringify(proof,null,2));
+mkdirSync(join(root,'backups'),{recursive:true});
+renameSync(current,backup);
+try { renameSync(candidate,current); } catch(error) { renameSync(backup,current); throw error; }
+if(hash(readFileSync(sideManifest))!==sideHash)throw Error('Side-view manifest changed during promotion');
+const design=JSON.parse(readFileSync(join(current,'CANOPY_DESIGN.json')));
+design.nativeValidated=true;design.productionApproved=false;design.validation={visual,runtime,route,report};
+writeFileSync(join(current,'CANOPY_DESIGN.json'),JSON.stringify(design,null,2));
+writeFileSync(join(report,'route-telemetry.json'),JSON.stringify(telemetry,null,2));
+writeFileSync(join(report,'results.json'),JSON.stringify({...proof,current,backup,sideViewManifestUnchanged:true},null,2));
+writeFileSync(join(current,'PLAY.md'),`# The Ruined Canopy\n\nTop-down woodland action-adventure visual test. WASD/arrows move, J/X/left-click attack, Shift dodge/sprint, E interact, Escape pause. Collect the Verdant Disc at the shrine, return through the aqueduct shortcut, open the vine seal, then face the Hollow Crown.\n\nUse the repository's Play Top-down Test.cmd. Saves and assets remain on E: and separate from the side-view set. Original artwork and synthesized audio remain drafts.\n\nNative test report: ${report}\n`);
+writeFileSync(join(report,'RESULTS.md'),`# The Ruined Canopy: environment and level redesign\n\nPromoted tested candidate ${candidate} to ${current}. Previous playable top-down game is recoverable at ${backup}. Side-view manifest SHA-256 stayed ${sideHash}.\n\nReplaced repeated crossroads with ten authored material layouts and map-aligned reciprocal entrances. New environment art includes irregular layered tree canopies, bark and vines, aged ruins, a shrine, root gate, aqueduct, rounded path corners, varied stone paving, subdued grass clusters, shoreline accents and a detailed chest. Hero and combat actor families are retained from the fresh canopy set. ${changedAssets.length} asset files differ from the previous playable set; ${assets} assets are hash-verified. No commercial reference art was copied.\n\n| Native test | Passed | Hard failures | Optional missing |\n|---|---:|---:|---:|\n| Graphical room and interaction checks | ${visual.passed} | ${visual.failed} | ${visual.softFailures} |\n| Graphical gameplay regressions | ${runtime.passed} | ${runtime.failed} | ${runtime.softFailures} |\n| Input-driven entrance-to-boss route | ${route.passed} | ${route.failed} | ${route.softFailures} |\n\nSix source world tests also pass: graph reachability, matching physical gates, POI access, ability order/shortcut, ten different material grids and reciprocal map-oriented entrances. All native tests ran in Godot 4.6 on NVIDIA RTX 5060 with isolated E: saves. Route reached victory in ${(telemetry.durationMs/1000).toFixed(2)} seconds, completed ${telemetry.transitionsCompleted} transitions, opened ${telemetry.gatesOpened} gates and performed ${telemetry.attacksPerformed} attacks.\n\nThe room suite uses direct loads for controlled inspection and separately drives movement, attacks and passage contact. It checks painted actor ground contact, prop anchors, clip availability, depth sorting/fade, camera coverage and interactions; it is not an art approval or proof of every combat encounter. The full route uses real input and swept player-body navigation. The test bot resets health before the boss and uses real dodge controls; this is route/boss functionality evidence, not complete difficulty balance. The optional grotto is inspected but not visited on the victory route.\n\nThe 7.47-second preview is 224 controlled native captures encoded at 30 fps and decode-verified; it is not a performance benchmark. Artwork and audio remain original procedural drafts with production approval false. Nine optional quest checks remain missing because Mira has lore dialogue rather than a quest. Engine cleanup warnings remain at exit; corrupt-save warning is an intentional recovery test. Failed parse, navigation and boss logs are preserved. Unity and Unreal were not tested in this pass. Repo-wide whitespace checking reports pre-existing line-ending/trailing-whitespace issues; no clean repo-wide result is claimed.\n\nThe earlier Copilot/reference conversation and developer screenshot sources are recorded in ../20260930-ruined-canopy/RESULTS.md. This pass applies clear routes, varied room purpose, large landmarks, consistent woodland materials and ground anchoring.\n`);
+appendFileSync(join(report,'RESULTS.md'),`\nBoss warning behavior: ${telegraph.passed} native checks pass with no hard failures. Projectile warnings show a committed aim line, the real shot follows that line after the player moves, all three attack types have distinct colors, and the projectile uses original canopy artwork. Ten original VFX textures now replace missing warning, projectile, hit, phase, pickup and dodge artwork. The boss retains 240 HP and its original damage; the completed route finishes the boss fight with ${telemetry.bossPlayerFinalHealth} player HP after the disclosed pre-boss health reset.\n`);
+console.log(JSON.stringify({current,backup,assets,changedAssets:changedAssets.length,visual,runtime,route,telegraph,productionApproved:false}));

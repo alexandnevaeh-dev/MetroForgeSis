@@ -1,0 +1,51 @@
+{
+  "generatedAt": "2026-09-09T23:15:11.666Z",
+  "characters": [
+    {
+      "key": "melee",
+      "provider": "nvidia-image",
+      "modelId": "black-forest-labs/flux.1-dev",
+      "fallbackGenerated": false,
+      "seed": 454166,
+      "prompt": "top-down 2D pixel art game character sprite, single clean idle pose facing down-forward, flat neutral dark background, no text, no watermark, crisp readable silhouette, abandoned research facility sci-fi theme, squat containment robot with dark structural metal frame and glowing orange hazard accent stripes, twin short blade arms, aggressive hunched stance",
+      "frameSize": 64
+    },
+    {
+      "key": "ranged",
+      "provider": "nvidia-image",
+      "modelId": "black-forest-labs/flux.1-dev",
+      "fallbackGenerated": false,
+      "seed": 35470,
+      "prompt": "top-down 2D pixel art game character sprite, single clean idle pose facing down-forward, flat plain mid-gray background, brightly and evenly lit, no text, no watermark, crisp readable silhouette with clearly visible surface detail, abandoned research facility sci-fi theme, small hovering security drone, pale ceramic outer shell with dark metal joints, glowing orange sensor eye, one forward auto-cannon barrel, no legs, compact rounded body",
+      "frameSize": 64
+    },
+    {
+      "key": "heavy",
+      "provider": "nvidia-image",
+      "modelId": "black-forest-labs/flux.1-dev",
+      "fallbackGenerated": false,
+      "seed": 5553,
+      "prompt": "top-down 2D pixel art game character sprite, single clean idle pose facing down-forward, flat plain mid-gray background, brightly and evenly lit, no text, no watermark, crisp readable silhouette with clearly visible surface detail, abandoned research facility sci-fi theme, oversized four-legged industrial walker robot, pale ceramic ablative armor slabs over a dark metal frame, glowing orange warning stripes on its shoulders, wide stable stance, bulky and heavy looking",
+      "frameSize": 64
+    },
+    {
+      "key": "boss",
+      "provider": "nvidia-image",
+      "modelId": "black-forest-labs/flux.1-dev",
+      "fallbackGenerated": false,
+      "seed": 444444,
+      "prompt": "top-down 2D pixel art game creature sprite, single clean pose facing down-forward, flat neutral dark background, no text, no watermark, crisp readable silhouette, industrial sci-fi theme, enormous four-legged spider-shaped machine, dark articulated metal legs, pale ceramic plated body, one glowing purple energy sphere embedded in its back, tall thin antenna, imposing scale",
+      "frameSize": 128
+    },
+    {
+      "key": "player",
+      "provider": "nvidia-image",
+      "modelId": "black-forest-labs/flux.1-dev",
+      "fallbackGenerated": false,
+      "seed": 454166,
+      "prompt": "top-down 2D pixel art game character sprite, single clean idle pose facing down-forward, flat neutral dark background, no text, no watermark, crisp readable silhouette, abandoned research facility sci-fi theme, small human explorer in pale ceramic armor plating with glowing cyan visor and cyan accent lights, field tool backpack",
+      "frameSize": 64
+    }
+  ],
+  "errors": []
+}

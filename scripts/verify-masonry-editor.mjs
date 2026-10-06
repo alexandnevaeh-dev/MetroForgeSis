@@ -1,0 +1,38 @@
+import {_electron} from 'playwright';
+import {createRequire} from 'node:module';
+import {mkdirSync,writeFileSync,readFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+const repo='E:/Metroforge/MetroForge-Publish',desktop=repo+'/apps/desktop',require=createRequire(desktop+'/package.json');
+const base='E:/MetroForgeData/Development/stormglass-masonry-20261006-v1',project=base+'/game',output=base+'/editor-'+Date.now();
+for(const name of ['temp','data','appdata','localappdata'])mkdirSync(output+'/'+name,{recursive:true});
+writeFileSync(output+'/empty.env','');
+const sha=()=>createHash('sha256').update(readFileSync(project+'/data/rooms/rooms.json')).digest('hex'),before=sha();
+const env={...process.env,METROFORGE_ENV_FILE:output+'/empty.env',METROFORGE_DESKTOP_HIDDEN:'1',METROFORGE_DATA_DIR:output+'/data',METROFORGE_GENERATED_GAMES_DIR:base,TEMP:output+'/temp',TMP:output+'/temp',APPDATA:output+'/appdata',LOCALAPPDATA:output+'/localappdata'};
+delete env.ELECTRON_RUN_AS_NODE;delete env.VITE_DEV_SERVER_URL;
+const proof={scope:'Real MetroForge desktop editor and collision IPC; read-only isolated E: campaign',passed:false};let app;
+try{
+ app=await _electron.launch({executablePath:require('electron'),args:[desktop],cwd:repo,env,timeout:60000});
+ const page=await app.firstWindow();page.setDefaultTimeout(30000);
+ await app.evaluate(({BrowserWindow})=>{const w=BrowserWindow.getAllWindows()[0];w.webContents.setBackgroundThrottling(false);w.setBounds({width:1500,height:1000});});
+ await page.locator('.nav-item').filter({has:page.locator('.nav-function',{hasText:/^Rooms$/})}).click();
+ const select=page.locator('.room-editor-screen .project-select select');
+ proof.options=await select.locator('option').evaluateAll(nodes=>nodes.map(n=>({value:n.value,label:n.textContent})));
+ const option=proof.options.find(o=>o.value.replaceAll('\\','/').toLowerCase()===project.toLowerCase());
+ if(!option)throw new Error('Isolated campaign is absent from the real project picker: '+JSON.stringify(proof.options));
+ await select.selectOption(option.value);
+ await page.getByRole('option',{name:/room_002/}).click();
+ const wall=page.locator('.room-editor-canvas [data-masonry-body="ShellLeftSegment_1"]').first();await wall.waitFor();
+ proof.wall=await wall.locator('rect').first().evaluate(node=>Object.fromEntries(['x','y','width','height'].map(k=>[k,Number(node.getAttribute(k))])));
+ proof.collision=await page.evaluate(path=>window.metroforge.getRoomCollision(path,'room_002'),project);
+ proof.stairPolygons=await page.locator('.room-editor-canvas [data-stair-flight]').count();
+ proof.nativeStairPolygons=proof.collision.rects.filter(r=>r.path.includes('StairFlight_')&&r.points?.length===4).length;
+ proof.clipped=await wall.locator('..').locator('..').getAttribute('overflow')==='hidden';
+ proof.preserved=before===sha();
+ proof.passed=proof.wall.y===704&&proof.wall.height===768&&proof.clipped&&proof.preserved&&proof.stairPolygons===7&&proof.nativeStairPolygons===7;
+ await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+ await page.waitForTimeout(500);
+ proof.selectedRoom=await page.getByRole('option',{name:/room_002/}).getAttribute('aria-selected');
+ proof.passed=proof.passed&&proof.selectedRoom==='true';
+ const png=await app.evaluate(async({BrowserWindow})=>BrowserWindow.getAllWindows()[0].webContents.capturePage(undefined,{stayHidden:true,stayAwake:true}).then(i=>i.toPNG().toString('base64')));
+ writeFileSync(output+'/editor.png',Buffer.from(png,'base64'));
+}catch(e){proof.error=String(e);}finally{writeFileSync(output+'/proof.json',JSON.stringify(proof,null,2));if(app)await app.close();console.log(JSON.stringify({output,passed:proof.passed,error:proof.error}));if(!proof.passed)process.exitCode=1;}

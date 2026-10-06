@@ -1,0 +1,34 @@
+import {readFileSync,writeFileSync,copyFileSync} from 'node:fs';
+import {join} from 'node:path';
+import {createHash} from 'node:crypto';
+const report=process.argv[2]??'reports/game-tests/20261001-canopy-actor-integration';
+const proof=JSON.parse(readFileSync(join(report,'generation-proof.json'))),project=proof.result.outputPath;
+const identity=JSON.parse(readFileSync(join(report,'shared-art-identity.json')));
+for(const asset of identity.records)if(createHash('sha256').update(readFileSync(join(project,asset.path))).digest('hex')!==asset.sha256)throw Error('Assembled sprite differs: '+asset.path);
+const sidecars=['assets/characters/player_animations.json','assets/enemies/enemy_000_animations.json','assets/enemies/enemy_001_animations.json','assets/enemies/melee_animations.json','assets/enemies/ranged_animations.json','assets/enemies/heavy_animations.json','assets/bosses/boss_final_animations.json','assets/npcs/npc_000_animations.json','assets/vfx/effects.json'];
+for(const file of sidecars){const data=JSON.parse(readFileSync(join(project,file)));if(file.endsWith('effects.json')?Object.keys(data).length!==9:data.run.frameCount!==16||data.attack.frameCount!==12)throw Error('Missing clip metadata: '+file);}
+const manifest=JSON.parse(readFileSync(join(project,'generation_manifest.json')));
+const detailed=manifest.artifacts.filter(asset=>asset.provider==='metroforge-canopy-procedural-v3');
+if(!detailed.length||detailed.some(asset=>asset.productionReady||asset.maturity!=='QA_REVIEW'||asset.fallbackGenerated))throw Error('Draft provenance lost');
+const result={project,matchingNativeTestedSprites:identity.checked,verifiedSidecars:sidecars.length,detailedDraftArtifacts:detailed.length,productionApproved:false};
+writeFileSync(join(report,'assembled-actor-proof.json'),JSON.stringify(result,null,2));
+// The standalone verification scene is copied only into this isolated proof game.
+let native=readFileSync('scripts/test-cases/CanopyArtDetailAcceptance.gd','utf8');
+native=native.replace('res://.qa/detail','res://.qa/generated-detail');
+native=native.replace('CANOPY_DETAIL_BEGIN','GENERATED_CANOPY_DETAIL_BEGIN').replace('CANOPY_DETAIL_END','GENERATED_CANOPY_DETAIL_END');
+native=native.replace('var captures :=', 'var movie_frames := 0\nvar captures :=');
+native=native.replace('func _ready() -> void:',`func record_frames(count: int) -> void:\n\tfor _frame in range(count):\n\t\tawait RenderingServer.frame_post_draw\n\t\tget_viewport().get_texture().get_image().save_png(captures + "/frame_%04d.png" % movie_frames)\n\t\tmovie_frames += 1\n\nfunc _ready() -> void:`);
+native=native.replace('\tawait screenshot("hero-closeup")','\tawait screenshot("hero-closeup")\n\tactor.play("run_S")\n\tawait record_frames(48)\n\tactor.play("idle_S")');
+native=native.replace('\tplayer.set_physics_process(false)', '\tfor entity in world.get_current_entities().get_children():\n\t\tif entity is CharacterBody2D: entity.set_physics_process(false)\n\tplayer.set_physics_process(false)');
+const enemyChecks=`\n\tvar enemy = load("res://scenes/enemies/Enemy.tscn").instantiate()\n\tenemy.enemy_id = "enemy_001"\n\tworld.get_current_entities().add_child(enemy)\n\tenemy.set_physics_process(false)\n\tenemy.global_position = player.global_position + Vector2(48,0)\n\tvar enemy_sprite: AnimatedSprite2D = enemy.get_node("Sprite")\n\tfor action: String in ["idle","walk","run","attack","hurt","death"]:\n\t\tvar expected: int = 16 if action == "run" else 6 if action == "hurt" else 12\n\t\tcheck("ranged_"+action+"_real_frame_count",enemy_sprite.sprite_frames.has_animation(action) and enemy_sprite.sprite_frames.get_frame_count(action)==expected)\n\tenemy.set("_state",1)\n\tenemy.velocity = Vector2(enemy.move_speed,0)\n\tenemy.call("_update_sprite")\n\tcheck("enemy_chase_uses_run",enemy_sprite.animation=="run")\n\tawait get_tree().create_timer(0.12).timeout\n\tcheck("enemy_run_advances",enemy_sprite.frame>0)\n\tenemy.set("_state",0)\n\tenemy.velocity = Vector2(enemy.move_speed*.5,0)\n\tenemy.call("_update_sprite")\n\tcheck("enemy_wander_uses_walk",enemy_sprite.animation=="walk")\n\tenemy.velocity = Vector2.ZERO\n\tenemy.call("_update_sprite")\n\tcheck("enemy_stationary_uses_idle",enemy_sprite.animation=="idle")\n\tenemy.set("_state",5)\n\tenemy.call("_update_sprite")\n\tcheck("enemy_hit_uses_hurt",enemy_sprite.animation=="hurt")\n\tenemy.set("_state",2)\n\tenemy.call("_update_sprite")\n\tcheck("enemy_attack_uses_attack",enemy_sprite.animation=="attack")\n\tawait screenshot("enemy-closeup")\n\tenemy.queue_free()\n`;
+native=native.replace('\tfor effect_id: String',enemyChecks+'\tfor effect_id: String');
+native=native.replace('\tcheck("enemy_run_advances",enemy_sprite.frame>0)','\tcheck("enemy_run_advances",enemy_sprite.frame>0)\n\tawait record_frames(16)');
+native=native.replace('\t\tawait screenshot(effect_id)','\t\tawait screenshot(effect_id)\n\t\tawait record_frames(10)');
+native=native.replace('\tawait screenshot("boss-closeup")',`\t\t\tentity.set("_hurt_timer",0.0)\n\t\t\tentity.set("_attack_busy",false)\n\t\t\tentity.set("_telegraph_active",false)\n\t\t\tsprite.play("idle")\n\t\t\tplayer.global_position=entity.global_position+Vector2(100,0)\n\t\t\tentity.call("_physics_process",0.016)\n\t\t\tcheck("boss_chase_uses_run",sprite.animation=="run")\n\t\t\tawait get_tree().create_timer(0.12).timeout\n\t\t\tcheck("boss_run_advances",sprite.frame>0)\n\t\t\tplayer.global_position=entity.global_position+Vector2(8,0)\n\t\t\tentity.call("_physics_process",0.016)\n\t\t\tcheck("boss_stationary_uses_idle",sprite.animation=="idle")\n\tawait screenshot("boss-closeup")`);
+native=native.replace('\tawait screenshot("boss-closeup")','\tfor body in world.get_current_entities().get_children():\n\t\tif body.scene_file_path.ends_with("Boss.tscn"):\n\t\t\tplayer.global_position=body.global_position+Vector2(-100,0)\n\tcamera.reset_smoothing()\n\tawait screenshot("boss-closeup")\n\tawait record_frames(32)');
+native=native.replace('"failures":failures}', '"failures":failures,"movieFrames":movie_frames}');
+writeFileSync(join(project,'scripts/test/GeneratedCanopyActorAcceptance.gd'),native);
+const scene=readFileSync('scripts/test-cases/CanopyArtDetailAcceptance.tscn','utf8').replaceAll('CanopyArtDetailAcceptance','GeneratedCanopyActorAcceptance');
+writeFileSync(join(project,'scenes/test/GeneratedCanopyActorAcceptance.tscn'),scene);
+copyFileSync(join(project,'scripts/test/GeneratedCanopyActorAcceptance.gd'),join(report,'native-acceptance-source.gd'));
+console.log(JSON.stringify(result));

@@ -1,0 +1,145 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\models-review\\reports\\game-tests\\20261004-models-ui\\1791084607609",
+  "scope": "Hidden portable app, real catalog/settings IPC and loopback model server. No live hosted authentication, paid calls, model-quality or engine-game acceptance.",
+  "checks": [
+    {
+      "label": "loopback connection settings saved through IPC",
+      "passed": true
+    },
+    {
+      "label": "real corrupt catalog is preserved and read failure stays recoverable",
+      "passed": true
+    },
+    {
+      "label": "capture stays hidden: 00-catalog-recovery.png",
+      "passed": true
+    },
+    {
+      "label": "scout discovers two actual loopback chat models in the selected data directory",
+      "passed": true
+    },
+    {
+      "label": "discovery does not label embeddings as text models",
+      "passed": true
+    },
+    {
+      "label": "discovery retains honest unknown license and quality",
+      "passed": true
+    },
+    {
+      "label": "saving model sends no generation request",
+      "passed": true
+    },
+    {
+      "label": "selected provider preference persisted through real IPC",
+      "passed": true
+    },
+    {
+      "label": "catalog rows stay on one line in the actual panel width",
+      "passed": true
+    },
+    {
+      "label": "discovered local hardware fit remains unknown",
+      "passed": true
+    },
+    {
+      "label": "capture stays hidden: 01-model-selection.png",
+      "passed": true
+    },
+    {
+      "label": "packaged provider sends the model selected in the app",
+      "passed": true
+    },
+    {
+      "label": "packaged provider completes the loopback JSON contract",
+      "passed": true
+    },
+    {
+      "label": "actual provider failure retains discovered model records",
+      "passed": true
+    },
+    {
+      "label": "offline model cannot be set as a ready candidate",
+      "passed": true
+    },
+    {
+      "label": "capture stays hidden: 02-offline-provider.png",
+      "passed": true
+    },
+    {
+      "label": "provider recovers without restarting the app",
+      "passed": true
+    },
+    {
+      "label": "packaged Models screen has no narrow document overflow",
+      "passed": true
+    },
+    {
+      "label": "narrow catalog keeps a usable scroll area",
+      "passed": true
+    },
+    {
+      "label": "capture stays hidden: 03-models-narrow.png",
+      "passed": true
+    },
+    {
+      "label": "route has a descriptive title",
+      "passed": true
+    },
+    {
+      "label": "no renderer errors",
+      "passed": true
+    },
+    {
+      "label": "portable application matches tested build: dist/assets/main.js",
+      "passed": true
+    },
+    {
+      "label": "portable application matches tested build: dist-electron/handlers.js",
+      "passed": true
+    },
+    {
+      "label": "portable application matches tested build: dist-electron/preload.cjs",
+      "passed": true
+    },
+    {
+      "label": "portable provider module matches tested build: model-scout.js",
+      "passed": true
+    },
+    {
+      "label": "portable provider module matches tested build: model-catalog.js",
+      "passed": true
+    },
+    {
+      "label": "portable provider module matches tested build: catalog-reconciliation.js",
+      "passed": true
+    },
+    {
+      "label": "portable provider module matches tested build: bootstrap.js",
+      "passed": true
+    },
+    {
+      "label": "portable provider module matches tested build: providers/compatible-chat.js",
+      "passed": true
+    }
+  ],
+  "captures": [
+    "00-catalog-recovery.png",
+    "01-model-selection.png",
+    "02-offline-provider.png",
+    "03-models-narrow.png"
+  ],
+  "pageErrors": [],
+  "sourceHashes": {
+    "apps/desktop/src/studio/ModelsScreen.tsx": "b7547a98365b4d72c57ab59dc1886bb288b69c1751b801acbb8d847afe3ffab9",
+    "apps/desktop/electron/handlers.ts": "3c8d27db2735c3ce6de1ac9522c6951594289e2c3fde855c2f38bf6a3ef98e18",
+    "packages/ai/src/model-scout.ts": "cbcd8acff1435a0f2b954ab464e0007693efefbbb22fdb51286d15ee5ba93eb6",
+    "packages/ai/src/model-catalog.ts": "a38914f4909d63e3dffec9672fdde1230a1e6269bfd135477a9539a3baef3dd2",
+    "packages/ai/src/providers/compatible-chat.ts": "a3fbed960e05ce79e40bfe3f9d840c06f9e0722b63a89f959fb105bc788ab9a2"
+  },
+  "packaged": {
+    "executable": "E:/MetroForgeData/Releases/MetroForge-models-20261004-v3/MetroForge.exe",
+    "sha256": "1925f358e7f0e9675a5ac4198fb076613f0db318da56d388799a97be74a5b19c"
+  },
+  "passed": true
+}

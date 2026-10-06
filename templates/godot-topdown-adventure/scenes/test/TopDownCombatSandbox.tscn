@@ -1,0 +1,72 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/player/Player.tscn" id="1_player"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/Enemy.tscn" id="2_enemy"]
+
+[sub_resource type="RectangleShape2D" id="wall_top"]
+size = Vector2(960, 32)
+[sub_resource type="RectangleShape2D" id="wall_side"]
+size = Vector2(32, 640)
+[sub_resource type="RectangleShape2D" id="obstacle_wide"]
+size = Vector2(160, 48)
+[sub_resource type="RectangleShape2D" id="obstacle_tall"]
+size = Vector2(48, 160)
+
+[node name="TopDownCombatSandbox" type="Node2D"]
+y_sort_enabled = true
+
+[node name="ArenaFloor" type="ColorRect" parent="."]
+offset_right = 960.0
+offset_bottom = 640.0
+color = Color(0.12, 0.19, 0.15, 1)
+mouse_filter = 2
+show_behind_parent = true
+
+[node name="TopWall" type="StaticBody2D" parent="."]
+position = Vector2(480, 16)
+collision_layer = 1
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TopWall"]
+shape = SubResource("wall_top")
+
+[node name="BottomWall" type="StaticBody2D" parent="."]
+position = Vector2(480, 624)
+collision_layer = 1
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BottomWall"]
+shape = SubResource("wall_top")
+
+[node name="LeftWall" type="StaticBody2D" parent="."]
+position = Vector2(16, 320)
+collision_layer = 1
+[node name="CollisionShape2D" type="CollisionShape2D" parent="LeftWall"]
+shape = SubResource("wall_side")
+
+[node name="RightWall" type="StaticBody2D" parent="."]
+position = Vector2(944, 320)
+collision_layer = 1
+[node name="CollisionShape2D" type="CollisionShape2D" parent="RightWall"]
+shape = SubResource("wall_side")
+
+[node name="CenterCover" type="StaticBody2D" parent="."]
+position = Vector2(480, 320)
+collision_layer = 1
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CenterCover"]
+shape = SubResource("obstacle_wide")
+
+[node name="NorthCover" type="StaticBody2D" parent="."]
+position = Vector2(480, 150)
+collision_layer = 1
+[node name="CollisionShape2D" type="CollisionShape2D" parent="NorthCover"]
+shape = SubResource("obstacle_tall")
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+position = Vector2(160, 500)
+
+[node name="EnemyA" parent="." instance=ExtResource("2_enemy")]
+position = Vector2(680, 160)
+[node name="EnemyB" parent="." instance=ExtResource("2_enemy")]
+position = Vector2(780, 420)
+[node name="EnemyC" parent="." instance=ExtResource("2_enemy")]
+position = Vector2(360, 180)
+[node name="EnemyD" parent="." instance=ExtResource("2_enemy")]
+position = Vector2(650, 520)
+

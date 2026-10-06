@@ -1,0 +1,180 @@
+[gd_scene load_steps=12 format=3 uid="uid://visual_polish_slice"]
+
+[ext_resource type="Script" path="res://scripts/test/VisualPolishSlice.gd" id="1_slice"]
+[ext_resource type="PackedScene" path="res://scenes/player/Player.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/Enemy.tscn" id="3_enemy"]
+[ext_resource type="PackedScene" path="res://scenes/world/ItemPickup.tscn" id="4_pickup"]
+[ext_resource type="PackedScene" path="res://scenes/world/WaterZone.tscn" id="5_water"]
+[ext_resource type="Script" path="res://scripts/world/RoomTileMap.gd" id="6_tiles"]
+[ext_resource type="PackedScene" path="res://scenes/world/NPC.tscn" id="7_npc"]
+[ext_resource type="PackedScene" path="res://scenes/bosses/Boss.tscn" id="8_boss"]
+[ext_resource type="PackedScene" path="res://scenes/world/PauseMenu.tscn" id="9_pause"]
+[ext_resource type="PackedScene" path="res://scenes/world/DialogueOverlay.tscn" id="10_dialogue"]
+[ext_resource type="Script" path="res://scripts/UI/GameHUD.gd" id="11_hud"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_floor"]
+size = Vector2(960, 32)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat"]
+size = Vector2(192, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
+size = Vector2(32, 448)
+
+[node name="VisualPolishSlice" type="Node2D"]
+script = ExtResource("1_slice")
+
+[node name="Background" type="ColorRect" parent="."]
+offset_left = -80.0
+offset_top = -80.0
+offset_right = 1040.0
+offset_bottom = 620.0
+color = Color(0.075, 0.118, 0.173, 1)
+mouse_filter = 2
+z_index = -30
+
+[node name="FarSky" type="Sprite2D" parent="."]
+z_index = -25
+centered = true
+position = Vector2(480, 270)
+
+[node name="Ground" type="TileMapLayer" parent="."]
+script = ExtResource("6_tiles")
+biome_id = "biome_0"
+room_width = 960
+room_height = 540
+tile_size = 32
+visual_kit = "foundry"
+room_archetype = "combat"
+
+[node name="Floor" type="StaticBody2D" parent="."]
+position = Vector2(480, 464)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Floor"]
+shape = SubResource("RectangleShape2D_floor")
+
+[node name="LeftWall" type="StaticBody2D" parent="."]
+position = Vector2(16, 240)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="LeftWall"]
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="RightWall" type="StaticBody2D" parent="."]
+position = Vector2(944, 240)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="RightWall"]
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="Platform" type="StaticBody2D" parent="."]
+position = Vector2(640, 336)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platform"]
+shape = SubResource("RectangleShape2D_plat")
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+position = Vector2(180, 448)
+
+[node name="Enemy" parent="." instance=ExtResource("3_enemy")]
+position = Vector2(360, 448)
+enemy_id = "enemy_000"
+patrol_distance = 48.0
+move_speed = 40.0
+
+[node name="RangedEnemy" parent="." instance=ExtResource("3_enemy")]
+position = Vector2(520, 448)
+enemy_id = "enemy_001"
+patrol_distance = 36.0
+move_speed = 28.0
+
+[node name="Sprite" parent="RangedEnemy"]
+sheet_path = "assets/enemies/enemy_001_walk.png"
+hurt_sheet_path = "assets/enemies/enemy_001_hurt.png"
+death_sheet_path = "assets/enemies/enemy_001_death.png"
+attack_sheet_path = "assets/enemies/enemy_001_attack.png"
+extra_animation_sheets = {
+"idle": "assets/enemies/enemy_001_idle.png"
+}
+
+[node name="FlyingEnemy" parent="." instance=ExtResource("3_enemy")]
+position = Vector2(760, 380)
+enemy_id = "enemy_002"
+patrol_distance = 64.0
+move_speed = 44.0
+
+[node name="Sprite" parent="FlyingEnemy"]
+sheet_path = "assets/enemies/enemy_002_walk.png"
+hurt_sheet_path = "assets/enemies/enemy_002_hurt.png"
+death_sheet_path = "assets/enemies/enemy_002_death.png"
+attack_sheet_path = "assets/enemies/enemy_002_attack.png"
+extra_animation_sheets = {
+"idle": "assets/enemies/enemy_002_idle.png",
+"fly": "assets/enemies/enemy_002_fly.png"
+}
+
+[node name="ItemPickup" parent="." instance=ExtResource("4_pickup")]
+position = Vector2(640, 336)
+
+[node name="NPC" parent="." instance=ExtResource("7_npc")]
+position = Vector2(90, 448)
+npc_id = "npc_000"
+npc_name = "Keeper"
+role = "lore"
+
+[node name="Boss" parent="." instance=ExtResource("8_boss")]
+position = Vector2(860, 448)
+boss_id = "boss_final"
+
+[node name="WaterZone" parent="." instance=ExtResource("5_water")]
+position = Vector2(800, 500)
+
+[node name="WorldCanvasModulate" type="CanvasModulate" parent="."]
+color = Color(0.86, 0.90, 0.96, 1)
+
+[node name="PauseMenu" parent="." instance=ExtResource("9_pause")]
+
+[node name="DialogueOverlay" parent="." instance=ExtResource("10_dialogue")]
+
+[node name="GameHUD" type="CanvasLayer" parent="."]
+script = ExtResource("11_hud")
+
+[node name="HUD" type="Control" parent="GameHUD"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="HUDFrame" type="Panel" parent="GameHUD/HUD"]
+visible = false
+offset_left = 12.0
+offset_top = 12.0
+offset_right = 224.0
+offset_bottom = 54.0
+mouse_filter = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="GameHUD/HUD"]
+offset_left = 20.0
+offset_top = 18.0
+offset_right = 216.0
+offset_bottom = 48.0
+
+[node name="VBox" type="VBoxContainer" parent="GameHUD/HUD/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HealthBar" type="ProgressBar" parent="GameHUD/HUD/MarginContainer/VBox"]
+custom_minimum_size = Vector2(196, 14)
+layout_mode = 2
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="AbilityLabel" type="Label" parent="GameHUD/HUD/MarginContainer/VBox"]
+layout_mode = 2
+text = ""
+
+[node name="CurrencyLabel" type="Label" parent="GameHUD/HUD/MarginContainer/VBox"]
+layout_mode = 2
+text = ""
+
+[node name="CollectibleLabel" type="Label" parent="GameHUD/HUD/MarginContainer/VBox"]
+layout_mode = 2
+text = ""

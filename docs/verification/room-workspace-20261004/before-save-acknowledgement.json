@@ -1,0 +1,50 @@
+{
+  "passed": false,
+  "error": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('status').filter({ hasText: 'Tilemap saved and room recompiled' }) to be visible\u001b[22m\n\n    at E:\\MetroForgeData\\GitHubUpload\\20261004\\room-workspace-review\\scripts\\verify-room-workspace-ui.mjs:177:91",
+  "checks": [
+    {
+      "label": "Rooms owns full authoring width without duplicate assistant",
+      "passed": true
+    },
+    {
+      "label": "Visual has exactly one scene canvas",
+      "passed": true
+    },
+    {
+      "label": "Select never paints or writes files",
+      "passed": true
+    },
+    {
+      "label": "keyboard cursor uses native cell coordinates",
+      "passed": true
+    },
+    {
+      "label": "IME composition does not paint",
+      "passed": true
+    },
+    {
+      "label": "keyboard paints a draft with no file write",
+      "passed": true
+    },
+    {
+      "label": "grid uses a pattern instead of one button per empty cell",
+      "passed": true
+    },
+    {
+      "label": "Select preserves unsaved tiles and exposes Save",
+      "passed": true
+    },
+    {
+      "label": "room navigation preserves its unsaved draft",
+      "passed": true
+    },
+    {
+      "label": "route navigation preserves the draft",
+      "passed": true
+    },
+    {
+      "label": "capture stays hidden: room-workspace-draft.png",
+      "passed": true
+    }
+  ]
+}

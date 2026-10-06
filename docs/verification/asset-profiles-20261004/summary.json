@@ -1,0 +1,68 @@
+{
+  "parent": "47520dff15305e34aec0b4e2e51b69b21c7f3682",
+  "regressionTests": 76,
+  "pendingTests": 0,
+  "uiChecks": 97,
+  "scopes": {
+    "assets-ui": {
+      "scope": "Hidden portable app UI with real IPC, staged files, registry, history and Unity mirrors. Controlled loopback ComfyUI returns synthetic tiles: no live GPU/hosted inference, finished-art or gameplay acceptance.",
+      "checks": 34,
+      "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\manual-profiles-review\\reports\\game-tests\\20261004-assets-ui\\1791092629172"
+    },
+    "assets-frontend": {
+      "scope": "Real asset workshop with a controlled bridge. Failure, retry, duplicate mutations, project isolation, partial results, keyboard and narrow layout; not real image inference or art approval.",
+      "checks": 20,
+      "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\manual-profiles-review\\reports\\game-tests\\20261004-assets-frontend\\1791092501170"
+    },
+    "local-nvidia-ui": {
+      "scope": "Real portable app generation of one castle background using installed SDXL and CUDA. Separate candidate projects. No engine gameplay, animation or finished-art acceptance.",
+      "checks": 23,
+      "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\manual-profiles-review\\reports\\game-tests\\20261004-assets-nvidia-ui\\1791091675835"
+    },
+    "bundled-demo": {
+      "scope": "Read-only final portable Projects library proof; game files must remain unchanged. Does not launch or replay the native game.",
+      "checks": 6,
+      "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\manual-profiles-review\\reports\\game-tests\\20261004-assets-demo\\1791092691442"
+    },
+    "art-preview": {
+      "scope": "Final portable frontend read-only preview of the exact v3 CUDA-generated artwork. Deliberately incomplete art study lacks level usage data; missing optional data must not hide the image. No new inference or engine gameplay in this check.",
+      "checks": 14,
+      "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\manual-profiles-review\\reports\\game-tests\\20261004-art-preview\\1791092613429"
+    }
+  },
+  "sourceHashes": {
+    "packages/assets/src/asset-pipeline.ts": "5598cf966eb890f01e49a0acfae96828119eeda9c807c5a21e64e1079f815fd4",
+    "packages/assets/src/types/prompts.ts": "859e585f35f75a48abd66e1e0f4a53880e17c5f6bd65decabf86f20a10773f67",
+    "packages/assets/src/gateway/types.ts": "4c0cc1f66ede1e1c4d795b96e317dc8ea5f1ff0df9da8cdcdcf8fdf95ec274e9",
+    "packages/assets/src/gateway/legacy-gateway.ts": "ecfb9ff110e3fa1ee24560dbb4b5c6b2a22a84cba36f851138f379cc9f00cef7",
+    "packages/assets/src/manual-image-plan.ts": "e06b3afb3efa9b1d5acb98731f28fece69b80e5ca01ef662e3ab600a8b9f33e7",
+    "packages/assets/src/manual-image-plan.test.ts": "9155e773897fa0dfa8ceb9bf626f3c421fba2bfdc3818179d55c79c742887a91",
+    "apps/desktop/src/studio/GenerateAsset.tsx": "312d0b652c087faeef8adc1095b0aa6ae5bdb787ef3dbedc8a789f78eb19b279",
+    "apps/desktop/src/studio/metroforge-api.ts": "50367d52b59870053eb3aec62fe874ee63022c20b3c8cb2adb0466bbb423295e",
+    "packages/assets/src/manual-image-generation.test.ts": "1e2bf04b5d32189465b56f873e234de5ca91d80fe5f23bacc668b78a1e86da90",
+    "packages/assets/src/providers/diffusers.ts": "158a54bba5c8bc27566f3d6e201501667770e634bccca7be024189e3c268852a",
+    "packages/assets/src/providers/diffusers.test.ts": "34e6558abbade7a4d3ccf571eac2cf54ae67067cbea31313effb7e3d272d93ff",
+    "scripts/verify-assets-nvidia-ui.mjs": "1d667511e945c2d71881d740aad9ba71c70c2c0c22c4a9f9ce3c0fe73de08e2c",
+    "scripts/verify-assets-frontend.mjs": "8cb7036b3f43ca8affa88bdd36f79b2148f8271e7a9779e32c3cac81bcfbaca1",
+    "scripts/verify-generated-art-preview.mjs": "ad1647ae6b67d468715ec8ccfd205efcef0ae3508bcaa5064efe58539bb58917",
+    "apps/desktop/electron/handlers.ts": "9e9a9a2c09479a8c18db3371730ef6d8d135553d812709cb261e7b00c5bc9693",
+    "apps/desktop/src/studio/AssetsGallery.tsx": "97af90abddfa333d01ebad7ffe5a7c208b13dd73c20cc8bef02f090b331a9e9f",
+    "apps/desktop/src/studio/types.ts": "c048b8452042917669263ee833d04ede30ba03d37472915b21d5c19d3880d166"
+  },
+  "previewFix": {
+    "reason": "The v3 image-generation checks passed, but missing usage data hid its preview. Final v5 read-only preview verification passes with the exact generated image bytes."
+  },
+  "localGenerationMs": 324744,
+  "firstLiveAttempt": {
+    "passed": false,
+    "reason": "SDXL prompt budget exceeded: 84 tokens versus 77. No artwork committed. The final test also verifies actionable refusal and retry."
+  },
+  "productionReady": false,
+  "portable": "E:/MetroForgeData/Releases/MetroForge-art-profiles-20261004-v5/Launch-MetroForge.cmd",
+  "remaining": [
+    "Artwork review and integration into coherent playable castle levels",
+    "Animation and enemy/boss visual acceptance",
+    "Unity and Unreal native acceptance",
+    "Broader application completion"
+  ]
+}

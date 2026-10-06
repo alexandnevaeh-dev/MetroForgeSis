@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>MetroForge UI Audit — Layout Pack</title>
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: #07090c;
+      color: #e8eef6;
+      line-height: 1.45;
+    }
+    header {
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid #2a3544;
+      background: #0e1218;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    header h1 { margin: 0 0 0.35rem; font-size: 1.35rem; }
+    header p { margin: 0; color: #8b97a8; font-size: 0.9rem; }
+    main { padding: 1.5rem 2rem 3rem; display: grid; gap: 2rem; }
+    figure {
+      margin: 0;
+      background: #0e1218;
+      border: 1px solid #2a3544;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    figcaption {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #1c2430;
+      font-weight: 600;
+      color: #38bdf8;
+    }
+    img, object { display: block; width: 100%; height: auto; background: #07090c; }
+    .note {
+      max-width: 72rem;
+      padding: 1rem 1.25rem;
+      border: 1px solid #2a3544;
+      border-radius: 10px;
+      background: #141a22;
+      color: #b7c2d0;
+    }
+    code { color: #7dd3fc; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>MetroForge Desktop — UI layout pack</h1>
+    <p>
+      Schematic layouts for ChatGPT redesign. Open
+      <code>CHATGPT_REDESIGN_BRIEF.md</code> with these images.
+      These are wireframe schematics, not live Electron screenshots.
+    </p>
+  </header>
+  <main>
+    <div class="note">
+      Share with ChatGPT: (1) paste <code>CHATGPT_REDESIGN_BRIEF.md</code>,
+      (2) attach every SVG below (or PNG exports), (3) use the prompt at the
+      bottom of the brief. For live photos: run <code>pnpm dev:desktop</code>
+      and drop screenshots into <code>docs/ui-audit/screenshots/</code>.
+    </div>
+
+    <figure>
+      <figcaption>00 — App shell</figcaption>
+      <object data="layouts/00-app-shell.svg" type="image/svg+xml">App shell</object>
+    </figure>
+    <figure>
+      <figcaption>01 — Create / New Game</figcaption>
+      <object data="layouts/01-create.svg" type="image/svg+xml">Create</object>
+    </figure>
+    <figure>
+      <figcaption>02 — Project Dashboard</figcaption>
+      <object data="layouts/02-dashboard.svg" type="image/svg+xml">Dashboard</object>
+    </figure>
+    <figure>
+      <figcaption>03 — Generation Studio</figcaption>
+      <object data="layouts/03-generation-studio.svg" type="image/svg+xml">Studio</object>
+    </figure>
+    <figure>
+      <figcaption>04 — Asset Gallery</figcaption>
+      <object data="layouts/04-asset-gallery.svg" type="image/svg+xml">Assets</object>
+    </figure>
+    <figure>
+      <figcaption>05 — World Editor</figcaption>
+      <object data="layouts/05-world-editor.svg" type="image/svg+xml">World</object>
+    </figure>
+    <figure>
+      <figcaption>06 — Room Editor</figcaption>
+      <object data="layouts/06-room-editor.svg" type="image/svg+xml">Rooms</object>
+    </figure>
+    <figure>
+      <figcaption>07 — Dungeon Editor</figcaption>
+      <object data="layouts/07-dungeon-editor.svg" type="image/svg+xml">Dungeon</object>
+    </figure>
+    <figure>
+      <figcaption>08 — Models / Routing / QA</figcaption>
+      <object data="layouts/08-models-routing-qa.svg" type="image/svg+xml">AI screens</object>
+    </figure>
+  </main>
+</body>
+</html>

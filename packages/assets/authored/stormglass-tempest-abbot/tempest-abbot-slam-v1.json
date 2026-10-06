@@ -1,0 +1,154 @@
+{
+  "source": "E:\\Metroforge\\MetroForge-Publish\\packages\\assets\\authored\\stormglass-tempest-abbot\\tempest-abbot-slam-source-v1.png",
+  "output": "E:\\Metroforge\\MetroForge-Publish\\packages\\assets\\authored\\stormglass-tempest-abbot\\tempest-abbot-slam-v1.png",
+  "frameSize": [
+    160,
+    160
+  ],
+  "frameCount": 8,
+  "sharedScale": 0.2711267605633803,
+  "bottomCenterAnchor": [
+    80,
+    156
+  ],
+  "frames": [
+    {
+      "frame": 0,
+      "sourceBox": [
+        11,
+        232,
+        272,
+        636
+      ],
+      "size": [
+        71,
+        110
+      ],
+      "anchor": [
+        80,
+        156
+      ]
+    },
+    {
+      "frame": 1,
+      "sourceBox": [
+        0,
+        149,
+        271,
+        636
+      ],
+      "size": [
+        73,
+        132
+      ],
+      "anchor": [
+        80,
+        156
+      ]
+    },
+    {
+      "frame": 2,
+      "sourceBox": [
+        0,
+        187,
+        271,
+        636
+      ],
+      "size": [
+        73,
+        122
+      ],
+      "anchor": [
+        80,
+        156
+      ]
+    },
+    {
+      "frame": 3,
+      "sourceBox": [
+        0,
+        67,
+        272,
+        635
+      ],
+      "size": [
+        74,
+        154
+      ],
+      "anchor": [
+        80,
+        156
+      ]
+    },
+    {
+      "frame": 4,
+      "sourceBox": [
+        0,
+        323,
+        272,
+        638
+      ],
+      "size": [
+        74,
+        85
+      ],
+      "anchor": [
+        80,
+        156
+      ]
+    },
+    {
+      "frame": 5,
+      "sourceBox": [
+        0,
+        314,
+        271,
+        636
+      ],
+      "size": [
+        73,
+        87
+      ],
+      "anchor": [
+        80,
+        156
+      ]
+    },
+    {
+      "frame": 6,
+      "sourceBox": [
+        0,
+        222,
+        271,
+        635
+      ],
+      "size": [
+        73,
+        112
+      ],
+      "anchor": [
+        80,
+        156
+      ]
+    },
+    {
+      "frame": 7,
+      "sourceBox": [
+        0,
+        231,
+        272,
+        636
+      ],
+      "size": [
+        74,
+        110
+      ],
+      "anchor": [
+        80,
+        156
+      ]
+    }
+  ],
+  "status": "candidate",
+  "productionApproved": false
+}

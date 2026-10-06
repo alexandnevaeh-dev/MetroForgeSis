@@ -1,0 +1,55 @@
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { config as loadDotenv } from 'dotenv';
+import { PRODUCT, type GenerationMode, type GenerationProfile } from './constants.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = join(__dirname, '..', '..', '..');
+
+/** Absolute path to the monorepo root (where `.env` and `GeneratedGames` live). */
+export function getRepoRoot(): string {
+  return REPO_ROOT;
+}
+
+// Loaded once at module import time, consistent with how every other repo-root config file
+// (config/*.json, the Godot template) is resolved relative to this package's own location
+// rather than process.cwd() — so `.env` is found regardless of which directory `metroforge`
+// is invoked from. Never overrides variables already set in the shell environment (dotenv's
+// default), so explicit env vars always win over the file.
+loadDotenv({ path: process.env.METROFORGE_ENV_FILE || join(REPO_ROOT, '.env') });
+
+export interface AppConfig {
+  appName: string;
+  dataDir: string;
+  generatedGamesDir: string;
+  logLevel: 'debug' | 'info' | 'warn' | 'error';
+  defaultMode: GenerationMode;
+  defaultProfile: GenerationProfile;
+  godotExecutable: string | null;
+  unityEditor: string | null;
+  unrealEditor: string | null;
+  ollamaBaseUrl: string;
+}
+
+export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
+  return {
+    appName: env.METROFORGE_APP_NAME ?? PRODUCT.defaultName,
+    dataDir: env.METROFORGE_DATA_DIR ?? '',
+    generatedGamesDir: env.METROFORGE_GENERATED_GAMES_DIR ?? 'GeneratedGames',
+    logLevel: (env.METROFORGE_LOG_LEVEL as AppConfig['logLevel']) ?? 'info',
+    defaultMode: (env.METROFORGE_DEFAULT_MODE as GenerationMode) ?? 'LOCAL_ONLY',
+    defaultProfile: (env.METROFORGE_DEFAULT_PROFILE as GenerationProfile) ?? 'TINY_TEST',
+    godotExecutable: env.GODOT_EXECUTABLE ?? env.GODOT4_PATH ?? env.GODOT_PATH ?? null,
+    unityEditor: env.UNITY_EDITOR ?? env.UNITY_PATH ?? env.UNITY_HOME ?? null,
+    unrealEditor: env.UE_ROOT ?? env.UNREAL_ENGINE ?? env.UNREAL_EDITOR ?? env.UE_ENGINE ?? null,
+    ollamaBaseUrl: env.OLLAMA_BASE_URL ?? 'http://localhost:11434',
+  };
+}
+
+export function resolveGeneratedGamesPath(config: AppConfig, cwd: string): string {
+  const { generatedGamesDir } = config;
+  if (generatedGamesDir.startsWith('/') || /^[A-Za-z]:/.test(generatedGamesDir)) {
+    return generatedGamesDir;
+  }
+  return `${cwd}/${generatedGamesDir}`.replace(/\\/g, '/');
+}

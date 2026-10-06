@@ -1,0 +1,36 @@
+{
+  "checks": [
+    {
+      "label": "enemy_000 lethal hit starts death rather than hurt",
+      "passed": false
+    },
+    {
+      "label": "enemy_000 further hit cannot interrupt death",
+      "passed": false
+    },
+    {
+      "label": "enemy_000 completes the entire death frame sequence",
+      "passed": false
+    },
+    {
+      "label": "enemy_000 kill event follows the authored clip once",
+      "passed": false
+    },
+    {
+      "label": "enemy_000 dead actor is removed",
+      "passed": true
+    }
+  ],
+  "passed": false,
+  "rows": [
+    {
+      "deathFramesSeen": 0,
+      "enemy": "enemy_000",
+      "expectedFrames": 8,
+      "expectedMs": 800.0,
+      "killEvents": 1,
+      "observedMs": 163
+    }
+  ],
+  "scope": "Real enemy hurtbox lifecycle across the generated roster; direct test hits, not input-driven combat or visual acceptance."
+}

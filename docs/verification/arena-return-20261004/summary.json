@@ -1,0 +1,137 @@
+{
+  "status": "verified-development-progress",
+  "productionReady": false,
+  "actualFrontendChecks": 24,
+  "audioChecks": 40,
+  "controlledArenaChecks": 34,
+  "studioDisconnectScenarios": 2,
+  "blueprintChecks": 4,
+  "nativeJourney": {
+    "passed": true,
+    "strictDriverPassed": true,
+    "nativeErrors": [],
+    "warnings": [
+      "WARNING: ObjectDB instances leaked at exit (run with --verbose for details)."
+    ],
+    "steps": 40,
+    "clearedArenaReturns": [
+      {
+        "room": "room_008",
+        "boss": "boss_000",
+        "observations": 2,
+        "passed": true,
+        "cleared": {
+          "bossPresent": false,
+          "defeatedBosses": [
+            "boss_000"
+          ],
+          "exitsOpen": true,
+          "music": "biome_0",
+          "room": "room_008",
+          "tMs": 72621
+        }
+      },
+      {
+        "room": "room_018",
+        "boss": "boss_001",
+        "observations": 2,
+        "passed": true,
+        "cleared": {
+          "bossPresent": false,
+          "defeatedBosses": [
+            "boss_000",
+            "boss_001"
+          ],
+          "exitsOpen": true,
+          "music": "biome_0",
+          "room": "room_018",
+          "tMs": 130410
+        }
+      },
+      {
+        "room": "room_028",
+        "boss": "boss_002",
+        "observations": 2,
+        "passed": true,
+        "cleared": {
+          "bossPresent": false,
+          "defeatedBosses": [
+            "boss_000",
+            "boss_001",
+            "boss_002"
+          ],
+          "exitsOpen": true,
+          "music": "biome_0",
+          "room": "room_028",
+          "tMs": 188895
+        }
+      }
+    ],
+    "bosses": [
+      "boss_000",
+      "boss_001",
+      "boss_002",
+      "boss_final"
+    ],
+    "abilities": [
+      "dash",
+      "double_jump",
+      "wall_slide",
+      "wall_jump",
+      "ground_slam",
+      "air_dash"
+    ],
+    "telemetry": {
+      "attacksPerformed": 101,
+      "damageTaken": 180,
+      "playerDeaths": 0,
+      "roomsVisited": [
+        "room_000",
+        "room_001",
+        "room_002",
+        "room_003",
+        "room_004",
+        "room_005",
+        "room_006",
+        "room_008",
+        "room_009",
+        "room_008",
+        "room_009",
+        "room_010",
+        "room_011",
+        "room_012",
+        "room_013",
+        "room_014",
+        "room_015",
+        "room_016",
+        "room_018",
+        "room_019",
+        "room_018",
+        "room_019",
+        "room_020",
+        "room_021",
+        "room_022",
+        "room_023",
+        "room_024",
+        "room_025",
+        "room_026",
+        "room_028",
+        "room_029",
+        "room_028",
+        "room_029",
+        "room_030",
+        "room_031",
+        "room_032",
+        "room_033",
+        "room_034",
+        "room_035",
+        "room_036",
+        "room_038"
+      ]
+    }
+  },
+  "release": "E:/MetroForgeData/Releases/MetroForge-arena-return-20261004-v3",
+  "parent": "a3c87d89581497cf52c7445af54d7aebfc99e2d2",
+  "mediaUnchanged": 632,
+  "scope": "Actual normal-input critical route and three cleared arena returns; controlled save/load covers all four guardians. Dummy audio, not human/listening/final art acceptance. No new provider inference or Unity/Unreal/top-down gameplay validation."
+}

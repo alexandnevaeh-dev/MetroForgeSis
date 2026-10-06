@@ -1,0 +1,1438 @@
+{
+  "id": "metroforge-research-facility",
+  "visualTheme": "abandoned research facility -- pale ceramic armor, dark structural metal, cyan player accents, orange enemy cues, violet reactor energy (top-down boss-milestone asset pack)",
+  "playerReferenceHeight": 64,
+  "sourceLicense": "MetroForge internally authored/generated research-facility test pack; repository development-only. Character stills: real NVIDIA FLUX (black-forest-labs/flux.1-dev) generations, this session, under this repo's own configured NVIDIA_API_KEY. Terrain/props/interactive/VFX: this repo's own procedural generators. See production-report.json for exact per-character provider/model/seed/prompt records.",
+  "assets": [
+    {
+      "id": "player_idle",
+      "family": "character",
+      "role": "player.idle",
+      "source": "characters/player.png",
+      "destination": "assets/characters/player.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "boss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "AI-generated: one real NVIDIA black-forest-labs/flux.1-dev still (prompt/seed recorded in test-packs/metroforge-research-facility/production-report.json), then run through the repo's own real pose-progression sheet builders (generateWalkCycleSheet/generateAttackSheet/generateHurtFlashSheet/generateDeathSheet, packages/assets/src/png.ts) for genuine per-frame articulation derived from that still -- the same mechanism the main AssetPipeline uses for a real sourcePng, not a duplicate-frame or slide/rotate-only fake. QA-approved by an AI-delegated review (this session), NOT the user's own personal visual sign-off.",
+      "animation": [
+        {
+          "id": "idle",
+          "frameCount": 1,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 1,
+          "loop": true,
+          "origin": "bottom-center",
+          "facingConvention": "down-forward",
+          "mirrorSafe": true,
+          "gameplayState": "idle"
+        }
+      ]
+    },
+    {
+      "id": "player_walk",
+      "family": "character",
+      "role": "player.walk",
+      "source": "characters/player_walk.png",
+      "destination": "assets/characters/player_walk.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "boss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "AI-generated: one real NVIDIA black-forest-labs/flux.1-dev still (prompt/seed recorded in test-packs/metroforge-research-facility/production-report.json), then run through the repo's own real pose-progression sheet builders (generateWalkCycleSheet/generateAttackSheet/generateHurtFlashSheet/generateDeathSheet, packages/assets/src/png.ts) for genuine per-frame articulation derived from that still -- the same mechanism the main AssetPipeline uses for a real sourcePng, not a duplicate-frame or slide/rotate-only fake. QA-approved by an AI-delegated review (this session), NOT the user's own personal visual sign-off.",
+      "animation": [
+        {
+          "id": "walk",
+          "frameCount": 4,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 8,
+          "loop": true,
+          "origin": "bottom-center",
+          "facingConvention": "down-forward",
+          "mirrorSafe": true,
+          "gameplayState": "walk"
+        }
+      ]
+    },
+    {
+      "id": "player_attack",
+      "family": "character",
+      "role": "player.attack",
+      "source": "characters/player_attack.png",
+      "destination": "assets/characters/player_attack.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "boss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "AI-generated: one real NVIDIA black-forest-labs/flux.1-dev still (prompt/seed recorded in test-packs/metroforge-research-facility/production-report.json), then run through the repo's own real pose-progression sheet builders (generateWalkCycleSheet/generateAttackSheet/generateHurtFlashSheet/generateDeathSheet, packages/assets/src/png.ts) for genuine per-frame articulation derived from that still -- the same mechanism the main AssetPipeline uses for a real sourcePng, not a duplicate-frame or slide/rotate-only fake. QA-approved by an AI-delegated review (this session), NOT the user's own personal visual sign-off.",
+      "animation": [
+        {
+          "id": "attack",
+          "frameCount": 4,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 10,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "down-forward",
+          "mirrorSafe": true,
+          "gameplayState": "attack",
+          "eventFrames": {
+            "strike": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "player_hurt",
+      "family": "character",
+      "role": "player.hurt",
+      "source": "characters/player_hurt.png",
+      "destination": "assets/characters/player_hurt.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "boss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "AI-generated: one real NVIDIA black-forest-labs/flux.1-dev still (prompt/seed recorded in test-packs/metroforge-research-facility/production-report.json), then run through the repo's own real pose-progression sheet builders (generateWalkCycleSheet/generateAttackSheet/generateHurtFlashSheet/generateDeathSheet, packages/assets/src/png.ts) for genuine per-frame articulation derived from that still -- the same mechanism the main AssetPipeline uses for a real sourcePng, not a duplicate-frame or slide/rotate-only fake. QA-approved by an AI-delegated review (this session), NOT the user's own personal visual sign-off.",
+      "animation": [
+        {
+          "id": "hurt",
+          "frameCount": 3,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 8,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "down-forward",
+          "mirrorSafe": true,
+          "gameplayState": "hurt"
+        }
+      ]
+    },
+    {
+      "id": "player_death",
+      "family": "character",
+      "role": "player.death",
+      "source": "characters/player_death.png",
+      "destination": "assets/characters/player_death.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "boss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "AI-generated: one real NVIDIA black-forest-labs/flux.1-dev still (prompt/seed recorded in test-packs/metroforge-research-facility/production-report.json), then run through the repo's own real pose-progression sheet builders (generateWalkCycleSheet/generateAttackSheet/generateHurtFlashSheet/generateDeathSheet, packages/assets/src/png.ts) for genuine per-frame articulation derived from that still -- the same mechanism the main AssetPipeline uses for a real sourcePng, not a duplicate-frame or slide/rotate-only fake. QA-approved by an AI-delegated review (this session), NOT the user's own personal visual sign-off.",
+      "animation": [
+        {
+          "id": "death",
+          "frameCount": 4,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 6,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "down-forward",
+          "mirrorSafe": true,
+          "gameplayState": "death"
+        }
+      ]
+    },
+    {
+      "id": "melee_idle",
+      "family": "character",
+      "role": "melee.idle",
+      "source": "enemies/melee.png",
+      "destination": "assets/enemies/melee.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "boss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "AI-generated: one real NVIDIA black-forest-labs/flux.1-dev still (prompt/seed recorded in test-packs/metroforge-research-facility/production-report.json), then run through the repo's own real pose-progression sheet builders (generateWalkCycleSheet/generateAttackSheet/generateHurtFlashSheet/generateDeathSheet, packages/assets/src/png.ts) for genuine per-frame articulation derived from that still -- the same mechanism the main AssetPipeline uses for a real sourcePng, not a duplicate-frame or slide/rotate-only fake. QA-approved by an AI-delegated review (this session), NOT the user's own personal visual sign-off.",
+      "animation": [
+        {
+          "id": "idle",
+          "frameCount": 1,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 1,
+          "loop": true,
+          "origin": "bottom-center",
+          "facingConvention": "down-forward",
+          "mirrorSafe": true,
+          "gameplayState": "idle"
+        }
+      ]
+    },
+    {
+      "id": "melee_walk",
+      "family": "character",
+      "role": "melee.walk",
+      "source": "enemies/melee_walk.png",
+      "destination": "assets/enemies/melee_walk.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "boss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "AI-generated: one real NVIDIA black-forest-labs/flux.1-dev still (prompt/seed recorded in test-packs/metroforge-research-facility/production-report.json), then run through the repo's own real pose-progression sheet builders (generateWalkCycleSheet/generateAttackSheet/generateHurtFlashSheet/generateDeathSheet, packages/assets/src/png.ts) for genuine per-frame articulation derived from that still -- the same mechanism the main AssetPipeline uses for a real sourcePng, not a duplicate-frame or slide/rotate-only fake. QA-approved by an AI-delegated review (this session), NOT the user's own personal visual sign-off.",
+      "animation": [
+        {
+          "id": "walk",
+          "frameCount": 4,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 8,
+          "loop": true,
+          "origin": "bottom-center",
+          "facingConvention": "down-forward",
+          "mirrorSafe": true,
+          "gameplayState": "walk"
+        }
+      ]
+    },
+    {
+      "id": "melee_attack",
+      "family": "character",
+      "role": "melee.attack",
+      "source": "enemies/melee_attack.png",
+      "destination": "assets/enemies/melee_attack.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "boss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "AI-generated: one real NVIDIA black-forest-labs/flux.1-dev still (prompt/seed recorded in test-packs/metroforge-research-facility/production-report.json), then run through the repo's own real pose-progression sheet builders (generateWalkCycleSheet/generateAttackSheet/generateHurtFlashSheet/generateDeathSheet, packages/assets/src/png.ts) for genuine per-frame articulation derived from that still -- the same mechanism the main AssetPipeline uses for a real sourcePng, not a duplicate-frame or slide/rotate-only fake. QA-approved by an AI-delegated review (this session), NOT the user's own personal visual sign-off.",
+      "animation": [
+        {
+          "id": "attack",
+          "frameCount": 4,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 10,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "down-forward",
+          "mirrorSafe": true,
+          "gameplayState": "attack",
+          "eventFrames": {
+            "strike": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "melee_hurt",
+      "family": "character",
+      "role": "melee.hurt",
+      "source": "enemies/melee_hurt.png",
+      "destination": "assets/enemies/melee_hurt.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "boss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "AI-generated: one real NVIDIA black-forest-labs/flux.1-dev still (prompt/seed recorded in test-packs/metroforge-research-facility/production-report.json), then run through the repo's own real pose-progression sheet builders (generateWalkCycleSheet/generateAttackSheet/generateHurtFlashSheet/generateDeathSheet, packages/assets/src/png.ts) for genuine per-frame articulation derived from that still -- the same mechanism the main AssetPipeline uses for a real sourcePng, not a duplicate-frame or slide/rotate-only fake. QA-approved by an AI-delegated review (this session), NOT the user's own personal visual sign-off.",
+      "animation": [
+        {
+          "id": "hurt",
+          "frameCount": 3,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 8,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "down-forward",
+          "mirrorSafe": true,
+          "gameplayState": "hurt"
+        }
+      ]
+    },
+    {
+      "id": "melee_death",
+      "family": "character",
+      "role": "melee.death",
+      "source": "enemies/melee_death.png",
+      "destination": "assets/enemies/melee_death.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "boss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "AI-generated: one real NVIDIA black-forest-labs/flux.1-dev still (prompt/seed recorded in test-packs/metroforge-research-facility/production-report.json), then run through the repo's own real pose-progression sheet builders (generateWalkCycleSheet/generateAttackSheet/generateHurtFlashSheet/generateDeathSheet, packages/assets/src/png.ts) for genuine per-frame articulation derived from that still -- the same mechanism the main AssetPipeline uses for a real sourcePng, not a duplicate-frame or slide/rotate-only fake. QA-approved by an AI-delegated review (this session), NOT the user's own personal visual sign-off.",
+      "animation": [
+        {
+          "id": "death",
+          "frameCount": 4,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 6,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "down-forward",
+          "mirrorSafe": true,
+          "gameplayState": "death"
+        }
+      ]
+    },
+    {
+      "id": "ranged_idle",
+      "family": "character",
+      "role": "ranged.idle",
+      "source": "enemies/ranged.png",
+      "destination": "assets/enemies/ranged.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "boss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "AI-generated: one real NVIDIA black-forest-labs/flux.1-dev still (prompt/seed recorded in test-packs/metroforge-research-facility/production-report.json), then run through the repo's own real pose-progression sheet builders (generateWalkCycleSheet/generateAttackSheet/generateHurtFlashSheet/generateDeathSheet, packages/assets/src/png.ts) for genuine per-frame articulation derived from that still -- the same mechanism the main AssetPipeline uses for a real sourcePng, not a duplicate-frame or slide/rotate-only fake. QA-approved by an AI-delegated review (this session), NOT the user's own personal visual sign-off.",
+      "animation": [
+        {
+          "id": "idle",
+          "frameCount": 1,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 1,
+          "loop": true,
+          "origin": "bottom-center",
+          "facingConvention": "down-forward",
+          "mirrorSafe": true,
+          "gameplayState": "idle"
+        }
+      ]
+    },
+    {
+      "id": "ranged_walk",
+      "family": "character",
+      "role": "ranged.walk",
+      "source": "enemies/ranged_walk.png",
+      "destination": "assets/enemies/ranged_walk.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "boss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "AI-generated: one real NVIDIA black-forest-labs/flux.1-dev still (prompt/seed recorded in test-packs/metroforge-research-facility/production-report.json), then run through the repo's own real pose-progression sheet builders (generateWalkCycleSheet/generateAttackSheet/generateHurtFlashSheet/generateDeathSheet, packages/assets/src/png.ts) for genuine per-frame articulation derived from that still -- the same mechanism the main AssetPipeline uses for a real sourcePng, not a duplicate-frame or slide/rotate-only fake. QA-approved by an AI-delegated review (this session), NOT the user's own personal visual sign-off.",
+      "animation": [
+        {
+          "id": "walk",
+          "frameCount": 4,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 8,
+          "loop": true,
+          "origin": "bottom-center",
+          "facingConvention": "down-forward",
+          "mirrorSafe": true,
+          "gameplayState": "walk"
+        }
+      ]
+    },
+    {
+      "id": "ranged_attack",
+      "family": "character",
+      "role": "ranged.attack",
+      "source": "enemies/ranged_attack.png",
+      "destination": "assets/enemies/ranged_attack.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "boss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "AI-generated: one real NVIDIA black-forest-labs/flux.1-dev still (prompt/seed recorded in test-packs/metroforge-research-facility/production-report.json), then run through the repo's own real pose-progression sheet builders (generateWalkCycleSheet/generateAttackSheet/generateHurtFlashSheet/generateDeathSheet, packages/assets/src/png.ts) for genuine per-frame articulation derived from that still -- the same mechanism the main AssetPipeline uses for a real sourcePng, not a duplicate-frame or slide/rotate-only fake. QA-approved by an AI-delegated review (this session), NOT the user's own personal visual sign-off.",
+      "animation": [
+        {
+          "id": "attack",
+          "frameCount": 4,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 10,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "down-forward",
+          "mirrorSafe": true,
+          "gameplayState": "attack",
+          "eventFrames": {
+            "strike": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "ranged_hurt",
+      "family": "character",
+      "role": "ranged.hurt",
+      "source": "enemies/ranged_hurt.png",
+      "destination": "assets/enemies/ranged_hurt.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "boss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "AI-generated: one real NVIDIA black-forest-labs/flux.1-dev still (prompt/seed recorded in test-packs/metroforge-research-facility/production-report.json), then run through the repo's own real pose-progression sheet builders (generateWalkCycleSheet/generateAttackSheet/generateHurtFlashSheet/generateDeathSheet, packages/assets/src/png.ts) for genuine per-frame articulation derived from that still -- the same mechanism the main AssetPipeline uses for a real sourcePng, not a duplicate-frame or slide/rotate-only fake. QA-approved by an AI-delegated review (this session), NOT the user's own personal visual sign-off.",
+      "animation": [
+        {
+          "id": "hurt",
+          "frameCount": 3,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 8,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "down-forward",
+          "mirrorSafe": true,
+          "gameplayState": "hurt"
+        }
+      ]
+    },
+    {
+      "id": "ranged_death",
+      "family": "character",
+      "role": "ranged.death",
+      "source": "enemies/ranged_death.png",
+      "destination": "assets/enemies/ranged_death.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "boss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "AI-generated: one real NVIDIA black-forest-labs/flux.1-dev still (prompt/seed recorded in test-packs/metroforge-research-facility/production-report.json), then run through the repo's own real pose-progression sheet builders (generateWalkCycleSheet/generateAttackSheet/generateHurtFlashSheet/generateDeathSheet, packages/assets/src/png.ts) for genuine per-frame articulation derived from that still -- the same mechanism the main AssetPipeline uses for a real sourcePng, not a duplicate-frame or slide/rotate-only fake. QA-approved by an AI-delegated review (this session), NOT the user's own personal visual sign-off.",
+      "animation": [
+        {
+          "id": "death",
+          "frameCount": 4,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 6,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "down-forward",
+          "mirrorSafe": true,
+          "gameplayState": "death"
+        }
+      ]
+    },
+    {
+      "id": "heavy_idle",
+      "family": "character",
+      "role": "heavy.idle",
+      "source": "enemies/heavy.png",
+      "destination": "assets/enemies/heavy.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "boss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "AI-generated: one real NVIDIA black-forest-labs/flux.1-dev still (prompt/seed recorded in test-packs/metroforge-research-facility/production-report.json), then run through the repo's own real pose-progression sheet builders (generateWalkCycleSheet/generateAttackSheet/generateHurtFlashSheet/generateDeathSheet, packages/assets/src/png.ts) for genuine per-frame articulation derived from that still -- the same mechanism the main AssetPipeline uses for a real sourcePng, not a duplicate-frame or slide/rotate-only fake. QA-approved by an AI-delegated review (this session), NOT the user's own personal visual sign-off.",
+      "animation": [
+        {
+          "id": "idle",
+          "frameCount": 1,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 1,
+          "loop": true,
+          "origin": "bottom-center",
+          "facingConvention": "down-forward",
+          "mirrorSafe": true,
+          "gameplayState": "idle"
+        }
+      ]
+    },
+    {
+      "id": "heavy_walk",
+      "family": "character",
+      "role": "heavy.walk",
+      "source": "enemies/heavy_walk.png",
+      "destination": "assets/enemies/heavy_walk.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "boss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "AI-generated: one real NVIDIA black-forest-labs/flux.1-dev still (prompt/seed recorded in test-packs/metroforge-research-facility/production-report.json), then run through the repo's own real pose-progression sheet builders (generateWalkCycleSheet/generateAttackSheet/generateHurtFlashSheet/generateDeathSheet, packages/assets/src/png.ts) for genuine per-frame articulation derived from that still -- the same mechanism the main AssetPipeline uses for a real sourcePng, not a duplicate-frame or slide/rotate-only fake. QA-approved by an AI-delegated review (this session), NOT the user's own personal visual sign-off.",
+      "animation": [
+        {
+          "id": "walk",
+          "frameCount": 4,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 8,
+          "loop": true,
+          "origin": "bottom-center",
+          "facingConvention": "down-forward",
+          "mirrorSafe": true,
+          "gameplayState": "walk"
+        }
+      ]
+    },
+    {
+      "id": "heavy_attack",
+      "family": "character",
+      "role": "heavy.attack",
+      "source": "enemies/heavy_attack.png",
+      "destination": "assets/enemies/heavy_attack.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "boss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "AI-generated: one real NVIDIA black-forest-labs/flux.1-dev still (prompt/seed recorded in test-packs/metroforge-research-facility/production-report.json), then run through the repo's own real pose-progression sheet builders (generateWalkCycleSheet/generateAttackSheet/generateHurtFlashSheet/generateDeathSheet, packages/assets/src/png.ts) for genuine per-frame articulation derived from that still -- the same mechanism the main AssetPipeline uses for a real sourcePng, not a duplicate-frame or slide/rotate-only fake. QA-approved by an AI-delegated review (this session), NOT the user's own personal visual sign-off.",
+      "animation": [
+        {
+          "id": "attack",
+          "frameCount": 4,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 10,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "down-forward",
+          "mirrorSafe": true,
+          "gameplayState": "attack",
+          "eventFrames": {
+            "strike": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "heavy_hurt",
+      "family": "character",
+      "role": "heavy.hurt",
+      "source": "enemies/heavy_hurt.png",
+      "destination": "assets/enemies/heavy_hurt.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "boss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "AI-generated: one real NVIDIA black-forest-labs/flux.1-dev still (prompt/seed recorded in test-packs/metroforge-research-facility/production-report.json), then run through the repo's own real pose-progression sheet builders (generateWalkCycleSheet/generateAttackSheet/generateHurtFlashSheet/generateDeathSheet, packages/assets/src/png.ts) for genuine per-frame articulation derived from that still -- the same mechanism the main AssetPipeline uses for a real sourcePng, not a duplicate-frame or slide/rotate-only fake. QA-approved by an AI-delegated review (this session), NOT the user's own personal visual sign-off.",
+      "animation": [
+        {
+          "id": "hurt",
+          "frameCount": 3,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 8,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "down-forward",
+          "mirrorSafe": true,
+          "gameplayState": "hurt"
+        }
+      ]
+    },
+    {
+      "id": "heavy_death",
+      "family": "character",
+      "role": "heavy.death",
+      "source": "enemies/heavy_death.png",
+      "destination": "assets/enemies/heavy_death.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "boss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "AI-generated: one real NVIDIA black-forest-labs/flux.1-dev still (prompt/seed recorded in test-packs/metroforge-research-facility/production-report.json), then run through the repo's own real pose-progression sheet builders (generateWalkCycleSheet/generateAttackSheet/generateHurtFlashSheet/generateDeathSheet, packages/assets/src/png.ts) for genuine per-frame articulation derived from that still -- the same mechanism the main AssetPipeline uses for a real sourcePng, not a duplicate-frame or slide/rotate-only fake. QA-approved by an AI-delegated review (this session), NOT the user's own personal visual sign-off.",
+      "animation": [
+        {
+          "id": "death",
+          "frameCount": 4,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 6,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "down-forward",
+          "mirrorSafe": true,
+          "gameplayState": "death"
+        }
+      ]
+    },
+    {
+      "id": "boss_idle",
+      "family": "character",
+      "role": "boss.idle",
+      "source": "bosses/boss_final.png",
+      "destination": "assets/bosses/boss_final.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "boss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "AI-generated: one real NVIDIA black-forest-labs/flux.1-dev still (prompt/seed recorded in test-packs/metroforge-research-facility/production-report.json), then run through the repo's own real pose-progression sheet builders (generateWalkCycleSheet/generateAttackSheet/generateHurtFlashSheet/generateDeathSheet, packages/assets/src/png.ts) for genuine per-frame articulation derived from that still -- the same mechanism the main AssetPipeline uses for a real sourcePng, not a duplicate-frame or slide/rotate-only fake. QA-approved by an AI-delegated review (this session), NOT the user's own personal visual sign-off.",
+      "animation": [
+        {
+          "id": "idle",
+          "frameCount": 1,
+          "frameSize": [
+            128,
+            128
+          ],
+          "fps": 1,
+          "loop": true,
+          "origin": "bottom-center",
+          "facingConvention": "down-forward",
+          "mirrorSafe": true,
+          "gameplayState": "idle"
+        }
+      ]
+    },
+    {
+      "id": "boss_walk",
+      "family": "character",
+      "role": "boss.walk",
+      "source": "bosses/boss_final_walk.png",
+      "destination": "assets/bosses/boss_final_walk.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "boss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "AI-generated: one real NVIDIA black-forest-labs/flux.1-dev still (prompt/seed recorded in test-packs/metroforge-research-facility/production-report.json), then run through the repo's own real pose-progression sheet builders (generateWalkCycleSheet/generateAttackSheet/generateHurtFlashSheet/generateDeathSheet, packages/assets/src/png.ts) for genuine per-frame articulation derived from that still -- the same mechanism the main AssetPipeline uses for a real sourcePng, not a duplicate-frame or slide/rotate-only fake. QA-approved by an AI-delegated review (this session), NOT the user's own personal visual sign-off.",
+      "animation": [
+        {
+          "id": "walk",
+          "frameCount": 4,
+          "frameSize": [
+            128,
+            128
+          ],
+          "fps": 6,
+          "loop": true,
+          "origin": "bottom-center",
+          "facingConvention": "down-forward",
+          "mirrorSafe": true,
+          "gameplayState": "walk"
+        }
+      ]
+    },
+    {
+      "id": "boss_attack",
+      "family": "character",
+      "role": "boss.attack",
+      "source": "bosses/boss_final_attack.png",
+      "destination": "assets/bosses/boss_final_attack.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "boss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "AI-generated: one real NVIDIA black-forest-labs/flux.1-dev still (prompt/seed recorded in test-packs/metroforge-research-facility/production-report.json), then run through the repo's own real pose-progression sheet builders (generateWalkCycleSheet/generateAttackSheet/generateHurtFlashSheet/generateDeathSheet, packages/assets/src/png.ts) for genuine per-frame articulation derived from that still -- the same mechanism the main AssetPipeline uses for a real sourcePng, not a duplicate-frame or slide/rotate-only fake. QA-approved by an AI-delegated review (this session), NOT the user's own personal visual sign-off.",
+      "animation": [
+        {
+          "id": "attack",
+          "frameCount": 4,
+          "frameSize": [
+            128,
+            128
+          ],
+          "fps": 8,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "down-forward",
+          "mirrorSafe": true,
+          "gameplayState": "attack",
+          "eventFrames": {
+            "strike": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "boss_hurt",
+      "family": "character",
+      "role": "boss.hurt",
+      "source": "bosses/boss_final_hurt.png",
+      "destination": "assets/bosses/boss_final_hurt.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "boss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "AI-generated: one real NVIDIA black-forest-labs/flux.1-dev still (prompt/seed recorded in test-packs/metroforge-research-facility/production-report.json), then run through the repo's own real pose-progression sheet builders (generateWalkCycleSheet/generateAttackSheet/generateHurtFlashSheet/generateDeathSheet, packages/assets/src/png.ts) for genuine per-frame articulation derived from that still -- the same mechanism the main AssetPipeline uses for a real sourcePng, not a duplicate-frame or slide/rotate-only fake. QA-approved by an AI-delegated review (this session), NOT the user's own personal visual sign-off.",
+      "animation": [
+        {
+          "id": "hurt",
+          "frameCount": 3,
+          "frameSize": [
+            128,
+            128
+          ],
+          "fps": 6,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "down-forward",
+          "mirrorSafe": true,
+          "gameplayState": "hurt"
+        }
+      ]
+    },
+    {
+      "id": "boss_death",
+      "family": "character",
+      "role": "boss.death",
+      "source": "bosses/boss_final_death.png",
+      "destination": "assets/bosses/boss_final_death.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "boss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "AI-generated: one real NVIDIA black-forest-labs/flux.1-dev still (prompt/seed recorded in test-packs/metroforge-research-facility/production-report.json), then run through the repo's own real pose-progression sheet builders (generateWalkCycleSheet/generateAttackSheet/generateHurtFlashSheet/generateDeathSheet, packages/assets/src/png.ts) for genuine per-frame articulation derived from that still -- the same mechanism the main AssetPipeline uses for a real sourcePng, not a duplicate-frame or slide/rotate-only fake. QA-approved by an AI-delegated review (this session), NOT the user's own personal visual sign-off.",
+      "animation": [
+        {
+          "id": "death",
+          "frameCount": 4,
+          "frameSize": [
+            128,
+            128
+          ],
+          "fps": 5,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "down-forward",
+          "mirrorSafe": true,
+          "gameplayState": "death"
+        }
+      ]
+    },
+    {
+      "id": "terrain_tileset",
+      "family": "tile",
+      "role": "terrain.tileset",
+      "source": "tiles/research_facility_tileset.png",
+      "destination": "assets/tilesets/biome_0/source.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "connector"
+      ],
+      "collision": "gameplay-owned",
+      "layer": "far",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "Procedurally constructed: the repo's own shipped procedural generator (packages/assets/src/png.ts / prop-art.ts), the same code path a `--visual-mode procedural-only` generation already uses project-wide -- not an ad hoc placeholder invented for this pack. Not AI-generated."
+    },
+    {
+      "id": "prop_terminal_lantern",
+      "family": "prop",
+      "role": "prop.terminal",
+      "source": "props/terminal_lantern.png",
+      "destination": "assets/props/biome_0/biome_0_prop_0.png",
+      "nativeDimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "connector"
+      ],
+      "collision": "gameplay-owned",
+      "layer": "mid",
+      "maxInstancesPerRoom": 4,
+      "sourceProvenance": "Procedurally constructed: the repo's own shipped procedural generator (packages/assets/src/png.ts / prop-art.ts), the same code path a `--visual-mode procedural-only` generation already uses project-wide -- not an ad hoc placeholder invented for this pack. Not AI-generated."
+    },
+    {
+      "id": "prop_exhaust_pipe",
+      "family": "prop",
+      "role": "prop.pipe",
+      "source": "props/exhaust_pipe.png",
+      "destination": "assets/props/biome_0/biome_0_prop_1.png",
+      "nativeDimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "connector"
+      ],
+      "collision": "gameplay-owned",
+      "layer": "mid",
+      "maxInstancesPerRoom": 6,
+      "sourceProvenance": "Procedurally constructed: the repo's own shipped procedural generator (packages/assets/src/png.ts / prop-art.ts), the same code path a `--visual-mode procedural-only` generation already uses project-wide -- not an ad hoc placeholder invented for this pack. Not AI-generated."
+    },
+    {
+      "id": "prop_support_pillar",
+      "family": "prop",
+      "role": "prop.pillar",
+      "source": "props/support_pillar.png",
+      "destination": "assets/props/biome_0/biome_0_prop_2.png",
+      "nativeDimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "connector"
+      ],
+      "collision": "gameplay-owned",
+      "layer": "mid",
+      "maxInstancesPerRoom": 4,
+      "sourceProvenance": "Procedurally constructed: the repo's own shipped procedural generator (packages/assets/src/png.ts / prop-art.ts), the same code path a `--visual-mode procedural-only` generation already uses project-wide -- not an ad hoc placeholder invented for this pack. Not AI-generated."
+    },
+    {
+      "id": "prop_containment_gear",
+      "family": "prop",
+      "role": "prop.mechanism",
+      "source": "props/containment_gear.png",
+      "destination": "assets/props/biome_0/biome_0_prop_3.png",
+      "nativeDimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "connector"
+      ],
+      "collision": "gameplay-owned",
+      "layer": "mid",
+      "maxInstancesPerRoom": 3,
+      "sourceProvenance": "Procedurally constructed: the repo's own shipped procedural generator (packages/assets/src/png.ts / prop-art.ts), the same code path a `--visual-mode procedural-only` generation already uses project-wide -- not an ad hoc placeholder invented for this pack. Not AI-generated."
+    },
+    {
+      "id": "interactive_checkpoint",
+      "family": "interactive",
+      "role": "interactive.checkpoint",
+      "source": "interactives/checkpoint/interactive_checkpoint.png",
+      "destination": "assets/generated/checkpoint/interactive_checkpoint.png",
+      "nativeDimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "connector"
+      ],
+      "collision": "gameplay-owned",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 3,
+      "sourceProvenance": "Procedurally constructed: the repo's own shipped procedural generator (packages/assets/src/png.ts / prop-art.ts), the same code path a `--visual-mode procedural-only` generation already uses project-wide -- not an ad hoc placeholder invented for this pack. Not AI-generated."
+    },
+    {
+      "id": "interactive_chest_closed",
+      "family": "interactive",
+      "role": "interactive.chest.closed",
+      "source": "interactives/chest/interactive_chest_closed.png",
+      "destination": "assets/generated/chest/interactive_chest_closed.png",
+      "nativeDimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "connector"
+      ],
+      "collision": "gameplay-owned",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 3,
+      "sourceProvenance": "Procedurally constructed: the repo's own shipped procedural generator (packages/assets/src/png.ts / prop-art.ts), the same code path a `--visual-mode procedural-only` generation already uses project-wide -- not an ad hoc placeholder invented for this pack. Not AI-generated."
+    },
+    {
+      "id": "interactive_chest_open",
+      "family": "interactive",
+      "role": "interactive.chest.open",
+      "source": "interactives/chest/interactive_chest_open.png",
+      "destination": "assets/generated/chest/interactive_chest_open.png",
+      "nativeDimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "connector"
+      ],
+      "collision": "gameplay-owned",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 3,
+      "sourceProvenance": "Procedurally constructed: the repo's own shipped procedural generator (packages/assets/src/png.ts / prop-art.ts), the same code path a `--visual-mode procedural-only` generation already uses project-wide -- not an ad hoc placeholder invented for this pack. Not AI-generated."
+    },
+    {
+      "id": "interactive_ability_gate",
+      "family": "interactive",
+      "role": "interactive.gate",
+      "source": "interactives/gate/interactive_ability_gate.png",
+      "destination": "assets/generated/gate/interactive_ability_gate.png",
+      "nativeDimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "connector"
+      ],
+      "collision": "gameplay-owned",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 3,
+      "sourceProvenance": "Procedurally constructed: the repo's own shipped procedural generator (packages/assets/src/png.ts / prop-art.ts), the same code path a `--visual-mode procedural-only` generation already uses project-wide -- not an ad hoc placeholder invented for this pack. Not AI-generated."
+    },
+    {
+      "id": "interactive_ability_pickup",
+      "family": "interactive",
+      "role": "interactive.switch",
+      "source": "interactives/pickup/interactive_ability_pickup.png",
+      "destination": "assets/generated/pickup/interactive_ability_pickup.png",
+      "nativeDimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "connector"
+      ],
+      "collision": "gameplay-owned",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 3,
+      "sourceProvenance": "Procedurally constructed: the repo's own shipped procedural generator (packages/assets/src/png.ts / prop-art.ts), the same code path a `--visual-mode procedural-only` generation already uses project-wide -- not an ad hoc placeholder invented for this pack. Not AI-generated."
+    },
+    {
+      "id": "interactive_portal",
+      "family": "interactive",
+      "role": "interactive.portal",
+      "source": "interactives/portal/interactive_portal.png",
+      "destination": "assets/generated/portal/interactive_portal.png",
+      "nativeDimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "connector"
+      ],
+      "collision": "gameplay-owned",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 3,
+      "sourceProvenance": "Procedurally constructed: the repo's own shipped procedural generator (packages/assets/src/png.ts / prop-art.ts), the same code path a `--visual-mode procedural-only` generation already uses project-wide -- not an ad hoc placeholder invented for this pack. Not AI-generated."
+    },
+    {
+      "id": "interactive_completion",
+      "family": "interactive",
+      "role": "interactive.completion",
+      "source": "interactives/completion/interactive_completion.png",
+      "destination": "assets/generated/completion/interactive_completion.png",
+      "nativeDimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "save",
+        "connector"
+      ],
+      "collision": "gameplay-owned",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "Procedurally constructed: the repo's own shipped procedural generator (packages/assets/src/png.ts / prop-art.ts), the same code path a `--visual-mode procedural-only` generation already uses project-wide -- not an ad hoc placeholder invented for this pack. Not AI-generated."
+    },
+    {
+      "id": "item_health_pickup",
+      "family": "interactive",
+      "role": "item.health",
+      "source": "items/health_pickup.png",
+      "destination": "assets/generated/items/health_pickup.png",
+      "nativeDimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "traversal",
+        "combat",
+        "arena",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 4,
+      "sourceProvenance": "Procedurally constructed: the repo's own shipped procedural generator (packages/assets/src/png.ts / prop-art.ts), the same code path a `--visual-mode procedural-only` generation already uses project-wide -- not an ad hoc placeholder invented for this pack. Not AI-generated."
+    },
+    {
+      "id": "item_progression_pickup",
+      "family": "interactive",
+      "role": "item.progression",
+      "source": "items/progression_pickup.png",
+      "destination": "assets/generated/items/progression_pickup.png",
+      "nativeDimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "traversal",
+        "combat",
+        "arena",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 4,
+      "sourceProvenance": "Procedurally constructed: the repo's own shipped procedural generator (packages/assets/src/png.ts / prop-art.ts), the same code path a `--visual-mode procedural-only` generation already uses project-wide -- not an ad hoc placeholder invented for this pack. Not AI-generated."
+    },
+    {
+      "id": "vfx_ranged_projectile",
+      "family": "vfx",
+      "role": "vfx.projectile",
+      "source": "vfx/ranged_projectile.png",
+      "destination": "assets/vfx/ranged_projectile.png",
+      "nativeDimensions": {
+        "width": 24,
+        "height": 24
+      },
+      "anchor": "free",
+      "allowedArchetypes": [
+        "combat",
+        "arena",
+        "boss"
+      ],
+      "collision": "none",
+      "layer": "foreground",
+      "maxInstancesPerRoom": 8,
+      "sourceProvenance": "Procedurally constructed: the repo's own shipped procedural generator (packages/assets/src/png.ts / prop-art.ts), the same code path a `--visual-mode procedural-only` generation already uses project-wide -- not an ad hoc placeholder invented for this pack. Not AI-generated."
+    },
+    {
+      "id": "vfx_hit_spark",
+      "family": "vfx",
+      "role": "vfx.hit",
+      "source": "vfx/hit_spark.png",
+      "destination": "assets/vfx/hit_spark.png",
+      "nativeDimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "anchor": "free",
+      "allowedArchetypes": [
+        "combat",
+        "arena",
+        "boss"
+      ],
+      "collision": "none",
+      "layer": "foreground",
+      "maxInstancesPerRoom": 8,
+      "sourceProvenance": "Procedurally constructed: the repo's own shipped procedural generator (packages/assets/src/png.ts / prop-art.ts), the same code path a `--visual-mode procedural-only` generation already uses project-wide -- not an ad hoc placeholder invented for this pack. Not AI-generated."
+    },
+    {
+      "id": "vfx_attack_warning",
+      "family": "vfx",
+      "role": "vfx.telegraph",
+      "source": "vfx/attack_warning.png",
+      "destination": "assets/vfx/attack_warning.png",
+      "nativeDimensions": {
+        "width": 96,
+        "height": 96
+      },
+      "anchor": "free",
+      "allowedArchetypes": [
+        "combat",
+        "arena",
+        "boss"
+      ],
+      "collision": "none",
+      "layer": "foreground",
+      "maxInstancesPerRoom": 8,
+      "sourceProvenance": "Procedurally constructed: the repo's own shipped procedural generator (packages/assets/src/png.ts / prop-art.ts), the same code path a `--visual-mode procedural-only` generation already uses project-wide -- not an ad hoc placeholder invented for this pack. Not AI-generated."
+    }
+  ]
+}

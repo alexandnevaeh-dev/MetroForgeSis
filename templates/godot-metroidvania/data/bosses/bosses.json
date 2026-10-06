@@ -1,0 +1,16 @@
+{
+  "bosses": [
+    {
+      "id": "boss_final",
+      "health": 200,
+      "weaknesses": [],
+      "phases": [
+        {
+          "attacks": ["slam", "projectile", "area_burst"],
+          "telegraphDuration": 0.8,
+          "recoveryWindow": 1.2
+        }
+      ]
+    }
+  ]
+}

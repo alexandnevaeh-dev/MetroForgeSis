@@ -1,0 +1,6196 @@
+{
+  "code": 0,
+  "base": "E:\\MetroForgeData\\TestArtifacts\\castle-interior-journey-20261004-v1",
+  "scriptErrors": false,
+  "nativeErrors": [],
+  "warnings": [
+    "WARNING: ObjectDB instances leaked at exit (run with --verbose for details)."
+  ],
+  "scope": "Actual native GPU route, not an assisted hitbox or forced-room suite",
+  "nvidia": true,
+  "journey": {
+    "abilities": [
+      "dash",
+      "double_jump",
+      "wall_slide",
+      "wall_jump",
+      "ground_slam",
+      "air_dash"
+    ],
+    "bossesDefeated": [
+      "boss_000",
+      "boss_001",
+      "boss_002",
+      "boss_final"
+    ],
+    "captures": [
+      {
+        "file": "000_room_000.png",
+        "room": "room_000",
+        "tMs": 1672
+      },
+      {
+        "file": "001_room_001.png",
+        "room": "room_001",
+        "tMs": 10178
+      },
+      {
+        "file": "002_room_002.png",
+        "room": "room_002",
+        "tMs": 28175
+      },
+      {
+        "file": "003_room_003.png",
+        "room": "room_003",
+        "tMs": 34966
+      },
+      {
+        "file": "004_room_004.png",
+        "room": "room_004",
+        "tMs": 42318
+      },
+      {
+        "file": "005_room_005.png",
+        "room": "room_005",
+        "tMs": 48161
+      },
+      {
+        "file": "006_room_006.png",
+        "room": "room_006",
+        "tMs": 53317
+      },
+      {
+        "file": "007_room_008.png",
+        "room": "room_008",
+        "tMs": 57889
+      },
+      {
+        "file": "008_boss_000_death_00.png",
+        "room": "room_008",
+        "tMs": 71341
+      },
+      {
+        "file": "009_boss_000_death_01.png",
+        "room": "room_008",
+        "tMs": 71515
+      },
+      {
+        "file": "010_boss_000_death_02.png",
+        "room": "room_008",
+        "tMs": 71665
+      },
+      {
+        "file": "011_boss_000_death_03.png",
+        "room": "room_008",
+        "tMs": 71810
+      },
+      {
+        "file": "012_boss_000_death_04.png",
+        "room": "room_008",
+        "tMs": 71953
+      },
+      {
+        "file": "013_boss_000_death_05.png",
+        "room": "room_008",
+        "tMs": 72098
+      },
+      {
+        "file": "014_boss_000_death_06.png",
+        "room": "room_008",
+        "tMs": 72241
+      },
+      {
+        "file": "015_boss_000_death_07.png",
+        "room": "room_008",
+        "tMs": 72393
+      },
+      {
+        "file": "016_boss_000_death_08.png",
+        "room": "room_008",
+        "tMs": 72539
+      },
+      {
+        "file": "017_boss_000_death_09.png",
+        "room": "room_008",
+        "tMs": 72694
+      },
+      {
+        "file": "018_boss_000_death_10.png",
+        "room": "room_008",
+        "tMs": 72844
+      },
+      {
+        "file": "019_boss_000_death_11.png",
+        "room": "room_008",
+        "tMs": 73000
+      },
+      {
+        "file": "020_boss_000_death_12.png",
+        "room": "room_008",
+        "tMs": 73155
+      },
+      {
+        "file": "021_boss_000_death_13.png",
+        "room": "room_008",
+        "tMs": 73302
+      },
+      {
+        "file": "022_boss_000_death_14.png",
+        "room": "room_008",
+        "tMs": 73450
+      },
+      {
+        "file": "023_boss_000_death_15.png",
+        "room": "room_008",
+        "tMs": 73599
+      },
+      {
+        "file": "024_boss_000_death_16.png",
+        "room": "room_008",
+        "tMs": 73744
+      },
+      {
+        "file": "025_boss_000_death_17.png",
+        "room": "room_008",
+        "tMs": 73925
+      },
+      {
+        "file": "026_room_009.png",
+        "room": "room_009",
+        "tMs": 76966
+      },
+      {
+        "file": "027_room_010.png",
+        "room": "room_010",
+        "tMs": 83414
+      },
+      {
+        "file": "028_room_011.png",
+        "room": "room_011",
+        "tMs": 88316
+      },
+      {
+        "file": "029_room_012.png",
+        "room": "room_012",
+        "tMs": 93223
+      },
+      {
+        "file": "030_room_013.png",
+        "room": "room_013",
+        "tMs": 97202
+      },
+      {
+        "file": "031_room_014.png",
+        "room": "room_014",
+        "tMs": 101645
+      },
+      {
+        "file": "032_room_015.png",
+        "room": "room_015",
+        "tMs": 107109
+      },
+      {
+        "file": "033_room_016.png",
+        "room": "room_016",
+        "tMs": 110654
+      },
+      {
+        "file": "034_room_018.png",
+        "room": "room_018",
+        "tMs": 115196
+      },
+      {
+        "file": "035_boss_001_death_00.png",
+        "room": "room_018",
+        "tMs": 124817
+      },
+      {
+        "file": "036_boss_001_death_01.png",
+        "room": "room_018",
+        "tMs": 125013
+      },
+      {
+        "file": "037_boss_001_death_02.png",
+        "room": "room_018",
+        "tMs": 125206
+      },
+      {
+        "file": "038_boss_001_death_03.png",
+        "room": "room_018",
+        "tMs": 125359
+      },
+      {
+        "file": "039_boss_001_death_04.png",
+        "room": "room_018",
+        "tMs": 125504
+      },
+      {
+        "file": "040_boss_001_death_05.png",
+        "room": "room_018",
+        "tMs": 125650
+      },
+      {
+        "file": "041_boss_001_death_06.png",
+        "room": "room_018",
+        "tMs": 126065
+      },
+      {
+        "file": "042_boss_001_death_07.png",
+        "room": "room_018",
+        "tMs": 126251
+      },
+      {
+        "file": "043_boss_001_death_08.png",
+        "room": "room_018",
+        "tMs": 126406
+      },
+      {
+        "file": "044_boss_001_death_09.png",
+        "room": "room_018",
+        "tMs": 126560
+      },
+      {
+        "file": "045_boss_001_death_10.png",
+        "room": "room_018",
+        "tMs": 126711
+      },
+      {
+        "file": "046_boss_001_death_11.png",
+        "room": "room_018",
+        "tMs": 126862
+      },
+      {
+        "file": "047_boss_001_death_12.png",
+        "room": "room_018",
+        "tMs": 127016
+      },
+      {
+        "file": "048_boss_001_death_13.png",
+        "room": "room_018",
+        "tMs": 127219
+      },
+      {
+        "file": "049_boss_001_death_14.png",
+        "room": "room_018",
+        "tMs": 127419
+      },
+      {
+        "file": "050_boss_001_death_15.png",
+        "room": "room_018",
+        "tMs": 127551
+      },
+      {
+        "file": "051_boss_001_death_16.png",
+        "room": "room_018",
+        "tMs": 127682
+      },
+      {
+        "file": "052_boss_001_death_17.png",
+        "room": "room_018",
+        "tMs": 127817
+      },
+      {
+        "file": "053_room_019.png",
+        "room": "room_019",
+        "tMs": 130681
+      },
+      {
+        "file": "054_room_020.png",
+        "room": "room_020",
+        "tMs": 137212
+      },
+      {
+        "file": "055_room_021.png",
+        "room": "room_021",
+        "tMs": 142352
+      },
+      {
+        "file": "056_room_022.png",
+        "room": "room_022",
+        "tMs": 148878
+      },
+      {
+        "file": "057_room_023.png",
+        "room": "room_023",
+        "tMs": 152894
+      },
+      {
+        "file": "058_room_024.png",
+        "room": "room_024",
+        "tMs": 157297
+      },
+      {
+        "file": "059_room_025.png",
+        "room": "room_025",
+        "tMs": 162222
+      },
+      {
+        "file": "060_room_026.png",
+        "room": "room_026",
+        "tMs": 167760
+      },
+      {
+        "file": "061_room_028.png",
+        "room": "room_028",
+        "tMs": 171363
+      },
+      {
+        "file": "062_boss_002_death_00.png",
+        "room": "room_028",
+        "tMs": 187849
+      },
+      {
+        "file": "063_boss_002_death_01.png",
+        "room": "room_028",
+        "tMs": 188035
+      },
+      {
+        "file": "064_boss_002_death_02.png",
+        "room": "room_028",
+        "tMs": 188184
+      },
+      {
+        "file": "065_boss_002_death_03.png",
+        "room": "room_028",
+        "tMs": 188331
+      },
+      {
+        "file": "066_boss_002_death_04.png",
+        "room": "room_028",
+        "tMs": 188477
+      },
+      {
+        "file": "067_boss_002_death_05.png",
+        "room": "room_028",
+        "tMs": 188627
+      },
+      {
+        "file": "068_boss_002_death_06.png",
+        "room": "room_028",
+        "tMs": 188769
+      },
+      {
+        "file": "069_boss_002_death_07.png",
+        "room": "room_028",
+        "tMs": 188918
+      },
+      {
+        "file": "070_boss_002_death_08.png",
+        "room": "room_028",
+        "tMs": 189069
+      },
+      {
+        "file": "071_boss_002_death_09.png",
+        "room": "room_028",
+        "tMs": 189220
+      },
+      {
+        "file": "072_boss_002_death_10.png",
+        "room": "room_028",
+        "tMs": 189374
+      },
+      {
+        "file": "073_boss_002_death_11.png",
+        "room": "room_028",
+        "tMs": 189530
+      },
+      {
+        "file": "074_boss_002_death_12.png",
+        "room": "room_028",
+        "tMs": 189682
+      },
+      {
+        "file": "075_boss_002_death_13.png",
+        "room": "room_028",
+        "tMs": 189834
+      },
+      {
+        "file": "076_boss_002_death_14.png",
+        "room": "room_028",
+        "tMs": 189982
+      },
+      {
+        "file": "077_boss_002_death_15.png",
+        "room": "room_028",
+        "tMs": 190125
+      },
+      {
+        "file": "078_boss_002_death_16.png",
+        "room": "room_028",
+        "tMs": 190263
+      },
+      {
+        "file": "079_boss_002_death_17.png",
+        "room": "room_028",
+        "tMs": 190402
+      },
+      {
+        "file": "080_room_029.png",
+        "room": "room_029",
+        "tMs": 193088
+      },
+      {
+        "file": "081_room_030.png",
+        "room": "room_030",
+        "tMs": 196601
+      },
+      {
+        "file": "082_room_031.png",
+        "room": "room_031",
+        "tMs": 198845
+      },
+      {
+        "file": "083_room_032.png",
+        "room": "room_032",
+        "tMs": 203801
+      },
+      {
+        "file": "084_room_033.png",
+        "room": "room_033",
+        "tMs": 207295
+      },
+      {
+        "file": "085_room_034.png",
+        "room": "room_034",
+        "tMs": 211645
+      },
+      {
+        "file": "086_room_035.png",
+        "room": "room_035",
+        "tMs": 216424
+      },
+      {
+        "file": "087_room_036.png",
+        "room": "room_036",
+        "tMs": 220189
+      },
+      {
+        "file": "088_room_038.png",
+        "room": "room_038",
+        "tMs": 223766
+      },
+      {
+        "file": "089_boss_final_death_00.png",
+        "room": "room_038",
+        "tMs": 250322
+      },
+      {
+        "file": "090_boss_final_death_01.png",
+        "room": "room_038",
+        "tMs": 250503
+      },
+      {
+        "file": "091_boss_final_death_02.png",
+        "room": "room_038",
+        "tMs": 250648
+      },
+      {
+        "file": "092_boss_final_death_03.png",
+        "room": "room_038",
+        "tMs": 250792
+      },
+      {
+        "file": "093_boss_final_death_04.png",
+        "room": "room_038",
+        "tMs": 250933
+      },
+      {
+        "file": "094_boss_final_death_05.png",
+        "room": "room_038",
+        "tMs": 251079
+      },
+      {
+        "file": "095_boss_final_death_06.png",
+        "room": "room_038",
+        "tMs": 251224
+      },
+      {
+        "file": "096_boss_final_death_07.png",
+        "room": "room_038",
+        "tMs": 251368
+      },
+      {
+        "file": "097_boss_final_death_08.png",
+        "room": "room_038",
+        "tMs": 251526
+      },
+      {
+        "file": "098_boss_final_death_09.png",
+        "room": "room_038",
+        "tMs": 251688
+      },
+      {
+        "file": "099_boss_final_death_10.png",
+        "room": "room_038",
+        "tMs": 251850
+      },
+      {
+        "file": "100_boss_final_death_11.png",
+        "room": "room_038",
+        "tMs": 252012
+      },
+      {
+        "file": "101_boss_final_death_12.png",
+        "room": "room_038",
+        "tMs": 252176
+      },
+      {
+        "file": "102_boss_final_death_13.png",
+        "room": "room_038",
+        "tMs": 252338
+      },
+      {
+        "file": "103_boss_final_death_14.png",
+        "room": "room_038",
+        "tMs": 252493
+      },
+      {
+        "file": "104_boss_final_death_15.png",
+        "room": "room_038",
+        "tMs": 252654
+      },
+      {
+        "file": "105_boss_final_death_16.png",
+        "room": "room_038",
+        "tMs": 252816
+      },
+      {
+        "file": "106_boss_final_death_17.png",
+        "room": "room_038",
+        "tMs": 252972
+      },
+      {
+        "file": "107_end.png",
+        "room": "room_038",
+        "tMs": 253141
+      }
+    ],
+    "elapsedMs": 253141,
+    "outcome": {
+      "ok": true,
+      "reason": "",
+      "steps": 40,
+      "telemetry": {
+        "abilitiesAcquired": [
+          "dash",
+          "double_jump",
+          "wall_slide",
+          "wall_jump",
+          "ground_slam",
+          "air_dash"
+        ],
+        "abilitiesAfterRun": [
+          "dash",
+          "double_jump",
+          "wall_slide",
+          "wall_jump",
+          "ground_slam",
+          "air_dash"
+        ],
+        "abilityGateAttempts": [
+          "room_029->room_030:ground_slam"
+        ],
+        "attacksPerformed": 100,
+        "avgTransitionMs": 5550.925,
+        "balanceHints": [],
+        "bossDamageEvents": [
+          {
+            "boss": "boss_000",
+            "damage": 10,
+            "remaining": 112,
+            "tMs": 64097
+          },
+          {
+            "boss": "boss_000",
+            "damage": 10,
+            "remaining": 102,
+            "tMs": 64491
+          },
+          {
+            "boss": "boss_000",
+            "damage": 10,
+            "remaining": 92,
+            "tMs": 64894
+          },
+          {
+            "boss": "boss_000",
+            "damage": 10,
+            "remaining": 82,
+            "tMs": 66547
+          },
+          {
+            "boss": "boss_000",
+            "damage": 10,
+            "remaining": 72,
+            "tMs": 66942
+          },
+          {
+            "boss": "boss_000",
+            "damage": 10,
+            "remaining": 62,
+            "tMs": 67345
+          },
+          {
+            "boss": "boss_000",
+            "damage": 10,
+            "remaining": 52,
+            "tMs": 67741
+          },
+          {
+            "boss": "boss_000",
+            "damage": 10,
+            "remaining": 42,
+            "tMs": 68144
+          },
+          {
+            "boss": "boss_000",
+            "damage": 10,
+            "remaining": 32,
+            "tMs": 68547
+          },
+          {
+            "boss": "boss_000",
+            "damage": 10,
+            "remaining": 22,
+            "tMs": 68943
+          },
+          {
+            "boss": "boss_000",
+            "damage": 10,
+            "remaining": 12,
+            "tMs": 69346
+          },
+          {
+            "boss": "boss_000",
+            "damage": 10,
+            "remaining": 2,
+            "tMs": 71845
+          },
+          {
+            "boss": "boss_000",
+            "damage": 10,
+            "remaining": 0,
+            "tMs": 72276
+          },
+          {
+            "boss": "boss_001",
+            "damage": 10,
+            "remaining": 109,
+            "tMs": 121056
+          },
+          {
+            "boss": "boss_001",
+            "damage": 10,
+            "remaining": 99,
+            "tMs": 121459
+          },
+          {
+            "boss": "boss_001",
+            "damage": 10,
+            "remaining": 89,
+            "tMs": 121855
+          },
+          {
+            "boss": "boss_001",
+            "damage": 10,
+            "remaining": 79,
+            "tMs": 122292
+          },
+          {
+            "boss": "boss_001",
+            "damage": 10,
+            "remaining": 69,
+            "tMs": 122660
+          },
+          {
+            "boss": "boss_001",
+            "damage": 10,
+            "remaining": 59,
+            "tMs": 123057
+          },
+          {
+            "boss": "boss_001",
+            "damage": 10,
+            "remaining": 49,
+            "tMs": 123459
+          },
+          {
+            "boss": "boss_001",
+            "damage": 10,
+            "remaining": 39,
+            "tMs": 123854
+          },
+          {
+            "boss": "boss_001",
+            "damage": 10,
+            "remaining": 29,
+            "tMs": 124257
+          },
+          {
+            "boss": "boss_001",
+            "damage": 10,
+            "remaining": 19,
+            "tMs": 124661
+          },
+          {
+            "boss": "boss_001",
+            "damage": 10,
+            "remaining": 9,
+            "tMs": 125056
+          },
+          {
+            "boss": "boss_001",
+            "damage": 10,
+            "remaining": 0,
+            "tMs": 125459
+          },
+          {
+            "boss": "boss_002",
+            "damage": 10,
+            "remaining": 138,
+            "tMs": 181224
+          },
+          {
+            "boss": "boss_002",
+            "damage": 10,
+            "remaining": 128,
+            "tMs": 181620
+          },
+          {
+            "boss": "boss_002",
+            "damage": 10,
+            "remaining": 118,
+            "tMs": 182037
+          },
+          {
+            "boss": "boss_002",
+            "damage": 10,
+            "remaining": 108,
+            "tMs": 182419
+          },
+          {
+            "boss": "boss_002",
+            "damage": 10,
+            "remaining": 98,
+            "tMs": 182821
+          },
+          {
+            "boss": "boss_002",
+            "damage": 10,
+            "remaining": 88,
+            "tMs": 183224
+          },
+          {
+            "boss": "boss_002",
+            "damage": 10,
+            "remaining": 78,
+            "tMs": 183620
+          },
+          {
+            "boss": "boss_002",
+            "damage": 10,
+            "remaining": 68,
+            "tMs": 184037
+          },
+          {
+            "boss": "boss_002",
+            "damage": 10,
+            "remaining": 58,
+            "tMs": 184419
+          },
+          {
+            "boss": "boss_002",
+            "damage": 10,
+            "remaining": 48,
+            "tMs": 186023
+          },
+          {
+            "boss": "boss_002",
+            "damage": 10,
+            "remaining": 38,
+            "tMs": 186419
+          },
+          {
+            "boss": "boss_002",
+            "damage": 10,
+            "remaining": 28,
+            "tMs": 186822
+          },
+          {
+            "boss": "boss_002",
+            "damage": 10,
+            "remaining": 18,
+            "tMs": 187974
+          },
+          {
+            "boss": "boss_002",
+            "damage": 10,
+            "remaining": 8,
+            "tMs": 188370
+          },
+          {
+            "boss": "boss_002",
+            "damage": 10,
+            "remaining": 0,
+            "tMs": 188774
+          },
+          {
+            "boss": "boss_final",
+            "damage": 10,
+            "remaining": 190,
+            "tMs": 229312
+          },
+          {
+            "boss": "boss_final",
+            "damage": 10,
+            "remaining": 180,
+            "tMs": 229715
+          },
+          {
+            "boss": "boss_final",
+            "damage": 10,
+            "remaining": 170,
+            "tMs": 230118
+          },
+          {
+            "boss": "boss_final",
+            "damage": 10,
+            "remaining": 160,
+            "tMs": 231917
+          },
+          {
+            "boss": "boss_final",
+            "damage": 10,
+            "remaining": 150,
+            "tMs": 232313
+          },
+          {
+            "boss": "boss_final",
+            "damage": 10,
+            "remaining": 140,
+            "tMs": 232715
+          },
+          {
+            "boss": "boss_final",
+            "damage": 10,
+            "remaining": 130,
+            "tMs": 236563
+          },
+          {
+            "boss": "boss_final",
+            "damage": 10,
+            "remaining": 120,
+            "tMs": 236965
+          },
+          {
+            "boss": "boss_final",
+            "damage": 10,
+            "remaining": 110,
+            "tMs": 237369
+          },
+          {
+            "boss": "boss_final",
+            "damage": 10,
+            "remaining": 100,
+            "tMs": 239014
+          },
+          {
+            "boss": "boss_final",
+            "damage": 10,
+            "remaining": 90,
+            "tMs": 239431
+          },
+          {
+            "boss": "boss_final",
+            "damage": 10,
+            "remaining": 80,
+            "tMs": 239812
+          },
+          {
+            "boss": "boss_final",
+            "damage": 10,
+            "remaining": 70,
+            "tMs": 240215
+          },
+          {
+            "boss": "boss_final",
+            "damage": 10,
+            "remaining": 60,
+            "tMs": 240618
+          },
+          {
+            "boss": "boss_final",
+            "damage": 10,
+            "remaining": 50,
+            "tMs": 241014
+          },
+          {
+            "boss": "boss_final",
+            "damage": 10,
+            "remaining": 40,
+            "tMs": 241423
+          },
+          {
+            "boss": "boss_final",
+            "damage": 10,
+            "remaining": 30,
+            "tMs": 241841
+          },
+          {
+            "boss": "boss_final",
+            "damage": 10,
+            "remaining": 20,
+            "tMs": 242222
+          },
+          {
+            "boss": "boss_final",
+            "damage": 10,
+            "remaining": 10,
+            "tMs": 246827
+          },
+          {
+            "boss": "boss_final",
+            "damage": 10,
+            "remaining": 0,
+            "tMs": 251257
+          }
+        ],
+        "bossFightMs": 28101,
+        "checkpointActivated": true,
+        "checkpointHealth": 100,
+        "checkpointMaxHealth": 100,
+        "checkpointRoomId": "room_036",
+        "checkpointSpawnPosition": {
+          "x": 146.841247558594,
+          "y": 694.5927734375
+        },
+        "damageEvents": [
+          {
+            "amount": 10,
+            "health_after": 90,
+            "room_id": "room_008",
+            "t_ms": 65061
+          },
+          {
+            "amount": 10,
+            "health_after": 80,
+            "room_id": "room_008",
+            "t_ms": 67575
+          },
+          {
+            "amount": 10,
+            "health_after": 70,
+            "room_id": "room_008",
+            "t_ms": 69680
+          },
+          {
+            "amount": 10,
+            "health_after": 60,
+            "room_id": "room_008",
+            "t_ms": 72130
+          },
+          {
+            "amount": 10,
+            "health_after": 90,
+            "room_id": "room_018",
+            "t_ms": 122160
+          },
+          {
+            "amount": 10,
+            "health_after": 80,
+            "room_id": "room_018",
+            "t_ms": 124376
+          },
+          {
+            "amount": 10,
+            "health_after": 90,
+            "room_id": "room_028",
+            "t_ms": 175110
+          },
+          {
+            "amount": 10,
+            "health_after": 80,
+            "room_id": "room_028",
+            "t_ms": 176488
+          },
+          {
+            "amount": 10,
+            "health_after": 70,
+            "room_id": "room_028",
+            "t_ms": 178488
+          },
+          {
+            "amount": 10,
+            "health_after": 60,
+            "room_id": "room_028",
+            "t_ms": 182440
+          },
+          {
+            "amount": 10,
+            "health_after": 50,
+            "room_id": "room_028",
+            "t_ms": 184537
+          },
+          {
+            "amount": 10,
+            "health_after": 40,
+            "room_id": "room_028",
+            "t_ms": 186975
+          },
+          {
+            "amount": 10,
+            "health_after": 90,
+            "room_id": "room_038",
+            "t_ms": 232702
+          },
+          {
+            "amount": 10,
+            "health_after": 80,
+            "room_id": "room_038",
+            "t_ms": 239952
+          },
+          {
+            "amount": 10,
+            "health_after": 70,
+            "room_id": "room_038",
+            "t_ms": 241529
+          },
+          {
+            "amount": 10,
+            "health_after": 60,
+            "room_id": "room_038",
+            "t_ms": 243507
+          },
+          {
+            "amount": 10,
+            "health_after": 50,
+            "room_id": "room_038",
+            "t_ms": 245125
+          },
+          {
+            "amount": 10,
+            "health_after": 40,
+            "room_id": "room_038",
+            "t_ms": 248090
+          },
+          {
+            "amount": 10,
+            "health_after": 30,
+            "room_id": "room_038",
+            "t_ms": 249660
+          }
+        ],
+        "damageTaken": 190,
+        "deathEvents": [],
+        "elapsedMs": 250139,
+        "failStage": "",
+        "gameComplete": true,
+        "gatesPassed": [
+          "room_009->room_010:dash",
+          "room_019->room_020:double_jump",
+          "room_029->room_030:ground_slam",
+          "room_036->room_038:air_dash"
+        ],
+        "groundSlamEvents": [
+          {
+            "from": "room_029",
+            "saveKey": "room_029:room_030",
+            "tMs": 195778,
+            "to": "room_030"
+          }
+        ],
+        "inputOnly": true,
+        "inputSimulationUsed": true,
+        "personaId": "ability_collector",
+        "pickupsCollected": 6,
+        "playerDeaths": 0,
+        "respawnDestinationRoomId": "",
+        "restoredHealthOnRespawn": -1,
+        "roomsVisited": [
+          "room_000",
+          "room_001",
+          "room_002",
+          "room_003",
+          "room_004",
+          "room_005",
+          "room_006",
+          "room_008",
+          "room_009",
+          "room_008",
+          "room_009",
+          "room_010",
+          "room_011",
+          "room_012",
+          "room_013",
+          "room_014",
+          "room_015",
+          "room_016",
+          "room_018",
+          "room_019",
+          "room_018",
+          "room_019",
+          "room_020",
+          "room_021",
+          "room_022",
+          "room_023",
+          "room_024",
+          "room_025",
+          "room_026",
+          "room_028",
+          "room_029",
+          "room_028",
+          "room_029",
+          "room_030",
+          "room_031",
+          "room_032",
+          "room_033",
+          "room_034",
+          "room_035",
+          "room_036",
+          "room_038"
+        ],
+        "transitionsCompleted": 40,
+        "transitionsPlanned": 40,
+        "victoryBossId": "boss_final",
+        "victoryState": true
+      },
+      "used_input": true
+    },
+    "passed": true,
+    "renderer": "gl_compatibility",
+    "roomStates": [
+      {
+        "bossPresent": false,
+        "defeatedBosses": [],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_000",
+        "tMs": 1240
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_001",
+        "tMs": 9713
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_002",
+        "tMs": 27653
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_003",
+        "tMs": 34496
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_004",
+        "tMs": 41799
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_005",
+        "tMs": 47661
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_006",
+        "tMs": 52751
+      },
+      {
+        "bossPresent": true,
+        "defeatedBosses": [],
+        "exitsOpen": false,
+        "music": "boss",
+        "room": "room_008",
+        "tMs": 57384
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_009",
+        "tMs": 75499
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_008",
+        "tMs": 75940
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_009",
+        "tMs": 76408
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_010",
+        "tMs": 82798
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_011",
+        "tMs": 87792
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_012",
+        "tMs": 92679
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_013",
+        "tMs": 96628
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_014",
+        "tMs": 101094
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_015",
+        "tMs": 106557
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_016",
+        "tMs": 110065
+      },
+      {
+        "bossPresent": true,
+        "defeatedBosses": [
+          "boss_000"
+        ],
+        "exitsOpen": false,
+        "music": "boss",
+        "room": "room_018",
+        "tMs": 114713
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_019",
+        "tMs": 129244
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_018",
+        "tMs": 129677
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_019",
+        "tMs": 130101
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_020",
+        "tMs": 136517
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_021",
+        "tMs": 141836
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_022",
+        "tMs": 148314
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_023",
+        "tMs": 152228
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_024",
+        "tMs": 156719
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_025",
+        "tMs": 161651
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_026",
+        "tMs": 167188
+      },
+      {
+        "bossPresent": true,
+        "defeatedBosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "exitsOpen": false,
+        "music": "boss",
+        "room": "room_028",
+        "tMs": 170846
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_029",
+        "tMs": 191652
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_028",
+        "tMs": 192086
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_029",
+        "tMs": 192512
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_030",
+        "tMs": 195997
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_031",
+        "tMs": 198337
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_032",
+        "tMs": 203273
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_033",
+        "tMs": 206744
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_034",
+        "tMs": 211130
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_035",
+        "tMs": 215894
+      },
+      {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_036",
+        "tMs": 219624
+      },
+      {
+        "bossPresent": true,
+        "defeatedBosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "exitsOpen": false,
+        "music": "boss",
+        "room": "room_038",
+        "tMs": 223263
+      }
+    ],
+    "samples": [
+      {
+        "attacks": 0,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          102.757919311523,
+          685.531677246094
+        ],
+        "room": "room_000",
+        "steps": 0,
+        "tMs": 1243,
+        "velocity": [
+          75,
+          -543.666687011719
+        ]
+      },
+      {
+        "attacks": 0,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          273.92529296875,
+          608.197387695313
+        ],
+        "room": "room_000",
+        "steps": 0,
+        "tMs": 2244,
+        "velocity": [
+          270,
+          16.3333339691162
+        ]
+      },
+      {
+        "attacks": 0,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          494.925201416016,
+          545.490844726563
+        ],
+        "room": "room_000",
+        "steps": 0,
+        "tMs": 3245,
+        "velocity": [
+          220,
+          -118.99991607666
+        ]
+      },
+      {
+        "attacks": 0,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          722.260009765625,
+          573.140808105469
+        ],
+        "room": "room_000",
+        "steps": 0,
+        "tMs": 4252,
+        "velocity": [
+          220,
+          -265.999877929688
+        ]
+      },
+      {
+        "attacks": 0,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          894.925537109375,
+          607.047241210938
+        ],
+        "room": "room_000",
+        "steps": 0,
+        "tMs": 5252,
+        "velocity": [
+          220,
+          163.33332824707
+        ]
+      },
+      {
+        "attacks": 0,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          1114.92565917969,
+          542.924194335938
+        ],
+        "room": "room_000",
+        "steps": 0,
+        "tMs": 6252,
+        "velocity": [
+          220,
+          77.0000915527344
+        ]
+      },
+      {
+        "attacks": 0,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          1334.92370605469,
+          543.779724121094
+        ],
+        "room": "room_000",
+        "steps": 0,
+        "tMs": 7252,
+        "velocity": [
+          220,
+          -102.666580200195
+        ]
+      },
+      {
+        "attacks": 0,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          1507.59130859375,
+          649.24169921875
+        ],
+        "room": "room_000",
+        "steps": 0,
+        "tMs": 8252,
+        "velocity": [
+          220,
+          326.666687011719
+        ]
+      },
+      {
+        "attacks": 0,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          1727.58935546875,
+          570.729797363281
+        ],
+        "room": "room_000",
+        "steps": 0,
+        "tMs": 9252,
+        "velocity": [
+          220,
+          240.333404541016
+        ]
+      },
+      {
+        "attacks": 1,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          243.591400146484,
+          1310.92626953125
+        ],
+        "room": "room_001",
+        "steps": 1,
+        "tMs": 10259,
+        "velocity": [
+          220,
+          77.0000915527344
+        ]
+      },
+      {
+        "attacks": 1,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          524.008178710938,
+          1411.79711914063
+        ],
+        "room": "room_001",
+        "steps": 1,
+        "tMs": 11259,
+        "velocity": [
+          220,
+          310.333343505859
+        ]
+      },
+      {
+        "attacks": 1,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          744.010131835938,
+          1444.74084472656
+        ],
+        "room": "room_001",
+        "steps": 1,
+        "tMs": 12260,
+        "velocity": [
+          220,
+          -527.333374023438
+        ]
+      },
+      {
+        "attacks": 1,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          964.011352539063,
+          1415.57446289063
+        ],
+        "room": "room_001",
+        "steps": 1,
+        "tMs": 13265,
+        "velocity": [
+          220,
+          452.666870117188
+        ]
+      },
+      {
+        "attacks": 1,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          1184.01025390625,
+          1347.5576171875
+        ],
+        "room": "room_001",
+        "steps": 1,
+        "tMs": 14265,
+        "velocity": [
+          220,
+          273.000091552734
+        ]
+      },
+      {
+        "attacks": 1,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          1404.00830078125,
+          1312.47998046875
+        ],
+        "room": "room_001",
+        "steps": 1,
+        "tMs": 15265,
+        "velocity": [
+          220,
+          93.3334274291992
+        ]
+      },
+      {
+        "attacks": 1,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          1624.00634765625,
+          1310.34094238281
+        ],
+        "room": "room_001",
+        "steps": 1,
+        "tMs": 16265,
+        "velocity": [
+          220,
+          -86.3332443237305
+        ]
+      },
+      {
+        "attacks": 1,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          1844.00439453125,
+          1341.14111328125
+        ],
+        "room": "room_001",
+        "steps": 1,
+        "tMs": 17266,
+        "velocity": [
+          220,
+          -265.999877929688
+        ]
+      },
+      {
+        "attacks": 1,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          2064.0029296875,
+          1404.8798828125
+        ],
+        "room": "room_001",
+        "steps": 1,
+        "tMs": 18273,
+        "velocity": [
+          220,
+          -445.666656494141
+        ]
+      },
+      {
+        "attacks": 1,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          2287.67456054688,
+          1466.5576171875
+        ],
+        "room": "room_001",
+        "steps": 1,
+        "tMs": 19280,
+        "velocity": [
+          220,
+          550.666870117188
+        ]
+      },
+      {
+        "attacks": 2,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          2507.6796875,
+          1380.57446289063
+        ],
+        "room": "room_001",
+        "steps": 1,
+        "tMs": 20280,
+        "velocity": [
+          220,
+          371.000152587891
+        ]
+      },
+      {
+        "attacks": 2,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          2727.68481445313,
+          1327.52978515625
+        ],
+        "room": "room_001",
+        "steps": 1,
+        "tMs": 21280,
+        "velocity": [
+          220,
+          191.333419799805
+        ]
+      },
+      {
+        "attacks": 2,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          2947.68994140625,
+          1307.42443847656
+        ],
+        "room": "room_001",
+        "steps": 1,
+        "tMs": 22280,
+        "velocity": [
+          220,
+          11.6667566299438
+        ]
+      },
+      {
+        "attacks": 2,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          3167.69506835938,
+          1320.25756835938
+        ],
+        "room": "room_001",
+        "steps": 1,
+        "tMs": 23280,
+        "velocity": [
+          220,
+          -167.999908447266
+        ]
+      },
+      {
+        "attacks": 2,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          3387.7001953125,
+          1366.03002929688
+        ],
+        "room": "room_001",
+        "steps": 1,
+        "tMs": 24280,
+        "velocity": [
+          220,
+          -347.666595458984
+        ]
+      },
+      {
+        "attacks": 2,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          3607.70532226563,
+          1444.74084472656
+        ],
+        "room": "room_001",
+        "steps": 1,
+        "tMs": 25280,
+        "velocity": [
+          220,
+          -527.333374023438
+        ]
+      },
+      {
+        "attacks": 2,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          3827.71020507813,
+          1415.57446289063
+        ],
+        "room": "room_001",
+        "steps": 1,
+        "tMs": 26280,
+        "velocity": [
+          220,
+          452.666870117188
+        ]
+      },
+      {
+        "attacks": 2,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          4046.21533203125,
+          1347.5576171875
+        ],
+        "room": "room_001",
+        "steps": 1,
+        "tMs": 27280,
+        "velocity": [
+          175,
+          273.000091552734
+        ]
+      },
+      {
+        "attacks": 2,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          250.924743652344,
+          2082.30908203125
+        ],
+        "room": "room_002",
+        "steps": 2,
+        "tMs": 28280,
+        "velocity": [
+          220,
+          109.666763305664
+        ]
+      },
+      {
+        "attacks": 2,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          448.509796142578,
+          2224.8916015625
+        ],
+        "room": "room_002",
+        "steps": 2,
+        "tMs": 29287,
+        "velocity": [
+          220,
+          32.6666679382324
+        ]
+      },
+      {
+        "attacks": 4,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          662.277954101563,
+          2233.72436523438
+        ],
+        "room": "room_002",
+        "steps": 2,
+        "tMs": 30287,
+        "velocity": [
+          220,
+          277.666656494141
+        ]
+      },
+      {
+        "attacks": 4,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          882.279846191406,
+          2077.17407226563
+        ],
+        "room": "room_002",
+        "steps": 2,
+        "tMs": 31287,
+        "velocity": [
+          220,
+          -69.9999084472656
+        ]
+      },
+      {
+        "attacks": 4,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          1102.2802734375,
+          2104.98022460938
+        ],
+        "room": "room_002",
+        "steps": 2,
+        "tMs": 32287,
+        "velocity": [
+          220,
+          -249.666549682617
+        ]
+      },
+      {
+        "attacks": 4,
+        "bosses": [],
+        "health": 85,
+        "player": [
+          1314.84838867188,
+          2179.705078125
+        ],
+        "room": "room_002",
+        "steps": 2,
+        "tMs": 33293,
+        "velocity": [
+          220,
+          -443.216644287109
+        ]
+      },
+      {
+        "attacks": 4,
+        "bosses": [],
+        "health": 85,
+        "player": [
+          112.250007629395,
+          959.925231933594
+        ],
+        "room": "room_003",
+        "steps": 2,
+        "tMs": 34504,
+        "velocity": [
+          15,
+          0
+        ]
+      },
+      {
+        "attacks": 4,
+        "bosses": [],
+        "health": 85,
+        "player": [
+          349.416748046875,
+          945.379760742188
+        ],
+        "room": "room_003",
+        "steps": 3,
+        "tMs": 35508,
+        "velocity": [
+          220,
+          534.333557128906
+        ]
+      },
+      {
+        "attacks": 4,
+        "bosses": [],
+        "health": 85,
+        "player": [
+          569.417053222656,
+          862.390930175781
+        ],
+        "room": "room_003",
+        "steps": 3,
+        "tMs": 36510,
+        "velocity": [
+          220,
+          354.666809082031
+        ]
+      },
+      {
+        "attacks": 4,
+        "bosses": [],
+        "health": 85,
+        "player": [
+          796.752014160156,
+          818.990905761719
+        ],
+        "room": "room_003",
+        "steps": 3,
+        "tMs": 37516,
+        "velocity": [
+          220,
+          207.666748046875
+        ]
+      },
+      {
+        "attacks": 4,
+        "bosses": [],
+        "health": 85,
+        "player": [
+          929.25146484375,
+          959.925231933594
+        ],
+        "room": "room_003",
+        "steps": 3,
+        "tMs": 38522,
+        "velocity": [
+          -220,
+          0
+        ]
+      },
+      {
+        "attacks": 4,
+        "bosses": [],
+        "health": 85,
+        "player": [
+          1253.50122070313,
+          796.279846191406
+        ],
+        "room": "room_003",
+        "steps": 3,
+        "tMs": 39523,
+        "velocity": [
+          220,
+          -53.666576385498
+        ]
+      },
+      {
+        "attacks": 4,
+        "bosses": [],
+        "health": 85,
+        "player": [
+          1640.75183105469,
+          941.529907226563
+        ],
+        "room": "room_003",
+        "steps": 3,
+        "tMs": 40529,
+        "velocity": [
+          305,
+          -543.666687011719
+        ]
+      },
+      {
+        "attacks": 4,
+        "bosses": [],
+        "health": 85,
+        "player": [
+          1726.67517089844,
+          896.029663085938
+        ],
+        "room": "room_003",
+        "steps": 3,
+        "tMs": 41530,
+        "velocity": [
+          120,
+          436.333526611328
+        ]
+      },
+      {
+        "attacks": 5,
+        "bosses": [],
+        "health": 85,
+        "player": [
+          467.424957275391,
+          1308.27990722656
+        ],
+        "room": "room_004",
+        "steps": 4,
+        "tMs": 42530,
+        "velocity": [
+          220,
+          -53.666576385498
+        ]
+      },
+      {
+        "attacks": 5,
+        "bosses": [],
+        "health": 85,
+        "player": [
+          849.592407226563,
+          1462.59106445313
+        ],
+        "room": "room_004",
+        "steps": 4,
+        "tMs": 43530,
+        "velocity": [
+          320,
+          -560
+        ]
+      },
+      {
+        "attacks": 5,
+        "bosses": [],
+        "health": 85,
+        "player": [
+          1074.34252929688,
+          1400.7578125
+        ],
+        "room": "room_004",
+        "steps": 4,
+        "tMs": 44536,
+        "velocity": [
+          220,
+          420.000183105469
+        ]
+      },
+      {
+        "attacks": 7,
+        "bosses": [],
+        "health": 85,
+        "player": [
+          1461.26025390625,
+          1310.34094238281
+        ],
+        "room": "room_004",
+        "steps": 4,
+        "tMs": 45536,
+        "velocity": [
+          220,
+          -86.3332443237305
+        ]
+      },
+      {
+        "attacks": 8,
+        "bosses": [],
+        "health": 85,
+        "player": [
+          1693.2578125,
+          1219.74731445313
+        ],
+        "room": "room_004",
+        "steps": 4,
+        "tMs": 46538,
+        "velocity": [
+          220,
+          -135.333251953125
+        ]
+      },
+      {
+        "attacks": 8,
+        "bosses": [],
+        "health": 85,
+        "player": [
+          112,
+          2240
+        ],
+        "room": "room_005",
+        "steps": 4,
+        "tMs": 47674,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 10,
+        "bosses": [],
+        "health": 85,
+        "player": [
+          518.758056640625,
+          2092.34106445313
+        ],
+        "room": "room_005",
+        "steps": 5,
+        "tMs": 48676,
+        "velocity": [
+          220,
+          175.000091552734
+        ]
+      },
+      {
+        "attacks": 10,
+        "bosses": [],
+        "health": 85,
+        "player": [
+          703.925048828125,
+          1973.99755859375
+        ],
+        "room": "room_005",
+        "steps": 5,
+        "tMs": 49676,
+        "velocity": [
+          230,
+          -429.333312988281
+        ]
+      },
+      {
+        "attacks": 10,
+        "bosses": [],
+        "health": 85,
+        "player": [
+          923.92626953125,
+          2042.83081054688
+        ],
+        "room": "room_005",
+        "steps": 5,
+        "tMs": 50682,
+        "velocity": [
+          220,
+          550.666870117188
+        ]
+      },
+      {
+        "attacks": 10,
+        "bosses": [],
+        "health": 85,
+        "player": [
+          1310.84484863281,
+          2104.98046875
+        ],
+        "room": "room_005",
+        "steps": 5,
+        "tMs": 51682,
+        "velocity": [
+          220,
+          -249.666549682617
+        ]
+      },
+      {
+        "attacks": 10,
+        "bosses": [],
+        "health": 85,
+        "player": [
+          112.250007629395,
+          703.925231933594
+        ],
+        "room": "room_006",
+        "steps": 5,
+        "tMs": 52763,
+        "velocity": [
+          15,
+          0
+        ]
+      },
+      {
+        "attacks": 10,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          512.167114257813,
+          550.779907226563
+        ],
+        "room": "room_006",
+        "steps": 6,
+        "tMs": 53765,
+        "velocity": [
+          220,
+          142.333435058594
+        ]
+      },
+      {
+        "attacks": 10,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          899.084716796875,
+          603.824340820313
+        ],
+        "room": "room_006",
+        "steps": 6,
+        "tMs": 54765,
+        "velocity": [
+          220,
+          -363.999938964844
+        ]
+      },
+      {
+        "attacks": 10,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          1132.0849609375,
+          694.5908203125
+        ],
+        "room": "room_006",
+        "steps": 6,
+        "tMs": 55765,
+        "velocity": [
+          500,
+          0
+        ]
+      },
+      {
+        "attacks": 10,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          1491.17529296875,
+          546.307861328125
+        ],
+        "room": "room_006",
+        "steps": 6,
+        "tMs": 56766,
+        "velocity": [
+          -30,
+          109.666763305664
+        ]
+      },
+      {
+        "attacks": 10,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          214.000122070313,
+          960
+        ],
+        "room": "room_008",
+        "steps": 7,
+        "tMs": 57889,
+        "velocity": [
+          220,
+          0
+        ]
+      },
+      {
+        "attacks": 10,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          450.518005371094,
+          924.230041503906
+        ],
+        "room": "room_008",
+        "steps": 7,
+        "tMs": 58890,
+        "velocity": [
+          36.6666603088379,
+          -511.000030517578
+        ]
+      },
+      {
+        "attacks": 10,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          498.767944335938,
+          911.396789550781
+        ],
+        "room": "room_008",
+        "steps": 7,
+        "tMs": 59890,
+        "velocity": [
+          220,
+          469.000213623047
+        ]
+      },
+      {
+        "attacks": 10,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          698.602478027344,
+          900.307434082031
+        ],
+        "room": "room_008",
+        "steps": 7,
+        "tMs": 60890,
+        "velocity": [
+          0,
+          -462
+        ]
+      },
+      {
+        "attacks": 10,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          759.685913085938,
+          936.474243164063
+        ],
+        "room": "room_008",
+        "steps": 7,
+        "tMs": 61890,
+        "velocity": [
+          0,
+          518.000244140625
+        ]
+      },
+      {
+        "attacks": 10,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          960.936950683594,
+          959.925231933594
+        ],
+        "room": "room_008",
+        "steps": 7,
+        "tMs": 62890,
+        "velocity": [
+          220,
+          0
+        ]
+      },
+      {
+        "attacks": 13,
+        "bosses": [],
+        "health": 100,
+        "player": [
+          984.912414550781,
+          959.925231933594
+        ],
+        "room": "room_008",
+        "steps": 7,
+        "tMs": 63890,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 13,
+        "bosses": [],
+        "health": 90,
+        "player": [
+          862.357055664063,
+          959.925231933594
+        ],
+        "room": "room_008",
+        "steps": 7,
+        "tMs": 64890,
+        "velocity": [
+          220,
+          0
+        ]
+      },
+      {
+        "attacks": 15,
+        "bosses": [],
+        "health": 90,
+        "player": [
+          985.333068847656,
+          959.925231933594
+        ],
+        "room": "room_008",
+        "steps": 7,
+        "tMs": 65890,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 17,
+        "bosses": [],
+        "health": 80,
+        "player": [
+          981.341003417969,
+          959.934326171875
+        ],
+        "room": "room_008",
+        "steps": 7,
+        "tMs": 66890,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 20,
+        "bosses": [],
+        "health": 80,
+        "player": [
+          981.341003417969,
+          959.934326171875
+        ],
+        "room": "room_008",
+        "steps": 7,
+        "tMs": 67891,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 22,
+        "bosses": [],
+        "health": 70,
+        "player": [
+          773.946533203125,
+          915.979675292969
+        ],
+        "room": "room_008",
+        "steps": 7,
+        "tMs": 68898,
+        "velocity": [
+          -280.000061035156,
+          -494.666687011719
+        ]
+      },
+      {
+        "attacks": 22,
+        "bosses": [],
+        "health": 70,
+        "player": [
+          859.196411132813,
+          919.479736328125
+        ],
+        "room": "room_008",
+        "steps": 7,
+        "tMs": 69904,
+        "velocity": [
+          220,
+          485.333557128906
+        ]
+      },
+      {
+        "attacks": 23,
+        "bosses": [],
+        "health": 70,
+        "player": [
+          986.506713867188,
+          959.925170898438
+        ],
+        "room": "room_008",
+        "steps": 7,
+        "tMs": 70904,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 24,
+        "bosses": [],
+        "health": 60,
+        "player": [
+          982.5146484375,
+          959.933959960938
+        ],
+        "room": "room_008",
+        "steps": 7,
+        "tMs": 71953,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 24,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          1245.26684570313,
+          900.307678222656
+        ],
+        "room": "room_008",
+        "steps": 7,
+        "tMs": 73000,
+        "velocity": [
+          230,
+          -462
+        ]
+      },
+      {
+        "attacks": 24,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          1516.93151855469,
+          950.5908203125
+        ],
+        "room": "room_008",
+        "steps": 7,
+        "tMs": 74004,
+        "velocity": [
+          500,
+          0
+        ]
+      },
+      {
+        "attacks": 24,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          1881.51513671875,
+          806.779907226563
+        ],
+        "room": "room_008",
+        "steps": 7,
+        "tMs": 75010,
+        "velocity": [
+          220,
+          142.333435058594
+        ]
+      },
+      {
+        "attacks": 24,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          1943.5,
+          960
+        ],
+        "room": "room_008",
+        "steps": 9,
+        "tMs": 76029,
+        "velocity": [
+          150,
+          0
+        ]
+      },
+      {
+        "attacks": 24,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          430.758392333984,
+          817.474304199219
+        ],
+        "room": "room_009",
+        "steps": 10,
+        "tMs": 77030,
+        "velocity": [
+          220,
+          -216.999893188477
+        ]
+      },
+      {
+        "attacks": 24,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          780.758666992188,
+          950.5908203125
+        ],
+        "room": "room_009",
+        "steps": 10,
+        "tMs": 78031,
+        "velocity": [
+          500,
+          0
+        ]
+      },
+      {
+        "attacks": 24,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          998.175720214844,
+          831.007629394531
+        ],
+        "room": "room_009",
+        "steps": 10,
+        "tMs": 79031,
+        "velocity": [
+          220,
+          256.666748046875
+        ]
+      },
+      {
+        "attacks": 24,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          1377.67602539063,
+          956.307434082031
+        ],
+        "room": "room_009",
+        "steps": 10,
+        "tMs": 80037,
+        "velocity": [
+          410,
+          98.0000076293945
+        ]
+      },
+      {
+        "attacks": 24,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          1611.84155273438,
+          862.39111328125
+        ],
+        "room": "room_009",
+        "steps": 10,
+        "tMs": 81037,
+        "velocity": [
+          220,
+          354.666809082031
+        ]
+      },
+      {
+        "attacks": 24,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          1998.00927734375,
+          805.729919433594
+        ],
+        "room": "room_009",
+        "steps": 10,
+        "tMs": 82037,
+        "velocity": [
+          190,
+          -151.666580200195
+        ]
+      },
+      {
+        "attacks": 24,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          318.091247558594,
+          698.676025390625
+        ],
+        "room": "room_010",
+        "steps": 11,
+        "tMs": 83039,
+        "velocity": [
+          425,
+          81.6666717529297
+        ]
+      },
+      {
+        "attacks": 24,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          551.758361816406,
+          594.841064453125
+        ],
+        "room": "room_010",
+        "steps": 11,
+        "tMs": 84039,
+        "velocity": [
+          220,
+          322.000122070313
+        ]
+      },
+      {
+        "attacks": 24,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          938.676025390625,
+          601.875183105469
+        ],
+        "room": "room_010",
+        "steps": 11,
+        "tMs": 85039,
+        "velocity": [
+          220,
+          130.66667175293
+        ]
+      },
+      {
+        "attacks": 24,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          1303.67529296875,
+          577.574279785156
+        ],
+        "room": "room_010",
+        "steps": 11,
+        "tMs": 86039,
+        "velocity": [
+          75,
+          -282.333221435547
+        ]
+      },
+      {
+        "attacks": 24,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          1467.25842285156,
+          604.325012207031
+        ],
+        "room": "room_010",
+        "steps": 11,
+        "tMs": 87039,
+        "velocity": [
+          220,
+          147
+        ]
+      },
+      {
+        "attacks": 25,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          354.091827392578,
+          1456.07482910156
+        ],
+        "room": "room_011",
+        "steps": 12,
+        "tMs": 88043,
+        "velocity": [
+          305,
+          0
+        ]
+      },
+      {
+        "attacks": 25,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          741.809326171875,
+          1371.82446289063
+        ],
+        "room": "room_011",
+        "steps": 12,
+        "tMs": 89049,
+        "velocity": [
+          220,
+          -363.999938964844
+        ]
+      },
+      {
+        "attacks": 26,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          955.577087402344,
+          1471.92517089844
+        ],
+        "room": "room_011",
+        "steps": 12,
+        "tMs": 90049,
+        "velocity": [
+          220,
+          0
+        ]
+      },
+      {
+        "attacks": 26,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          1342.49426269531,
+          1310.92443847656
+        ],
+        "room": "room_011",
+        "steps": 12,
+        "tMs": 91054,
+        "velocity": [
+          220,
+          77.0000915527344
+        ]
+      },
+      {
+        "attacks": 28,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          1729.41198730469,
+          1463.69689941406
+        ],
+        "room": "room_011",
+        "steps": 12,
+        "tMs": 92054,
+        "velocity": [
+          220,
+          114.333343505859
+        ]
+      },
+      {
+        "attacks": 28,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          371.925109863281,
+          2226.79711914063
+        ],
+        "room": "room_012",
+        "steps": 13,
+        "tMs": 93060,
+        "velocity": [
+          245,
+          65.3333358764648
+        ]
+      },
+      {
+        "attacks": 28,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          762.676086425781,
+          2109.1416015625
+        ],
+        "room": "room_012",
+        "steps": 13,
+        "tMs": 94065,
+        "velocity": [
+          220,
+          -265.999877929688
+        ]
+      },
+      {
+        "attacks": 28,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          1073.67761230469,
+          2230.5908203125
+        ],
+        "room": "room_012",
+        "steps": 13,
+        "tMs": 95065,
+        "velocity": [
+          500,
+          0
+        ]
+      },
+      {
+        "attacks": 28,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          1369.59387207031,
+          2098.9912109375
+        ],
+        "room": "room_012",
+        "steps": 13,
+        "tMs": 96065,
+        "velocity": [
+          220,
+          207.666748046875
+        ]
+      },
+      {
+        "attacks": 28,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          381.536193847656,
+          878.840881347656
+        ],
+        "room": "room_013",
+        "steps": 14,
+        "tMs": 97075,
+        "velocity": [
+          220,
+          -412.999969482422
+        ]
+      },
+      {
+        "attacks": 28,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          601.536315917969,
+          959.925231933594
+        ],
+        "room": "room_013",
+        "steps": 14,
+        "tMs": 98080,
+        "velocity": [
+          220,
+          0
+        ]
+      },
+      {
+        "attacks": 28,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          1118.45483398438,
+          950.5908203125
+        ],
+        "room": "room_013",
+        "steps": 14,
+        "tMs": 99086,
+        "velocity": [
+          500,
+          0
+        ]
+      },
+      {
+        "attacks": 28,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          1375.37084960938,
+          831.007751464844
+        ],
+        "room": "room_013",
+        "steps": 14,
+        "tMs": 100086,
+        "velocity": [
+          220,
+          256.666748046875
+        ]
+      },
+      {
+        "attacks": 28,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          112.25,
+          1471.92529296875
+        ],
+        "room": "room_014",
+        "steps": 14,
+        "tMs": 101103,
+        "velocity": [
+          15,
+          0
+        ]
+      },
+      {
+        "attacks": 30,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          662.851257324219,
+          1466.67419433594
+        ],
+        "room": "room_014",
+        "steps": 15,
+        "tMs": 102106,
+        "velocity": [
+          425,
+          81.6666717529297
+        ]
+      },
+      {
+        "attacks": 30,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          903.852661132813,
+          1374.39111328125
+        ],
+        "room": "room_014",
+        "steps": 15,
+        "tMs": 103112,
+        "velocity": [
+          220,
+          354.666809082031
+        ]
+      },
+      {
+        "attacks": 30,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          1290.77075195313,
+          1317.72973632813
+        ],
+        "room": "room_014",
+        "steps": 15,
+        "tMs": 104113,
+        "velocity": [
+          220,
+          -151.666580200195
+        ]
+      },
+      {
+        "attacks": 31,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          1656.93701171875,
+          1465.31311035156
+        ],
+        "room": "room_014",
+        "steps": 15,
+        "tMs": 105113,
+        "velocity": [
+          440,
+          65.3333358764648
+        ]
+      },
+      {
+        "attacks": 31,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          1897.68603515625,
+          1362.84106445313
+        ],
+        "room": "room_014",
+        "steps": 15,
+        "tMs": 106119,
+        "velocity": [
+          220,
+          322.000122070313
+        ]
+      },
+      {
+        "attacks": 31,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          416.834442138672,
+          2224.8916015625
+        ],
+        "room": "room_015",
+        "steps": 16,
+        "tMs": 107119,
+        "velocity": [
+          220,
+          32.6666679382324
+        ]
+      },
+      {
+        "attacks": 32,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          805.086059570313,
+          2230.5908203125
+        ],
+        "room": "room_015",
+        "steps": 16,
+        "tMs": 108126,
+        "velocity": [
+          500,
+          0
+        ]
+      },
+      {
+        "attacks": 33,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 60,
+        "player": [
+          1179.00146484375,
+          2082.30737304688
+        ],
+        "room": "room_015",
+        "steps": 16,
+        "tMs": 109131,
+        "velocity": [
+          220,
+          109.666763305664
+        ]
+      },
+      {
+        "attacks": 33,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 100,
+        "player": [
+          230.916778564453,
+          694.590698242188
+        ],
+        "room": "room_016",
+        "steps": 17,
+        "tMs": 110136,
+        "velocity": [
+          500,
+          0
+        ]
+      },
+      {
+        "attacks": 33,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 100,
+        "player": [
+          519.50048828125,
+          556.341064453125
+        ],
+        "room": "room_016",
+        "steps": 17,
+        "tMs": 111141,
+        "velocity": [
+          220,
+          175.000091552734
+        ]
+      },
+      {
+        "attacks": 33,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 100,
+        "player": [
+          906.418090820313,
+          592.507690429688
+        ],
+        "room": "room_016",
+        "steps": 17,
+        "tMs": 112141,
+        "velocity": [
+          220,
+          -331.333251953125
+        ]
+      },
+      {
+        "attacks": 33,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 100,
+        "player": [
+          1165.41845703125,
+          694.5908203125
+        ],
+        "room": "room_016",
+        "steps": 17,
+        "tMs": 113141,
+        "velocity": [
+          500,
+          0
+        ]
+      },
+      {
+        "attacks": 33,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 100,
+        "player": [
+          1489.42529296875,
+          549.891296386719
+        ],
+        "room": "room_016",
+        "steps": 17,
+        "tMs": 114141,
+        "velocity": [
+          -60,
+          129
+        ]
+      },
+      {
+        "attacks": 33,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 100,
+        "player": [
+          210.333450317383,
+          960
+        ],
+        "room": "room_018",
+        "steps": 18,
+        "tMs": 115196,
+        "velocity": [
+          220,
+          0
+        ]
+      },
+      {
+        "attacks": 33,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 100,
+        "player": [
+          457.851287841797,
+          950.5966796875
+        ],
+        "room": "room_018",
+        "steps": 18,
+        "tMs": 116198,
+        "velocity": [
+          146.666656494141,
+          -560
+        ]
+      },
+      {
+        "attacks": 33,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 100,
+        "player": [
+          509.767913818359,
+          888.763427734375
+        ],
+        "room": "room_018",
+        "steps": 18,
+        "tMs": 117198,
+        "velocity": [
+          220,
+          420.000183105469
+        ]
+      },
+      {
+        "attacks": 33,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 100,
+        "player": [
+          709.6025390625,
+          900.307434082031
+        ],
+        "room": "room_018",
+        "steps": 18,
+        "tMs": 118198,
+        "velocity": [
+          0,
+          -462
+        ]
+      },
+      {
+        "attacks": 33,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 100,
+        "player": [
+          818.936096191406,
+          936.474182128906
+        ],
+        "room": "room_018",
+        "steps": 18,
+        "tMs": 119198,
+        "velocity": [
+          220,
+          518.000244140625
+        ]
+      },
+      {
+        "attacks": 34,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 100,
+        "player": [
+          985.912353515625,
+          959.925231933594
+        ],
+        "room": "room_018",
+        "steps": 18,
+        "tMs": 120198,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 37,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 90,
+        "player": [
+          981.920227050781,
+          959.928405761719
+        ],
+        "room": "room_018",
+        "steps": 18,
+        "tMs": 121198,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 39,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 90,
+        "player": [
+          981.920227050781,
+          959.928405761719
+        ],
+        "room": "room_018",
+        "steps": 18,
+        "tMs": 122198,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 42,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 90,
+        "player": [
+          981.920227050781,
+          959.928405761719
+        ],
+        "room": "room_018",
+        "steps": 18,
+        "tMs": 123198,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 44,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 80,
+        "player": [
+          977.928100585938,
+          959.924133300781
+        ],
+        "room": "room_018",
+        "steps": 18,
+        "tMs": 124198,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 45,
+        "bosses": [
+          "boss_000"
+        ],
+        "health": 80,
+        "player": [
+          977.928100585938,
+          959.924133300781
+        ],
+        "room": "room_018",
+        "steps": 18,
+        "tMs": 125206,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 45,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          977.928100585938,
+          959.924133300781
+        ],
+        "room": "room_018",
+        "steps": 18,
+        "tMs": 126252,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 45,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          1383.67810058594,
+          812.341064453125
+        ],
+        "room": "room_018",
+        "steps": 18,
+        "tMs": 127261,
+        "velocity": [
+          220,
+          175.000091552734
+        ]
+      },
+      {
+        "attacks": 45,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          1770.59582519531,
+          848.507690429688
+        ],
+        "room": "room_018",
+        "steps": 18,
+        "tMs": 128263,
+        "velocity": [
+          220,
+          -331.333251953125
+        ]
+      },
+      {
+        "attacks": 45,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          110.000007629395,
+          959.925231933594
+        ],
+        "room": "room_019",
+        "steps": 19,
+        "tMs": 129332,
+        "velocity": [
+          -75,
+          0
+        ]
+      },
+      {
+        "attacks": 45,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          324.924591064453,
+          956.309387207031
+        ],
+        "room": "room_019",
+        "steps": 21,
+        "tMs": 130338,
+        "velocity": [
+          410,
+          98.0000076293945
+        ]
+      },
+      {
+        "attacks": 45,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          559.091735839844,
+          862.39111328125
+        ],
+        "room": "room_019",
+        "steps": 21,
+        "tMs": 131339,
+        "velocity": [
+          220,
+          354.666809082031
+        ]
+      },
+      {
+        "attacks": 45,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          906.675231933594,
+          805.729797363281
+        ],
+        "room": "room_019",
+        "steps": 21,
+        "tMs": 132339,
+        "velocity": [
+          195,
+          -151.666580200195
+        ]
+      },
+      {
+        "attacks": 45,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          1136.9248046875,
+          923.208374023438
+        ],
+        "room": "room_019",
+        "steps": 21,
+        "tMs": 133339,
+        "velocity": [
+          220,
+          375.666717529297
+        ]
+      },
+      {
+        "attacks": 45,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          1523.84252929688,
+          795.657653808594
+        ],
+        "room": "room_019",
+        "steps": 21,
+        "tMs": 134339,
+        "velocity": [
+          220,
+          -37.3332443237305
+        ]
+      },
+      {
+        "attacks": 45,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          1907.42651367188,
+          941.529907226563
+        ],
+        "room": "room_019",
+        "steps": 21,
+        "tMs": 135339,
+        "velocity": [
+          305,
+          -543.666687011719
+        ]
+      },
+      {
+        "attacks": 45,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          1990.17529296875,
+          896.02978515625
+        ],
+        "room": "room_019",
+        "steps": 21,
+        "tMs": 136339,
+        "velocity": [
+          165,
+          436.333526611328
+        ]
+      },
+      {
+        "attacks": 45,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          445.425018310547,
+          549.729919433594
+        ],
+        "room": "room_020",
+        "steps": 22,
+        "tMs": 137339,
+        "velocity": [
+          220,
+          -151.666580200195
+        ]
+      },
+      {
+        "attacks": 45,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          811.591918945313,
+          697.31298828125
+        ],
+        "room": "room_020",
+        "steps": 22,
+        "tMs": 138345,
+        "velocity": [
+          440,
+          65.3333358764648
+        ]
+      },
+      {
+        "attacks": 45,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          1156.34411621094,
+          694.5908203125
+        ],
+        "room": "room_020",
+        "steps": 22,
+        "tMs": 139350,
+        "velocity": [
+          500,
+          0
+        ]
+      },
+      {
+        "attacks": 45,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          1395.92529296875,
+          562.196533203125
+        ],
+        "room": "room_020",
+        "steps": 22,
+        "tMs": 140352,
+        "velocity": [
+          0,
+          80
+        ]
+      },
+      {
+        "attacks": 45,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          1511.42456054688,
+          654.958374023438
+        ],
+        "room": "room_020",
+        "steps": 22,
+        "tMs": 141352,
+        "velocity": [
+          220,
+          343.000030517578
+        ]
+      },
+      {
+        "attacks": 45,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          383.091857910156,
+          1397.72436523438
+        ],
+        "room": "room_021",
+        "steps": 23,
+        "tMs": 142353,
+        "velocity": [
+          220,
+          -429.333312988281
+        ]
+      },
+      {
+        "attacks": 46,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          697.425537109375,
+          1462.59094238281
+        ],
+        "room": "room_021",
+        "steps": 23,
+        "tMs": 143360,
+        "velocity": [
+          500,
+          0
+        ]
+      },
+      {
+        "attacks": 46,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          1019.34307861328,
+          1324.34094238281
+        ],
+        "room": "room_021",
+        "steps": 23,
+        "tMs": 144360,
+        "velocity": [
+          220,
+          175.000091552734
+        ]
+      },
+      {
+        "attacks": 47,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          1406.26086425781,
+          1360.5078125
+        ],
+        "room": "room_021",
+        "steps": 23,
+        "tMs": 145360,
+        "velocity": [
+          220,
+          -331.333251953125
+        ]
+      },
+      {
+        "attacks": 48,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          1665.75939941406,
+          1375.92529296875
+        ],
+        "room": "room_021",
+        "steps": 23,
+        "tMs": 146360,
+        "velocity": [
+          380,
+          0
+        ]
+      },
+      {
+        "attacks": 48,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          1957.34289550781,
+          1212.16430664063
+        ],
+        "room": "room_021",
+        "steps": 23,
+        "tMs": 147361,
+        "velocity": [
+          220,
+          28.0000896453857
+        ]
+      },
+      {
+        "attacks": 48,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          196.841201782227,
+          2230.5927734375
+        ],
+        "room": "room_022",
+        "steps": 24,
+        "tMs": 148505,
+        "velocity": [
+          500,
+          0
+        ]
+      },
+      {
+        "attacks": 49,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          715.008605957031,
+          2172.88037109375
+        ],
+        "room": "room_022",
+        "steps": 24,
+        "tMs": 149505,
+        "velocity": [
+          220,
+          -445.666656494141
+        ]
+      },
+      {
+        "attacks": 49,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          938.676513671875,
+          2234.55810546875
+        ],
+        "room": "room_022",
+        "steps": 24,
+        "tMs": 150506,
+        "velocity": [
+          220,
+          550.666870117188
+        ]
+      },
+      {
+        "attacks": 49,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          1325.59362792969,
+          2076.62915039063
+        ],
+        "room": "room_022",
+        "steps": 24,
+        "tMs": 151506,
+        "velocity": [
+          220,
+          44.333423614502
+        ]
+      },
+      {
+        "attacks": 49,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          337.841278076172,
+          959.925231933594
+        ],
+        "room": "room_023",
+        "steps": 25,
+        "tMs": 152512,
+        "velocity": [
+          380,
+          0
+        ]
+      },
+      {
+        "attacks": 49,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          668.597412109375,
+          908.007690429688
+        ],
+        "room": "room_023",
+        "steps": 25,
+        "tMs": 153512,
+        "velocity": [
+          245,
+          -478.333343505859
+        ]
+      },
+      {
+        "attacks": 49,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          984.272033691406,
+          950.591613769531
+        ],
+        "room": "room_023",
+        "steps": 25,
+        "tMs": 154512,
+        "velocity": [
+          30,
+          -560
+        ]
+      },
+      {
+        "attacks": 49,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          1299.69567871094,
+          872.23046875
+        ],
+        "room": "room_023",
+        "steps": 25,
+        "tMs": 155512,
+        "velocity": [
+          180,
+          -396.666625976563
+        ]
+      },
+      {
+        "attacks": 49,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          1696.87268066406,
+          950.591613769531
+        ],
+        "room": "room_023",
+        "steps": 25,
+        "tMs": 156513,
+        "velocity": [
+          500,
+          0
+        ]
+      },
+      {
+        "attacks": 50,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          452.758972167969,
+          1471.92529296875
+        ],
+        "room": "room_024",
+        "steps": 26,
+        "tMs": 157519,
+        "velocity": [
+          220,
+          0
+        ]
+      },
+      {
+        "attacks": 50,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          908.097839355469,
+          1462.59167480469
+        ],
+        "room": "room_024",
+        "steps": 26,
+        "tMs": 158520,
+        "velocity": [
+          500,
+          0
+        ]
+      },
+      {
+        "attacks": 51,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          1273.60522460938,
+          1462.59106445313
+        ],
+        "room": "room_024",
+        "steps": 26,
+        "tMs": 159520,
+        "velocity": [
+          320,
+          -560
+        ]
+      },
+      {
+        "attacks": 51,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          1615.36242675781,
+          1471.04675292969
+        ],
+        "room": "room_024",
+        "steps": 26,
+        "tMs": 160527,
+        "velocity": [
+          220,
+          163.33332824707
+        ]
+      },
+      {
+        "attacks": 51,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          1958.11682128906,
+          1471.97412109375
+        ],
+        "room": "room_024",
+        "steps": 26,
+        "tMs": 161527,
+        "velocity": [
+          220,
+          0
+        ]
+      },
+      {
+        "attacks": 51,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          460.922760009766,
+          950.591613769531
+        ],
+        "room": "room_025",
+        "steps": 27,
+        "tMs": 162527,
+        "velocity": [
+          500,
+          0
+        ]
+      },
+      {
+        "attacks": 51,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          897.76123046875,
+          952.224914550781
+        ],
+        "room": "room_025",
+        "steps": 27,
+        "tMs": 163533,
+        "velocity": [
+          455,
+          49
+        ]
+      },
+      {
+        "attacks": 51,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          1084.92529296875,
+          897.946166992188
+        ],
+        "room": "room_025",
+        "steps": 27,
+        "tMs": 164534,
+        "velocity": [
+          120,
+          -380.333282470703
+        ]
+      },
+      {
+        "attacks": 51,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          1397.35412597656,
+          915.980529785156
+        ],
+        "room": "room_025",
+        "steps": 27,
+        "tMs": 165540,
+        "velocity": [
+          90,
+          -494.666687011719
+        ]
+      },
+      {
+        "attacks": 51,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          1708.27795410156,
+          959.974609375
+        ],
+        "room": "room_025",
+        "steps": 27,
+        "tMs": 166540,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 51,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 100,
+        "player": [
+          372.667449951172,
+          652.007690429688
+        ],
+        "room": "room_026",
+        "steps": 28,
+        "tMs": 167540,
+        "velocity": [
+          245,
+          -478.333343505859
+        ]
+      },
+      {
+        "attacks": 51,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 100,
+        "player": [
+          659.925231933594,
+          703.97412109375
+        ],
+        "room": "room_026",
+        "steps": 28,
+        "tMs": 168548,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 51,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 100,
+        "player": [
+          989.43115234375,
+          646.23046875
+        ],
+        "room": "room_026",
+        "steps": 28,
+        "tMs": 169554,
+        "velocity": [
+          0,
+          900
+        ]
+      },
+      {
+        "attacks": 51,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 100,
+        "player": [
+          1386.60791015625,
+          694.591613769531
+        ],
+        "room": "room_026",
+        "steps": 28,
+        "tMs": 170554,
+        "velocity": [
+          500,
+          0
+        ]
+      },
+      {
+        "attacks": 51,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 100,
+        "player": [
+          285.333404541016,
+          960
+        ],
+        "room": "room_028",
+        "steps": 29,
+        "tMs": 171554,
+        "velocity": [
+          220,
+          0
+        ]
+      },
+      {
+        "attacks": 51,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 100,
+        "player": [
+          453.684783935547,
+          795.430053710938
+        ],
+        "room": "room_028",
+        "steps": 29,
+        "tMs": 172554,
+        "velocity": [
+          0,
+          11.6667566299438
+        ]
+      },
+      {
+        "attacks": 51,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 100,
+        "player": [
+          608.2685546875,
+          959.925231933594
+        ],
+        "room": "room_028",
+        "steps": 29,
+        "tMs": 173554,
+        "velocity": [
+          220,
+          0
+        ]
+      },
+      {
+        "attacks": 51,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 90,
+        "player": [
+          698.077514648438,
+          865.891662597656
+        ],
+        "room": "room_028",
+        "steps": 29,
+        "tMs": 174554,
+        "velocity": [
+          15,
+          -380.333282470703
+        ]
+      },
+      {
+        "attacks": 51,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          853.73681640625,
+          905.734252929688
+        ],
+        "room": "room_028",
+        "steps": 29,
+        "tMs": 175554,
+        "velocity": [
+          -32.0086364746094,
+          69.4808731079102
+        ]
+      },
+      {
+        "attacks": 51,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 80,
+        "player": [
+          713.563537597656,
+          885.723999023438
+        ],
+        "room": "room_028",
+        "steps": 29,
+        "tMs": 176554,
+        "velocity": [
+          15,
+          -429.333312988281
+        ]
+      },
+      {
+        "attacks": 51,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 70,
+        "player": [
+          870.25244140625,
+          882.377319335938
+        ],
+        "room": "room_028",
+        "steps": 29,
+        "tMs": 177561,
+        "velocity": [
+          -7.51509094238281,
+          64.3485870361328
+        ]
+      },
+      {
+        "attacks": 52,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 70,
+        "player": [
+          743.485717773438,
+          900.307373046875
+        ],
+        "room": "room_028",
+        "steps": 29,
+        "tMs": 178561,
+        "velocity": [
+          0,
+          -462
+        ]
+      },
+      {
+        "attacks": 52,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 70,
+        "player": [
+          852.819274902344,
+          936.474182128906
+        ],
+        "room": "room_028",
+        "steps": 29,
+        "tMs": 179562,
+        "velocity": [
+          220,
+          518.000244140625
+        ]
+      },
+      {
+        "attacks": 54,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 70,
+        "player": [
+          986.79541015625,
+          959.925231933594
+        ],
+        "room": "room_028",
+        "steps": 29,
+        "tMs": 180568,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 56,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 60,
+        "player": [
+          982.803344726563,
+          959.929138183594
+        ],
+        "room": "room_028",
+        "steps": 29,
+        "tMs": 181568,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 59,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 60,
+        "player": [
+          982.803344726563,
+          959.929138183594
+        ],
+        "room": "room_028",
+        "steps": 29,
+        "tMs": 182568,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 61,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 50,
+        "player": [
+          890.301818847656,
+          950.591430664063
+        ],
+        "room": "room_028",
+        "steps": 29,
+        "tMs": 183575,
+        "velocity": [
+          -500,
+          0
+        ]
+      },
+      {
+        "attacks": 61,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 50,
+        "player": [
+          907.913513183594,
+          959.925231933594
+        ],
+        "room": "room_028",
+        "steps": 29,
+        "tMs": 184575,
+        "velocity": [
+          220,
+          0
+        ]
+      },
+      {
+        "attacks": 63,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 50,
+        "player": [
+          983.222595214844,
+          959.925231933594
+        ],
+        "room": "room_028",
+        "steps": 29,
+        "tMs": 185576,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 64,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 40,
+        "player": [
+          916.705261230469,
+          959.925170898438
+        ],
+        "room": "room_028",
+        "steps": 29,
+        "tMs": 186581,
+        "velocity": [
+          220,
+          0
+        ]
+      },
+      {
+        "attacks": 67,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 40,
+        "player": [
+          981.014282226563,
+          959.925170898438
+        ],
+        "room": "room_028",
+        "steps": 29,
+        "tMs": 187581,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 67,
+        "bosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "health": 40,
+        "player": [
+          981.014282226563,
+          959.925170898438
+        ],
+        "room": "room_028",
+        "steps": 29,
+        "tMs": 188627,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 67,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          1259.68518066406,
+          941.530517578125
+        ],
+        "room": "room_028",
+        "steps": 29,
+        "tMs": 189682,
+        "velocity": [
+          45,
+          -543.666687011719
+        ]
+      },
+      {
+        "attacks": 67,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          1641.52868652344,
+          950.591613769531
+        ],
+        "room": "room_028",
+        "steps": 29,
+        "tMs": 190685,
+        "velocity": [
+          500,
+          0
+        ]
+      },
+      {
+        "attacks": 67,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          107,
+          960
+        ],
+        "room": "room_029",
+        "steps": 30,
+        "tMs": 191789,
+        "velocity": [
+          -120,
+          0
+        ]
+      },
+      {
+        "attacks": 67,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          337.841278076172,
+          959.925231933594
+        ],
+        "room": "room_029",
+        "steps": 32,
+        "tMs": 192789,
+        "velocity": [
+          380,
+          0
+        ]
+      },
+      {
+        "attacks": 67,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          704.510131835938,
+          933.257690429688
+        ],
+        "room": "room_029",
+        "steps": 32,
+        "tMs": 193796,
+        "velocity": [
+          0,
+          900
+        ]
+      },
+      {
+        "attacks": 67,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          1017.90032958984,
+          843.552734375
+        ],
+        "room": "room_029",
+        "steps": 32,
+        "tMs": 194802,
+        "velocity": [
+          0,
+          -314.999908447266
+        ]
+      },
+      {
+        "attacks": 67,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          1017.90032958984,
+          1026.46960449219
+        ],
+        "room": "room_029",
+        "steps": 32,
+        "tMs": 195802,
+        "velocity": [
+          0,
+          650
+        ]
+      },
+      {
+        "attacks": 67,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          1272.50329589844,
+          644.307678222656
+        ],
+        "room": "room_030",
+        "steps": 33,
+        "tMs": 196804,
+        "velocity": [
+          230,
+          -462
+        ]
+      },
+      {
+        "attacks": 67,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          1585.09631347656,
+          685.530517578125
+        ],
+        "room": "room_030",
+        "steps": 33,
+        "tMs": 197805,
+        "velocity": [
+          45,
+          -543.666687011719
+        ]
+      },
+      {
+        "attacks": 68,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          386.758575439453,
+          1465.87463378906
+        ],
+        "room": "room_031",
+        "steps": 34,
+        "tMs": 198845,
+        "velocity": [
+          220,
+          130.66667175293
+        ]
+      },
+      {
+        "attacks": 68,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          738.431030273438,
+          1444.23071289063
+        ],
+        "room": "room_031",
+        "steps": 34,
+        "tMs": 199847,
+        "velocity": [
+          0,
+          900
+        ]
+      },
+      {
+        "attacks": 70,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          1119.19799804688,
+          1462.59155273438
+        ],
+        "room": "room_031",
+        "steps": 34,
+        "tMs": 200847,
+        "velocity": [
+          500,
+          0
+        ]
+      },
+      {
+        "attacks": 71,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          1527.2890625,
+          1468.30822753906
+        ],
+        "room": "room_031",
+        "steps": 34,
+        "tMs": 201848,
+        "velocity": [
+          410,
+          98.0000076293945
+        ]
+      },
+      {
+        "attacks": 71,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          1928.37536621094,
+          1397.72436523438
+        ],
+        "room": "room_031",
+        "steps": 34,
+        "tMs": 202848,
+        "velocity": [
+          220,
+          -429.333312988281
+        ]
+      },
+      {
+        "attacks": 71,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          378.676940917969,
+          2226.79711914063
+        ],
+        "room": "room_032",
+        "steps": 35,
+        "tMs": 203852,
+        "velocity": [
+          105,
+          65.3333358764648
+        ]
+      },
+      {
+        "attacks": 72,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          807.511413574219,
+          2230.5908203125
+        ],
+        "room": "room_032",
+        "steps": 35,
+        "tMs": 204852,
+        "velocity": [
+          500,
+          0
+        ]
+      },
+      {
+        "attacks": 72,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          1235.01782226563,
+          2233.31372070313
+        ],
+        "room": "room_032",
+        "steps": 35,
+        "tMs": 205855,
+        "velocity": [
+          440,
+          65.3333358764648
+        ]
+      },
+      {
+        "attacks": 72,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          264.250091552734,
+          950.590698242188
+        ],
+        "room": "room_033",
+        "steps": 36,
+        "tMs": 206856,
+        "velocity": [
+          500,
+          0
+        ]
+      },
+      {
+        "attacks": 72,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          641.089233398438,
+          959.925231933594
+        ],
+        "room": "room_033",
+        "steps": 36,
+        "tMs": 207859,
+        "velocity": [
+          350,
+          0
+        ]
+      },
+      {
+        "attacks": 72,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          980.844970703125,
+          878.840942382813
+        ],
+        "room": "room_033",
+        "steps": 36,
+        "tMs": 208859,
+        "velocity": [
+          220,
+          -412.999969482422
+        ]
+      },
+      {
+        "attacks": 72,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          1286.18798828125,
+          915.980529785156
+        ],
+        "room": "room_033",
+        "steps": 36,
+        "tMs": 209859,
+        "velocity": [
+          90,
+          -494.666687011719
+        ]
+      },
+      {
+        "attacks": 72,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          1597.11181640625,
+          959.974609375
+        ],
+        "room": "room_033",
+        "steps": 36,
+        "tMs": 210859,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 73,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          450.192260742188,
+          1471.92529296875
+        ],
+        "room": "room_034",
+        "steps": 37,
+        "tMs": 211863,
+        "velocity": [
+          220,
+          0
+        ]
+      },
+      {
+        "attacks": 73,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          887.531127929688,
+          1462.59167480469
+        ],
+        "room": "room_034",
+        "steps": 37,
+        "tMs": 212863,
+        "velocity": [
+          500,
+          0
+        ]
+      },
+      {
+        "attacks": 74,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          1275.20446777344,
+          1471.92529296875
+        ],
+        "room": "room_034",
+        "steps": 37,
+        "tMs": 213863,
+        "velocity": [
+          380,
+          0
+        ]
+      },
+      {
+        "attacks": 75,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          1610.92846679688,
+          1460.58471679688
+        ],
+        "room": "room_034",
+        "steps": 37,
+        "tMs": 214863,
+        "velocity": [
+          225.5,
+          86.5666656494141
+        ]
+      },
+      {
+        "attacks": 76,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          112.25,
+          2239.92529296875
+        ],
+        "room": "room_035",
+        "steps": 37,
+        "tMs": 215904,
+        "velocity": [
+          15,
+          0
+        ]
+      },
+      {
+        "attacks": 77,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          548.601196289063,
+          2230.5908203125
+        ],
+        "room": "room_035",
+        "steps": 38,
+        "tMs": 216905,
+        "velocity": [
+          500,
+          0
+        ]
+      },
+      {
+        "attacks": 77,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          992.772705078125,
+          2233.31372070313
+        ],
+        "room": "room_035",
+        "steps": 38,
+        "tMs": 217905,
+        "velocity": [
+          440,
+          65.3333358764648
+        ]
+      },
+      {
+        "attacks": 78,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          1346.2802734375,
+          2195.98022460938
+        ],
+        "room": "room_035",
+        "steps": 38,
+        "tMs": 218905,
+        "velocity": [
+          260,
+          -494.666687011719
+        ]
+      },
+      {
+        "attacks": 78,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 100,
+        "player": [
+          358.925170898438,
+          676.741027832031
+        ],
+        "room": "room_036",
+        "steps": 39,
+        "tMs": 219909,
+        "velocity": [
+          290,
+          -527.333374023438
+        ]
+      },
+      {
+        "attacks": 78,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 100,
+        "player": [
+          687.097534179688,
+          660.158447265625
+        ],
+        "room": "room_036",
+        "steps": 39,
+        "tMs": 220912,
+        "velocity": [
+          220,
+          81.6666717529297
+        ]
+      },
+      {
+        "attacks": 78,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 100,
+        "player": [
+          1038.93408203125,
+          622.841552734375
+        ],
+        "room": "room_036",
+        "steps": 39,
+        "tMs": 221913,
+        "velocity": [
+          165,
+          -412.999969482422
+        ]
+      },
+      {
+        "attacks": 78,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 100,
+        "player": [
+          1405.77758789063,
+          694.591613769531
+        ],
+        "room": "room_036",
+        "steps": 39,
+        "tMs": 222913,
+        "velocity": [
+          500,
+          0
+        ]
+      },
+      {
+        "attacks": 78,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 100,
+        "player": [
+          272.666809082031,
+          1088
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 223913,
+        "velocity": [
+          220,
+          0
+        ]
+      },
+      {
+        "attacks": 78,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 100,
+        "player": [
+          439.518035888672,
+          971.263488769531
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 224913,
+        "velocity": [
+          0,
+          -314.999908447266
+        ]
+      },
+      {
+        "attacks": 78,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 100,
+        "player": [
+          597.768371582031,
+          1087.92529296875
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 225913,
+        "velocity": [
+          220,
+          0
+        ]
+      },
+      {
+        "attacks": 78,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 100,
+        "player": [
+          764.602844238281,
+          971.257507324219
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 226913,
+        "velocity": [
+          0,
+          -314.999908447266
+        ]
+      },
+      {
+        "attacks": 78,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 100,
+        "player": [
+          922.853576660156,
+          1087.92529296875
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 227913,
+        "velocity": [
+          220,
+          0
+        ]
+      },
+      {
+        "attacks": 80,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 100,
+        "player": [
+          1023.60711669922,
+          1087.92529296875
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 228913,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 81,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 100,
+        "player": [
+          845.690856933594,
+          1087.92529296875
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 229913,
+        "velocity": [
+          220,
+          0
+        ]
+      },
+      {
+        "attacks": 82,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 100,
+        "player": [
+          1045.66711425781,
+          1087.92529296875
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 230913,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 84,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 90,
+        "player": [
+          889.815795898438,
+          1078.59106445313
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 231913,
+        "velocity": [
+          -316.666717529297,
+          -560
+        ]
+      },
+      {
+        "attacks": 84,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 90,
+        "player": [
+          966.732299804688,
+          1016.75787353516
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 232913,
+        "velocity": [
+          220,
+          420.000183105469
+        ]
+      },
+      {
+        "attacks": 84,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 90,
+        "player": [
+          867.593139648438,
+          1028.30749511719
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 233913,
+        "velocity": [
+          30,
+          -462
+        ]
+      },
+      {
+        "attacks": 84,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 90,
+        "player": [
+          987.510314941406,
+          1064.47424316406
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 234913,
+        "velocity": [
+          220,
+          518.000244140625
+        ]
+      },
+      {
+        "attacks": 86,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 90,
+        "player": [
+          1114.65173339844,
+          1087.92529296875
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 235913,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 87,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 90,
+        "player": [
+          941.817993164063,
+          1087.92529296875
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 236913,
+        "velocity": [
+          220,
+          0
+        ]
+      },
+      {
+        "attacks": 88,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 90,
+        "player": [
+          1159.98364257813,
+          1087.92529296875
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 237913,
+        "velocity": [
+          146.666656494141,
+          0
+        ]
+      },
+      {
+        "attacks": 90,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 80,
+        "player": [
+          1195.50402832031,
+          1087.92529296875
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 238914,
+        "velocity": [
+          -111,
+          0
+        ]
+      },
+      {
+        "attacks": 93,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 80,
+        "player": [
+          1257.57409667969,
+          1087.92529296875
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 239921,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 95,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 70,
+        "player": [
+          1300.0224609375,
+          1087.92529296875
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 240928,
+        "velocity": [
+          90,
+          0
+        ]
+      },
+      {
+        "attacks": 97,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 70,
+        "player": [
+          1114.82739257813,
+          1087.92529296875
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 241928,
+        "velocity": [
+          -40.0000610351563,
+          0
+        ]
+      },
+      {
+        "attacks": 97,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 60,
+        "player": [
+          1276.91027832031,
+          1087.92529296875
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 242928,
+        "velocity": [
+          220,
+          0
+        ]
+      },
+      {
+        "attacks": 97,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 60,
+        "player": [
+          1141.82727050781,
+          1087.92529296875
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 243934,
+        "velocity": [
+          220,
+          0
+        ]
+      },
+      {
+        "attacks": 97,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 50,
+        "player": [
+          1197.74450683594,
+          923.229736328125
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 244934,
+        "velocity": [
+          0,
+          -4.66657686233521
+        ]
+      },
+      {
+        "attacks": 98,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 50,
+        "player": [
+          1338.96875,
+          1087.92529296875
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 245934,
+        "velocity": [
+          90,
+          0
+        ]
+      },
+      {
+        "attacks": 99,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 50,
+        "player": [
+          1211.35546875,
+          1087.92529296875
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 246934,
+        "velocity": [
+          220,
+          0
+        ]
+      },
+      {
+        "attacks": 99,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 40,
+        "player": [
+          1115.77197265625,
+          1067.19592285156
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 247934,
+        "velocity": [
+          -170.000045776367,
+          163.33332824707
+        ]
+      },
+      {
+        "attacks": 99,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 30,
+        "player": [
+          1238.27087402344,
+          1087.92529296875
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 248934,
+        "velocity": [
+          220,
+          0
+        ]
+      },
+      {
+        "attacks": 99,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 30,
+        "player": [
+          1308.71508789063,
+          990.390930175781
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 249934,
+        "velocity": [
+          220,
+          354.666809082031
+        ]
+      },
+      {
+        "attacks": 100,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "health": 30,
+        "player": [
+          1358.47595214844,
+          1087.92529296875
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 250942,
+        "velocity": [
+          0,
+          0
+        ]
+      },
+      {
+        "attacks": 100,
+        "bosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002",
+          "boss_final"
+        ],
+        "health": 30,
+        "player": [
+          1358.47595214844,
+          1087.92529296875
+        ],
+        "room": "room_038",
+        "steps": 40,
+        "tMs": 252012,
+        "velocity": [
+          0,
+          0
+        ]
+      }
+    ],
+    "scope": "Actual NVIDIA gameplay with normal fades/hit-stop and Input-only walking, jumping, attacks and dodges. Bot observations are read-only; no human or final art acceptance claim."
+  },
+  "returnVisits": [
+    {
+      "room": "room_008",
+      "boss": "boss_000",
+      "observations": 2,
+      "passed": true,
+      "cleared": {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_008",
+        "tMs": 75940
+      }
+    },
+    {
+      "room": "room_018",
+      "boss": "boss_001",
+      "observations": 2,
+      "passed": true,
+      "cleared": {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000",
+          "boss_001"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_018",
+        "tMs": 129677
+      }
+    },
+    {
+      "room": "room_028",
+      "boss": "boss_002",
+      "observations": 2,
+      "passed": true,
+      "cleared": {
+        "bossPresent": false,
+        "defeatedBosses": [
+          "boss_000",
+          "boss_001",
+          "boss_002"
+        ],
+        "exitsOpen": true,
+        "music": "biome_0",
+        "room": "room_028",
+        "tMs": 192086
+      }
+    }
+  ],
+  "returnVisitsPassed": true
+}

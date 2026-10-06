@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": ["src/**/*"],
+  "references": [
+    { "path": "../shared" },
+    { "path": "../schemas" },
+    { "path": "../ai" },
+    { "path": "../database" },
+    { "path": "../godot" },
+    { "path": "../engines" },
+    { "path": "../unity" },
+    { "path": "../unreal" },
+    { "path": "../procedural" },
+    { "path": "../tools" },
+    { "path": "../qa" },
+    { "path": "../assets" }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\navigation-review\\reports\\game-tests\\20261004-jump-frontend\\1791104787986",
+  "scope": "Actual React Jump component and shared native-dialog controls in hidden Electron, controlled IPC failures/races; no generation or gameplay claim",
+  "checks": [
+    {
+      "label": "opening focuses the searchable combobox",
+      "passed": false
+    }
+  ],
+  "errors": [],
+  "sourceHashes": {
+    "apps/desktop/src/studio/GoToPalette.tsx": "8c14ab8123fd8bdd31253b70a9ba41ac325a75a9293883b9ba7e0fac2cbf7134",
+    "apps/desktop/src/studio/ui/index.tsx": "51aca544477a21f6ab2b12212990aad69ebed2d42413194423f9204017a3e6e6",
+    "apps/desktop/src/studio/StudioContext.tsx": "0cb92d683f0d6f835fa3f7e069e3edf824b6e216f18c4a203a98b9939caa7920",
+    "apps/desktop/src/styles.css": "82527907f7680349f032c0e11e2eaa06a6794d268cc579a58953eca84bb7e29a",
+    "scripts/verify-jump-frontend.mjs": "31dce55b681888595eec15a7f6769862acc59e3230bdb368ae4485ee4dbad429"
+  },
+  "passed": false,
+  "error": "AssertionError [ERR_ASSERTION]: opening focuses the searchable combobox\n    at check (file:///E:/MetroForgeData/GitHubUpload/20261004/navigation-review/scripts/verify-jump-frontend.mjs:31:72)\n    at file:///E:/MetroForgeData/GitHubUpload/20261004/navigation-review/scripts/verify-jump-frontend.mjs:36:2"
+}

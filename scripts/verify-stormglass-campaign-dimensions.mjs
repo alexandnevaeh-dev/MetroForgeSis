@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
+import {resolve,join,dirname} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {generateStormglassGalleryCampaign,prepareRoomAssemblyContext,buildRoomAssemblyOptions} from '../packages/godot/dist/index.js';
+const repo=resolve(dirname(fileURLToPath(import.meta.url)),'..');
+const project=process.argv[2];
+if(!project)throw new Error('Pass the isolated generated project containing game_dna.json');
+const dna=JSON.parse(readFileSync(join(project,'game_dna.json'),'utf8'));
+const recipe=generateStormglassGalleryCampaign(dna,20261006);
+assert.ok(recipe);
+const ctx=prepareRoomAssemblyContext(recipe.worldGraph,undefined,recipe.roomIds);
+const counter={value:0},rows=[];
+for(const [index,id] of recipe.roomIds.entries()){
+ const meta=ctx.worldGraphNodesById.get(id).metadata;
+ const opts=buildRoomAssemblyOptions(id,index,ctx,dna,undefined,counter,()=>false);
+ assert.equal(opts.width,meta.targetTileWidth*dna.technical.tileSize,id+' width');
+ assert.equal(opts.height,meta.targetTileHeight*dna.technical.tileSize,id+' height');
+ rows.push({id,width:opts.width,height:opts.height});
+}
+const chosen='room_031',index=recipe.roomIds.indexOf(chosen),node=ctx.worldGraphNodesById.get(chosen);
+const original=structuredClone(node.metadata);
+const overridden=buildRoomAssemblyOptions(chosen,index,ctx,dna,undefined,counter,()=>false,{width:1536,height:1536});
+assert.equal(overridden.width,1536);assert.equal(overridden.height,1536);
+delete node.metadata.stormglassCampaignLayout;
+const legacy=buildRoomAssemblyOptions(chosen,index,ctx,dna,undefined,counter,()=>false);
+assert.equal(legacy.width,2048);assert.equal(legacy.height,1536);
+Object.assign(node.metadata,original,{targetTileWidth:0});
+assert.throws(()=>buildRoomAssemblyOptions(chosen,index,ctx,dna,undefined,counter,()=>false),/Invalid authored/);
+const output=join(repo,'reports/game-tests/20261006-campaign-dimensions',String(Date.now()));mkdirSync(output,{recursive:true});
+writeFileSync(join(output,'proof.json'),JSON.stringify({passed:true,scope:'Real room compiler options for43campaignrooms; editor override, legacy sizing and malformed dimension controls. Native full-generation validation remains separate.',rows,editorOverridePreserved:true,legacyPreserved:true,invalidRejected:true},null,2));
+console.log(JSON.stringify({passed:true,rooms:rows.length,controls:3,output}));

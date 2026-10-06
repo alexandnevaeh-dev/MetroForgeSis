@@ -1,0 +1,154 @@
+{
+  "source": "E:\\Metroforge\\MetroForge-Publish\\packages\\assets\\authored\\stormglass-veilblade\\veilblade-hurt-source-v2.png",
+  "output": "E:\\Metroforge\\MetroForge-Publish\\packages\\assets\\authored\\stormglass-veilblade\\veilblade-hurt-v2.png",
+  "frameSize": [
+    64,
+    64
+  ],
+  "frameCount": 8,
+  "sharedScale": 0.15263157894736842,
+  "bottomCenterAnchor": [
+    32,
+    62
+  ],
+  "frames": [
+    {
+      "frame": 0,
+      "sourceBox": [
+        23,
+        208,
+        270,
+        588
+      ],
+      "size": [
+        38,
+        58
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 1,
+      "sourceBox": [
+        7,
+        231,
+        264,
+        588
+      ],
+      "size": [
+        39,
+        54
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 2,
+      "sourceBox": [
+        0,
+        232,
+        271,
+        588
+      ],
+      "size": [
+        41,
+        54
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 3,
+      "sourceBox": [
+        0,
+        243,
+        272,
+        588
+      ],
+      "size": [
+        42,
+        53
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 4,
+      "sourceBox": [
+        0,
+        324,
+        272,
+        589
+      ],
+      "size": [
+        42,
+        40
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 5,
+      "sourceBox": [
+        0,
+        258,
+        269,
+        590
+      ],
+      "size": [
+        41,
+        51
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 6,
+      "sourceBox": [
+        12,
+        224,
+        271,
+        590
+      ],
+      "size": [
+        40,
+        56
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 7,
+      "sourceBox": [
+        0,
+        209,
+        262,
+        588
+      ],
+      "size": [
+        40,
+        58
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    }
+  ],
+  "status": "candidate",
+  "productionApproved": false
+}

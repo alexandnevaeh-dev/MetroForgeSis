@@ -1,0 +1,129 @@
+{
+  "code": 0,
+  "base": "E:\\MetroForgeData\\TestArtifacts\\castle-profile-20261004-v2",
+  "scriptErrors": false,
+  "nativeErrors": [],
+  "warnings": [
+    "WARNING: ObjectDB instances leaked at exit (run with --verbose for details)."
+  ],
+  "scope": "Controlled native backdrop and malformed-profile checks with forced room loads; not gameplay traversal",
+  "nvidia": true,
+  "castleBackdrop": {
+    "bands": [
+      {
+        "height": 1024.00002479553,
+        "opacity": 0.899999976158142,
+        "repeat": 3,
+        "tileWidth": 1820.44448852539,
+        "tint": [
+          0.860000014305115,
+          0.899999976158142,
+          0.959999978542328
+        ],
+        "width": 4096.00009918213,
+        "x": -0.000049591064453125,
+        "y": 447.999987602234
+      },
+      {
+        "height": 1024.00002479553,
+        "opacity": 0.611999988555908,
+        "repeat": 3,
+        "tileWidth": 1820.44448852539,
+        "tint": [
+          0.860000014305115,
+          0.899999976158142,
+          0.959999978542328
+        ],
+        "width": 4096.00009918213,
+        "x": -0.000049591064453125,
+        "y": -576.000012397766
+      }
+    ],
+    "checks": [
+      {
+        "label": "valid gallery profile is read",
+        "passed": true
+      },
+      {
+        "label": "other rooms keep legacy framing",
+        "passed": true
+      },
+      {
+        "label": "invalid height is refused: \"1024\"",
+        "passed": true
+      },
+      {
+        "label": "invalid height is refused: []",
+        "passed": true
+      },
+      {
+        "label": "invalid height is refused: {}",
+        "passed": true
+      },
+      {
+        "label": "invalid height is refused: null",
+        "passed": true
+      },
+      {
+        "label": "invalid height is refused: 511",
+        "passed": true
+      },
+      {
+        "label": "invalid height is refused: 1537",
+        "passed": true
+      },
+      {
+        "label": "profile bytes restored exactly",
+        "passed": true
+      },
+      {
+        "label": "legacy background native rectangle retained",
+        "passed": true
+      },
+      {
+        "label": "two native interior bands",
+        "passed": true
+      },
+      {
+        "label": "lower native band meets gallery floor",
+        "passed": true
+      },
+      {
+        "label": "upper band continues the same world scale",
+        "passed": true
+      },
+      {
+        "label": "horizontal native mirror repetition",
+        "passed": true
+      },
+      {
+        "label": "upper band uses native depth opacity",
+        "passed": true
+      },
+      {
+        "label": "native stone material grading",
+        "passed": true
+      },
+      {
+        "label": "eighteen stone balcony corbels",
+        "passed": true
+      }
+    ],
+    "legacy": {
+      "height": 1007.99998283386,
+      "opacity": 0.899999976158142,
+      "repeat": 0,
+      "tileWidth": 1791.99996948242,
+      "tint": [
+        1,
+        1,
+        1
+      ],
+      "width": 1791.99996948242,
+      "x": 0.0000152587890625,
+      "y": -303.999991416931
+    },
+    "passed": true,
+    "scope": "Controlled native profile failures and forced room loads on NVIDIA; not gameplay traversal or final art acceptance."
+  }
+}

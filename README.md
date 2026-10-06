@@ -1,2 +1,116 @@
-# MetroForgeSis
-MetroForge (working title) is an AI-powered game development platform designed to generate complete, playable, and fully editable games. Starting with Metroidvania games for Godot 4, it aims to expand into more genres, engines, art styles, 2D, HD-2D, 2.5D, and eventually 3D—while keeping the developer in control.
+# Canonical Repository
+
+The current Windows development repository is `E:\Metroforge\MetroForge-Publish`.
+Run install, build, test, doctor, generation, and validation commands from the
+repository root. Recovery trees and older parallel checkouts are preserved
+separately. Keep downloads, dependencies, caches, and generated games on E:.
+
+# MetroForge AI
+
+Game generation and authoring application in active development. Separate genres
+include side-view Metroidvania, Platformer, top-down action adventure, and Quantum
+simulation roguelite. Godot projects can be created and tested locally; Unity,
+Unreal, provider, artwork, and full-game acceptance depend on their own validation.
+
+This source snapshot is a development build. It does not establish finished art,
+full campaign combat and victory, or production readiness. See
+[Platformer evidence](docs/PLATFORMER_IMPLEMENTATION.md),
+[Stormglass masonry evidence](docs/STORMGLASS_MASONRY_DEVELOPMENT.md), and
+[runtime validation limits](docs/QA_RUNTIME_BUDGET_20261006.md).
+
+## Quick Start
+
+```bash
+pnpm install
+pnpm build
+pnpm test
+pnpm metroforge doctor
+```
+
+## CLI
+
+```bash
+# Check environment
+pnpm metroforge doctor
+
+# Create and generate a game
+pnpm metroforge create --prompt "Create a ruined mechanical-temple Metroidvania" --profile TINY_TEST --mode LOCAL_ONLY
+
+# Validate a generated project
+pnpm metroforge validate <slug>
+
+# List AI providers (live health)
+pnpm metroforge providers
+
+# Model catalog and routing
+pnpm metroforge models list
+pnpm metroforge models list --installed --capability JSON_GENERATION
+pnpm metroforge models rank JSON_GENERATION
+pnpm metroforge models starter-pack
+pnpm metroforge scout
+```
+
+## Hosted AI Providers
+
+Add hosted provider keys from **API Keys** in MetroForge's top bar or under **AI & Quality**. Keys saved there are encrypted for your Windows account in the configured application data directory. Existing `.env` keys remain supported; the interface shows their presence without retrieving their values. Check **Providers** to verify access and **Settings → Runtime** to enable providers.
+
+API Keys now includes Together AI, Cerebras, Mistral AI and optional LM Studio tokens. Filter the page by text, images or local models. Set Ollama/LM Studio loopback server URLs and chat-model names in **Settings → Runtime**; Ollama and ordinary LM Studio servers need no API key. These new connections generate plans, code and narrative. Hosted services remain excluded from free/local modes and may charge for requests. Model licenses depend on the selected model.
+
+Optional free-tier providers — keys can also be set in `.env`:
+
+| Provider | Env Variable |
+|----------|-------------|
+| Google Gemini | `GEMINI_API_KEY` |
+| Groq | `GROQ_API_KEY` |
+| OpenRouter | `OPENROUTER_API_KEY` |
+| Hugging Face | `HUGGINGFACE_API_KEY` |
+
+Generation modes:
+- **LOCAL_ONLY** — Ollama and LM Studio local chat models
+- **HYBRID_FREE** — Ollama first, fallback to configured free hosted APIs
+- **FREE_ONLY** — Free providers only
+- **CUSTOM** — All enabled providers by priority
+
+## Desktop App
+
+```bash
+pnpm dev:desktop
+```
+
+## Project Structure
+
+```
+apps/
+  cli/          Command-line interface
+  desktop/      Electron + React desktop app
+packages/
+  shared/       Constants, config, logging
+  schemas/      Zod data contracts
+  core/         Core business logic
+templates/
+  godot-metroidvania/   Reusable Godot 4 runtime (Pass 10)
+GeneratedGames/         Output directory for generated projects
+docs/                   Architecture and build status
+```
+
+## Configuration
+
+Copy `.env.example` to `.env`. Product name is configurable via `METROFORGE_APP_NAME`.
+
+## Generation Modes
+
+- **FREE_ONLY** — Only free providers
+- **LOCAL_ONLY** — Local models only (Ollama and LM Studio)
+- **HYBRID_FREE** — Local first, fallback to free hosted APIs
+- **CUSTOM** — User-configured provider priority
+
+## Requirements
+
+- Node.js 22.5+ (uses built-in `node:sqlite` for CLI; desktop uses sql.js)
+- pnpm 9+
+- Godot 4.x (for validation and play)
+- Ollama (recommended for local AI generation)
+
+## License
+
+See individual provider and asset licenses in generated `generation_manifest.json`.

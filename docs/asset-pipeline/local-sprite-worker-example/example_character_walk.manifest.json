@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "id": "example_character",
+  "path": "example_character_walk.png",
+  "width": 256,
+  "height": 32,
+  "frameWidth": 32,
+  "frameHeight": 32,
+  "frameCount": 8,
+  "frameRects": [
+    {
+      "x": 0,
+      "y": 0,
+      "width": 32,
+      "height": 32
+    },
+    {
+      "x": 32,
+      "y": 0,
+      "width": 32,
+      "height": 32
+    },
+    {
+      "x": 64,
+      "y": 0,
+      "width": 32,
+      "height": 32
+    },
+    {
+      "x": 96,
+      "y": 0,
+      "width": 32,
+      "height": 32
+    },
+    {
+      "x": 128,
+      "y": 0,
+      "width": 32,
+      "height": 32
+    },
+    {
+      "x": 160,
+      "y": 0,
+      "width": 32,
+      "height": 32
+    },
+    {
+      "x": 192,
+      "y": 0,
+      "width": 32,
+      "height": 32
+    },
+    {
+      "x": 224,
+      "y": 0,
+      "width": 32,
+      "height": 32
+    }
+  ],
+  "animations": [
+    {
+      "name": "walk",
+      "frameIndices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "fps": 8,
+      "loop": true
+    }
+  ],
+  "provider": "local-procedural-sprite-worker",
+  "modelId": "metroforge-local-sprite-v1",
+  "seed": 20260910,
+  "generationParams": {
+    "kind": "character_sheet",
+    "width": 32,
+    "height": 32,
+    "frameCount": 8,
+    "seed": 20260910,
+    "fill": [
+      176,
+      172,
+      158
+    ],
+    "accent": [
+      92,
+      214,
+      224
+    ]
+  },
+  "generatedAt": "2026-09-10T05:39:39.866Z",
+  "license": "MetroForge internally authored procedural generator (original work); no third-party model weights, no network access.",
+  "commercialUse": "allowed",
+  "sourceLicense": "MetroForge internally authored procedural generator (original work); no third-party model weights, no network access.",
+  "requiresNetwork": false,
+  "requiresPayment": false
+}

@@ -1,0 +1,154 @@
+{
+  "source": "E:\\Metroforge\\MetroForge-Publish\\packages\\assets\\authored\\stormglass-veilblade\\veilblade-walk-source-v2.png",
+  "output": "E:\\Metroforge\\MetroForge-Publish\\packages\\assets\\authored\\stormglass-veilblade\\veilblade-walk-v2.png",
+  "frameSize": [
+    64,
+    64
+  ],
+  "frameCount": 8,
+  "sharedScale": 0.10800744878957169,
+  "bottomCenterAnchor": [
+    32,
+    62
+  ],
+  "frames": [
+    {
+      "frame": 0,
+      "sourceBox": [
+        12,
+        96,
+        272,
+        632
+      ],
+      "size": [
+        28,
+        58
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 1,
+      "sourceBox": [
+        0,
+        97,
+        271,
+        632
+      ],
+      "size": [
+        29,
+        58
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 2,
+      "sourceBox": [
+        0,
+        95,
+        271,
+        632
+      ],
+      "size": [
+        29,
+        58
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 3,
+      "sourceBox": [
+        0,
+        97,
+        272,
+        632
+      ],
+      "size": [
+        29,
+        58
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 4,
+      "sourceBox": [
+        0,
+        100,
+        272,
+        633
+      ],
+      "size": [
+        29,
+        58
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 5,
+      "sourceBox": [
+        0,
+        100,
+        271,
+        632
+      ],
+      "size": [
+        29,
+        57
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 6,
+      "sourceBox": [
+        0,
+        98,
+        271,
+        633
+      ],
+      "size": [
+        29,
+        58
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 7,
+      "sourceBox": [
+        0,
+        104,
+        259,
+        633
+      ],
+      "size": [
+        28,
+        57
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    }
+  ],
+  "status": "candidate",
+  "productionApproved": false
+}

@@ -1,0 +1,95 @@
+{
+  "version": "1.0.0",
+  "workers": [
+    {
+      "id": "runpod-reference-core",
+      "target": "RUNPOD_SERVERLESS",
+      "provider": "runpod",
+      "endpointEnv": "RUNPOD_ENDPOINT_ID",
+      "gpuProfile": "24GB+ CUDA GPU",
+      "container": "metroforge-reference-core:0.1.0",
+      "models": ["qwen-image-edit-2509", "dreamo-v1.1", "sdxl-base-1.0", "ip-adapter-sdxl"],
+      "capabilities": ["REFERENCE_IMAGE", "IDENTITY_CONDITIONING", "POSE_CONDITIONING"],
+      "authentication": "RUNPOD_API_KEY",
+      "costTier": "PAID",
+      "secretsStoredOutsideRepository": true
+    },
+    {
+      "id": "custom-remote-worker",
+      "target": "REMOTE_METROFORGE_WORKER",
+      "provider": "custom",
+      "endpointEnv": "METROFORGE_REMOTE_WORKER_URL",
+      "gpuProfile": "configured by operator",
+      "container": "operator-managed",
+      "models": [],
+      "capabilities": [],
+      "authentication": "METROFORGE_REMOTE_WORKER_TOKEN",
+      "secretsStoredOutsideRepository": true
+    },
+    {
+      "id": "huggingface-zerogpu-qwen",
+      "target": "HF_ZEROGPU_SPACE",
+      "provider": "huggingface-zerogpu",
+      "endpointEnv": "HF_SPACE_ID",
+      "gpuProfile": "ZeroGPU (shared free-quota H200 slice)",
+      "container": "Qwen/Qwen-Image-Edit-2509 (official hosted Space)",
+      "models": ["qwen-image-edit-2509"],
+      "capabilities": ["REFERENCE_IMAGE", "IMAGE_EDITING"],
+      "authentication": "HF_TOKEN",
+      "costTier": "FREE_QUOTA",
+      "secretsStoredOutsideRepository": true
+    },
+    {
+      "id": "huggingface-zerogpu-own-space",
+      "target": "HF_ZEROGPU_SPACE",
+      "provider": "huggingface-zerogpu",
+      "endpointEnv": "HF_SPACE_ID",
+      "gpuProfile": "ZeroGPU (shared free-quota, user-owned Space)",
+      "container": "workers/huggingface-zerogpu/ (deployable MetroForge reference wrapper)",
+      "models": [],
+      "capabilities": ["REFERENCE_IMAGE"],
+      "authentication": "HF_TOKEN",
+      "costTier": "USER_OWNED",
+      "secretsStoredOutsideRepository": true
+    },
+    {
+      "id": "lightning-free-credit-worker",
+      "target": "LIGHTNING_STUDIO",
+      "provider": "lightning-ai",
+      "endpointEnv": "LIGHTNING_STUDIO_URL",
+      "gpuProfile": "configured by operator (prefer high-memory GPU only for brief probes)",
+      "container": "workers/remote-visual/ (reused unmodified)",
+      "models": ["qwen-image-edit-2509"],
+      "capabilities": ["REFERENCE_IMAGE"],
+      "authentication": "LIGHTNING_API_KEY",
+      "costTier": "FREE_CREDIT",
+      "secretsStoredOutsideRepository": true
+    },
+    {
+      "id": "kaggle-notebook-benchmark",
+      "target": "KAGGLE_NOTEBOOK",
+      "provider": "kaggle",
+      "endpointEnv": "KAGGLE_NOTEBOOK_SLUG",
+      "gpuProfile": "Kaggle free-tier GPU (development/benchmarking only)",
+      "container": "manual export/import contract, not a permanent server",
+      "models": [],
+      "capabilities": [],
+      "authentication": "KAGGLE_KEY",
+      "costTier": "FREE_QUOTA",
+      "secretsStoredOutsideRepository": true
+    },
+    {
+      "id": "colab-notebook-manual",
+      "target": "COLAB_NOTEBOOK",
+      "provider": "colab",
+      "endpointEnv": "COLAB_NOTEBOOK_URL",
+      "gpuProfile": "Colab free-tier GPU (interactive/manual only)",
+      "container": "no persistent worker deployed",
+      "models": [],
+      "capabilities": [],
+      "authentication": "none",
+      "costTier": "FREE_QUOTA",
+      "secretsStoredOutsideRepository": false
+    }
+  ]
+}

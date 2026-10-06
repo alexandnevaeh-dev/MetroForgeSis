@@ -1,0 +1,1128 @@
+import { CastleBackdrop } from './CastleBackdrop.js';
+import type {RoomMasonryRect,RoomStairFlight} from './RoomMasonryPreview.js';
+import { validCastleRegionPreview, type CastleRegionPreview } from './CastleRegionBackdrop.js';
+import { BiomeBackgroundEditor, type CastleBackgroundPreview } from './BiomeBackgroundEditor.js';
+import { TopDownPropPicker } from './TopDownPropPicker.js';
+import { TopDownPropViewport } from './TopDownPropViewport.js';
+import { TopDownPropInspector, type TopDownEditorProp } from './TopDownPropInspector.js';
+import { UnityRoomGeometry } from './UnityRoomGeometry.js';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { enemyDefinitionForPlacement, unusedEntityId } from './entity-authoring.js';
+import { CommandBar } from './CommandBar.js';
+import { EditStatusBadge } from './EditStatusBadge.js';
+import { TilePaintEditor, TilePalettePanel, type TileCoord } from './TilePaintEditor.js';
+import { VirtualizedRoomList } from './VirtualizedRoomList.js';
+import { ScreenHeader } from './ScreenHeader.js';
+import { ProjectSelect } from './ProjectSelect.js';
+import { NoProjectHint } from './NoProjectHint.js';
+import { useStudio } from './StudioContext.js';
+import type { RoomCollisionPreview } from './metroforge-api.js';
+import {
+  Badge,
+  Button,
+  EditorToolButton,
+  EditorToolbar,
+  EditorViewport,
+  EditorWorkbench,
+  EditorZoomControls,
+  EmptyViewport,
+  InspectorSection,
+  Panel,
+  SearchField,
+  ViewModeTabs,
+} from './ui/index.js';
+
+type RoomRecord = {
+  masonryRects?: RoomMasonryRect[];
+  stairFlights?: RoomStairFlight[];
+  castleRegionPlan?: CastleRegionPreview;
+  editingMode?: 'topdown';
+  tileSize?: number;
+  tiles?: number[][];
+  propPlacements?: TopDownEditorProp[];
+  id: string;
+  index?: number;
+  archetype?: string;
+  worldArchetype?: string;
+  biomeId?: string;
+  width?: number;
+  height?: number;
+  enemies?: string[];
+  npcs?: string[];
+  collectibles?: string[];
+  connections?: Array<{ direction: string; targetRoomId: string; requirements?: string[] }>;
+  tileCells?: Array<{ x: number; y: number; col: number; row: number }>;
+  weakFloors?: Array<{ x: number; width: number; targetRoomId: string }>;
+  entityPlacements?: Array<{ kind: string; id: string; definitionId?: string; x: number; y: number }>;
+};
+
+type EntityPlacement = { kind: string; id: string; definitionId?: string; x: number; y: number };
+
+function entityKey(p: EntityPlacement): string {
+  return `${p.kind}:${p.id}`;
+}
+
+/** View-mode tabs (Concept A Room Editor reference). */
+type ViewModeId = 'visual' | 'collision' | 'entities' | 'navigation' | 'progression' | 'debug';
+
+const VIEW_MODES: Array<{ id: ViewModeId; label: string }> = [
+  { id: 'visual', label: 'Visual' },
+  { id: 'collision', label: 'Collision' },
+  { id: 'entities', label: 'Entities' },
+  { id: 'navigation', label: 'Navigation' },
+  { id: 'progression', label: 'Progression' },
+  { id: 'debug', label: 'Debug' },
+];
+
+/** Overlay channels derived from real room IPC — not inventing Ground/Props/Lights. */
+const OVERLAY_LAYERS: Array<{ id: ViewModeId; label: string }> = [
+  { id: 'visual', label: 'Tiles' },
+  { id: 'collision', label: 'Collision' },
+  { id: 'entities', label: 'Entities' },
+  { id: 'navigation', label: 'Navigation' },
+  { id: 'progression', label: 'Progression' },
+  { id: 'debug', label: 'Debug' },
+];
+
+type PaintTool = 'select' | 'paint' | 'erase';
+
+const TILE = 16;
+
+function roomHasGeometry(room: RoomRecord, collision: RoomCollisionPreview | null): boolean {
+  return (
+    (room.tileCells?.length ?? 0) > 0 ||
+    (collision?.rects?.length ?? 0) > 0 ||
+    (room.weakFloors?.length ?? 0) > 0 ||
+    (room.connections?.length ?? 0) > 0
+  );
+}
+
+export function RoomEditor() {
+  const { selectedPath, selectedProject, hasActiveProject, focusRoomId, setFocusRoomId, navigate } = useStudio();
+  const activeProject = useRef(selectedPath);
+  const projectVisit = useRef(0);
+  if (activeProject.current !== selectedPath) {
+    activeProject.current = selectedPath;
+    projectVisit.current += 1;
+  }
+  const mounted = useRef(true);
+  const saving = useRef(false);
+  const [isSaving, setIsSaving] = useState(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
+  const [rooms, setRooms] = useState<RoomRecord[]>([]);
+  const [selectedRoomId, setSelectedRoomId] = useState('');
+  const [query, setQuery] = useState('');
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ViewModeId>('visual');
+  const [castleBackground, setCastleBackground] = useState<CastleBackgroundPreview | null>(null);
+  const [collision, setCollision] = useState<RoomCollisionPreview | null>(null);
+  const [zoom, setZoom] = useState(100);
+  const [fitRoom, setFitRoom] = useState(true);
+  const [selectedTile, setSelectedTile] = useState<TileCoord>({ col: 0, row: 2 });
+  const [terrainMaterial,setTerrainMaterial]=useState(1);
+  const [paintTool, setPaintTool] = useState<PaintTool>('select');
+  const [gridSnap, setGridSnap] = useState(true);
+  const [selectedPropId, setSelectedPropId] = useState('');
+  const [selectedEntityKey, setSelectedEntityKey] = useState<string | null>(null);
+  const [dragEntityKey, setDragEntityKey] = useState<string | null>(null);
+
+  const loadRooms = async (path: string) => {
+    if (!window.metroforge?.listRooms) return;
+    const visit = projectVisit.current;
+    const list = await window.metroforge.listRooms(path);
+    if (!mounted.current || activeProject.current !== path || projectVisit.current !== visit) return;
+    setRooms(list as RoomRecord[]);
+    setSelectedRoomId((prev) => {
+      if (focusRoomId && list.some((room) => room.id === focusRoomId)) return focusRoomId;
+      if (prev && list.some((room) => room.id === prev)) return prev;
+      return list[0]?.id ?? '';
+    });
+  };
+
+  useEffect(() => {
+    setMessage(null);
+    setError(null);
+    setRooms([]);
+    const visit = projectVisit.current;
+    if (selectedPath) void loadRooms(selectedPath).catch((cause: unknown) => {
+      if (mounted.current && activeProject.current === selectedPath && projectVisit.current === visit) setError(cause instanceof Error ? cause.message : String(cause));
+    });
+  }, [selectedPath]);
+
+  useEffect(() => {
+    if (focusRoomId) setSelectedRoomId(focusRoomId);
+  }, [focusRoomId]);
+
+  useEffect(() => {
+    if (!selectedPath || !selectedRoomId || !window.metroforge?.getRoomCollision) {
+      setCollision(null);
+      return;
+    }
+    let cancelled = false;
+    setCollision(null);
+    void window.metroforge.getRoomCollision(selectedPath, selectedRoomId).then((data) => {
+      if (!cancelled) setCollision(data?.error ? { ...data, rects: [] } : data);
+    }).catch((cause: unknown) => {
+      if (!cancelled) setCollision({
+        roomId: selectedRoomId,
+        rects: [],
+        error: cause instanceof Error ? cause.message : String(cause),
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedPath, selectedRoomId, rooms]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return rooms;
+    return rooms.filter((room) => {
+      const hay = [
+        room.id,
+        room.archetype,
+        room.worldArchetype,
+        room.biomeId,
+        ...(room.enemies ?? []),
+        ...(room.npcs ?? []),
+        ...(room.collectibles ?? []),
+      ]
+        .join(' ')
+        .toLowerCase();
+      return hay.includes(q);
+    });
+  }, [rooms, query]);
+
+  const selected = rooms.find((r) => r.id === selectedRoomId) ?? filtered[0];
+  useEffect(() => {
+    if (selected?.editingMode === 'topdown' && viewMode !== 'visual' && viewMode !== 'debug') setViewMode('visual');
+  }, [selected?.editingMode, viewMode]);
+  useEffect(() => { setSelectedPropId(''); }, [selectedPath, selected?.id]);
+  const activePropId = selected?.propPlacements?.some(prop => prop.id === selectedPropId) ? selectedPropId : selected?.propPlacements?.[0]?.id;
+  const activeBackground = castleBackground?.projectPath === selectedPath && castleBackground.biomeId === selected?.biomeId ? castleBackground : null;
+  const hasGeometry = selected ? roomHasGeometry(selected, collision) : false;
+  const placements: EntityPlacement[] = selected?.entityPlacements ?? [];
+  const selectedPlacement = placements.find((p) => entityKey(p) === selectedEntityKey) ?? null;
+
+  const persistPlacements = async (next: EntityPlacement[], extras?: Partial<RoomRecord>) => {
+    if (!selectedPath || !selected) return;
+    await runRoomAction(() =>
+      window.metroforge!.updateRoom!(selectedPath, {
+        roomId: selected.id,
+        entityPlacements: next,
+        enemies: extras?.enemies ?? selected.enemies,
+        npcs: extras?.npcs ?? selected.npcs,
+      }),
+    );
+  };
+
+  const runRoomAction = async (action: () => Promise<{ success?: boolean; error?: string; errors?: string[]; message?: string }>) => {
+    if (saving.current) return;
+    const projectPath = selectedPath;
+    const visit = projectVisit.current;
+    saving.current = true;
+    setIsSaving(true);
+    setError(null);
+    setMessage('Saving changes…');
+    try {
+      const result = await action();
+      if (!mounted.current || activeProject.current !== projectPath || projectVisit.current !== visit) return;
+      if (result.error || result.success === false) {
+        setMessage(null);
+        setError(result.error || result.errors?.join('; ') || 'Action failed');
+      } else setMessage(result.message ?? 'Done');
+      await loadRooms(projectPath);
+    } catch (cause) {
+      if (mounted.current && activeProject.current === projectPath && projectVisit.current === visit) {
+        setMessage(null);
+        setError(cause instanceof Error ? cause.message : String(cause));
+      }
+    } finally {
+      saving.current = false;
+      if (mounted.current) setIsSaving(false);
+    }
+  };
+
+  const tileSize = collision?.tileSize ?? selected?.tileSize ?? TILE;
+  const widthTiles = selected ? Math.round((selected.width ?? 800) / tileSize) : 0;
+  const heightTiles = selected ? Math.round((selected.height ?? 600) / tileSize) : 0;
+
+  return (
+    <section className="workspace-screen room-editor-screen" aria-busy={isSaving}>
+      <ScreenHeader
+        compact
+        eyebrow="World"
+        title="Room Editor"
+        description="Browse rooms, inspect geometry, and paint tiles with an explicit save."
+        actions={
+          <>
+            <ProjectSelect />
+            <EditStatusBadge projectPath={selectedPath} />
+          </>
+        }
+      />
+      <NoProjectHint />
+
+      {hasActiveProject && (
+        <>
+          <CommandBar
+            compact
+            projectPath={selectedPath}
+            selectedRoomId={selectedRoomId}
+            onSuccess={() => loadRooms(selectedPath)}
+          />
+
+          <ViewModeTabs
+            label="Room view mode"
+            items={VIEW_MODES.filter(item => selected?.editingMode !== 'topdown' || ['visual', 'debug'].includes(item.id)).map((item) => ({ id: item.id, label: item.label }))}
+            value={viewMode}
+            onChange={(id) => setViewMode(id as ViewModeId)}
+          />
+
+          <EditorWorkbench className="room-editor-workspace">
+            <aside className="editor-left-rail">
+              <Panel level={1} title="Hierarchy">
+                <SearchField
+              onClear={() => setQuery('')}
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Filter rooms…"
+                  aria-label="Filter rooms"
+                />
+                <p className="hint type-caption">
+                  {filtered.length} of {rooms.length}
+                </p>
+                {filtered.length === 0 && (
+                  <div className="empty-state">
+                    <p>
+                      {rooms.length === 0
+                        ? 'No rooms in this project yet.'
+                        : 'No rooms match this filter.'}
+                    </p>
+                    {rooms.length > 0 && (
+                      <Button size="sm" onClick={() => setQuery('')}>
+                        Clear filter
+                      </Button>
+                    )}
+                  </div>
+                )}
+                <VirtualizedRoomList
+                  items={filtered}
+                  selectedId={selected?.id}
+                  onSelect={(room) => {
+                    setSelectedRoomId(room.id);
+                    setFocusRoomId(room.id);
+                  }}
+                  renderItem={(room, active) => (
+                    <span className={active ? 'room-item active room-item-compact' : 'room-item room-item-compact'}>
+                      <strong>{room.id}</strong>
+                      <span>{room.worldArchetype ?? room.archetype ?? 'room'}</span>
+                    </span>
+                  )}
+                />
+              </Panel>
+
+              <Panel level={1} title="Layers">
+                <ul className="layer-list">
+                  {OVERLAY_LAYERS.filter(item => selected?.editingMode !== 'topdown' || ['visual', 'debug'].includes(item.id)).map((item) => (
+                    <li key={item.id}>
+                      <button
+                        type="button"
+                        className={viewMode === item.id ? 'layer-list-item active' : 'layer-list-item'}
+                        onClick={() => setViewMode(item.id)}
+                        aria-pressed={viewMode === item.id}
+                      >
+                        <span>{selected?.editingMode === 'topdown' && item.id === 'visual' ? 'Props' : item.label}</span>
+                        <span className="layer-vis" aria-hidden="true">
+                          {viewMode === item.id ? '●' : '○'}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </Panel>
+
+              <Panel level={1} title="Tools">
+                <div className="editor-tools-grid" role="toolbar" aria-label="Room paint tools">
+                  {(
+                    [
+                      { id: 'select' as const, label: 'Select', hint: 'Select' },
+                      { id: 'paint' as const, label: 'Paint', hint: 'Paint tiles (Visual)' },
+                      { id: 'erase' as const, label: 'Erase', hint: 'Erase (Visual)' },
+                    ] as const
+                  ).map((tool) => (
+                    <EditorToolButton
+                      key={tool.id}
+                      active={paintTool === tool.id}
+                      onClick={() => {
+                        setPaintTool(tool.id);
+                        if (tool.id !== 'select') setViewMode('visual');
+                      }}
+                      title={tool.hint}
+                      disabled={isSaving || (tool.id !== 'select' && viewMode !== 'visual' && paintTool !== tool.id)}
+                    >
+                      {tool.label}
+                    </EditorToolButton>
+                  ))}
+                </div>
+                <p className="hint type-caption" style={{ marginTop: '0.35rem' }}>
+                  {selected?.editingMode === 'topdown' ? 'Paint terrain; erase restores grass. Release to save, Escape cancels. Arrow keys move the brush; Enter or Space paints.' : 'Paint or erase tiles in Visual mode.'}
+                </p>
+              </Panel>
+
+              {selected?.editingMode === 'topdown' && <Panel title="Terrain material">{['Grass','Dirt','Water','Wall'].map((name,value)=><Button key={name} size="sm" aria-pressed={terrainMaterial===value} disabled={isSaving} onClick={()=>{setTerrainMaterial(value);setPaintTool('paint');setViewMode('visual')}}>{name}</Button>)}</Panel>}
+              {selected && selected.editingMode !== 'topdown' && (
+                <div className="tile-palette-dock-slot">
+                  <TilePalettePanel
+                    projectPath={selectedPath}
+                    biomeId={selected.biomeId ?? 'biome_0'}
+                    tileSize={tileSize}
+                    selectedTile={selectedTile}
+                    onSelect={setSelectedTile}
+                    interactive={viewMode === 'visual' && paintTool !== 'select'}
+                  />
+                </div>
+              )}
+            </aside>
+
+            <EditorViewport
+              className="room-editor-canvas"
+              toolbar={
+                <EditorToolbar>
+                  <span className="hint mono">{selected?.id ?? 'No room selected'}</span>
+                  <Badge tone="muted">{viewMode}</Badge>
+                  <span className="status-grow" />
+                  <Button
+                    size="sm"
+                    disabled={selected?.editingMode === 'topdown'}
+                    aria-pressed={gridSnap}
+                    onClick={() => setGridSnap((v) => !v)}
+                    title="Grid snap preference (paint uses tile grid)"
+                  >
+                    Snap {gridSnap ? 'On' : 'Off'}
+                  </Button>
+                  <EditorZoomControls zoom={zoom} onZoomChange={(value) => { setFitRoom(false); setZoom(value); }} onFit={() => { setFitRoom(true); setZoom(100); }} />
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    disabled={!selectedPath}
+                    onClick={async () => {
+                      setError(null);
+                      if (!selectedPath) return;
+                      setMessage(null);
+                      try {
+                        const r = await window.metroforge!.playProject(selectedPath);
+                        if (!r.success) setError(r.message);
+                        else setMessage(r.message);
+                      } catch (cause) {
+                        setError(cause instanceof Error ? cause.message : String(cause));
+                      }
+                    }}
+                  >
+                    Play Preview
+                  </Button>
+                </EditorToolbar>
+              }
+              footer={
+                selected ? (
+                  <div className="room-canvas-status" role="status">
+                    <span>Grid: {tileSize}px</span>
+                    <span>Snap {gridSnap ? 'On' : 'Off'}</span>
+                    <span>
+                      Size: {widthTiles} × {heightTiles} tiles
+                    </span>
+                    <span>Cells: {selected.editingMode === 'topdown'
+                      ? (selected.tiles ?? []).reduce((count, row) => count + row.length, 0)
+                      : (selected.tileCells?.length ?? 0)}</span>
+                    <span>
+                      Collision: {collision?.rects?.length ?? 0}
+                      {collision?.error ? ' (fallback)' : ''}
+                    </span>
+                    <span className="status-grow" />
+                    <span className="mono">{selected.id}</span>
+                  </div>
+                ) : null
+              }
+            >
+              {!selected ? (
+                <EmptyViewport
+                  title={rooms.length === 0 ? 'No rooms in this project' : 'Select a room'}
+                  description={
+                    rooms.length === 0
+                      ? 'listRooms returned no room records. Generate or open a project that has authored rooms.'
+                      : 'Choose a room from the left list to inspect metadata and paint tiles when geometry exists.'
+                  }
+                  meta={
+                    <dl className="settings-dl empty-viewport-dl">
+                      <dt>Project rooms</dt>
+                      <dd>{rooms.length}</dd>
+                      <dt>Active filter</dt>
+                      <dd>{query.trim() ? `"${query.trim()}" → ${filtered.length}` : 'none'}</dd>
+                      <dt>View mode</dt>
+                      <dd>{viewMode}</dd>
+                    </dl>
+                  }
+                  actions={
+                    <>
+                      <Button variant="primary" size="sm" onClick={() => navigate('Studio')}>
+                        Generation Studio
+                      </Button>
+                      <Button size="sm" onClick={() => navigate('World')}>
+                        World Editor
+                      </Button>
+                      <Button size="sm" onClick={() => navigate('Create')}>
+                        New Game
+                      </Button>
+                      {rooms.length > 0 && query && (
+                        <Button size="sm" onClick={() => setQuery('')}>
+                          Clear filter
+                        </Button>
+                      )}
+                    </>
+                  }
+                />
+              ) : viewMode === 'debug' ? (
+                <pre className="panel room-debug-json mono" role="region" aria-label="Room debug JSON">
+                  {JSON.stringify(selected, null, 2)}
+                </pre>
+              ) : selected.editingMode === 'topdown' ? (
+                <TopDownPropViewport key={`${selectedPath}:${selected.id}`} projectPath={selectedPath} areaId={selected.id} terrainBrush={paintTool==='select'?undefined:paintTool==='erase'?0:terrainMaterial} onPaint={terrainTiles=>{void runRoomAction(()=>window.metroforge!.updateRoom(selectedPath,{roomId:selected.id,terrainTiles}));}} tiles={selected.tiles} tileSize={tileSize} width={selected.width ?? 0} height={selected.height ?? 0} props={selected.propPlacements} zoom={zoom} fit={fitRoom} selectedId={activePropId} onSelect={setSelectedPropId} busy={isSaving} onMove={(id,x,y) => { void runRoomAction(() => window.metroforge!.updateRoom(selectedPath, {roomId:selected.id,propPlacements:(selected.propPlacements ?? []).map(prop => prop.id===id ? {...prop,x,y} : prop)})); }} />
+              ) : viewMode === 'visual' && selectedProject?.engine === 'unity' ? (
+                <UnityRoomGeometry key={`${selectedPath}:${selected.id}`} projectPath={selectedPath} roomId={selected.id} width={selected.width ?? 800} height={selected.height ?? 600} zoom={zoom} gridSnap={gridSnap} tileSize={tileSize} />
+              ) : viewMode === 'visual' ? (
+                  <TilePaintEditor
+                    key={`${selectedPath}:${selected.id}`}
+                    projectPath={selectedPath} roomId={selected.id}
+                    biomeId={selected.biomeId ?? 'biome_0'} tileSize={tileSize}
+                    width={selected.width ?? 800} height={selected.height ?? 600}
+                    initialCells={selected.tileCells} selectedTile={selectedTile}
+                    tool={paintTool} background={activeBackground} regionPlan={selected.castleRegionPlan} masonryRects={selected.masonryRects} stairFlights={selected.stairFlights}
+                    collisionRects={collision?.rects} zoom={zoom} fit={fitRoom}
+                    onSaved={() => loadRooms(selectedPath)}
+                  />
+              ) : !hasGeometry && viewMode !== 'entities' ? (
+                <EmptyViewport
+                  title={`No ${viewMode} geometry`}
+                  description={viewMode === 'collision' && collision?.error ? `Collision preview unavailable: ${collision.error}` : 'Authored overlay data is empty for this room. Entity counts still appear in the inspector when present on the room record.'}
+                  meta={
+                    <dl className="settings-dl empty-viewport-dl">
+                      <dt>Room</dt>
+                      <dd className="mono">{selected.id}</dd>
+                      <dt>Tile cells</dt>
+                      <dd>{selected.tileCells?.length ?? 0}</dd>
+                      <dt>Collision rects</dt>
+                      <dd>{collision?.rects?.length ?? 0}</dd>
+                    </dl>
+                  }
+                />
+              ) : (
+                <>
+                    <div
+                      className="room-canvas-zoom"
+                      style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top left' }}
+                    >
+                      <RoomCanvasPreview
+                        projectPath={selectedPath}
+                        background={activeBackground}
+                    room={selected}
+                        layer={viewMode}
+                        collision={collision}
+                        fill
+                        fit={fitRoom}
+                        selectedEntityKey={selectedEntityKey}
+                        onSelectEntity={setSelectedEntityKey}
+                        onMoveEntity={(key, x, y) => {
+                          const next = placements.map((p) =>
+                            entityKey(p) === key ? { ...p, x, y } : p,
+                          );
+                          setRooms((prev) =>
+                            prev.map((r) =>
+                              r.id === selected.id ? { ...r, entityPlacements: next } : r,
+                            ),
+                          );
+                        }}
+                        onMoveEntityEnd={(key, x, y) => {
+                          const next = placements.map((p) =>
+                            entityKey(p) === key ? { ...p, x, y } : p,
+                          );
+                          void persistPlacements(next);
+                          setDragEntityKey(null);
+                        }}
+                        dragEntityKey={dragEntityKey}
+                        setDragEntityKey={setDragEntityKey}
+                        gridSnap={gridSnap}
+                      />
+                    </div>
+                  {viewMode === 'collision' && (
+                    <p className="hint">
+                      {collision?.rects?.length
+                        ? `Authored collision: ${collision.rects.length} rects (${collision.widthTiles}×${collision.heightTiles} @ ${collision.tileSize}px).`
+                        : collision?.error
+                          ? `${collision.error} Showing painted tileCells occupancy instead.`
+                          : `Occupancy from ${selected.tileCells?.length ?? 0} painted tile cells.`}
+                    </p>
+                  )}
+                  {viewMode === 'entities' && (
+                    <p className="hint">
+                      Drag markers to author coordinates. Positions persist to rooms.json and Godot assembly.
+                      Missing placements fall back to legacy defaults on compile.
+                    </p>
+                  )}
+                </>
+              )}
+            </EditorViewport>
+
+            <aside className="room-detail panel editor-inspector">
+              {selected?.editingMode === 'topdown' ? (
+                <><TopDownPropPicker key={`${selectedPath}:${selected.id}:picker`} projectPath={selectedPath} props={selected.propPlacements} width={selected.width ?? 0} height={selected.height ?? 0} busy={isSaving} onSave={props => { void runRoomAction(() => window.metroforge!.updateRoom(selectedPath, {roomId:selected.id,propPlacements:props})); }} />
+                <TopDownPropInspector key={`${selectedPath}:${selected.id}:${JSON.stringify(selected.propPlacements)}`}
+                  props={selected.propPlacements} busy={isSaving} selectedId={activePropId} onSelect={setSelectedPropId}
+                  onSave={props => { void runRoomAction(() => window.metroforge!.updateRoom(selectedPath, {roomId:selected.id,propPlacements:props})); }}
+                  onUndo={() => { void runRoomAction(() => window.metroforge!.undoRoomEdit(selectedPath)); }}
+                  onRedo={() => { void runRoomAction(() => window.metroforge!.redoRoomEdit(selectedPath)); }} /></>
+              ) : selected ? (
+                <>
+                  <InspectorSection title="Preview">
+                    {hasGeometry ? (
+                      <div className="room-mini-preview" aria-label="Room mini preview">
+                        <RoomCanvasPreview projectPath={selectedPath} background={activeBackground} room={selected} layer="visual" collision={collision} mini />
+                      </div>
+                    ) : (
+                      <p className="hint">No geometry thumbnail — room has no authored tiles/collision yet.</p>
+                    )}
+                  </InspectorSection>
+                  {validCastleRegionPreview(selected.castleRegionPlan, selected.width ?? 800, selected.height ?? 600) ? (
+                    <InspectorSection title="Castle region material">
+                      <p className="hint">Local masonry follows this room’s saved chamber plan. Panorama settings apply to other rooms.</p>
+                      <p className="hint">The editor approximates the native stone shading. Play Preview to inspect architecture and lighting in game.</p>
+                      {selected.castleRegionPlan.furnishings?.length ? <p className="hint">Saved furnishings appear in their chamber positions. Play Preview checks floor support, lighting and clearance.</p> : <p className="hint">Regenerate this room to include its furnishing layout in the editor preview.</p>}
+                    </InspectorSection>
+                  ) : <BiomeBackgroundEditor key={JSON.stringify([selectedPath, selected.biomeId])} projectPath={selectedPath} biomeId={selected.biomeId ?? "biome_0"} onPreview={setCastleBackground} />}
+                  <InspectorSection title="Room">
+                    <dl className="settings-dl">
+                      <dt>Name</dt>
+                      <dd>{selected.id}</dd>
+                      <dt>ID</dt>
+                      <dd className="mono">{selected.id}</dd>
+                      <dt>Archetype</dt>
+                      <dd>
+                        {selected.archetype ?? '—'}
+                        {selected.worldArchetype && selected.worldArchetype !== selected.archetype
+                          ? ` · world ${selected.worldArchetype}`
+                          : ''}
+                      </dd>
+                      <dt>Dimensions</dt>
+                      <dd>
+                        {widthTiles} × {heightTiles} tiles · {selected.width ?? 800}×{selected.height ?? 600}px
+                      </dd>
+                      <dt>Biome</dt>
+                      <dd>{selected.biomeId ?? '—'}</dd>
+                    </dl>
+                    <div className="row" style={{ marginTop: '0.45rem', flexWrap: 'wrap', gap: '0.25rem' }}>
+                      {(selected.enemies ?? []).slice(0, 3).map((tag) => (
+                        <Badge key={tag} tone="muted">
+                          {tag}
+                        </Badge>
+                      ))}
+                      {(selected.biomeId ? [selected.biomeId] : []).map((tag) => (
+                        <Badge key={tag} tone="info">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </InspectorSection>
+                  <InspectorSection title="Contents">
+                    <ul className="stat-list">
+                      <li>Enemies ({(selected.enemies ?? []).length})</li>
+                      <li>NPCs ({(selected.npcs ?? []).length})</li>
+                      <li>Collectibles ({(selected.collectibles ?? []).length})</li>
+                      <li>Entity placements ({placements.length})</li>
+                      <li>Painted cells ({selected.tileCells?.length ?? 0})</li>
+                      <li>Weak floors ({selected.weakFloors?.length ?? 0})</li>
+                      <li>Connections ({selected.connections?.length ?? 0})</li>
+                    </ul>
+                    {selectedPlacement ? (
+                      <dl className="settings-dl" style={{ marginTop: '0.4rem' }}>
+                        <dt>Selected</dt>
+                        <dd className="mono">
+                          {selectedPlacement.kind} · {selectedPlacement.id}
+                        </dd>
+                        <dt>X</dt>
+                        <dd>
+                          <input
+                            type="number"
+                            className="input"
+                            value={selectedPlacement.x}
+                            onChange={(e) => {
+                              const x = Number(e.target.value);
+                              const next = placements.map((p) =>
+                                entityKey(p) === selectedEntityKey ? { ...p, x } : p,
+                              );
+                              setRooms((prev) =>
+                                prev.map((r) =>
+                                  r.id === selected.id ? { ...r, entityPlacements: next } : r,
+                                ),
+                              );
+                            }}
+                            onBlur={() => void persistPlacements(placements)}
+                          />
+                        </dd>
+                        <dt>Y</dt>
+                        <dd>
+                          <input
+                            type="number"
+                            className="input"
+                            value={selectedPlacement.y}
+                            onChange={(e) => {
+                              const y = Number(e.target.value);
+                              const next = placements.map((p) =>
+                                entityKey(p) === selectedEntityKey ? { ...p, y } : p,
+                              );
+                              setRooms((prev) =>
+                                prev.map((r) =>
+                                  r.id === selected.id ? { ...r, entityPlacements: next } : r,
+                                ),
+                              );
+                            }}
+                            onBlur={() => void persistPlacements(placements)}
+                          />
+                        </dd>
+                      </dl>
+                    ) : null}
+                  </InspectorSection>
+                  <InspectorSection title="Connections">
+                    {(selected.connections ?? []).length === 0 ? (
+                      <p className="hint">No connections on this room record.</p>
+                    ) : (
+                      <ul className="stat-list">
+                        {(selected.connections ?? []).map((c, i) => (
+                          <li key={`${c.direction}-${c.targetRoomId}-${i}`}>
+                            <button
+                              type="button"
+                              className="status-link"
+                              onClick={() => {
+                                setSelectedRoomId(c.targetRoomId);
+                                setFocusRoomId(c.targetRoomId);
+                              }}
+                            >
+                              {c.direction} → {c.targetRoomId}
+                            </button>
+                            {(c.requirements?.length ?? 0) > 0 ? (
+                              <span className="hint"> · {c.requirements!.join(', ')}</span>
+                            ) : null}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </InspectorSection>
+                  <InspectorSection title="Actions">
+                    <div className="row" style={{ flexWrap: 'wrap', gap: '0.35rem' }}>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          if (!selectedPath) return;
+                          void runRoomAction(() => window.metroforge!.undoRoomEdit!(selectedPath));
+                        }}
+                      >
+                        Undo saved room change
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          if (!selectedPath) return;
+                          void runRoomAction(() => window.metroforge!.redoRoomEdit(selectedPath));
+                        }}
+                      >
+                        Redo saved room change
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          const definitionId = enemyDefinitionForPlacement([selected, ...rooms]);
+                          if (!definitionId) { setError('This project has no enemy definition to place. Generate an encounter first.'); return; }
+                          const enemyId = unusedEntityId(placements, 'enemy', `${definitionId}_instance`);
+                          const floorY = (selected.height ?? 600) - 64;
+                          const nextPlacements = [
+                            ...placements,
+                            {
+                              kind: 'enemy',
+                              id: enemyId,
+                              definitionId,
+                              x: Math.round((selected.width ?? 800) * 0.55),
+                              y: floorY,
+                            },
+                          ];
+                          const nextEnemies = [...(selected.enemies ?? []), enemyId];
+                          void persistPlacements(nextPlacements, { enemies: nextEnemies });
+                          setSelectedEntityKey(`enemy:${enemyId}`);
+                        }}
+                      >
+                        Place enemy
+                      </Button>
+                      <Button
+                        size="sm"
+                        disabled={!selectedPlacement}
+                        onClick={() => {
+                          if (!selectedPlacement) return;
+                          const copyId = unusedEntityId(placements, selectedPlacement.kind, `${selectedPlacement.id}_copy`);
+                          const copy: EntityPlacement = {
+                            ...selectedPlacement,
+                            id: copyId,
+                            definitionId: selectedPlacement.definitionId ?? selectedPlacement.id,
+                            x: selectedPlacement.x + 32,
+                          };
+                          const next = [...placements, copy];
+                          const extras: Partial<RoomRecord> = {};
+                          if (copy.kind === 'enemy') {
+                            extras.enemies = [...(selected.enemies ?? []), copy.id];
+                          }
+                          if (copy.kind === 'npc') {
+                            extras.npcs = [...(selected.npcs ?? []), copy.id];
+                          }
+                          void persistPlacements(next, extras);
+                          setSelectedEntityKey(entityKey(copy));
+                        }}
+                      >
+                        Duplicate
+                      </Button>
+                      <Button
+                        size="sm"
+                        disabled={!selectedPlacement || selectedPlacement.kind === 'player_spawn'}
+                        onClick={() => {
+                          if (!selectedPlacement) return;
+                          const next = placements.filter((p) => entityKey(p) !== selectedEntityKey);
+                          const extras: Partial<RoomRecord> = {};
+                          if (selectedPlacement.kind === 'enemy') {
+                            extras.enemies = (selected.enemies ?? []).filter(
+                              (id) => id !== selectedPlacement.id,
+                            );
+                          }
+                          if (selectedPlacement.kind === 'npc') {
+                            extras.npcs = (selected.npcs ?? []).filter(
+                              (id) => id !== selectedPlacement.id,
+                            );
+                          }
+                          void persistPlacements(next, extras);
+                          setSelectedEntityKey(null);
+                        }}
+                      >
+                        Delete
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          runRoomAction(() =>
+                            window.metroforge!.updateRoom!(selectedPath, {
+                              roomId: selected.id,
+                              hasEnemy: true,
+                            }),
+                          )
+                        }
+                      >
+                        Add Enemy
+                      </Button>
+                      <Button
+                        size="sm"
+                        disabled={!selected.enemies?.length}
+                        onClick={() =>
+                          runRoomAction(() =>
+                            window.metroforge!.updateRoom!(selectedPath, {
+                              roomId: selected.id,
+                              enemies: (selected.enemies ?? []).slice(0, -1),
+                            }),
+                          )
+                        }
+                      >
+                        Remove last enemy
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          runRoomAction(() =>
+                            window.metroforge!.regenerateRoom!(selectedPath, selected.id, 'encounter'),
+                          )
+                        }
+                      >
+                        Regenerate Encounter
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          runRoomAction(() =>
+                            window.metroforge!.regenerateRoom!(selectedPath, selected.id, 'full'),
+                          )
+                        }
+                      >
+                        Regenerate Room
+                      </Button>
+                      <Button variant="primary" size="sm" onClick={() => navigate('World')}>
+                        World Editor
+                      </Button>
+                      <Button size="sm" onClick={() => navigate('Dungeon')}>
+                        Dungeon
+                      </Button>
+                    </div>
+                  </InspectorSection>
+                </>
+              ) : (
+                <EmptyViewport
+                  className="inspector-empty"
+                  title="Inspector"
+                  description="Room properties appear when a room is selected from listRooms."
+                  meta={
+                    <dl className="settings-dl empty-viewport-dl">
+                      <dt>Rooms loaded</dt>
+                      <dd>{rooms.length}</dd>
+                    </dl>
+                  }
+                />
+              )}
+            </aside>
+          </EditorWorkbench>
+
+          {message && <p className="result success">{message}</p>}
+          {error && <p className="result error">{error}</p>}
+        </>
+      )}
+    </section>
+  );
+}
+
+function RoomCanvasPreview({
+  projectPath,
+  room,
+  layer,
+  collision,
+  background,
+  mini = false,
+  fill = false,
+  fit = false,
+  selectedEntityKey = null,
+  onSelectEntity,
+  onMoveEntity,
+  onMoveEntityEnd,
+  dragEntityKey = null,
+  setDragEntityKey,
+  gridSnap = true,
+}: {
+  projectPath?: string;
+  room: RoomRecord;
+  layer: ViewModeId;
+  collision?: RoomCollisionPreview | null;
+  background?: CastleBackgroundPreview | null;
+  mini?: boolean;
+  fill?: boolean;
+  fit?: boolean;
+  selectedEntityKey?: string | null;
+  onSelectEntity?: (key: string | null) => void;
+  onMoveEntity?: (key: string, x: number, y: number) => void;
+  onMoveEntityEnd?: (key: string, x: number, y: number) => void;
+  dragEntityKey?: string | null;
+  setDragEntityKey?: (key: string | null) => void;
+  gridSnap?: boolean;
+}) {
+  const tileSize = collision?.tileSize ?? room.tileSize ?? TILE;
+  const w = room.width ?? 800;
+  const h = room.height ?? 600;
+  const showBackdrop = (!!background || !!room.castleRegionPlan || !!room.masonryRects?.length) && (layer === 'visual' || layer === 'entities');
+  const backdrop = showBackdrop ? <CastleBackdrop projectPath={projectPath} background={background} regionPlan={room.castleRegionPlan} masonryRects={room.masonryRects} stairFlights={room.stairFlights} roomId={room.id} width={w} height={h} tileSize={tileSize} /> : null;
+  const scale = mini ? 0.18 : fill ? 0.55 : 0.35;
+  const showTiles = layer === 'visual' || layer === 'collision';
+  const showNav = layer === 'visual' || layer === 'navigation' || layer === 'progression';
+  const authoredRects = showTiles ? collision?.rects ?? [] : [];
+  const tileCells = room.tileCells ?? [];
+  const hasPaint = tileCells.length > 0 || authoredRects.length > 0;
+  const placements = room.entityPlacements ?? [];
+
+  const clientToRoom = (svg: SVGSVGElement, clientX: number, clientY: number) => {
+    const pt = svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return { x: 0, y: 0 };
+    const local = pt.matrixTransform(ctm.inverse());
+    let x = local.x;
+    let y = local.y;
+    if (gridSnap) {
+      x = Math.round(x / tileSize) * tileSize;
+      y = Math.round(y / tileSize) * tileSize;
+    }
+    return {
+      x: Math.max(0, Math.min(w, Math.round(x))),
+      y: Math.max(0, Math.min(h, Math.round(y))),
+    };
+  };
+
+  if (layer === 'entities') {
+    return (
+      <div className={`room-canvas-wrap${fill ? ' room-canvas-fill' : ''} room-canvas-pixelated`}>
+        <svg
+          className="room-canvas"
+          width={fit ? "100%" : w * scale}
+          height={fit ? undefined : h * scale}
+          viewBox={`0 0 ${w} ${h}`}
+          style={{ imageRendering: 'pixelated', ...(fit ? { aspectRatio: w / h, display: 'block' } : {}) }}
+          onMouseMove={(e) => {
+            if (!dragEntityKey || !onMoveEntity) return;
+            const { x, y } = clientToRoom(e.currentTarget, e.clientX, e.clientY);
+            onMoveEntity(dragEntityKey, x, y);
+          }}
+          onMouseUp={(e) => {
+            if (!dragEntityKey || !onMoveEntityEnd) return;
+            const { x, y } = clientToRoom(e.currentTarget, e.clientX, e.clientY);
+            onMoveEntityEnd(dragEntityKey, x, y);
+          }}
+          onMouseLeave={() => {
+            if (dragEntityKey && setDragEntityKey) setDragEntityKey(null);
+          }}
+        >
+          <rect className="room-floor" x={0} y={0} width={w} height={h} />
+        {backdrop}
+          {tileCells.map((cell, i) => (
+            <rect
+              key={`tile-${i}`}
+              className="room-paint"
+              x={cell.x * tileSize}
+              y={cell.y * tileSize}
+              width={tileSize}
+              height={tileSize}
+              opacity={0.35}
+            />
+          ))}
+          {placements.length === 0 ? (
+            <text x={16} y={32} fill="currentColor" fontSize={12}>
+              No placements yet — Place enemy or Add Enemy, then drag markers.
+            </text>
+          ) : (
+            placements.map((p) => {
+              const key = entityKey(p);
+              const selected = key === selectedEntityKey;
+              return (
+                <g
+                  key={key}
+                  transform={`translate(${p.x}, ${p.y})`}
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    onSelectEntity?.(key);
+                    setDragEntityKey?.(key);
+                  }}
+                  style={{ cursor: 'grab' }}
+                >
+                  <circle r={10} fill={selected ? '#c47a3a' : '#8a9bb0'} stroke="#1a1c1f" strokeWidth={2} />
+                  <text x={14} y={4} fontSize={11} fill="currentColor">
+                    {p.kind}:{p.id}
+                  </text>
+                </g>
+              );
+            })
+          )}
+        </svg>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`room-canvas-wrap${fill ? ' room-canvas-fill' : ''} room-canvas-pixelated`}>
+      <svg
+        className="room-canvas"
+        width={fit ? "100%" : w * scale}
+        height={fit ? undefined : h * scale}
+        viewBox={`0 0 ${w} ${h}`}
+        style={{ imageRendering: 'pixelated', ...(fit ? { aspectRatio: w / h, display: 'block' } : {}) }}
+      >
+        <rect className="room-floor" x={0} y={0} width={w} height={h} />
+        {backdrop}
+        {hasPaint && (
+          <defs>
+            <pattern id={`room-grid-${room.id}`} width={tileSize} height={tileSize} patternUnits="userSpaceOnUse">
+              <path d={`M ${tileSize} 0 L 0 0 0 ${tileSize}`} fill="none" stroke="rgba(128,140,160,0.25)" strokeWidth="0.5" />
+            </pattern>
+          </defs>
+        )}
+        {hasPaint && <rect x={0} y={0} width={w} height={h} fill={`url(#room-grid-${room.id})`} />}
+        {showTiles &&
+          authoredRects.length === 0 &&
+          tileCells.map((cell, i) => (
+            <rect
+              key={`tile-${i}`}
+              className={layer === 'collision' ? 'room-occupancy' : 'room-paint'}
+              x={cell.x * tileSize}
+              y={cell.y * tileSize}
+              width={tileSize}
+              height={tileSize}
+            />
+          ))}
+        {authoredRects.map((rect, i) => rect.points ? (
+          <polygon key={`col-${i}`} className="room-occupancy" points={rect.points.map(p => `${p.x},${p.y}`).join(' ')} />
+        ) : (
+          <rect
+            key={`col-${i}`}
+            className="room-occupancy"
+            x={rect.x}
+            y={rect.y}
+            width={Math.max(1, rect.w)}
+            height={Math.max(1, rect.h)}
+          />
+        ))}
+        {(layer === 'visual' || layer === 'debug') &&
+          placements.map((p) => (
+            <circle key={entityKey(p)} cx={p.x} cy={p.y} r={6} fill="#c47a3a" opacity={0.85}>
+              <title>
+                {p.kind}:{p.id}
+              </title>
+            </circle>
+          ))}
+        {showNav &&
+          (room.weakFloors ?? []).map((floor, i) => (
+            <rect
+              key={`weak-${i}`}
+              className="room-weak-floor"
+              x={floor.x}
+              y={h - 64}
+              width={Math.max(24, floor.width)}
+              height={12}
+            >
+              <title>Weak floor → {floor.targetRoomId}</title>
+            </rect>
+          ))}
+        {showNav &&
+          (room.connections ?? []).map((c, i) => {
+            let x = w / 2;
+            let y = h - 80;
+            if (c.direction === 'left') x = 12;
+            if (c.direction === 'right') x = w - 24;
+            if (c.direction === 'up') y = 24;
+            const locked = (c.requirements?.length ?? 0) > 0;
+            return (
+              <g key={`door-${i}`}>
+                <rect
+                  className={locked ? 'room-door-locked' : 'room-door'}
+                  x={x}
+                  y={y}
+                  width={24}
+                  height={24}
+                />
+                <title>
+                  {c.direction} → {c.targetRoomId}
+                  {locked ? ` (${c.requirements!.join(', ')})` : ''}
+                </title>
+              </g>
+            );
+          })}
+      </svg>
+      {!mini && (
+        <p className="hint">
+          {layer === 'collision'
+            ? authoredRects.length > 0
+              ? 'Collision layer from getRoomCollision.'
+              : 'Occupancy overlay from painted cells — authored collision unavailable for this room.'
+            : showBackdrop ? 'Saved biome artwork with authored geometry and entity markers. Play Preview shows the complete game.' : 'Visual preview from authored tileCells / connections / entity markers.'}
+        </p>
+      )}
+    </div>
+  );
+}

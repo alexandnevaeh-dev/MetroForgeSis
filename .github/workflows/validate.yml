@@ -1,0 +1,112 @@
+name: MetroForge Validation
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+
+jobs:
+  baseline:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-15]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm build
+      - run: pnpm desktop:build
+
+  godot-runtime:
+    runs-on: windows-latest
+    needs: baseline
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.0
+          cache: pnpm
+      - name: Install Godot 4.7.2
+        shell: pwsh
+        run: |
+          $url = 'https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_win64_console.exe.zip'
+          $zip = Join-Path $env:RUNNER_TEMP 'godot.zip'
+          $dir = Join-Path $env:RUNNER_TEMP 'godot'
+          Invoke-WebRequest -Uri $url -OutFile $zip
+          Expand-Archive -Path $zip -DestinationPath $dir -Force
+          "GODOT_EXECUTABLE=$dir\Godot_v4.7.2-stable_win64_console.exe" >> $env:GITHUB_ENV
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm smoke:godot
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: metroforge-runtime-evidence
+          if-no-files-found: ignore
+          path: |
+            GeneratedGames/metroforge-smoke-metroidvania/metroforge-validation.json
+            GeneratedGames/metroforge-smoke-metroidvania/qa/capture_telemetry.json
+            GeneratedGames/metroforge-smoke-metroidvania/qa/screenshot_gameplay.png
+      - run: pnpm smoke:world-design
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: metroforge-world-design-evidence
+          if-no-files-found: ignore
+          path: |
+            GeneratedGames/metroforge-smoke-world-design/world-design-smoke-report.json
+            GeneratedGames/metroforge-smoke-world-design/world_design_report.txt
+            GeneratedGames/metroforge-smoke-world-design/validation_report.json
+
+  godot-runtime-macos-arm64:
+    runs-on: macos-15
+    needs: baseline
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.0
+          cache: pnpm
+      - name: Install official Godot 4.7.2 Universal build
+        shell: bash
+        run: |
+          curl --fail --location --output "$RUNNER_TEMP/godot.zip" 'https://downloads.godotengine.org/?flavor=stable&platform=macos.universal&slug=macos.universal.zip&version=4.7.2'
+          ditto -x -k "$RUNNER_TEMP/godot.zip" "$RUNNER_TEMP/godot"
+          echo "GODOT_EXECUTABLE=$RUNNER_TEMP/godot/Godot.app/Contents/MacOS/Godot" >> "$GITHUB_ENV"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm smoke:godot
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: metroforge-runtime-evidence-macos-arm64
+          if-no-files-found: ignore
+          path: |
+            GeneratedGames/metroforge-smoke-metroidvania/metroforge-validation.json
+            GeneratedGames/metroforge-smoke-metroidvania/qa/capture_telemetry.json
+            GeneratedGames/metroforge-smoke-metroidvania/qa/screenshot_gameplay.png
+      - run: pnpm smoke:world-design
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: metroforge-world-design-evidence-macos-arm64
+          if-no-files-found: ignore
+          path: |
+            GeneratedGames/metroforge-smoke-world-design/world-design-smoke-report.json
+            GeneratedGames/metroforge-smoke-world-design/world_design_report.txt
+            GeneratedGames/metroforge-smoke-world-design/validation_report.json

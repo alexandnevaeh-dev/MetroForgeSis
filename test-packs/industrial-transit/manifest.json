@@ -1,0 +1,2528 @@
+{
+  "id": "industrial-transit",
+  "visualTheme": "abandoned underground transit / industrial sci-fi ruins",
+  "playerReferenceHeight": 52,
+  "sourceLicense": "MetroForge internally authored test artwork; repository development-only",
+  "assets": [
+    {
+      "id": "player_idle",
+      "family": "character",
+      "role": "player.idle",
+      "source": "characters/player/player_idle.png",
+      "destination": "assets/characters/player_idle.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack",
+      "animation": [
+        {
+          "id": "idle",
+          "frameCount": 6,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 8,
+          "loop": true,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "idle",
+          "vfxAnchors": {
+            "ground": [
+              32,
+              60
+            ],
+            "hand": [
+              48,
+              31
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "player_run",
+      "family": "character",
+      "role": "player.run",
+      "source": "characters/player/player_run.png",
+      "destination": "assets/characters/player_run.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack",
+      "animation": [
+        {
+          "id": "run",
+          "frameCount": 8,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 14,
+          "loop": true,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "run",
+          "vfxAnchors": {
+            "ground": [
+              32,
+              60
+            ],
+            "hand": [
+              48,
+              31
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "player_jump_start",
+      "family": "character",
+      "role": "player.jump_start",
+      "source": "characters/player/player_jump_start.png",
+      "destination": "assets/characters/player_jump_start.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack",
+      "animation": [
+        {
+          "id": "jump_start",
+          "frameCount": 3,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 12,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "jump_start",
+          "vfxAnchors": {
+            "ground": [
+              32,
+              60
+            ],
+            "hand": [
+              48,
+              31
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "player_jump",
+      "family": "character",
+      "role": "player.jump",
+      "source": "characters/player/player_jump.png",
+      "destination": "assets/characters/player_jump.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack",
+      "animation": [
+        {
+          "id": "jump_rise",
+          "frameCount": 3,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 10,
+          "loop": true,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "jump",
+          "vfxAnchors": {
+            "ground": [
+              32,
+              60
+            ],
+            "hand": [
+              48,
+              31
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "player_fall",
+      "family": "character",
+      "role": "player.fall",
+      "source": "characters/player/player_fall.png",
+      "destination": "assets/characters/player_fall.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack",
+      "animation": [
+        {
+          "id": "fall",
+          "frameCount": 3,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 10,
+          "loop": true,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "fall",
+          "vfxAnchors": {
+            "ground": [
+              32,
+              60
+            ],
+            "hand": [
+              48,
+              31
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "player_land",
+      "family": "character",
+      "role": "player.land",
+      "source": "characters/player/player_land.png",
+      "destination": "assets/characters/player_land.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack",
+      "animation": [
+        {
+          "id": "land",
+          "frameCount": 3,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 14,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "land",
+          "vfxAnchors": {
+            "ground": [
+              32,
+              60
+            ],
+            "hand": [
+              48,
+              31
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "player_attack",
+      "family": "character",
+      "role": "player.attack",
+      "source": "characters/player/player_attack.png",
+      "destination": "assets/characters/player_attack.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack",
+      "animation": [
+        {
+          "id": "attack_1",
+          "frameCount": 6,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 18,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "attack",
+          "hitFrames": [
+            2,
+            3
+          ],
+          "vfxAnchors": {
+            "ground": [
+              32,
+              60
+            ],
+            "hand": [
+              48,
+              31
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "player_attack_2",
+      "family": "character",
+      "role": "player.attack_2",
+      "source": "characters/player/player_attack_2.png",
+      "destination": "assets/characters/player_attack_2.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack",
+      "animation": [
+        {
+          "id": "attack_2",
+          "frameCount": 6,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 18,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "attack_2",
+          "hitFrames": [
+            2,
+            3
+          ],
+          "vfxAnchors": {
+            "ground": [
+              32,
+              60
+            ],
+            "hand": [
+              48,
+              31
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "player_dash",
+      "family": "character",
+      "role": "player.dash",
+      "source": "characters/player/player_dash.png",
+      "destination": "assets/characters/player_dash.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack",
+      "animation": [
+        {
+          "id": "dash",
+          "frameCount": 5,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 18,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "dash",
+          "vfxAnchors": {
+            "ground": [
+              32,
+              60
+            ],
+            "hand": [
+              48,
+              31
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "player_wall_slide",
+      "family": "character",
+      "role": "player.wall_slide",
+      "source": "characters/player/player_wall_slide.png",
+      "destination": "assets/characters/player_wall_slide.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack",
+      "animation": [
+        {
+          "id": "wall_slide",
+          "frameCount": 4,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 8,
+          "loop": true,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "wall_slide",
+          "vfxAnchors": {
+            "ground": [
+              32,
+              60
+            ],
+            "hand": [
+              48,
+              31
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "player_wall_jump",
+      "family": "character",
+      "role": "player.wall_jump",
+      "source": "characters/player/player_wall_jump.png",
+      "destination": "assets/characters/player_wall_jump.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack",
+      "animation": [
+        {
+          "id": "wall_jump",
+          "frameCount": 4,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 14,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "wall_jump",
+          "vfxAnchors": {
+            "ground": [
+              32,
+              60
+            ],
+            "hand": [
+              48,
+              31
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "player_swim",
+      "family": "character",
+      "role": "player.swim",
+      "source": "characters/player/player_swim.png",
+      "destination": "assets/characters/player_swim.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack",
+      "animation": [
+        {
+          "id": "swim",
+          "frameCount": 6,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 10,
+          "loop": true,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "swim",
+          "vfxAnchors": {
+            "ground": [
+              32,
+              60
+            ],
+            "hand": [
+              48,
+              31
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "player_hurt",
+      "family": "character",
+      "role": "player.hurt",
+      "source": "characters/player/player_hurt.png",
+      "destination": "assets/characters/player_hurt.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack",
+      "animation": [
+        {
+          "id": "hurt",
+          "frameCount": 3,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 14,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "hurt",
+          "vfxAnchors": {
+            "ground": [
+              32,
+              60
+            ],
+            "hand": [
+              48,
+              31
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "player_death",
+      "family": "character",
+      "role": "player.death",
+      "source": "characters/player/player_death.png",
+      "destination": "assets/characters/player_death.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack",
+      "animation": [
+        {
+          "id": "death",
+          "frameCount": 10,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 10,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "death",
+          "vfxAnchors": {
+            "ground": [
+              32,
+              60
+            ],
+            "hand": [
+              48,
+              31
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "player_air_dash",
+      "family": "character",
+      "role": "player.air_dash",
+      "source": "characters/player/player_air_dash.png",
+      "destination": "assets/characters/player_air_dash.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack",
+      "animation": [
+        {
+          "id": "air_dash",
+          "frameCount": 5,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 18,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "air_dash",
+          "vfxAnchors": {
+            "ground": [
+              32,
+              60
+            ],
+            "hand": [
+              48,
+              31
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "player_double_jump",
+      "family": "character",
+      "role": "player.double_jump",
+      "source": "characters/player/player_double_jump.png",
+      "destination": "assets/characters/player_double_jump.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack",
+      "animation": [
+        {
+          "id": "double_jump",
+          "frameCount": 4,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 14,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "double_jump",
+          "vfxAnchors": {
+            "ground": [
+              32,
+              60
+            ],
+            "hand": [
+              48,
+              31
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "player_ground_slam_start",
+      "family": "character",
+      "role": "player.ground_slam_start",
+      "source": "characters/player/player_ground_slam_start.png",
+      "destination": "assets/characters/player_ground_slam_start.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack",
+      "animation": [
+        {
+          "id": "ground_slam_start",
+          "frameCount": 3,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 12,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "ground_slam_start",
+          "vfxAnchors": {
+            "ground": [
+              32,
+              60
+            ],
+            "hand": [
+              48,
+              31
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "player_ground_slam_fall",
+      "family": "character",
+      "role": "player.ground_slam_fall",
+      "source": "characters/player/player_ground_slam_fall.png",
+      "destination": "assets/characters/player_ground_slam_fall.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack",
+      "animation": [
+        {
+          "id": "ground_slam_fall",
+          "frameCount": 3,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 12,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "ground_slam_fall",
+          "vfxAnchors": {
+            "ground": [
+              32,
+              60
+            ],
+            "hand": [
+              48,
+              31
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "player_ground_slam_impact",
+      "family": "character",
+      "role": "player.ground_slam_impact",
+      "source": "characters/player/player_ground_slam_impact.png",
+      "destination": "assets/characters/player_ground_slam_impact.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack",
+      "animation": [
+        {
+          "id": "ground_slam_impact",
+          "frameCount": 5,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 16,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "ground_slam_impact",
+          "vfxAnchors": {
+            "ground": [
+              32,
+              60
+            ],
+            "hand": [
+              48,
+              31
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "player_swim_idle",
+      "family": "character",
+      "role": "player.swim_idle",
+      "source": "characters/player/player_swim_idle.png",
+      "destination": "assets/characters/player_swim_idle.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack",
+      "animation": [
+        {
+          "id": "swim_idle",
+          "frameCount": 5,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 8,
+          "loop": true,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "swim_idle",
+          "vfxAnchors": {
+            "ground": [
+              32,
+              60
+            ],
+            "hand": [
+              48,
+              31
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "player_grapple",
+      "family": "character",
+      "role": "player.grapple",
+      "source": "characters/player/player_grapple.png",
+      "destination": "assets/characters/player_grapple.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack",
+      "animation": [
+        {
+          "id": "grapple",
+          "frameCount": 5,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 12,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "grapple",
+          "vfxAnchors": {
+            "ground": [
+              32,
+              60
+            ],
+            "hand": [
+              48,
+              31
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "player_phase",
+      "family": "character",
+      "role": "player.phase",
+      "source": "characters/player/player_phase.png",
+      "destination": "assets/characters/player_phase.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack",
+      "animation": [
+        {
+          "id": "phase",
+          "frameCount": 5,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 12,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "phase",
+          "vfxAnchors": {
+            "ground": [
+              32,
+              60
+            ],
+            "hand": [
+              48,
+              31
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "player_respawn",
+      "family": "character",
+      "role": "player.respawn",
+      "source": "characters/player/player_respawn.png",
+      "destination": "assets/characters/player_respawn.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack",
+      "animation": [
+        {
+          "id": "respawn",
+          "frameCount": 8,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 10,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "respawn",
+          "vfxAnchors": {
+            "ground": [
+              32,
+              60
+            ],
+            "hand": [
+              48,
+              31
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "player_interact",
+      "family": "character",
+      "role": "player.interact",
+      "source": "characters/player/player_interact.png",
+      "destination": "assets/characters/player_interact.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack",
+      "animation": [
+        {
+          "id": "interact",
+          "frameCount": 4,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 10,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "interact",
+          "vfxAnchors": {
+            "ground": [
+              32,
+              60
+            ],
+            "hand": [
+              48,
+              31
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "player_ability_acquire",
+      "family": "character",
+      "role": "player.ability_acquire",
+      "source": "characters/player/player_ability_acquire.png",
+      "destination": "assets/characters/player_ability_acquire.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack",
+      "animation": [
+        {
+          "id": "ability_acquire",
+          "frameCount": 8,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 12,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "ability_acquire",
+          "vfxAnchors": {
+            "ground": [
+              32,
+              60
+            ],
+            "hand": [
+              48,
+              31
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "player_walk",
+      "family": "character",
+      "role": "player.walk",
+      "source": "characters/player/player_run.png",
+      "destination": "assets/characters/player_walk.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack",
+      "animation": [
+        {
+          "id": "walk",
+          "frameCount": 8,
+          "frameSize": [
+            64,
+            64
+          ],
+          "fps": 12,
+          "loop": true,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "walk",
+          "vfxAnchors": {
+            "ground": [
+              32,
+              60
+            ],
+            "hand": [
+              48,
+              31
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "enemy_000_walk",
+      "family": "character",
+      "role": "drone.walk",
+      "source": "characters/enemies/enemy_000_walk.png",
+      "destination": "assets/enemies/enemy_000_walk.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "enemy_000_attack",
+      "family": "character",
+      "role": "drone.attack",
+      "source": "characters/enemies/enemy_000_attack.png",
+      "destination": "assets/enemies/enemy_000_attack.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "enemy_000_hurt",
+      "family": "character",
+      "role": "drone.hurt",
+      "source": "characters/enemies/enemy_000_hurt.png",
+      "destination": "assets/enemies/enemy_000_hurt.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "enemy_000_death",
+      "family": "character",
+      "role": "drone.death",
+      "source": "characters/enemies/enemy_000_death.png",
+      "destination": "assets/enemies/enemy_000_death.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "enemy_001_walk",
+      "family": "character",
+      "role": "sentry.walk",
+      "source": "characters/enemies/enemy_001_walk.png",
+      "destination": "assets/enemies/enemy_001_walk.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "free",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "enemy_001_attack",
+      "family": "character",
+      "role": "sentry.attack",
+      "source": "characters/enemies/enemy_001_attack.png",
+      "destination": "assets/enemies/enemy_001_attack.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "free",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "enemy_001_hurt",
+      "family": "character",
+      "role": "sentry.hurt",
+      "source": "characters/enemies/enemy_001_hurt.png",
+      "destination": "assets/enemies/enemy_001_hurt.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "free",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "enemy_001_death",
+      "family": "character",
+      "role": "sentry.death",
+      "source": "characters/enemies/enemy_001_death.png",
+      "destination": "assets/enemies/enemy_001_death.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "free",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "enemy_002_walk",
+      "family": "character",
+      "role": "charger.walk",
+      "source": "characters/enemies/enemy_002_walk.png",
+      "destination": "assets/enemies/enemy_002_walk.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "enemy_002_attack",
+      "family": "character",
+      "role": "charger.attack",
+      "source": "characters/enemies/enemy_002_attack.png",
+      "destination": "assets/enemies/enemy_002_attack.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "enemy_002_hurt",
+      "family": "character",
+      "role": "charger.hurt",
+      "source": "characters/enemies/enemy_002_hurt.png",
+      "destination": "assets/enemies/enemy_002_hurt.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "enemy_002_death",
+      "family": "character",
+      "role": "charger.death",
+      "source": "characters/enemies/enemy_002_death.png",
+      "destination": "assets/enemies/enemy_002_death.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "enemy_003_walk",
+      "family": "character",
+      "role": "walker.walk",
+      "source": "characters/enemies/enemy_003_walk.png",
+      "destination": "assets/enemies/enemy_003_walk.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "enemy_003_attack",
+      "family": "character",
+      "role": "walker.attack",
+      "source": "characters/enemies/enemy_003_attack.png",
+      "destination": "assets/enemies/enemy_003_attack.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "enemy_003_hurt",
+      "family": "character",
+      "role": "walker.hurt",
+      "source": "characters/enemies/enemy_003_hurt.png",
+      "destination": "assets/enemies/enemy_003_hurt.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "enemy_003_death",
+      "family": "character",
+      "role": "walker.death",
+      "source": "characters/enemies/enemy_003_death.png",
+      "destination": "assets/enemies/enemy_003_death.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "boss_final_walk",
+      "family": "character",
+      "role": "boss.walk",
+      "source": "characters/boss/boss_final_walk.png",
+      "destination": "assets/bosses/boss_final_walk.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "boss_final_attack",
+      "family": "character",
+      "role": "boss.attack",
+      "source": "characters/boss/boss_final_attack.png",
+      "destination": "assets/bosses/boss_final_attack.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "boss_final_hurt",
+      "family": "character",
+      "role": "boss.hurt",
+      "source": "characters/boss/boss_final_hurt.png",
+      "destination": "assets/bosses/boss_final_hurt.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "boss_final_death",
+      "family": "character",
+      "role": "boss.death",
+      "source": "characters/boss/boss_final_death.png",
+      "destination": "assets/bosses/boss_final_death.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "npc_000_idle",
+      "family": "character",
+      "role": "npc.idle",
+      "source": "characters/npcs/npc_000_idle.png",
+      "destination": "assets/npcs/npc_000_idle.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "npc_000_talk",
+      "family": "character",
+      "role": "npc.talk",
+      "source": "characters/npcs/npc_000_talk.png",
+      "destination": "assets/npcs/npc_000_talk.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "npc_000_gesture",
+      "family": "character",
+      "role": "npc.gesture",
+      "source": "characters/npcs/npc_000_gesture.png",
+      "destination": "assets/npcs/npc_000_gesture.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "transit_tileset",
+      "family": "tile",
+      "role": "floor wall ceiling platform transit tile atlas",
+      "source": "tiles/transit_tileset.png",
+      "destination": "assets/tilesets/biome_0/source.png",
+      "nativeDimensions": {
+        "width": 256,
+        "height": 192
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "bg_far",
+      "family": "background",
+      "role": "far_background",
+      "source": "backgrounds/far/biome_0_far.png",
+      "destination": "assets/backgrounds/biome_0/far.png",
+      "nativeDimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "anchor": "free",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "far",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "bg_mid",
+      "family": "background",
+      "role": "mid_background",
+      "source": "backgrounds/mid/biome_0_mid.png",
+      "destination": "assets/backgrounds/biome_0/mid.png",
+      "nativeDimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "anchor": "free",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "mid",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "bg_near",
+      "family": "background",
+      "role": "near_background",
+      "source": "backgrounds/near/biome_0_near.png",
+      "destination": "assets/backgrounds/biome_0/near.png",
+      "nativeDimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "anchor": "free",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "near",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "pillar_small",
+      "family": "architecture",
+      "role": "pillar_small",
+      "source": "architecture/pillar_small.png",
+      "destination": "assets/architecture/biome_0/biome_0_arch_0.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 96
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "arch_narrow",
+      "family": "architecture",
+      "role": "arch_narrow",
+      "source": "architecture/arch_narrow.png",
+      "destination": "assets/architecture/biome_0/biome_0_arch_1.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 96
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "pipe_cluster",
+      "family": "prop",
+      "role": "pipe_cluster",
+      "source": "props/pipe_cluster.png",
+      "destination": "assets/props/biome_0/biome_0_prop_0.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 96
+      },
+      "anchor": "wall",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "utility_lamp",
+      "family": "prop",
+      "role": "utility_lamp",
+      "source": "props/utility_lamp.png",
+      "destination": "assets/props/biome_0/biome_0_prop_1.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 96
+      },
+      "anchor": "wall",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "maintenance_crate",
+      "family": "prop",
+      "role": "maintenance_crate",
+      "source": "props/maintenance_crate.png",
+      "destination": "assets/props/biome_0/biome_0_prop_2.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 96
+      },
+      "anchor": "wall",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "junction_box",
+      "family": "prop",
+      "role": "junction_box",
+      "source": "props/junction_box.png",
+      "destination": "assets/props/biome_0/biome_0_prop_3.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 96
+      },
+      "anchor": "wall",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "save_point",
+      "family": "interactive",
+      "role": "save_point",
+      "source": "interactives/save_point.png",
+      "destination": "assets/generated/checkpoint/interactive_checkpoint.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "free",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "ability_pedestal",
+      "family": "interactive",
+      "role": "ability_pedestal",
+      "source": "interactives/ability_pedestal.png",
+      "destination": "assets/generated/pickup/interactive_ability_pickup.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "free",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "locked_gate",
+      "family": "interactive",
+      "role": "locked_gate",
+      "source": "interactives/locked_gate.png",
+      "destination": "assets/generated/gate/interactive_ability_gate.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "free",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "attack_slash",
+      "family": "vfx",
+      "role": "attack_slash",
+      "source": "vfx/attack_slash.png",
+      "destination": "assets/vfx/hit_spark.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "free",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "dash_burst",
+      "family": "vfx",
+      "role": "dash_burst",
+      "source": "vfx/dash_burst.png",
+      "destination": "assets/vfx/dash_trail.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "free",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "landing_dust",
+      "family": "vfx",
+      "role": "landing_dust",
+      "source": "vfx/landing_dust.png",
+      "destination": "assets/vfx/landing_dust.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "free",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "phase_effect",
+      "family": "vfx",
+      "role": "phase_effect",
+      "source": "vfx/phase_effect.png",
+      "destination": "assets/vfx/boss_phase_shift.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "free",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "ability_acquire",
+      "family": "vfx",
+      "role": "ability_acquire",
+      "source": "vfx/ability_acquire.png",
+      "destination": "assets/vfx/ability_unlock.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "free",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    },
+    {
+      "id": "boss_death",
+      "family": "vfx",
+      "role": "boss_death",
+      "source": "vfx/boss_death.png",
+      "destination": "assets/vfx/death_puff.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "anchor": "free",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge internally authored industrial-transit pixel-art test pack"
+    }
+  ]
+}

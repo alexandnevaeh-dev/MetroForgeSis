@@ -1,0 +1,14 @@
+{
+  "player-ip-adapter": {
+    "runtime": "diffusers",
+    "architecture": "stable-diffusion-xl",
+    "baseModel": "sdxl-base-1.0",
+    "adapter": "ip-adapter-sdxl",
+    "imageEncoder": "clip-vit-h-14-reference-encoder",
+    "referenceMechanism": "IP_ADAPTER",
+    "referenceStrengths": [0.35, 0.55, 0.75],
+    "dimensions": { "width": 1024, "height": 1024 },
+    "dtype": "float16-when-cuda",
+    "offloadMode": "model-offload-when-needed"
+  }
+}

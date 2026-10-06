@@ -1,0 +1,128 @@
+{
+  "code": 0,
+  "base": "E:\\MetroForgeData\\TestArtifacts\\room-workspace-hud-20261004",
+  "scriptErrors": false,
+  "nativeErrors": [],
+  "warnings": [
+    "WARNING: ObjectDB instances leaked at exit (run with --verbose for details)."
+  ],
+  "scope": "Controlled actual HUD layout with explicitly seeded abilities; not gameplay traversal",
+  "nvidia": true,
+  "hudLayout": {
+    "checks": [
+      {
+        "label": "state 0 health is entirely on screen",
+        "passed": true
+      },
+      {
+        "label": "state 0 frame is entirely on screen",
+        "passed": true
+      },
+      {
+        "label": "state 0 frame width stays bounded",
+        "passed": true
+      },
+      {
+        "label": "state 0 quest panel sits below health stack",
+        "passed": true
+      },
+      {
+        "label": "state 0 empty abilities do not reserve a line",
+        "passed": true
+      },
+      {
+        "label": "state 1 health is entirely on screen",
+        "passed": true
+      },
+      {
+        "label": "state 1 frame is entirely on screen",
+        "passed": true
+      },
+      {
+        "label": "state 1 frame width stays bounded",
+        "passed": true
+      },
+      {
+        "label": "state 1 quest panel sits below health stack",
+        "passed": true
+      },
+      {
+        "label": "state 1 empty abilities do not reserve a line",
+        "passed": true
+      },
+      {
+        "label": "state 1 abilities are entirely on screen",
+        "passed": true
+      },
+      {
+        "label": "state 1 names have no raw underscores",
+        "passed": true
+      },
+      {
+        "label": "state 6 health is entirely on screen",
+        "passed": true
+      },
+      {
+        "label": "state 6 frame is entirely on screen",
+        "passed": true
+      },
+      {
+        "label": "state 6 frame width stays bounded",
+        "passed": true
+      },
+      {
+        "label": "state 6 quest panel sits below health stack",
+        "passed": true
+      },
+      {
+        "label": "state 6 empty abilities do not reserve a line",
+        "passed": true
+      },
+      {
+        "label": "state 6 abilities are entirely on screen",
+        "passed": true
+      },
+      {
+        "label": "state 6 names have no raw underscores",
+        "passed": true
+      }
+    ],
+    "observations": [
+      {
+        "abilities": "",
+        "frame": {
+          "height": 70,
+          "width": 280,
+          "x": 12,
+          "y": 12
+        },
+        "questTop": 94,
+        "state": 0
+      },
+      {
+        "abilities": "Dash",
+        "frame": {
+          "height": 72,
+          "width": 280,
+          "x": 12,
+          "y": 12
+        },
+        "questTop": 96,
+        "state": 1
+      },
+      {
+        "abilities": "Dash, Double Jump, Wall Slide, Wall Jump, Air Dash, Ground Slam",
+        "frame": {
+          "height": 95,
+          "width": 280,
+          "x": 12,
+          "y": 12
+        },
+        "questTop": 119,
+        "state": 6
+      }
+    ],
+    "passed": true,
+    "scope": "Real NVIDIA castle rendering; zero, one and all six abilities explicitly seeded for layout. Debug HUD remains visible. Dummy audio; not gameplay or art acceptance."
+  }
+}

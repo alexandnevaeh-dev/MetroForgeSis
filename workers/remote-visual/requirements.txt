@@ -1,0 +1,8 @@
+# Standard-library HTTP service plus the pinned OpenVINO SD1.5 runtime.
+openvino==2025.4.1
+numpy==2.2.6
+torch==2.5.1
+diffusers==0.31.0
+transformers==4.46.3
+Pillow==11.0.0
+psutil==6.1.0

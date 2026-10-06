@@ -1,0 +1,24 @@
+import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+const canonical = resolve('.');
+const root = 'E:/MetroForgeData/GitHubUpload/20261003/quantum-publish-objectdb';
+const previous = 'E:/MetroForgeData/GitHubUpload/20261001/quantum-saves.git';
+const parent = 'd0e155edfedbc25e00ad1386363fdfaa32134944';
+const branch = 'refs/heads/codex/metroforge-epic-20261001';
+assert.match(canonical, /^E:[/\\]/i);
+assert.ok(!existsSync(root), 'Preserve the existing object store; choose a fresh destination');
+const run = args => execFileSync('git', args, { encoding: 'utf8', windowsHide: true });
+mkdirSync(root, { recursive: true });
+run(['init', '--bare', root]);
+// Read the historical stores; never copy their ACLs or modify their objects.
+writeFileSync(join(root, 'objects/info/alternates'), [join(previous, 'objects'), join(canonical, '.git/objects')].map(path => path.replaceAll('\\', '/')).join('\n') + '\n');
+const git = args => run(['--git-dir=' + root, ...args]);
+git(['remote', 'add', 'origin', 'https://github.com/alexandnevaeh-dev/MetroForgeSis.git']);
+git(['update-ref', branch, parent, '0000000000000000000000000000000000000000']);
+const [name, email] = run(['--git-dir=' + previous, 'show', '-s', '--format=%an%x00%ae', parent]).trim().split('\0');
+assert.ok(name && email && !/[\r\n\0]/.test(name + email));
+git(['config', 'user.name', name]); git(['config', 'user.email', email]);
+assert.equal(git(['rev-parse', branch]).trim(), parent);
+console.log(JSON.stringify({ root, parent, historicalStoresPreserved: true }));

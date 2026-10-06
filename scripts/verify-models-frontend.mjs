@@ -1,0 +1,59 @@
+/** Real ModelsScreen with controlled bridge failures; hidden Electron, no OS input or downloads. */
+import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { createRequire } from 'node:module';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { _electron } from 'playwright';
+const repo = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const require = createRequire(join(repo, 'apps/desktop/package.json'));
+const native = createRequire(createRequire(require.resolve('vite/package.json')).resolve('esbuild/package.json')).resolve('@esbuild/win32-x64/esbuild.exe');
+const output = join(repo, 'reports/game-tests/20261004-models-frontend', String(Date.now()));
+mkdirSync(output, { recursive: true });
+const files = ['apps/desktop/src/studio/ModelsScreen.tsx', 'apps/desktop/src/studio/StudioContext.tsx', 'apps/desktop/src/studio/ui/index.tsx', 'apps/desktop/src/styles.css', 'scripts/verify-models-frontend.mjs'];
+const sha = file => createHash('sha256').update(readFileSync(file)).digest('hex');
+const sourceHashes = Object.fromEntries(files.map(file => [file, sha(join(repo, file))]));
+writeFileSync(join(output, 'fixture.tsx'), `
+import React from 'react';import {createRoot} from 'react-dom/client';
+import {ModelsScreen} from ${JSON.stringify(join(repo, files[0]))};
+import {StudioProvider} from ${JSON.stringify(join(repo, files[1]))};
+import ${JSON.stringify(join(repo, files[3]))};
+const state=window.modelsFixture={readError:true,actionError:false,reads:0,inFlight:0,maxInFlight:0,hold:false,pending:[],actions:[],holdAction:false,actionPending:[],finish(){for(const resolve of this.pending.splice(0))resolve()},finishAction(){for(const resolve of this.actionPending.splice(0))resolve()}};
+const models=Array.from({length:150},(_,index)=>({id:index<2?'shared-model':'model-'+index,name:index<2?'Shared '+index:'Model '+index,provider:index===1?'cerebras':'together',modality:'text',capabilities:['TEXT_GENERATION'],local:false,license:'Unverified',commercialUse:'unknown',enabled:true,routable:true,installed:false,downloadable:index===2,health:'healthy',tags:[]}));
+async function action(type,args){state.actions.push({type,args});if(state.holdAction)await new Promise(resolve=>state.actionPending.push(resolve));if(state.actionError)throw Error('fixture rejection')}
+window.metroforge={async listProjects(){return[]},async listModels(){state.reads++;state.inFlight++;state.maxInFlight=Math.max(state.maxInFlight,state.inFlight);try{if(state.hold)await new Promise(resolve=>state.pending.push(resolve));if(state.readError)throw Error('fixture read failure');return structuredClone(models)}finally{state.inFlight--}},async getHardwareProfile(){return{profile:'BALANCED',totalRamMb:32768,starterPack:[]}},async scoutModels(...args){await action('scout',args);return{sourcesChecked:['together','cerebras'],modelsAdded:2,modelsUpdated:1,errors:['One connection unavailable']}},async downloadModel(...args){await action('download',args);return{success:true,message:'Installed fixture'}},async setAppSettings(settings){await action('settings',[settings]);return{success:true,saved:settings}}};
+const root=createRoot(document.getElementById('root'));window.modelsUnmount=()=>root.unmount();root.render(<StudioProvider onNavigate={id=>state.actions.push({type:'navigate',id})}><ModelsScreen/></StudioProvider>);
+`);
+execFileSync(native, [join(output, 'fixture.tsx'), '--bundle', '--platform=browser', '--format=esm', '--jsx=automatic', '--outfile='+join(output, 'fixture.js')], { cwd:repo, windowsHide:true, env:{...process.env, NODE_PATH:join(repo, 'apps/desktop/node_modules')} });
+writeFileSync(join(output, 'index.html'), '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>MetroForge model tests</title><link rel="stylesheet" href="fixture.css"></head><body><main id="root" style="padding:16px"></main><script type="module" src="fixture.js"></script></body></html>');
+writeFileSync(join(output, 'main.cjs'), `const{app,BrowserWindow}=require('electron');app.setPath('userData',process.env.METROFORGE_DATA_DIR);app.whenReady().then(()=>new BrowserWindow({show:false,width:1440,height:1000,webPreferences:{backgroundThrottling:false}}).loadFile(${JSON.stringify(join(output, 'index.html'))}));`);
+const proof={output,scope:'Real ModelsScreen with controlled bridge: identity, failure, duplicate actions, keyboard and layout. No provider authentication or game-quality claim.',sourceHashes,checks:[],captures:[]};
+const check=(label,value)=>{proof.checks.push({label,passed:!!value});assert.ok(value,label)};
+let app;
+try{
+ const env={...process.env,TEMP:join(output,'temp'),TMP:join(output,'temp'),APPDATA:join(output,'appdata'),LOCALAPPDATA:join(output,'localappdata'),METROFORGE_DATA_DIR:join(output,'data')};for(const name of ['temp','appdata','localappdata','data'])mkdirSync(join(output,name),{recursive:true});delete env.ELECTRON_RUN_AS_NODE;
+ app=await _electron.launch({executablePath:require('electron'),args:[join(output,'main.cjs')],cwd:repo,env});const page=await app.firstWindow();const errors=[];page.on('pageerror',error=>errors.push(error.message));
+ await page.getByRole('alert').waitFor();check('read failure has an explicit retry and does not claim an empty catalog',await page.getByText('Catalog unavailable',{exact:true}).isVisible());
+ await page.evaluate(()=>{window.modelsFixture.readError=false});await page.getByRole('button',{name:'Retry catalog',exact:true}).click();await page.getByRole('option',{name:/Shared 0/}).waitFor();
+ check('virtualized rendering is bounded for 150 models',await page.locator('.virtualized-row').count()<60);
+ const table=page.getByRole('listbox',{name:'Model catalog'});await table.focus();await page.keyboard.press('ArrowDown');
+ check('keyboard selection distinguishes providers with the same model id',await page.getByRole('option',{name:/Shared 1/}).getAttribute('aria-selected')==='true'&&await page.locator('.ai-ops-inspector').innerText().then(text=>text.includes('cerebras')));
+ await page.getByRole('button',{name:'Set provider model',exact:true}).click();await page.getByRole('status').filter({hasText:'cerebras will use'}).waitFor();
+ check('save uses provider-specific setting and the original API model id',await page.evaluate(()=>window.modelsFixture.actions.find(action=>action.type==='settings').args[0]['app.cerebras.model']==='shared-model'));
+ await page.evaluate(()=>{window.modelsFixture.readError=true});await page.getByRole('button',{name:'Refresh Catalog',exact:true}).click();await page.getByRole('alert').filter({hasText:'last loaded models'}).waitFor();check('failed refresh retains loaded catalog and selection',await page.getByRole('option',{name:/Shared 1/}).getAttribute('aria-selected')==='true');
+ await page.evaluate(()=>{window.modelsFixture.readError=false;window.modelsFixture.hold=true});await page.getByRole('button',{name:'Retry catalog',exact:true}).evaluate(button=>{button.click();button.click()});check('duplicate reads are locked immediately',await page.evaluate(()=>window.modelsFixture.maxInFlight===1));check('pending read marks refresh busy without changing label',await page.getByRole('button',{name:'Refresh Catalog',exact:true}).getAttribute('aria-busy')==='true');
+ await page.evaluate(()=>{window.modelsFixture.hold=false;window.modelsFixture.finish()});await page.waitForFunction(()=>!document.querySelector('.screen-header button[aria-busy="true"]'));
+ await page.evaluate(()=>{window.modelsFixture.actionError=true});await page.getByRole('button',{name:'Refresh Catalog',exact:true}).click();await page.getByRole('alert').filter({hasText:'discovery failed'}).waitFor();check('scout rejection unlocks retry',await page.getByRole('button',{name:'Refresh Catalog',exact:true}).isEnabled());
+ await page.evaluate(()=>{window.modelsFixture.actionError=false;window.modelsFixture.holdAction=true});await page.getByRole('button',{name:'Refresh Catalog',exact:true}).evaluate(button=>{button.click();button.click()});check('duplicate scouts dispatch once',await page.evaluate(()=>window.modelsFixture.actions.filter(action=>action.type==='scout').length===3));
+ await page.evaluate(()=>{window.modelsFixture.holdAction=false;window.modelsFixture.finishAction()});await page.getByRole('status').filter({hasText:'Checked 2 sources'}).waitFor();check('partial discovery displays success counts and provider warning',await page.getByRole('alert').filter({hasText:'One connection unavailable'}).isVisible());
+ await page.getByRole('option',{name:/Model 2 /}).click();await page.evaluate(()=>{window.modelsFixture.holdAction=true});await page.getByRole('button',{name:'Install / Get',exact:true}).evaluate(button=>{button.click();button.click()});check('duplicate downloads dispatch once with provider identity',await page.evaluate(()=>window.modelsFixture.actions.filter(action=>action.type==='download').length===1&&window.modelsFixture.actions.find(action=>action.type==='download').args.join('|')==='model-2|together'));check('download locks other mutations',await page.getByRole('button',{name:'Set provider model',exact:true}).isDisabled());
+ await page.evaluate(()=>{window.modelsFixture.holdAction=false;window.modelsFixture.finishAction()});await page.getByRole('status').filter({hasText:'Installed fixture'}).waitFor();
+ const search=page.getByRole('searchbox',{name:'Search models'});await search.fill('not found');await page.getByText('No matching models',{exact:true}).waitFor();await page.locator('.mf-search').getByRole('button',{name:'Clear search'}).focus();await page.keyboard.press('Enter');check('keyboard clear restores the query and focus',await search.inputValue()===''&&await search.evaluate(input=>input===document.activeElement));
+ await table.focus();await page.keyboard.press('End');await page.getByRole('option',{name:/Model 149/}).waitFor();check('keyboard End reaches a virtualized offscreen model with a valid active descendant',await table.evaluate(element=>!!document.getElementById(element.getAttribute('aria-activedescendant'))));
+ await page.keyboard.press('Home');await page.getByRole('option',{name:/Shared 0/}).waitFor();
+ await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setBounds({width:700,height:900}));await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));check('narrow workbench has no document overflow',await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+ const capture=await app.evaluate(async({BrowserWindow})=>{const win=BrowserWindow.getAllWindows()[0];return{visible:win.isVisible(),data:(await win.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG().toString('base64')}});check('fixture stays hidden',!capture.visible);writeFileSync(join(output,'models-narrow.png'),Buffer.from(capture.data,'base64'));proof.captures.push('models-narrow.png');
+ await page.evaluate(()=>{window.modelsFixture.holdAction=true});await page.getByRole('button',{name:'Set provider model',exact:true}).click();await page.evaluate(()=>{window.modelsUnmount();window.modelsFixture.finishAction()});check('late response after unmount produces no renderer error',errors.length===0);check('tested sources remained unchanged',Object.entries(sourceHashes).every(([file,hash])=>sha(join(repo,file))===hash));proof.passed=true;
+}catch(error){proof.passed=false;proof.error=String(error.stack??error);process.exitCode=1}finally{if(app)await app.close();writeFileSync(join(output,'proof.json'),JSON.stringify(proof,null,2));writeFileSync(join(repo,'reports/game-tests/20261004-models-frontend/latest.json'),JSON.stringify(proof,null,2));console.log(JSON.stringify({passed:proof.passed,checks:proof.checks.length,output,error:proof.error}));}

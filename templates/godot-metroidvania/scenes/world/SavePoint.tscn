@@ -1,0 +1,35 @@
+[gd_scene load_steps=3 format=3 uid="uid://save_point"]
+
+[ext_resource type="Script" path="res://scripts/world/SavePoint.gd" id="1_save"]
+[ext_resource type="Script" path="res://scripts/core/WorldPropSprite.gd" id="2_sprite"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_save"]
+size = Vector2(32, 32)
+
+[node name="SavePoint" type="Area2D"]
+collision_layer = 32
+collision_mask = 2
+script = ExtResource("1_save")
+
+[node name="Sprite" type="Sprite2D" parent="."]
+script = ExtResource("2_sprite")
+sprite_path = "assets/props/interact/save_shrine.png"
+fallback_color = Color(0.3, 0.75, 0.95, 1)
+display_size = Vector2(32, 40)
+bob_pixels = 0.0
+
+[node name="GeneratedSprite" type="Sprite2D" parent="."]
+visible = false
+position = Vector2(0, -16)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -16)
+shape = SubResource("RectangleShape2D_save")
+
+[node name="Label" type="Label" parent="."]
+offset_left = -30.0
+offset_top = -58.0
+offset_right = 30.0
+offset_bottom = -38.0
+text = "Save Point"
+horizontal_alignment = 1

@@ -1,0 +1,34 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\navigation-review\\reports\\game-tests\\20261004-jump-app\\1791105274283",
+  "executable": "E:/MetroForgeData/Releases/MetroForge-navigation-20261004/MetroForge.exe",
+  "executableSha256": "1925f358e7f0e9675a5ac4198fb076613f0db318da56d388799a97be74a5b19c",
+  "checks": [
+    {
+      "label": "real app search opens with correct modal semantics and input focus",
+      "passed": true
+    },
+    {
+      "label": "background route and sidebar shortcuts respect the open modal",
+      "passed": true
+    },
+    {
+      "label": "global shortcut ignores composition",
+      "passed": true
+    },
+    {
+      "label": "real room IPC indexes the final boss room",
+      "passed": true
+    },
+    {
+      "label": "capture remains hidden: jump-castle-room.png",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "captures": [
+    "jump-castle-room.png"
+  ],
+  "scope": "Real portable MetroForge with copied, separate castle and Quantum games: Jump routes, project switching, real room/asset indexing, modal/IME shortcuts, narrow and short layout. No inference or gameplay claim.",
+  "passed": false,
+  "error": "locator.waitFor: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.room-item.active').filter({ hasText: 'room_038' }) to be visible\u001b[22m\n\n    at E:\\MetroForgeData\\GitHubUpload\\20261004\\navigation-review\\scripts\\verify-jump-app.mjs:30:71"
+}

@@ -1,0 +1,94 @@
+{
+  "status": "verified-development-progress",
+  "productionReady": false,
+  "parent": "49d6ca294ff008f4d1f6c972010c071434f32b76",
+  "release": "E:/MetroForgeData/Releases/MetroForge-castle-profile-20261004-v1",
+  "roomsUiChecks": 41,
+  "apiKeysUiChecks": 44,
+  "unitChecks": 69,
+  "controlledNativeBackdropChecks": 17,
+  "nativeJourney": {
+    "passed": true,
+    "transitions": 40,
+    "uniqueRooms": 35,
+    "bosses": [
+      "boss_000",
+      "boss_001",
+      "boss_002",
+      "boss_final"
+    ],
+    "abilities": [
+      "dash",
+      "double_jump",
+      "wall_slide",
+      "wall_jump",
+      "ground_slam",
+      "air_dash"
+    ],
+    "clearedArenaReturns": [
+      {
+        "room": "room_008",
+        "boss": "boss_000",
+        "observations": 2,
+        "passed": true,
+        "cleared": {
+          "bossPresent": false,
+          "defeatedBosses": [
+            "boss_000"
+          ],
+          "exitsOpen": true,
+          "music": "biome_0",
+          "room": "room_008",
+          "tMs": 72201
+        }
+      },
+      {
+        "room": "room_018",
+        "boss": "boss_001",
+        "observations": 2,
+        "passed": true,
+        "cleared": {
+          "bossPresent": false,
+          "defeatedBosses": [
+            "boss_000",
+            "boss_001"
+          ],
+          "exitsOpen": true,
+          "music": "biome_0",
+          "room": "room_018",
+          "tMs": 133810
+        }
+      },
+      {
+        "room": "room_028",
+        "boss": "boss_002",
+        "observations": 2,
+        "passed": true,
+        "cleared": {
+          "bossPresent": false,
+          "defeatedBosses": [
+            "boss_000",
+            "boss_001",
+            "boss_002"
+          ],
+          "exitsOpen": true,
+          "music": "biome_0",
+          "room": "room_028",
+          "tMs": 196037
+        }
+      }
+    ],
+    "warnings": [
+      "WARNING: ObjectDB instances leaked at exit (run with --verbose for details)."
+    ]
+  },
+  "gallery": {
+    "room": "room_001",
+    "width": 4096,
+    "height": 1536,
+    "platforms": 9,
+    "corbels": 18,
+    "unchangedSiblingRooms": 39
+  },
+  "scope": "Candidate gallery plus shared Studio/native background layout. Controlled native fixture forces rooms; separate gameplay journey uses normal input. Existing assets retained, no fresh generation. No new top-down, Unity, Unreal or provider inference acceptance. ObjectDB exit warning remains."
+}

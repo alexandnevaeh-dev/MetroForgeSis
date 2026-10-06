@@ -1,0 +1,81 @@
+{
+  "status": "verified-progress-with-shutdown-error",
+  "productionReady": false,
+  "parent": "31345ec74185a12a7fd1010f07894102a0bcc73e",
+  "review": "E:\\MetroForgeData\\GitHubUpload\\20261004\\input-journey-review",
+  "release": "E:\\MetroForgeData\\Releases\\MetroForge-input-journey-20261004-v4",
+  "unitRegressions": 64,
+  "actualFrontendChecks": 24,
+  "controlledDoorChecks": 9,
+  "nativeMapChecks": 5,
+  "nativeJourney": {
+    "passed": true,
+    "strictDriverPassed": false,
+    "transitions": 34,
+    "rooms": 35,
+    "bosses": [
+      "boss_000",
+      "boss_001",
+      "boss_002",
+      "boss_final"
+    ],
+    "abilities": [
+      "dash",
+      "double_jump",
+      "wall_slide",
+      "wall_jump",
+      "ground_slam",
+      "air_dash"
+    ],
+    "attacks": 107,
+    "deaths": 0,
+    "damageTaken": 150,
+    "elapsedMs": 261017,
+    "captures": 108,
+    "shutdownErrors": [
+      "ERROR: 1 resources still in use at exit."
+    ],
+    "audio": "Dummy output driver; no listening acceptance"
+  },
+  "finalMetadataParity": {
+    "physicalFiles": 1510,
+    "passed": true
+  },
+  "mediaPreserved": 1321,
+  "sourceHashes": {
+    "templates/godot-metroidvania/scripts/test/PlaytestAgent.gd": "e0a33f7a315773767176bb6fe2eb85199405d7628b6bc58e26b1d20a7bf567b9",
+    "scripts/refresh-test-game.mjs": "0ae07106ed06d0b7301440854e61a12b5ef07d0bf333c3c19cdc5c8ff0d016ec",
+    "templates/godot-metroidvania/scripts/world/WorldManager.gd": "9348de49cd4fa1d4ff57668a5762b0a0503714abaecf2ff5fe0588231df8b6c3",
+    "packages/godot/src/room-assembler.ts": "8416b363663770232e789c1e57f6953de838fe0283a889962a37ee4a2854d6b8",
+    "scripts/verify-jump-app.mjs": "9893c75e95dc3954a42a5effd90858d536dde469ce83f951147a496cb959eabe",
+    "packages/godot/src/room-assembler.test.ts": "b5daa7b24484cf567d3f30120303fabc478dc59c1aeb5751bf18e22cf51aa385",
+    "templates/godot-metroidvania/scenes/world/WeakFloor.tscn": "66306a7c3e7c3a2d2811cbbd068aa6d0c82101cd8c488f456deb7190c9349115",
+    "templates/godot-metroidvania/scripts/world/RoomTransition.gd": "ad4e55dd025384671beec376a7de1eb274c14d343ccb66570ae6bfade8c44340",
+    "templates/godot-metroidvania/scripts/test/CastleJourneyValidation.gd": "3ffc6b3a0fddd3c881a9db22d5b0d34bfd63717b53c9c0404c3b8266867b348e",
+    "templates/godot-metroidvania/scenes/test/CastleJourneyValidation.tscn": "187f0ecb0a85b4e015dc8e789bef5450586dbeee1ec972d4ea9ebe7b249cfbe0",
+    "templates/godot-metroidvania/scripts/test/UpDoorIntentTest.gd": "da0af2182cbb16f381c25ada160a7061590d0215f3c883f52a4771e4d8e0b699",
+    "templates/godot-metroidvania/scripts/test/CastleMapValidation.gd": "79a3ec0fe457a5088e55d52bed75d7e3c10fc583df4194f39a4f7541c858202e",
+    "scripts/prepare-input-journey.mjs": "2816c613dc28482b72a1e3e6390ab80d3053852783b3af43f9be6f74a39c5145",
+    "scripts/verify-input-journey.mjs": "daa5679ba8b576c2a6eab32bc7b7ca5fc3f6d6609ba65254c54ea47a8f9329cf",
+    "scripts/stormglass-blueprint.test.mjs": "f715eace38f6bdd2b725849d131e9931b1235a975c7cd841d3e7a3db7698881e"
+  },
+  "localGamePromotion": {
+    "current": "E:\\Metroforge\\MetroForge-Publish\\GeneratedGames\\test-games\\metroidvania\\current",
+    "backup": "E:\\Metroforge\\MetroForge-Publish\\GeneratedGames\\test-games\\metroidvania\\backups\\input-journey-20261004",
+    "preservedFiles": 3165
+  },
+  "staticChecks": [
+    "workspace TypeScript",
+    "native desktop build",
+    "new JS syntax",
+    "new JS Prettier"
+  ],
+  "remaining": [
+    "Shutdown audio/playback and zero-reference object ownership",
+    "Optional rooms and backtracking",
+    "Distinct boss artwork and broader world/animation polish",
+    "Real provider-backed app generation",
+    "Unity and Unreal native acceptance",
+    "Separate top-down development"
+  ]
+}

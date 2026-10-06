@@ -1,0 +1,153 @@
+{
+  "code": 0,
+  "base": "E:\\MetroForgeData\\TestArtifacts\\shutdown-backtracking-20261004\\backtrack-candidate-v1",
+  "scriptErrors": false,
+  "nativeErrors": [],
+  "warnings": [
+    "WARNING: ObjectDB instances leaked at exit (run with --verbose for details)."
+  ],
+  "scope": "Controlled save/load and arena restoration; forced room loads and seeded defeat records, not gameplay traversal",
+  "nvidia": true,
+  "backtracking": {
+    "checks": [
+      {
+        "label": "boss_000 fresh encounter exists",
+        "passed": true
+      },
+      {
+        "label": "boss_000 fresh exits sealed",
+        "passed": true
+      },
+      {
+        "label": "boss_000 save succeeds",
+        "passed": true
+      },
+      {
+        "label": "boss_000 reload succeeds",
+        "passed": true
+      },
+      {
+        "label": "boss_000 saved defeat restored",
+        "passed": true
+      },
+      {
+        "label": "boss_000 defeated boss absent on return",
+        "passed": true
+      },
+      {
+        "label": "boss_000 return exits open",
+        "passed": true
+      },
+      {
+        "label": "boss_000 return uses exploration music",
+        "passed": true
+      },
+      {
+        "label": "boss_001 fresh encounter exists",
+        "passed": true
+      },
+      {
+        "label": "boss_001 fresh exits sealed",
+        "passed": true
+      },
+      {
+        "label": "boss_001 save succeeds",
+        "passed": true
+      },
+      {
+        "label": "boss_001 reload succeeds",
+        "passed": true
+      },
+      {
+        "label": "boss_001 saved defeat restored",
+        "passed": true
+      },
+      {
+        "label": "boss_001 defeated boss absent on return",
+        "passed": true
+      },
+      {
+        "label": "boss_001 return exits open",
+        "passed": true
+      },
+      {
+        "label": "boss_001 return uses exploration music",
+        "passed": true
+      },
+      {
+        "label": "boss_002 fresh encounter exists",
+        "passed": true
+      },
+      {
+        "label": "boss_002 fresh exits sealed",
+        "passed": true
+      },
+      {
+        "label": "boss_002 save succeeds",
+        "passed": true
+      },
+      {
+        "label": "boss_002 reload succeeds",
+        "passed": true
+      },
+      {
+        "label": "boss_002 saved defeat restored",
+        "passed": true
+      },
+      {
+        "label": "boss_002 defeated boss absent on return",
+        "passed": true
+      },
+      {
+        "label": "boss_002 return exits open",
+        "passed": true
+      },
+      {
+        "label": "boss_002 return uses exploration music",
+        "passed": true
+      },
+      {
+        "label": "boss_final fresh encounter exists",
+        "passed": true
+      },
+      {
+        "label": "boss_final fresh exits sealed",
+        "passed": true
+      },
+      {
+        "label": "boss_final save succeeds",
+        "passed": true
+      },
+      {
+        "label": "boss_final reload succeeds",
+        "passed": true
+      },
+      {
+        "label": "boss_final saved defeat restored",
+        "passed": true
+      },
+      {
+        "label": "boss_final defeated boss absent on return",
+        "passed": true
+      },
+      {
+        "label": "boss_final return exits open",
+        "passed": true
+      },
+      {
+        "label": "boss_final return uses exploration music",
+        "passed": true
+      },
+      {
+        "label": "new game restores first guardian",
+        "passed": true
+      },
+      {
+        "label": "new game clears defeated progression",
+        "passed": true
+      }
+    ],
+    "passed": true,
+    "scope": "Controlled actual save/load and WorldManager room instantiation for all four guardians. Progression is explicitly seeded; not input-driven combat or backtracking evidence."
+  }
+}

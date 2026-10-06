@@ -1,0 +1,16 @@
+{
+  "designLint": {
+    "warnings": [
+      "Existing DESIGN.md has prose only, without YAML token content. Runtime tokens remain canonical."
+    ],
+    "errors": 0,
+    "exitCode": 0
+  },
+  "nativeDesktopBundle": "passed",
+  "formatter": "New credential modules and health helpers passed Prettier checks",
+  "strictAudit": "current desktop source only",
+  "scope": "Connection and workflow feature validation",
+  "fullWorkspaceBuild": "passed",
+  "desktopRendererAndElectronTypecheck": "passed",
+  "productionReady": false
+}

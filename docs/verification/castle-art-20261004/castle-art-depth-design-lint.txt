@@ -1,0 +1,13 @@
+{
+  "findings": [
+    {
+      "severity": "warning",
+      "message": "No YAML content found. Expected frontmatter (---) or fenced yaml code blocks."
+    }
+  ],
+  "summary": {
+    "errors": 0,
+    "warnings": 1,
+    "infos": 0
+  }
+}

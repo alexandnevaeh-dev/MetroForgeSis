@@ -1,0 +1,285 @@
+{
+  "version": 1,
+  "kit": "archive-reliquary-v1",
+  "atlas": "assets/architecture/stormglass/kits/archive-reliquary-v1/atlas.png",
+  "sha256": "62a98923f9ea7e15a547882b955a41305e8ea9d156322c7f048d20198490335e",
+  "entries": [
+    {
+      "role": "bookcase",
+      "region": [
+        0,
+        0,
+        314,
+        325
+      ],
+      "opaqueBounds": [
+        96,
+        81,
+        156,
+        215
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "bookcase_low",
+      "region": [
+        314,
+        0,
+        313,
+        325
+      ],
+      "opaqueBounds": [
+        67,
+        140,
+        179,
+        147
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "reading_desk",
+      "region": [
+        627,
+        0,
+        313,
+        325
+      ],
+      "opaqueBounds": [
+        62,
+        131,
+        186,
+        154
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "book_stack",
+      "region": [
+        940,
+        0,
+        314,
+        325
+      ],
+      "opaqueBounds": [
+        56,
+        167,
+        185,
+        115
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "scroll_rack",
+      "region": [
+        0,
+        325,
+        314,
+        302
+      ],
+      "opaqueBounds": [
+        95,
+        65,
+        154,
+        193
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "star_chart",
+      "region": [
+        314,
+        325,
+        313,
+        302
+      ],
+      "opaqueBounds": [
+        61,
+        55,
+        191,
+        205
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "glass_cabinet",
+      "region": [
+        627,
+        325,
+        313,
+        302
+      ],
+      "opaqueBounds": [
+        100,
+        33,
+        115,
+        236
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "reading_lamp",
+      "region": [
+        940,
+        325,
+        314,
+        302
+      ],
+      "opaqueBounds": [
+        88,
+        55,
+        100,
+        203
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "relic_altar",
+      "region": [
+        0,
+        627,
+        314,
+        278
+      ],
+      "opaqueBounds": [
+        75,
+        50,
+        194,
+        179
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "glass_reliquary",
+      "region": [
+        314,
+        627,
+        313,
+        278
+      ],
+      "opaqueBounds": [
+        71,
+        47,
+        174,
+        191
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "stone_lectern",
+      "region": [
+        627,
+        627,
+        313,
+        278
+      ],
+      "opaqueBounds": [
+        81,
+        55,
+        144,
+        187
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "ceremonial_banner",
+      "region": [
+        940,
+        627,
+        314,
+        278
+      ],
+      "opaqueBounds": [
+        61,
+        39,
+        176,
+        213
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "memorial_niche",
+      "region": [
+        0,
+        905,
+        314,
+        349
+      ],
+      "opaqueBounds": [
+        95,
+        27,
+        155,
+        225
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "rest_bench",
+      "region": [
+        314,
+        905,
+        313,
+        349
+      ],
+      "opaqueBounds": [
+        51,
+        139,
+        215,
+        102
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "candle_cluster",
+      "region": [
+        627,
+        905,
+        313,
+        349
+      ],
+      "opaqueBounds": [
+        102,
+        58,
+        100,
+        189
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "door_ornament",
+      "region": [
+        940,
+        905,
+        314,
+        349
+      ],
+      "opaqueBounds": [
+        60,
+        33,
+        174,
+        207
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    }
+  ],
+  "candidateOnly": true,
+  "productionApproved": false,
+  "admission": "Measured non-overlapping regions retain complete artwork and safe alpha margins; native visual proof pending",
+  "generator": "built-in image_gen",
+  "promptSummary": "Sixteen original coherent archive/reliquary props; corrected independent scale/placement and measured row spacing"
+}

@@ -1,0 +1,152 @@
+import { useEffect, useRef, useState } from 'react';
+import { blobToWavBase64, startSpeechRecording } from './speech-capture.js';
+
+interface CommandBarProps {
+  projectPath: string;
+  selectedRoomId?: string;
+  placeholder?: string;
+  onSuccess?: (summary: string) => void | Promise<void>;
+  /** Compact 40–44px editor command strip. */
+  compact?: boolean;
+}
+
+export function CommandBar(props: CommandBarProps) {
+  return <ProjectCommandBar key={props.projectPath} {...props} />;
+}
+
+function ProjectCommandBar({
+  projectPath,
+  selectedRoomId,
+  placeholder = 'Try: connect room_a to room_b, add treasure room, make this room harder…',
+  onSuccess,
+  compact = false,
+}: CommandBarProps) {
+  const [input, setInput] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const stopRecordingRef = useRef<(() => void) | null>(null);
+
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      stopRecordingRef.current?.();
+    };
+  }, []);
+  const pendingCommand = useRef(false);
+
+  const run = async () => {
+    if (pendingCommand.current || busy || !input.trim() || !window.metroforge?.executeAiCommand) return;
+    pendingCommand.current = true;
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const result = await window.metroforge.executeAiCommand(projectPath, input.trim(), selectedRoomId);
+      if (!mounted.current) return;
+      if (!result.success) {
+        setError(result.error || 'Command failed');
+        return;
+      }
+      setInput('');
+      const summary = result.summary ?? 'Command applied';
+      setMessage(summary);
+      try {
+        await onSuccess?.(summary);
+      } catch (cause) {
+        if (mounted.current) setError(`Command applied, but the editor could not refresh: ${cause instanceof Error ? cause.message : String(cause)}`);
+      }
+    } catch (cause) {
+      if (mounted.current) setError(cause instanceof Error ? cause.message : 'Command failed');
+    } finally {
+      pendingCommand.current = false;
+      if (mounted.current) setBusy(false);
+    }
+  };
+
+  const toggleVoice = async () => {
+    if (listening) {
+      stopRecordingRef.current?.();
+      return;
+    }
+    if (!window.metroforge?.transcribeSpeech) {
+      setError('Speech recognition is unavailable in this build');
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setError('Microphone access is not supported here');
+      return;
+    }
+
+    setError(null);
+    setMessage(null);
+    setListening(true);
+
+    try {
+      const recording = startSpeechRecording();
+      stopRecordingRef.current = recording.stop;
+
+      const blob = await recording.done;
+      if (!mounted.current) return;
+      setListening(false);
+      stopRecordingRef.current = null;
+      setBusy(true);
+
+      const wavBase64 = await blobToWavBase64(blob);
+      if (!mounted.current) return;
+      const transcript = await window.metroforge.transcribeSpeech(wavBase64);
+      if (!mounted.current) return;
+      if (mounted.current) setBusy(false);
+
+      if (!transcript.success || !transcript.text?.trim()) {
+        setError(transcript.error ?? 'No speech detected');
+        return;
+      }
+
+      setInput(transcript.text.trim());
+      setMessage('Voice captured — review and press Run');
+    } catch (err) {
+      if (!mounted.current) return;
+      setListening(false);
+      if (mounted.current) setBusy(false);
+      stopRecordingRef.current = null;
+      setError(err instanceof Error ? err.message : 'Voice capture failed');
+    }
+  };
+
+  return (
+    <div className={['command-bar', 'panel', compact ? 'command-bar-compact' : ''].filter(Boolean).join(' ')}>
+      <label className={compact ? 'command-bar-compact-label' : undefined}>
+        {compact ? <span className="type-label">AI</span> : 'AI Command'}
+        <div className="row">
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={placeholder}
+            disabled={busy || listening}
+            onKeyDown={(e) => e.key === 'Enter' && run()}
+            aria-label="AI command"
+          />
+          <button
+            type="button"
+            onClick={toggleVoice}
+            disabled={busy}
+            title={listening ? 'Stop recording' : 'Dictate command'}
+            aria-pressed={listening}
+          >
+            {listening ? 'Stop' : 'Mic'}
+          </button>
+          <button type="button" className="primary" onClick={run} disabled={busy || listening || !input.trim()}>
+            {busy ? 'Running…' : 'Run'}
+          </button>
+        </div>
+      </label>
+      {listening && <p className="hint">Listening… click Stop when finished.</p>}
+      {message && <p className="hint" role="status">{message}</p>}
+      {error && <p className="result error" role="alert">{error}</p>}
+    </div>
+  );
+}

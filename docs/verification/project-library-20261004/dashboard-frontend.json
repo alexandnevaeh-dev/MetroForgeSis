@@ -1,0 +1,51 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\project-library-review\\reports\\game-tests\\20261004-dashboard-frontend\\1791080997794",
+  "scope": "Real dashboard and project selector; controlled bridge, read failure, retries, duplicate submissions, stale responses and unmount; no actual engine acceptance",
+  "sourceHashes": {
+    "apps/desktop/src/studio/ProjectDashboard.tsx": "cd2f5ea78da4a0917e2dbed46f04d904f75d7b833380ace5bd35b1ff095ea514",
+    "apps/desktop/src/studio/StudioContext.tsx": "4b3cc10d27dd41ccc03812237cf4c539efeea4f0a699814e1ec920235577e1ce",
+    "apps/desktop/src/studio/ProjectSelect.tsx": "5cc10c54db0ea55fc14711050a7e31f31d656210d9c008b30b795adeba287996",
+    "apps/desktop/src/styles.css": "b5c3ad7ba93d1342e94260380ab03dc110fd786b9a1ddd3743ea7b9a3abaa1e1",
+    "scripts/verify-dashboard-frontend.mjs": "6b1319c376a5f7c647718e35338638f921ae86d76e4178c44b6faee343d9c954"
+  },
+  "checks": [
+    {
+      "label": "overview read rejection has inline recovery",
+      "passed": true
+    },
+    {
+      "label": "retry restores actual returned overview",
+      "passed": true
+    },
+    {
+      "label": "same-project duplicate refresh submits once",
+      "passed": true
+    },
+    {
+      "label": "pending refresh locks the button without geometry changes",
+      "passed": true
+    },
+    {
+      "label": "project switch clears the previous overview",
+      "passed": true
+    },
+    {
+      "label": "late first-project response cannot overwrite second-project data",
+      "passed": true
+    },
+    {
+      "label": "project dropdown has two path-distinct entries for repeated slugs",
+      "passed": true
+    },
+    {
+      "label": "read failure and late unmount produce no renderer errors",
+      "passed": true
+    },
+    {
+      "label": "all tested sources remain unchanged",
+      "passed": true
+    }
+  ],
+  "pageErrors": [],
+  "passed": true
+}

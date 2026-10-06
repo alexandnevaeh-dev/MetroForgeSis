@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://rf_test_scenarios"]
+
+[ext_resource type="Script" path="res://TestScenarios.gd" id="1_scenarios"]
+
+[node name="TestScenarios" type="Node"]
+script = ExtResource("1_scenarios")

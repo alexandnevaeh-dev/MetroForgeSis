@@ -1,0 +1,35 @@
+import {_electron} from 'playwright';
+import {createRequire} from 'node:module';
+import {mkdirSync,writeFileSync,readFileSync,readdirSync,existsSync} from 'node:fs';
+import {join,resolve,dirname} from 'node:path';
+import {fileURLToPath} from 'node:url';
+const repo=resolve(dirname(fileURLToPath(import.meta.url)),'..'),desktop=join(repo,'apps/desktop'),require=createRequire(join(desktop,'package.json'));
+const output='E:/MetroForgeData/Development/platformer-20261006-v1/app-'+Date.now();
+for(const name of ['temp','data','appdata','localappdata','games'])mkdirSync(join(output,name),{recursive:true});
+writeFileSync(join(output,'empty.env'),'');
+const env={...process.env,METROFORGE_ENV_FILE:join(output,'empty.env'),TEMP:join(output,'temp'),TMP:join(output,'temp'),APPDATA:join(output,'appdata'),LOCALAPPDATA:join(output,'localappdata'),METROFORGE_DATA_DIR:join(output,'data'),METROFORGE_GENERATED_GAMES_DIR:join(output,'games'),METROFORGE_DESKTOP_HIDDEN:'1'};
+for(const key of Object.keys(env))if(/API_KEY|ACCESS_TOKEN|AUTH_TOKEN/.test(key))delete env[key];
+delete env.ELECTRON_RUN_AS_NODE;delete env.VITE_DEV_SERVER_URL;
+const proof={scope:'Real Electron Platformer selection and native manual creation IPC; native gameplay validated separately',passed:false};let app;
+try{
+ app=await _electron.launch({executablePath:require('electron'),args:[desktop],cwd:repo,env,timeout:60000});
+ const page=await app.firstWindow();page.setDefaultTimeout(30000);
+ await app.evaluate(({BrowserWindow})=>{const w=BrowserWindow.getAllWindows()[0];w.webContents.setBackgroundThrottling(false);w.setBounds({width:1500,height:1000});});
+ await page.getByRole('button',{name:/New Game/}).first().click();
+ await page.getByRole('radio',{name:/^Platformer/}).click();
+ proof.selected=await page.getByRole('radio',{name:/^Platformer/}).getAttribute('aria-checked');
+ await page.getByRole('tab',{name:'Manual',exact:true}).click();
+ await page.getByLabel('Project title',{exact:true}).fill('Platformer Stage Test');
+ await page.getByLabel('Game description',{exact:true}).fill('Original pixel art platformer with jump stages, checkpoints and a finish encounter.');
+ await page.getByRole('button',{name:'Create from template',exact:true}).click();
+ await page.getByText('Created',{exact:true}).waitFor({timeout:90000});
+ const folders=readdirSync(join(output,'games'),{withFileTypes:true}).filter(e=>e.isDirectory()&&existsSync(join(output,'games',e.name,'project.json')));
+ if(folders.length!==1)throw new Error('Expected one newly created project');
+ const project=join(output,'games',folders[0].name);proof.project=project;
+ const dna=JSON.parse(readFileSync(join(project,'game_dna.json'),'utf8'));
+ const graph=JSON.parse(readFileSync(join(project,'world_graph.json'),'utf8'));
+ proof.genre=dna.archetype;proof.roomCount=graph.nodes.length;proof.abilities=dna.abilities;
+ proof.passed=proof.selected==='true'&&dna.archetype==='SIDE_VIEW_PLATFORMER'&&dna.abilities.length===0&&graph.edges.every(e=>e.requirements.length===0);
+ const png=await app.evaluate(async({BrowserWindow})=>BrowserWindow.getAllWindows()[0].webContents.capturePage(undefined,{stayHidden:true,stayAwake:true}).then(i=>i.toPNG().toString('base64')));
+ writeFileSync(join(output,'platformer-created.png'),Buffer.from(png,'base64'));
+}catch(error){proof.error=String(error);}finally{writeFileSync(join(output,'proof.json'),JSON.stringify(proof,null,2));if(app)await app.close();console.log(JSON.stringify({output,passed:proof.passed,error:proof.error,project:proof.project}));if(!proof.passed)process.exitCode=1;}

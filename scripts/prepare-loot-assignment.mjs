@@ -1,0 +1,12 @@
+import {readEditableLoot,createEditableLoot,saveEditableLoot,saveEditableLootSource} from '../packages/generation/dist/loot-edit-service.js';
+import {writeFileSync} from 'node:fs';
+const project=process.argv[2];
+if(!project || !/^E:[\\/]Metroforge[\\/]Recovery-Audit[\\/]/i.test(project))throw Error('Supply an isolated E:/Metroforge/Recovery-Audit Unity fixture');
+let state=readEditableLoot(project);
+const table={id:'loot_assignment_native',name:'Native assignment equipment',entries:[{itemId:'warden_mail',chance:1,minQuantity:3,maxQuantity:3}]};
+const writes=[];
+writes.push((state.tables.some(t=>t.id===table.id)?saveEditableLoot:createEditableLoot)(project,table,state.revision));
+state=readEditableLoot(project);writes.push(saveEditableLootSource(project,'enemy_000',table.id,state.revision));
+state=readEditableLoot(project);writes.push(saveEditableLootSource(project,'enemy_001',null,state.revision));
+writeFileSync(project+'/assignment-preparation.json',JSON.stringify({table,writes},null,2));
+console.log('Prepared service-authored assignment and clearing in isolated fixture');

@@ -1,0 +1,164 @@
+{
+  "idle": {
+    "state": "idle",
+    "source": "original",
+    "status": "ACCEPTED",
+    "notes": "Accepted SunnyLand source animation."
+  },
+  "jump": {
+    "state": "jump",
+    "source": "original",
+    "status": "ACCEPTED",
+    "notes": "Accepted SunnyLand source animation."
+  },
+  "fall": {
+    "state": "fall",
+    "source": "original",
+    "status": "ACCEPTED",
+    "notes": "Accepted SunnyLand source animation."
+  },
+  "hurt": {
+    "state": "hurt",
+    "source": "original",
+    "status": "ACCEPTED",
+    "notes": "Accepted SunnyLand source animation."
+  },
+  "walk": {
+    "state": "walk",
+    "source": "authored",
+    "status": "PENDING",
+    "notes": "Awaiting frame-by-frame SunnyLand-character art review."
+  },
+  "run": {
+    "state": "run",
+    "source": "authored",
+    "status": "PENDING",
+    "notes": "Awaiting frame-by-frame SunnyLand-character art review."
+  },
+  "jump_start": {
+    "state": "jump_start",
+    "source": "authored",
+    "status": "PENDING",
+    "notes": "Awaiting frame-by-frame SunnyLand-character art review."
+  },
+  "land": {
+    "state": "land",
+    "source": "authored",
+    "status": "PENDING",
+    "notes": "Awaiting frame-by-frame SunnyLand-character art review."
+  },
+  "attack": {
+    "state": "attack",
+    "source": "authored",
+    "status": "PENDING",
+    "notes": "Awaiting frame-by-frame SunnyLand-character art review."
+  },
+  "attack_2": {
+    "state": "attack_2",
+    "source": "authored",
+    "status": "PENDING",
+    "notes": "Awaiting frame-by-frame SunnyLand-character art review."
+  },
+  "attack_3": {
+    "state": "attack_3",
+    "source": "authored",
+    "status": "PENDING",
+    "notes": "Awaiting frame-by-frame SunnyLand-character art review."
+  },
+  "dash": {
+    "state": "dash",
+    "source": "authored",
+    "status": "PENDING",
+    "notes": "Awaiting frame-by-frame SunnyLand-character art review."
+  },
+  "air_dash": {
+    "state": "air_dash",
+    "source": "authored",
+    "status": "PENDING",
+    "notes": "Awaiting frame-by-frame SunnyLand-character art review."
+  },
+  "double_jump": {
+    "state": "double_jump",
+    "source": "authored",
+    "status": "PENDING",
+    "notes": "Awaiting frame-by-frame SunnyLand-character art review."
+  },
+  "wall_slide": {
+    "state": "wall_slide",
+    "source": "authored",
+    "status": "PENDING",
+    "notes": "Awaiting frame-by-frame SunnyLand-character art review."
+  },
+  "wall_jump": {
+    "state": "wall_jump",
+    "source": "authored",
+    "status": "PENDING",
+    "notes": "Awaiting frame-by-frame SunnyLand-character art review."
+  },
+  "ground_slam_start": {
+    "state": "ground_slam_start",
+    "source": "authored",
+    "status": "PENDING",
+    "notes": "Awaiting frame-by-frame SunnyLand-character art review."
+  },
+  "ground_slam_fall": {
+    "state": "ground_slam_fall",
+    "source": "authored",
+    "status": "PENDING",
+    "notes": "Awaiting frame-by-frame SunnyLand-character art review."
+  },
+  "ground_slam_impact": {
+    "state": "ground_slam_impact",
+    "source": "authored",
+    "status": "PENDING",
+    "notes": "Awaiting frame-by-frame SunnyLand-character art review."
+  },
+  "swim": {
+    "state": "swim",
+    "source": "authored",
+    "status": "PENDING",
+    "notes": "Awaiting frame-by-frame SunnyLand-character art review."
+  },
+  "swim_idle": {
+    "state": "swim_idle",
+    "source": "authored",
+    "status": "PENDING",
+    "notes": "Awaiting frame-by-frame SunnyLand-character art review."
+  },
+  "grapple": {
+    "state": "grapple",
+    "source": "authored",
+    "status": "PENDING",
+    "notes": "Awaiting frame-by-frame SunnyLand-character art review."
+  },
+  "phase": {
+    "state": "phase",
+    "source": "authored",
+    "status": "PENDING",
+    "notes": "Awaiting frame-by-frame SunnyLand-character art review."
+  },
+  "death": {
+    "state": "death",
+    "source": "authored",
+    "status": "PENDING",
+    "notes": "Awaiting frame-by-frame SunnyLand-character art review."
+  },
+  "respawn": {
+    "state": "respawn",
+    "source": "authored",
+    "status": "PENDING",
+    "notes": "Awaiting frame-by-frame SunnyLand-character art review."
+  },
+  "interact": {
+    "state": "interact",
+    "source": "authored",
+    "status": "PENDING",
+    "notes": "Awaiting frame-by-frame SunnyLand-character art review."
+  },
+  "ability_acquire": {
+    "state": "ability_acquire",
+    "source": "authored",
+    "status": "PENDING",
+    "notes": "Awaiting frame-by-frame SunnyLand-character art review."
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "code": 4294967295,
+  "base": "E:\\MetroForgeData\\TestArtifacts\\castle-interior-controlled-20261004-v1",
+  "scriptErrors": true,
+  "nativeErrors": [
+    "ERROR: Failed to load script \"res://scripts/test/CastleContinuityValidation.gd\" with error \"Parse error\"."
+  ],
+  "warnings": [],
+  "scope": "Controlled native backdrop and malformed-profile checks with forced room loads; not gameplay traversal",
+  "nvidia": true
+}

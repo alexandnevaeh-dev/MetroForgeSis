@@ -1,0 +1,154 @@
+{
+  "source": "E:\\Metroforge\\MetroForge-Publish\\packages\\assets\\authored\\stormglass-veilblade\\veilblade-death-source-v2.png",
+  "output": "E:\\Metroforge\\MetroForge-Publish\\packages\\assets\\authored\\stormglass-veilblade\\veilblade-death-v2.png",
+  "frameSize": [
+    64,
+    64
+  ],
+  "frameCount": 8,
+  "sharedScale": 0.19661016949152543,
+  "bottomCenterAnchor": [
+    32,
+    62
+  ],
+  "frames": [
+    {
+      "frame": 0,
+      "sourceBox": [
+        26,
+        250,
+        253,
+        545
+      ],
+      "size": [
+        45,
+        58
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 1,
+      "sourceBox": [
+        11,
+        292,
+        271,
+        545
+      ],
+      "size": [
+        51,
+        50
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 2,
+      "sourceBox": [
+        0,
+        325,
+        271,
+        545
+      ],
+      "size": [
+        53,
+        43
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 3,
+      "sourceBox": [
+        0,
+        377,
+        272,
+        552
+      ],
+      "size": [
+        53,
+        34
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 4,
+      "sourceBox": [
+        0,
+        393,
+        272,
+        549
+      ],
+      "size": [
+        53,
+        31
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 5,
+      "sourceBox": [
+        0,
+        435,
+        271,
+        547
+      ],
+      "size": [
+        53,
+        22
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 6,
+      "sourceBox": [
+        0,
+        448,
+        271,
+        544
+      ],
+      "size": [
+        53,
+        19
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 7,
+      "sourceBox": [
+        0,
+        458,
+        254,
+        549
+      ],
+      "size": [
+        50,
+        18
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    }
+  ],
+  "status": "candidate",
+  "productionApproved": false
+}

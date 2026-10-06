@@ -1,0 +1,11 @@
+# Torch is intentionally reused from the approved runtime and is not replaced here.
+# This is the tested CPU Diffusers and Optimum Intel OpenVINO worker set.
+diffusers==0.37.0
+transformers==5.5.4
+accelerate==0.34.2
+safetensors==0.7.0
+Pillow==12.3.0
+opencv-python-headless==4.10.0.84
+huggingface-hub==1.21.0
+openvino==2026.3.1
+optimum-intel[openvino]==2.1.0

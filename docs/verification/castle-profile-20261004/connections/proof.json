@@ -1,0 +1,248 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\castle-profile-review\\reports\\game-tests\\20261003-connections\\1791118588563",
+  "scope": "Hidden real Electron, real IPC, Windows encryption, synthetic keys; no live authentication claim",
+  "checks": [
+    {
+      "label": "twelve supported providers have editable masked fields",
+      "passed": true
+    },
+    {
+      "label": "existing environment credential has clear source",
+      "passed": true
+    },
+    {
+      "label": "capture keeps native window hidden",
+      "passed": true
+    },
+    {
+      "label": "invalid key is associated with guidance and cannot submit",
+      "passed": true
+    },
+    {
+      "label": "reveal has correct state",
+      "passed": true
+    },
+    {
+      "label": "navigation retains draft in memory and remasks",
+      "passed": true
+    },
+    {
+      "label": "keyboard save clears sensitive draft",
+      "passed": true
+    },
+    {
+      "label": "main process uses new credential immediately",
+      "passed": true
+    },
+    {
+      "label": "Windows vault contains no plaintext key",
+      "passed": true
+    },
+    {
+      "label": "IPC returns presence only",
+      "passed": true
+    },
+    {
+      "label": "no key was persisted in browser storage",
+      "passed": true
+    },
+    {
+      "label": "capture keeps native window hidden",
+      "passed": true
+    },
+    {
+      "label": "encrypted saved key survives real app restart",
+      "passed": true
+    },
+    {
+      "label": "restart never retrieves a stored key into the form",
+      "passed": true
+    },
+    {
+      "label": "actual storage failure retains input and previous active key",
+      "passed": true
+    },
+    {
+      "label": "retry succeeds after storage recovery",
+      "passed": true
+    },
+    {
+      "label": "removal requires explicit consequence confirmation",
+      "passed": true
+    },
+    {
+      "label": "cancel preserves saved connection",
+      "passed": true
+    },
+    {
+      "label": "removal restores original environment key",
+      "passed": true
+    },
+    {
+      "label": "local filter shows optional LM Studio token and key-free server guidance",
+      "passed": true
+    },
+    {
+      "label": "local URL has associated validation and remote endpoints cannot be saved",
+      "passed": true
+    },
+    {
+      "label": "main process also rejects remote local-server URLs",
+      "passed": true
+    },
+    {
+      "label": "server and model settings persist through actual IPC",
+      "passed": true
+    },
+    {
+      "label": "actual MetroForge provider health discovers the local model",
+      "passed": true
+    },
+    {
+      "label": "shared generation router calls the local HTTP server configured through the app",
+      "passed": true
+    },
+    {
+      "label": "local HTTP fixture saw model discovery and generation",
+      "passed": true
+    },
+    {
+      "label": "capture keeps native window hidden",
+      "passed": true
+    },
+    {
+      "label": "hosted text filter includes new providers and excludes image-only credentials",
+      "passed": true
+    },
+    {
+      "label": "capture keeps native window hidden",
+      "passed": true
+    },
+    {
+      "label": "capture keeps native window hidden",
+      "passed": true
+    },
+    {
+      "label": "narrow app has no horizontal document overflow",
+      "passed": true
+    },
+    {
+      "label": "last provider and save action remain reachable",
+      "passed": true
+    },
+    {
+      "label": "capture keeps native window hidden",
+      "passed": true
+    },
+    {
+      "label": "route has clear document title",
+      "passed": true
+    },
+    {
+      "label": "no renderer errors",
+      "passed": true
+    },
+    {
+      "label": "desktop stayed hidden",
+      "passed": true
+    },
+    {
+      "label": "packaged application matches tested source build: dist/assets/main.js",
+      "passed": true
+    },
+    {
+      "label": "packaged application matches tested source build: dist-electron/handlers.js",
+      "passed": true
+    },
+    {
+      "label": "packaged application matches tested source build: dist-electron/credentials.js",
+      "passed": true
+    },
+    {
+      "label": "packaged application matches tested source build: dist-electron/preload.cjs",
+      "passed": true
+    },
+    {
+      "label": "packaged provider module matches isolated build: packages/ai/dist/bootstrap.js",
+      "passed": true
+    },
+    {
+      "label": "packaged provider module matches isolated build: packages/ai/dist/providers/compatible-chat.js",
+      "passed": true
+    },
+    {
+      "label": "packaged provider module matches isolated build: packages/shared/dist/provider-toggles.js",
+      "passed": true
+    },
+    {
+      "label": "packaged provider module matches isolated build: packages/generation/dist/pipeline.js",
+      "passed": true
+    }
+  ],
+  "captures": [
+    {
+      "file": "01-api-keys.png",
+      "size": {
+        "width": 1484,
+        "height": 935
+      },
+      "visible": false
+    },
+    {
+      "file": "02-key-saved.png",
+      "size": {
+        "width": 1484,
+        "height": 935
+      },
+      "visible": false
+    },
+    {
+      "file": "04-local-model-settings.png",
+      "size": {
+        "width": 1484,
+        "height": 935
+      },
+      "visible": false
+    },
+    {
+      "file": "05-hosted-text-providers.png",
+      "size": {
+        "width": 1484,
+        "height": 935
+      },
+      "visible": false
+    },
+    {
+      "file": "03-connections-wide.png",
+      "size": {
+        "width": 1484,
+        "height": 935
+      },
+      "visible": false
+    },
+    {
+      "file": "03-narrow.png",
+      "size": {
+        "width": 984,
+        "height": 655
+      },
+      "visible": false
+    }
+  ],
+  "pageErrors": [],
+  "sourceHashes": {
+    "apps/desktop/electron/credentials.ts": "82f1732a497c53e27fcb34215f5f275c05bb9680ec24b737d7d357270e0aca72",
+    "apps/desktop/electron/handlers.ts": "66f7cb9bee902ec18bb709c8292643b17df1eaf3d84b7cda5e265569a6e1eb60",
+    "apps/desktop/electron/preload.ts": "a119639a0fb44db8b5c60d8b9099fe34877f5542c29fc182d94d17b11e7258e6",
+    "apps/desktop/src/studio/ApiKeysScreen.tsx": "371254c69a82b969908e2c7f6714921d730551f775c6a034fee11f604c606325",
+    "apps/desktop/src/App.tsx": "a1956e91f2f26b3704527573a4162591dfc9a47359b876cb7a12b2e8fb6ed582",
+    "apps/desktop/src/styles.css": "5344cbc50f9681a7e2cd4d1265e117bce77c42db38742ba36676b83113e48146",
+    "apps/desktop/dist/assets/main.js": "1dc445098f6002d7926047152631b7bafe3c55bed61f27532c39ffbe1b099e12",
+    "apps/desktop/dist-electron/handlers.js": "e099b73a048ce0b3f57a2a154d628d6ecbe02fe975417a81794c001984e2294b"
+  },
+  "packaged": {
+    "executable": "E:/MetroForgeData/Releases/MetroForge-castle-profile-20261004-v1/MetroForge.exe",
+    "sha256": "1925f358e7f0e9675a5ac4198fb076613f0db318da56d388799a97be74a5b19c"
+  },
+  "passed": true
+}

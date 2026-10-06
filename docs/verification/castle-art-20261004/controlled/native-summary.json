@@ -1,0 +1,217 @@
+{
+  "code": 0,
+  "base": "E:\\MetroForgeData\\TestArtifacts\\castle-art-controlled-20261004-v4",
+  "scriptErrors": false,
+  "nativeErrors": [],
+  "warnings": [
+    "WARNING: ObjectDB instances leaked at exit (run with --verbose for details)."
+  ],
+  "scope": "Controlled native backdrop and malformed-profile checks with forced room loads; not gameplay traversal",
+  "nvidia": true,
+  "castleBackdrop": {
+    "bands": [
+      {
+        "height": 256.000001907349,
+        "opacity": 0.899999976158142,
+        "repeat": 3,
+        "tileWidth": 455.111114501953,
+        "tint": [
+          0.540000021457672,
+          0.670000016689301,
+          0.839999973773956
+        ],
+        "width": 4096.00003051758,
+        "x": -0.0000152587890625,
+        "y": 1215.99999904633
+      },
+      {
+        "height": 256.000001907349,
+        "opacity": 0.611999988555908,
+        "repeat": 3,
+        "tileWidth": 455.111114501953,
+        "tint": [
+          0.540000021457672,
+          0.670000016689301,
+          0.839999973773956
+        ],
+        "width": 4096.00003051758,
+        "x": -0.0000152587890625,
+        "y": 959.999999046326
+      },
+      {
+        "height": 256.000001907349,
+        "opacity": 0.611999988555908,
+        "repeat": 3,
+        "tileWidth": 455.111114501953,
+        "tint": [
+          0.540000021457672,
+          0.670000016689301,
+          0.839999973773956
+        ],
+        "width": 4096.00003051758,
+        "x": -0.0000152587890625,
+        "y": 703.999999046326
+      },
+      {
+        "height": 256.000001907349,
+        "opacity": 0.611999988555908,
+        "repeat": 3,
+        "tileWidth": 455.111114501953,
+        "tint": [
+          0.540000021457672,
+          0.670000016689301,
+          0.839999973773956
+        ],
+        "width": 4096.00003051758,
+        "x": -0.0000152587890625,
+        "y": 447.999999046326
+      },
+      {
+        "height": 256.000001907349,
+        "opacity": 0.611999988555908,
+        "repeat": 3,
+        "tileWidth": 455.111114501953,
+        "tint": [
+          0.540000021457672,
+          0.670000016689301,
+          0.839999973773956
+        ],
+        "width": 4096.00003051758,
+        "x": -0.0000152587890625,
+        "y": 191.999999046326
+      },
+      {
+        "height": 256.000001907349,
+        "opacity": 0.611999988555908,
+        "repeat": 3,
+        "tileWidth": 455.111114501953,
+        "tint": [
+          0.540000021457672,
+          0.670000016689301,
+          0.839999973773956
+        ],
+        "width": 4096.00003051758,
+        "x": -0.0000152587890625,
+        "y": -64.0000009536743
+      }
+    ],
+    "checks": [
+      {
+        "label": "valid gallery profile is read",
+        "passed": true
+      },
+      {
+        "label": "other rooms keep legacy framing",
+        "passed": true
+      },
+      {
+        "label": "invalid height is refused: \"1024\"",
+        "passed": true
+      },
+      {
+        "label": "invalid height is refused: []",
+        "passed": true
+      },
+      {
+        "label": "invalid height is refused: {}",
+        "passed": true
+      },
+      {
+        "label": "invalid height is refused: null",
+        "passed": true
+      },
+      {
+        "label": "invalid height is refused: 255",
+        "passed": true
+      },
+      {
+        "label": "invalid height is refused: 1537",
+        "passed": true
+      },
+      {
+        "label": "invalid grading is refused: null",
+        "passed": true
+      },
+      {
+        "label": "invalid grading is refused: []",
+        "passed": true
+      },
+      {
+        "label": "invalid grading is refused: [1,1]",
+        "passed": true
+      },
+      {
+        "label": "invalid grading is refused: [1,1,1,1]",
+        "passed": true
+      },
+      {
+        "label": "invalid grading is refused: [\"1\",1,1]",
+        "passed": true
+      },
+      {
+        "label": "invalid grading is refused: [true,1,1]",
+        "passed": true
+      },
+      {
+        "label": "invalid grading is refused: [-0.1,1,1]",
+        "passed": true
+      },
+      {
+        "label": "invalid grading is refused: [1,1,1.01]",
+        "passed": true
+      },
+      {
+        "label": "profile bytes restored exactly",
+        "passed": true
+      },
+      {
+        "label": "legacy background native rectangle retained",
+        "passed": true
+      },
+      {
+        "label": "native interior band count matches world scale",
+        "passed": true
+      },
+      {
+        "label": "lower native band meets gallery floor",
+        "passed": true
+      },
+      {
+        "label": "upper band continues the same world scale",
+        "passed": true
+      },
+      {
+        "label": "horizontal native mirror repetition",
+        "passed": true
+      },
+      {
+        "label": "upper band uses native depth opacity",
+        "passed": true
+      },
+      {
+        "label": "native stone material grading",
+        "passed": true
+      },
+      {
+        "label": "eighteen stone balcony corbels",
+        "passed": true
+      }
+    ],
+    "legacy": {
+      "height": 1008,
+      "opacity": 0.899999976158142,
+      "repeat": 0,
+      "tileWidth": 1792,
+      "tint": [
+        1,
+        1,
+        1
+      ],
+      "width": 1792,
+      "x": 0,
+      "y": -304
+    },
+    "passed": true,
+    "scope": "Controlled native profile failures and forced room loads on NVIDIA; not gameplay traversal or final art acceptance."
+  }
+}

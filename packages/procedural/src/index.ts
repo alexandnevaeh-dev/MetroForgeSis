@@ -1,0 +1,154 @@
+export { SeededRNG } from './rng.js';
+export { generatePlatformerWorld } from './platformer-world.js';
+export {
+  generateWorldTopology,
+  validateReachability,
+  validateWorldConnectivity,
+  validateWorldReachability,
+  resolveRoomCount,
+} from './world.js';
+export type { WorldGenOptions, WorldGenResult } from './world.js';
+export { planVictoryRoute } from './playtest-route.js';
+export type { PlaytestRoutePlan, PlaytestTransitionStep, PlanVictoryRouteOptions } from './playtest-route.js';
+export {
+  validateMovementFeasibility,
+  movementStatsFromJson,
+  DEFAULT_MOVEMENT_STATS,
+  DEFAULT_ROOM_LAYOUT,
+} from './movement-feasibility.js';
+export type {
+  MovementStats,
+  MovementFeasibilityIssue,
+  MovementFeasibilityReport,
+  RoomLayoutDefaults,
+} from './movement-feasibility.js';
+export {
+  attachPlaytestPersona,
+  defaultPlaytestPersonaForProfile,
+  resolvePlaytestPersona,
+  PLAYTEST_PERSONAS,
+} from './playtest-persona.js';
+export type { PlaytestPersona, PlaytestPersonaId, PlaytestRouteWithPersona } from './playtest-persona.js';
+export {
+  assignRoomArchetypes,
+  abilityGateRoomIndex,
+  npcRoomIndex,
+  npcCountForProfile,
+  PROCEDURAL_ARCHETYPE_POOL,
+  VISUAL_SLICE_ROOM_ARCHETYPES,
+} from './room-archetypes.js';
+export {
+  ENVIRONMENT_ARCHETYPES,
+  assignEnvironmentArchetype,
+  roomPurposeFromGameplay,
+  majorRoomTileSize,
+  sideViewGalleryPlan,
+  scoreRoomEnvironment,
+  scoreSideViewRoom,
+  scoreTopDownRoom,
+  environmentFamilyForBiome,
+} from './environment-archetypes.js';
+export type {
+  EnvironmentArchetype,
+  EnvironmentArchetypeId,
+  RoomPurposeId,
+  RoomQualityScore,
+  SideViewRoomQuality,
+  TopDownRoomQuality,
+} from './environment-archetypes.js';
+export {
+  generateGameContent,
+  buildBossVisualPrompt,
+  enemyCombatTypeForIndex,
+  enemyMovementForIndex,
+  collectibleCountForProfile,
+} from './content.js';
+export type { GameContent } from './content.js';
+export { synthesizeSfx, synthesizeAllSfx, DEFAULT_SFX } from './audio.js';
+export type { SfxSpec } from './audio.js';
+export {
+  generateTrackerPattern,
+  synthesizeBiomeLoop,
+  generateMusicFromAudioBible,
+  enhanceMusicWithStableAudio,
+  exportPatternToMidi,
+  exportTrackerInterchange,
+} from './music.js';
+export type { TrackerPattern, TrackerEvent, MusicGenerationResult, TrackerInterchangeModule } from './music.js';
+export { StableAudioProvider } from './stable-audio.js';
+export type { StableAudioRequest, StableAudioResult } from './stable-audio.js';
+export {
+  generateArtBible,
+  generateAudioBible,
+  generateDesignBible,
+  generateStyleBible,
+  generateCharacterVisualDNA,
+  applyStyleBiblePrompt,
+} from './bibles.js';
+export { buildVisualStyleContract, applyVisualStyleContract } from './style-contract.js';
+export type { VisualStyleContract } from './style-contract.js';
+export {
+  generateVisualDNA,
+  generateBiomeVisualDNA,
+  generateAllBiomeVisualDNA,
+  compileVisualPrompt,
+  animationPoseGuidance,
+  VISUAL_PROMPT_COMPILER_VERSION,
+  generateEnvironmentKit,
+  environmentKitScaleFor,
+  biomeKitFromEnvironment,
+  generateRoomStorytelling,
+  buildDeterministicBiomeLightingProfile,
+  lightingDirectiveForRoom,
+  computeStyleFingerprint,
+  fingerprintFromVisualDNA,
+  resolveVisualStyleTemplate,
+  propAllowedInBiome,
+  tileAllowedInBiome,
+  filterAllowedProps,
+  filterAllowedTileVariants,
+  biomeMaterialMatches,
+  collectBiomeForbiddenTokens,
+  minimalBiomeContextFromId,
+} from './visual/index.js';
+export type {
+  CompileVisualPromptInput,
+  RoomLightingDirective,
+  VisualStyleTemplate,
+  BiomeKit,
+  BiomeLightingProfile,
+  BiomeConsistencyContext,
+} from './visual/index.js';
+export { buildProgressionProof } from './progression-proof.js';
+export type { ProgressionProof, ProgressionTraceStep } from './progression-proof.js';
+export {
+  generateFullMetroidvaniaWorld,
+  validateWorldDesign,
+  deriveWorldLayout,
+  evaluateFullWorldApplicability,
+  generateWorldDesignReport,
+  DEFAULT_ZONE_THEMES,
+  MIN_FULL_WORLD_ZONES,
+  BREAKABLE_WALL_ABILITY,
+  FULL_WORLD_TEST_CONFIG,
+  FULL_WORLD_TEST_SEEDS,
+} from './world-design.js';
+export type {
+  ZoneTheme,
+  FullWorldOptions,
+  FullWorldResult,
+  RoomExtent,
+  RoomPlacement,
+  LayoutIssue,
+  WorldLayout,
+  WorldDesignReport,
+  WorldDesignIssueBase,
+  ValidateWorldDesignInput,
+  GameHookInfo,
+} from './world-design.js';
+export { validateExportFidelity } from './export-fidelity.js';
+export type { ExportedConnection, ExportedRoomData, ExportFidelityIssue, ExportFidelityReport } from './export-fidelity.js';
+export { generateTopDownWorld, collisionRectsFromTiles, isWalkableTile } from './topdown/world.js';
+export { createCanopyLayout } from './topdown/canopy-layout.js';
+export type { CanopyRoomLayout, CanopyScenery } from './topdown/canopy-layout.js';
+export type { TopDownOverworld, TopDownArea, TopDownPoi, TopDownWorldGenResult, TopDownPropPlacement, TopDownPropLayout } from './topdown/world.js';

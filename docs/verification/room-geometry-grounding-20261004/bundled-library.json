@@ -1,0 +1,64 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\room-geometry-grounding-review\\reports\\game-tests\\20261004-castle-library\\1791099264787",
+  "checks": [
+    {
+      "label": "both bundled games appear separately",
+      "passed": true
+    },
+    {
+      "label": "Quantum retains its genre and Play action",
+      "passed": true
+    },
+    {
+      "label": "castle retains its Metroidvania genre and Play action",
+      "passed": true
+    },
+    {
+      "label": "capture stays hidden: bundled-castle-library.png",
+      "passed": true
+    },
+    {
+      "label": "bundled inspector retains selected background",
+      "passed": true
+    },
+    {
+      "label": "bundled inspector shows all forty affected rooms",
+      "passed": true
+    },
+    {
+      "label": "bundled preview matches the tested artwork exactly",
+      "passed": true
+    },
+    {
+      "label": "saved opacity and floor framing persist",
+      "passed": true
+    },
+    {
+      "label": "no unsaved changes and undo remains available",
+      "passed": true
+    },
+    {
+      "label": "capture stays hidden: bundled-castle-inspector.png",
+      "passed": true
+    },
+    {
+      "label": "library inspection preserves every bundled game file",
+      "passed": true
+    },
+    {
+      "label": "no renderer errors",
+      "passed": true
+    }
+  ],
+  "captures": [
+    "bundled-castle-library.png",
+    "bundled-castle-inspector.png"
+  ],
+  "errors": [],
+  "scope": "Read-only final portable library and room inspector. Verify both separate games, the assigned castle background and exact image bytes; no game launches or new generation.",
+  "packaged": {
+    "executable": "E:/MetroForgeData/Releases/MetroForge-room-editor-grounding-20261004-v3/MetroForge.exe",
+    "sha256": "1925f358e7f0e9675a5ac4198fb076613f0db318da56d388799a97be74a5b19c"
+  },
+  "passed": true
+}

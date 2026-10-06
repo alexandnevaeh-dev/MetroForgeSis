@@ -1,0 +1,115 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\castle-art-review\\reports\\game-tests\\20261004-continuity-connections\\1791127137406",
+  "scope": "Hidden real Electron, real IPC, Windows encryption, synthetic keys; no live authentication claim",
+  "checks": [
+    {
+      "label": "twelve supported providers have editable masked fields",
+      "passed": true
+    },
+    {
+      "label": "existing environment credential has clear source",
+      "passed": true
+    },
+    {
+      "label": "capture keeps native window hidden",
+      "passed": true
+    },
+    {
+      "label": "invalid key is associated with guidance and cannot submit",
+      "passed": true
+    },
+    {
+      "label": "reveal has correct state",
+      "passed": true
+    },
+    {
+      "label": "navigation retains draft in memory and remasks",
+      "passed": true
+    },
+    {
+      "label": "keyboard save clears sensitive draft",
+      "passed": true
+    },
+    {
+      "label": "main process uses new credential immediately",
+      "passed": true
+    },
+    {
+      "label": "Windows vault contains no plaintext key",
+      "passed": true
+    },
+    {
+      "label": "IPC returns presence only",
+      "passed": true
+    },
+    {
+      "label": "no key was persisted in browser storage",
+      "passed": true
+    },
+    {
+      "label": "capture keeps native window hidden",
+      "passed": true
+    },
+    {
+      "label": "encrypted saved key survives real app restart",
+      "passed": true
+    },
+    {
+      "label": "restart never retrieves a stored key into the form",
+      "passed": true
+    },
+    {
+      "label": "actual storage failure retains input and previous active key",
+      "passed": true
+    },
+    {
+      "label": "retry succeeds after storage recovery",
+      "passed": true
+    },
+    {
+      "label": "removal requires explicit consequence confirmation",
+      "passed": true
+    },
+    {
+      "label": "cancel preserves saved connection",
+      "passed": true
+    },
+    {
+      "label": "removal restores original environment key",
+      "passed": true
+    },
+    {
+      "label": "local filter shows optional LM Studio token and key-free server guidance",
+      "passed": true
+    },
+    {
+      "label": "local URL has associated validation and remote endpoints cannot be saved",
+      "passed": true
+    },
+    {
+      "label": "main process also rejects remote local-server URLs",
+      "passed": true
+    }
+  ],
+  "captures": [
+    {
+      "file": "01-api-keys.png",
+      "size": {
+        "width": 1484,
+        "height": 935
+      },
+      "visible": false
+    },
+    {
+      "file": "02-key-saved.png",
+      "size": {
+        "width": 1484,
+        "height": 935
+      },
+      "visible": false
+    }
+  ],
+  "pageErrors": [],
+  "passed": false,
+  "error": "locator.uncheck: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByLabel('Ollama (local)', { exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <input checked type=\"checkbox\"/>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\n    at E:\\MetroForgeData\\GitHubUpload\\20261004\\castle-art-review\\scripts\\verify-castle-continuity-connections.mjs:126:56"
+}

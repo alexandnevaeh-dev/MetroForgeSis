@@ -1,0 +1,13 @@
+import {generateStormglassGalleryCampaign} from '@metroforge/godot';
+import type {GameDNA} from '@metroforge/schemas';
+export type WorldLayoutChoice='procedural'|'stormglass-gallery';
+export function selectAuthoredWorld(dna:GameDNA,request:{worldLayout?:WorldLayoutChoice;targetEngine?:string;seed:number;worldOverride?:{roomCount?:number;biomeCount?:number}}){
+ if(!request.worldLayout||request.worldLayout==='procedural')return null;
+ if(request.worldLayout!=='stormglass-gallery')throw new Error('Unknown world layout');
+ if(request.targetEngine&&request.targetEngine!=='godot')throw new Error('Stormglass Gallery currently requires Godot');
+ const campaign=generateStormglassGalleryCampaign(dna,request.seed);
+ if(!campaign)throw new Error('Stormglass Gallery requires side-view Stormglass Reliquary, 32px tiles and its six movement abilities');
+ if(request.worldOverride?.roomCount!==undefined&&request.worldOverride.roomCount!==campaign.roomIds.length)throw new Error('Stormglass Gallery has 43 authored rooms');
+ if(request.worldOverride?.biomeCount!==undefined&&request.worldOverride.biomeCount!==campaign.worldGraph.regions.length)throw new Error('Stormglass Gallery region count conflicts with requested topology');
+ return campaign;
+}

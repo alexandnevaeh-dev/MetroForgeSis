@@ -1,0 +1,33 @@
+{
+  "scope": "Read-only final portable app library and byte-verified native-tested demo; no OS input",
+  "checks": [
+    {
+      "label": "final app lists the copied demo",
+      "passed": true
+    },
+    {
+      "label": "demo metadata identifies its separate Quantum genre",
+      "passed": true
+    },
+    {
+      "label": "demo has a playable game action",
+      "passed": true
+    },
+    {
+      "label": "sealed demo offers no room-template overwrite",
+      "passed": true
+    },
+    {
+      "label": "actual app stays hidden",
+      "passed": true
+    },
+    {
+      "label": "demo route completed extraction alive",
+      "passed": true
+    }
+  ],
+  "captures": [
+    "demo-library.png"
+  ],
+  "passed": true
+}

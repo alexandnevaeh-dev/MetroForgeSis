@@ -1,0 +1,46 @@
+import {_electron} from 'playwright';
+import {createRequire} from 'node:module';
+import {mkdirSync,writeFileSync} from 'node:fs';
+import {join,dirname,resolve} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import assert from 'node:assert/strict';
+const repo=resolve(dirname(fileURLToPath(import.meta.url)),'..'),desktop=join(repo,'apps/desktop'),require=createRequire(join(desktop,'package.json'));
+const output=join(repo,'reports/game-tests/20261006-world-layout-ui',String(Date.now()));
+for(const dir of ['temp','data','appdata','localappdata','games'])mkdirSync(join(output,dir),{recursive:true});
+writeFileSync(join(output,'empty.env'),'');
+const env={...process.env,METROFORGE_ENV_FILE:join(output,'empty.env'),TEMP:join(output,'temp'),TMP:join(output,'temp'),APPDATA:join(output,'appdata'),LOCALAPPDATA:join(output,'localappdata'),METROFORGE_DATA_DIR:join(output,'data'),METROFORGE_GENERATED_GAMES_DIR:join(output,'games'),METROFORGE_DESKTOP_HIDDEN:'1'};
+for(const key of ['ELECTRON_RUN_AS_NODE','VITE_DEV_SERVER_URL','METROFORGE_DESKTOP_SMOKE','METROFORGE_OPEN_DEVTOOLS'])delete env[key];
+const proof={scope:'Real native Electron creation controls; no generation submission or provider requests',checks:[],pageErrors:[],captures:[]};
+const check=(label,passed)=>{proof.checks.push({label,passed:!!passed});assert.ok(passed,label)};
+let app;
+try{
+ app=await _electron.launch({executablePath:require('electron'),args:[desktop],cwd:repo,env,timeout:60000});
+ const page=await app.firstWindow();page.setDefaultTimeout(15000);page.on('pageerror',e=>proof.pageErrors.push(e.message));
+ await app.evaluate(({BrowserWindow})=>{const win=BrowserWindow.getAllWindows()[0];win.webContents.setBackgroundThrottling(false);win.setBounds({width:1500,height:1000});});
+ await page.getByRole('button',{name:/New Game/}).first().click();
+ const layout=page.getByLabel('World layout',{exact:true});await layout.waitFor();
+ check('procedural default',await layout.inputValue()==='procedural');
+ await layout.selectOption('stormglass-gallery');
+ check('preset selected',await layout.inputValue()==='stormglass-gallery');
+ check('default title populated',await page.getByLabel('Project title',{exact:true}).inputValue()==='Stormglass Reliquary');
+ check('blank description populated',(await page.getByLabel('Game description',{exact:true}).inputValue()).includes('archive backrooms'));
+ check('six-ability profile selected and locked',await page.getByLabel('Profile',{exact:true}).inputValue()==='MEDIUM'&&await page.getByLabel('Profile',{exact:true}).isDisabled());
+ await page.getByLabel('Project title',{exact:true}).fill('Stormglass Reliquary - My Castle');
+ await page.getByLabel('Game description',{exact:true}).fill('My custom castle premise.');
+ await layout.selectOption('procedural');await layout.selectOption('stormglass-gallery');
+ check('custom title preserved',await page.getByLabel('Project title',{exact:true}).inputValue()==='Stormglass Reliquary - My Castle');
+ check('custom description preserved',await page.getByLabel('Game description',{exact:true}).inputValue()==='My custom castle premise.');
+ await layout.focus();await layout.press('Home');await layout.press('ArrowDown');await layout.press('Enter');
+ check('keyboard selects campaign',await layout.inputValue()==='stormglass-gallery');
+ await page.getByRole('radio',{name:/Top-down action adventure/}).click();
+ check('top-down hides side-view layout',await layout.count()===0);
+ await page.getByRole('radio',{name:/Side-view Metroidvania/}).click();
+ check('return retains authored selection',await layout.inputValue()==='stormglass-gallery');
+ async function capture(name){await page.waitForFunction(()=>document.getAnimations().every(animation=>animation.playState!=='running'||animation.effect?.getComputedTiming().iterations===Infinity));await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));const png=await app.evaluate(async({BrowserWindow})=>{const image=await BrowserWindow.getAllWindows()[0].webContents.capturePage(undefined,{stayHidden:true,stayAwake:true});return image.toPNG().toString('base64');});writeFileSync(join(output,name),Buffer.from(png,'base64'));proof.captures.push(name);}
+ await capture('world-layout-wide.png');
+ await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setBounds({width:1000,height:900}));
+ await page.waitForTimeout(150);
+ check('narrow viewport has no document overflow',await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+ await capture('world-layout-narrow.png');
+ check('no renderer errors',proof.pageErrors.length===0);proof.passed=true;
+}catch(error){proof.passed=false;proof.error=String(error);process.exitCode=1;}finally{writeFileSync(join(output,'proof.json'),JSON.stringify(proof,null,2));if(app)await app.close();console.log(JSON.stringify({passed:proof.passed,checks:proof.checks.length,error:proof.error,output}));}

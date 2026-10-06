@@ -1,0 +1,154 @@
+{
+  "source": "E:\\Metroforge\\MetroForge-Publish\\packages\\assets\\authored\\stormglass-veilblade\\veilblade-run-source-v2.png",
+  "output": "E:\\Metroforge\\MetroForge-Publish\\packages\\assets\\authored\\stormglass-veilblade\\veilblade-run-v2.png",
+  "frameSize": [
+    64,
+    64
+  ],
+  "frameCount": 8,
+  "sharedScale": 0.15803814713896458,
+  "bottomCenterAnchor": [
+    32,
+    62
+  ],
+  "frames": [
+    {
+      "frame": 0,
+      "sourceBox": [
+        12,
+        203,
+        264,
+        570
+      ],
+      "size": [
+        40,
+        58
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 1,
+      "sourceBox": [
+        10,
+        208,
+        265,
+        570
+      ],
+      "size": [
+        40,
+        57
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 2,
+      "sourceBox": [
+        11,
+        217,
+        271,
+        570
+      ],
+      "size": [
+        41,
+        56
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 3,
+      "sourceBox": [
+        0,
+        198,
+        272,
+        551
+      ],
+      "size": [
+        43,
+        56
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 4,
+      "sourceBox": [
+        0,
+        213,
+        251,
+        570
+      ],
+      "size": [
+        40,
+        56
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 5,
+      "sourceBox": [
+        6,
+        208,
+        253,
+        570
+      ],
+      "size": [
+        39,
+        57
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 6,
+      "sourceBox": [
+        2,
+        198,
+        271,
+        517
+      ],
+      "size": [
+        43,
+        50
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 7,
+      "sourceBox": [
+        0,
+        215,
+        246,
+        570
+      ],
+      "size": [
+        39,
+        56
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    }
+  ],
+  "status": "candidate",
+  "productionApproved": false
+}

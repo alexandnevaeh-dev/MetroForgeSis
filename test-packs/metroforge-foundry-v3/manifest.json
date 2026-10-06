@@ -1,0 +1,1182 @@
+{
+  "id": "metroforge-foundry-v3",
+  "visualTheme": "industrial sci-fi articulated-robot cast (Foundry V3 milestone)",
+  "playerReferenceHeight": 68,
+  "sourceLicense": "MetroForge internally authored Foundry V3 test pack; repository development-only",
+  "qaStatus": "FULL_APPROVAL_AI_DELEGATED",
+  "qaNote": "All 29 pack assets are QA-approved via an AI-delegated review (not the user's own visual sign-off) as of the twelfth session -- includes previously-excluded hurt/death clips, terrain, backdrop, and 4 individually-sliced props, all revised to address the eleventh session's specific findings. See docs/audit/MODERN_COHESION_TEST_PROJECT.md.",
+  "assets": [
+    {
+      "id": "player_idle",
+      "family": "character",
+      "role": "player.idle",
+      "source": "characters/player/player_idle.png",
+      "destination": "assets/characters/player_idle.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "animation": [
+        {
+          "id": "idle",
+          "frameCount": 4,
+          "frameSize": [
+            128,
+            128
+          ],
+          "fps": 8,
+          "loop": true,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "idle"
+        }
+      ],
+      "finalHash": "bc5a79088a3f54f1c09571c9823ac21d4807a83991c4599ce0123ac037103e2d"
+    },
+    {
+      "id": "player_run",
+      "family": "character",
+      "role": "player.run",
+      "source": "characters/player/player_locomotion.png",
+      "destination": "assets/characters/player_locomotion.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "animation": [
+        {
+          "id": "run",
+          "frameCount": 6,
+          "frameSize": [
+            128,
+            128
+          ],
+          "fps": 8,
+          "loop": true,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "run"
+        }
+      ],
+      "finalHash": "87036498d8cd345c6b0e692fa154387082fdb08a64b2f23ed981e4e078071af8"
+    },
+    {
+      "id": "player_attack",
+      "family": "character",
+      "role": "player.attack",
+      "source": "characters/player/player_attack.png",
+      "destination": "assets/characters/player_attack.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "animation": [
+        {
+          "id": "attack",
+          "frameCount": 4,
+          "frameSize": [
+            128,
+            128
+          ],
+          "fps": 8,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "attack",
+          "eventFrames": {
+            "strike": 2
+          }
+        }
+      ],
+      "finalHash": "d7a5092f636f3311a4dbd30d6116e8cec7e280b0568fc10ea1f5e5ff08f60bf5"
+    },
+    {
+      "id": "player_hurt",
+      "family": "character",
+      "role": "player.hurt",
+      "source": "characters/player/player_hurt.png",
+      "destination": "assets/characters/player_hurt.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "animation": [
+        {
+          "id": "hurt",
+          "frameCount": 3,
+          "frameSize": [
+            128,
+            128
+          ],
+          "fps": 5,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "hurt"
+        }
+      ],
+      "finalHash": "348f7085693667101e3e4b095d03146b413195fc0bc41b825a743632f92a6f62"
+    },
+    {
+      "id": "player_death",
+      "family": "character",
+      "role": "player.death",
+      "source": "characters/player/player_death.png",
+      "destination": "assets/characters/player_death.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "animation": [
+        {
+          "id": "death",
+          "frameCount": 5,
+          "frameSize": [
+            128,
+            128
+          ],
+          "fps": 8,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "death"
+        }
+      ],
+      "finalHash": "73ba8610856b29eac007f8b1e01f9cd34fce8430059e3562a58c36f5549c8ba0"
+    },
+    {
+      "id": "melee_idle",
+      "family": "character",
+      "role": "melee.idle",
+      "source": "characters/enemies/melee_idle.png",
+      "destination": "assets/enemies/melee_idle.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "animation": [
+        {
+          "id": "idle",
+          "frameCount": 4,
+          "frameSize": [
+            128,
+            128
+          ],
+          "fps": 8,
+          "loop": true,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "idle"
+        }
+      ],
+      "finalHash": "2de098e95d820bdfdfe4538e1fbc68a889c2c9ff50159aa573f841492786f185"
+    },
+    {
+      "id": "melee_walk",
+      "family": "character",
+      "role": "melee.walk",
+      "source": "characters/enemies/melee_locomotion.png",
+      "destination": "assets/enemies/melee_locomotion.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "animation": [
+        {
+          "id": "walk",
+          "frameCount": 4,
+          "frameSize": [
+            128,
+            128
+          ],
+          "fps": 8,
+          "loop": true,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "walk"
+        }
+      ],
+      "finalHash": "1849962df406f314bfb2fcc877065b51992d8182303dbd18e4ab9a972dd16f9d"
+    },
+    {
+      "id": "melee_attack",
+      "family": "character",
+      "role": "melee.attack",
+      "source": "characters/enemies/melee_attack.png",
+      "destination": "assets/enemies/melee_attack.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "animation": [
+        {
+          "id": "attack",
+          "frameCount": 4,
+          "frameSize": [
+            128,
+            128
+          ],
+          "fps": 8,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "attack",
+          "eventFrames": {
+            "strike": 2
+          }
+        }
+      ],
+      "finalHash": "430942c12df2d960edf70bd6b0386e361b3f232029e85701125a1311f9a30c58"
+    },
+    {
+      "id": "melee_hurt",
+      "family": "character",
+      "role": "melee.hurt",
+      "source": "characters/enemies/melee_hurt.png",
+      "destination": "assets/enemies/melee_hurt.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "animation": [
+        {
+          "id": "hurt",
+          "frameCount": 3,
+          "frameSize": [
+            128,
+            128
+          ],
+          "fps": 5,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "hurt"
+        }
+      ],
+      "finalHash": "ac018577289a6168569761ad78dfe4a10499e556e53cc22765418a88537dca6b"
+    },
+    {
+      "id": "melee_death",
+      "family": "character",
+      "role": "melee.death",
+      "source": "characters/enemies/melee_death.png",
+      "destination": "assets/enemies/melee_death.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "animation": [
+        {
+          "id": "death",
+          "frameCount": 4,
+          "frameSize": [
+            128,
+            128
+          ],
+          "fps": 8,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "death"
+        }
+      ],
+      "finalHash": "bdbf9f0026bbf3967d2a235cb6b6f806781ec712c3a3707233b70ed8dd023d76"
+    },
+    {
+      "id": "ranged_idle",
+      "family": "character",
+      "role": "ranged.idle",
+      "source": "characters/enemies/ranged_idle.png",
+      "destination": "assets/enemies/ranged_idle.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "animation": [
+        {
+          "id": "idle",
+          "frameCount": 4,
+          "frameSize": [
+            128,
+            128
+          ],
+          "fps": 8,
+          "loop": true,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "idle"
+        }
+      ],
+      "finalHash": "d1c201bf7149aa923e5479585120ea80a3310b957571156496b0db21371e5456"
+    },
+    {
+      "id": "ranged_walk",
+      "family": "character",
+      "role": "ranged.walk",
+      "source": "characters/enemies/ranged_locomotion.png",
+      "destination": "assets/enemies/ranged_locomotion.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "animation": [
+        {
+          "id": "walk",
+          "frameCount": 4,
+          "frameSize": [
+            128,
+            128
+          ],
+          "fps": 8,
+          "loop": true,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "walk"
+        }
+      ],
+      "finalHash": "db313e60061ad1b6e531b9aa1903ea3c29ca71746948e00ba087aa32e63518f6"
+    },
+    {
+      "id": "ranged_attack",
+      "family": "character",
+      "role": "ranged.attack",
+      "source": "characters/enemies/ranged_attack.png",
+      "destination": "assets/enemies/ranged_attack.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "animation": [
+        {
+          "id": "attack",
+          "frameCount": 4,
+          "frameSize": [
+            128,
+            128
+          ],
+          "fps": 8,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "attack",
+          "eventFrames": {
+            "strike": 2
+          }
+        }
+      ],
+      "finalHash": "c781b39f6e18153423bfe2fc11c6aea5851ba3e38f22c866b6c8f8078ed12fe9"
+    },
+    {
+      "id": "ranged_hurt",
+      "family": "character",
+      "role": "ranged.hurt",
+      "source": "characters/enemies/ranged_hurt.png",
+      "destination": "assets/enemies/ranged_hurt.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "animation": [
+        {
+          "id": "hurt",
+          "frameCount": 3,
+          "frameSize": [
+            128,
+            128
+          ],
+          "fps": 5,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "hurt"
+        }
+      ],
+      "finalHash": "0731a6bdce2df554df708e86612e7ee4d5771f542151cbb7761bccc523ab162f"
+    },
+    {
+      "id": "ranged_death",
+      "family": "character",
+      "role": "ranged.death",
+      "source": "characters/enemies/ranged_death.png",
+      "destination": "assets/enemies/ranged_death.png",
+      "nativeDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 2,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "animation": [
+        {
+          "id": "death",
+          "frameCount": 4,
+          "frameSize": [
+            128,
+            128
+          ],
+          "fps": 8,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "death"
+        }
+      ],
+      "finalHash": "467642860d4e728f38482feed695274c074d5d2e37510d547239d994d7cdb801"
+    },
+    {
+      "id": "boss_idle",
+      "family": "character",
+      "role": "boss.idle",
+      "source": "characters/boss/boss_idle.png",
+      "destination": "assets/bosses/boss_idle.png",
+      "nativeDimensions": {
+        "width": 160,
+        "height": 160
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "animation": [
+        {
+          "id": "idle",
+          "frameCount": 4,
+          "frameSize": [
+            160,
+            160
+          ],
+          "fps": 8,
+          "loop": true,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "idle"
+        }
+      ],
+      "finalHash": "bbb01607bc6512e61f8a4103bedf6655fbe7da1862008752ce078a2a66d4c681"
+    },
+    {
+      "id": "boss_walk",
+      "family": "character",
+      "role": "boss.walk",
+      "source": "characters/boss/boss_locomotion.png",
+      "destination": "assets/bosses/boss_locomotion.png",
+      "nativeDimensions": {
+        "width": 160,
+        "height": 160
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "animation": [
+        {
+          "id": "walk",
+          "frameCount": 4,
+          "frameSize": [
+            160,
+            160
+          ],
+          "fps": 8,
+          "loop": true,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "walk"
+        }
+      ],
+      "finalHash": "517654f0e27ffc441b8ed39bf6d7e5d4e60878fba4ea1b641b38a84b5041685d"
+    },
+    {
+      "id": "boss_attack",
+      "family": "character",
+      "role": "boss.attack",
+      "source": "characters/boss/boss_attack.png",
+      "destination": "assets/bosses/boss_attack.png",
+      "nativeDimensions": {
+        "width": 160,
+        "height": 160
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "animation": [
+        {
+          "id": "attack",
+          "frameCount": 6,
+          "frameSize": [
+            160,
+            160
+          ],
+          "fps": 6,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "attack",
+          "eventFrames": {
+            "strike": 3
+          }
+        }
+      ],
+      "finalHash": "6356d09a3ee4da8df67afa879bca430a5372337c448ef3f8b67c1ca297147ba1"
+    },
+    {
+      "id": "boss_hurt",
+      "family": "character",
+      "role": "boss.hurt",
+      "source": "characters/boss/boss_hurt.png",
+      "destination": "assets/bosses/boss_hurt.png",
+      "nativeDimensions": {
+        "width": 160,
+        "height": 160
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "animation": [
+        {
+          "id": "hurt",
+          "frameCount": 3,
+          "frameSize": [
+            160,
+            160
+          ],
+          "fps": 5,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "hurt"
+        }
+      ],
+      "finalHash": "c92e43ffe77d280f5dee4659d54d88d717acd9e98405b5937d3a433e054ee3fa"
+    },
+    {
+      "id": "boss_death",
+      "family": "character",
+      "role": "boss.death",
+      "source": "characters/boss/boss_death.png",
+      "destination": "assets/bosses/boss_death.png",
+      "nativeDimensions": {
+        "width": 160,
+        "height": 160
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "animation": [
+        {
+          "id": "death",
+          "frameCount": 6,
+          "frameSize": [
+            160,
+            160
+          ],
+          "fps": 8,
+          "loop": false,
+          "origin": "bottom-center",
+          "facingConvention": "right",
+          "mirrorSafe": true,
+          "gameplayState": "death"
+        }
+      ],
+      "finalHash": "c7a818d0f92dabb23af600592e3e0cfc5a229e5a16663e216df82f832d4c2534"
+    },
+    {
+      "id": "projectile",
+      "family": "vfx",
+      "role": "ranged.projectile",
+      "source": "vfx/projectile.png",
+      "destination": "assets/vfx/projectile.png",
+      "nativeDimensions": {
+        "width": 20,
+        "height": 8
+      },
+      "anchor": "free",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "foreground",
+      "maxInstancesPerRoom": 4,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "finalHash": "7fe5a3b087f3abdd382e6e484ea62f1c9de119da902a65725989f4c29f5c37a2"
+    },
+    {
+      "id": "exit_door",
+      "family": "interactive",
+      "role": "level.exit",
+      "source": "interactive/exit.png",
+      "destination": "assets/generated/exit/interactive_exit.png",
+      "nativeDimensions": {
+        "width": 64,
+        "height": 96
+      },
+      "anchor": "wall",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "gameplay-owned",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "finalHash": "6f915ccb6ee6a48d2a813a28cf0ba37a4c087eaa6b1d08b8197220e136e606f5"
+    },
+    {
+      "id": "prop_monitor",
+      "family": "prop",
+      "role": "decor.monitor",
+      "source": "props/prop_monitor.png",
+      "destination": "assets/props/biome_0/biome_0_prop_0.png",
+      "nativeDimensions": {
+        "width": 48,
+        "height": 48
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "mid",
+      "maxInstancesPerRoom": 3,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "finalHash": "2f325e4c5bb11b34f737e3cb9333bd41e0d38f723bdf501a8633c4356e519bad"
+    },
+    {
+      "id": "prop_hazard_crate",
+      "family": "prop",
+      "role": "decor.hazard_crate",
+      "source": "props/prop_hazard_crate.png",
+      "destination": "assets/props/biome_0/biome_0_prop_1.png",
+      "nativeDimensions": {
+        "width": 48,
+        "height": 48
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "mid",
+      "maxInstancesPerRoom": 3,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "finalHash": "530725c446b23c4186e4598bead8140eaf8c145d236295b0692f7839c0e0ef6f"
+    },
+    {
+      "id": "prop_canister",
+      "family": "prop",
+      "role": "decor.canister",
+      "source": "props/prop_canister.png",
+      "destination": "assets/props/biome_0/biome_0_prop_2.png",
+      "nativeDimensions": {
+        "width": 48,
+        "height": 48
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "mid",
+      "maxInstancesPerRoom": 3,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "finalHash": "d56eed582daf40a83206162b7c26f4176e87a7e7c5f27c3f1c3e7801f36fd65b"
+    },
+    {
+      "id": "prop_panel",
+      "family": "prop",
+      "role": "decor.panel",
+      "source": "props/prop_panel.png",
+      "destination": "assets/props/biome_0/biome_0_prop_3.png",
+      "nativeDimensions": {
+        "width": 48,
+        "height": 48
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "mid",
+      "maxInstancesPerRoom": 3,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "finalHash": "b8c0481db7704c69ffa66b2eaedc3b8390641517e3bedec6dfd487eb82d31b15"
+    },
+    {
+      "id": "transit_tileset_foundry_v3",
+      "family": "tile",
+      "role": "terrain.industrial",
+      "source": "environment/terrain.png",
+      "destination": "assets/tilesets/biome_0/source.png",
+      "nativeDimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "anchor": "floor",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "gameplay-owned",
+      "layer": "gameplay",
+      "maxInstancesPerRoom": 999,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "finalHash": "797ff9a3bf4500ab8047a086553ef277f9f36aca182557feff71f836db6113f0"
+    },
+    {
+      "id": "backdrop_foundry_v3_far",
+      "family": "background",
+      "role": "backdrop.reactor_corridor.far",
+      "source": "background/backdrop.png",
+      "destination": "assets/backgrounds/biome_0/far.png",
+      "nativeDimensions": {
+        "width": 1920,
+        "height": 320
+      },
+      "anchor": "free",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "far",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "finalHash": "060a3a35cbc49c67befe09c08f555871452b62de84fcb7c93678cc7ce3b8810d"
+    },
+    {
+      "id": "backdrop_foundry_v3_mid",
+      "family": "background",
+      "role": "backdrop.reactor_corridor.mid",
+      "source": "background/backdrop.png",
+      "destination": "assets/backgrounds/biome_0/mid.png",
+      "nativeDimensions": {
+        "width": 1920,
+        "height": 320
+      },
+      "anchor": "free",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "far",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "finalHash": "060a3a35cbc49c67befe09c08f555871452b62de84fcb7c93678cc7ce3b8810d"
+    },
+    {
+      "id": "backdrop_foundry_v3_near",
+      "family": "background",
+      "role": "backdrop.reactor_corridor.near",
+      "source": "background/backdrop.png",
+      "destination": "assets/backgrounds/biome_0/near.png",
+      "nativeDimensions": {
+        "width": 1920,
+        "height": 320
+      },
+      "anchor": "free",
+      "allowedArchetypes": [
+        "tutorial",
+        "traversal",
+        "combat",
+        "arena",
+        "ability_shrine",
+        "save",
+        "boss",
+        "miniboss",
+        "connector"
+      ],
+      "collision": "none",
+      "layer": "far",
+      "maxInstancesPerRoom": 1,
+      "sourceProvenance": "MetroForge Foundry V3 pack -- manually authored articulated pixel geometry using local diffusion design references; not diffusion-generated frames. QA-approved by an AI-delegated review (claude-code:delegated-visual-qa-2026-09-06 / -r2), NOT the user's own personal visual sign-off -- see docs/audit/MODERN_COHESION_TEST_PROJECT.md eleventh/twelfth sessions.",
+      "finalHash": "060a3a35cbc49c67befe09c08f555871452b62de84fcb7c93678cc7ce3b8810d"
+    }
+  ]
+}

@@ -1,0 +1,112 @@
+import assert from 'node:assert/strict';
+import { mkdtempSync, mkdirSync, copyFileSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { applyRoomEditAndRecompile, applyWorldEditAndRecompile, regenerateRoom, restoreRoomRecord, snapshotRoomRecord } from '../packages/generation/dist/project-edit-service.js';
+const source = process.argv[2];
+if (!source) throw new Error('Provide a generated project fixture');
+const project = mkdtempSync(join(tmpdir(), 'metroforge-authored-tiles-'));
+mkdirSync(join(project, 'data/rooms'), { recursive: true });
+for (const file of ['game_dna.json','world_graph.json','data/rooms/rooms.json']) copyFileSync(join(source,file),join(project,file));
+writeFileSync(join(project,'project.godot'),'config_version=5\n');
+const roomsPath=join(project,'data/rooms/rooms.json');
+const roomId=Object.entries(JSON.parse(readFileSync(roomsPath)).rooms).find(([, room]) => room.enemies?.some(id => id.startsWith("enemy_")))?.[0];
+assert.ok(roomId, "Fixture needs a room with a generated regular enemy");
+for (let i=0;i<10;i++) {
+  const dir=join(project,`assets/tilesets/biome_${i}`); mkdirSync(dir,{recursive:true});
+  writeFileSync(join(dir,'source.png'),'existence-only fixture; not a runtime texture');
+}
+const scene=()=>readFileSync(join(project,'scenes/rooms',`${roomId}.tscn`),'utf8');
+const room=()=>JSON.parse(readFileSync(roomsPath)).rooms[roomId];
+const proceduralSnapshot = snapshotRoomRecord(project, roomId);
+const painted=[{x:3,y:4,col:6,row:2}];
+for (const cells of [painted,[]]) {
+  const result=applyRoomEditAndRecompile(project,{roomId,tileCells:cells});
+  assert.equal(result.success,true,result.errors.join('\n'));
+  assert.deepEqual(room().tileCells,cells);
+  assert.equal(room().tileCellsAuthored,true);
+  assert.match(scene(),/authored_cells = true/);
+  if (!cells.length) assert.match(scene(),/painted_cells_json = "\[\]"/);
+  const resized=applyRoomEditAndRecompile(project,{roomId,width:960});
+  assert.equal(resized.success,true,resized.errors.join('\n'));
+  assert.deepEqual(room().tileCells,cells,'Unrelated recompilation must preserve Studio paint');
+}
+const dimensions = { width: 1232, height: 736 };
+assert.equal(applyRoomEditAndRecompile(project, { roomId, ...dimensions }).success, true);
+assert.equal(applyRoomEditAndRecompile(project, { roomId, tileCells: painted }).success, true);
+assert.equal(room().width, dimensions.width, 'Painting must preserve authored width');
+assert.equal(room().height, dimensions.height, 'Painting must preserve authored height');
+const duplicate = applyWorldEditAndRecompile(project, { type: 'duplicate_room', roomId, newRoomId: 'authored_copy' });
+assert.equal(duplicate.success, true, duplicate.errors.join('\n'));
+for (const id of [roomId, 'authored_copy']) {
+  const record = JSON.parse(readFileSync(roomsPath)).rooms[id];
+  assert.equal(record.width, dimensions.width, 'World recompilation must retain authored width');
+  assert.equal(record.height, dimensions.height, 'World recompilation must retain authored height');
+  assert.deepEqual(record.tileCells, painted);
+}
+assert.equal(applyRoomEditAndRecompile(project, { roomId, hasEnemy: true }).success, true);
+assert.match(scene(), /\[node name="Enemy"/);
+assert.equal(applyRoomEditAndRecompile(project, { roomId, enemies: [] }).success, true);
+assert.doesNotMatch(scene(), /\[node name="Enemy"/, 'Removing the last enemy must remove its scene node');
+assert.deepEqual(room().enemies, []);
+assert.equal(applyRoomEditAndRecompile(project, { roomId, width: 1280 }).success, true);
+assert.doesNotMatch(scene(), /\[node name="Enemy"/, 'Resizing must not restore a removed enemy');
+assert.deepEqual(room().enemies, []);
+assert.equal(applyWorldEditAndRecompile(project, { type: 'duplicate_room', roomId, newRoomId: 'cleared_copy' }).success, true);
+assert.doesNotMatch(readFileSync(join(project, 'scenes/rooms/cleared_copy.tscn'), 'utf8'), /\[node name="Enemy"/);
+assert.equal(applyRoomEditAndRecompile(project, { roomId, hasEnemy: true }).success, true);
+assert.equal(applyRoomEditAndRecompile(project, { roomId, height: 752 }).success, true);
+assert.match(scene(), /\[node name="Enemy"/, 'Explicit re-enable must survive later edits');
+const originalEnemy = room().entityPlacements.find(p => p.kind === 'enemy');
+assert.ok(originalEnemy);
+const copyEnemy = { ...originalEnemy, id: `${originalEnemy.id}_copy`, definitionId: originalEnemy.definitionId ?? originalEnemy.id, x: originalEnemy.x - 120 };
+const nextPlacements = [...room().entityPlacements, copyEnemy];
+assert.equal(applyRoomEditAndRecompile(project, { roomId, enemies: [originalEnemy.id, copyEnemy.id], entityPlacements: nextPlacements }).success, true);
+for (let pass = 0; pass < 2; pass++) {
+  assert.match(scene(), /\[node name="Enemy_1"/);
+  assert.ok(scene().includes(`position = Vector2(${copyEnemy.x}, ${copyEnemy.y})`));
+  assert.ok(scene().includes(`metadata/metroforge_entity_id = "${copyEnemy.id}"`));
+  assert.ok(!scene().includes(`assets/enemies/${copyEnemy.id}_`), 'Copies must reuse definition assets');
+  assert.deepEqual(room().enemies, [originalEnemy.id, copyEnemy.id]);
+  assert.equal(room().entityPlacements.find(p => p.id === copyEnemy.id).definitionId, copyEnemy.definitionId);
+  assert.equal(applyRoomEditAndRecompile(project, { roomId, width: 1296 }).success, true);
+}
+const siblingBefore = JSON.parse(readFileSync(roomsPath)).rooms.authored_copy;
+const authoredSnapshot = snapshotRoomRecord(project, roomId);
+const encounter = regenerateRoom(project, roomId, 'encounter');
+assert.equal(encounter.success, true, encounter.errors.join('\n'));
+assert.deepEqual(room().tileCells, authoredSnapshot.tileCells);
+assert.equal(room().tileCellsAuthored, authoredSnapshot.tileCellsAuthored);
+assert.equal(room().width, authoredSnapshot.width);
+assert.deepEqual(room().entityPlacements.filter(p => !['enemy','boss'].includes(p.kind)), authoredSnapshot.entityPlacements.filter(p => !['enemy','boss'].includes(p.kind)));
+assert.ok(!room().entityPlacements.some(p => p.id === copyEnemy.id), 'Encounter regeneration replaces copied combatants');
+assert.ok(room().entityPlacements.some(p => p.kind === 'enemy'), 'Procedural encounter must have a combatant');
+const regenerated = regenerateRoom(project, roomId, 'full');
+assert.equal(regenerated.success, true, regenerated.errors.join('\n'));
+assert.notEqual(room().tileCellsAuthored, true, 'Explicit regeneration must release authored paint');
+assert.notEqual(room().width, 1296, 'Explicit regeneration must restore procedural bounds');
+assert.ok(!room().entityPlacements.some(p => p.id === copyEnemy.id), 'Regeneration must replace authored instance roster');
+assert.deepEqual(JSON.parse(readFileSync(roomsPath)).rooms.authored_copy, siblingBefore, 'Other rooms must remain unchanged');
+assert.equal(restoreRoomRecord(project, roomId, authoredSnapshot).success, true);
+assert.equal(room().width, authoredSnapshot.width);
+assert.deepEqual(room().entityPlacements, authoredSnapshot.entityPlacements);
+const geometryOnly = regenerateRoom(project, roomId, 'geometry');
+assert.equal(geometryOnly.success, true, geometryOnly.errors.join('\n'));
+assert.equal(room().width, authoredSnapshot.width, 'Geometry regeneration must preserve authored room width');
+assert.equal(room().height, authoredSnapshot.height);
+assert.deepEqual(room().entityPlacements, authoredSnapshot.entityPlacements, 'Geometry regeneration must preserve entities');
+assert.notEqual(room().tileCellsAuthored, true);
+assert.notDeepEqual(room().tileCells, painted, 'Geometry regeneration must replace hand-painted layout');
+assert.equal(restoreRoomRecord(project, roomId, proceduralSnapshot).success, true);
+assert.equal(room().tileCellsAuthored, proceduralSnapshot.tileCellsAuthored, 'Undo must not convert procedural tiles to authored paint');
+console.log('PASS: authored persistence, full regeneration and procedural/authored snapshot restoration');
+
+if (process.env.GODOT_EXECUTABLE) {
+  const { spawnSync } = await import('node:child_process');
+  const fixture = mkdtempSync(join(tmpdir(), 'metroforge-native-tile-'));
+  writeFileSync(join(fixture, 'project.godot'), 'config_version=5\n');
+  copyFileSync(new URL('../templates/godot-metroidvania/scripts/world/RoomTileMap.gd', import.meta.url), join(fixture, 'RoomTileMap.gd'));
+  copyFileSync(new URL('./fixtures/authored-tile-runtime.gd', import.meta.url), join(fixture, 'test.gd'));
+  const result = spawnSync(process.env.GODOT_EXECUTABLE, ['--headless', '--path', fixture, '--script', 'test.gd'], { stdio: 'inherit', timeout: 30000, windowsHide: true });
+  assert.equal(result.status, 0, result.error?.message ?? 'Native authored tile test failed');
+} else console.log('SKIPPED native Godot tile test: set GODOT_EXECUTABLE');

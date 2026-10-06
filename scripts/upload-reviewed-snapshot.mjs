@@ -1,0 +1,30 @@
+import {execFileSync} from 'node:child_process';
+import {readFileSync,writeFileSync,existsSync} from 'node:fs';
+import {resolve,join} from 'node:path';
+const report=resolve('reports/game-tests/20261001-canopy-depth');
+const review=JSON.parse(readFileSync(join(report,'github-snapshot-review.json')));
+if(review.findings.length||review.oversize.length)throw Error('Upload review has unresolved findings');
+const branch='refs/heads/'+review.branch;
+const index=join(report,process.env.METROFORGE_SNAPSHOT_INDEX || 'github-snapshot.index');
+if(existsSync(index))throw Error('Choose a fresh snapshot index; preserve prior evidence');
+const env={...process.env,GIT_INDEX_FILE:index,GH_CONFIG_DIR:'E:/MetroForgeData/AppData/GitHubCLI'};
+const run=(args,input)=>execFileSync('git',args,{env,input,encoding:'utf8',maxBuffer:8*1024*1024});
+if(run(['rev-parse','HEAD']).trim()!==review.head)throw Error('Checkout ancestry changed since review');
+const remote=run(['ls-remote','--heads','origin',branch]).trim();
+if(remote)throw Error('Remote branch already exists; do not overwrite it');
+run(['read-tree',review.head]);
+run(['add','--force','--pathspec-from-file='+join(report,'github-snapshot-files.nul'),'--pathspec-file-nul']);
+if(review.excludedTracked.length)run(['update-index','--force-remove','-z','--stdin'],readFileSync(join(report,'github-snapshot-excluded.nul')));
+const tree=run(['write-tree']).trim();
+const commit=run(['commit-tree',tree,'-p',review.head],
+ 'Continue MetroForge with separate playable worlds and crisp HD-2D animation\n\nPreserve the recovered application source and separate current side-view/top-down sets. Expand the Canopy story and spells, add real shore and bridge depth, retain authored enemy timing, and fix Unity trigger-driven respawn. Keep .env credentials, model data, caches and new machine reports out of the source snapshot.\n').trim();
+run(['update-ref',branch,commit,'0000000000000000000000000000000000000000']);
+writeFileSync(join(report,'github-upload.json'),JSON.stringify({branch:review.branch,commit,tree,files:review.files,bytes:review.bytes,workingCheckoutPreserved:true,status:'prepared'},null,2));
+console.log(JSON.stringify({branch:review.branch,commit,files:review.files,status:'prepared'}));
+// This pushes only the newly created branch. The working checkout and its index are unchanged.
+const pushed=run(['push','origin',branch+':'+branch]);
+console.log(pushed);
+const uploaded=run(['ls-remote','--heads','origin',branch]).trim().split(/\s+/)[0];
+if(uploaded!==commit)throw Error('Remote upload hash does not match the reviewed commit');
+writeFileSync(join(report,'github-upload.json'),JSON.stringify({branch:review.branch,commit,tree,files:review.files,bytes:review.bytes,workingCheckoutPreserved:true,status:'uploaded',url:'https://github.com/alexandnevaeh-dev/MetroForgeSis/tree/'+review.branch},null,2));
+console.log(JSON.stringify({status:'uploaded',commit}));

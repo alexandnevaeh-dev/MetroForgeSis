@@ -1,0 +1,3 @@
+# Optional adapter dependency tested with the installed native CUDA runtime.
+# No effect on ordinary requests. Keep the existing torch/diffusers runtime.
+peft==0.14.0

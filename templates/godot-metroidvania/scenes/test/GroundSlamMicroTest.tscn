@@ -1,0 +1,24 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/test/GroundSlamMicroTest.gd" id="1_test"]
+[ext_resource type="PackedScene" path="res://scenes/player/Player.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://scenes/world/WeakFloor.tscn" id="3_weak_floor"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lower_floor"]
+size = Vector2(512, 64)
+
+[node name="GroundSlamMicroTest" type="Node2D"]
+script = ExtResource("1_test")
+
+[node name="WeakFloor" parent="." instance=ExtResource("3_weak_floor")]
+position = Vector2(400, 400)
+floor_width = 128.0
+
+[node name="LowerLanding" type="StaticBody2D" parent="."]
+position = Vector2(400, 592)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="LowerLanding"]
+shape = SubResource("RectangleShape2D_lower_floor")
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+position = Vector2(400, 400)

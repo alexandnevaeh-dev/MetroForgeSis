@@ -1,0 +1,191 @@
+{
+  "idle": {
+    "frameCount": 9,
+    "fps": 8,
+    "loop": true,
+    "sourceFrames": "idle",
+    "derived": false
+  },
+  "walk": {
+    "frameCount": 8,
+    "fps": 12,
+    "loop": true,
+    "sourceFrames": "skip",
+    "derived": true
+  },
+  "run": {
+    "frameCount": 8,
+    "fps": 14,
+    "loop": true,
+    "sourceFrames": "skip",
+    "derived": true
+  },
+  "jump_start": {
+    "frameCount": 3,
+    "fps": 12,
+    "loop": false,
+    "sourceFrames": "jump",
+    "derived": true
+  },
+  "jump": {
+    "frameCount": 4,
+    "fps": 10,
+    "loop": true,
+    "sourceFrames": "jump",
+    "derived": false
+  },
+  "fall": {
+    "frameCount": 4,
+    "fps": 10,
+    "loop": true,
+    "sourceFrames": "fall",
+    "derived": false
+  },
+  "land": {
+    "frameCount": 3,
+    "fps": 14,
+    "loop": false,
+    "sourceFrames": "duck",
+    "derived": true
+  },
+  "attack": {
+    "frameCount": 6,
+    "fps": 18,
+    "loop": false,
+    "sourceFrames": "hurt",
+    "derived": true
+  },
+  "attack_2": {
+    "frameCount": 6,
+    "fps": 18,
+    "loop": false,
+    "sourceFrames": "jump",
+    "derived": true
+  },
+  "attack_3": {
+    "frameCount": 6,
+    "fps": 18,
+    "loop": false,
+    "sourceFrames": "fall",
+    "derived": true
+  },
+  "hurt": {
+    "frameCount": 3,
+    "fps": 14,
+    "loop": false,
+    "sourceFrames": "hurt",
+    "derived": false
+  },
+  "death": {
+    "frameCount": 10,
+    "fps": 10,
+    "loop": false,
+    "sourceFrames": "fall",
+    "derived": true
+  },
+  "dash": {
+    "frameCount": 5,
+    "fps": 18,
+    "loop": false,
+    "sourceFrames": "skip",
+    "derived": true
+  },
+  "air_dash": {
+    "frameCount": 5,
+    "fps": 18,
+    "loop": false,
+    "sourceFrames": "jump",
+    "derived": true
+  },
+  "double_jump": {
+    "frameCount": 4,
+    "fps": 14,
+    "loop": false,
+    "sourceFrames": "jump",
+    "derived": true
+  },
+  "wall_slide": {
+    "frameCount": 4,
+    "fps": 8,
+    "loop": true,
+    "sourceFrames": "climb",
+    "derived": true
+  },
+  "wall_jump": {
+    "frameCount": 4,
+    "fps": 14,
+    "loop": false,
+    "sourceFrames": "jump",
+    "derived": true
+  },
+  "ground_slam_start": {
+    "frameCount": 3,
+    "fps": 12,
+    "loop": false,
+    "sourceFrames": "duck",
+    "derived": true
+  },
+  "ground_slam_fall": {
+    "frameCount": 3,
+    "fps": 12,
+    "loop": false,
+    "sourceFrames": "fall",
+    "derived": true
+  },
+  "ground_slam_impact": {
+    "frameCount": 5,
+    "fps": 16,
+    "loop": false,
+    "sourceFrames": "duck",
+    "derived": true
+  },
+  "swim": {
+    "frameCount": 6,
+    "fps": 10,
+    "loop": true,
+    "sourceFrames": "climb",
+    "derived": true
+  },
+  "swim_idle": {
+    "frameCount": 5,
+    "fps": 8,
+    "loop": true,
+    "sourceFrames": "idle",
+    "derived": true
+  },
+  "grapple": {
+    "frameCount": 5,
+    "fps": 12,
+    "loop": false,
+    "sourceFrames": "climb",
+    "derived": true
+  },
+  "phase": {
+    "frameCount": 5,
+    "fps": 12,
+    "loop": false,
+    "sourceFrames": "idle",
+    "derived": true
+  },
+  "respawn": {
+    "frameCount": 8,
+    "fps": 10,
+    "loop": false,
+    "sourceFrames": "idle",
+    "derived": true
+  },
+  "interact": {
+    "frameCount": 4,
+    "fps": 10,
+    "loop": false,
+    "sourceFrames": "duck",
+    "derived": true
+  },
+  "ability_acquire": {
+    "frameCount": 8,
+    "fps": 12,
+    "loop": false,
+    "sourceFrames": "jump",
+    "derived": true
+  }
+}

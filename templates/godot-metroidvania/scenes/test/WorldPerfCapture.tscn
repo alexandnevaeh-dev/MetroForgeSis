@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://world_perf_capture"]
+
+[ext_resource type="Script" path="res://scripts/test/WorldPerfCapture.gd" id="1_capture"]
+
+[node name="WorldPerfCapture" type="Node"]
+script = ExtResource("1_capture")

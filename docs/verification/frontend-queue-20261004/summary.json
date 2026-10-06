@@ -1,0 +1,23 @@
+{
+  "productionReady": false,
+  "unitPassed": 37,
+  "unitFailed": 0,
+  "creationPassed": true,
+  "creationChecks": 33,
+  "connectionPassed": true,
+  "connectionChecks": 44,
+  "queuePassed": true,
+  "queueChecks": 22,
+  "release": "E:/MetroForgeData/Releases/MetroForge-frontend-20261004-v3/MetroForge.exe",
+  "envPresence": {
+    "passed": true,
+    "envUnchanged": true,
+    "environmentConfigured": 5
+  },
+  "quantum": {
+    "waypoints": 161,
+    "extracted": true,
+    "release": true
+  },
+  "scope": "Hidden packaged Electron workflow with actual native generation and release gameplay; queue race/failure testing uses a controlled component fixture. No live new-hosted-provider authentication or worker cancellation certificate."
+}

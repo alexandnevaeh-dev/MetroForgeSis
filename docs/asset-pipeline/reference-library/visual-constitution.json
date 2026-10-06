@@ -1,0 +1,76 @@
+{
+  "id": "metroforge-industrial-scifi-v1",
+  "version": "1.0.0",
+  "artDirection": "Industrial science-fiction Metroidvania: articulated armored/mechanical actors on hand-detailed steel modular terrain, cool structural palette against warm/cool biome-specific hazard and energy accents.",
+  "renderingStyle": "2D orthographic pixel art, manually authored articulated part geometry (native low-resolution construction, not downsampled painting); restrained 1px dark contour outline with selective pale upper-edge highlights on beveled armor planes.",
+  "perspective": "side-view",
+  "targetResolution": { "width": 960, "height": 540 },
+  "baseSpriteScale": 1,
+  "tileSize": 32,
+  "palette": {
+    "global": ["#131e2c", "#384d60", "#a9c3cb", "#e1e4cf", "#101c29"],
+    "shadows": ["#101c29", "#182733", "#172737"],
+    "highlights": ["#e1e4cf", "#b5cdd0"],
+    "accents": ["#63dbe0", "#efbd61", "#b95d3e"],
+    "ui": ["#131e2c", "#a9c3cb", "#63dbe0"],
+    "biome": {
+      "foundry": ["#131e2c", "#384d60", "#a9c3cb", "#e1e4cf", "#b95d3e", "#e39b58", "#efbd61"],
+      "flooded_utility": ["#101f22", "#2e4f4d", "#9fc7c2", "#d8ece6", "#3fa8a0", "#5f7a63", "#efbd61"],
+      "overgrown_reactor": ["#16241a", "#3a4f3a", "#b9c9a0", "#e2ecc9", "#a8e05a", "#6f8f52", "#efbd61"]
+    }
+  },
+  "lighting": {
+    "direction": "upper-left key light, cool and slightly diffuse",
+    "contrast": "moderate — bright steel upper planes, dark blue-black joint cavities, no full-black quantization",
+    "ambient": "biome-tinted ambient fill (warm amber for foundry, cool teal for flooded utility, soft green-luminous for overgrown reactor)",
+    "emissive": "gameplay-meaning-only emissive accents: cyan for player/interaction, amber for boss/telegraph/hazard, never used decoratively on inert geometry"
+  },
+  "language": {
+    "characters": "3-head-scale compact armored/mechanical bipeds; silhouette-first archetypes (compact, hunched-broad, tall-thin, hovering, wide-heavy) so role reads before color does.",
+    "environments": "modular 32px steel panel kit: floor/wall/ceiling/platform/outer-corner/inner-corner/transition tiles, explicit adjacency (not auto-tiled), biome dressing changes material/wear/growth only.",
+    "enemies": "rust/oxidized base material across all biomes (gameplay-meaning color, not biome-tinted) so an enemy silhouette is recognizable as hostile regardless of biome.",
+    "bosses": "broad reactor/furnace-class silhouette, amber accent identical across biomes (gameplay-meaning color), scale approximately double a regular actor.",
+    "props": "flat rounded-rectangle / cylinder geometry with a single accent stripe or window; biome dressing changes surface material and wear, not silhouette.",
+    "ui": "flat steel-panel chrome, cyan interactive highlight, amber warning/telegraph highlight.",
+    "vfx": "small flat polygon shapes (projectile bolts, impact bursts); amber/cyan gameplay-meaning coloring, never biome-tinted."
+  },
+  "silhouetteRules": [
+    "Every actor archetype must be identifiable in flat black silhouette alone before any color is applied.",
+    "Player silhouette stays compact and upright across all biomes and all generation variation.",
+    "Enemy archetypes (melee/ranged/flying/armored-heavy) each occupy a distinct silhouette family; no two archetypes may share a bounding proportion and equipment read.",
+    "Boss silhouette is the widest/tallest actor silhouette in its biome and carries one unambiguous weak-point read (a exposed core/vent/joint).",
+    "Terrain tiles read as flat modular panels; no tile may imply a silhouette element (character, prop) that gameplay does not place there."
+  ],
+  "materialRules": [
+    "Interior material values (mid-tones) must be preserved; flattening to pure black/white silhouette is a shading-pass failure, not a stylistic choice.",
+    "Steel/armor material keeps a beveled highlight edge on its uppermost plane in every biome.",
+    "Biome material swaps (oxidation, moisture, vegetation) change surface treatment only — they never change an actor's proportions, anchor points, or gameplay-meaning accent colors.",
+    "Rivets, panel seams, and engraved joins stay visible at native resolution; they are not smoothed away by any post-process."
+  ],
+  "animationRules": [
+    "Diffusion or other generated reference material may inform material and silhouette ideas only; final actor pixels are manually authored articulated part geometry, never diffusion-retained pixels.",
+    "No whole-sprite sliding, tinting, or single-still relabeling counts as an animation clip.",
+    "Attack clips require windup, extension/strike, and recovery phases at minimum.",
+    "Death clips collapse articulated body parts with a per-actor fall direction/magnitude; a shared tip-over across all actors is a defect.",
+    "Right-facing sheets are the source of truth; left-facing is a horizontal mirror, including which side equipment renders on — disclosed, not hidden.",
+    "Ground-contact frames anchor locomotion to the actor's foot pivot; floating feet during a grounded clip is a defect."
+  ],
+  "forbiddenTraits": [
+    "Text, letters, watermarks, or logos baked into any sprite.",
+    "Copying the silhouette, palette, or name of an existing commercial game's iconic character or enemy.",
+    "Biome-tinting a gameplay-meaning color (player cyan, boss/hazard amber, enemy rust base) — these stay constant so players can read gameplay state independent of biome.",
+    "Pure-black or pure-white quantization of any interior material surface.",
+    "An enemy archetype silhouette that is only a recolor of another archetype's geometry."
+  ],
+  "consistencyConstraints": [
+    "All character-family sprites share the same tile/pixel density and foot-pivot convention regardless of biome.",
+    "A seed may vary panel wear, growth coverage, corrosion pattern, and non-gameplay decorative detail; it may never vary an actor's anatomy proportions, its lighting direction, or a gameplay-meaning accent color.",
+    "Every biome's terrain kit exposes the same tile-role set (floor/wall/ceiling/platform/outer-corner/inner-corner/transition) so room composition logic is biome-agnostic.",
+    "Every reference image is labeled as concept/reference art and is not itself treated as a game-ready sprite sheet unless it also exists as a compiled, QA-reviewed asset in a pack manifest."
+  ],
+  "provenance": {
+    "source": "Extracted and generalized from the QA-approved metroforge-foundry-v3 pack's VISUAL_SPEC.md (artifacts/metroforge-foundry-v3-20260906-01/VISUAL_SPEC.md), reviewer claude-code:delegated-visual-qa-2026-09-06-r2. This is an AI-delegated extraction and generalization, not the user's own personal visual sign-off.",
+    "seed": 20260907,
+    "generatedAt": "2026-09-07T00:00:00.000Z"
+  }
+}

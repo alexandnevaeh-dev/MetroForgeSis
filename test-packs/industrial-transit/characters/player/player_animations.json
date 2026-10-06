@@ -1,0 +1,132 @@
+{
+  "idle": {
+    "frameCount": 6,
+    "fps": 8,
+    "loop": true
+  },
+  "run": {
+    "frameCount": 8,
+    "fps": 14,
+    "loop": true
+  },
+  "jump_start": {
+    "frameCount": 3,
+    "fps": 12,
+    "loop": false
+  },
+  "jump": {
+    "frameCount": 3,
+    "fps": 10,
+    "loop": true
+  },
+  "fall": {
+    "frameCount": 3,
+    "fps": 10,
+    "loop": true
+  },
+  "land": {
+    "frameCount": 3,
+    "fps": 14,
+    "loop": false
+  },
+  "attack": {
+    "frameCount": 6,
+    "fps": 18,
+    "loop": false
+  },
+  "attack_2": {
+    "frameCount": 6,
+    "fps": 18,
+    "loop": false
+  },
+  "dash": {
+    "frameCount": 5,
+    "fps": 18,
+    "loop": false
+  },
+  "wall_slide": {
+    "frameCount": 4,
+    "fps": 8,
+    "loop": true
+  },
+  "wall_jump": {
+    "frameCount": 4,
+    "fps": 14,
+    "loop": false
+  },
+  "swim": {
+    "frameCount": 6,
+    "fps": 10,
+    "loop": true
+  },
+  "hurt": {
+    "frameCount": 3,
+    "fps": 14,
+    "loop": false
+  },
+  "death": {
+    "frameCount": 10,
+    "fps": 10,
+    "loop": false
+  },
+  "air_dash": {
+    "frameCount": 5,
+    "fps": 18,
+    "loop": false
+  },
+  "double_jump": {
+    "frameCount": 4,
+    "fps": 14,
+    "loop": false
+  },
+  "ground_slam_start": {
+    "frameCount": 3,
+    "fps": 12,
+    "loop": false
+  },
+  "ground_slam_fall": {
+    "frameCount": 3,
+    "fps": 12,
+    "loop": false
+  },
+  "ground_slam_impact": {
+    "frameCount": 5,
+    "fps": 16,
+    "loop": false
+  },
+  "swim_idle": {
+    "frameCount": 5,
+    "fps": 8,
+    "loop": true
+  },
+  "grapple": {
+    "frameCount": 5,
+    "fps": 12,
+    "loop": false
+  },
+  "phase": {
+    "frameCount": 5,
+    "fps": 12,
+    "loop": false
+  },
+  "respawn": {
+    "frameCount": 8,
+    "fps": 10,
+    "loop": false
+  },
+  "interact": {
+    "frameCount": 4,
+    "fps": 10,
+    "loop": false
+  },
+  "ability_acquire": {
+    "frameCount": 8,
+    "fps": 12,
+    "loop": false
+  },
+  "walk": {
+    "frameCount": 8,
+    "fps": 12,
+    "loop": true
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261003\\frontend-queue-review\\reports\\game-tests\\20261004-queue-frontend\\1791077568766",
+  "scope": "Real queue component in hidden Electron with a controlled IPC fixture; no actual generation, key authentication or worker-cancellation claim",
+  "checks": [
+    {
+      "label": "idle queue avoids 1.5-second polling",
+      "passed": true
+    },
+    {
+      "label": "idle queue refreshes at ten seconds",
+      "passed": true
+    },
+    {
+      "label": "all active jobs and only ten past jobs render initially",
+      "passed": true
+    },
+    {
+      "label": "readable status badges identify actual states",
+      "passed": true
+    },
+    {
+      "label": "history grows by ten on explicit action",
+      "passed": true
+    },
+    {
+      "label": "active queue retains prompt polling",
+      "passed": true
+    },
+    {
+      "label": "read failure preserves visible job history",
+      "passed": true
+    },
+    {
+      "label": "retry restores readable queue without losing jobs",
+      "passed": true
+    },
+    {
+      "label": "repeated refreshes never overlap IPC reads",
+      "passed": true
+    },
+    {
+      "label": "refresh requested during a slow read is replayed",
+      "passed": true
+    },
+    {
+      "label": "duplicate cancellation sends one request",
+      "passed": true
+    },
+    {
+      "label": "cancellation locks controls with a busy state",
+      "passed": true
+    },
+    {
+      "label": "cancel control keeps its dimensions while pending",
+      "passed": true
+    },
+    {
+      "label": "request acknowledgement does not invent stopped-worker status",
+      "passed": true
+    },
+    {
+      "label": "cancellation failure is recoverable and retains the active job",
+      "passed": true
+    },
+    {
+      "label": "long queue content fits a narrow window",
+      "passed": true
+    },
+    {
+      "label": "fixture never opens or focuses a native window",
+      "passed": true
+    },
+    {
+      "label": "unmount removes subscriptions and stops polling including late responses",
+      "passed": true
+    },
+    {
+      "label": "no renderer errors during failures or unmount",
+      "passed": true
+    },
+    {
+      "label": "initial read failure reports unavailable status rather than an empty queue",
+      "passed": true
+    },
+    {
+      "label": "initial failure retry restores authoritative empty state",
+      "passed": true
+    },
+    {
+      "label": "tested component, styles and harness stayed unchanged",
+      "passed": true
+    }
+  ],
+  "sourceHashes": {
+    "E:/MetroForgeData/GitHubUpload/20261003/frontend-queue-review/apps/desktop/src/studio/GenerationQueuePanel.tsx": "0c4164115452fe06b8eeb9ee9a0b2e650cbe40e626352e0700d4fc55a5c0979f",
+    "E:/MetroForgeData/GitHubUpload/20261003/frontend-queue-review/apps/desktop/src/styles.css": "0d1c0c40128bc2b372f0a715a929f7b60fdc2e419e4257bb62f1bc55874fb45d",
+    "E:\\MetroForgeData\\GitHubUpload\\20261003\\frontend-queue-review\\scripts\\verify-queue-frontend.mjs": "bc187b3f401c79975f92aa72cf9b64aee1d5d46a236fb22b4de61a3a026aa4b7"
+  },
+  "fixtureSha256": "1c72a2d698f15fd49613aa6d9110d47de0adea47937c38609e1c925f129b5e81",
+  "passed": true
+}

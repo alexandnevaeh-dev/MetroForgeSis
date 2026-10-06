@@ -1,0 +1,31 @@
+[gd_scene load_steps=3 format=3 uid="uid://ability_pickup"]
+
+[ext_resource type="Script" path="res://scripts/world/AbilityPickup.gd" id="1_pickup"]
+[ext_resource type="Script" path="res://scripts/core/WorldPropSprite.gd" id="2_sprite"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pickup"]
+size = Vector2(24, 24)
+
+[node name="AbilityPickup" type="Area2D"]
+collision_layer = 32
+collision_mask = 2
+z_index = 8
+script = ExtResource("1_pickup")
+
+[node name="Sprite" type="Sprite2D" parent="."]
+script = ExtResource("2_sprite")
+sprite_path = "assets/props/interact/ability.png"
+fallback_color = Color(0.2, 0.9, 0.5, 1)
+display_size = Vector2(24, 24)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -12)
+shape = SubResource("RectangleShape2D_pickup")
+
+[node name="Label" type="Label" parent="."]
+offset_left = -30.0
+offset_top = -50.0
+offset_right = 30.0
+offset_bottom = -30.0
+text = "Ability"
+horizontal_alignment = 1

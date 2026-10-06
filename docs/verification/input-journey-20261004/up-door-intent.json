@@ -1,0 +1,6 @@
+{
+  "passed": true,
+  "checks": 9,
+  "scope": "Controlled production RoomTransition Input-action checks with stubbed world and ability lookup; not full gameplay",
+  "exitCode": 0
+}

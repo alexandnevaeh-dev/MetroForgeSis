@@ -1,0 +1,97 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\manual-profiles-review\\reports\\game-tests\\20261004-assets-frontend\\1791092501170",
+  "scope": "Real asset workshop with a controlled bridge. Failure, retry, duplicate mutations, project isolation, partial results, keyboard and narrow layout; not real image inference or art approval.",
+  "sourceHashes": {
+    "apps/desktop/src/studio/GenerateAsset.tsx": "312d0b652c087faeef8adc1095b0aa6ae5bdb787ef3dbedc8a789f78eb19b279",
+    "apps/desktop/src/studio/StudioContext.tsx": "3e40d26e13a1d0ead70eb15cde103e21f7ab41d60dd9e4a87396e337d6fb9137",
+    "apps/desktop/src/studio/ui/index.tsx": "27b530d260e83ffd74cd2fc3ec8738e7ad80c7786bc4f25851eafe101b4feeac",
+    "apps/desktop/src/styles.css": "72b359d83cc1e40837cba0d87c4f87d500a46e5036fb62ab579908836d9cdd6c",
+    "scripts/verify-assets-frontend.mjs": "8cb7036b3f43ca8affa88bdd36f79b2148f8271e7a9779e32c3cac81bcfbaca1"
+  },
+  "checks": [
+    {
+      "label": "provider rejection preserves prompt and unlocks retry",
+      "passed": true
+    },
+    {
+      "label": "invalid seed is rejected without dispatch",
+      "passed": true
+    },
+    {
+      "label": "same-tick duplicate generation dispatches once",
+      "passed": true
+    },
+    {
+      "label": "pending mutation locks prompt and replace",
+      "passed": true
+    },
+    {
+      "label": "partial batch reports successful count and failed alternative",
+      "passed": true
+    },
+    {
+      "label": "backend warning is visible",
+      "passed": true
+    },
+    {
+      "label": "keyboard can inspect a different alternative",
+      "passed": true
+    },
+    {
+      "label": "replace explicitly requests one image despite three selected alternatives",
+      "passed": true
+    },
+    {
+      "label": "failed restore is retryable",
+      "passed": true
+    },
+    {
+      "label": "same-tick duplicate restore dispatches once and locks generation",
+      "passed": true
+    },
+    {
+      "label": "project switch clears old selection, history and preview",
+      "passed": true
+    },
+    {
+      "label": "late prior-project response cannot populate castle results",
+      "passed": true
+    },
+    {
+      "label": "new genre generates into its own project with create intent",
+      "passed": true
+    },
+    {
+      "label": "optional metadata failures preserve selected artwork and preview",
+      "passed": true
+    },
+    {
+      "label": "unknown history disables restore without hiding the registered artwork",
+      "passed": true
+    },
+    {
+      "label": "refreshing inspection recovers history and usage information",
+      "passed": true
+    },
+    {
+      "label": "narrow workshop has no document overflow",
+      "passed": true
+    },
+    {
+      "label": "frontend test stays hidden",
+      "passed": true
+    },
+    {
+      "label": "late response after unmount has no renderer error",
+      "passed": true
+    },
+    {
+      "label": "tested sources unchanged",
+      "passed": true
+    }
+  ],
+  "captures": [
+    "asset-workshop-narrow.png"
+  ],
+  "passed": true
+}

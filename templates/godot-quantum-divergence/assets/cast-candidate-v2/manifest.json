@@ -1,0 +1,347 @@
+{
+  "version": 1,
+  "genre": "quantum-divergence",
+  "candidateOnly": true,
+  "productionApproved": false,
+  "animationReady": false,
+  "completeCast": false,
+  "actors": {
+    "skitter": {
+      "frame": [
+        64,
+        64
+      ],
+      "logicalSize": [
+        32,
+        32
+      ],
+      "pivot": [
+        32,
+        64
+      ],
+      "clips": {
+        "idle": {
+          "path": "skitter/idle.png",
+          "frames": 6,
+          "fps": 10,
+          "loop": true,
+          "uniqueFrames": 6
+        },
+        "walk": {
+          "path": "skitter/walk.png",
+          "frames": 8,
+          "fps": 16,
+          "loop": true,
+          "uniqueFrames": 8
+        },
+        "run": {
+          "path": "skitter/run.png",
+          "frames": 10,
+          "fps": 24,
+          "loop": true,
+          "uniqueFrames": 10
+        },
+        "attack": {
+          "path": "skitter/attack.png",
+          "frames": 6,
+          "fps": 24,
+          "loop": false,
+          "uniqueFrames": 6
+        },
+        "hit": {
+          "path": "skitter/hit.png",
+          "frames": 3,
+          "fps": 18,
+          "loop": false,
+          "uniqueFrames": 3
+        },
+        "death": {
+          "path": "skitter/death.png",
+          "frames": 8,
+          "fps": 18,
+          "loop": false,
+          "uniqueFrames": 8
+        }
+      },
+      "frameCount": 41,
+      "distinctImages": 40,
+      "sourceScriptSha256": "7a7c259034077551a8d1b04c56a12ff3af9326d4a7a32831fb3d35c3b201fc64",
+      "helperScriptSha256": "be7bb9ac20f820e840309c3961c085f2e612135b25038b286504d067697f052d",
+      "nativeSource": "E:\\MetroForgeData\\ArtProduction\\quantum-skitter-clips-v5-20261001",
+      "intentionalLevitation": false
+    },
+    "driller": {
+      "frame": [
+        96,
+        64
+      ],
+      "logicalSize": [
+        48,
+        32
+      ],
+      "pivot": [
+        48,
+        64
+      ],
+      "clips": {
+        "idle": {
+          "path": "driller/idle.png",
+          "frames": 6,
+          "fps": 10,
+          "loop": true,
+          "uniqueFrames": 6
+        },
+        "walk": {
+          "path": "driller/walk.png",
+          "frames": 8,
+          "fps": 16,
+          "loop": true,
+          "uniqueFrames": 8
+        },
+        "run": {
+          "path": "driller/run.png",
+          "frames": 10,
+          "fps": 24,
+          "loop": true,
+          "uniqueFrames": 10
+        },
+        "attack": {
+          "path": "driller/attack.png",
+          "frames": 8,
+          "fps": 24,
+          "loop": false,
+          "uniqueFrames": 8
+        },
+        "hit": {
+          "path": "driller/hit.png",
+          "frames": 3,
+          "fps": 18,
+          "loop": false,
+          "uniqueFrames": 3
+        },
+        "death": {
+          "path": "driller/death.png",
+          "frames": 8,
+          "fps": 18,
+          "loop": false,
+          "uniqueFrames": 8
+        },
+        "drill": {
+          "path": "driller/drill.png",
+          "frames": 8,
+          "fps": 24,
+          "loop": true,
+          "uniqueFrames": 8
+        }
+      },
+      "frameCount": 51,
+      "distinctImages": 48,
+      "sourceScriptSha256": "7a7c259034077551a8d1b04c56a12ff3af9326d4a7a32831fb3d35c3b201fc64",
+      "helperScriptSha256": "be7bb9ac20f820e840309c3961c085f2e612135b25038b286504d067697f052d",
+      "nativeSource": "E:\\MetroForgeData\\ArtProduction\\quantum-driller-clips-v5-20261001",
+      "intentionalLevitation": false
+    },
+    "wraith": {
+      "frame": [
+        64,
+        96
+      ],
+      "logicalSize": [
+        32,
+        48
+      ],
+      "pivot": [
+        32,
+        48
+      ],
+      "clips": {
+        "idle": {
+          "path": "wraith/idle.png",
+          "frames": 6,
+          "fps": 10,
+          "loop": true,
+          "uniqueFrames": 6
+        },
+        "walk": {
+          "path": "wraith/walk.png",
+          "frames": 8,
+          "fps": 16,
+          "loop": true,
+          "uniqueFrames": 8
+        },
+        "run": {
+          "path": "wraith/run.png",
+          "frames": 8,
+          "fps": 24,
+          "loop": true,
+          "uniqueFrames": 8
+        },
+        "attack": {
+          "path": "wraith/attack.png",
+          "frames": 6,
+          "fps": 24,
+          "loop": false,
+          "uniqueFrames": 6
+        },
+        "hit": {
+          "path": "wraith/hit.png",
+          "frames": 3,
+          "fps": 18,
+          "loop": false,
+          "uniqueFrames": 3
+        },
+        "death": {
+          "path": "wraith/death.png",
+          "frames": 10,
+          "fps": 18,
+          "loop": false,
+          "uniqueFrames": 10
+        },
+        "levitate": {
+          "path": "wraith/levitate.png",
+          "frames": 6,
+          "fps": 16,
+          "loop": true,
+          "uniqueFrames": 6
+        }
+      },
+      "frameCount": 47,
+      "distinctImages": 37,
+      "sourceScriptSha256": "7a7c259034077551a8d1b04c56a12ff3af9326d4a7a32831fb3d35c3b201fc64",
+      "helperScriptSha256": "be7bb9ac20f820e840309c3961c085f2e612135b25038b286504d067697f052d",
+      "nativeSource": "E:\\MetroForgeData\\ArtProduction\\quantum-wraith-clips-v5-20261001",
+      "intentionalLevitation": true
+    },
+    "golem": {
+      "frame": [
+        128,
+        192
+      ],
+      "logicalSize": [
+        64,
+        96
+      ],
+      "pivot": [
+        64,
+        192
+      ],
+      "clips": {
+        "idle": {
+          "path": "golem/idle.png",
+          "frames": 8,
+          "fps": 10,
+          "loop": true,
+          "uniqueFrames": 8
+        },
+        "walk": {
+          "path": "golem/walk.png",
+          "frames": 10,
+          "fps": 16,
+          "loop": true,
+          "uniqueFrames": 10
+        },
+        "run": {
+          "path": "golem/run.png",
+          "frames": 12,
+          "fps": 24,
+          "loop": true,
+          "uniqueFrames": 12
+        },
+        "attack": {
+          "path": "golem/attack.png",
+          "frames": 12,
+          "fps": 24,
+          "loop": false,
+          "uniqueFrames": 12
+        },
+        "hit": {
+          "path": "golem/hit.png",
+          "frames": 4,
+          "fps": 18,
+          "loop": false,
+          "uniqueFrames": 4
+        },
+        "death": {
+          "path": "golem/death.png",
+          "frames": 16,
+          "fps": 18,
+          "loop": false,
+          "uniqueFrames": 16
+        },
+        "slam": {
+          "path": "golem/slam.png",
+          "frames": 12,
+          "fps": 24,
+          "loop": false,
+          "uniqueFrames": 12
+        },
+        "burst": {
+          "path": "golem/burst.png",
+          "frames": 10,
+          "fps": 24,
+          "loop": false,
+          "uniqueFrames": 10
+        },
+        "roar": {
+          "path": "golem/roar.png",
+          "frames": 8,
+          "fps": 24,
+          "loop": false,
+          "uniqueFrames": 8
+        }
+      },
+      "frameCount": 92,
+      "distinctImages": 78,
+      "sourceScriptSha256": "7a7c259034077551a8d1b04c56a12ff3af9326d4a7a32831fb3d35c3b201fc64",
+      "helperScriptSha256": "be7bb9ac20f820e840309c3961c085f2e612135b25038b286504d067697f052d",
+      "nativeSource": "E:\\MetroForgeData\\ArtProduction\\quantum-golem-clips-v5-20261001",
+      "intentionalLevitation": false
+    }
+  },
+  "frameCount": 231,
+  "distinctImages": 203,
+  "scope": "Original matching cast candidate; complete native animation review and coherent world art remain required. Wraith teleport is not implemented or claimed.",
+  "hashes": {
+    "driller/actor-source.tscn": "67f650438ad37933be8f96626217d2f64596397f35edcae5a6e3a36a3e6fbd6a",
+    "driller/attack.png": "0e44d477139df8bf9502302b5244a0a5afaf7b5f2a3a3278c38ddb1a146f08f0",
+    "driller/death.png": "881c6698c30e30ef63c3b46ca0a05733719a576ce8f6664621225b4de5fb6799",
+    "driller/drill.png": "e945f91d8808a864fd2936a3d66dd43f7ccfe8d1ee2fbf606c97a38f7504fef2",
+    "driller/hit.png": "554ab2b31d697e6eb443d392f21d37ff52b26310a1fde61f6d2179bd7fe45c48",
+    "driller/idle.png": "0efae3a607d1b17b5a2dcd292aba7260708f67307e3127e2cd53c55fff8ac497",
+    "driller/native-bake-receipt.json": "0cf7e683163af18452083b46bf8e55d5c3e70639e2893c0947620b0ff24db701",
+    "driller/pose-review.png": "c5c7e7c9b73038bc5c867c12e6c6135ad97d9ffdffed8684cdcf8a2bd6364dee",
+    "driller/run.png": "83d745b77cf384084a38ed795141a168cf517dbeb9a4811d95424091c0afb61e",
+    "driller/walk.png": "c5a227b03fc6398d874afb47e3099e7e35bdd339c7e42a8b3d81ca290497d5ad",
+    "golem/actor-source.tscn": "92e43600dccc7117eecdaccf114743787034980630e0500d85c4bebef0329d6a",
+    "golem/attack.png": "714c07e1da223549fdb7d686255d4a85898b7669fc6bf381fd7e6ea09ecc9775",
+    "golem/burst.png": "317d1c0243880526945eb0e6825bbe9194765db3905fafb2a454ad9a99ec358c",
+    "golem/death.png": "b395ab4e383503442e3839f435a591bd2c55cf4e65b92c998379acb38afbfca9",
+    "golem/hit.png": "a05b01fe3e8d54fa26eba49b7221177b7360bdec89a0f6542ceebb07953e2a1a",
+    "golem/idle.png": "40a2eb10801834cd464535e267d0ce0c68e820fe9bfaef5dac94341ef9ab7320",
+    "golem/native-bake-receipt.json": "98aac19e26f20fed61692fdf8d768d2689adc32b54b719863a719d255aa87cdc",
+    "golem/pose-review.png": "20119e08ae9cab4b0b7f0d512efc4b1d62953b9722b8d8e4b7f31aaad9aee2c2",
+    "golem/roar.png": "8ed7cf4096a789de0ad9979a64afc9a54f4d16136d6446994ce53aa26f0ba3d4",
+    "golem/run.png": "08ee404bfb036241e2f1c481fb1c5da8e14c89d12cf27569bde86f32340ef03b",
+    "golem/slam.png": "714c07e1da223549fdb7d686255d4a85898b7669fc6bf381fd7e6ea09ecc9775",
+    "golem/walk.png": "58a23bc28f35406f55c283c9b6d92585ef03a9dffe45ac6788940a0f69059715",
+    "skitter/actor-source.tscn": "98c21d71bf5ec7d5bda253ad966834efc541ce9e9ace5f7ba99ef0bcdf5fb993",
+    "skitter/attack.png": "3d5a54a5a5c46144373b80be6e2bbe5710c58b60d5a9378a6949746babfb263b",
+    "skitter/death.png": "4556b926aef5c3f1487f83139a41cfd43cc436d8f9f9a6dfbcc267fb9fde7119",
+    "skitter/hit.png": "223766e324a89d91db4a0c900057706a6ac335be235821b92bfc2150b5554b8a",
+    "skitter/idle.png": "f8df0649760857e44b05b977c88411a2714822d1d09f5e34862580265bac738f",
+    "skitter/native-bake-receipt.json": "26f45973fa455a2cfe8a98b598516522eaddc357311ae74c5e76e9228195441a",
+    "skitter/pose-review.png": "4060d5366138361a34c20fda544f3f0b5321e207b0ab5920c77434ed26ec44a6",
+    "skitter/run.png": "f56b843e4031900cef43b2ca0a60adffb305ae09f17c192cf2c1db838bad5483",
+    "skitter/walk.png": "e0261914961138803a16c687e5225ff5b8c7e12b193d357d4568e679e7c17dbb",
+    "wraith/actor-source.tscn": "7a14fd403f8ba217b81f942ae88f9031c638d2195a06e20214d9b402eeee204f",
+    "wraith/attack.png": "3a795e731655f1432b1810a20a19ba89e9e69e0eefbb1ab9a879975624bb7964",
+    "wraith/death.png": "f83c6977438bd9d9d46d7f8a4c63ff61108fbd8e5f36571d90151d84ed5fe1a7",
+    "wraith/hit.png": "d160ff18556e0c4bd86fd697accc4e3b465435d45cd25236fdc7f45c8386d960",
+    "wraith/idle.png": "3ee2db88208ea9bbfb6a21a510ac25d86821dc46c7b7024217699d780e7732e9",
+    "wraith/levitate.png": "3ee2db88208ea9bbfb6a21a510ac25d86821dc46c7b7024217699d780e7732e9",
+    "wraith/native-bake-receipt.json": "f9b0045c65ba6b072a920f77347c985155d3e64308e3d0fc476d3078bb16247d",
+    "wraith/pose-review.png": "09136e53aa0a3d39dcf33f54feb08aca40547e5ab0ba5b501be980e1b3b79775",
+    "wraith/run.png": "3ad004f38c6f9caed6e0bbfa6ad69d9fea0449aeb425c721723fc337872758fe",
+    "wraith/walk.png": "8385c21a511a2ea07e24f7c9b44d9300c028aae524cb832aa8d37a056d62a26b"
+  }
+}

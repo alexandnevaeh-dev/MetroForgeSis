@@ -1,0 +1,86 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\castle-art-review\\reports\\game-tests\\20261004-castle-interior-ui\\1791131142335",
+  "project": "E:\\MetroForgeData\\GitHubUpload\\20261004\\castle-art-review\\reports\\game-tests\\20261004-castle-interior-ui\\1791131142335\\games\\stormglass-castle",
+  "executable": "E:/MetroForgeData/Releases/MetroForge-castle-interior-20261004-v7/MetroForge.exe",
+  "checks": [
+    {
+      "label": "saved original generated image is selected",
+      "passed": true
+    },
+    {
+      "label": "preview excludes the baked perspective floor",
+      "passed": true
+    },
+    {
+      "label": "one wall composition has no repeated scene bands",
+      "passed": true
+    },
+    {
+      "label": "actual native scene contains middle and upper floors",
+      "passed": true
+    },
+    {
+      "label": "internal door headers leave 192px walk-through openings",
+      "passed": true
+    },
+    {
+      "label": "Apply saves through actual IPC",
+      "passed": true
+    },
+    {
+      "label": "Undo restores the original opacity",
+      "passed": true
+    },
+    {
+      "label": "capture remains hidden: 01-three-storey-rooms-editor.png",
+      "passed": true
+    },
+    {
+      "label": "narrow editor keeps document bounds",
+      "passed": true
+    },
+    {
+      "label": "capture remains hidden: 02-three-storey-narrow.png",
+      "passed": true
+    },
+    {
+      "label": "layout, native scenes and asset registry survive background editing",
+      "passed": true
+    },
+    {
+      "label": "renderer has no exceptions",
+      "passed": true
+    },
+    {
+      "label": "exact final portable build: dist/assets/main.js",
+      "passed": true
+    },
+    {
+      "label": "exact final portable build: dist-electron/handlers.js",
+      "passed": true
+    }
+  ],
+  "captures": [
+    "01-three-storey-rooms-editor.png",
+    "02-three-storey-narrow.png"
+  ],
+  "pageErrors": [],
+  "scope": "Final packaged Rooms UI, real Apply/Undo/reapply and native collision IPC on saved original CUDA art. No fresh inference in this test; workshop generation has its own receipt.",
+  "beforeHashes": {
+    "data/rooms/rooms.json": "589fa7dd695e4d1492731338745c7e2cf6978b725e0c59e0fdd284cd9ae11277",
+    "data/visual/castle-spatial-profile.json": "1f43386f1b3b09134b1873bbe646591a846c04e745098342b03ac8179dd37bf2",
+    "data/visual/castle-interiors.json": "3e3180bf084708e33ea6d5684510d23aac332a951127b118782415406fc7c38f",
+    "generation_manifest.json": "dd0f3643078dfa45943288701d22e35cacdc363a3b8e20de1bb5b12f435ea847",
+    "world_graph.json": "557ac25fd31c51e5d7209795c19351d98dbe5a9b3bd744b5d066a308aabd4003",
+    "game_dna.json": "f6d599414e57374ffcb815161cfe3a5be913876637ef7ad9a779ea15e2a82162",
+    "scenes/rooms/room_001.tscn": "b85adf58add3d6e2dec6fbeb0c0b9809f28292182d752d3d007741cc39e6ba1a",
+    "scripts/world/StormglassDecor.gd": "ab6295f4b5f01bf0e6199506552cb91d3a7b29066b7e9992de471facc534fa4e",
+    "scripts/world/RoomTileMap.gd": "d60be2e9ad11f4ef8694d248b0889bbc3fdd8b9cd342f11ab5a17be9ec2aa7de"
+  },
+  "packaged": {
+    "executable": "E:/MetroForgeData/Releases/MetroForge-castle-interior-20261004-v7/MetroForge.exe",
+    "sha256": "1925f358e7f0e9675a5ac4198fb076613f0db318da56d388799a97be74a5b19c"
+  },
+  "passed": true,
+  "productionReady": false
+}

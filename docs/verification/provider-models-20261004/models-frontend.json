@@ -1,0 +1,89 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\models-review\\reports\\game-tests\\20261004-models-frontend\\1791084446223",
+  "scope": "Real ModelsScreen with controlled bridge: identity, failure, duplicate actions, keyboard and layout. No provider authentication or game-quality claim.",
+  "sourceHashes": {
+    "apps/desktop/src/studio/ModelsScreen.tsx": "b7547a98365b4d72c57ab59dc1886bb288b69c1751b801acbb8d847afe3ffab9",
+    "apps/desktop/src/studio/StudioContext.tsx": "8a3057b4eb946a291e04b3ccd5388821c2eb8c72d8d253f5d6a7c458fb0e1dc6",
+    "apps/desktop/src/studio/ui/index.tsx": "27b530d260e83ffd74cd2fc3ec8738e7ad80c7786bc4f25851eafe101b4feeac",
+    "apps/desktop/src/styles.css": "9c15658266818b4ed03c8739ccf413fd07b4e237a57fbbba0bc5cf34ce9adb4e",
+    "scripts/verify-models-frontend.mjs": "86342f4b41ae55a40e685fedb572807f022f549a323bf6a7370f457ee0e7f4de"
+  },
+  "checks": [
+    {
+      "label": "read failure has an explicit retry and does not claim an empty catalog",
+      "passed": true
+    },
+    {
+      "label": "virtualized rendering is bounded for 150 models",
+      "passed": true
+    },
+    {
+      "label": "keyboard selection distinguishes providers with the same model id",
+      "passed": true
+    },
+    {
+      "label": "save uses provider-specific setting and the original API model id",
+      "passed": true
+    },
+    {
+      "label": "failed refresh retains loaded catalog and selection",
+      "passed": true
+    },
+    {
+      "label": "duplicate reads are locked immediately",
+      "passed": true
+    },
+    {
+      "label": "pending read marks refresh busy without changing label",
+      "passed": true
+    },
+    {
+      "label": "scout rejection unlocks retry",
+      "passed": true
+    },
+    {
+      "label": "duplicate scouts dispatch once",
+      "passed": true
+    },
+    {
+      "label": "partial discovery displays success counts and provider warning",
+      "passed": true
+    },
+    {
+      "label": "duplicate downloads dispatch once with provider identity",
+      "passed": true
+    },
+    {
+      "label": "download locks other mutations",
+      "passed": true
+    },
+    {
+      "label": "keyboard clear restores the query and focus",
+      "passed": true
+    },
+    {
+      "label": "keyboard End reaches a virtualized offscreen model with a valid active descendant",
+      "passed": true
+    },
+    {
+      "label": "narrow workbench has no document overflow",
+      "passed": true
+    },
+    {
+      "label": "fixture stays hidden",
+      "passed": true
+    },
+    {
+      "label": "late response after unmount produces no renderer error",
+      "passed": true
+    },
+    {
+      "label": "tested sources remained unchanged",
+      "passed": true
+    }
+  ],
+  "captures": [
+    "models-narrow.png"
+  ],
+  "passed": true
+}

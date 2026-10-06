@@ -1,0 +1,276 @@
+{
+  "auditDate": "2026-08-14",
+  "gitBranch": "feature/claude-generation-runtime",
+  "gitCommit": "46c0b75",
+  "versions": {
+    "root": "0.1.0",
+    "desktop": "0.1.0",
+    "cli": "0.1.0",
+    "node": "v24.19.0",
+    "pnpm": "10.15.0",
+    "electron": "^33.2.1",
+    "react": "^18.3.1",
+    "godot": "4.7.1.stable.official.a13da4feb"
+  },
+  "hardware": {
+    "cpu": "Intel(R) Core(TM) i3-10110U @ 2.10GHz",
+    "cores": "2C/4T",
+    "ramBytes": 8367624192,
+    "gpu": "Intel(R) UHD Graphics (integrated)",
+    "vramBytes": 1073741824,
+    "hasDiscreteGpu": false
+  },
+  "architecture": {
+    "electron": {
+      "contextIsolation": true,
+      "nodeIntegration": false,
+      "ipcHandlerCount": 62,
+      "deadIpcHandlers": ["get-app-settings", "rank-models", "get-generation-events", "enqueue-generation", "get-room"]
+    },
+    "persistence": {
+      "engine": "sqlite",
+      "backends": ["node:sqlite", "sql.js (WASM fallback under Electron)"],
+      "migrationsApplied": 1,
+      "repositories": ["job", "artifact", "validation-result", "project", "settings"]
+    },
+    "generationRouterConsolidation": "complete, verified no dead pre-consolidation code reachable"
+  },
+  "features": {
+    "screens": [
+      { "name": "Dashboard", "status": "NEEDS_POLISH", "realBackend": true },
+      { "name": "Create", "status": "VISUALLY_COMPLETE", "realBackend": true },
+      { "name": "Projects", "status": "NEEDS_POLISH", "realBackend": true },
+      { "name": "GenerationStudio", "status": "VISUALLY_COMPLETE", "realBackend": true },
+      { "name": "AssetGallery", "status": "VISUALLY_COMPLETE", "realBackend": true },
+      { "name": "ManualAssetGenerator", "status": "VISUALLY_COMPLETE", "realBackend": true },
+      { "name": "WorldEditor", "status": "NEEDS_POLISH", "realBackend": true },
+      { "name": "RoomEditor", "status": "NEEDS_POLISH", "realBackend": true },
+      { "name": "DungeonEditor", "status": "FUNCTIONALLY_INCOMPLETE", "realBackend": "read-only" },
+      { "name": "GamePreview", "status": "FUNCTIONALLY_INCOMPLETE", "realBackend": "mislabeled, shows static recap not live game" },
+      { "name": "Models", "status": "VISUALLY_COMPLETE", "realBackend": true },
+      { "name": "Providers", "status": "VISUALLY_COMPLETE", "realBackend": true },
+      { "name": "RoutingInspector", "status": "NEEDS_POLISH", "realBackend": true },
+      { "name": "QA", "status": "VISUALLY_COMPLETE", "realBackend": true },
+      { "name": "Export", "status": "VISUALLY_COMPLETE", "realBackend": true },
+      { "name": "Settings", "status": "VISUALLY_COMPLETE", "realBackend": true, "note": "import here causes the current desktop build failure" }
+    ]
+  },
+  "providers": [
+    { "id": "ollama", "capability": "text", "local": true, "healthCheckReal": true },
+    { "id": "ollama-embeddings", "capability": "embedding", "local": true, "healthCheckReal": true },
+    { "id": "nvidia", "capability": "text", "local": false, "healthCheckReal": true, "configured": true },
+    { "id": "gemini", "capability": "text", "local": false, "healthCheckReal": true, "configured": "unknown" },
+    { "id": "groq", "capability": "text", "local": false, "healthCheckReal": true, "configured": "unknown" },
+    { "id": "openrouter", "capability": "text", "local": false, "healthCheckReal": true, "configured": "unknown" },
+    { "id": "huggingface", "capability": "text", "local": false, "healthCheckReal": true, "configured": "unknown" },
+    { "id": "piper-tts", "capability": "speech_generation", "local": true, "healthCheckReal": true },
+    { "id": "whisper-asr", "capability": "speech_recognition", "local": true, "healthCheckReal": true },
+    { "id": "comfyui", "capability": "image_generation", "local": true, "healthCheckReal": true, "currentlyAvailable": false, "unavailableReason": "no local ComfyUI server running; environmental, not a code defect" },
+    { "id": "diffusers", "capability": "image_generation", "local": true, "healthCheckReal": true, "currentlyAvailable": false, "unavailableReason": "no local Python/torch worker; environmental (no discrete GPU)" },
+    { "id": "nvidia-image", "capability": "image_generation", "local": false, "healthCheckReal": true, "currentlyAvailable": true, "note": "confirmed configured via .env NVIDIA_API_KEY; real network requests, bypasses main ModelRegistry catalog" },
+    { "id": "nvidia-vision-critic", "capability": "vision_analysis", "local": false, "healthCheckReal": true, "fallback": "deterministicCritique on failure" }
+  ],
+  "modelCatalog": {
+    "totalEntries": 36,
+    "catalogFile": "config/models.catalog.json",
+    "sample": [
+      { "id": "qwen3-coder-next", "capability": "TEXT_GENERATION", "provider": "ollama", "local": true },
+      { "id": "flux.1-schnell", "capability": "IMAGE_GENERATION", "provider": "comfyui", "local": true },
+      { "id": "meta/llama-3.2-11b-vision-instruct", "capability": "VISION_ANALYSIS", "provider": "nvidia", "local": false },
+      { "id": "nomic-embed-text", "capability": "EMBEDDING", "provider": "ollama", "local": true },
+      { "id": "piper-en", "capability": "SPEECH_GENERATION", "provider": "piper", "local": true },
+      { "id": "whisper-base", "capability": "SPEECH_RECOGNITION", "provider": "whisper.cpp", "local": true }
+    ],
+    "notes": "NVIDIA hosted image generation has no dedicated catalog entry; routed via a separate ImageProviderRegistry, not ModelRegistry."
+  },
+  "generationPipeline": {
+    "implementationFile": "packages/generation/src/pipeline.ts",
+    "phaseCount": 16,
+    "phases": [
+      "intake", "game_dna", "design_bible", "world_topology", "progression_graph",
+      "enemy_families", "bosses", "quests", "npcs", "audio",
+      "environment_assets", "project_assembly", "static_validation", "automated_repair",
+      "final_qa", "export"
+    ],
+    "aiVsDeterministic": {
+      "game_dna": "AI (LLM) for title/tagline/genre/tone/narrative only, deterministic fallback; abilities/items are ALWAYS deterministic regardless of AI availability",
+      "content_enemies_bosses_quests_npcs": "always deterministic, zero AI provider calls",
+      "world_topology": "always deterministic (spine+branch algorithm, no A*/Dijkstra/WFC/grammar)",
+      "environment_assets": "AI (image gen) when a provider is available, procedural fallback otherwise",
+      "audio": "always deterministic real DSP/MIDI synthesis"
+    }
+  },
+  "archetypes": {
+    "SIDE_VIEW_METROIDVANIA": {
+      "template": "templates/godot-metroidvania",
+      "mature": true,
+      "abilityFramework": true,
+      "abilities": ["dash", "double_jump", "wall_slide", "wall_jump", "air_dash", "ground_slam", "grapple", "swim", "phase"],
+      "perRoomScenes": true,
+      "godotPlaytestGate": "8/8, verified this session",
+      "runtimeSmokeTestChecks": "~100+",
+      "genuinelyPlayable": true
+    },
+    "TOP_DOWN_ACTION_ADVENTURE": {
+      "template": "templates/godot-topdown-adventure",
+      "mature": false,
+      "abilityFramework": false,
+      "gatingModel": "item-based (chest -> key/dungeon-item -> locked door/gate)",
+      "perRoomScenes": false,
+      "dungeonLayout": "fixed 4-room template, not procedurally generated",
+      "godotPlaytestGate": "8/8, verified this session",
+      "runtimeSmokeTestChecks": "~15",
+      "genuinelyPlayable": true,
+      "knownGap": "RuntimeSmokeTest.gd coverage far thinner than side-view despite equally-real underlying systems"
+    }
+  },
+  "godotSystems": {
+    "qaGates": {
+      "totalGates": 18,
+      "staticGates": [
+        "required_files", "game_dna_valid", "registered_abilities_valid", "world_connectivity",
+        "world_reachability", "movement_feasibility", "room_archetype_fidelity", "required_scenes_exist",
+        "asset_references_valid", "input_actions_exist", "player_spawn_valid", "main_scene_starts",
+        "attack_sheets_exist", "vfx_textures_exist"
+      ],
+      "runtimeGates": ["godot_imports", "godot_runtime", "gameplay_screenshot_qa", "godot_playtest"],
+      "implementationFile": "packages/qa/src/validator.ts"
+    },
+    "repairEngine": {
+      "type": "targeted deterministic file restoration",
+      "maxAttempts": 3,
+      "explicitlyNotAutoRepaired": ["registered_abilities_valid"]
+    },
+    "playtestBot": {
+      "realInputSimulation": true,
+      "evidence": "drives Input.action_press/action_release consumed by the real player controller, not internal method bypass",
+      "verifiedToVictory": true,
+      "verificationDate": "2026-08-14"
+    },
+    "saveSystem": {
+      "versioned": true,
+      "currentVersion": 2,
+      "migrationPath": "v1 -> v2, real backfill logic",
+      "persistedFields": ["health", "room_id", "checkpoint_room_id", "abilities", "defeated_bosses", "quests", "collectibles", "discovered_rooms", "playtime"]
+    },
+    "export": {
+      "producesManifest": true,
+      "producesLicenseReport": true,
+      "producesZip": true,
+      "commercialSafeGateBlocks": true
+    }
+  },
+  "assetPipeline": {
+    "maturityLadder": ["PLACEHOLDER", "BLOCKOUT", "GENERATED_SOURCE", "COMPILED", "QA_REVIEW", "PRODUCTION_READY", "REJECTED"],
+    "reachableStatesInPractice": ["PLACEHOLDER", "GENERATED_SOURCE", "COMPILED", "QA_REVIEW"],
+    "neverAssignedStates": ["PRODUCTION_READY", "BLOCKOUT"],
+    "productionGateType": "blocklist (rejects PLACEHOLDER/BLOCKOUT/REJECTED/fallbackGenerated), not an allowlist requiring PRODUCTION_READY",
+    "spritePipelineSteps": {
+      "poseGeneration": "MISSING",
+      "backgroundRemoval": "MISSING",
+      "alignmentScaling": "WORKING",
+      "pixelConversion": "WORKING",
+      "gridAlignment": "DEAD_CODE_NOOP",
+      "atlasPacking": "MISSING",
+      "spriteFramesResource": "WORKING (in Godot template, not TS pipeline)"
+    },
+    "animation": {
+      "statesImplemented": ["idle (copy of walk frame 0)", "walk", "attack", "hurt"],
+      "missingStates": ["death"],
+      "playerEnemySource": "procedural placeholder shape, NOT the real AI-generated character art",
+      "npcBossSource": "real AI sprite buffer used correctly as source"
+    },
+    "tileset": {
+      "autotile": false,
+      "terrainSets": false,
+      "method": "fixed-grid slicing of a single per-biome source image"
+    },
+    "audio": {
+      "sfx": "real WAV DSP synthesis",
+      "music": "real WAV synthesis + real Standard MIDI File encoding",
+      "furnaceExport": "MISLEADING - custom JSON note-list, not a real Furnace tracker file"
+    },
+    "vfx": {
+      "count": 8,
+      "type": "fixed procedural gradient-sprite library, identical across all projects",
+      "realParticlesOrShaders": false
+    }
+  },
+  "buildStatus": {
+    "typecheck": "PASS",
+    "build": "FAIL",
+    "buildFailureScope": "apps/desktop renderer (Vite) only",
+    "buildFailureRootCause": "packages/shared/src/config.ts (Node-only) is bundled into the renderer via the shared package's flat export barrel, even though the renderer only needs provider-toggles.ts",
+    "buildFailureFix": "add a ./provider-toggles subpath export and import from it directly in SettingsScreen.tsx; diagnosed, package.json change started but not completed",
+    "test": "386/387 passing, 1 confirmed-flaky (passes in isolation)",
+    "lint": "not run this audit pass"
+  },
+  "missingSystems": [
+    "real particle/shader VFX",
+    "autotile/terrain-set tileset generation",
+    "procedurally-generated top-down dungeons (currently fixed 4-room)",
+    "mini-boss concept (top-down)",
+    "town area concept (either archetype)",
+    "death animation",
+    "movement-feasibility validation for wall_jump/wall_slide/grapple"
+  ],
+  "blockers": {
+    "p0Count": 0,
+    "p1Count": 5,
+    "p1Items": [
+      "apps/desktop renderer build failure",
+      "top-down RuntimeSmokeTest.gd coverage gap vs side-view",
+      "orphaned templates/godot-metroidvania/scripts/world/RoomTileMap.gd",
+      "player/enemy animation source mismatch (procedural shape instead of real AI art)",
+      "asset-maturity production gate blocklist-not-allowlist semantics gap"
+    ],
+    "externalBlockers": [
+      "local image generation (ComfyUI/Diffusers) unavailable on this machine due to lack of a discrete GPU - environmental, not a code defect"
+    ]
+  },
+  "technicalDebt": {
+    "asAnyCount": 0,
+    "tsIgnoreCount": 0,
+    "rawConsoleInLibraryCode": 0,
+    "todoFixmeInCoreLayers": 0,
+    "legacyOrBackupFiles": 0,
+    "verdict": "unusually low conventional technical debt for repo size"
+  },
+  "testSuite": {
+    "totalTests": 387,
+    "passed": 386,
+    "failed": 1,
+    "failedTestConfirmedFlaky": true,
+    "flakyTest": "packages/ai/src/bootstrap.test.ts - NVIDIA catalog reconciliation (timed out at 5000ms under concurrent load, passed in 359ms in isolation)",
+    "testFiles": 81
+  },
+  "completionEstimate": {
+    "overallEngineering": 78,
+    "endUserProductReadiness": 45,
+    "weightedByArea": {
+      "architecture": 90,
+      "gameGeneration": 85,
+      "aiProviders": 70,
+      "visualAssets": 45,
+      "audio": 75,
+      "godotIntegration": 90,
+      "worldRooms": 80,
+      "gameplay": 90,
+      "qa": 90,
+      "playtesting": 85,
+      "editors": 75,
+      "uiUx": 65,
+      "export": 90,
+      "productionReadiness": 40
+    }
+  },
+  "explicitAnswers": {
+    "completePlayableGameGeneration": "YES",
+    "productionQualityAssetGeneration": "PARTIAL",
+    "realAiImageGeneration": "YES",
+    "godotProjectAssembly": "YES",
+    "godotHeadlessValidation": "YES",
+    "automatedPlaytesting": "YES",
+    "finalExport": "YES"
+  }
+}

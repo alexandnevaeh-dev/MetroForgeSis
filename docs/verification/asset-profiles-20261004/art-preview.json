@@ -1,0 +1,72 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\manual-profiles-review\\reports\\game-tests\\20261004-art-preview\\1791092613429",
+  "scope": "Final portable frontend read-only preview of the exact v3 CUDA-generated artwork. Deliberately incomplete art study lacks level usage data; missing optional data must not hide the image. No new inference or engine gameplay in this check.",
+  "checks": [
+    {
+      "label": "registered generated artwork is selected through the library action",
+      "passed": true
+    },
+    {
+      "label": "preview displays the exact compiled CUDA image bytes",
+      "passed": true
+    },
+    {
+      "label": "library preserves the background generation role",
+      "passed": true
+    },
+    {
+      "label": "missing level usage data does not suppress the image",
+      "passed": true
+    },
+    {
+      "label": "missing optional data does not create a blocking generation alert",
+      "passed": true
+    },
+    {
+      "label": "natural preview dimensions match the game canvas",
+      "passed": true
+    },
+    {
+      "label": "preview test stays hidden",
+      "passed": true
+    },
+    {
+      "label": "read-only inspection preserves all study files",
+      "passed": true
+    },
+    {
+      "label": "no renderer errors",
+      "passed": true
+    },
+    {
+      "label": "final inference module is byte-identical to live CUDA tested module: asset-pipeline.js",
+      "passed": true
+    },
+    {
+      "label": "final inference module is byte-identical to live CUDA tested module: manual-image-plan.js",
+      "passed": true
+    },
+    {
+      "label": "final inference module is byte-identical to live CUDA tested module: providers/diffusers.js",
+      "passed": true
+    },
+    {
+      "label": "final inference module is byte-identical to live CUDA tested module: gateway/legacy-gateway.js",
+      "passed": true
+    },
+    {
+      "label": "final renderer matches reviewed source build",
+      "passed": true
+    }
+  ],
+  "captures": [
+    "castle-background-preview.png"
+  ],
+  "pageErrors": [],
+  "generationEvidence": "E:\\MetroForgeData\\GitHubUpload\\20261004\\manual-profiles-review\\reports\\game-tests\\20261004-assets-nvidia-ui\\1791091675835\\proof.json",
+  "packaged": {
+    "executable": "E:/MetroForgeData/Releases/MetroForge-art-profiles-20261004-v5/MetroForge.exe",
+    "sha256": "1925f358e7f0e9675a5ac4198fb076613f0db318da56d388799a97be74a5b19c"
+  },
+  "passed": true
+}

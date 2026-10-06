@@ -1,0 +1,34 @@
+{
+  "scope": "Frontend navigation and shared room hierarchy; no new game artwork, inference, native gameplay, Unity or Unreal acceptance",
+  "productionReady": false,
+  "review": "E:/MetroForgeData/GitHubUpload/20261004/navigation-review",
+  "release": "E:/MetroForgeData/Releases/MetroForge-navigation-20261004-v4",
+  "parent": "1476bfffe2dac0dcb5616a7d8eb2605d770c4f0a",
+  "unitPassed": 43,
+  "unitFailed": 0,
+  "unitSkipped": 0,
+  "componentChecks": 37,
+  "appChecks": 24,
+  "connectionChecks": 44,
+  "premiumFindings": 0,
+  "build": "1791105890005",
+  "staticChecks": [
+    "workspace TypeScript build",
+    "renderer TypeScript typecheck",
+    "changed TSX ESLint",
+    "changed TSX Prettier",
+    "strict frontend audit"
+  ],
+  "gameChanges": [],
+  "sourceHashes": {
+    "apps/desktop/src/App.tsx": "d2dda15fe74e876759a104fbda4918cb5d5924f45fd76891c1ae84a1cab977e6",
+    "apps/desktop/src/studio/GoToPalette.tsx": "d39b83703f2abfb5ddc788aa193d84a59910ca33a8a6451f0ace7e8f3b818fdd",
+    "apps/desktop/src/studio/ui/index.tsx": "7fb42c3fc4f58379a07d690393468b7b650a7d960a22d3e2249c84b65ba10fbc",
+    "apps/desktop/src/styles.css": "2b08f7b00be012be11e62379f6f251904a4236d1c424b2a6c761eb4774f5ee9c",
+    "DESIGN.md": "24470dfe989b99d5aaa864dc46ddbddf6b8d0e42bf56c3e01703fbc3db7dfaf6",
+    "UX-CONTRACT.md": "bed3fe800d792a1bc137a5fc404fbe59cdc48f5cea1d1fc3f27c4eea80ea9ea7",
+    "apps/desktop/src/studio/VirtualizedRoomList.tsx": "06b54592532a80f8124848bb09d834363746dc2ebbf0c750581776ee8bfa129a",
+    "scripts/verify-jump-frontend.mjs": "2719e97a0340a716bff68c646e9da0ca3e0eb74897d5e8db57c445435b3becf7",
+    "scripts/verify-jump-app.mjs": "7cd7f78d45fc2b772530e23233f5dc0d43804ccd1025c6ad7b59c21d2923a171"
+  }
+}

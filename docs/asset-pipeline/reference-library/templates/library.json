@@ -1,0 +1,1889 @@
+{
+  "id": "metroforge-reference-library-v1",
+  "styleVersion": "1.0.0",
+  "templates": [
+    {
+      "id": "player-foundry",
+      "assetRole": "player",
+      "biome": "foundry",
+      "styleVersion": "1.0.0",
+      "referencePaths": [
+        "player/player-pose-guide.png",
+        "player/player-construction-guide.png",
+        "player/player-silhouette.png"
+      ],
+      "dimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "frameCount": 1,
+      "anchor": "floor",
+      "facing": "right",
+      "scale": 1,
+      "palette": [
+        "#63dbe0",
+        "#a9c3cb",
+        "#e1e4cf",
+        "#101c29"
+      ],
+      "materials": [
+        "beveled steel armor plate",
+        "cyan interaction visor"
+      ],
+      "requiredSilhouetteCues": [
+        "compact upright 3-head-scale biped",
+        "backpack mass",
+        "visible weapon-ready hand"
+      ],
+      "requiredGameplayCues": [
+        "cyan visor/accent reads as player-controlled, in every biome"
+      ],
+      "allowedVariation": [
+        "armor panel wear pattern",
+        "minor decorative decal"
+      ],
+      "forbiddenChanges": [
+        "proportions",
+        "foot pivot (64,120)",
+        "cyan accent role",
+        "silhouette family"
+      ],
+      "environmentFeatures": [],
+      "animationPoses": [
+        {
+          "clip": "idle",
+          "description": "standing, slight bob",
+          "frameCount": 4,
+          "fps": 8,
+          "loop": true,
+          "events": {}
+        },
+        {
+          "clip": "locomotion",
+          "description": "run cycle",
+          "frameCount": 6,
+          "fps": 8,
+          "loop": true,
+          "events": {}
+        },
+        {
+          "clip": "attack",
+          "description": "windup, strike, recovery",
+          "frameCount": 4,
+          "fps": 8,
+          "loop": false,
+          "events": {
+            "strike": 2
+          }
+        },
+        {
+          "clip": "hurt",
+          "description": "recoil arc",
+          "frameCount": 3,
+          "fps": 5,
+          "loop": false,
+          "events": {}
+        },
+        {
+          "clip": "death",
+          "description": "per-actor collapse",
+          "frameCount": 5,
+          "fps": 8,
+          "loop": false,
+          "events": {}
+        }
+      ],
+      "promptRecipe": {
+        "promptPrefix": "industrial sci-fi metroidvania pixel art, original game identity, not a copy of an existing commercial title",
+        "subjectTemplate": "compact armored player character, cyan visor accent, side view facing right, {{biome}} biome dressing",
+        "negativePrompt": "text, letters, watermark, copyrighted character, trademarked costume",
+        "estimatedTokenBudget": 45
+      },
+      "validationRules": [
+        "foot pivot at (64,120)",
+        "cyan accent present",
+        "transparent background"
+      ],
+      "provenance": {
+        "reviewer": "claude-code:delegated-visual-qa-2026-09-07",
+        "qaStatus": "QA_REVIEW",
+        "generatedAt": "2026-09-07T07:32:27.083Z",
+        "note": "Player is intentionally biome-invariant; this is the only player template."
+      }
+    },
+    {
+      "id": "enemy_melee-foundry",
+      "assetRole": "enemy_melee",
+      "biome": "foundry",
+      "styleVersion": "1.0.0",
+      "referencePaths": [
+        "enemies/melee-archetype.png",
+        "enemies/enemy-lineup.png"
+      ],
+      "dimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "frameCount": 1,
+      "anchor": "floor",
+      "facing": "right",
+      "scale": 1,
+      "palette": [
+        "#b95d3e",
+        "#e39b58",
+        "#131e2c",
+        "#384d60"
+      ],
+      "materials": [
+        "oxidized/rust base material (constant across biomes)",
+        "Foundry-appropriate surface wear"
+      ],
+      "requiredSilhouetteCues": [
+        "hunched broad-claw melee unit",
+        "distinct from every other enemy archetype silhouette"
+      ],
+      "requiredGameplayCues": [
+        "rust base color reads as hostile regardless of biome"
+      ],
+      "allowedVariation": [
+        "surface wear/corrosion/growth matching the biome",
+        "minor panel pattern"
+      ],
+      "forbiddenChanges": [
+        "archetype silhouette/proportions",
+        "rust base gameplay-meaning color",
+        "anchor type"
+      ],
+      "environmentFeatures": [],
+      "promptRecipe": {
+        "promptPrefix": "industrial sci-fi metroidvania pixel art, original game identity, not a copy of an existing commercial title",
+        "subjectTemplate": "hunched broad-claw melee unit, rust/oxidized base material, Foundry biome surface dressing, side view facing right",
+        "negativePrompt": "text, letters, watermark, copyrighted character, trademarked costume",
+        "estimatedTokenBudget": 50
+      },
+      "validationRules": [
+        "silhouette matches the archetype reference, not another archetype"
+      ],
+      "provenance": {
+        "reviewer": "claude-code:delegated-visual-qa-2026-09-07",
+        "qaStatus": "QA_REVIEW",
+        "generatedAt": "2026-09-07T07:32:27.083Z",
+        "note": "enemy_melee in the foundry biome variation."
+      }
+    },
+    {
+      "id": "enemy_ranged-foundry",
+      "assetRole": "enemy_ranged",
+      "biome": "foundry",
+      "styleVersion": "1.0.0",
+      "referencePaths": [
+        "enemies/ranged-archetype.png",
+        "enemies/enemy-lineup.png"
+      ],
+      "dimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "frameCount": 1,
+      "anchor": "floor",
+      "facing": "right",
+      "scale": 1,
+      "palette": [
+        "#b95d3e",
+        "#e39b58",
+        "#131e2c",
+        "#384d60"
+      ],
+      "materials": [
+        "oxidized/rust base material (constant across biomes)",
+        "Foundry-appropriate surface wear"
+      ],
+      "requiredSilhouetteCues": [
+        "tall thin cannon sentinel",
+        "distinct from every other enemy archetype silhouette"
+      ],
+      "requiredGameplayCues": [
+        "rust base color reads as hostile regardless of biome"
+      ],
+      "allowedVariation": [
+        "surface wear/corrosion/growth matching the biome",
+        "minor panel pattern"
+      ],
+      "forbiddenChanges": [
+        "archetype silhouette/proportions",
+        "rust base gameplay-meaning color",
+        "anchor type"
+      ],
+      "environmentFeatures": [],
+      "promptRecipe": {
+        "promptPrefix": "industrial sci-fi metroidvania pixel art, original game identity, not a copy of an existing commercial title",
+        "subjectTemplate": "tall thin cannon sentinel, rust/oxidized base material, Foundry biome surface dressing, side view facing right",
+        "negativePrompt": "text, letters, watermark, copyrighted character, trademarked costume",
+        "estimatedTokenBudget": 50
+      },
+      "validationRules": [
+        "silhouette matches the archetype reference, not another archetype"
+      ],
+      "provenance": {
+        "reviewer": "claude-code:delegated-visual-qa-2026-09-07",
+        "qaStatus": "QA_REVIEW",
+        "generatedAt": "2026-09-07T07:32:27.083Z",
+        "note": "enemy_ranged in the foundry biome variation."
+      }
+    },
+    {
+      "id": "enemy_flying-foundry",
+      "assetRole": "enemy_flying",
+      "biome": "foundry",
+      "styleVersion": "1.0.0",
+      "referencePaths": [
+        "enemies/flying-archetype.png",
+        "enemies/enemy-lineup.png"
+      ],
+      "dimensions": {
+        "width": 96,
+        "height": 96
+      },
+      "frameCount": 1,
+      "anchor": "hover",
+      "facing": "right",
+      "scale": 1,
+      "palette": [
+        "#b95d3e",
+        "#e39b58",
+        "#131e2c",
+        "#384d60"
+      ],
+      "materials": [
+        "oxidized/rust base material (constant across biomes)",
+        "Foundry-appropriate surface wear"
+      ],
+      "requiredSilhouetteCues": [
+        "hovering twin-wing drone chassis, no legs",
+        "distinct from every other enemy archetype silhouette"
+      ],
+      "requiredGameplayCues": [
+        "rust base color reads as hostile regardless of biome"
+      ],
+      "allowedVariation": [
+        "surface wear/corrosion/growth matching the biome",
+        "minor panel pattern"
+      ],
+      "forbiddenChanges": [
+        "archetype silhouette/proportions",
+        "rust base gameplay-meaning color",
+        "anchor type"
+      ],
+      "environmentFeatures": [],
+      "promptRecipe": {
+        "promptPrefix": "industrial sci-fi metroidvania pixel art, original game identity, not a copy of an existing commercial title",
+        "subjectTemplate": "hovering twin-wing drone chassis, no legs, rust/oxidized base material, Foundry biome surface dressing, side view facing right",
+        "negativePrompt": "text, letters, watermark, copyrighted character, trademarked costume",
+        "estimatedTokenBudget": 50
+      },
+      "validationRules": [
+        "silhouette matches the archetype reference, not another archetype"
+      ],
+      "provenance": {
+        "reviewer": "claude-code:delegated-visual-qa-2026-09-07",
+        "qaStatus": "QA_REVIEW",
+        "generatedAt": "2026-09-07T07:32:27.083Z",
+        "note": "enemy_flying in the foundry biome variation."
+      }
+    },
+    {
+      "id": "enemy_armored_heavy-foundry",
+      "assetRole": "enemy_armored_heavy",
+      "biome": "foundry",
+      "styleVersion": "1.0.0",
+      "referencePaths": [
+        "enemies/armored-heavy-archetype.png",
+        "enemies/enemy-lineup.png"
+      ],
+      "dimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "frameCount": 1,
+      "anchor": "floor",
+      "facing": "right",
+      "scale": 1.15,
+      "palette": [
+        "#b95d3e",
+        "#e39b58",
+        "#131e2c",
+        "#384d60"
+      ],
+      "materials": [
+        "oxidized/rust base material (constant across biomes)",
+        "Foundry-appropriate surface wear"
+      ],
+      "requiredSilhouetteCues": [
+        "wide-shouldered thick-limbed heavy unit",
+        "distinct from every other enemy archetype silhouette"
+      ],
+      "requiredGameplayCues": [
+        "rust base color reads as hostile regardless of biome"
+      ],
+      "allowedVariation": [
+        "surface wear/corrosion/growth matching the biome",
+        "minor panel pattern"
+      ],
+      "forbiddenChanges": [
+        "archetype silhouette/proportions",
+        "rust base gameplay-meaning color",
+        "anchor type"
+      ],
+      "environmentFeatures": [],
+      "promptRecipe": {
+        "promptPrefix": "industrial sci-fi metroidvania pixel art, original game identity, not a copy of an existing commercial title",
+        "subjectTemplate": "wide-shouldered thick-limbed heavy unit, rust/oxidized base material, Foundry biome surface dressing, side view facing right",
+        "negativePrompt": "text, letters, watermark, copyrighted character, trademarked costume",
+        "estimatedTokenBudget": 50
+      },
+      "validationRules": [
+        "silhouette matches the archetype reference, not another archetype"
+      ],
+      "provenance": {
+        "reviewer": "claude-code:delegated-visual-qa-2026-09-07",
+        "qaStatus": "QA_REVIEW",
+        "generatedAt": "2026-09-07T07:32:27.083Z",
+        "note": "enemy_armored_heavy in the foundry biome variation."
+      }
+    },
+    {
+      "id": "enemy_melee-flooded_utility",
+      "assetRole": "enemy_melee",
+      "biome": "flooded_utility",
+      "styleVersion": "1.0.0",
+      "referencePaths": [
+        "enemies/melee-archetype.png",
+        "enemies/enemy-lineup.png"
+      ],
+      "dimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "frameCount": 1,
+      "anchor": "floor",
+      "facing": "right",
+      "scale": 1,
+      "palette": [
+        "#b95d3e",
+        "#e39b58",
+        "#101f22",
+        "#2e4f4d"
+      ],
+      "materials": [
+        "oxidized/rust base material (constant across biomes)",
+        "Flooded Utility Sector-appropriate surface wear"
+      ],
+      "requiredSilhouetteCues": [
+        "hunched broad-claw melee unit",
+        "distinct from every other enemy archetype silhouette"
+      ],
+      "requiredGameplayCues": [
+        "rust base color reads as hostile regardless of biome"
+      ],
+      "allowedVariation": [
+        "surface wear/corrosion/growth matching the biome",
+        "minor panel pattern"
+      ],
+      "forbiddenChanges": [
+        "archetype silhouette/proportions",
+        "rust base gameplay-meaning color",
+        "anchor type"
+      ],
+      "environmentFeatures": [],
+      "promptRecipe": {
+        "promptPrefix": "industrial sci-fi metroidvania pixel art, original game identity, not a copy of an existing commercial title",
+        "subjectTemplate": "hunched broad-claw melee unit, rust/oxidized base material, Flooded Utility Sector biome surface dressing, side view facing right",
+        "negativePrompt": "text, letters, watermark, copyrighted character, trademarked costume",
+        "estimatedTokenBudget": 50
+      },
+      "validationRules": [
+        "silhouette matches the archetype reference, not another archetype"
+      ],
+      "provenance": {
+        "reviewer": "claude-code:delegated-visual-qa-2026-09-07",
+        "qaStatus": "QA_REVIEW",
+        "generatedAt": "2026-09-07T07:32:27.083Z",
+        "note": "enemy_melee in the flooded_utility biome variation."
+      }
+    },
+    {
+      "id": "enemy_ranged-flooded_utility",
+      "assetRole": "enemy_ranged",
+      "biome": "flooded_utility",
+      "styleVersion": "1.0.0",
+      "referencePaths": [
+        "enemies/ranged-archetype.png",
+        "enemies/enemy-lineup.png"
+      ],
+      "dimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "frameCount": 1,
+      "anchor": "floor",
+      "facing": "right",
+      "scale": 1,
+      "palette": [
+        "#b95d3e",
+        "#e39b58",
+        "#101f22",
+        "#2e4f4d"
+      ],
+      "materials": [
+        "oxidized/rust base material (constant across biomes)",
+        "Flooded Utility Sector-appropriate surface wear"
+      ],
+      "requiredSilhouetteCues": [
+        "tall thin cannon sentinel",
+        "distinct from every other enemy archetype silhouette"
+      ],
+      "requiredGameplayCues": [
+        "rust base color reads as hostile regardless of biome"
+      ],
+      "allowedVariation": [
+        "surface wear/corrosion/growth matching the biome",
+        "minor panel pattern"
+      ],
+      "forbiddenChanges": [
+        "archetype silhouette/proportions",
+        "rust base gameplay-meaning color",
+        "anchor type"
+      ],
+      "environmentFeatures": [],
+      "promptRecipe": {
+        "promptPrefix": "industrial sci-fi metroidvania pixel art, original game identity, not a copy of an existing commercial title",
+        "subjectTemplate": "tall thin cannon sentinel, rust/oxidized base material, Flooded Utility Sector biome surface dressing, side view facing right",
+        "negativePrompt": "text, letters, watermark, copyrighted character, trademarked costume",
+        "estimatedTokenBudget": 50
+      },
+      "validationRules": [
+        "silhouette matches the archetype reference, not another archetype"
+      ],
+      "provenance": {
+        "reviewer": "claude-code:delegated-visual-qa-2026-09-07",
+        "qaStatus": "QA_REVIEW",
+        "generatedAt": "2026-09-07T07:32:27.083Z",
+        "note": "enemy_ranged in the flooded_utility biome variation."
+      }
+    },
+    {
+      "id": "enemy_flying-flooded_utility",
+      "assetRole": "enemy_flying",
+      "biome": "flooded_utility",
+      "styleVersion": "1.0.0",
+      "referencePaths": [
+        "enemies/flying-archetype.png",
+        "enemies/enemy-lineup.png"
+      ],
+      "dimensions": {
+        "width": 96,
+        "height": 96
+      },
+      "frameCount": 1,
+      "anchor": "hover",
+      "facing": "right",
+      "scale": 1,
+      "palette": [
+        "#b95d3e",
+        "#e39b58",
+        "#101f22",
+        "#2e4f4d"
+      ],
+      "materials": [
+        "oxidized/rust base material (constant across biomes)",
+        "Flooded Utility Sector-appropriate surface wear"
+      ],
+      "requiredSilhouetteCues": [
+        "hovering twin-wing drone chassis, no legs",
+        "distinct from every other enemy archetype silhouette"
+      ],
+      "requiredGameplayCues": [
+        "rust base color reads as hostile regardless of biome"
+      ],
+      "allowedVariation": [
+        "surface wear/corrosion/growth matching the biome",
+        "minor panel pattern"
+      ],
+      "forbiddenChanges": [
+        "archetype silhouette/proportions",
+        "rust base gameplay-meaning color",
+        "anchor type"
+      ],
+      "environmentFeatures": [],
+      "promptRecipe": {
+        "promptPrefix": "industrial sci-fi metroidvania pixel art, original game identity, not a copy of an existing commercial title",
+        "subjectTemplate": "hovering twin-wing drone chassis, no legs, rust/oxidized base material, Flooded Utility Sector biome surface dressing, side view facing right",
+        "negativePrompt": "text, letters, watermark, copyrighted character, trademarked costume",
+        "estimatedTokenBudget": 50
+      },
+      "validationRules": [
+        "silhouette matches the archetype reference, not another archetype"
+      ],
+      "provenance": {
+        "reviewer": "claude-code:delegated-visual-qa-2026-09-07",
+        "qaStatus": "QA_REVIEW",
+        "generatedAt": "2026-09-07T07:32:27.083Z",
+        "note": "enemy_flying in the flooded_utility biome variation."
+      }
+    },
+    {
+      "id": "enemy_armored_heavy-flooded_utility",
+      "assetRole": "enemy_armored_heavy",
+      "biome": "flooded_utility",
+      "styleVersion": "1.0.0",
+      "referencePaths": [
+        "enemies/armored-heavy-archetype.png",
+        "enemies/enemy-lineup.png"
+      ],
+      "dimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "frameCount": 1,
+      "anchor": "floor",
+      "facing": "right",
+      "scale": 1.15,
+      "palette": [
+        "#b95d3e",
+        "#e39b58",
+        "#101f22",
+        "#2e4f4d"
+      ],
+      "materials": [
+        "oxidized/rust base material (constant across biomes)",
+        "Flooded Utility Sector-appropriate surface wear"
+      ],
+      "requiredSilhouetteCues": [
+        "wide-shouldered thick-limbed heavy unit",
+        "distinct from every other enemy archetype silhouette"
+      ],
+      "requiredGameplayCues": [
+        "rust base color reads as hostile regardless of biome"
+      ],
+      "allowedVariation": [
+        "surface wear/corrosion/growth matching the biome",
+        "minor panel pattern"
+      ],
+      "forbiddenChanges": [
+        "archetype silhouette/proportions",
+        "rust base gameplay-meaning color",
+        "anchor type"
+      ],
+      "environmentFeatures": [],
+      "promptRecipe": {
+        "promptPrefix": "industrial sci-fi metroidvania pixel art, original game identity, not a copy of an existing commercial title",
+        "subjectTemplate": "wide-shouldered thick-limbed heavy unit, rust/oxidized base material, Flooded Utility Sector biome surface dressing, side view facing right",
+        "negativePrompt": "text, letters, watermark, copyrighted character, trademarked costume",
+        "estimatedTokenBudget": 50
+      },
+      "validationRules": [
+        "silhouette matches the archetype reference, not another archetype"
+      ],
+      "provenance": {
+        "reviewer": "claude-code:delegated-visual-qa-2026-09-07",
+        "qaStatus": "QA_REVIEW",
+        "generatedAt": "2026-09-07T07:32:27.083Z",
+        "note": "enemy_armored_heavy in the flooded_utility biome variation."
+      }
+    },
+    {
+      "id": "enemy_melee-overgrown_reactor",
+      "assetRole": "enemy_melee",
+      "biome": "overgrown_reactor",
+      "styleVersion": "1.0.0",
+      "referencePaths": [
+        "enemies/melee-archetype.png",
+        "enemies/enemy-lineup.png"
+      ],
+      "dimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "frameCount": 1,
+      "anchor": "floor",
+      "facing": "right",
+      "scale": 1,
+      "palette": [
+        "#b95d3e",
+        "#e39b58",
+        "#16241a",
+        "#3a4f3a"
+      ],
+      "materials": [
+        "oxidized/rust base material (constant across biomes)",
+        "Overgrown Reactor-appropriate surface wear"
+      ],
+      "requiredSilhouetteCues": [
+        "hunched broad-claw melee unit",
+        "distinct from every other enemy archetype silhouette"
+      ],
+      "requiredGameplayCues": [
+        "rust base color reads as hostile regardless of biome"
+      ],
+      "allowedVariation": [
+        "surface wear/corrosion/growth matching the biome",
+        "minor panel pattern"
+      ],
+      "forbiddenChanges": [
+        "archetype silhouette/proportions",
+        "rust base gameplay-meaning color",
+        "anchor type"
+      ],
+      "environmentFeatures": [],
+      "promptRecipe": {
+        "promptPrefix": "industrial sci-fi metroidvania pixel art, original game identity, not a copy of an existing commercial title",
+        "subjectTemplate": "hunched broad-claw melee unit, rust/oxidized base material, Overgrown Reactor biome surface dressing, side view facing right",
+        "negativePrompt": "text, letters, watermark, copyrighted character, trademarked costume",
+        "estimatedTokenBudget": 50
+      },
+      "validationRules": [
+        "silhouette matches the archetype reference, not another archetype"
+      ],
+      "provenance": {
+        "reviewer": "claude-code:delegated-visual-qa-2026-09-07",
+        "qaStatus": "QA_REVIEW",
+        "generatedAt": "2026-09-07T07:32:27.083Z",
+        "note": "enemy_melee in the overgrown_reactor biome variation."
+      }
+    },
+    {
+      "id": "enemy_ranged-overgrown_reactor",
+      "assetRole": "enemy_ranged",
+      "biome": "overgrown_reactor",
+      "styleVersion": "1.0.0",
+      "referencePaths": [
+        "enemies/ranged-archetype.png",
+        "enemies/enemy-lineup.png"
+      ],
+      "dimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "frameCount": 1,
+      "anchor": "floor",
+      "facing": "right",
+      "scale": 1,
+      "palette": [
+        "#b95d3e",
+        "#e39b58",
+        "#16241a",
+        "#3a4f3a"
+      ],
+      "materials": [
+        "oxidized/rust base material (constant across biomes)",
+        "Overgrown Reactor-appropriate surface wear"
+      ],
+      "requiredSilhouetteCues": [
+        "tall thin cannon sentinel",
+        "distinct from every other enemy archetype silhouette"
+      ],
+      "requiredGameplayCues": [
+        "rust base color reads as hostile regardless of biome"
+      ],
+      "allowedVariation": [
+        "surface wear/corrosion/growth matching the biome",
+        "minor panel pattern"
+      ],
+      "forbiddenChanges": [
+        "archetype silhouette/proportions",
+        "rust base gameplay-meaning color",
+        "anchor type"
+      ],
+      "environmentFeatures": [],
+      "promptRecipe": {
+        "promptPrefix": "industrial sci-fi metroidvania pixel art, original game identity, not a copy of an existing commercial title",
+        "subjectTemplate": "tall thin cannon sentinel, rust/oxidized base material, Overgrown Reactor biome surface dressing, side view facing right",
+        "negativePrompt": "text, letters, watermark, copyrighted character, trademarked costume",
+        "estimatedTokenBudget": 50
+      },
+      "validationRules": [
+        "silhouette matches the archetype reference, not another archetype"
+      ],
+      "provenance": {
+        "reviewer": "claude-code:delegated-visual-qa-2026-09-07",
+        "qaStatus": "QA_REVIEW",
+        "generatedAt": "2026-09-07T07:32:27.083Z",
+        "note": "enemy_ranged in the overgrown_reactor biome variation."
+      }
+    },
+    {
+      "id": "enemy_flying-overgrown_reactor",
+      "assetRole": "enemy_flying",
+      "biome": "overgrown_reactor",
+      "styleVersion": "1.0.0",
+      "referencePaths": [
+        "enemies/flying-archetype.png",
+        "enemies/enemy-lineup.png"
+      ],
+      "dimensions": {
+        "width": 96,
+        "height": 96
+      },
+      "frameCount": 1,
+      "anchor": "hover",
+      "facing": "right",
+      "scale": 1,
+      "palette": [
+        "#b95d3e",
+        "#e39b58",
+        "#16241a",
+        "#3a4f3a"
+      ],
+      "materials": [
+        "oxidized/rust base material (constant across biomes)",
+        "Overgrown Reactor-appropriate surface wear"
+      ],
+      "requiredSilhouetteCues": [
+        "hovering twin-wing drone chassis, no legs",
+        "distinct from every other enemy archetype silhouette"
+      ],
+      "requiredGameplayCues": [
+        "rust base color reads as hostile regardless of biome"
+      ],
+      "allowedVariation": [
+        "surface wear/corrosion/growth matching the biome",
+        "minor panel pattern"
+      ],
+      "forbiddenChanges": [
+        "archetype silhouette/proportions",
+        "rust base gameplay-meaning color",
+        "anchor type"
+      ],
+      "environmentFeatures": [],
+      "promptRecipe": {
+        "promptPrefix": "industrial sci-fi metroidvania pixel art, original game identity, not a copy of an existing commercial title",
+        "subjectTemplate": "hovering twin-wing drone chassis, no legs, rust/oxidized base material, Overgrown Reactor biome surface dressing, side view facing right",
+        "negativePrompt": "text, letters, watermark, copyrighted character, trademarked costume",
+        "estimatedTokenBudget": 50
+      },
+      "validationRules": [
+        "silhouette matches the archetype reference, not another archetype"
+      ],
+      "provenance": {
+        "reviewer": "claude-code:delegated-visual-qa-2026-09-07",
+        "qaStatus": "QA_REVIEW",
+        "generatedAt": "2026-09-07T07:32:27.083Z",
+        "note": "enemy_flying in the overgrown_reactor biome variation."
+      }
+    },
+    {
+      "id": "enemy_armored_heavy-overgrown_reactor",
+      "assetRole": "enemy_armored_heavy",
+      "biome": "overgrown_reactor",
+      "styleVersion": "1.0.0",
+      "referencePaths": [
+        "enemies/armored-heavy-archetype.png",
+        "enemies/enemy-lineup.png"
+      ],
+      "dimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "frameCount": 1,
+      "anchor": "floor",
+      "facing": "right",
+      "scale": 1.15,
+      "palette": [
+        "#b95d3e",
+        "#e39b58",
+        "#16241a",
+        "#3a4f3a"
+      ],
+      "materials": [
+        "oxidized/rust base material (constant across biomes)",
+        "Overgrown Reactor-appropriate surface wear"
+      ],
+      "requiredSilhouetteCues": [
+        "wide-shouldered thick-limbed heavy unit",
+        "distinct from every other enemy archetype silhouette"
+      ],
+      "requiredGameplayCues": [
+        "rust base color reads as hostile regardless of biome"
+      ],
+      "allowedVariation": [
+        "surface wear/corrosion/growth matching the biome",
+        "minor panel pattern"
+      ],
+      "forbiddenChanges": [
+        "archetype silhouette/proportions",
+        "rust base gameplay-meaning color",
+        "anchor type"
+      ],
+      "environmentFeatures": [],
+      "promptRecipe": {
+        "promptPrefix": "industrial sci-fi metroidvania pixel art, original game identity, not a copy of an existing commercial title",
+        "subjectTemplate": "wide-shouldered thick-limbed heavy unit, rust/oxidized base material, Overgrown Reactor biome surface dressing, side view facing right",
+        "negativePrompt": "text, letters, watermark, copyrighted character, trademarked costume",
+        "estimatedTokenBudget": 50
+      },
+      "validationRules": [
+        "silhouette matches the archetype reference, not another archetype"
+      ],
+      "provenance": {
+        "reviewer": "claude-code:delegated-visual-qa-2026-09-07",
+        "qaStatus": "QA_REVIEW",
+        "generatedAt": "2026-09-07T07:32:27.083Z",
+        "note": "enemy_armored_heavy in the overgrown_reactor biome variation."
+      }
+    },
+    {
+      "id": "boss-foundry",
+      "assetRole": "boss",
+      "biome": "foundry",
+      "styleVersion": "1.0.0",
+      "referencePaths": [
+        "boss/boss-reference.png"
+      ],
+      "dimensions": {
+        "width": 160,
+        "height": 160
+      },
+      "frameCount": 1,
+      "anchor": "floor",
+      "facing": "right",
+      "scale": 2,
+      "palette": [
+        "#efbd61",
+        "#a9c3cb",
+        "#e1e4cf"
+      ],
+      "materials": [
+        "heavy armor plate",
+        "exposed chest-core glow (weak point)"
+      ],
+      "requiredSilhouetteCues": [
+        "broadest/tallest actor silhouette in its biome",
+        "unambiguous exposed weak point"
+      ],
+      "requiredGameplayCues": [
+        "amber accent identical across biomes"
+      ],
+      "allowedVariation": [
+        "armor wear",
+        "minor plating detail"
+      ],
+      "forbiddenChanges": [
+        "scale ratio vs player (~2x)",
+        "amber accent role",
+        "weak-point read"
+      ],
+      "environmentFeatures": [],
+      "animationPoses": [
+        {
+          "clip": "attack",
+          "description": "windup, strike, recovery telegraph",
+          "frameCount": 6,
+          "fps": 6,
+          "loop": false,
+          "events": {
+            "strike": 3
+          }
+        },
+        {
+          "clip": "death",
+          "description": "per-actor collapse, heaviest fall of any actor",
+          "frameCount": 6,
+          "fps": 8,
+          "loop": false,
+          "events": {}
+        }
+      ],
+      "promptRecipe": {
+        "promptPrefix": "industrial sci-fi metroidvania pixel art, original game identity, not a copy of an existing commercial title",
+        "subjectTemplate": "broad reactor/furnace-class boss, amber chest-core weak point, side view facing right, {{biome}} biome dressing",
+        "negativePrompt": "text, letters, watermark, copyrighted character, trademarked costume",
+        "estimatedTokenBudget": 50
+      },
+      "validationRules": [
+        "weak point visually distinct from surrounding armor"
+      ],
+      "provenance": {
+        "reviewer": "claude-code:delegated-visual-qa-2026-09-07",
+        "qaStatus": "QA_REVIEW",
+        "generatedAt": "2026-09-07T07:32:27.083Z",
+        "note": "Boss is biome-invariant in this pass; only foundry template defined."
+      }
+    },
+    {
+      "id": "terrain-foundry",
+      "assetRole": "terrain",
+      "biome": "foundry",
+      "styleVersion": "1.0.0",
+      "referencePaths": [
+        "terrain/foundry-tile-kit.png",
+        "terrain/foundry-connected-room.png"
+      ],
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "frameCount": 7,
+      "anchor": "floor",
+      "facing": "omnidirectional",
+      "scale": 1,
+      "palette": [
+        "#131e2c",
+        "#384d60",
+        "#a9c3cb",
+        "#e1e4cf",
+        "#b95d3e",
+        "#e39b58",
+        "#efbd61"
+      ],
+      "materials": [
+        "Foundry structural material and wear treatment"
+      ],
+      "requiredSilhouetteCues": [
+        "flat modular panel read",
+        "no implied character/prop silhouette"
+      ],
+      "requiredGameplayCues": [
+        "transition tiles carry the amber hazard stripe convention"
+      ],
+      "allowedVariation": [
+        "surface wear/corrosion/growth",
+        "decorative panel decal"
+      ],
+      "forbiddenChanges": [
+        "tile size (32x32)",
+        "role set (floor/wall/ceiling/platform/outer_corner/inner_corner/transition)",
+        "adjacency contract"
+      ],
+      "environmentFeatures": [
+        "panel_grates",
+        "stains",
+        "damaged_modules"
+      ],
+      "terrainAdjacency": [
+        {
+          "tileRole": "floor",
+          "adjacentTo": [
+            "wall",
+            "ceiling",
+            "platform",
+            "outer_corner",
+            "inner_corner",
+            "transition"
+          ],
+          "seamRequirement": "seamless edge match at 32px boundary, no visible crack at repeated placement"
+        },
+        {
+          "tileRole": "wall",
+          "adjacentTo": [
+            "floor",
+            "ceiling",
+            "platform",
+            "outer_corner",
+            "inner_corner",
+            "transition"
+          ],
+          "seamRequirement": "seamless edge match at 32px boundary, no visible crack at repeated placement"
+        },
+        {
+          "tileRole": "ceiling",
+          "adjacentTo": [
+            "floor",
+            "wall",
+            "platform",
+            "outer_corner",
+            "inner_corner",
+            "transition"
+          ],
+          "seamRequirement": "seamless edge match at 32px boundary, no visible crack at repeated placement"
+        },
+        {
+          "tileRole": "platform",
+          "adjacentTo": [
+            "floor",
+            "wall",
+            "ceiling",
+            "outer_corner",
+            "inner_corner",
+            "transition"
+          ],
+          "seamRequirement": "seamless edge match at 32px boundary, no visible crack at repeated placement"
+        },
+        {
+          "tileRole": "outer_corner",
+          "adjacentTo": [
+            "floor",
+            "wall",
+            "ceiling",
+            "platform",
+            "inner_corner",
+            "transition"
+          ],
+          "seamRequirement": "seamless edge match at 32px boundary, no visible crack at repeated placement"
+        },
+        {
+          "tileRole": "inner_corner",
+          "adjacentTo": [
+            "floor",
+            "wall",
+            "ceiling",
+            "platform",
+            "outer_corner",
+            "transition"
+          ],
+          "seamRequirement": "seamless edge match at 32px boundary, no visible crack at repeated placement"
+        },
+        {
+          "tileRole": "transition",
+          "adjacentTo": [
+            "floor",
+            "wall",
+            "ceiling",
+            "platform",
+            "outer_corner",
+            "inner_corner"
+          ],
+          "seamRequirement": "seamless edge match at 32px boundary, no visible crack at repeated placement"
+        }
+      ],
+      "promptRecipe": {
+        "promptPrefix": "industrial sci-fi metroidvania modular tileset pixel art",
+        "subjectTemplate": "Foundry biome modular terrain tile, {{role}} role, 32x32, explicit adjacency, seamless repeat",
+        "negativePrompt": "text, letters, watermark, character, creature",
+        "estimatedTokenBudget": 40
+      },
+      "validationRules": [
+        "every role present",
+        "seams verified seamless at 2x2 tile repeat"
+      ],
+      "provenance": {
+        "reviewer": "claude-code:delegated-visual-qa-2026-09-07",
+        "qaStatus": "QA_REVIEW",
+        "generatedAt": "2026-09-07T07:32:27.083Z",
+        "note": "Terrain kit for the foundry biome."
+      }
+    },
+    {
+      "id": "prop-foundry",
+      "assetRole": "prop",
+      "biome": "foundry",
+      "styleVersion": "1.0.0",
+      "referencePaths": [
+        "props/foundry-props.png"
+      ],
+      "dimensions": {
+        "width": 56,
+        "height": 72
+      },
+      "frameCount": 1,
+      "anchor": "floor",
+      "facing": "omnidirectional",
+      "scale": 1,
+      "palette": [
+        "#3a2c22",
+        "#6b4a34",
+        "#a9c3cb",
+        "#e1e4cf",
+        "#b95d3e",
+        "#e39b58",
+        "#efbd61"
+      ],
+      "materials": [
+        "Foundry surface material"
+      ],
+      "requiredSilhouetteCues": [
+        "flat rounded-rectangle/cylinder geometry",
+        "single accent stripe or window"
+      ],
+      "requiredGameplayCues": [
+        "pickup/checkpoint use the player cyan accent; hazard/projectile use the boss amber accent"
+      ],
+      "allowedVariation": [
+        "surface wear",
+        "minor color variant within the biome material palette"
+      ],
+      "forbiddenChanges": [
+        "silhouette family per prop kind",
+        "gameplay-meaning accent color on pickup/checkpoint/hazard/projectile"
+      ],
+      "environmentFeatures": [
+        "stains"
+      ],
+      "promptRecipe": {
+        "promptPrefix": "industrial sci-fi metroidvania pixel art prop",
+        "subjectTemplate": "small isolated {{role}} game object, Foundry biome material, side view, transparent background",
+        "negativePrompt": "text, letters, watermark, character, scenery, multiple objects, cropped edges",
+        "estimatedTokenBudget": 35
+      },
+      "validationRules": [
+        "isolated single object, no scenery bleed"
+      ],
+      "provenance": {
+        "reviewer": "claude-code:delegated-visual-qa-2026-09-07",
+        "qaStatus": "QA_REVIEW",
+        "generatedAt": "2026-09-07T07:32:27.083Z",
+        "note": "Props/gameplay-object kit for the foundry biome."
+      }
+    },
+    {
+      "id": "background-foundry",
+      "assetRole": "background",
+      "biome": "foundry",
+      "styleVersion": "1.0.0",
+      "referencePaths": [
+        "backgrounds/foundry-far.png",
+        "backgrounds/foundry-mid.png",
+        "backgrounds/foundry-near.png",
+        "backgrounds/foundry-composite.png"
+      ],
+      "dimensions": {
+        "width": 480,
+        "height": 270
+      },
+      "frameCount": 3,
+      "anchor": "free",
+      "facing": "omnidirectional",
+      "scale": 1,
+      "palette": [
+        "#131e2c",
+        "#384d60",
+        "#a9c3cb",
+        "#e1e4cf",
+        "#b95d3e",
+        "#e39b58",
+        "#efbd61"
+      ],
+      "materials": [
+        "Foundry distant structural/environmental material"
+      ],
+      "requiredSilhouetteCues": [
+        "decreasing detail/contrast toward the far layer"
+      ],
+      "requiredGameplayCues": [
+        "no gameplay-meaning color used decoratively in background layers"
+      ],
+      "allowedVariation": [
+        "module/bay variety",
+        "biome dressing density"
+      ],
+      "forbiddenChanges": [
+        "3-layer depth structure (far/mid/near)",
+        "gameplay-meaning colors reserved for foreground"
+      ],
+      "environmentFeatures": [
+        "stains",
+        "damaged_modules"
+      ],
+      "promptRecipe": {
+        "promptPrefix": "industrial sci-fi metroidvania parallax background pixel art",
+        "subjectTemplate": "Foundry biome {{role}} background layer, side view, no characters, no UI, no text",
+        "negativePrompt": "text, letters, watermark, characters, UI, logos",
+        "estimatedTokenBudget": 35
+      },
+      "validationRules": [
+        "three distinct depth layers present"
+      ],
+      "provenance": {
+        "reviewer": "claude-code:delegated-visual-qa-2026-09-07",
+        "qaStatus": "QA_REVIEW",
+        "generatedAt": "2026-09-07T07:32:27.083Z",
+        "note": "Background layer set for the foundry biome."
+      }
+    },
+    {
+      "id": "terrain-flooded_utility",
+      "assetRole": "terrain",
+      "biome": "flooded_utility",
+      "styleVersion": "1.0.0",
+      "referencePaths": [
+        "terrain/flooded_utility-tile-kit.png",
+        "terrain/flooded_utility-connected-room.png"
+      ],
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "frameCount": 7,
+      "anchor": "floor",
+      "facing": "omnidirectional",
+      "scale": 1,
+      "palette": [
+        "#101f22",
+        "#2e4f4d",
+        "#9fc7c2",
+        "#d8ece6",
+        "#3fa8a0",
+        "#5f7a63",
+        "#efbd61"
+      ],
+      "materials": [
+        "Flooded Utility Sector structural material and wear treatment"
+      ],
+      "requiredSilhouetteCues": [
+        "flat modular panel read",
+        "no implied character/prop silhouette"
+      ],
+      "requiredGameplayCues": [
+        "transition tiles carry the amber hazard stripe convention"
+      ],
+      "allowedVariation": [
+        "surface wear/corrosion/growth",
+        "decorative panel decal"
+      ],
+      "forbiddenChanges": [
+        "tile size (32x32)",
+        "role set (floor/wall/ceiling/platform/outer_corner/inner_corner/transition)",
+        "adjacency contract"
+      ],
+      "environmentFeatures": [
+        "corrosion",
+        "stains"
+      ],
+      "terrainAdjacency": [
+        {
+          "tileRole": "floor",
+          "adjacentTo": [
+            "wall",
+            "ceiling",
+            "platform",
+            "outer_corner",
+            "inner_corner",
+            "transition"
+          ],
+          "seamRequirement": "seamless edge match at 32px boundary, no visible crack at repeated placement"
+        },
+        {
+          "tileRole": "wall",
+          "adjacentTo": [
+            "floor",
+            "ceiling",
+            "platform",
+            "outer_corner",
+            "inner_corner",
+            "transition"
+          ],
+          "seamRequirement": "seamless edge match at 32px boundary, no visible crack at repeated placement"
+        },
+        {
+          "tileRole": "ceiling",
+          "adjacentTo": [
+            "floor",
+            "wall",
+            "platform",
+            "outer_corner",
+            "inner_corner",
+            "transition"
+          ],
+          "seamRequirement": "seamless edge match at 32px boundary, no visible crack at repeated placement"
+        },
+        {
+          "tileRole": "platform",
+          "adjacentTo": [
+            "floor",
+            "wall",
+            "ceiling",
+            "outer_corner",
+            "inner_corner",
+            "transition"
+          ],
+          "seamRequirement": "seamless edge match at 32px boundary, no visible crack at repeated placement"
+        },
+        {
+          "tileRole": "outer_corner",
+          "adjacentTo": [
+            "floor",
+            "wall",
+            "ceiling",
+            "platform",
+            "inner_corner",
+            "transition"
+          ],
+          "seamRequirement": "seamless edge match at 32px boundary, no visible crack at repeated placement"
+        },
+        {
+          "tileRole": "inner_corner",
+          "adjacentTo": [
+            "floor",
+            "wall",
+            "ceiling",
+            "platform",
+            "outer_corner",
+            "transition"
+          ],
+          "seamRequirement": "seamless edge match at 32px boundary, no visible crack at repeated placement"
+        },
+        {
+          "tileRole": "transition",
+          "adjacentTo": [
+            "floor",
+            "wall",
+            "ceiling",
+            "platform",
+            "outer_corner",
+            "inner_corner"
+          ],
+          "seamRequirement": "seamless edge match at 32px boundary, no visible crack at repeated placement"
+        }
+      ],
+      "promptRecipe": {
+        "promptPrefix": "industrial sci-fi metroidvania modular tileset pixel art",
+        "subjectTemplate": "Flooded Utility Sector biome modular terrain tile, {{role}} role, 32x32, explicit adjacency, seamless repeat",
+        "negativePrompt": "text, letters, watermark, character, creature",
+        "estimatedTokenBudget": 40
+      },
+      "validationRules": [
+        "every role present",
+        "seams verified seamless at 2x2 tile repeat"
+      ],
+      "provenance": {
+        "reviewer": "claude-code:delegated-visual-qa-2026-09-07",
+        "qaStatus": "QA_REVIEW",
+        "generatedAt": "2026-09-07T07:32:27.083Z",
+        "note": "Terrain kit for the flooded_utility biome."
+      }
+    },
+    {
+      "id": "prop-flooded_utility",
+      "assetRole": "prop",
+      "biome": "flooded_utility",
+      "styleVersion": "1.0.0",
+      "referencePaths": [
+        "props/flooded_utility-props.png"
+      ],
+      "dimensions": {
+        "width": 56,
+        "height": 72
+      },
+      "frameCount": 1,
+      "anchor": "floor",
+      "facing": "omnidirectional",
+      "scale": 1,
+      "palette": [
+        "#101f22",
+        "#2e4f4d",
+        "#9fc7c2",
+        "#d8ece6",
+        "#3fa8a0",
+        "#5f7a63",
+        "#efbd61"
+      ],
+      "materials": [
+        "Flooded Utility Sector surface material"
+      ],
+      "requiredSilhouetteCues": [
+        "flat rounded-rectangle/cylinder geometry",
+        "single accent stripe or window"
+      ],
+      "requiredGameplayCues": [
+        "pickup/checkpoint use the player cyan accent; hazard/projectile use the boss amber accent"
+      ],
+      "allowedVariation": [
+        "surface wear",
+        "minor color variant within the biome material palette"
+      ],
+      "forbiddenChanges": [
+        "silhouette family per prop kind",
+        "gameplay-meaning accent color on pickup/checkpoint/hazard/projectile"
+      ],
+      "environmentFeatures": [
+        "corrosion",
+        "stains"
+      ],
+      "promptRecipe": {
+        "promptPrefix": "industrial sci-fi metroidvania pixel art prop",
+        "subjectTemplate": "small isolated {{role}} game object, Flooded Utility Sector biome material, side view, transparent background",
+        "negativePrompt": "text, letters, watermark, character, scenery, multiple objects, cropped edges",
+        "estimatedTokenBudget": 35
+      },
+      "validationRules": [
+        "isolated single object, no scenery bleed"
+      ],
+      "provenance": {
+        "reviewer": "claude-code:delegated-visual-qa-2026-09-07",
+        "qaStatus": "QA_REVIEW",
+        "generatedAt": "2026-09-07T07:32:27.083Z",
+        "note": "Props/gameplay-object kit for the flooded_utility biome."
+      }
+    },
+    {
+      "id": "background-flooded_utility",
+      "assetRole": "background",
+      "biome": "flooded_utility",
+      "styleVersion": "1.0.0",
+      "referencePaths": [
+        "backgrounds/flooded_utility-far.png",
+        "backgrounds/flooded_utility-mid.png",
+        "backgrounds/flooded_utility-near.png",
+        "backgrounds/flooded_utility-composite.png"
+      ],
+      "dimensions": {
+        "width": 480,
+        "height": 270
+      },
+      "frameCount": 3,
+      "anchor": "free",
+      "facing": "omnidirectional",
+      "scale": 1,
+      "palette": [
+        "#101f22",
+        "#2e4f4d",
+        "#9fc7c2",
+        "#d8ece6",
+        "#3fa8a0",
+        "#5f7a63",
+        "#efbd61"
+      ],
+      "materials": [
+        "Flooded Utility Sector distant structural/environmental material"
+      ],
+      "requiredSilhouetteCues": [
+        "decreasing detail/contrast toward the far layer"
+      ],
+      "requiredGameplayCues": [
+        "no gameplay-meaning color used decoratively in background layers"
+      ],
+      "allowedVariation": [
+        "module/bay variety",
+        "biome dressing density"
+      ],
+      "forbiddenChanges": [
+        "3-layer depth structure (far/mid/near)",
+        "gameplay-meaning colors reserved for foreground"
+      ],
+      "environmentFeatures": [
+        "corrosion",
+        "stains"
+      ],
+      "promptRecipe": {
+        "promptPrefix": "industrial sci-fi metroidvania parallax background pixel art",
+        "subjectTemplate": "Flooded Utility Sector biome {{role}} background layer, side view, no characters, no UI, no text",
+        "negativePrompt": "text, letters, watermark, characters, UI, logos",
+        "estimatedTokenBudget": 35
+      },
+      "validationRules": [
+        "three distinct depth layers present"
+      ],
+      "provenance": {
+        "reviewer": "claude-code:delegated-visual-qa-2026-09-07",
+        "qaStatus": "QA_REVIEW",
+        "generatedAt": "2026-09-07T07:32:27.083Z",
+        "note": "Background layer set for the flooded_utility biome."
+      }
+    },
+    {
+      "id": "terrain-overgrown_reactor",
+      "assetRole": "terrain",
+      "biome": "overgrown_reactor",
+      "styleVersion": "1.0.0",
+      "referencePaths": [
+        "terrain/overgrown_reactor-tile-kit.png",
+        "terrain/overgrown_reactor-connected-room.png"
+      ],
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "frameCount": 7,
+      "anchor": "floor",
+      "facing": "omnidirectional",
+      "scale": 1,
+      "palette": [
+        "#16241a",
+        "#3a4f3a",
+        "#b9c9a0",
+        "#e2ecc9",
+        "#a8e05a",
+        "#6f8f52",
+        "#efbd61"
+      ],
+      "materials": [
+        "Overgrown Reactor structural material and wear treatment"
+      ],
+      "requiredSilhouetteCues": [
+        "flat modular panel read",
+        "no implied character/prop silhouette"
+      ],
+      "requiredGameplayCues": [
+        "transition tiles carry the amber hazard stripe convention"
+      ],
+      "allowedVariation": [
+        "surface wear/corrosion/growth",
+        "decorative panel decal"
+      ],
+      "forbiddenChanges": [
+        "tile size (32x32)",
+        "role set (floor/wall/ceiling/platform/outer_corner/inner_corner/transition)",
+        "adjacency contract"
+      ],
+      "environmentFeatures": [
+        "vegetation",
+        "damaged_modules"
+      ],
+      "terrainAdjacency": [
+        {
+          "tileRole": "floor",
+          "adjacentTo": [
+            "wall",
+            "ceiling",
+            "platform",
+            "outer_corner",
+            "inner_corner",
+            "transition"
+          ],
+          "seamRequirement": "seamless edge match at 32px boundary, no visible crack at repeated placement"
+        },
+        {
+          "tileRole": "wall",
+          "adjacentTo": [
+            "floor",
+            "ceiling",
+            "platform",
+            "outer_corner",
+            "inner_corner",
+            "transition"
+          ],
+          "seamRequirement": "seamless edge match at 32px boundary, no visible crack at repeated placement"
+        },
+        {
+          "tileRole": "ceiling",
+          "adjacentTo": [
+            "floor",
+            "wall",
+            "platform",
+            "outer_corner",
+            "inner_corner",
+            "transition"
+          ],
+          "seamRequirement": "seamless edge match at 32px boundary, no visible crack at repeated placement"
+        },
+        {
+          "tileRole": "platform",
+          "adjacentTo": [
+            "floor",
+            "wall",
+            "ceiling",
+            "outer_corner",
+            "inner_corner",
+            "transition"
+          ],
+          "seamRequirement": "seamless edge match at 32px boundary, no visible crack at repeated placement"
+        },
+        {
+          "tileRole": "outer_corner",
+          "adjacentTo": [
+            "floor",
+            "wall",
+            "ceiling",
+            "platform",
+            "inner_corner",
+            "transition"
+          ],
+          "seamRequirement": "seamless edge match at 32px boundary, no visible crack at repeated placement"
+        },
+        {
+          "tileRole": "inner_corner",
+          "adjacentTo": [
+            "floor",
+            "wall",
+            "ceiling",
+            "platform",
+            "outer_corner",
+            "transition"
+          ],
+          "seamRequirement": "seamless edge match at 32px boundary, no visible crack at repeated placement"
+        },
+        {
+          "tileRole": "transition",
+          "adjacentTo": [
+            "floor",
+            "wall",
+            "ceiling",
+            "platform",
+            "outer_corner",
+            "inner_corner"
+          ],
+          "seamRequirement": "seamless edge match at 32px boundary, no visible crack at repeated placement"
+        }
+      ],
+      "promptRecipe": {
+        "promptPrefix": "industrial sci-fi metroidvania modular tileset pixel art",
+        "subjectTemplate": "Overgrown Reactor biome modular terrain tile, {{role}} role, 32x32, explicit adjacency, seamless repeat",
+        "negativePrompt": "text, letters, watermark, character, creature",
+        "estimatedTokenBudget": 40
+      },
+      "validationRules": [
+        "every role present",
+        "seams verified seamless at 2x2 tile repeat"
+      ],
+      "provenance": {
+        "reviewer": "claude-code:delegated-visual-qa-2026-09-07",
+        "qaStatus": "QA_REVIEW",
+        "generatedAt": "2026-09-07T07:32:27.083Z",
+        "note": "Terrain kit for the overgrown_reactor biome."
+      }
+    },
+    {
+      "id": "prop-overgrown_reactor",
+      "assetRole": "prop",
+      "biome": "overgrown_reactor",
+      "styleVersion": "1.0.0",
+      "referencePaths": [
+        "props/overgrown_reactor-props.png"
+      ],
+      "dimensions": {
+        "width": 56,
+        "height": 72
+      },
+      "frameCount": 1,
+      "anchor": "floor",
+      "facing": "omnidirectional",
+      "scale": 1,
+      "palette": [
+        "#16241a",
+        "#3a4f3a",
+        "#b9c9a0",
+        "#e2ecc9",
+        "#a8e05a",
+        "#6f8f52",
+        "#efbd61"
+      ],
+      "materials": [
+        "Overgrown Reactor surface material"
+      ],
+      "requiredSilhouetteCues": [
+        "flat rounded-rectangle/cylinder geometry",
+        "single accent stripe or window"
+      ],
+      "requiredGameplayCues": [
+        "pickup/checkpoint use the player cyan accent; hazard/projectile use the boss amber accent"
+      ],
+      "allowedVariation": [
+        "surface wear",
+        "minor color variant within the biome material palette"
+      ],
+      "forbiddenChanges": [
+        "silhouette family per prop kind",
+        "gameplay-meaning accent color on pickup/checkpoint/hazard/projectile"
+      ],
+      "environmentFeatures": [
+        "vegetation"
+      ],
+      "promptRecipe": {
+        "promptPrefix": "industrial sci-fi metroidvania pixel art prop",
+        "subjectTemplate": "small isolated {{role}} game object, Overgrown Reactor biome material, side view, transparent background",
+        "negativePrompt": "text, letters, watermark, character, scenery, multiple objects, cropped edges",
+        "estimatedTokenBudget": 35
+      },
+      "validationRules": [
+        "isolated single object, no scenery bleed"
+      ],
+      "provenance": {
+        "reviewer": "claude-code:delegated-visual-qa-2026-09-07",
+        "qaStatus": "QA_REVIEW",
+        "generatedAt": "2026-09-07T07:32:27.083Z",
+        "note": "Props/gameplay-object kit for the overgrown_reactor biome."
+      }
+    },
+    {
+      "id": "background-overgrown_reactor",
+      "assetRole": "background",
+      "biome": "overgrown_reactor",
+      "styleVersion": "1.0.0",
+      "referencePaths": [
+        "backgrounds/overgrown_reactor-far.png",
+        "backgrounds/overgrown_reactor-mid.png",
+        "backgrounds/overgrown_reactor-near.png",
+        "backgrounds/overgrown_reactor-composite.png"
+      ],
+      "dimensions": {
+        "width": 480,
+        "height": 270
+      },
+      "frameCount": 3,
+      "anchor": "free",
+      "facing": "omnidirectional",
+      "scale": 1,
+      "palette": [
+        "#16241a",
+        "#3a4f3a",
+        "#b9c9a0",
+        "#e2ecc9",
+        "#a8e05a",
+        "#6f8f52",
+        "#efbd61"
+      ],
+      "materials": [
+        "Overgrown Reactor distant structural/environmental material"
+      ],
+      "requiredSilhouetteCues": [
+        "decreasing detail/contrast toward the far layer"
+      ],
+      "requiredGameplayCues": [
+        "no gameplay-meaning color used decoratively in background layers"
+      ],
+      "allowedVariation": [
+        "module/bay variety",
+        "biome dressing density"
+      ],
+      "forbiddenChanges": [
+        "3-layer depth structure (far/mid/near)",
+        "gameplay-meaning colors reserved for foreground"
+      ],
+      "environmentFeatures": [
+        "vegetation"
+      ],
+      "promptRecipe": {
+        "promptPrefix": "industrial sci-fi metroidvania parallax background pixel art",
+        "subjectTemplate": "Overgrown Reactor biome {{role}} background layer, side view, no characters, no UI, no text",
+        "negativePrompt": "text, letters, watermark, characters, UI, logos",
+        "estimatedTokenBudget": 35
+      },
+      "validationRules": [
+        "three distinct depth layers present"
+      ],
+      "provenance": {
+        "reviewer": "claude-code:delegated-visual-qa-2026-09-07",
+        "qaStatus": "QA_REVIEW",
+        "generatedAt": "2026-09-07T07:32:27.083Z",
+        "note": "Background layer set for the overgrown_reactor biome."
+      }
+    },
+    {
+      "id": "traversal_ability_gate-foundry",
+      "assetRole": "traversal_ability_gate",
+      "biome": "foundry",
+      "styleVersion": "1.0.0",
+      "referencePaths": [
+        "traversal/ability-gate-color-code.png",
+        "traversal/foundry-traversal.png"
+      ],
+      "dimensions": {
+        "width": 54,
+        "height": 84
+      },
+      "frameCount": 1,
+      "anchor": "opening",
+      "facing": "omnidirectional",
+      "scale": 1,
+      "palette": [
+        "#63dbe0",
+        "#efbd61",
+        "#b95d3e"
+      ],
+      "materials": [
+        "flat energy-barrier geometry"
+      ],
+      "requiredSilhouetteCues": [
+        "distinct from door/lift/breakable-barrier silhouettes"
+      ],
+      "requiredGameplayCues": [
+        "gate color matches the required ability, identically across every biome"
+      ],
+      "allowedVariation": [
+        "frame material dressing per biome"
+      ],
+      "forbiddenChanges": [
+        "ability-to-color mapping",
+        "gate silhouette"
+      ],
+      "environmentFeatures": [],
+      "promptRecipe": {
+        "promptPrefix": "industrial sci-fi metroidvania pixel art traversal object",
+        "subjectTemplate": "ability-gated barrier, color-coded energy field, side view, transparent background",
+        "negativePrompt": "text, letters, watermark, character",
+        "estimatedTokenBudget": 30
+      },
+      "validationRules": [
+        "gate color matches its declared required ability"
+      ],
+      "provenance": {
+        "reviewer": "claude-code:delegated-visual-qa-2026-09-07",
+        "qaStatus": "QA_REVIEW",
+        "generatedAt": "2026-09-07T07:32:27.083Z",
+        "note": "Ability-gate color coding is biome-neutral by design; one representative template covers every biome."
+      }
+    }
+  ],
+  "biomes": [
+    {
+      "biome": "foundry",
+      "label": "Foundry",
+      "styleVersion": "1.0.0",
+      "templateIds": [
+        "player-foundry",
+        "enemy_melee-foundry",
+        "enemy_ranged-foundry",
+        "enemy_flying-foundry",
+        "enemy_armored_heavy-foundry",
+        "boss-foundry",
+        "terrain-foundry",
+        "prop-foundry",
+        "background-foundry",
+        "traversal_ability_gate-foundry"
+      ],
+      "consistencyConstraints": [
+        "actor proportions match every other biome",
+        "pixel density (32px tile, 128/160px actor frame) matches every other biome",
+        "perspective (side-view) matches every other biome",
+        "gameplay-meaning colors (player cyan, enemy rust, boss/hazard amber) match every other biome"
+      ],
+      "provenance": {
+        "reviewer": "claude-code:delegated-visual-qa-2026-09-07",
+        "qaStatus": "QA_REVIEW",
+        "generatedAt": "2026-09-07T07:32:27.083Z",
+        "note": "Biome variation contract for Foundry."
+      }
+    },
+    {
+      "biome": "flooded_utility",
+      "label": "Flooded Utility Sector",
+      "styleVersion": "1.0.0",
+      "templateIds": [
+        "enemy_melee-flooded_utility",
+        "enemy_ranged-flooded_utility",
+        "enemy_flying-flooded_utility",
+        "enemy_armored_heavy-flooded_utility",
+        "terrain-flooded_utility",
+        "prop-flooded_utility",
+        "background-flooded_utility"
+      ],
+      "consistencyConstraints": [
+        "actor proportions match every other biome",
+        "pixel density (32px tile, 128/160px actor frame) matches every other biome",
+        "perspective (side-view) matches every other biome",
+        "gameplay-meaning colors (player cyan, enemy rust, boss/hazard amber) match every other biome"
+      ],
+      "provenance": {
+        "reviewer": "claude-code:delegated-visual-qa-2026-09-07",
+        "qaStatus": "QA_REVIEW",
+        "generatedAt": "2026-09-07T07:32:27.083Z",
+        "note": "Biome variation contract for Flooded Utility Sector."
+      }
+    },
+    {
+      "biome": "overgrown_reactor",
+      "label": "Overgrown Reactor",
+      "styleVersion": "1.0.0",
+      "templateIds": [
+        "enemy_melee-overgrown_reactor",
+        "enemy_ranged-overgrown_reactor",
+        "enemy_flying-overgrown_reactor",
+        "enemy_armored_heavy-overgrown_reactor",
+        "terrain-overgrown_reactor",
+        "prop-overgrown_reactor",
+        "background-overgrown_reactor"
+      ],
+      "consistencyConstraints": [
+        "actor proportions match every other biome",
+        "pixel density (32px tile, 128/160px actor frame) matches every other biome",
+        "perspective (side-view) matches every other biome",
+        "gameplay-meaning colors (player cyan, enemy rust, boss/hazard amber) match every other biome"
+      ],
+      "provenance": {
+        "reviewer": "claude-code:delegated-visual-qa-2026-09-07",
+        "qaStatus": "QA_REVIEW",
+        "generatedAt": "2026-09-07T07:32:27.083Z",
+        "note": "Biome variation contract for Overgrown Reactor."
+      }
+    }
+  ]
+}

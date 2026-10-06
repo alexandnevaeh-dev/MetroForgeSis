@@ -1,0 +1,772 @@
+{
+  "assets": [
+    {
+      "destination": "assets/characters/player_air_dash_cape_v2.png",
+      "sha256": "8268c64d2c9bba7e4f264fcabb61b9df5cc989049dc6d830687cd22396c7914b",
+      "source": "player_air_dash_cape_v2.png"
+    },
+    {
+      "destination": "assets/characters/player_attack_2_cape_v2.png",
+      "sha256": "51c369c48262a0ae33a5dc6972d91aa1013d9d61c1f44bf39d86c8fb1d4faf29",
+      "source": "player_attack_2_cape_v2.png"
+    },
+    {
+      "destination": "assets/characters/player_attack_3_cape_v2.png",
+      "sha256": "c09f7625c3d3b25191ff8b113114ac8f749f5b003c85a011e948f8a08ba00dba",
+      "source": "player_attack_3_cape_v2.png"
+    },
+    {
+      "destination": "assets/characters/player_attack_cape_v2.png",
+      "sha256": "c1ad76388ae09e0f5ca60f92c7657084353ab41379a4e51d95b2c189bc612cef",
+      "source": "player_attack_cape_v2.png"
+    },
+    {
+      "destination": "assets/characters/player_dash_cape_v2.png",
+      "sha256": "236a5a910156fb0c7674ce0f7a116c6d52d223bab32688b81cfa6ec4ed6bc792",
+      "source": "player_dash_cape_v2.png"
+    },
+    {
+      "destination": "assets/characters/player_death_cape_v2.png",
+      "sha256": "fe9ffa234cb01e7e574fbf29899a26bac12af55864d5618096d8dbb723ee4283",
+      "source": "player_death_cape_v2.png"
+    },
+    {
+      "destination": "assets/characters/player_hurt_cape_v2.png",
+      "sha256": "1e8ee563a3b908a372e35ebcd1058cc0bf93fda69aff81d5a24cb05dc570d79b",
+      "source": "player_hurt_cape_v2.png"
+    },
+    {
+      "destination": "assets/characters/player_jump_sequence_cape_v2.png",
+      "sha256": "8d7b7295b3de9dabd7005503752e3a3272a268e651f0dfa50336e076693ae4bd",
+      "source": "player_jump_sequence_cape_v2.png"
+    },
+    {
+      "destination": "assets/characters/player_walk_cape_v2.png",
+      "sha256": "6c33d1fcda1a0aff395be3f62834c785e01519addb226d3ce29c98c4fb308575",
+      "source": "player_walk_cape_v2.png"
+    },
+    {
+      "destination": "assets/characters/player_idle_cape_v2.png",
+      "source": "player_idle_cape_v2.png",
+      "sha256": "f8f0928ba6d858a1ee134308ae331d02ed7afeebcc7ef81046809106635d70b6"
+    },
+    {
+      "source": "player_run_cape_v2.png",
+      "destination": "assets/characters/player_run_cape_v2.png",
+      "sha256": "fd674f17748a8b616d90c204efb2770ed63dcbde689183e99e3dfbb293a395af"
+    }
+  ],
+  "version": 1,
+  "source": "Original image-generation strips; runtime-only measured atlas regions; no raster resampling",
+  "productionReady": false,
+  "animations": {
+    "attack_3": {
+      "frameCount": 8,
+      "fps": 16,
+      "loop": false,
+      "attackTiming": {
+        "activeStart": 2,
+        "activeEnd": 5,
+        "recoveryEnd": 7,
+        "comboCancelOpenFrame": 6
+      },
+      "sourceSheet": "assets/characters/player_attack_3_cape_v2.png",
+      "sourceRegions": [
+        [
+          0,
+          0,
+          255,
+          724
+        ],
+        [
+          255,
+          0,
+          268,
+          724
+        ],
+        [
+          523,
+          0,
+          279,
+          724
+        ],
+        [
+          802,
+          0,
+          289,
+          724
+        ],
+        [
+          1091,
+          0,
+          277,
+          724
+        ],
+        [
+          1368,
+          0,
+          305,
+          724
+        ],
+        [
+          1673,
+          0,
+          233,
+          724
+        ],
+        [
+          1906,
+          0,
+          266,
+          724
+        ]
+      ],
+      "displayScale": 0.1937984496124031,
+      "footAnchorY": 501,
+      "combatSync": {
+        "sfxFrame": 4,
+        "vfxFrame": 4,
+        "comboCancelOpenFrame": 7,
+        "hitboxOffFrame": 6,
+        "hitboxOnFrame": 4
+      }
+    },
+    "death": {
+      "frameCount": 8,
+      "fps": 12,
+      "loop": false,
+      "sourceSheet": "assets/characters/player_death_cape_v2.png",
+      "sourceRegions": [
+        [
+          0,
+          0,
+          242,
+          724
+        ],
+        [
+          242,
+          0,
+          254,
+          724
+        ],
+        [
+          496,
+          0,
+          253,
+          724
+        ],
+        [
+          749,
+          0,
+          267,
+          724
+        ],
+        [
+          1016,
+          0,
+          314,
+          724
+        ],
+        [
+          1330,
+          0,
+          289,
+          724
+        ],
+        [
+          1619,
+          0,
+          288,
+          724
+        ],
+        [
+          1907,
+          0,
+          265,
+          724
+        ]
+      ],
+      "displayScale": 0.1953125,
+      "footAnchorY": 501
+    },
+    "hurt": {
+      "frameCount": 8,
+      "fps": 16,
+      "loop": false,
+      "sourceSheet": "assets/characters/player_hurt_cape_v2.png",
+      "sourceRegions": [
+        [
+          0,
+          0,
+          261,
+          724
+        ],
+        [
+          261,
+          0,
+          279,
+          724
+        ],
+        [
+          540,
+          0,
+          273,
+          724
+        ],
+        [
+          813,
+          0,
+          263,
+          724
+        ],
+        [
+          1076,
+          0,
+          266,
+          724
+        ],
+        [
+          1342,
+          0,
+          264,
+          724
+        ],
+        [
+          1606,
+          0,
+          272,
+          724
+        ],
+        [
+          1878,
+          0,
+          294,
+          724
+        ]
+      ],
+      "displayScale": 0.16722408026755853,
+      "footAnchorY": 534
+    },
+    "attack": {
+      "frameCount": 8,
+      "fps": 18,
+      "loop": false,
+      "attackTiming": {
+        "activeStart": 2,
+        "activeEnd": 5,
+        "recoveryEnd": 7,
+        "comboCancelOpenFrame": 6
+      },
+      "sourceSheet": "assets/characters/player_attack_cape_v2.png",
+      "sourceRegions": [
+        [
+          0,
+          0,
+          242,
+          724
+        ],
+        [
+          242,
+          0,
+          258,
+          724
+        ],
+        [
+          500,
+          0,
+          290,
+          724
+        ],
+        [
+          790,
+          0,
+          302,
+          724
+        ],
+        [
+          1092,
+          0,
+          295,
+          724
+        ],
+        [
+          1387,
+          0,
+          266,
+          724
+        ],
+        [
+          1653,
+          0,
+          244,
+          724
+        ],
+        [
+          1897,
+          0,
+          275,
+          724
+        ]
+      ],
+      "displayScale": 0.228310502283105,
+      "footAnchorY": 480,
+      "combatSync": {
+        "vfxFrame": 3,
+        "hitboxOffFrame": 5,
+        "comboCancelOpenFrame": 6,
+        "sfxFrame": 3,
+        "hitboxOnFrame": 3
+      }
+    },
+    "fall": {
+      "frameCount": 2,
+      "fps": 8,
+      "loop": true,
+      "sourceSheet": "assets/characters/player_jump_sequence_cape_v2.png",
+      "sourceRegions": [
+        [
+          1075,
+          0,
+          266,
+          724
+        ],
+        [
+          1341,
+          0,
+          293,
+          724
+        ]
+      ],
+      "displayScale": 0.15432098765432098,
+      "footAnchorY": 560
+    },
+    "land": {
+      "frameCount": 2,
+      "fps": 9.090909090909092,
+      "loop": false,
+      "sourceSheet": "assets/characters/player_jump_sequence_cape_v2.png",
+      "sourceRegions": [
+        [
+          1634,
+          0,
+          271,
+          724
+        ],
+        [
+          1905,
+          0,
+          267,
+          724
+        ]
+      ],
+      "displayScale": 0.15432098765432098,
+      "footAnchorY": 560
+    },
+    "jump": {
+      "frameCount": 2,
+      "fps": 8,
+      "loop": true,
+      "sourceSheet": "assets/characters/player_jump_sequence_cape_v2.png",
+      "sourceRegions": [
+        [
+          532,
+          0,
+          271,
+          724
+        ],
+        [
+          803,
+          0,
+          272,
+          724
+        ]
+      ],
+      "displayScale": 0.15432098765432098,
+      "footAnchorY": 560
+    },
+    "dash": {
+      "frameCount": 8,
+      "fps": 53.333333333333336,
+      "loop": false,
+      "sourceSheet": "assets/characters/player_dash_cape_v2.png",
+      "sourceRegions": [
+        [
+          0,
+          0,
+          272,
+          724
+        ],
+        [
+          272,
+          0,
+          271,
+          724
+        ],
+        [
+          543,
+          0,
+          263,
+          724
+        ],
+        [
+          806,
+          0,
+          288,
+          724
+        ],
+        [
+          1094,
+          0,
+          264,
+          724
+        ],
+        [
+          1358,
+          0,
+          271,
+          724
+        ],
+        [
+          1629,
+          0,
+          271,
+          724
+        ],
+        [
+          1900,
+          0,
+          272,
+          724
+        ]
+      ],
+      "displayScale": 0.1968503937007874,
+      "footAnchorY": 503
+    },
+    "jump_start": {
+      "frameCount": 2,
+      "fps": 24,
+      "loop": false,
+      "sourceSheet": "assets/characters/player_jump_sequence_cape_v2.png",
+      "sourceRegions": [
+        [
+          0,
+          0,
+          261,
+          724
+        ],
+        [
+          261,
+          0,
+          271,
+          724
+        ]
+      ],
+      "displayScale": 0.15432098765432098,
+      "footAnchorY": 560
+    },
+    "attack_2": {
+      "frameCount": 8,
+      "fps": 18,
+      "loop": false,
+      "attackTiming": {
+        "activeStart": 2,
+        "activeEnd": 5,
+        "recoveryEnd": 7,
+        "comboCancelOpenFrame": 6
+      },
+      "sourceSheet": "assets/characters/player_attack_2_cape_v2.png",
+      "sourceRegions": [
+        [
+          0,
+          0,
+          265,
+          724
+        ],
+        [
+          265,
+          0,
+          271,
+          724
+        ],
+        [
+          536,
+          0,
+          297,
+          724
+        ],
+        [
+          833,
+          0,
+          240,
+          724
+        ],
+        [
+          1073,
+          0,
+          306,
+          724
+        ],
+        [
+          1379,
+          0,
+          275,
+          724
+        ],
+        [
+          1654,
+          0,
+          247,
+          724
+        ],
+        [
+          1901,
+          0,
+          271,
+          724
+        ]
+      ],
+      "displayScale": 0.19011406844106463,
+      "footAnchorY": 519,
+      "combatSync": {
+        "sfxFrame": 3,
+        "vfxFrame": 3,
+        "comboCancelOpenFrame": 6,
+        "hitboxOffFrame": 5,
+        "hitboxOnFrame": 3
+      }
+    },
+    "air_dash": {
+      "frameCount": 8,
+      "fps": 53.333333333333336,
+      "loop": false,
+      "sourceSheet": "assets/characters/player_air_dash_cape_v2.png",
+      "sourceRegions": [
+        [
+          0,
+          0,
+          263,
+          724
+        ],
+        [
+          263,
+          0,
+          280,
+          724
+        ],
+        [
+          543,
+          0,
+          344,
+          724
+        ],
+        [
+          887,
+          0,
+          237,
+          724
+        ],
+        [
+          1124,
+          0,
+          274,
+          724
+        ],
+        [
+          1398,
+          0,
+          255,
+          724
+        ],
+        [
+          1653,
+          0,
+          259,
+          724
+        ],
+        [
+          1912,
+          0,
+          261,
+          724
+        ]
+      ],
+      "displayScale": 0.1968503937007874,
+      "footAnchorY": 503
+    },
+    "walk": {
+      "frameCount": 8,
+      "fps": 12,
+      "loop": true,
+      "sourceSheet": "assets/characters/player_walk_cape_v2.png",
+      "sourceRegions": [
+        [
+          0,
+          0,
+          272,
+          724
+        ],
+        [
+          272,
+          0,
+          271,
+          724
+        ],
+        [
+          543,
+          0,
+          271,
+          724
+        ],
+        [
+          814,
+          0,
+          272,
+          724
+        ],
+        [
+          1086,
+          0,
+          272,
+          724
+        ],
+        [
+          1358,
+          0,
+          271,
+          724
+        ],
+        [
+          1629,
+          0,
+          271,
+          724
+        ],
+        [
+          1900,
+          0,
+          272,
+          724
+        ]
+      ],
+      "displayScale": 0.1968503937007874,
+      "footAnchorY": 499
+    },
+    "idle": {
+      "frameCount": 8,
+      "loop": true,
+      "footAnchorY": 500,
+      "sourceSheet": "assets/characters/player_idle_cape_v2.png",
+      "fps": 8,
+      "displayScale": 0.19230769230769232,
+      "sourceRegions": [
+        [
+          0,
+          0,
+          272,
+          724
+        ],
+        [
+          272,
+          0,
+          271,
+          724
+        ],
+        [
+          543,
+          0,
+          271,
+          724
+        ],
+        [
+          814,
+          0,
+          272,
+          724
+        ],
+        [
+          1086,
+          0,
+          272,
+          724
+        ],
+        [
+          1358,
+          0,
+          271,
+          724
+        ],
+        [
+          1629,
+          0,
+          271,
+          724
+        ],
+        [
+          1900,
+          0,
+          272,
+          724
+        ]
+      ]
+    },
+    "run": {
+      "footAnchorY": 509,
+      "sourceRegions": [
+        [
+          0,
+          0,
+          272,
+          724
+        ],
+        [
+          272,
+          0,
+          271,
+          724
+        ],
+        [
+          543,
+          0,
+          258,
+          724
+        ],
+        [
+          801,
+          0,
+          285,
+          724
+        ],
+        [
+          1086,
+          0,
+          272,
+          724
+        ],
+        [
+          1358,
+          0,
+          271,
+          724
+        ],
+        [
+          1629,
+          0,
+          271,
+          724
+        ],
+        [
+          1900,
+          0,
+          272,
+          724
+        ]
+      ],
+      "sourceSheet": "assets/characters/player_run_cape_v2.png",
+      "displayScale": 0.18518518518518517,
+      "frameCount": 8,
+      "loop": true,
+      "fps": 14
+    }
+  },
+  "id": "stormglass-player-cape-v3"
+}

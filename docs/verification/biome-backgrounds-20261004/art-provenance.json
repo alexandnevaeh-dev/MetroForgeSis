@@ -1,0 +1,62 @@
+{
+  "source": "E:/Metroforge/MetroForge-Publish/GeneratedGames/test-games/metroidvania/candidate-2026-10-04T00-09-22-983Z",
+  "project": "E:\\MetroForgeData\\TestArtifacts\\biome-backgrounds-final-20261004\\games\\stormglass-castle",
+  "study": "E:/MetroForgeData/GitHubUpload/20261004/manual-profiles-review/reports/game-tests/20261004-assets-nvidia-ui/1791091675835/games/stormglass-castle",
+  "artifact": {
+    "id": "pixel_art_gothic_castle_hall_vaulted_arc_a1d1376f-0bb2-4f17-8b52-a51400c129ae",
+    "path": "assets/generated/pixel_art_gothic_castle_hall_vaulted_arc_a1d1376f-0bb2-4f17-8b52-a51400c129ae.png",
+    "provider": "diffusers",
+    "modelId": "E:/Metroforge/Recovery-Audit/models/sdxl-base-1.0",
+    "executionMetadata": {
+      "computeBackend": "cuda",
+      "actualDevice": "cuda",
+      "offloadStrategy": "model",
+      "executionPath": "diffusers_torch_cuda",
+      "timings": {
+        "totalMs": 324744
+      },
+      "effectiveConditioningMode": null,
+      "effectiveConditioningStrength": null,
+      "effectivePrompt": "Pixel art Gothic castle hall, vaulted arches, amber lanterns, blue stormglass windows, teal recesses, readable floor, no characters or text. Art style: Rich detailed HD pixel art. For Stormglass Castle. Side-view game, consistent horizontal ground plane and lighting. Environment matching the game camera and biome architecture.",
+      "effectiveNegativePrompt": "blurry, low quality, text, watermark",
+      "effectiveSteps": 20,
+      "effectiveGuidance": 5,
+      "effectiveWidth": 1024,
+      "effectiveHeight": 576
+    },
+    "imagePlan": {
+      "profile": "BACKGROUND",
+      "width": 640,
+      "height": 360,
+      "sourceWidth": 1024,
+      "sourceHeight": 576,
+      "transparent": false,
+      "grounded": false
+    },
+    "fallbackGenerated": false,
+    "critiquePassed": true,
+    "critiqueScore": 70,
+    "sourceType": "compiled",
+    "sourcePath": "assets/generated/pixel_art_gothic_castle_hall_vaulted_arc_a1d1376f-0bb2-4f17-8b52-a51400c129ae_source.png",
+    "fallbackDepth": 0,
+    "selectedProvider": "diffusers",
+    "selectedModel": "E:/Metroforge/Recovery-Audit/models/sdxl-base-1.0",
+    "requestedCapability": "IMAGE_GENERATION",
+    "productionAllowed": true,
+    "promptHash": "6863f7f161f252a0",
+    "requestedProvider": "diffusers",
+    "generationTimestamp": "2026-10-04T05:34:11.348Z",
+    "generationBackend": "legacy",
+    "maturity": "QA_REVIEW",
+    "productionReady": false,
+    "type": "texture",
+    "license": "Local diffusion — model license unverified",
+    "commercialUse": "unknown",
+    "manual": true,
+    "prompt": "Pixel art Gothic castle hall, vaulted arches, amber lanterns, blue stormglass windows, teal recesses, readable floor, no characters or text",
+    "seed": 42,
+    "dirty": false
+  },
+  "compiledSha256": "71bc5aec89759707ca9c9c3b7020c430c81aff9eca739dc452861bd78b9cc650",
+  "scope": "Isolated clone of the existing forty-room castle. Admit the exact previously app-generated CUDA background with retained provenance; no fresh inference in this frame."
+}

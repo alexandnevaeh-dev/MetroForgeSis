@@ -1,0 +1,56 @@
+[gd_scene load_steps=2 format=3 uid="uid://dialogue_overlay"]
+
+[ext_resource type="Script" path="res://scripts/UI/DialogueOverlay.gd" id="1_dialogue"]
+
+[node name="DialogueOverlay" type="CanvasLayer"]
+layer = 12
+script = ExtResource("1_dialogue")
+
+[node name="Dim" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.45)
+
+[node name="Panel" type="PanelContainer" parent="."]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -320.0
+offset_top = -170.0
+offset_right = 320.0
+offset_bottom = -24.0
+
+[node name="HBox" type="HBoxContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Portrait" type="ColorRect" parent="Panel/HBox"]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+color = Color(0.75, 0.6, 0.45, 1)
+
+[node name="Content" type="VBoxContainer" parent="Panel/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="SpeakerLabel" type="Label" parent="Panel/HBox/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Speaker"
+
+[node name="TextLabel" type="Label" parent="Panel/HBox/Content"]
+layout_mode = 2
+autowrap_mode = 3
+text = "..."
+
+[node name="ChoicesBox" type="VBoxContainer" parent="Panel/HBox/Content"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ContinueButton" type="Button" parent="Panel/HBox/Content"]
+layout_mode = 2
+text = "Continue"

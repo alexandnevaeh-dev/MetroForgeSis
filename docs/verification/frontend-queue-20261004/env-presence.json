@@ -1,0 +1,6 @@
+{
+  "passed": true,
+  "envUnchanged": true,
+  "environmentConfigured": 5,
+  "scope": "Read-only packaged credential presence from the existing authorized .env; no generation or live-service authentication assertion"
+}

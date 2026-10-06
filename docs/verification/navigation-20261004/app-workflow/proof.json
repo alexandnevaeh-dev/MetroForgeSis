@@ -1,0 +1,140 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261004\\navigation-review\\reports\\game-tests\\20261004-jump-app\\1791105978453",
+  "executable": "E:/MetroForgeData/Releases/MetroForge-navigation-20261004-v4/MetroForge.exe",
+  "executableSha256": "1925f358e7f0e9675a5ac4198fb076613f0db318da56d388799a97be74a5b19c",
+  "checks": [
+    {
+      "label": "real app search opens with correct modal semantics and input focus",
+      "passed": true
+    },
+    {
+      "label": "background route and sidebar shortcuts respect the open modal",
+      "passed": true
+    },
+    {
+      "label": "global shortcut ignores composition",
+      "passed": true
+    },
+    {
+      "label": "real room IPC indexes the final boss room",
+      "passed": true
+    },
+    {
+      "label": "capture remains hidden: jump-castle-room.png",
+      "passed": true
+    },
+    {
+      "label": "Enter navigates into the actual selected room editor",
+      "passed": true
+    },
+    {
+      "label": "close returns focus to Jump",
+      "passed": true
+    },
+    {
+      "label": "capture remains hidden: selected-room-before-keyboard.png",
+      "passed": true
+    },
+    {
+      "label": "externally selected room is visible and exposes its true list position",
+      "passed": true
+    },
+    {
+      "label": "room-list Home, End and arrows navigate real rooms without absent active descendants",
+      "passed": true
+    },
+    {
+      "label": "room-list ignores keyboard composition",
+      "passed": true
+    },
+    {
+      "label": "capture remains hidden: selected-castle-room.png",
+      "passed": true
+    },
+    {
+      "label": "screen search opens the existing encrypted credential form",
+      "passed": true
+    },
+    {
+      "label": "actual admitted asset can be found by its registered ID",
+      "passed": true
+    },
+    {
+      "label": "capture remains hidden: jump-authored-animation.png",
+      "passed": true
+    },
+    {
+      "label": "asset activation selects real artwork in its existing gallery",
+      "passed": true
+    },
+    {
+      "label": "project search preserves separate castle and Quantum entries",
+      "passed": true
+    },
+    {
+      "label": "project switching uses the actual Quantum path",
+      "passed": true
+    },
+    {
+      "label": "small desktop retains search, selection and visible footer",
+      "passed": true
+    },
+    {
+      "label": "capture remains hidden: jump-app-narrow.png",
+      "passed": true
+    },
+    {
+      "label": "Escape leaves the actual project intact and restores focus",
+      "passed": true
+    },
+    {
+      "label": "navigation preserves game artwork and definitions",
+      "passed": true
+    },
+    {
+      "label": "only authorized gallery registration changed existing game files",
+      "passed": true
+    },
+    {
+      "label": "no renderer exceptions in the real app",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "captures": [
+    "jump-castle-room.png",
+    "selected-room-before-keyboard.png",
+    "selected-castle-room.png",
+    "jump-authored-animation.png",
+    "jump-app-narrow.png"
+  ],
+  "scope": "Real portable MetroForge with copied, separate castle and Quantum games: Jump routes, project switching, real room/asset indexing, modal/IME shortcuts, narrow and short layout. No inference or gameplay claim.",
+  "roomList": {
+    "scrollTop": 1794,
+    "clientHeight": 238,
+    "list": {
+      "x": 223,
+      "y": 316.28125,
+      "width": 139,
+      "height": 240,
+      "top": 316.28125,
+      "right": 362,
+      "bottom": 556.28125,
+      "left": 223
+    },
+    "option": {
+      "x": 228,
+      "y": 503.28125,
+      "width": 118,
+      "height": 48,
+      "top": 503.28125,
+      "right": 346,
+      "bottom": 551.28125,
+      "left": 228
+    },
+    "position": "39",
+    "size": "40"
+  },
+  "changedGameFiles": [],
+  "passed": true
+}

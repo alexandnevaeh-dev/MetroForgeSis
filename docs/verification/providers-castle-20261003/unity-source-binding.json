@@ -1,0 +1,14 @@
+[
+  {
+    "path": "Assets\\StreamingAssets\\gameplay.json",
+    "sha256": "8c1d72f0d703dc8704d36f92ef937625322f9e02f37f8cebab73c08b9d8f9833"
+  },
+  {
+    "path": "Assets\\Scripts\\GameBootstrap.cs",
+    "sha256": "e3765ca6a348e2db666542c488bd99cef3a2ca80af96ac18535913a5e65fea98"
+  },
+  {
+    "path": "Assets\\Scripts\\CastleTerrainPresentation.cs",
+    "sha256": "4eae384f9e085d8f6fe7331ba316036dd382d45686c8451b4e9dc6ad8cf4454e"
+  }
+]

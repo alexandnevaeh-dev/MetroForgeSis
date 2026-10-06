@@ -1,0 +1,52 @@
+{
+  "idle": {
+    "frameCount": 6,
+    "fps": 6,
+    "loop": true
+  },
+  "walk": {
+    "frameCount": 6,
+    "fps": 6,
+    "loop": true
+  },
+  "locomotion": {
+    "frameCount": 8,
+    "fps": 6,
+    "loop": true
+  },
+  "telegraph": {
+    "frameCount": 4,
+    "fps": 8,
+    "loop": true
+  },
+  "attack": {
+    "frameCount": 6,
+    "fps": 12,
+    "loop": false
+  },
+  "attack_projectile": {
+    "frameCount": 6,
+    "fps": 12,
+    "loop": false
+  },
+  "attack_burst": {
+    "frameCount": 6,
+    "fps": 12,
+    "loop": false
+  },
+  "recovery": {
+    "frameCount": 4,
+    "fps": 8,
+    "loop": true
+  },
+  "hurt": {
+    "frameCount": 3,
+    "fps": 12,
+    "loop": false
+  },
+  "death": {
+    "frameCount": 8,
+    "fps": 8,
+    "loop": false
+  }
+}

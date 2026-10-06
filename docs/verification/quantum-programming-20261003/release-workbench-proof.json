@@ -1,0 +1,162 @@
+{
+  "output": "E:\\MetroForgeData\\GitHubUpload\\20261003\\quantum-programming-1791060993969\\tree\\reports\\game-tests\\20261003-quantum-programming\\packaged-workbench-1791062133181",
+  "project": "E:\\MetroForgeData\\GitHubUpload\\20261003\\quantum-programming-1791060993969\\tree\\reports\\game-tests\\20261002-quantum-create-ui\\1791061810691\\GeneratedGames\\quantum-ui-expedition",
+  "files": [
+    {
+      "path": "game.exe",
+      "bytes": 104578048,
+      "sha256": "f9cb815a32a1ae3a73ad8699ed2b068cb76fe01636d7e8538243056fac05f37b"
+    },
+    {
+      "path": "game.pck",
+      "bytes": 4517236,
+      "sha256": "b84c31c2367f125a528aa53e4cce716532044212b5e39c3f470aca41f41574f8"
+    },
+    {
+      "path": "game.console.exe",
+      "bytes": 188928,
+      "sha256": "77db0d03f70aad4545b91e219fbdc002a9ef01409c00e1a886d9d1f2772c5662"
+    }
+  ],
+  "sourceHashes": {
+    "prototypes/quantum-divergence/tests/WorkbenchTests.gd": "e72ca0780a1278fe5498166393500ae82779f69b023c89c369e40f2f316dd2bb",
+    "prototypes/quantum-divergence/scripts/WorkbenchRunDriver.gd": "54a058b69189db2f169aeb83d49034b13b4d99f3757fd641578d98a5922eee52",
+    "scripts/build-quantum-workbench-probe.mjs": "76d52a12000212b9dd2e3450277ba4ef8f31bd53f24d49ca1739c00daa1ff84b",
+    "scripts/verify-quantum-packaged-workbench.mjs": "27fca1d6a3489338b27c243a14189c460e721ca074e7f797ccd6596e3f4074b1"
+  },
+  "productionReady": false,
+  "scope": "Copied executables/PCK only; verified in-package fixture drives actual native release Controls and game-owned input. No OS input, external script or source-asset fallback.",
+  "runtime": {
+    "failed": 0,
+    "package": {
+      "failures": [],
+      "files": 125,
+      "integrity": true,
+      "release": true,
+      "standalone": true,
+      "template_sha256": "0c8a0f816514a25fc28285fad3905a030d7faf15b1bdc0bb1f4e050db2ff0da4"
+    },
+    "passed": 22,
+    "programs": {
+      "photon": {
+        "operator": "collapse",
+        "state": "thermal",
+        "trigger": "impact",
+        "waveform": "tachyon"
+      },
+      "tachyon": {
+        "operator": "superposition",
+        "state": "dark_energy",
+        "trigger": "probability_threshold",
+        "waveform": "tachyon"
+      }
+    },
+    "results": [
+      {
+        "passed": true,
+        "test": "native workbench runs inside the verified Windows release PCK"
+      },
+      {
+        "passed": true,
+        "test": "real grounded Diver is admitted at the registered entry station"
+      },
+      {
+        "passed": true,
+        "test": "P opens the actual native station workbench"
+      },
+      {
+        "passed": true,
+        "test": "opening gives keyboard focus to the instrument selector"
+      },
+      {
+        "passed": true,
+        "test": "editing pauses actual material, enemy and player clocks"
+      },
+      {
+        "passed": true,
+        "test": "actual native viewport captured: 01-workbench"
+      },
+      {
+        "passed": true,
+        "test": "locked Tunneling shows a reason and disables application"
+      },
+      {
+        "passed": true,
+        "test": "actual native viewport captured: 02-locked-blueprint"
+      },
+      {
+        "passed": true,
+        "test": "valid edited waveform previews its real firing price"
+      },
+      {
+        "passed": true,
+        "test": "native mouse input applies the edited program to the selected slot"
+      },
+      {
+        "passed": true,
+        "test": "application preserves the other slot and existing energy"
+      },
+      {
+        "passed": true,
+        "test": "successful application stays paused and reports its result"
+      },
+      {
+        "passed": true,
+        "test": "actual native viewport captured: 03-program-applied"
+      },
+      {
+        "passed": true,
+        "test": "Escape closes the workbench and resumes the game"
+      },
+      {
+        "passed": true,
+        "test": "workbench clicks do not leak into attacks or movement after closing"
+      },
+      {
+        "passed": true,
+        "test": "resumed game fires the newly programmed waveform at the previewed energy cost"
+      },
+      {
+        "passed": true,
+        "test": "applied waveform controls telegraph, damage and projectile capacity"
+      },
+      {
+        "passed": true,
+        "test": "walking away from the station rejects direct application without changing the loadout"
+      },
+      {
+        "passed": true,
+        "test": "P away from a station leaves gameplay running and reports the actual admission reason"
+      },
+      {
+        "passed": true,
+        "test": "normal Recall input returns to the safe station without test position grants"
+      },
+      {
+        "passed": true,
+        "test": "the same workbench can reopen after normal traversal and Recall"
+      },
+      {
+        "passed": true,
+        "test": "closing an uncommitted draft preserves the actual equipped program"
+      }
+    ],
+    "scope": "Native Control selection signals, game-owned P/Escape/mouse events and actual GPU captures; no OS input, no position/health grants",
+    "simulation_tick": 168
+  },
+  "captures": [
+    {
+      "path": "E:\\MetroForgeData\\GitHubUpload\\20261003\\quantum-programming-1791060993969\\tree\\reports\\game-tests\\20261003-quantum-programming\\packaged-workbench-1791062133181\\captures\\01-workbench.png",
+      "sha256": "449dbc25a0c853326d712415104035f4cb758fc516f2edc36621ebca09c59bda"
+    },
+    {
+      "path": "E:\\MetroForgeData\\GitHubUpload\\20261003\\quantum-programming-1791060993969\\tree\\reports\\game-tests\\20261003-quantum-programming\\packaged-workbench-1791062133181\\captures\\02-locked-blueprint.png",
+      "sha256": "6ba0e5dd3b22028b464c841e778097e3d774bddb71eb642ecfaaddd4e2eee74a"
+    },
+    {
+      "path": "E:\\MetroForgeData\\GitHubUpload\\20261003\\quantum-programming-1791060993969\\tree\\reports\\game-tests\\20261003-quantum-programming\\packaged-workbench-1791062133181\\captures\\03-program-applied.png",
+      "sha256": "72cc1f4c24bedc2d1880f4fdeff7f3fbf02a5954ebcac7b9d0a0fe23cfd07d73"
+    }
+  ],
+  "passed": true
+}

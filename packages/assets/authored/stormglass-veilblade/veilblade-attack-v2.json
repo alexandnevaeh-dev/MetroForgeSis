@@ -1,0 +1,154 @@
+{
+  "source": "E:\\Metroforge\\MetroForge-Publish\\packages\\assets\\authored\\stormglass-veilblade\\veilblade-attack-source-v2.png",
+  "output": "E:\\Metroforge\\MetroForge-Publish\\packages\\assets\\authored\\stormglass-veilblade\\veilblade-attack-v2.png",
+  "frameSize": [
+    64,
+    64
+  ],
+  "frameCount": 8,
+  "sharedScale": 0.14948453608247422,
+  "bottomCenterAnchor": [
+    32,
+    62
+  ],
+  "frames": [
+    {
+      "frame": 0,
+      "sourceBox": [
+        13,
+        216,
+        272,
+        563
+      ],
+      "size": [
+        39,
+        52
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 1,
+      "sourceBox": [
+        0,
+        175,
+        271,
+        563
+      ],
+      "size": [
+        41,
+        58
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 2,
+      "sourceBox": [
+        0,
+        190,
+        271,
+        563
+      ],
+      "size": [
+        41,
+        56
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 3,
+      "sourceBox": [
+        0,
+        199,
+        272,
+        563
+      ],
+      "size": [
+        41,
+        54
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 4,
+      "sourceBox": [
+        0,
+        241,
+        272,
+        563
+      ],
+      "size": [
+        41,
+        48
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 5,
+      "sourceBox": [
+        0,
+        231,
+        271,
+        563
+      ],
+      "size": [
+        41,
+        50
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 6,
+      "sourceBox": [
+        0,
+        210,
+        271,
+        563
+      ],
+      "size": [
+        41,
+        53
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    },
+    {
+      "frame": 7,
+      "sourceBox": [
+        0,
+        187,
+        260,
+        563
+      ],
+      "size": [
+        39,
+        56
+      ],
+      "anchor": [
+        32,
+        62
+      ]
+    }
+  ],
+  "status": "candidate",
+  "productionApproved": false
+}

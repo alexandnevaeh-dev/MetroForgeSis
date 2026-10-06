@@ -1,0 +1,24 @@
+{
+  "release": "E:/MetroForgeData/Releases/MetroForge-castle-backgrounds-20261004-v3",
+  "castleSource": "E:\\MetroForgeData\\TestArtifacts\\biome-backgrounds-final-20261004\\games\\stormglass-castle",
+  "castleTarget": "E:\\MetroForgeData\\Releases\\MetroForge-castle-backgrounds-20261004-v3\\UserData\\games\\stormglass-castle",
+  "castleFiles": 1644,
+  "castleAddedArt": [
+    {
+      "path": "assets/generated/pixel_art_gothic_castle_hall_vaulted_arc_a1d1376f-0bb2-4f17-8b52-a51400c129ae.png",
+      "sha256": "71bc5aec89759707ca9c9c3b7020c430c81aff9eca739dc452861bd78b9cc650"
+    },
+    {
+      "path": "assets/generated/pixel_art_gothic_castle_hall_vaulted_arc_a1d1376f-0bb2-4f17-8b52-a51400c129ae_source.png",
+      "sha256": "31e74d18e9035beaaba8de0a9768468ca5bcc1ab3ca32c0c47ff11e0c7209c29"
+    }
+  ],
+  "castleMetadataChanges": [
+    "GAME_SET.json asset/provenance additions",
+    "validation_report.json truthful partial native results, replacing controlled UI invalidation sentinel"
+  ],
+  "quantumFiles": 310,
+  "quantumByteIdentical": true,
+  "quantumGameplayRerun": false,
+  "productionReady": false
+}

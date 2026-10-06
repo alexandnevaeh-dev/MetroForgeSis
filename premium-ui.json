@@ -1,0 +1,18 @@
+{
+  "profile": "product-admin",
+  "sourceRoots": ["apps/desktop/src"],
+  "locale": "en-US",
+  "canonicalMap": "UX-CONTRACT.md",
+  "requiredCapabilities": ["Select/Listbox", "Form", "Scrollbar", "CRUD"],
+  "ownership": { "Select/Listbox": "native" },
+  "requiredCommands": ["unit", "build", "connections"],
+  "commands": {
+    "unit": "node node_modules/vitest/vitest.mjs run apps/desktop/electron/credentials.test.ts apps/desktop/src/studio/aiOpsShared.test.ts apps/desktop/src/studio/creation-contract.test.ts apps/desktop/electron/provider-fetch.test.ts",
+    "build": "node scripts/desktop-build.mjs --native",
+    "connections": "node scripts/verify-connections-ui.mjs"
+  },
+  "evidence": {
+    "crudFullFlow": "scripts/verify-connections-ui.mjs",
+    "failurePaths": "apps/desktop/electron/credentials.test.ts"
+  }
+}
