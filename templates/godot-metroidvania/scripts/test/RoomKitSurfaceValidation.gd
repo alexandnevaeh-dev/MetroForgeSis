@@ -35,6 +35,16 @@ func _ready() -> void:
 		check(id+" background stays clipped to authored room bounds",interior != null and interior.clip_contents and interior.size.is_equal_approx(room_size))
 		check(id+" brick backwall matches room dimensions",backwall != null and backwall.position == Vector2.ZERO and backwall.dimensions.is_equal_approx(room_size))
 		check(id+" collision surface renderer exists",kit.get("surface_views") is Array)
+		for body in room.get_children():
+			if not body is StaticBody2D or not (String(body.name).begins_with("MasonryRoof_") or String(body.name).begins_with("MasonryPier_")):
+				continue
+			var collision := body.get_node_or_null("CollisionShape2D") as CollisionShape2D
+			var visual := kit.get_node_or_null("Brick_"+String(body.name))
+			var matches := false
+			if collision != null and collision.shape is RectangleShape2D and visual != null:
+				var bounds := Rect2(body.position+collision.position-collision.shape.size*0.5,collision.shape.size)
+				matches = visual.position.is_equal_approx(bounds.position) and visual.dimensions.is_equal_approx(bounds.size) and visual.get_meta("collision_body")==body
+			check(id+" "+String(body.name)+" masonry matches real collider",matches)
 		if not kit.get("surface_views") is Array:
 			continue
 		var expected_count := 0

@@ -1806,6 +1806,13 @@ export class AssetPipeline {
           ),
         'animation',
       );
+      if (options.gameDna.archetype === 'SIDE_VIEW_METROIDVANIA' || options.gameDna.archetype === 'SIDE_VIEW_PLATFORMER') {
+        recordAsset(
+          authoredEnemySheet(`${enemyId}_run.png`, `assets/enemies/${enemyId}_run.png`, 'run') ??
+            this.buildRunSheetAsset(enemyId, enemySpec, `assets/enemies/${enemyId}_run.png`, 12, tileSize, enemySource),
+          'animation',
+        );
+      }
       recordAsset(
         authoredEnemySheet(`${enemyId}_hurt.png`, `assets/enemies/${enemyId}_hurt.png`, 'hurt') ??
           this.buildHurtSheetAsset(
@@ -1876,8 +1883,8 @@ export class AssetPipeline {
           signal: options.signal,
           tileSize,
           spec: enemySpec,
-          // EnemyController.gd only ever plays "idle"/"walk"/"attack"/"hurt"/"death" by name (no
-          // "run" check exists), and attack/hurt/death already have real multi-frame sheets wired
+          // EnemyController.gd also uses the run strip for charge/fast movement.
+          // Run/attack/hurt/death already have multi-frame sheets wired
           // via attack_sheet_path/hurt_sheet_path/death_sheet_path — generating single-frame pose
           // stills for those names would make AnimatedAssetSprite.gd's _load_pose_overrides()
           // clear() and replace those sheets with a static frame. Only "idle" is both consumed

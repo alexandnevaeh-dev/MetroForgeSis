@@ -2,6 +2,14 @@ import {describe,it,expect} from 'vitest';
 import {buildStormglassInteriorMasonry,type RoomAssemblyOptions} from './room-assembler.js';
 const options = {width:2048,height:1280,hasTileset:true,tileSize:32,stormglassRoomTheme:'library-reading',connections:[{direction:'left'},{direction:'right'}]} as RoomAssemblyOptions;
 describe('Sunken Library enclosure',()=>{
+ it('gives the Archive Gallery a wider hall with compact vestibules',()=>{
+  const volumes=buildStormglassInteriorMasonry({...options,stormglassRoomTheme:'archive-gallery'});
+  expect(volumes.filter(v=>v.name.startsWith('MasonryRoof')).map(v=>[v.x,v.width,v.height]))
+    .toEqual([[0,384,960],[384,1280,832],[1664,384,960]]);
+  const piers=volumes.filter(v=>v.name.startsWith('MasonryPier'));
+  expect(piers).toHaveLength(2);
+  for(const pier of piers)expect(1216-pier.y-pier.height).toBe(192);
+ });
  it('encloses three unequal chamber spans with two clear walking portals',()=>{
   const volumes=buildStormglassInteriorMasonry(options);
   const roofs=volumes.filter(v=>v.name.startsWith('MasonryRoof'));

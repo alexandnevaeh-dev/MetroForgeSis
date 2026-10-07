@@ -18,10 +18,23 @@ func _draw() -> void:
 			if right <= left or bottom <= top:
 				continue
 			var face := Rect2(left, top, right-left, bottom-top)
-			var variation := float((row * 7 + column * 3) % 5) * 0.025
-			draw_rect(face, stone.lightened(variation))
-			draw_line(face.position, Vector2(right, top), stone.lightened(0.2), 1.0)
+			var variation := float((row * 7 + column * 3) % 7) * 0.015
+			var material := stone.lightened(variation)
+			draw_rect(face, material)
+			# Warm upper bevel and cool lower recess tie the masonry to the
+			# relief lighting in the Gothic facade kit. All detail stays in face.
+			if face.size.y > 8.0:
+				draw_rect(Rect2(left,top+2.0,face.size.x,2.0),material.lightened(0.06))
+				draw_rect(Rect2(left,bottom-5.0,face.size.x,4.0),material.darkened(0.12))
+			if face.size.x > 8.0:
+				draw_rect(Rect2(right-3.0,top,2.0,face.size.y),material.darkened(0.14))
+			draw_line(face.position, Vector2(right, top), material.lightened(0.14), 1.0)
 			draw_line(Vector2(left, bottom-1.0), Vector2(right, bottom-1.0), stone.darkened(0.3), 1.0)
+			if face.size.x > 18.0 and face.size.y > 12.0:
+				for fleck in range(5):
+					var fx := left+4.0+float((row*17+column*29+fleck*13)%int(face.size.x-8.0))
+					var fy := top+4.0+float((row*11+column*7+fleck*9)%int(face.size.y-8.0))
+					draw_rect(Rect2(fx,fy,2.0,1.0),material.lightened(0.08) if fleck%2==0 else material.darkened(0.1))
 			# Sparse, deterministic wear belongs to the brick, never beyond its face.
 			if (row*13+column*7)%11 == 0 and face.size.x > 16.0 and face.size.y > 12.0:
 				var crack := Vector2(left+face.size.x*0.6, top+4.0)

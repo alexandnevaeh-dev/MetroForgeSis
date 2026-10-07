@@ -1,0 +1,22 @@
+import {readFileSync,existsSync,mkdirSync,writeFileSync} from 'node:fs';
+import {resolve,join} from 'node:path';
+import {createHash} from 'node:crypto';
+const project=resolve(process.argv[2]??''),output=resolve(process.argv[3]??'');
+if(!process.argv[2]||!process.argv[3]||!/^e:[\\/]/i.test(output))throw new Error('Provide a game and fresh E: report directory');
+if(existsSync(join(output,'enemy-sheet-audit.json')))throw new Error('Preserve previous audit; use fresh output');
+const dna=JSON.parse(readFileSync(join(project,'game_dna.json'),'utf8'));
+if(dna.archetype!=='SIDE_VIEW_METROIDVANIA')throw new Error('This audit is side-view only');
+const enemies=JSON.parse(readFileSync(join(project,'data/enemies/enemies.json'),'utf8')).enemies;
+const clips=['idle','walk','run','attack','hurt','death'];
+const actors=enemies.map(enemy=>({id:enemy.id,name:enemy.name,sheets:clips.map(clip=>{
+ const path=`assets/enemies/${enemy.id}_${clip}.png`,file=join(project,path);
+ if(!existsSync(file))return {clip,path,present:false};
+ const bytes=readFileSync(file),png=bytes.length>=24&&bytes.subarray(0,8).toString('hex')==='89504e470d0a1a0a'&&bytes.toString('ascii',12,16)==='IHDR';
+ const width=png?bytes.readUInt32BE(16):0,height=png?bytes.readUInt32BE(20):0;
+ return {clip,path,present:true,png,width,height,squareStrip:height>0&&width%height===0,inferredSquareFrameCount:height>0&&width%height===0?width/height:null,sha256:createHash('sha256').update(bytes).digest('hex')};
+})}));
+const missing=actors.flatMap(actor=>actor.sheets.filter(sheet=>!sheet.present).map(sheet=>({id:actor.id,clip:sheet.clip})));
+mkdirSync(output,{recursive:true});
+const result={project,actors,actorCount:actors.length,missing,missingCount:missing.length,scope:'Read-only clip inventory. Square-strip dimensions are inferred, not animation metadata validation. No art quality, correct anatomy, frame isolation, engine parity or production approval claim.'};
+writeFileSync(join(output,'enemy-sheet-audit.json'),JSON.stringify(result,null,2));
+console.log(JSON.stringify({actorCount:actors.length,missingCount:missing.length,missingByClip:Object.fromEntries(clips.map(clip=>[clip,missing.filter(row=>row.clip===clip).length]))}));

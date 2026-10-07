@@ -351,7 +351,13 @@ func _execute_transition(_world: Node, host: Node, from_room: String, to_room: S
 		Input.action_press("move_up")
 	var entry := _transition_entry_point(transition)
 	var walk_timeout := _walk_timeout_for((player as Node2D).global_position, entry)
-	if not await _walk_player_to(host, player, entry, walk_timeout):
+	var arrived := await _walk_player_to(host, player, entry, walk_timeout)
+	# Boss-room loading frees the outgoing actor before its exit-lock await
+	# publishes the destination. Require the exact destination within a bound;
+	# an unrelated room, ordinary stall or live-player timeout still fails.
+	if not arrived and not is_instance_valid(player):
+		arrived = await _wait_room(host, to_room, 2.0)
+	if not arrived:
 		_fail_stage = "walk_timeout"
 		return false
 
@@ -414,7 +420,7 @@ func _follow_switchback_ascent(host: Node, player: Node, transition: Node) -> bo
 	# at the flight endpoint hits the ceiling outside the authored opening,
 	# then falls beneath the landing while jump remains held.
 	var entry := _transition_entry_point(transition)
-	var approach := Vector2(entry.x + 64.0, room.to_global(Vector2(0,128)).y)
+	var approach := Vector2(entry.x, room.to_global(Vector2(0,128)).y)
 	if not await _walk_player_to(host, player, approach, 8.0):
 		return false
 	Input.action_release("jump")

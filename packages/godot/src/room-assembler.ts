@@ -838,7 +838,7 @@ export function buildRoomAssemblyOptions(
     layout.platforms.splice(0,layout.platforms.length,...(galleryRoom.theme==='stairwell'?buildStormglassGalleryStairPlatforms(height,galleryRoom.id==="room_042"):[]));
     layout.pits.splice(0,layout.pits.length,...stormglassGalleryDescentPits(width,tileSize,connections,galleryRoom.theme,roomId));
   }
-  if (authoredCampaignSize && nodeMeta.stormglassRoomTheme === 'library-reading') {
+  if (authoredCampaignSize && ['library-reading','archive-gallery'].includes(String(nodeMeta.stormglassRoomTheme))) {
     // The enclosed reading wing owns its geometry; no random floating shelves.
     layout.cells.splice(0, layout.cells.length);
     layout.platforms.splice(0, layout.platforms.length);
@@ -1475,17 +1475,21 @@ export function buildStormglassInteriorMasonry(options: RoomAssemblyOptions): Co
   if (!options.stormglassRoomTheme || options.stormglassRoomTheme === 'stairwell') return [];
   if (options.connections.some(connection => connection.direction === 'up')) return [];
   const floor = options.hasTileset ? floorTopPx(options.height, options.tileSize || 16) : options.height - 96;
-  if (options.stormglassRoomTheme === 'library-reading') {
+  if (['library-reading','archive-gallery'].includes(options.stormglassRoomTheme)) {
     // Two sheltered chambers open into a taller central reading hall. The solid
     // roof fills unused canvas and the 192px portals preserve the combat route.
-    const spans = [
+    const spans = options.stormglassRoomTheme === 'archive-gallery' ? [
+      {x:0,width:options.width*0.1875,clearance:256},
+      {x:options.width*0.1875,width:options.width*0.625,clearance:384},
+      {x:options.width*0.8125,width:options.width*0.1875,clearance:256},
+    ] : [
       {x:0,width:options.width*0.25,clearance:320},
       {x:options.width*0.25,width:options.width*0.5,clearance:448},
       {x:options.width*0.75,width:options.width*0.25,clearance:320},
     ];
     return spans.flatMap((span,index) => [
       {name:`MasonryRoof_${index}`,x:span.x,y:0,width:span.width,height:Math.max(64,floor-span.clearance)},
-      ...(index===0?[]:[{name:`MasonryPier_${index}`,x:span.x-32,y:Math.max(64,floor-320),width:64,height:128}]),
+      ...(index===0?[]:[{name:`MasonryPier_${index}`,x:span.x-32,y:Math.max(64,floor-(options.stormglassRoomTheme==='archive-gallery'?256:320)),width:64,height:options.stormglassRoomTheme==='archive-gallery'?64:128}]),
     ]);
   }
   const bayWidth = 768;

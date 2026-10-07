@@ -283,7 +283,10 @@ func _begin_charge(dir: int) -> void:
 	_charging = true
 	_charge_timer = CHARGE_DURATION
 	velocity.x = float(_direction) * move_speed * CHARGE_SPEED_MULT
-	_play_attack_animation()
+	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("run") and sprite.sprite_frames.get_frame_count("run") > 1:
+		_play_move("run")
+	else:
+		_play_attack_animation()
 
 func _process_teleport(delta: float) -> void:
 	velocity.x = 0
