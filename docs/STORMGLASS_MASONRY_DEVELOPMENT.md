@@ -1,5 +1,25 @@
 # Stormglass masonry development evidence — 2026-10-06
 
+The room inspector now reads per-room kit metadata for native Stormglass
+projects with complete referenced manifests/atlases and an existing room scene.
+It displays wall material and furnishing roles rather than offering panorama
+controls that the runtime kit hides. Missing, unsafe, malformed, and unrelated
+kit data retain fallback behavior. Four focused inspector/geometry checks and
+the desktop build passed. Actual app inspection confirmed the architecture
+section, absence of ineffective Apply background controls, preserved geometry,
+and unchanged room records. The canvas remains a geometry preview; exact
+themed-asset preview and editable room-kit composition remain unfinished.
+
+The editor now previews 32 shallow treads and a 40px handrail on each compiled
+stair flight, matching the native renderer's geometric detail. Three focused
+preview tests and the desktop build passed. Actual app inspection of room_002
+found seven flight polygons, 224 treads, seven handrails, and seven native
+collision polygons. The middle doorway remained clipped correctly and room
+records stayed byte-for-byte unchanged. Capture and proof:
+`E:/MetroForgeData/Development/stormglass-masonry-20261006-v1/editor-1791335868045`.
+This is editor geometry parity; its generic background is not native themed-kit
+art parity or finished presentation.
+
 The old themed kit filled rectangular canvases with repeating façade art and only
 dressed floors/landings. The new opening experiment adds actual solid roof masses
 and piers, with connected low hall openings. Collision rectangles and brick faces

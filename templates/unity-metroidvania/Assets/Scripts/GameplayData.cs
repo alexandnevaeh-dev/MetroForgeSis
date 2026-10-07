@@ -4,6 +4,7 @@ using UnityEngine;
 [Serializable]
 public class GameplayRect
 {
+    public bool oneWay;
     public string name;
     public float x;
     public float y;

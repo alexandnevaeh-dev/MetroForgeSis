@@ -1,4 +1,5 @@
 import { readTopDownTerrain } from './topdown-terrain.js';
+import {readActiveRoomKits} from './room-kit-inspector.js';
 import { resolvePropAsset } from './prop-asset.js';
 import { topDownRoomRecords } from './topdown-room-records.js';
 import { latestPhases } from './latest-phases.js';
@@ -1730,10 +1731,12 @@ export function registerIpcHandlers(cwd: string): void {
       return topDownRoomRecords(overworld);
     }
     const project = loadProjectContext(projectPath);
+    const activeRoomKits = readActiveRoomKits(projectPath, project.roomIds);
     return project.roomIds.map((id) => ({
       id,
       ...(project.roomsData[id] ?? {}),
       tileSize: project.roomsData[id]?.tileSize ?? project.gameDna.technical?.tileSize,
+      ...(activeRoomKits[id] ? {themedRoomKit:activeRoomKits[id]} : {}),
     }));
   });
 

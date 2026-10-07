@@ -25,14 +25,19 @@ try{
  proof.wall=await wall.locator('rect').first().evaluate(node=>Object.fromEntries(['x','y','width','height'].map(k=>[k,Number(node.getAttribute(k))])));
  proof.collision=await page.evaluate(path=>window.metroforge.getRoomCollision(path,'room_002'),project);
  proof.stairPolygons=await page.locator('.room-editor-canvas [data-stair-flight]').count();
+ proof.stairTreads=await page.locator('.room-editor-canvas [data-stair-tread]').count();
+ proof.stairHandrails=await page.locator('.room-editor-canvas [data-stair-handrail]').count();
  proof.nativeStairPolygons=proof.collision.rects.filter(r=>r.path.includes('StairFlight_')&&r.points?.length===4).length;
  proof.clipped=await wall.locator('..').locator('..').getAttribute('overflow')==='hidden';
  proof.preserved=before===sha();
- proof.passed=proof.wall.y===704&&proof.wall.height===768&&proof.clipped&&proof.preserved&&proof.stairPolygons===7&&proof.nativeStairPolygons===7;
+ proof.architectureInspector=await page.getByText('Room architecture',{exact:true}).count();
+ proof.panoramaApplyControls=await page.getByRole('button',{name:'Apply background',exact:true}).count();
+ proof.passed=proof.wall.y===704&&proof.wall.height===768&&proof.clipped&&proof.preserved&&proof.stairPolygons===7&&proof.nativeStairPolygons===7&&proof.stairTreads===224&&proof.stairHandrails===7;
  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
  await page.waitForTimeout(500);
  proof.selectedRoom=await page.getByRole('option',{name:/room_002/}).getAttribute('aria-selected');
  proof.passed=proof.passed&&proof.selectedRoom==='true';
+ proof.passed=proof.passed&&proof.architectureInspector===1&&proof.panoramaApplyControls===0;
  const png=await app.evaluate(async({BrowserWindow})=>BrowserWindow.getAllWindows()[0].webContents.capturePage(undefined,{stayHidden:true,stayAwake:true}).then(i=>i.toPNG().toString('base64')));
  writeFileSync(output+'/editor.png',Buffer.from(png,'base64'));
 }catch(e){proof.error=String(e);}finally{writeFileSync(output+'/proof.json',JSON.stringify(proof,null,2));if(app)await app.close();console.log(JSON.stringify({output,passed:proof.passed,error:proof.error}));if(!proof.passed)process.exitCode=1;}

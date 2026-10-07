@@ -38,7 +38,69 @@ The main repository index hash remained
 
 ## Remaining work
 
+Native checkpoint/death validation subsequently passed ten checks in the fresh
+audio-enabled app project. The fixture enters the real SavePoint Area2D through
+movement, applies lethal HealthComponent damage, and waits for the automatic
+game-over and checkpoint respawn sequence. It verifies the saved stage, a fresh
+actor, restored health, grounded placement, and resumed movement. Stage setup is
+direct and enemies are removed; this remains separate from combat acceptance.
+Evidence: `E:/MetroForgeData/Development/platformer-checkpoint-20261006/native.log`.
+The initial fixture overlapped the return-door sensor; its failed log is retained.
+
 Artwork is fallback starter art; character/boss/NPC animation warnings remain.
-Native combat, final victory, checkpoint death/respawn, full AI-generation
+Full AI-generation
 acceptance, Unity/Unreal runtime evidence and finished artistic presentation are
 not established by these tests. The application and game are not production-ready.
+
+## Cross-engine one-way ledge export
+
+The shared gameplay pack now retains `oneWay: true` on Platformer ledges while
+floors and legacy Metroidvania solids keep their existing behavior. Unity's
+runtime assembler consumes the flag with a PlatformEffector2D and an effector
+collider. Unreal assembly emits an explicit warning because its native runtime
+does not yet consume this behavior. It must not be treated as Platformer parity.
+Engine package compilation and 31 gameplay-pack/Unity/Unreal assembly tests
+passed. Native Unity 6000.3.0f1 subsequently compiled the current runtime and
+passed upward ledge passage, downward landing, and legacy solid-collider checks.
+The fixture invokes the actual GameBootstrap solid constructor with serialized
+gameplay data, then uses native Physics2D simulation. It does not establish a
+full Unity gameplay campaign, visual acceptance, or Unreal runtime parity.
+Its original package-resolution attempt failed certificate verification; exact
+cached package versions were copied into isolated E: offline package folders.
+No certificate validation was disabled. Logs and the positive proof are at
+`E:/MetroForgeData/Development/unity-platformer-oneway-20261006`.
+The repeatable Editor entry point is `tests/unity/PlatformerOneWayValidation.cs`.
+Evidence: `E:/MetroForgeData/Development/platformer-engine-oneway-20261006/tests.log`.
+
+## Full ordered campaign input results
+
+The fresh eight-stage app project completed seven transitions, activated the
+room_003 checkpoint, and defeated the final boss using Input only. All encounters
+remained enabled. The run recorded 25 attacks, 50 damage taken, zero deaths,
+and victory after about 48 seconds. No geometry, actor health, or damage rules
+were changed. Evidence: `platformer-campaign-20261006/probe-native.log` under
+`E:/MetroForgeData/Development`.
+
+The initial attempt exposed a playtest-agent ground ray starting inside floor
+colliders; it timed out in the room_004 gap. Its failed log remains preserved.
+The ray now starts eight pixels above the feet and probes 24 pixels below them.
+The runner's completed-transitions check also now requires every planned
+transition, rather than accepting any positive number of transitions. The
+visible repeat with this stricter runner also passed all eight checks: seven
+transitions, 25 attacks, 40 damage taken, no deaths, and victory. Its log is
+`platformer-campaign-20261006/strict-visible.log` under the same evidence root.
+
+### Separate arena test
+
+The fresh manual Platformer project passed a separate native arena test using
+the existing PlaytestAgent combat controller. Twenty real player attacks reduced
+the final boss from 200 health to zero and triggered the boss-defeated signal
+and victory state. The player took damage during the encounter. No enemies were
+removed, health granted, damage invoked directly, or victory signals forced.
+The fixture loads the final arena directly; it does not prove an uninterrupted
+eight-stage combat campaign. Headless evidence is retained at
+`E:/MetroForgeData/Development/platformer-boss-20261006/native.log`.
+The visible OpenGL repeat also passed: 25 attempted attacks, 20 boss damage
+events, victory, and 60 remaining player health. Entry/result PNG captures and
+`visible.log` are retained beside the headless evidence. The capture confirms
+starter fallback presentation, not finished artwork.

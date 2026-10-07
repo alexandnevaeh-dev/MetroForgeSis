@@ -46,7 +46,8 @@ func _ready() -> void:
 	_check("playtest_route_file_present", FileAccess.file_exists("res://playtest_route.json"))
 	_check("playtest_persona_configured", _telemetry.get("personaId", "") != "")
 	_check("playtest_used_input_simulation", agent.used_input_simulation)
-	_check("playtest_completed_transitions", agent.steps_completed > 0)
+	var planned_transitions: int = int(_telemetry.get("transitionsPlanned",0))
+	_check("playtest_completed_transitions", planned_transitions > 0 and agent.steps_completed == planned_transitions)
 	_check("playtest_reached_victory_flow", outcome.get("ok", false))
 	_check(
 		"playtest_victory_state_or_boss_defeated",

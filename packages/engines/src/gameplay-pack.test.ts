@@ -20,6 +20,20 @@ const dna: GameDNA = {
 };
 
 describe('buildGameplayPack', () => {
+  it('exports jump-through ledges only for Platformer while preserving solid floors', () => {
+    const roomIds=['room_000','room_001'];
+    const graph: WorldGraph={version:'0.1.0',seed:3,nodes:roomIds.map(id=>({id,type:'room',label:id,metadata:{archetype:'tutorial',platformerStage:true,targetTileWidth:64,targetTileHeight:24}})),edges:[],regions:[]};
+    const progressionGraph: ProgressionGraph={version:'0.1.0',seed:3,startNodeId:roomIds[0]!,endNodeId:roomIds[1]!,nodes:[],edges:[],abilities:[],criticalPath:roomIds};
+    const input={outputDir:join(tmpdir(),'platformer-one-way-fixture'),roomIds,worldGraph:graph,progressionGraph,
+      textureFiles:new Map([['assets/tilesets/biome_0/source.png',Buffer.from('presence fixture')]])};
+    const platformer=buildGameplayPack({...input,gameDna:{...dna,archetype:'SIDE_VIEW_PLATFORMER',abilities:[]}});
+    const platforms=platformer.rooms.flatMap(room=>room.solids.filter(rect=>rect.name?.startsWith('Platform_')));
+    expect(platforms.length).toBeGreaterThan(0);
+    expect(platforms.every(rect=>rect.oneWay===true)).toBe(true);
+    expect(platformer.rooms.flatMap(room=>room.solids.filter(rect=>!rect.name?.startsWith('Platform_'))).every(rect=>!rect.oneWay)).toBe(true);
+    const metroidvania=buildGameplayPack({...input,gameDna:dna});
+    expect(metroidvania.rooms.flatMap(room=>room.solids).every(rect=>!rect.oneWay)).toBe(true);
+  });
   it('exports every authored guardian with its phases and boss animation sheets', () => {
     const roomIds = ['room_000', 'room_001', 'room_002'];
     const png = Buffer.alloc(24); png.set([0x89, 0x50, 0x4e, 0x47]); png.writeUInt32BE(512, 16); png.writeUInt32BE(64, 20);

@@ -785,8 +785,10 @@ func _walk_player_to(host: Node, player: Node, target: Vector2, timeout_sec: flo
 	return reached_x
 
 func _has_ground_ahead(body: CharacterBody2D, direction: float) -> bool:
-	var from := body.global_position + Vector2(direction * 28.0, 8.0)
-	var to := from + Vector2(0.0, 72.0)
+	# Actor origin is its feet. Start above the floor rather than inside a solid
+	# floor rectangle (ray queries normally do not report hits from inside).
+	var from := body.global_position + Vector2(direction * 28.0, -8.0)
+	var to := from + Vector2(0.0, 32.0)
 	var query := PhysicsRayQueryParameters2D.create(from, to, body.collision_mask)
 	query.exclude = [body.get_rid()]
 	return not body.get_world_2d().direct_space_state.intersect_ray(query).is_empty()

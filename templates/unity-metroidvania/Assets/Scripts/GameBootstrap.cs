@@ -736,6 +736,15 @@ public class GameBootstrap : MonoBehaviour
         go.transform.position = Coord.RectCenter(rect, room.height);
         var box = go.AddComponent<BoxCollider2D>();
         box.size = new Vector2(rect.width, rect.height);
+        if (rect.oneWay)
+        {
+            var platform = go.AddComponent<PlatformEffector2D>();
+            platform.useOneWay = true;
+            platform.useOneWayGrouping = true;
+            platform.surfaceArc = 170f;
+            platform.useSideFriction = false;
+            box.usedByEffector = true;
+        }
         var body = go.AddComponent<Rigidbody2D>();
         body.bodyType = RigidbodyType2D.Static;
         var sr = go.AddComponent<SpriteRenderer>();

@@ -33,6 +33,7 @@ import {
 } from './ui/index.js';
 
 type RoomRecord = {
+  themedRoomKit?: {wallRole:string;propRoles:string[]};
   masonryRects?: RoomMasonryRect[];
   stairFlights?: RoomStairFlight[];
   castleRegionPlan?: CastleRegionPreview;
@@ -600,6 +601,12 @@ export function RoomEditor() {
                       <p className="hint">Local masonry follows this room’s saved chamber plan. Panorama settings apply to other rooms.</p>
                       <p className="hint">The editor approximates the native stone shading. Play Preview to inspect architecture and lighting in game.</p>
                       {selected.castleRegionPlan.furnishings?.length ? <p className="hint">Saved furnishings appear in their chamber positions. Play Preview checks floor support, lighting and clearance.</p> : <p className="hint">Regenerate this room to include its furnishing layout in the editor preview.</p>}
+                    </InspectorSection>
+                  ) : selected.themedRoomKit ? (
+                    <InspectorSection title="Room architecture">
+                      <p className="hint">Walls: {selected.themedRoomKit.wallRole.replaceAll('_',' ')}.</p>
+                      {selected.themedRoomKit.propRoles.length>0 && <p className="hint">Furnishings: {selected.themedRoomKit.propRoles.map(role=>role.replaceAll('_',' ')).join(', ')}.</p>}
+                      <p className="hint">The canvas shows built geometry. Play Preview shows this room’s architecture, decorations, and lighting.</p>
                     </InspectorSection>
                   ) : <BiomeBackgroundEditor key={JSON.stringify([selectedPath, selected.biomeId])} projectPath={selectedPath} biomeId={selected.biomeId ?? "biome_0"} onPreview={setCastleBackground} />}
                   <InspectorSection title="Room">

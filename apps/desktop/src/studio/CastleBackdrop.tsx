@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import {RoomMasonryPreview,validRoomMasonry,validStairFlights,type RoomMasonryRect,type RoomStairFlight} from './RoomMasonryPreview.js';
+import {RoomMasonryPreview,RoomStairPreview,validRoomMasonry,validStairFlights,type RoomMasonryRect,type RoomStairFlight} from './RoomMasonryPreview.js';
 import {
   CastleRegionBackdrop,
   validCastleRegionPreview,
@@ -12,8 +12,7 @@ export function CastleBackdrop(props:Parameters<typeof CastleBackdropArtwork>[0]
  return <svg x={0} y={0} width={props.width} height={props.height} viewBox={`0 0 ${props.width} ${props.height}`} overflow="hidden" pointerEvents="none">
   <CastleBackdropArtwork {...props}/>
   {validRoomMasonry(props.masonryRects,props.width,props.height)&&<RoomMasonryPreview rects={props.masonryRects}/>}
-  {validStairFlights(props.stairFlights,props.width,props.height)&&props.stairFlights.map((f,i)=><polygon key={i} data-stair-flight={i}
-    points={`${f.from.x},${f.from.y} ${f.to.x},${f.to.y} ${f.to.x},${f.to.y+f.thickness} ${f.from.x},${f.from.y+f.thickness}`} fill="#46516b" stroke="#a1aec5" strokeWidth={2}/>)}
+  {validStairFlights(props.stairFlights,props.width,props.height)&&props.stairFlights.map((flight,index)=><RoomStairPreview key={index} flight={flight} index={index}/>)}
  </svg>;
 }
 function CastleBackdropArtwork({

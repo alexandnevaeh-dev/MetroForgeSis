@@ -15,6 +15,8 @@ export interface GameplayNpc {
 }
 
 export interface GameplayRect {
+  /** Jump-through ledge; omitted retains legacy solid collision. */
+  oneWay?: boolean;
   name?: string;
   x: number;
   y: number;
