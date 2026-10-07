@@ -62,6 +62,8 @@ export const BOSS_ANIMATION_SPEC: Record<string, PlayerAnimationDefinition> = {
   death: { name: 'death', frameCount: 8, fps: 8, loop: false, mode: 'death-sink', minUniqueFrameRatio: 0.5 },
 };
 
-export function buildBossAnimationSidecar(): AnimationMetadataSidecar {
-  return buildAnimationMetadataSidecar(Object.values(BOSS_ANIMATION_SPEC));
+export function buildBossAnimationSidecar(includeSideViewRun = false): AnimationMetadataSidecar {
+  const clips = Object.values(BOSS_ANIMATION_SPEC);
+  if (includeSideViewRun) clips.push({name:'run',frameCount:12,fps:14,loop:true,mode:'run-cycle',minUniqueFrameRatio:0.8});
+  return buildAnimationMetadataSidecar(clips);
 }

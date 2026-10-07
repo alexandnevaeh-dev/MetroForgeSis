@@ -1475,6 +1475,19 @@ export function buildStormglassInteriorMasonry(options: RoomAssemblyOptions): Co
   if (!options.stormglassRoomTheme || options.stormglassRoomTheme === 'stairwell') return [];
   if (options.connections.some(connection => connection.direction === 'up')) return [];
   const floor = options.hasTileset ? floorTopPx(options.height, options.tileSize || 16) : options.height - 96;
+  if (options.stormglassRoomTheme === 'drowned-hall') {
+    // Broad flooded arcade bays retain their existing low platforms. Taller
+    // portals leave room for ordinary jumping instead of a low tunnel route.
+    const spans = [
+      {x:0,width:options.width*0.3125,clearance:384},
+      {x:options.width*0.3125,width:options.width*0.375,clearance:512},
+      {x:options.width*0.6875,width:options.width*0.3125,clearance:384},
+    ];
+    return spans.flatMap((span,index)=>[
+      {name:`MasonryRoof_${index}`,x:span.x,y:0,width:span.width,height:Math.max(64,floor-span.clearance)},
+      ...(index===0?[]:[{name:`MasonryPier_${index}`,x:span.x-32,y:Math.max(64,floor-384),width:64,height:128}]),
+    ]);
+  }
   if (['library-reading','archive-gallery'].includes(options.stormglassRoomTheme)) {
     // Two sheltered chambers open into a taller central reading hall. The solid
     // roof fills unused canvas and the 192px portals preserve the combat route.

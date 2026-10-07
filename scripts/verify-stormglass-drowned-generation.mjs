@@ -1,0 +1,31 @@
+import {_electron} from 'playwright';import {createRequire} from 'node:module';import {mkdirSync,writeFileSync,readdirSync,existsSync,readFileSync} from 'node:fs';import {join,resolve,dirname} from 'node:path';import {fileURLToPath} from 'node:url';
+const repo=resolve(dirname(fileURLToPath(import.meta.url)),'..'),desktop=join(repo,'apps/desktop'),require=createRequire(join(desktop,'package.json'));
+const output=join(repo,'reports/game-tests/20261007-drowned-generation',String(Date.now()));for(const name of ['temp','data','appdata','localappdata','games'])mkdirSync(join(output,name),{recursive:true});writeFileSync(join(output,'empty.env'),'');
+const env={...process.env,METROFORGE_ENV_FILE:join(output,'empty.env'),TEMP:join(output,'temp'),TMP:join(output,'temp'),APPDATA:join(output,'appdata'),LOCALAPPDATA:join(output,'localappdata'),METROFORGE_DATA_DIR:join(output,'data'),METROFORGE_GENERATED_GAMES_DIR:join(output,'games'),METROFORGE_DESKTOP_HIDDEN:'1'};
+env.GODOT_EXECUTABLE='E:/MetroForgeData/Godot/4.6/Godot_v4.6-stable_win64_console.exe';
+for(const key of Object.keys(env))if(/API_KEY|ACCESS_TOKEN|AUTH_TOKEN/.test(key))delete env[key];for(const key of ['ELECTRON_RUN_AS_NODE','VITE_DEV_SERVER_URL','METROFORGE_DESKTOP_SMOKE','METROFORGE_OPEN_DEVTOOLS','DIFFUSERS_PYTHON','DIFFUSERS_MODEL_ID'])delete env[key];
+let app;const proof={scope:'Actual native creation submission and IPC pipeline, Local Only, isolated E storage; no fake provider',phases:[],passed:false};
+try{
+ app=await _electron.launch({executablePath:require('electron'),args:[desktop],cwd:repo,env,timeout:60000});const page=await app.firstWindow();page.setDefaultTimeout(60000);
+ await app.evaluate(({BrowserWindow})=>{const w=BrowserWindow.getAllWindows()[0];w.webContents.setBackgroundThrottling(false);w.setBounds({width:1500,height:1000});});
+ await page.getByRole('button',{name:/New Game/}).first().click();await page.getByLabel('World layout',{exact:true}).selectOption('stormglass-gallery');await page.getByLabel('Mode',{exact:true}).selectOption('LOCAL_ONLY');await page.getByLabel('Project title',{exact:true}).fill('Stormglass Reliquary - Drowned Generation 20261007');
+ await page.evaluate(()=>{window.__generationProbePhases=[];window.metroforge.onGenerationProgress(data=>window.__generationProbePhases.push(data));});
+ await page.getByRole('button',{name:'Generate Game',exact:true}).click();
+ let job;const deadline=Date.now()+600000;let last='';
+ while(Date.now()<deadline){const jobs=await page.evaluate(()=>window.metroforge.listGenerationQueue());job=jobs.find(j=>j.type==='generate_game');const phases=await page.evaluate(()=>window.__generationProbePhases);proof.phases=phases;const latest=phases.at(-1);const current=latest?latest.phase+':'+latest.status:'';if(current!==last){console.log('GENERATION '+current);last=current;}if(job&&['failed','completed','cancelled'].includes(job.status.toLowerCase()))break;await page.waitForTimeout(500);}
+ proof.job=job;proof.passed=job?.status.toLowerCase()==='completed';
+ for(const directory of readdirSync(join(output,'games'),{withFileTypes:true}).filter(e=>e.isDirectory())){const folder=join(output,'games',directory.name),file=join(folder,'world_graph.json');if(existsSync(file)){const graph=JSON.parse(readFileSync(file,'utf8'));proof.project=folder;proof.roomCount=graph.nodes.filter(n=>n.type==='room').length;proof.bossRooms=graph.nodes.filter(n=>n.metadata?.bossArena).map(n=>n.id);
+const node=graph.nodes.find(n=>n.id==='room_021');
+const scene=readFileSync(join(folder,'scenes/rooms/room_021.tscn'),'utf8');
+const rooms=JSON.parse(readFileSync(join(folder,'data/rooms/rooms.json'),'utf8')).rooms;
+proof.archive={theme:node?.metadata?.stormglassRoomTheme,label:node?.label,roofCount:(scene.match(/\[node name="MasonryRoof_/g)??[]).length,pierCount:(scene.match(/\[node name="MasonryPier_/g)??[]).length,platformCount:(scene.match(/\[node name="Platform_/g)??[]).length,recordMasonryCount:rooms.room_021?.masonryRects?.filter(r=>r.name.startsWith('Masonry')).length};
+const enemies=JSON.parse(readFileSync(join(folder,'data/enemies/enemies.json'),'utf8')).enemies;
+proof.enemyRuns=enemies.map(enemy=>{const file=join(folder,`assets/enemies/${enemy.id}_run.png`);if(!existsSync(file))return {id:enemy.id,present:false};const bytes=readFileSync(file);const png=bytes.length>=24&&bytes.subarray(0,8).toString('hex')==='89504e470d0a1a0a';const width=png?bytes.readUInt32BE(16):0,height=png?bytes.readUInt32BE(20):0;return {id:enemy.id,present:true,png,width,height,valid:png&&height===64&&width%64===0&&width/64>1};});
+proof.enemyRunExportPassed=proof.enemyRuns.length>0&&proof.enemyRuns.every(sheet=>sheet.valid===true);
+const drownedScene=readFileSync(join(folder,'scenes/rooms/room_011.tscn'),'utf8');
+const drowned=graph.nodes.find(n=>n.id==='room_011');
+proof.drowned={theme:drowned?.metadata?.stormglassRoomTheme,roofs:(drownedScene.match(/\[node name="MasonryRoof_/g)??[]).length,piers:(drownedScene.match(/\[node name="MasonryPier_/g)??[]).length,platforms:rooms.room_011?.platforms};
+proof.drownedExportPassed=proof.drowned.theme==='drowned-hall'&&proof.drowned.roofs===3&&proof.drowned.piers===2&&JSON.stringify(proof.drowned.platforms)===JSON.stringify([{x:224,y:1120,width:192,height:32},{x:1472,y:1120,width:128,height:32}]);
+proof.archiveExportPassed=proof.archive.theme==='archive-gallery'&&proof.archive.roofCount===3&&proof.archive.pierCount===2&&proof.archive.platformCount===0&&proof.archive.recordMasonryCount===5;}}
+ await page.waitForFunction(()=>document.getAnimations().every(a=>a.playState!=='running'||a.effect?.getComputedTiming().iterations===Infinity));const png=await app.evaluate(async({BrowserWindow})=>BrowserWindow.getAllWindows()[0].webContents.capturePage(undefined,{stayHidden:true,stayAwake:true}).then(i=>i.toPNG().toString('base64')));writeFileSync(join(output,'generation-result.png'),Buffer.from(png,'base64'));if(!proof.passed)process.exitCode=1;
+}catch(e){proof.error=String(e);process.exitCode=1;}finally{writeFileSync(join(output,'proof.json'),JSON.stringify(proof,null,2));if(app)await app.close();console.log(JSON.stringify({passed:proof.passed,error:proof.error,job:proof.job,roomCount:proof.roomCount,archiveExportPassed:proof.archiveExportPassed,project:proof.project,output}));}

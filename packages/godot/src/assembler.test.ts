@@ -35,6 +35,27 @@ const minimalDna: GameDNA = {
 };
 
 describe('GodotProjectAssembler', () => {
+  it.each([96, 160])('slices bosses from the final generated %ipx sheets after template copying', (size) => {
+    const outputDir = join(tmpdir(), `metroforge-boss-final-art-${size}-${Date.now()}`);
+    const roomIds = ['room_000', 'room_001'];
+    const worldGraph: WorldGraph = {version:'0.1.0', seed:1,
+      nodes:roomIds.map(id=>({id,type:'room',label:id,metadata:{}})),
+      edges:[{id:'e0',from:roomIds[0]!,to:roomIds[1]!,requirements:[],optional:false,bidirectional:true}],
+      regions:[{id:'region_0',name:'R0',biomeId:'biome_0',roomIds}]};
+    try {
+      const result = new GodotProjectAssembler().assemble({outputDir,gameDna:minimalDna,roomIds,worldGraph,
+        progressionGraph:{version:'0.1.0',seed:1,startNodeId:roomIds[0]!,endNodeId:roomIds[1]!,nodes:[],edges:[],abilities:[],criticalPath:roomIds},
+        gameContent:{enemies:[],bosses:[{id:'boss_final',name:'Guardian',lore:'Test',arenaRoomId:'room_001',health:200,
+          phases:[{phase:1,healthThreshold:1,attacks:['slam'],telegraphDuration:0.8,recoveryWindow:1.2}],weaknesses:[],visualPrompt:'Test'}],
+          quests:[],items:[],npcs:[],dialogues:[],shops:[]},
+        textureFiles:new Map([['assets/bosses/boss_final_walk.png',readFileSync(new URL(`./fixtures/boss-strip-${size}.png`,import.meta.url))]])});
+      expect(result.errors).toEqual([]);
+      expect(result.success).toBe(true);
+      const room = readFileSync(join(outputDir,'scenes/rooms/room_001.tscn'),'utf8');
+      expect(room).toContain(`frame_size = Vector2i(${size}, ${size})`);
+      expect(readFileSync(join(outputDir,'assets/bosses/boss_final_walk.png')).readUInt32BE(20)).toBe(size);
+    } finally {rmSync(outputDir,{recursive:true,force:true});}
+  });
   it('generates room scenes with transitions and asset paths', () => {
     const outputDir = join(tmpdir(), `metroforge-assembler-${Date.now()}`);
     mkdirSync(outputDir, { recursive: true });

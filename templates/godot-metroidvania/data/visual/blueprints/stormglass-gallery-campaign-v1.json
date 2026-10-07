@@ -250,7 +250,8 @@
           "screenSpanH": 2,
           "screenSpanV": 2,
           "targetTileWidth": 64,
-          "targetTileHeight": 40
+          "targetTileHeight": 40,
+          "stormglassRoomTheme": "drowned-hall"
         }
       },
       {

@@ -177,6 +177,7 @@ export class GodotProjectAssembler {
       mkdirSync(roomsDir, { recursive: true });
       const roomsData: Record<string, unknown> = {};
       let topDownOverworld: TopDownOverworld | undefined;
+      const deferredRoomScenes: Array<{roomId: string; index: number; options: ReturnType<typeof buildRoomAssemblyOptions>}> = [];
 
       if (genreUsesOverworldChunks(input.gameDna.archetype)) {
         const overworld =
@@ -318,9 +319,7 @@ export class GodotProjectAssembler {
           seed: input.gameDna.seed + i,
           textureExists,
         });
-        if (opts.isBossRoom) opts.bossFrameSize = resolveBossFrameSize(input.outputDir, opts.bossId);
-        const sceneContent = generateRoomScene(roomId, i, opts);
-        writeFileSync(join(roomsDir, `${roomId}.tscn`), sceneContent);
+        deferredRoomScenes.push({roomId, index: i, options: opts});
         roomsData[roomId] = {
           ...buildPublishedRoomRecord(roomId, i, opts),
           layoutMetrics: previousLayouts[previousLayouts.length - 1]!.metrics,
@@ -536,6 +535,13 @@ export class GodotProjectAssembler {
         patchCharacterSheetPathsForFoundryPack(input.outputDir, input.externalVisualPack);
       } else if (input.foundryThemed && genreSupports(input.gameDna.archetype, 'supportsPerRoomScenes')) {
         overlaidAuthoredPaths = overlayAuthoredVisualPolish(input.outputDir, templatePath);
+      }
+
+      // Resolve frame cells from the final emitted art, after generated textures and
+      // authored overlays replace template sheets. Earlier resolution read stale art.
+      for (const {roomId, index, options} of deferredRoomScenes) {
+        if (options.isBossRoom) options.bossFrameSize = resolveBossFrameSize(input.outputDir, options.bossId);
+        writeFileSync(join(roomsDir, `${roomId}.tscn`), generateRoomScene(roomId, index, options));
       }
 
       const incoming: AssetManifestEntry[] = [...(input.assetMetadata ?? [])];

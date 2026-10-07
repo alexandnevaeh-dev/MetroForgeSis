@@ -1,5 +1,19 @@
 # Platformer development evidence — 2026-10-06
 
+## Fresh app and visible campaign repeat — 2026-10-07
+
+The current desktop application created a fresh separate Platformer project at
+`E:/MetroForgeData/Development/platformer-20261006-v1/app-1791406506553/games/platformer-stage-test`.
+The real New Game selection and manual creation passed. Native Godot import and
+the visible input campaign both exited zero with no script errors. All eight
+checks passed: eight stages visited, seven of seven transitions, room_003
+checkpoint activation, 25 attacks, 60 damage taken, zero deaths and final victory.
+The campaign took about 50 seconds. All 705 original project inputs retained
+their hashes. No gameplay scripts, health, geometry or damage rules were patched.
+Evidence: `E:/MetroForgeData/Development/platformer-20261007-fresh/visible.log`
+and `completion.json`. This repeats starter gameplay acceptance; finished art,
+full Unity campaign and Unreal parity remain open.
+
 Platformer is a separate `SIDE_VIEW_PLATFORMER` genre in the shared registry, schema,
 New Game UI, manual scaffolder and generation pipeline. It uses ordered stages,
 basic side-view jumping, one-way ledges, checkpoints and a final encounter.
