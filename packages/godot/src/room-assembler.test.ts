@@ -21,6 +21,7 @@ import { foundryBackdropCoverScale } from '../src/foundry-visual-pack.js';
 import { generateWorldTopology } from '@metroforge/procedural';
 import { generateGameContent } from '@metroforge/procedural';
 import { GameDNASchema } from '@metroforge/schemas';
+import { buildStormglassGalleryBlueprint, stormglassGalleryPort } from './stormglass-gallery-blueprint.js';
 
 describe('Stormglass level-design sizing contract', () => {
   it('matches reference side-view hall and shaft extents while keeping quiet chambers distinct', () => {
@@ -455,9 +456,24 @@ describe('Reference-gallery downward door access', () => {
       expect(stormglassGalleryDescentPits(4096, 32, [{...down[0]!,requirements:[requirement]}], 'gallery')).toEqual([]);
   });
   it('does not carve ordinary rooms or upward connections', () => {
-    for (const theme of [undefined, 'stairwell', 'secret', 'shrine'])
+    for (const theme of [undefined, 'stairwell', 'shrine'])
       expect(stormglassGalleryDescentPits(4096, 32, down, theme)).toEqual([]);
     expect(stormglassGalleryDescentPits(4096, 32, [{...down[0]!,direction:'up'}], 'gallery')).toEqual([]);
+  });
+  it('keeps the Echo service loop and Memorial return open at their authored downward ports', () => {
+    const blueprint = buildStormglassGalleryBlueprint();
+    for (const [roomId, targetId, pitX] of [['room_007', 'room_040', 448], ['room_004', 'room_042', 960]] as const) {
+      const room = blueprint.rooms.find(r => r.id === roomId)!;
+      const connection = { direction: 'down' as const, targetRoomId: targetId!, requirements: [], optional: true };
+      const port = stormglassGalleryPort(roomId!, targetId!, 'down')!;
+      const pits = stormglassGalleryDescentPits(room.width, 32, [connection], room.theme, roomId);
+      expect(pits).toEqual([{ x: pitX, width: 128 }]);
+      expect(pits[0]!.x).toBeLessThanOrEqual(port.x);
+      expect(pits[0]!.x + pits[0]!.width).toBeGreaterThanOrEqual(port.x + 24);
+      for (const requirement of ['ground_slam', 'swim', 'dash'])
+        expect(stormglassGalleryDescentPits(room.width, 32, [{ ...connection, requirements: [requirement] }], room.theme, roomId)).toEqual([]);
+      expect(stormglassGalleryDescentPits(room.width, 32, [{ ...connection, direction: 'up' }], room.theme, roomId)).toEqual([]);
+    }
   });
 });
 
@@ -693,6 +709,13 @@ describe('generateRoomScene combat sprites', () => {
     expect(scene).toContain('assets/bosses/boss_final_walk.png');
     expect(scene).toContain('assets/bosses/boss_final_hurt.png');
     expect(scene).toContain('assets/bosses/boss_final_attack.png');
+  });
+
+  it('slices fallback guardians at their emitted dimensions while keeping authored guardians at 160px', () => {
+    const options = { ...baseOptions, hasEnemy: false, enemyIndex: 0, isBossRoom: true, bossId: 'boss_002' };
+    expect(generateRoomScene('room_boss', 1, { ...options, bossFrameSize: 96 }))
+      .toContain('frame_size = Vector2i(96, 96)');
+    expect(generateRoomScene('room_boss', 1, options)).toContain('frame_size = Vector2i(160, 160)');
   });
 
   it('embeds relic item pickups', () => {

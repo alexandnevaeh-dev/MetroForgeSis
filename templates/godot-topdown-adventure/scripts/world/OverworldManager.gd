@@ -203,6 +203,16 @@ func _build_ground(area: Dictionary) -> void:
 			var role := _ground_role_for_cell(value, x, y, roles)
 			if value == TILE_GRASS and roles.has("ground_variant_0"):
 				role = "ground_variant_" + str(_cell_hash(x,y,4))
+			if value == TILE_WALL and roles.has("wall_edge_0"):
+				var wall_mask := 0
+				var wall_neighbors: Array[Vector2i] = [Vector2i.UP,Vector2i.RIGHT,Vector2i.DOWN,Vector2i.LEFT]
+				for side in range(4):
+					var neighbor := Vector2i(x,y)+wall_neighbors[side]
+					var solid_neighbor: bool = neighbor.y>=0 and neighbor.x>=0 and neighbor.y<tiles.size() and tiles[neighbor.y] is Array and neighbor.x<tiles[neighbor.y].size() and int(tiles[neighbor.y][neighbor.x])==TILE_WALL
+					if not solid_neighbor: wall_mask |= 1<<side
+				role = "wall_edge_"+str(wall_mask)
+				var hedge_variant := role+"_variant_"+str(_cell_hash(x,y,4))
+				if roles.has(hedge_variant): role = hedge_variant
 			if value == TILE_WATER and roles.has("water_edge_0"):
 				var shore_mask := 0
 				var shore_neighbors: Array[Vector2i] = [Vector2i.UP,Vector2i.RIGHT,Vector2i.DOWN,Vector2i.LEFT]

@@ -30,7 +30,7 @@ func _ready() -> void:
 	_check("playtest_route_file_present", FileAccess.file_exists("res://playtest_route.json"))
 	_check("playtest_persona_configured", _telemetry.get("personaId", "") != "")
 	_check("playtest_used_input_simulation", agent.used_input_simulation)
-	_check("playtest_completed_transitions", agent.steps_completed > 0)
+	_check("playtest_completed_transitions", int(_telemetry.get("transitionsPlanned",-1))>=0 and agent.steps_completed==int(_telemetry.get("transitionsPlanned",-1)))
 	_check("playtest_reached_victory_flow", outcome.get("ok", false))
 	_check(
 		"playtest_victory_state_or_boss_defeated",
@@ -40,7 +40,23 @@ func _ready() -> void:
 
 	_release_input()
 	await get_tree().process_frame
+	await _capture_final_result()
 	_finish()
+
+func _capture_final_result() -> void:
+	var directory := "res://qa/topdown-playtest"
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(directory))
+	var capture := ""
+	if DisplayServer.get_name() != "headless":
+		await RenderingServer.frame_post_draw
+		capture = directory+"/final.png"
+		get_viewport().get_texture().get_image().save_png(capture)
+	var passed := true
+	for result in _results:
+		passed = passed and bool(result.passed)
+	var file := FileAccess.open(directory+"/proof.json",FileAccess.WRITE)
+	file.store_string(JSON.stringify({"passed":passed,"checks":_results,"telemetry":_telemetry,"capture":capture,"scope":"Input-driven top-down route with actual area and health telemetry. No harness health grant. Artwork and full generation acceptance remain separate."},"\t"))
+	file.close()
 
 func _release_input() -> void:
 	Input.action_release("move_left")

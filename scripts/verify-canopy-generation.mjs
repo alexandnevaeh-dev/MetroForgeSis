@@ -4,7 +4,7 @@ import {createHash} from 'node:crypto';
 import {GenerationPipeline} from '../packages/generation/dist/index.js';
 import {engineOutputSlug} from '../packages/shared/dist/index.js';
 import {GameDNASchema} from '../packages/schemas/dist/index.js';
-import {canopyTerrainV2} from '../packages/assets/dist/index.js';
+import {canopyTerrainV4} from '../packages/assets/dist/index.js';
 
 const reportDir=resolve(process.env.METROFORGE_CANOPY_PROOF_REPORT??`reports/game-tests/canopy-generator-proof-${Date.now()}`);
 if(!/^e:[\\/]/i.test(reportDir))throw new Error('The proof report must stay on E:');
@@ -28,7 +28,7 @@ const result=await new GenerationPipeline().run({prompt:dna.narrative.premise,pr
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const atlas=join(result.outputPath,'assets/tilesets/biome_0/source.png');
 const rolePath=join(result.outputPath,'assets/tilesets/biome_0/terrain.json');
-const expected=canopyTerrainV2();
+const expected=canopyTerrainV4();
 const roles=existsSync(rolePath)?JSON.parse(readFileSync(rolePath,'utf8')):null;
 const worldPath=join(result.outputPath,'data/world/overworld.json');
 const world=existsSync(worldPath)?JSON.parse(readFileSync(worldPath,'utf8')):null;

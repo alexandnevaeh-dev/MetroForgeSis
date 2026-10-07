@@ -139,8 +139,13 @@ export function canopyEnvironment(kind: string) {
 
 export const CANOPY_PROP_KINDS = ['tree','tree_b','tree_c','rune_tree','elder_roots','root_arch','vine_gate','mushrooms','ferns','ruin_fragments','bridge','lantern','seed_shrine','crown'] as const;
 
-export function canopyTerrainV2() {
-  const p=paint(256,288);
+export function canopyTerrainV2() { return buildCanopyTerrain(2); }
+/** Readable connected hedge barriers; v2 remains available for recovery and comparisons. */
+export function canopyTerrainV3() { return buildCanopyTerrain(3); }
+/** Four quiet foliage variants per boundary mask, without a diagonal repeat. */
+export function canopyTerrainV4() { return buildCanopyTerrain(4); }
+function buildCanopyTerrain(version:2|3|4) {
+  const p=paint(256,version===4?544:version===3?352:288);
   const roles: Array<{role:string;col:number;row:number}> = [];
   for(let col=0;col<8;col++) {
     const ox=col*32,c=col===1?P.shadow:col===2?P.stone:col===3?P.dirt:col===4?P.water:P.floor;
@@ -216,6 +221,63 @@ export function canopyTerrainV2() {
       if(variant===2){p.line(ox+18,oy+20,ox+21,oy+25,P.shadow,1);p.rect(ox+24,oy+seam+1,5,1,P.green);}
     }
     roles.push({role:family+'_variant_'+variant,col,row:8});
+  }
+  if(version===3) {
+    const hedge=(ox:number,oy:number,mask:number)=>{
+      p.rect(ox,oy,32,32,P.dark);
+      // Low-contrast interior clusters join without per-cell borders.
+      for(let n=0;n<7;n++) {
+        const x=ox+3+(n*11)%25,y=oy+3+(n*7)%22;
+        p.line(x,y,x+3,y-1,n%2?P.green:'#3d8474',2);
+      }
+      if(mask&1){p.rect(ox,oy,32,2,P.ink);p.line(ox,oy+3,ox+31,oy+3,P.leaf,1);}
+      if(mask&2){p.rect(ox+30,oy,2,32,P.ink);p.line(ox+28,oy+3,ox+28,oy+25,P.green,1);}
+      if(mask&8){p.rect(ox,oy,2,32,P.ink);p.line(ox+3,oy+3,ox+3,oy+25,P.leaf,1);}
+      if(mask&4){
+        p.rect(ox,oy+24,32,6,P.bark);p.rect(ox,oy+30,32,2,P.ink);
+        p.line(ox+2,oy+24,ox+29,oy+24,P.wood,1);
+        for(const x of [5,15,25])p.line(ox+x,oy+25,ox+x+3,oy+28,P.shadow,1);
+      }
+    };
+    hedge(32,0,15); // Legacy wall role remains a readable isolated barrier.
+    for(let mask=0;mask<16;mask++) {
+      const col=mask%8,row=9+Math.floor(mask/8);
+      hedge(col*32,row*32,mask);roles.push({role:'wall_edge_'+mask,col,row});
+    }
+  }
+  if(version===4) {
+    const hedge=(ox:number,oy:number,mask:number,variant:number)=>{
+      p.rect(ox,oy,32,32,'#24534b');
+      // Uneven compact leaf masses use subdued colors. Open tile edges have
+      // no outlines, so adjacent cells read as one continuous canopy.
+      let state=1729+variant*7919;
+      const next=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;return state;};
+      for(let n=0;n<11;n++) {
+        const x=3+next()%26,y=3+next()%24;
+        const rx=2+next()%4,ry=1+next()%3;
+        const c=n%3===0?'#2f6251':n%3===1?'#285a4d':'#204a43';
+        // Clamp to this tile; neighboring roles must never receive pixels.
+        for(let dy=-ry;dy<=ry;dy++)for(let dx=-rx;dx<=rx;dx++)
+          if(dx*dx/(rx*rx)+dy*dy/(ry*ry)<=1&&x+dx>=0&&x+dx<32&&y+dy>=0&&y+dy<32)
+            p.dot(ox+x+dx,oy+y+dy,c);
+        if(n%4===0)p.rect(ox+Math.min(x,29),oy+y-1,2,1,'#41755b');
+      }
+      if(mask&1){p.rect(ox,oy,32,2,P.ink);for(let x=0;x<32;x++)p.dot(ox+x,oy+3+(x*7%5===0?1:0),'#588361');}
+      if(mask&2){p.rect(ox+30,oy,2,32,P.ink);p.rect(ox+28,oy+3,1,22,'#326650');}
+      if(mask&8){p.rect(ox,oy,2,32,P.ink);p.rect(ox+3,oy+3,1,22,'#588361');}
+      if(mask&4){
+        p.rect(ox,oy+24,32,6,P.bark);p.rect(ox,oy+30,32,2,P.ink);
+        p.line(ox+2,oy+24,ox+29,oy+24,P.wood,1);
+        for(const x of [5,15,25])p.line(ox+x,oy+25,ox+x+3,oy+28,P.shadow,1);
+      }
+    };
+    hedge(32,0,15,0);
+    for(let variant=0;variant<4;variant++)for(let mask=0;mask<16;mask++) {
+      const col=mask%8,row=9+variant*2+Math.floor(mask/8);
+      hedge(col*32,row*32,mask,variant);
+      if(variant===0)roles.push({role:'wall_edge_'+mask,col,row});
+      roles.push({role:`wall_edge_${mask}_variant_${variant}`,col,row});
+    }
   }
   return {bytes:p.png(),roles};
 }

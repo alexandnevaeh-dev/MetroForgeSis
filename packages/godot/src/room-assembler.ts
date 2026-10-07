@@ -65,6 +65,8 @@ export interface RoomAssemblyOptions {
   abilityPickups: string[];
   isBossRoom: boolean;
   bossId: string;
+  /** Square horizontal-strip frame dimensions from the emitted boss walk PNG. */
+  bossFrameSize?: number;
   hasSavePoint: boolean;
   width: number;
   height: number;
@@ -1593,6 +1595,21 @@ export function spawnSideForEntry(exitDirection: RoomConnection['direction']): s
   }
 }
 
+export function resolveBossFrameSize(outputDir: string, bossId: string): number | undefined {
+  const path = join(outputDir, 'assets', 'bosses', `${bossId}_walk.png`);
+  if (!existsSync(path)) return undefined;
+  const bytes = readFileSync(path);
+  if (bytes.length < 24 || bytes.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a' ||
+      bytes.subarray(12, 16).toString('ascii') !== 'IHDR') {
+    throw new Error(`Invalid boss PNG header: ${bossId}`);
+  }
+  const width = bytes.readUInt32BE(16), height = bytes.readUInt32BE(20);
+  if (height === 0 || width === 0 || width % height !== 0) {
+    throw new Error(`Boss ${bossId} walk sheet is not a square horizontal frame strip: ${width}x${height}`);
+  }
+  return height;
+}
+
 export function generateRoomScene(roomId: string, _index: number, options: RoomAssemblyOptions): string {
   const foundryKit = options.visualKit === 'foundry';
   const tileSize = options.tileSize || 16;
@@ -2009,10 +2026,9 @@ attack_sheet_path = "assets/enemies/${enemyId}_attack.png"
   if (options.isBossRoom) {
     const bossId = options.bossId;
     const isFinalBoss = bossId === 'boss_final' || bossId.includes('final');
-    const bossFrame = 160;
-    // Every Stormglass guardian now uses the same authored 160px production standard as the
-    // final Abbot. Non-final guardians clear the final-only special attacks but keep full-size
-    // walk, attack, hurt, death and prefixed idle sheets.
+    const bossFrame = options.bossFrameSize ?? 160;
+    // Authored guardians use 160px sheets; generated fallback guardians can use 96px.
+    // Slice the emitted sheet at its actual dimensions without changing the source artwork.
     const bossExtraAnimations = isFinalBoss ? '' : 'extra_animation_sheets = {}\n';
     const bossPos =
       findPlacement(placements, 'boss', bossId) ??
@@ -2303,6 +2319,7 @@ export function recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult
           ...combat,
         ];
       }
+      if (opts.isBossRoom) opts.bossFrameSize = resolveBossFrameSize(input.outputDir, opts.bossId);
       const scene = generateRoomScene(roomId, i, opts);
       writeFileSync(join(roomsDir, `${roomId}.tscn`), scene);
       roomsData[roomId] = buildPublishedRoomRecord(roomId, i, opts);

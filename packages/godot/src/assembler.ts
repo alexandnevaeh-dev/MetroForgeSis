@@ -30,6 +30,7 @@ import {
   buildRoomAssemblyOptions,
   buildPublishedRoomRecord,
   generateRoomScene,
+  resolveBossFrameSize,
   prepareRoomAssemblyContext,
   recompileRooms,
   resolveFloorPropPlacements,
@@ -317,6 +318,7 @@ export class GodotProjectAssembler {
           seed: input.gameDna.seed + i,
           textureExists,
         });
+        if (opts.isBossRoom) opts.bossFrameSize = resolveBossFrameSize(input.outputDir, opts.bossId);
         const sceneContent = generateRoomScene(roomId, i, opts);
         writeFileSync(join(roomsDir, `${roomId}.tscn`), sceneContent);
         roomsData[roomId] = {

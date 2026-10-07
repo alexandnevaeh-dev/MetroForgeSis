@@ -90,6 +90,7 @@ func _load_directional_frames(frames: SpriteFrames) -> void:
 			var count: int = texture.get_width() / frame_size.x
 			for index in range(count):
 				var atlas := AtlasTexture.new()
+				atlas.filter_clip = true
 				atlas.atlas = texture
 				atlas.region = Rect2(index * frame_size.x, 0, frame_size.x, frame_size.y)
 				frames.add_frame(name, atlas)
@@ -238,6 +239,7 @@ func _load_animation_frames(frames: SpriteFrames, anim: String, path: String, co
 				sheet_frame_count = tex_width / frame_size.x
 		for i in range(sheet_frame_count):
 			var atlas := AtlasTexture.new()
+			atlas.filter_clip = true
 			atlas.atlas = tex
 			atlas.region = Rect2(i * frame_size.x, 0, frame_size.x, frame_size.y)
 			frames.add_frame(anim, atlas, 1.0)

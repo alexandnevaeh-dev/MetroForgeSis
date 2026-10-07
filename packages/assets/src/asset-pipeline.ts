@@ -63,7 +63,7 @@ import {
   PARALLAX_STRIP_SIZE,
 } from './parallax-strip.js';
 import { ImageProviderRegistry } from './image-router.js';
-import { canopyTerrainV2,canopyEnvironment,CANOPY_PROP_KINDS } from './topdown-canopy-environment.js';
+import { canopyTerrainV4,canopyEnvironment,CANOPY_PROP_KINDS } from './topdown-canopy-environment.js';
 import { shouldUseCanopyEnvironment } from './canopy-environment-selection.js';
 import {buildCanopyActorFamily,canopyEffect,canopyIcon,canopyPickup,canopyEffectMetadata,CANOPY_EFFECT_IDS,type CanopyActorKind} from './topdown-canopy-art.js';
 import { registerFoundryImageProviders } from './foundry/register.js';
@@ -2380,7 +2380,7 @@ export class AssetPipeline {
       const authoredMasonry =
         !cachedTileset && authoredKit ? loadAuthoredKitTileset(authoredKit, b, tileSize) : null;
       let canopyAtlas = !cachedTileset && shouldUseCanopyEnvironment(options.gameDna)
-        ? canopyTerrainV2() : null;
+        ? canopyTerrainV4() : null;
 
       if (cachedTileset) {
         processedBuffer = cachedTileset;
@@ -2393,11 +2393,11 @@ export class AssetPipeline {
         processedBuffer = canopyAtlas.bytes;
         critiquePassed = false;
         critiqueScore = 0; // Unscored draft; native functionality is not visual approval.
-        provider = 'metroforge-canopy-procedural-v2';
+        provider = 'metroforge-canopy-terrain-v4';
         fallback = false;
         modelId = undefined;
         writeCheckpoint(options.outputDir,tilesetPath,processedBuffer);
-        writeCheckpoint(options.outputDir,`assets/tilesets/biome_${b}/terrain.json`,Buffer.from(JSON.stringify({tileSize,roles:canopyAtlas.roles,style:'ruined-canopy-v2',productionApproved:false},null,2)));
+        writeCheckpoint(options.outputDir,`assets/tilesets/biome_${b}/terrain.json`,Buffer.from(JSON.stringify({tileSize,roles:canopyAtlas.roles,style:'ruined-canopy-v4',productionApproved:false},null,2)));
         warnings.push(`Canopy woodland terrain biome_${b} uses original procedural draft art; production visual review is pending.`);
       } else if (authoredMasonry) {
         // Hand-authored 32px foundry masonry atlas (256×192) — the Foundry visual slice's
@@ -2549,11 +2549,11 @@ export class AssetPipeline {
       // An unavailable provider must not turn a woodland request back into generic walls.
       // Keep the failed-provider warning, then select the original woodland draft fallback.
       if(fallback&&shouldUseCanopyEnvironment(options.gameDna)) {
-        canopyAtlas=canopyTerrainV2();processedBuffer=canopyAtlas.bytes;
-        critiquePassed=false;critiqueScore=0;provider='metroforge-canopy-procedural-v2';
+        canopyAtlas=canopyTerrainV4();processedBuffer=canopyAtlas.bytes;
+        critiquePassed=false;critiqueScore=0;provider='metroforge-canopy-terrain-v4';
         fallback=false;modelId=undefined;
         writeCheckpoint(options.outputDir,tilesetPath,processedBuffer);
-        writeCheckpoint(options.outputDir,`assets/tilesets/biome_${b}/terrain.json`,Buffer.from(JSON.stringify({tileSize,roles:canopyAtlas.roles,style:'ruined-canopy-v2',productionApproved:false},null,2)));
+        writeCheckpoint(options.outputDir,`assets/tilesets/biome_${b}/terrain.json`,Buffer.from(JSON.stringify({tileSize,roles:canopyAtlas.roles,style:'ruined-canopy-v4',productionApproved:false},null,2)));
         warnings.push(`Canopy woodland terrain biome_${b} uses original procedural draft art after provider failure; production visual review is pending.`);
       }
       if (terrainVisualTemplate)
@@ -3116,7 +3116,7 @@ export class AssetPipeline {
       }
     }
 
-    if(assets.some(asset=>asset.provider==='metroforge-canopy-procedural-v2'&&asset.path.endsWith('/source.png'))) {
+    if(assets.some(asset=>['metroforge-canopy-procedural-v2','metroforge-canopy-terrain-v3','metroforge-canopy-terrain-v4'].includes(asset.provider)&&asset.path.endsWith('/source.png'))) {
       for(const kind of CANOPY_PROP_KINDS) {
         const art=canopyEnvironment(kind),path=`assets/props/canopy/${kind}.png`;
         writeCheckpoint(options.outputDir,path,art.bytes);

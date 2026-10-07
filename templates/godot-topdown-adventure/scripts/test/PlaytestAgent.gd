@@ -41,9 +41,71 @@ var _failed_step_index: int = -1
 var _last_walk_budget_sec: float = 0.0
 var _boss_final_health: float = -1.0
 var _boss_player_final_health: float = -1.0
+var _boss_player_initial_health: float = -1.0
+var _observed_areas: Array[String] = []
+var _area_captures: Array[String] = []
+var _damage_events: Array = []
+var _checkpoint_events: Array = []
+var _save_events: Array = []
+var _player_deaths := 0
+var _tracked_health: HealthComponent
+var _telemetry_host: Node
+
+func _observe_area(area_id: String) -> void:
+	_observed_areas.append(area_id)
+	if is_instance_valid(_telemetry_host):
+		await _telemetry_host.get_tree().process_frame
+		await _telemetry_host.get_tree().process_frame
+		_attach_player_health()
+		if DisplayServer.get_name() != "headless":
+			await RenderingServer.frame_post_draw
+			if not is_instance_valid(_telemetry_host):
+				return
+			var directory := "res://qa/topdown-playtest/areas"
+			DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(directory))
+			var path := "%s/%03d_%s.png" % [directory, _observed_areas.size(), area_id.validate_filename()]
+			if _telemetry_host.get_viewport().get_texture().get_image().save_png(path) == OK:
+				_area_captures.append(path)
+
+func _attach_player_health() -> void:
+	if not is_instance_valid(_telemetry_host):
+		return
+	var player := _telemetry_host.get_tree().get_first_node_in_group("player")
+	if player == null:
+		return
+	var hp := player.get_node_or_null("HealthComponent") as HealthComponent
+	if hp == null or hp == _tracked_health:
+		return
+	if is_instance_valid(_tracked_health) and _tracked_health.damaged.is_connected(_observe_damage):
+		_tracked_health.damaged.disconnect(_observe_damage)
+	_tracked_health = hp
+	hp.damaged.connect(_observe_damage)
+
+func _observe_damage(amount: float) -> void:
+	_damage_events.append({"amount":amount,"healthAfter":_tracked_health.current_health if is_instance_valid(_tracked_health) else -1,"area":GameManager.current_room_id,"tMs":Time.get_ticks_msec()-_started_at_ms})
+
+func _observe_death() -> void:
+	_player_deaths += 1
+
+func _observe_checkpoint(object_id: String) -> void:
+	if not object_id.begins_with("save_"):
+		return
+	_attach_player_health()
+	_checkpoint_events.append({"area":GameManager.current_room_id,"health":_tracked_health.current_health if is_instance_valid(_tracked_health) else -1,"tMs":Time.get_ticks_msec()-_started_at_ms})
+
+func _observe_save() -> void:
+	_attach_player_health()
+	_save_events.append({"area":GameManager.current_room_id,"health":_tracked_health.current_health if is_instance_valid(_tracked_health) else -1,"tMs":Time.get_ticks_msec()-_started_at_ms})
 
 func run(world: Node, host: Node) -> Dictionary:
 	_started_at_ms = Time.get_ticks_msec()
+	_telemetry_host = host
+	EventBus.room_entered.connect(_observe_area)
+	EventBus.player_died.connect(_observe_death)
+	EventBus.object_activated.connect(_observe_checkpoint)
+	EventBus.save_triggered.connect(_observe_save)
+	_attach_player_health()
+	await _observe_area(GameManager.current_room_id)
 	_load_expected_speed()
 	var route := _load_route()
 	if route.is_empty():
@@ -87,6 +149,11 @@ func run(world: Node, host: Node) -> Dictionary:
 ## the old `run()`'s early `return {"ok": false, "reason": ...}` returns with no "telemetry" key
 ## at all) â€” a route failing on its very first step produced zero diagnostic output.
 func _finish(ok: bool, route: Dictionary, boss_fight_ms: int, from_area: String = "", to_area: String = "") -> Dictionary:
+	for pair in [[EventBus.room_entered,_observe_area],[EventBus.player_died,_observe_death],[EventBus.object_activated,_observe_checkpoint],[EventBus.save_triggered,_observe_save]]:
+		if pair[0].is_connected(pair[1]):
+			pair[0].disconnect(pair[1])
+	if is_instance_valid(_tracked_health) and _tracked_health.damaged.is_connected(_observe_damage):
+		_tracked_health.damaged.disconnect(_observe_damage)
 	var result := {
 		"ok": ok,
 		"steps": steps_completed,
@@ -166,7 +233,15 @@ func _build_telemetry(route: Dictionary, boss_fight_ms: int) -> Dictionary:
 		"pickupsCollected": pickups_collected,
 		"attacksPerformed": attacks_performed,
 		"abilitiesAfterRun": GameManager.player_abilities.duplicate(),
-		"roomsVisited": route.get("visitedRoomOrder", []),
+		"roomsVisited": _observed_areas.duplicate(),
+		"roomsPlanned": route.get("visitedRoomOrder", []),
+		"damageEvents": _damage_events.duplicate(true),
+		"playerDeaths": _player_deaths,
+		"checkpointEvents": _checkpoint_events.duplicate(true),
+		"areaCaptures": _area_captures.duplicate(),
+		"saveEvents": _save_events.duplicate(true),
+		"bossPlayerInitialHealth": _boss_player_initial_health,
+		"healthGrantedByHarness": false,
 		"victoryBossId": route.get("victoryBossId", "boss_final"),
 		"bossFightMs": boss_fight_ms,
 		"avgTransitionMs": avg_transition_ms,
@@ -399,15 +474,10 @@ func _defeat_final_boss(host: Node, boss_id: String) -> bool:
 	if not player.has_method("_start_attack"):
 		return false
 
-	# Route-following incidentally walks the player through/near regular enemies on the way to
-	# the arena (this bot doesn't dodge them either), so it can arrive with chip damage already
-	# taken â€” a real player would typically rest at the dungeon's SavePoint first, but the route
-	# only visits pickups on each leg's *origin* room, never the boss room itself (nothing
-	# transitions *from* it). Reset to full here so this gate proves "is the boss itself
-	# beatable within its timeout," not "did the bot happen to arrive undamaged."
+	# Preserve the health earned through ordinary traversal and checkpoint interactions.
+	_attach_player_health()
 	var player_health: HealthComponent = player.get_node_or_null("HealthComponent")
-	if player_health:
-		player_health.reset_health()
+	_boss_player_initial_health = player_health.current_health if player_health else -1.0
 
 	var boss_defeated := false
 	# Real wall-clock time, not accumulated physics delta: each iteration below nests its own
