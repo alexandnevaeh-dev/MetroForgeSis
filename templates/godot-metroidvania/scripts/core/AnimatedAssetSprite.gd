@@ -235,8 +235,13 @@ func _load_animation_metadata(frames: SpriteFrames) -> void:
 		var entry = parsed[anim_name]
 		if typeof(entry) != TYPE_DICTIONARY:
 			continue
-		if entry.has("sourceSheet"):
-			_load_source_regions(frames,String(anim_name),entry)
+		if entry.has("fps") and (not typeof(entry.fps) in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(entry.fps)) or float(entry.fps)<=0.0):
+			continue
+		if entry.has("loop") and not typeof(entry.loop)==TYPE_BOOL:
+			continue
+		if entry.has("sourceSheet") or entry.has("sourceFrames"):
+			if not _load_source_regions(frames,String(anim_name),entry):
+				continue
 		if entry.has("fps"):
 			frames.set_animation_speed(anim_name, float(entry["fps"]))
 		if entry.has("loop"):
@@ -329,42 +334,56 @@ func _load_animation_frames(frames: SpriteFrames, anim: String, path: String, co
 
 ## Generated strips may carry larger source cells. Keep their pixels intact and use one
 ## shared display scale/foot anchor, rather than slicing them as arbitrary 64px cells.
-func _load_source_regions(frames: SpriteFrames, anim: String, entry: Dictionary) -> void:
+func _load_source_regions(frames: SpriteFrames, anim: String, entry: Dictionary) -> bool:
 	var path := "res://"+String(entry.get("sourceSheet",""))
 	var regions: Variant = entry.get("sourceRegions",[])
 	var display_scale := float(entry.get("displayScale",0.0))
 	var anchor_y := float(entry.get("footAnchorY",-1.0))
 	var anchors: Variant = entry.get("frameFootAnchors")
 	var has_anchors := entry.has("frameFootAnchors")
-	if not regions is Array or regions.is_empty() or not is_finite(display_scale) or display_scale<=0.0 or (not has_anchors and (not is_finite(anchor_y) or anchor_y<0.0)) or not ResourceLoader.exists(path):
-		return
+	var independent := entry.has("sourceFrames")
+	var paths: Variant = entry.get("sourceFrames",[])
+	if not regions is Array or regions.is_empty() or not is_finite(display_scale) or display_scale<=0.0 or (not has_anchors and (not is_finite(anchor_y) or anchor_y<0.0)):
+		return false
+	if independent:
+		if entry.has("sourceSheet") or not has_anchors or not paths is Array or paths.size()!=regions.size() or not typeof(entry.get("frameCount")) in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(entry.frameCount)) or float(entry.frameCount)!=regions.size():
+			return false
+		for source in paths:
+			if not source is String or not source.begins_with("assets/") or not source.ends_with(".png") or source.contains("\\") or source.contains(":") or source.split("/").has("..") or not ResourceLoader.exists("res://"+source):
+				return false
+	elif not ResourceLoader.exists(path):
+		return false
 	if has_anchors and (not anchors is Array or anchors.size()!=regions.size()):
-		return
-	var texture: Texture2D = load(path)
-	if texture == null:
-		return
+		return false
+	var texture: Texture2D = null if independent else load(path)
+	if not independent and texture == null:
+		return false
 	var prepared: Array[AtlasTexture] = []
 	var common_height := -1.0
 	var frame_offsets: Array[Vector2] = []
 	for value in regions:
+		if independent:
+			texture = load("res://"+String(paths[prepared.size()]))
+			if texture == null:
+				return false
 		if not value is Array or value.size()!=4:
-			return
+			return false
 		for coordinate in value:
 			if not typeof(coordinate) in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(coordinate)):
-				return
+				return false
 		var rect := Rect2(float(value[0]),float(value[1]),float(value[2]),float(value[3]))
 		if rect.size.x<=0.0 or rect.size.y<=0.0 or not Rect2(Vector2.ZERO,texture.get_size()).encloses(rect) or (not has_anchors and anchor_y>rect.size.y):
-			return
+			return false
 		if has_anchors:
 			var anchor: Variant = anchors[prepared.size()]
 			if not anchor is Array or anchor.size()!=2 or not typeof(anchor[0]) in [TYPE_INT,TYPE_FLOAT] or not typeof(anchor[1]) in [TYPE_INT,TYPE_FLOAT]:
-				return
+				return false
 			var point := Vector2(float(anchor[0]),float(anchor[1]))
 			if not is_finite(point.x) or not is_finite(point.y) or point.x<0 or point.y<0 or point.x>rect.size.x or point.y>rect.size.y:
-				return
+				return false
 			frame_offsets.append(rect.size*0.5-point)
 		if common_height>=0.0 and common_height!=rect.size.y:
-			return
+			return false
 		common_height=rect.size.y
 		var atlas := AtlasTexture.new()
 		atlas.atlas=texture
@@ -378,6 +397,7 @@ func _load_source_regions(frames: SpriteFrames, anim: String, entry: Dictionary)
 	if has_anchors:
 		_clip_presentations[anim]["frameOffsets"] = frame_offsets
 		_has_frame_anchors = true
+	return true
 
 func _apply_clip_presentation() -> void:
 	var direction := -1.0 if scale.x<0.0 else 1.0
@@ -391,3 +411,12 @@ func _apply_clip_presentation() -> void:
 		if flip_h:
 			offset.x=-offset.x
 	_presentation_flip=flip_h
+
+## Parent controllers set family scale after this sprite's _ready(). Preserve
+## clip presentation factors instead of replacing their rendered scale.
+func set_base_presentation_scale(base_scale: Vector2) -> bool:
+	if not is_finite(base_scale.x) or not is_finite(base_scale.y) or base_scale.x<=0.0 or base_scale.y<=0.0:
+		return false
+	_default_presentation_scale=base_scale
+	_apply_clip_presentation()
+	return true

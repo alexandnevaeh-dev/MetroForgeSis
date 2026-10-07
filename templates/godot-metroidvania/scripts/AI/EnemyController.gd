@@ -123,7 +123,10 @@ func _apply_authored_sprite_scale() -> void:
 	var family_index := clampi(roster_index / 4, 0, 4)
 	var family_scales := [1.35, 1.45, 1.35, 1.40, 1.20]
 	var authored_scale: float = float(family_scales[family_index])
-	sprite.scale = Vector2(authored_scale, authored_scale)
+	if sprite.has_method("set_base_presentation_scale"):
+		sprite.call("set_base_presentation_scale",Vector2(authored_scale,authored_scale))
+	else:
+		sprite.scale = Vector2(authored_scale, authored_scale)
 
 func _become_minion() -> void:
 	_combat_type = "melee"
