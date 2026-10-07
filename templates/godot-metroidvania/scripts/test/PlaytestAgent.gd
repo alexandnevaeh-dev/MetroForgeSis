@@ -345,6 +345,9 @@ func _execute_transition(_world: Node, host: Node, from_room: String, to_room: S
 		return false
 
 	if String(transition.get("transition_direction")) == "up":
+		if not await _follow_switchback_ascent(host, player, transition):
+			_fail_stage = "switchback_ascent_failed"
+			return false
 		Input.action_press("move_up")
 	var entry := _transition_entry_point(transition)
 	var walk_timeout := _walk_timeout_for((player as Node2D).global_position, entry)
@@ -352,6 +355,9 @@ func _execute_transition(_world: Node, host: Node, from_room: String, to_room: S
 		_fail_stage = "walk_timeout"
 		return false
 
+	# Keep Up held until physics checks the door overlap after arrival.
+	if is_instance_valid(transition) and String(transition.get("transition_direction")) == "up":
+		Input.action_press("move_up")
 	if not await _wait_room(host, to_room, 2.0):
 		# Godot will not re-emit body_entered if we were already overlapping when
 		# monitoring flipped true. Step off the sensor and walk back in.
@@ -369,6 +375,51 @@ func _execute_transition(_world: Node, host: Node, from_room: String, to_room: S
 		return false
 	if not requirements.is_empty():
 		_gates_passed.append("%s->%s:%s" % [from_room, to_room, ",".join(requirements)])
+	return true
+
+## Follow authored incline endpoints with normal input.
+## The straight-line door target cannot describe a switchback staircase.
+func _follow_switchback_ascent(host: Node, player: Node, transition: Node) -> bool:
+	var room := transition.get_parent()
+	if room.get_node_or_null("StairFlight_0/StoneFlight") == null:
+		return true
+	var body := player as CharacterBody2D
+	for index in range(7):
+		var face := room.get_node_or_null("StairFlight_" + str(index) + "/StoneFlight")
+		if face == null:
+			return false
+		var endpoint: Vector2 = room.to_global(face.finish)
+		if body.global_position.y <= endpoint.y + 8.0:
+			continue
+		var right: bool = face.finish.x > face.start.x
+		var elapsed := 0.0
+		Input.action_release("jump")
+		Input.action_release("dash")
+		Input.action_release("move_down")
+		Input.action_release("move_up")
+		Input.action_press("move_right" if right else "move_left")
+		while elapsed < 12.0 and (body.global_position.x < endpoint.x - 6.0 if right else body.global_position.x > endpoint.x + 6.0):
+			if not is_instance_valid(body) or not body.get_node("HealthComponent").is_alive():
+				_release_horizontal_input()
+				return false
+			await host.get_tree().physics_frame
+			elapsed += host.get_physics_process_delta_time()
+		_release_horizontal_input()
+		await host.get_tree().create_timer(0.25).timeout
+		var passed := absf(body.global_position.y-endpoint.y)<8.0 and body.is_on_floor()
+		print("JOURNEY_SWITCHBACK ",index," passed=",passed," pos=",body.global_position," elapsed=",elapsed)
+		if not passed:
+			return false
+	# Approach along the upper landing before jumping. Jumping immediately
+	# at the flight endpoint hits the ceiling outside the authored opening,
+	# then falls beneath the landing while jump remains held.
+	var entry := _transition_entry_point(transition)
+	var approach := Vector2(entry.x + 64.0, room.to_global(Vector2(0,128)).y)
+	if not await _walk_player_to(host, player, approach, 8.0):
+		return false
+	Input.action_release("jump")
+	Input.action_release("dash")
+	await host.get_tree().physics_frame
 	return true
 
 func _wait_transition_open(host: Node, transition: Node, timeout_sec: float) -> bool:

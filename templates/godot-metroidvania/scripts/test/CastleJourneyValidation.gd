@@ -33,6 +33,10 @@ func _ready() -> void:
 	while death_captures_pending > 0:
 		await get_tree().process_frame
 	await _capture("end")
+	# Freeze the observer before freeing actors. Otherwise a teardown tick can
+	# overwrite the last live status with health=-1 and steps=0 after victory.
+	set_process(false)
+	_record_progress()
 	var result := {"scope": "Actual NVIDIA gameplay with normal fades/hit-stop and Input-only walking, jumping, attacks and dodges. Bot observations are read-only; no human or final art acceptance claim.",
 		"passed": bool(outcome.get("ok", false)), "outcome": outcome, "samples": samples, "captures": captures, "roomStates": room_states,
 		"renderer": RenderingServer.get_current_rendering_method(), "elapsedMs": Time.get_ticks_msec() - started,
@@ -52,6 +56,9 @@ func _process(_delta: float) -> void:
 	if Time.get_ticks_msec() < next_sample:
 		return
 	next_sample = Time.get_ticks_msec() + 1000
+	_record_progress()
+
+func _record_progress() -> void:
 	var player := get_tree().get_first_node_in_group("player") as CharacterBody2D
 	var health := player.get_node_or_null("HealthComponent") as HealthComponent if player else null
 	var row := {"tMs": Time.get_ticks_msec() - started, "room": GameManager.current_room_id,

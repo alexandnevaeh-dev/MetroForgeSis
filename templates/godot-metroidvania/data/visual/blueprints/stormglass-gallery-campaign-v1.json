@@ -297,7 +297,7 @@
         "label": "Sunken Library",
         "metadata": {
           "archetype": "combat",
-          "environmentArchetype": "chapel",
+          "environmentArchetype": "library",
           "roomPurpose": "combat",
           "biomeIndex": 0,
           "regionIndex": 0,
@@ -305,7 +305,8 @@
           "screenSpanH": 2,
           "screenSpanV": 2,
           "targetTileWidth": 64,
-          "targetTileHeight": 40
+          "targetTileHeight": 40,
+          "stormglassRoomTheme": "library-reading"
         }
       },
       {

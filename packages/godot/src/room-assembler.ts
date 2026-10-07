@@ -833,8 +833,18 @@ export function buildRoomAssemblyOptions(
 
   if (galleryRoom) {
     layout.cells.splice(0,layout.cells.length);
-    layout.platforms.splice(0,layout.platforms.length,...(galleryRoom.theme==='stairwell'?buildStormglassGalleryStairPlatforms(height):[]));
+    layout.platforms.splice(0,layout.platforms.length,...(galleryRoom.theme==='stairwell'?buildStormglassGalleryStairPlatforms(height,galleryRoom.id==="room_042"):[]));
     layout.pits.splice(0,layout.pits.length,...stormglassGalleryDescentPits(width,tileSize,connections,galleryRoom.theme,roomId));
+  }
+  if (authoredCampaignSize && nodeMeta.stormglassRoomTheme === 'library-reading') {
+    // The enclosed reading wing owns its geometry; no random floating shelves.
+    layout.cells.splice(0, layout.cells.length);
+    layout.platforms.splice(0, layout.platforms.length);
+    layout.pits.splice(0, layout.pits.length);
+    if (layout.blueprint?.plan) {
+      layout.blueprint.plan.platformRegions = [];
+      layout.blueprint.plan.gameplayFloors = [{x:0,y:height-tileSize*2,width,height:tileSize*2}];
+    }
   }
   if (authoredPlatformerSize) {
     const stage=buildPlatformerStageLayout(width,height,tileSize,Number(nodeMeta.stageIndex)||0,worldGraphArchetype ?? 'traversal');
@@ -900,7 +910,7 @@ export function buildRoomAssemblyOptions(
     worldGraphArchetype,
     stormglassRoomTheme: typeof nodeMeta.stormglassRoomTheme === "string" ? nodeMeta.stormglassRoomTheme : undefined,
     platformerStage: authoredPlatformerSize,
-    stairFlights:galleryRoom?.theme==='stairwell'?buildStormglassStairFlights(height):undefined,
+    stairFlights:galleryRoom?.theme==='stairwell'?buildStormglassStairFlights(height,galleryRoom.id==="room_042"):undefined,
     spatialPorts:galleryRoom?connections.flatMap(connection=>{const port=stormglassGalleryPort(roomId,connection.targetRoomId,connection.direction);return port?[port]:[];}):undefined,
     ...(roomId === 'room_003' && grantsAbilities.length > 0 ? {
       entityPlacements: [
@@ -1463,6 +1473,19 @@ export function buildStormglassInteriorMasonry(options: RoomAssemblyOptions): Co
   if (!options.stormglassRoomTheme || options.stormglassRoomTheme === 'stairwell') return [];
   if (options.connections.some(connection => connection.direction === 'up')) return [];
   const floor = options.hasTileset ? floorTopPx(options.height, options.tileSize || 16) : options.height - 96;
+  if (options.stormglassRoomTheme === 'library-reading') {
+    // Two sheltered chambers open into a taller central reading hall. The solid
+    // roof fills unused canvas and the 192px portals preserve the combat route.
+    const spans = [
+      {x:0,width:options.width*0.25,clearance:320},
+      {x:options.width*0.25,width:options.width*0.5,clearance:448},
+      {x:options.width*0.75,width:options.width*0.25,clearance:320},
+    ];
+    return spans.flatMap((span,index) => [
+      {name:`MasonryRoof_${index}`,x:span.x,y:0,width:span.width,height:Math.max(64,floor-span.clearance)},
+      ...(index===0?[]:[{name:`MasonryPier_${index}`,x:span.x-32,y:Math.max(64,floor-320),width:64,height:128}]),
+    ]);
+  }
   const bayWidth = 768;
   const rects: CollisionRect[] = [];
   for (let x = 0, bay = 0; x < options.width; x += bayWidth, bay++) {

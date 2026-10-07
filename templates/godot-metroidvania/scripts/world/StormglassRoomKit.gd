@@ -6,6 +6,7 @@ var room_height := 0.0
 var config: Dictionary = {}
 var parts: Dictionary = {}
 var part_textures: Dictionary = {}
+var missing_roles: Dictionary = {}
 var doorway_views: Array = []
 var surface_views: Array = []
 var interior_clip: Control
@@ -195,6 +196,9 @@ func _texture(role: String) -> AtlasTexture:
 	if part_textures.has(role):
 		return part_textures[role]
 	if not parts.has(role):
+		if not missing_roles.has(role):
+			missing_roles[role] = true
+			push_warning("Stormglass room "+room_id+" missing architecture module: "+role)
 		return null
 	var entry: Dictionary = parts[role].entry
 	var region: Array = entry.region

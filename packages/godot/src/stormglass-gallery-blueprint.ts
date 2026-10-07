@@ -37,22 +37,23 @@ export function buildStormglassGalleryBlueprint() {
 }
 
 /** Broad top landing provides a safe final jump beneath the ceiling and room to approach Up. */
-export function buildStormglassGalleryStairPlatforms(height: number) {
-  return Array.from({length:8},(_,i)=>({
+export function buildStormglassGalleryStairPlatforms(height: number, mirrored=false) {
+  const platforms = Array.from({length:8},(_,i)=>({
     x:i===7?512:i%2===0?96:864,
     y:height-64-i*192,
     width:i===7?416:i%2===0?48:64,
     height:32,
   }));
+  return mirrored ? platforms.map(p=>({...p,x:1024-p.x-p.width})) : platforms;
 }
 
-export function buildStormglassStairFlights(height:number){
-  return Array.from({length:7},(_,i)=>({
+export function buildStormglassStairFlights(height:number,mirrored=false){
+  const flights = Array.from({length:7},(_,i)=>({
     from:{x:i%2===0?144:864,y:height-64-i*192},
     to:{x:i%2===0?864:144,y:height-64-(i+1)*192},thickness:32,
   }));
+  return mirrored ? flights.map(f=>({...f,from:{...f.from,x:1024-f.from.x},to:{...f.to,x:1024-f.to.x}})) : flights;
 }
-
 /** Portal anchors use shared world-space room edges, not each room's bottom.
  * A tall stairwell can therefore connect to a small chamber halfway up its wall. */
 export function stormglassGalleryPort(roomId:string,targetId:string,direction:string) {

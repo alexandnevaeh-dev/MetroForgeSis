@@ -30,14 +30,25 @@ static var _clean_cache: Dictionary = {}
 var _clip_presentations: Dictionary = {}
 var _default_presentation_scale := Vector2.ONE
 var _default_presentation_offset := Vector2.ZERO
+var _has_frame_anchors := false
+var _presentation_flip := false
 
 func _ready() -> void:
 	_build_frames()
 	_default_presentation_scale = scale
 	_default_presentation_offset = offset
 	animation_changed.connect(_apply_clip_presentation)
+	frame_changed.connect(_on_presentation_frame_changed)
 	_apply_contact_filter()
 	play("idle")
+
+func _process(_delta: float) -> void:
+	if _has_frame_anchors and flip_h != _presentation_flip:
+		_apply_clip_presentation()
+
+func _on_presentation_frame_changed() -> void:
+	if _clip_presentations.get(String(animation),{}).has("frameOffsets"):
+		_apply_clip_presentation()
 
 func _apply_contact_filter() -> void:
 	## Palette red/cream/magenta still composites at the feet after knockout.
@@ -323,19 +334,35 @@ func _load_source_regions(frames: SpriteFrames, anim: String, entry: Dictionary)
 	var regions: Variant = entry.get("sourceRegions",[])
 	var display_scale := float(entry.get("displayScale",0.0))
 	var anchor_y := float(entry.get("footAnchorY",-1.0))
-	if not regions is Array or regions.is_empty() or display_scale<=0.0 or anchor_y<0.0 or not ResourceLoader.exists(path):
+	var anchors: Variant = entry.get("frameFootAnchors")
+	var has_anchors := entry.has("frameFootAnchors")
+	if not regions is Array or regions.is_empty() or not is_finite(display_scale) or display_scale<=0.0 or (not has_anchors and (not is_finite(anchor_y) or anchor_y<0.0)) or not ResourceLoader.exists(path):
+		return
+	if has_anchors and (not anchors is Array or anchors.size()!=regions.size()):
 		return
 	var texture: Texture2D = load(path)
 	if texture == null:
 		return
 	var prepared: Array[AtlasTexture] = []
 	var common_height := -1.0
+	var frame_offsets: Array[Vector2] = []
 	for value in regions:
 		if not value is Array or value.size()!=4:
 			return
+		for coordinate in value:
+			if not typeof(coordinate) in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(coordinate)):
+				return
 		var rect := Rect2(float(value[0]),float(value[1]),float(value[2]),float(value[3]))
-		if rect.size.x<=0.0 or rect.size.y<=0.0 or not Rect2(Vector2.ZERO,texture.get_size()).encloses(rect) or anchor_y>rect.size.y:
+		if rect.size.x<=0.0 or rect.size.y<=0.0 or not Rect2(Vector2.ZERO,texture.get_size()).encloses(rect) or (not has_anchors and anchor_y>rect.size.y):
 			return
+		if has_anchors:
+			var anchor: Variant = anchors[prepared.size()]
+			if not anchor is Array or anchor.size()!=2 or not typeof(anchor[0]) in [TYPE_INT,TYPE_FLOAT] or not typeof(anchor[1]) in [TYPE_INT,TYPE_FLOAT]:
+				return
+			var point := Vector2(float(anchor[0]),float(anchor[1]))
+			if not is_finite(point.x) or not is_finite(point.y) or point.x<0 or point.y<0 or point.x>rect.size.x or point.y>rect.size.y:
+				return
+			frame_offsets.append(rect.size*0.5-point)
 		if common_height>=0.0 and common_height!=rect.size.y:
 			return
 		common_height=rect.size.y
@@ -348,6 +375,9 @@ func _load_source_regions(frames: SpriteFrames, anim: String, entry: Dictionary)
 	for atlas in prepared:
 		frames.add_frame(anim,atlas,1.0)
 	_clip_presentations[anim]={"scale":display_scale,"offset":Vector2(0,common_height*0.5-anchor_y)}
+	if has_anchors:
+		_clip_presentations[anim]["frameOffsets"] = frame_offsets
+		_has_frame_anchors = true
 
 func _apply_clip_presentation() -> void:
 	var direction := -1.0 if scale.x<0.0 else 1.0
@@ -355,3 +385,9 @@ func _apply_clip_presentation() -> void:
 	var factor := float(presentation.get("scale",1.0))
 	scale=Vector2(absf(_default_presentation_scale.x)*factor*direction,_default_presentation_scale.y*factor)
 	offset=presentation.get("offset",_default_presentation_offset)
+	var frame_offsets: Array = presentation.get("frameOffsets",[])
+	if not frame_offsets.is_empty():
+		offset=frame_offsets[clampi(frame,0,frame_offsets.size()-1)]
+		if flip_h:
+			offset.x=-offset.x
+	_presentation_flip=flip_h

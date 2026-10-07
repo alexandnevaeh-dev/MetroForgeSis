@@ -163,6 +163,11 @@ export class GodotProjectAssembler {
       });
       stripRollbackOnlyAssets(input.outputDir);
       configureStormglassGalleryRoomKits(input.outputDir,input.gameDna,input.worldGraph);
+      if (input.gameDna.identity.title.startsWith('Stormglass Reliquary')
+        && input.worldGraph.nodes.some(node => node.metadata?.stormglassRoomTheme)
+        && !existsSync(join(input.outputDir,'data/visual/stormglass-room-kits.json'))) {
+        warnings.push('Stormglass room architecture kit could not be admitted; fallback decoration is active. Check required modules, atlas bounds, and asset hashes.');
+      }
       if (input.externalVisualPack === 'metroforge-foundry-v3' && input.textureFiles) {
         expandFoundryTextureAliases(input.textureFiles);
       }

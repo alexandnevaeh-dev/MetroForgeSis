@@ -40,16 +40,30 @@ export function loadStormglassPlayerAssets(resourceRoot: string, existingMetadat
     const animation = animations[clip];
     const size = sizes.get(animation.sourceSheet);
     if (!size || !Array.isArray(animation.sourceRegions) || animation.sourceRegions.length !== animation.frameCount
+      || !Number.isInteger(animation.frameCount) || animation.frameCount < 1
       || !Number.isFinite(animation.fps) || animation.fps <= 0 || typeof animation.loop !== 'boolean'
       || !Number.isFinite(animation.displayScale) || animation.displayScale <= 0 || animation.displayScale > 2
-      || !Number.isFinite(animation.footAnchorY)) throw new Error(`Invalid Stormglass player clip: ${clip}`);
+      || (animation.frameFootAnchors === undefined && !Number.isFinite(animation.footAnchorY))) throw new Error(`Invalid Stormglass player clip: ${clip}`);
+    const anchors = animation.frameFootAnchors;
+    if (anchors !== undefined && (!Array.isArray(anchors) || anchors.length !== animation.frameCount)) {
+      throw new Error(`Invalid per-frame anchor count: ${clip}`);
+    }
     let previousRight = -1;
+    let frameIndex = 0;
     const frameHeight = animation.sourceRegions[0]?.[3];
     for (const region of animation.sourceRegions) {
       if (!Array.isArray(region) || region.length !== 4 || !region.every(Number.isInteger)) throw new Error(`Invalid atlas region: ${clip}`);
       const [x,y,w,h] = region;
       if (x < 0 || y !== 0 || w <= 0 || h !== frameHeight || x < previousRight || x + w > size.width
-        || y + h > size.height || animation.footAnchorY < 0 || animation.footAnchorY > h) throw new Error(`Overlapping or out-of-bounds atlas region: ${clip}`);
+        || y + h > size.height || (anchors === undefined && (animation.footAnchorY < 0 || animation.footAnchorY > h))) throw new Error(`Overlapping or out-of-bounds atlas region: ${clip}`);
+      if (anchors !== undefined) {
+        const anchor = anchors[frameIndex];
+        if (!Array.isArray(anchor) || anchor.length !== 2 || !anchor.every(Number.isFinite)
+          || anchor[0] < 0 || anchor[0] > w || anchor[1] < 0 || anchor[1] > h) {
+          throw new Error(`Invalid per-frame foot anchor: ${clip}`);
+        }
+      }
+      frameIndex++;
       previousRight = x + w;
     }
   }

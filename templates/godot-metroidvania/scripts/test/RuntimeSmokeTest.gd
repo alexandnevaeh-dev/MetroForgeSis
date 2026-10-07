@@ -6,6 +6,7 @@ extends Node
 ## calls get_tree().quit() itself so no external --quit-after is required.
 
 const CaptureGuard := preload("res://scripts/test/CaptureGuard.gd")
+const RoomKitBounds := preload("res://scripts/test/RoomKitBounds.gd")
 const SpriteGroundContact := preload("res://scripts/test/SpriteGroundContact.gd")
 
 var _results: Array[Dictionary] = []
@@ -1929,6 +1930,8 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 	var stormglass_floor_foundations_present := true
 	var stormglass_water_zone_visuals_hidden := true
 	var stormglass_rooms_share_castle_interior := true
+	var uses_modular_rooms := FileAccess.file_exists("res://data/visual/stormglass-room-kits.json")
+	var stormglass_modular_backgrounds_match_rooms := true
 	var stormglass_condition_decals_present := true
 	var stormglass_condition_metadata_matches_rooms := true
 	var stormglass_surface_materials_match_districts := true
@@ -1963,6 +1966,8 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 		var loaded_room := world.get("_current_room") as Node
 		if actual_biome == "biome_0" and loaded_room != null:
 			stormglass_surface_rooms_checked += 1
+			if uses_modular_rooms:
+				stormglass_modular_backgrounds_match_rooms = RoomKitBounds.matches(loaded_room) and stormglass_modular_backgrounds_match_rooms
 			for body in loaded_room.get_children():
 				var label := String(body.name)
 				if not body is StaticBody2D or not (label == "Floor" or label.begins_with("FloorSeg") or label.begins_with("FloorSection_") or label.begins_with("Platform_") or label.begins_with("Shell") or label == "PaintedShell"):
@@ -2090,7 +2095,10 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 	_check("stormglass_visual_slice_uses_one_continuous_biome", captured_biomes.size() == 1 and captured_biomes.has("biome_0"))
 	_check("stormglass_visual_slice_captures_four_connected_regions", captured_regions.size() == 4)
 	_check("visual_slice_captures_all_ten_authored_gothic_rooms", captured_gothic_opening_rooms.size() == 10)
-	_check("stormglass_visual_slice_checks_all_40_room_surfaces", stormglass_surface_rooms_checked == 40)
+	if uses_modular_rooms:
+		_check("stormglass_visual_slice_checks_all_configured_room_surfaces",stormglass_surface_rooms_checked==rooms.size() and rooms.size()>0)
+	else:
+		_check("stormglass_visual_slice_checks_all_40_room_surfaces", stormglass_surface_rooms_checked == 40)
 	_check("stormglass_all_masonry_exactly_matches_real_collision", stormglass_masonry_rectangles_checked >= 40 and stormglass_masonry_matches_collision)
 	_check("stormglass_all_rooms_hide_placeholder_tile_layers", stormglass_placeholder_layers_hidden)
 	_check("stormglass_all_rooms_match_platform_art_to_collision", stormglass_platform_trims_match_collision)
@@ -2098,7 +2106,10 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 	_check("stormglass_all_existing_floor_colliders_are_dressed", stormglass_floor_strips_present)
 	_check("stormglass_all_existing_floors_have_painted_foundations", stormglass_floor_foundations_present)
 	_check("stormglass_water_zones_use_authored_panorama_visuals", stormglass_water_zone_visuals_hidden)
-	_check("stormglass_all_40_rooms_share_one_castle_interior_background", stormglass_rooms_share_castle_interior)
+	if uses_modular_rooms:
+		_check("stormglass_modular_backgrounds_match_all_loaded_room_bounds",stormglass_surface_rooms_checked==rooms.size() and stormglass_surface_rooms_checked>0 and stormglass_modular_backgrounds_match_rooms)
+	else:
+		_check("stormglass_all_40_rooms_share_one_castle_interior_background", stormglass_rooms_share_castle_interior)
 	_check("stormglass_all_40_rooms_have_two_authored_condition_decals", stormglass_condition_decals_present)
 	_check("stormglass_condition_metadata_matches_each_room_district", stormglass_condition_metadata_matches_rooms)
 	_check("stormglass_platform_materials_match_castle_condition", stormglass_surface_materials_match_districts)
