@@ -1,6 +1,7 @@
 # MetroForge design context
 
 ## Animation source preview
+AnimationThumbnail owns static first-source gallery cards. Only visible virtualized cards read their first authored frame; canvas pixels are bounded to 216px and retain the existing 108px media footprint. Source failures show readable unavailable text. Maturity and provider badges remain artifact provenance, independent of preview success.
 The asset inspector retains the forge workbench controls and canonical tokens. Its animation viewport reserves the existing 240px canvas limit during loading and errors so playback controls do not move. Independent source frames and source-sheet regions use one shared canvas extent derived from declared foot anchors and scale; nearest-neighbor drawing preserves pixel-art inspection. Playback starts after the source images are ready. Source failures keep disabled controls and an explicit retry action. Grid-sheet previews retain their existing frame order and metadata fallback.
 
 ## Jump navigation

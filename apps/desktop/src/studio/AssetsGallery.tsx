@@ -275,6 +275,7 @@ function ProjectAssetsGallery() {
           assets={filtered}
           selectedId={selected?.id}
           onSelect={setSelected}
+          loadSource={loadAnimationSource}
         />
 
         {selected && (

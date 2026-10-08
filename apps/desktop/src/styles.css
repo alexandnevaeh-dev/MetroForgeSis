@@ -936,6 +936,7 @@ textarea {
 }
 
 .asset-card img,
+.asset-animation-thumbnail,
 .detail-preview {
   display: block;
   width: 100%;
@@ -944,6 +945,10 @@ textarea {
   image-rendering: pixelated;
   background: var(--bg-root);
 }
+
+.asset-animation-thumbnail { display: grid; place-items: center; font-size: 11px; color: var(--text-muted); }
+.asset-animation-thumbnail canvas { max-width: 100%; max-height: 108px; image-rendering: pixelated; }
+.asset-animation-thumbnail canvas[hidden] { display: none; }
 
 .detail-preview {
   height: 180px;
