@@ -60,14 +60,21 @@ export function stormglassGalleryPort(roomId:string,targetId:string,direction:st
   const rooms=buildStormglassGalleryBlueprint().rooms;
   const room=rooms.find(r=>r.id===roomId),target=rooms.find(r=>r.id===targetId);
   if(!room||!target)return undefined;
+  // Overlap alone is insufficient: a chamber on the opposite side (or across
+  // another room) would otherwise receive a plausible but disconnected anchor.
+  const touches = direction==='left' ? target.x+target.width===room.x
+    : direction==='right' ? room.x+room.width===target.x
+    : direction==='up' ? target.y+target.height===room.y
+    : direction==='down' ? room.y+room.height===target.y : false;
+  if(!touches)throw new Error(`Stormglass portal ${roomId} ${direction} ${targetId}: room edges do not touch`);
   if(direction==='left'||direction==='right'){
     const top=Math.max(room.y,target.y),bottom=Math.min(room.y+room.height,target.y+target.height);
-    if(bottom-top<128)return undefined;
+    if(bottom-top<128)throw new Error(`Stormglass portal ${roomId} ${direction} ${targetId}: opening has less than 128px shared height`);
     const floorY=bottom-room.y-64;
     return {x:direction==='left'?48:room.width-72,y:floorY-32,floorY,direction,targetRoomId:targetId};
   }
   const left=Math.max(room.x,target.x),right=Math.min(room.x+room.width,target.x+target.width);
-  if(right-left<128)return undefined;
+  if(right-left<128)throw new Error(`Stormglass portal ${roomId} ${direction} ${targetId}: opening has less than 128px shared width`);
   const x=(left+right)/2-room.x-12;
   return {x,y:direction==='up'?32:room.height+64,floorY:direction==='up'?64:room.height-64,direction,targetRoomId:targetId};
 }

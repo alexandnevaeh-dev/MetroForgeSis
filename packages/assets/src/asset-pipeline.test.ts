@@ -519,6 +519,16 @@ describe('AssetPipeline procedural path', () => {
       const talk = result.assets.find(a => a.id === `${id}_talk`)!;
       expect(idle.buffer.equals(talk.buffer)).toBe(false);
     }
+    for (const id of ['npc_merchant','npc_sage']) {
+      const identityPortrait = result.assets.find(a => a.path === `assets/ui/portraits/${id}.png`)!;
+      const parent = result.assets.find(a => a.id === id)!;
+      expect(identityPortrait).toBeDefined();
+      expect(identityPortrait.parentArtifactIds).toEqual([id]);
+      expect(identityPortrait.provider).toBe(parent.provider);
+      expect(identityPortrait.fallbackGenerated).toBe(parent.fallbackGenerated);
+      expect(identityPortrait.buffer.readUInt32BE(16)).toBe(72);
+      expect(identityPortrait.buffer.readUInt32BE(20)).toBe(72);
+    }
     const merchant = result.assets.find((a) => a.id === 'npc_merchant')!;
     const sage = result.assets.find((a) => a.id === 'npc_sage')!;
     expect(merchant.buffer.equals(sage.buffer)).toBe(false);

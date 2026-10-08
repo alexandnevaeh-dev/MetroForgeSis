@@ -1,7 +1,27 @@
 import {describe,it,expect} from 'vitest';
-import {stormglassGalleryPort} from './stormglass-gallery-blueprint.js';
+import {buildStormglassGalleryBlueprint,stormglassGalleryPort} from './stormglass-gallery-blueprint.js';
 import {stormglassGalleryDescentPits,buildRoomBoundaryColliders} from './room-assembler.js';
 describe('Stormglass shared-world portal alignment',()=>{
+ it('rejects wrong directions, separated rooms and corner-only openings',()=>{
+  expect(()=>stormglassGalleryPort('room_002','room_003','right')).toThrow(/edges do not touch/);
+  expect(()=>stormglassGalleryPort('room_000','room_006','right')).toThrow(/edges do not touch/);
+  expect(()=>stormglassGalleryPort('room_000','room_003','down')).toThrow(/shared width/);
+  expect(()=>stormglassGalleryPort('room_002','room_003','diagonal')).toThrow(/edges do not touch/);
+ });
+ it('accepts every internal authored doorway in both directions',()=>{
+  const plan=buildStormglassGalleryBlueprint();
+  const opposite:Record<string,string>={left:'right',right:'left',up:'down',down:'up'};
+  for(const link of plan.links){
+   if(!plan.rooms.some(room=>room.id===link.to))continue;
+   const forward=stormglassGalleryPort(link.from,link.to,link.direction)!;
+   const reverse=stormglassGalleryPort(link.to,link.from,opposite[link.direction]!)!;
+   expect(forward).toBeDefined();expect(reverse).toBeDefined();
+   const from=plan.rooms.find(room=>room.id===link.from)!;
+   const to=plan.rooms.find(room=>room.id===link.to)!;
+   if(link.direction==='left'||link.direction==='right')expect(from.y+forward.floorY).toBe(to.y+reverse.floorY);
+   else expect(from.x+forward.x).toBe(to.x+reverse.x);
+  }
+ });
  it('places the stairwell shrine door at the shared chamber floor',()=>{
   expect(stormglassGalleryPort('room_002','room_003','left')).toMatchObject({floorY:704,y:672});
   expect(stormglassGalleryPort('room_003','room_002','right')).toMatchObject({floorY:704,y:672});

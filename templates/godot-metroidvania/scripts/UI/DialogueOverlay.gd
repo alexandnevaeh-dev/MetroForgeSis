@@ -219,6 +219,14 @@ func _apply_portrait(portrait_key: String) -> void:
 		return
 	var key := portrait_key.to_lower()
 	var path := "res://assets/ui/portraits/%s.png" % key
+	# Prefer an identity portrait only for the default role portrait. Explicit
+	# authored line portraits keep their own choice; absent NPC art keeps role fallback.
+	var npc_id := String(_context.get("npc_id", ""))
+	var default_role := String(_context.get("role", "neutral")).to_lower()
+	if key == default_role and npc_id.is_valid_identifier():
+		var identity_path := "res://assets/ui/portraits/%s.png" % npc_id
+		if ResourceLoader.exists(identity_path):
+			path = identity_path
 	if ResourceLoader.exists(path):
 		portrait_image.texture = load(path)
 		portrait_image.visible = true

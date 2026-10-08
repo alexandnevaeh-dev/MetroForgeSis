@@ -2039,7 +2039,8 @@ export class AssetPipeline {
       }
       }
       const portraitRole = role.replace(/[^a-z0-9_]/gi, '_').toLowerCase();
-      const portraitPath = `assets/ui/portraits/${portraitRole}.png`;
+      for (const portraitKey of new Set([portraitRole, npcId])) {
+      const portraitPath = `assets/ui/portraits/${portraitKey}.png`;
       if (!assets.some((a) => a.path === portraitPath)) {
         const portrait = this.pixelArt.process(npcAsset.buffer, {
           targetWidth: 72,
@@ -2049,7 +2050,7 @@ export class AssetPipeline {
         writeCheckpoint(options.outputDir, portraitPath, portrait.buffer);
         recordAsset(
           {
-            id: `portrait_${portraitRole}`,
+            id: `portrait_${portraitKey}`,
             path: portraitPath,
             buffer: portrait.buffer,
             // A portrait crop of procedural NPC art carries no new content beyond the parent's
@@ -2074,6 +2075,7 @@ export class AssetPipeline {
           },
           'portrait',
         );
+      }
       }
     }
 
