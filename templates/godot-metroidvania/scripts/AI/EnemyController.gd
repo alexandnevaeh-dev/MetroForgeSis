@@ -84,6 +84,12 @@ func _ready() -> void:
 	# Projectile/burst/beam/area attack from range; trap springs on proximity; summoners spawn.
 	if _combat_type == "melee":
 		contact_hitbox.activate()
+		var strike := preload("res://scripts/combat/EnemyMeleeStrike.gd").new()
+		if strike.configure(self,sprite,"res://assets/enemies/"+enemy_id+"_animations.json",contact_damage):
+			strike.name="AuthoredMeleeStrike"
+			add_child(strike)
+		else:
+			strike.free()
 	_attack_timer = _combat_cooldown
 
 func _apply_enemy_data() -> void:

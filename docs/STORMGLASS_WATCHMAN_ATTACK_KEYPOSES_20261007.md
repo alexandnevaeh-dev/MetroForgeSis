@@ -119,3 +119,11 @@ combat synchronization, family integration and visual approval before admission.
 ## Contact-source study 2026-10-08
 
 Two new unmodified built-in imagegen studies are retained on E: (`watchman-attack-contact-unaccepted-v3.png` and `watchman-attack-contact-right-v4.png`). V3 kept the planted silhouette but had only 35px visible right margin; it was not admitted. V4 shortens the forward blade for padding and remains a draft contact study. The cape stays behind the torso and there are no adjacent atlas frames. Its measured bounds and SHA256 are in the sibling JSON receipt. No native six-frame sequence or complete-family quality is claimed; production source assets and the existing five-frame proofs remain unchanged. This was built-in image generation, not local NVIDIA inference.
+
+## Six-pose native excerpt
+
+The padded contact V4 source is now tested between start and follow-through in an isolated six-pose excerpt through the current production AnimatedAssetSprite loader. Both facings passed 22 native checks: independent whole-source frames, authored one-shot timing, all six observed poses, declared ground/head anchors, final ready pose and matching singleton-idle transition. Import and native exit were zero without script/native errors. Read-only captures measured a maximum 0.8px horizontal cyan-visor range in each facing. All six source hashes remained unchanged.
+
+Evidence: `motion-v4-completion.json`, `motion-source-audit-v4.json`, `motion-raster-audit-v4.json`, `motion-v4-native.log` and `native-attack-excerpt-v4/qa` under the E: attack evidence root. The initially mis-rooted empty preparation and failed import log are preserved. Native right/left contact captures were inspected: weapon faces forward and cape remains behind the body.
+
+The blade is foreshortened in the contact study. Weapon-length consistency and motion quality remain art review work. This is still a coarse excerpt and singleton idle; full idle/walk/run/hurt/death family completion, combat contact-frame synchronization and production admission remain open. The production game assets and earlier five-pose proofs are unchanged.

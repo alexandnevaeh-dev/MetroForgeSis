@@ -18,7 +18,7 @@ func activate() -> void:
 	# Area2D does not emit area_entered for shapes that were already overlapping
 	# when monitoring flips true. A standing melee swing (playtest bot, or a player
 	# who walked into range then attacked) would otherwise deal 0 damage forever.
-	if is_inside_tree():
+	if is_inside_tree() and not get_tree().physics_frame.is_connected(_apply_current_overlaps):
 		get_tree().physics_frame.connect(_apply_current_overlaps, CONNECT_ONE_SHOT)
 
 func deactivate() -> void:
