@@ -1475,6 +1475,21 @@ export function buildStormglassInteriorMasonry(options: RoomAssemblyOptions): Co
   if (!options.stormglassRoomTheme || options.stormglassRoomTheme === 'stairwell') return [];
   if (options.connections.some(connection => connection.direction === 'up')) return [];
   const floor = options.hasTileset ? floorTopPx(options.height, options.tileSize || 16) : options.height - 96;
+  if (options.stormglassRoomTheme === 'water-refuge') {
+    const entryWidth = options.width * 5 / 24;
+    const hallWidth = options.width * 17 / 48;
+    const exitX = entryWidth + hallWidth;
+    // Shelter the real checkpoint and retain the existing low hall landing.
+    const spans = [
+      {x:0,width:entryWidth,clearance:384},
+      {x:entryWidth,width:hallWidth,clearance:320},
+      {x:exitX,width:options.width-exitX,clearance:256},
+    ];
+    return spans.flatMap((span,index)=>[
+      {name:`MasonryRoof_${index}`,x:span.x,y:0,width:span.width,height:Math.max(64,floor-span.clearance)},
+      ...(index===0?[]:[{name:`MasonryPier_${index}`,x:span.x-32,y:floor-(index===1?384:320),width:64,height:index===1?128:64}]),
+    ]);
+  }
   if (options.stormglassRoomTheme === 'pressure-shaft') {
     const entryWidth = options.width / 7;
     const naveWidth = options.width * 9 / 28;

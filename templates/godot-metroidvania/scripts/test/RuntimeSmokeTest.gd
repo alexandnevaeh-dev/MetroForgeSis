@@ -6,6 +6,7 @@ extends Node
 ## calls get_tree().quit() itself so no external --quit-after is required.
 
 const CaptureGuard := preload("res://scripts/test/CaptureGuard.gd")
+const RegionCaptureCoverage := preload("res://scripts/test/RegionCaptureCoverage.gd")
 const RoomKitBounds := preload("res://scripts/test/RoomKitBounds.gd")
 const SpriteGroundContact := preload("res://scripts/test/SpriteGroundContact.gd")
 
@@ -1920,6 +1921,10 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 	var rooms: Dictionary = parsed.get("rooms", {})
 	var captured_biomes: Dictionary = {}
 	var captured_regions: Dictionary = {}
+	var captured_rooms: Dictionary = {}
+	var graph_data: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://world_graph.json"))
+	var authored_graph: Dictionary = graph_data if graph_data is Dictionary else {}
+	var region_coverage := RegionCaptureCoverage.membership(authored_graph, rooms)
 	var captured_gothic_opening_rooms: Dictionary = {}
 	var stormglass_surface_rooms_checked := 0
 	var stormglass_placeholder_layers_hidden := true
@@ -1955,13 +1960,13 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 		await get_tree().process_frame
 		# Room loads instantiate a new Player — never reuse a stale reference.
 		var _player := get_tree().get_first_node_in_group("player")
-		if _player == null:
-			push_warning("visual slice capture: no player in %s" % String(room_id))
+		if _player == null or GameManager.current_room_id != String(room_id):
+			push_warning("visual slice capture: requested room not loaded: %s" % String(room_id))
 			continue
 		var actual_biome := String(info.get("biomeId", ""))
 		var expected_castle_base: String = preload("res://scripts/world/StormglassDecor.gd").castle_background_path(actual_biome)
 		var room_index := maxi(0, String(room_id).trim_prefix("room_").to_int())
-		var region_id := "region_%d" % int(room_index / 10)
+		var region_id := String(region_coverage.roomRegions.get(String(room_id), ""))
 		var loaded_room := world.get("_current_room") as Node
 		if actual_biome == "biome_0" and loaded_room != null:
 			stormglass_surface_rooms_checked += 1
@@ -2062,10 +2067,11 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 			captured_biomes[actual_biome] = true
 			await _capture_runtime_state(actual_biome, "biome room %s" % actual_biome, {"roomId": String(room_id), "biomeId": actual_biome, "runtimeState": "biome"})
 			_save_report_shot(actual_biome, "%s.png" % actual_biome)
-		if not captured_regions.has(region_id):
-			captured_regions[region_id] = true
-			await _capture_runtime_state(region_id, "connected district %s" % region_id, {"roomId": String(room_id), "biomeId": actual_biome, "regionId": region_id, "runtimeState": "region"})
-			_save_report_shot(region_id, "%s.png" % region_id)
+		if not region_id.is_empty() and not captured_regions.has(region_id):
+			var region_shot_ok := await _capture_runtime_state(region_id, "authored region %s" % region_id, {"roomId": String(room_id), "biomeId": actual_biome, "regionId": region_id, "runtimeState": "region"})
+			if region_shot_ok:
+				captured_regions[region_id] = true
+				_save_report_shot(region_id, "%s.png" % region_id)
 		var enemies: Array = info.get("enemies", [])
 		for enemy_id in enemies:
 			var enemy_key := String(enemy_id)
@@ -2081,8 +2087,10 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 					await get_tree().process_frame
 				await _capture_runtime_state(alias, "enemy %s" % alias, {"roomId": String(room_id), "biomeId": actual_biome, "entityId": enemy_key, "enemyArchetype": alias, "runtimeState": "enemy"})
 				_save_report_shot(alias, "%s.png" % alias)
-		var shot_id := "slice_%s" % tag
-		await _capture_runtime_state(shot_id, "visual-slice room %s" % tag, {"roomId": String(room_id), "biomeId": tag, "runtimeState": "room"})
+		var shot_id := "slice_%s_%s" % [tag, String(room_id)]
+		var room_shot_ok := await _capture_runtime_state(shot_id, "visual-slice room %s" % tag, {"roomId": String(room_id), "biomeId": actual_biome, "regionId": region_id, "runtimeState": "room"})
+		if room_shot_ok and not region_id.is_empty():
+			captured_rooms[String(room_id)] = region_id
 		_save_report_shot(shot_id, String(mapping[tag]))
 		if tag == "tutorial":
 			_save_report_shot(shot_id, "hud.png")
@@ -2092,7 +2100,9 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 			await _capture_named_screenshot("slice_boss_combat")
 			_save_report_shot("slice_boss_combat", "09-boss-combat.png")
 	_check("stormglass_visual_slice_uses_one_continuous_biome", captured_biomes.size() == 1 and captured_biomes.has("biome_0"))
-	_check("stormglass_visual_slice_captures_four_connected_regions", captured_regions.size() == 4)
+	_check("stormglass_visual_slice_covers_all_authored_region_rooms", RegionCaptureCoverage.complete(region_coverage, captured_regions, captured_rooms))
+	_check("stormglass_visual_slice_captures_connected_authored_regions", bool(region_coverage.valid) and captured_regions.size() == region_coverage.regions.size() and RegionCaptureCoverage.connected(authored_graph, rooms))
+	print("AUTHORED_REGION_COVERAGE " + JSON.stringify({"expectedRegions":region_coverage.regions.keys(), "capturedRegions":captured_regions.keys(), "expectedRooms":rooms.size(), "capturedRooms":captured_rooms.size(), "errors":region_coverage.errors}))
 	_check("visual_slice_captures_all_ten_authored_gothic_rooms", captured_gothic_opening_rooms.size() == 10)
 	if uses_modular_rooms:
 		_check("stormglass_visual_slice_checks_all_configured_room_surfaces",stormglass_surface_rooms_checked==rooms.size() and rooms.size()>0)

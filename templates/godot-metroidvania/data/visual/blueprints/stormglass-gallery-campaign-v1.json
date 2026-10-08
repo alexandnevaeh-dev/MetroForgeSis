@@ -344,7 +344,8 @@
           "screenSpanH": 3,
           "screenSpanV": 2,
           "targetTileWidth": 96,
-          "targetTileHeight": 36
+          "targetTileHeight": 36,
+          "stormglassRoomTheme": "water-refuge"
         }
       },
       {

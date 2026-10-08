@@ -547,7 +547,7 @@
         "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
         "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
       ],
-      "wallTint": "668c88",
+      "wallTint": "739ba0",
       "props": [
         {
           "role": "rest_bench",
@@ -560,14 +560,20 @@
           "lift": 0,
           "x": 2304.0,
           "height": 128
+        },
+        {
+          "role": "votive_lamp",
+          "lift": 128,
+          "x": 384,
+          "height": 64
         }
       ],
-      "columnTint": "8da59f",
+      "columnTint": "90a8b0",
       "district": "flooded_halls",
-      "wallHeight": 416,
-      "ambientColor": "0c1b21",
-      "wallRole": "burial_wall",
-      "stainedWindows": false,
+      "wallHeight": 384,
+      "ambientColor": "102126",
+      "wallRole": "marble_wall",
+      "stainedWindows": true,
       "purpose": "Water Shrine"
     },
     "room_017": {
