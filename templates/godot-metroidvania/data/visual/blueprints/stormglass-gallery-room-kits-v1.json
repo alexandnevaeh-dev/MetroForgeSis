@@ -643,10 +643,10 @@
       "wallTint": "668c88",
       "props": [
         {
-          "role": "sarcophagus",
-          "lift": 0,
+          "role": "chain_winch",
+          "lift": 96,
           "x": 448.0,
-          "height": 160
+          "height": 128
         },
         {
           "role": "iron_censer",

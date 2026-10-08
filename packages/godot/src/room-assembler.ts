@@ -1475,6 +1475,14 @@ export function buildStormglassInteriorMasonry(options: RoomAssemblyOptions): Co
   if (!options.stormglassRoomTheme || options.stormglassRoomTheme === 'stairwell') return [];
   if (options.connections.some(connection => connection.direction === 'up')) return [];
   const floor = options.hasTileset ? floorTopPx(options.height, options.tileSize || 16) : options.height - 96;
+  if (options.stormglassRoomTheme === 'floodgate-ascent') {
+    // Retain the two original gate ledges in a taller pump chamber.
+    return [
+      {name:'MasonryRoof_0',x:0,y:0,width:options.width*5/14,height:Math.max(64,floor-256)},
+      {name:'MasonryRoof_1',x:options.width*5/14,y:0,width:options.width*2/7,height:Math.max(64,floor-384)},
+      {name:'MasonryRoof_2',x:options.width*9/14,y:0,width:options.width*5/14,height:Math.max(64,floor-320)},
+    ];
+  }
   if (options.stormglassRoomTheme === 'cache-drop') {
     // Incoming room015 descent has no reciprocal up edge here. Keep its
     // real top arrival and collectible column open between enclosed bays.

@@ -1,0 +1,9 @@
+# Floodgate Ascent chamber
+
+Room019 has three solid masonry roofs: (0,0,640,448), (640,0,512,320), (1152,0,640,384) in its1792x768 bounds with floor704. The central chamber retains the original128px ledges at (768,608) and (928,512); the side hall retains npc_003 at (1344,704). A chain winch replaces the unrelated sarcophagus without changing collision. The right connection to room020 still requires double_jump; the left return connects to guardian room018.
+
+Four focused enclosure tests and desktop build passed. Actual app export1791453811093 passed export while broader art/presentation checks remained failed. Seven visible native checks passed: exact roofs, full-room facade clipping, blocked gate under real input without double_jump, actual shrine pickup, earned gate entry, return through room020 and input return to guardian arena. Six actual editor Regenerate/Undo checks passed. All native export inputs preserved their hashes. Missing NPC interaction sheet warnings and ObjectDB/resource shutdown warnings were retained in the native logs; subsequent NPC export repair has separate evidence. Native fixture uses controlled room setup and real input/pickup. Full current campaign, final artwork and publication remain separate requirements.
+
+Evidence: E:/MetroForgeData/Development/stormglass-floodgate-20261008/native-completion.json, native.log and editor-v1/editor/proof.json. Full replay of the later NPC-repaired export lives in E:/MetroForgeData/Development/stormglass-npc-clips-20261008/campaign-v2 with one explicitly recorded test-driver overlay.
+
+The later NPC-repaired export completed its full34-step visible campaign with all four guardians, six abilities and zero deaths. Its1949 input comparison admits exactly the documented PlaytestAgent guard overlay; gameplay and art inputs are unchanged. Publication review remains pending.

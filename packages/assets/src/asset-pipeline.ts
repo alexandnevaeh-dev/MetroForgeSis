@@ -2017,9 +2017,9 @@ export class AssetPipeline {
           ),
         'animation',
       );
-      if (authoredKit && npcId === 'npc_000') {
+      {
         for (const extra of ['idle', 'talk', 'listen'] as const) {
-          const extraAsset = this.materializeAuthoredCourier({
+          const extraAsset = (authoredKit && npcId === 'npc_000' ? this.materializeAuthoredCourier({
             id: `${npcId}_${extra}`,
             path: `assets/npcs/${npcId}_${extra}.png`,
             filename: `npc_000_${extra}.png`,
@@ -2030,8 +2030,11 @@ export class AssetPipeline {
             frameCount: 4,
             expectedFrameWidth: npcSpec.width,
             kit: authoredKit,
-          });
-          if (extraAsset) recordAsset(extraAsset, 'animation');
+          }) : null) ?? this.buildProgressionSheetAsset(
+            npcId, {name:extra,frameCount:4,fps:6,loop:true,mode:'progression-oscillate',poseKey:`npc_${extra}`,minUniqueFrameRatio:0.5},
+            npcSpec, `assets/npcs/${npcId}_${extra}.png`, tileSize, npcAsset.buffer,
+          );
+          recordAsset(withMaturity({...extraAsset, fallbackGenerated: extraAsset.fallbackGenerated || npcAsset.fallbackGenerated}), 'animation');
         }
       }
       }

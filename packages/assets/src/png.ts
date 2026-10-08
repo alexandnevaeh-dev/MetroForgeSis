@@ -1678,6 +1678,9 @@ export const POSE_TRANSFORMS: Record<string, PoseTransformSpec> = {
   // exact defect this phase fixes). The slight top crop shifts which rows are "inside" the
   // silhouette, which survives quantization since alpha isn't quantized.
   idle: { cropY: [0, 0.96], tint: -8 },
+  npc_idle: { cropY: [0, 0.98] },
+  npc_talk: { cropY: [0, 0.96], shearX: [-3, 3] },
+  npc_listen: { cropY: [0, 0.97], shearX: [1, -1] },
   run: { cropY: [0.02, 1], shearX: [-4, 4] },
   jump_start: { cropY: [0.16, 1], shearX: [3, -3] },
   jump: { cropY: [0, 0.86], shearX: [-2, 2], tint: 14 },

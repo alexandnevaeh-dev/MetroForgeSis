@@ -507,6 +507,18 @@ describe('AssetPipeline procedural path', () => {
     expect(result.assets.some((a) => a.path === 'assets/npcs/npc_sage.png')).toBe(true);
     expect(result.assets.some((a) => a.path === 'assets/npcs/npc_sage_walk.png')).toBe(true);
 
+    for (const id of ['npc_merchant', 'npc_sage']) {
+      for (const clip of ['idle', 'talk', 'listen']) {
+        const asset = result.assets.find(a => a.path === `assets/npcs/${id}_${clip}.png`);
+        expect(asset).toBeDefined();
+        expect(asset!.buffer.readUInt32BE(16)).toBe(256);
+        expect(asset!.buffer.readUInt32BE(20)).toBe(64);
+        expect(asset!.fallbackGenerated).toBe(result.assets.find(a => a.id === id)!.fallbackGenerated);
+      }
+      const idle = result.assets.find(a => a.id === `${id}_idle`)!;
+      const talk = result.assets.find(a => a.id === `${id}_talk`)!;
+      expect(idle.buffer.equals(talk.buffer)).toBe(false);
+    }
     const merchant = result.assets.find((a) => a.id === 'npc_merchant')!;
     const sage = result.assets.find((a) => a.id === 'npc_sage')!;
     expect(merchant.buffer.equals(sage.buffer)).toBe(false);

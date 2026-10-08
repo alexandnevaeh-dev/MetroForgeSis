@@ -345,7 +345,11 @@ func _execute_transition(_world: Node, host: Node, from_room: String, to_room: S
 		return false
 
 	if String(transition.get("transition_direction")) == "up":
-		if not await _follow_switchback_ascent(host, player, transition):
+		var ascended := await _follow_switchback_ascent(host, player, transition)
+		# A real door can finish during the staircase helper's final settle wait.
+		if GameManager.current_room_id == to_room:
+			return true
+		if not ascended or not is_instance_valid(player) or not is_instance_valid(transition):
 			_fail_stage = "switchback_ascent_failed"
 			return false
 		Input.action_press("move_up")
@@ -404,7 +408,7 @@ func _follow_switchback_ascent(host: Node, player: Node, transition: Node) -> bo
 		Input.action_release("move_down")
 		Input.action_release("move_up")
 		Input.action_press("move_right" if right else "move_left")
-		while elapsed < 12.0 and (body.global_position.x < endpoint.x - 6.0 if right else body.global_position.x > endpoint.x + 6.0):
+		while is_instance_valid(body) and elapsed < 12.0 and (body.global_position.x < endpoint.x - 6.0 if right else body.global_position.x > endpoint.x + 6.0):
 			if not is_instance_valid(body) or not body.get_node("HealthComponent").is_alive():
 				_release_horizontal_input()
 				return false
@@ -412,6 +416,8 @@ func _follow_switchback_ascent(host: Node, player: Node, transition: Node) -> bo
 			elapsed += host.get_physics_process_delta_time()
 		_release_horizontal_input()
 		await host.get_tree().create_timer(0.25).timeout
+		if not is_instance_valid(body):
+			return false
 		var passed := absf(body.global_position.y-endpoint.y)<8.0 and body.is_on_floor()
 		print("JOURNEY_SWITCHBACK ",index," passed=",passed," pos=",body.global_position," elapsed=",elapsed)
 		if not passed:

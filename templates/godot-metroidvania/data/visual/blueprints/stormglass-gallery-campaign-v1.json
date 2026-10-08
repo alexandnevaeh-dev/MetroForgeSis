@@ -399,7 +399,8 @@
           "screenSpanH": 2,
           "screenSpanV": 1,
           "targetTileWidth": 56,
-          "targetTileHeight": 24
+          "targetTileHeight": 24,
+          "stormglassRoomTheme": "floodgate-ascent"
         }
       },
       {

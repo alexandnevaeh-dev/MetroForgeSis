@@ -1,0 +1,57 @@
+import {_electron} from 'playwright';
+import {createRequire} from 'node:module';
+import {mkdirSync,readFileSync,writeFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import assert from 'node:assert/strict';
+const repo='E:/Metroforge/MetroForge-Publish',base=process.argv[2];
+assert.match(base??'',/^E:[\\/]/i);
+const project=base+'/games/stormglass-castle',output=base+'/editor';
+for(const dir of ['temp','data','appdata','localappdata'])mkdirSync(output+'/'+dir,{recursive:true});
+writeFileSync(output+'/empty.env','');
+const require=createRequire(repo+'/apps/desktop/package.json');
+const roomsFile=project+'/data/rooms/rooms.json';
+const bytes=readFileSync(roomsFile),before=JSON.parse(bytes).rooms;
+const hash=p=>createHash('sha256').update(readFileSync(p)).digest('hex');
+const guards=['world_graph.json','scenes/rooms/room_012.tscn','scenes/rooms/room_021.tscn','scripts/world/StormglassRoomKit.gd'];
+const hashes=Object.fromEntries(guards.map(p=>[p,hash(project+'/'+p)]));
+const env={...process.env,METROFORGE_ENV_FILE:output+'/empty.env',METROFORGE_DESKTOP_HIDDEN:'1',METROFORGE_DATA_DIR:output+'/data',METROFORGE_GENERATED_GAMES_DIR:base+'/games',TEMP:output+'/temp',TMP:output+'/temp',APPDATA:output+'/appdata',LOCALAPPDATA:output+'/localappdata'};
+for(const key of Object.keys(env))if(/API_KEY|ACCESS_TOKEN|AUTH_TOKEN/.test(key))delete env[key];
+for(const key of ['ELECTRON_RUN_AS_NODE','VITE_DEV_SERVER_URL'])delete env[key];
+const proof={passed:false,checks:[],errors:[],scope:'Actual desktop Rooms editor regeneration/Undo, isolated app-generated candidate; art scale requires native evidence.'};
+const check=(label,passed)=>{proof.checks.push({label,passed});assert.ok(passed,label);};
+let app;
+try{
+ app=await _electron.launch({executablePath:require('electron'),args:[repo+'/apps/desktop'],cwd:repo,env,timeout:60000});
+ const page=await app.firstWindow();page.setDefaultTimeout(30000);page.on('pageerror',e=>proof.errors.push(e.message));
+ await app.evaluate(({BrowserWindow})=>{const w=BrowserWindow.getAllWindows()[0];w.webContents.setBackgroundThrottling(false);w.setBounds({width:1500,height:1000});});
+ await page.locator('.nav-item').filter({has:page.locator('.nav-function',{hasText:/^Rooms$/})}).click();
+ const picker=page.locator('.room-editor-screen .project-select select');
+ proof.options=await picker.locator('option').evaluateAll(options=>options.map(o=>({value:o.value,label:o.textContent})));
+ const selected=proof.options.find(o=>o.value.replaceAll('\\','/').toLowerCase()===project.replaceAll('\\','/').toLowerCase());
+ assert.ok(selected,'Candidate exists in native project picker');
+ await picker.selectOption(selected.value);
+ await page.getByLabel('Filter rooms',{exact:true}).fill('room_019');
+ await page.getByRole('option',{name:/room_019/}).click();
+ await page.waitForFunction(()=>document.querySelector('.room-canvas-status')?.textContent.includes('room_019'));
+ const collision=await page.evaluate(p=>window.metroforge.getRoomCollision(p,'room_019'),project);
+ await page.getByRole('button',{name:'Regenerate Room',exact:true}).click();
+ await page.getByRole('button',{name:'Undo saved room change',exact:true}).waitFor({state:'visible'});
+ const regenerated=JSON.parse(readFileSync(roomsFile)).rooms;
+ check('Regeneration preserves Floodgate Ascent masonry',JSON.stringify(regenerated.room_019.masonryRects)===JSON.stringify(before.room_019.masonryRects));
+ check('Regeneration preserves 42 sibling room records',Object.keys(before).filter(id=>id!=='room_019').every(id=>JSON.stringify(before[id])===JSON.stringify(regenerated[id])));
+ check('Regeneration preserves world graph, neighboring scenes and render script',guards.every(p=>hash(project+'/'+p)===hashes[p]));
+ await page.getByRole('button',{name:'Undo saved room change',exact:true}).click();
+ await page.waitForFunction(async p=>(await window.metroforge.listRooms(p)).some(room=>room.id==='room_019'),project);
+ // Wait for the save to finish before comparing the on-disk collision records.
+ const undoDeadline=Date.now()+30000;
+ while(!readFileSync(roomsFile).equals(bytes)&&Date.now()<undoDeadline)await page.waitForTimeout(100);
+ check('Undo restores room records byte for byte',readFileSync(roomsFile).equals(bytes));
+ const restored=await page.evaluate(p=>window.metroforge.getRoomCollision(p,'room_019'),project);
+ check('Undo restores native collision rectangles',JSON.stringify(restored.rects)===JSON.stringify(collision.rects));
+ check('No renderer exceptions',proof.errors.length===0);
+ const png=await app.evaluate(async({BrowserWindow})=>BrowserWindow.getAllWindows()[0].webContents.capturePage(undefined,{stayHidden:true,stayAwake:true}).then(i=>i.toPNG().toString('base64')));
+ writeFileSync(output+'/rooms.png',Buffer.from(png,'base64'));
+ proof.passed=true;
+}catch(e){proof.error=String(e);process.exitCode=1;}finally{
+ writeFileSync(output+'/proof.json',JSON.stringify(proof,null,2));if(app)await app.close();console.log(JSON.stringify({passed:proof.passed,error:proof.error,output}));
+}
