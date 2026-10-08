@@ -349,6 +349,9 @@ func _execute_transition(_world: Node, host: Node, from_room: String, to_room: S
 		# A real door can finish during the staircase helper's final settle wait.
 		if GameManager.current_room_id == to_room:
 			return true
+		# Room loading can free the outgoing player before publishing its destination.
+		if (not is_instance_valid(player) or bool(_world.get("_transitioning"))) and await _wait_room(host, to_room, 2.0):
+			return true
 		if not ascended or not is_instance_valid(player) or not is_instance_valid(transition):
 			_fail_stage = "switchback_ascent_failed"
 			return false
@@ -412,6 +415,9 @@ func _follow_switchback_ascent(host: Node, player: Node, transition: Node) -> bo
 			if not is_instance_valid(body) or not body.get_node("HealthComponent").is_alive():
 				_release_horizontal_input()
 				return false
+			# Hardware axis events can replace a one-time simulated hold during a long flight.
+			Input.action_release("move_left" if right else "move_right")
+			Input.action_press("move_right" if right else "move_left")
 			await host.get_tree().physics_frame
 			elapsed += host.get_physics_process_delta_time()
 		_release_horizontal_input()

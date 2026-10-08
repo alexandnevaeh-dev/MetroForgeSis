@@ -1475,6 +1475,17 @@ export function buildStormglassInteriorMasonry(options: RoomAssemblyOptions): Co
   if (!options.stormglassRoomTheme || options.stormglassRoomTheme === 'stairwell') return [];
   if (options.connections.some(connection => connection.direction === 'up')) return [];
   const floor = options.hasTileset ? floorTopPx(options.height, options.tileSize || 16) : options.height - 96;
+  if (options.stormglassRoomTheme === 'archive-vestibule') {
+    // Three retained stair groups occupy book-lined side chambers and a high nave.
+    const bay = options.width * 9 / 28;
+    return [
+      {name:'MasonryRoof_0',x:0,y:0,width:bay,height:Math.max(64,floor-448)},
+      {name:'MasonryRoof_1',x:bay,y:0,width:bay,height:Math.max(64,floor-544)},
+      {name:'MasonryRoof_2',x:bay*2,y:0,width:options.width-bay*2,height:Math.max(64,floor-448)},
+      {name:'MasonryPier_1',x:bay-32,y:Math.max(64,floor-448),width:64,height:128},
+      {name:'MasonryPier_2',x:bay*2-32,y:Math.max(64,floor-544),width:64,height:224},
+    ];
+  }
   if (options.stormglassRoomTheme === 'floodgate-ascent') {
     // Retain the two original gate ledges in a taller pump chamber.
     return [
