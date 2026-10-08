@@ -1475,6 +1475,14 @@ export function buildStormglassInteriorMasonry(options: RoomAssemblyOptions): Co
   if (!options.stormglassRoomTheme || options.stormglassRoomTheme === 'stairwell') return [];
   if (options.connections.some(connection => connection.direction === 'up')) return [];
   const floor = options.hasTileset ? floorTopPx(options.height, options.tileSize || 16) : options.height - 96;
+  if (options.stormglassRoomTheme === 'cache-drop') {
+    // Incoming room015 descent has no reciprocal up edge here. Keep its
+    // real top arrival and collectible column open between enclosed bays.
+    return [
+      {name:'MasonryRoof_0',x:0,y:0,width:options.width*3/8,height:Math.max(64,floor-288)},
+      {name:'MasonryRoof_1',x:options.width*5/8,y:0,width:options.width*3/8,height:Math.max(64,floor-384)},
+    ];
+  }
   if (options.stormglassRoomTheme === 'water-refuge') {
     const entryWidth = options.width * 5 / 24;
     const hallWidth = options.width * 17 / 48;
