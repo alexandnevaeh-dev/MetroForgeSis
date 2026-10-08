@@ -3,7 +3,7 @@ import { previewFrameAtTime } from './animation-clock.js';
 import { AnimationPreview } from './AnimationPreview.js';
 import { LootDefinitionEditor } from './LootDefinitionEditor.js';
 import { ItemDefinitionEditor } from './ItemDefinitionEditor.js';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AssetRecord } from './types.js';
 import { categorizeAssetPath, GALLERY_CATEGORIES } from './types.js';
 import { TilesetPreview, AudioPreview } from './MediaPreviews.js';
@@ -27,6 +27,8 @@ function ProjectAssetsGallery() {
   const [selected, setSelected] = useState<AssetRecord | null>(null);
   const [animPlaying, setAnimPlaying] = useState(() => !window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [animFrame, setAnimFrame] = useState(0);
+  const [animReady,setAnimReady]=useState(false);
+  const loadAnimationSource=useCallback((path:string)=>window.metroforge?.getAssetPreview(selectedPath,path) ?? Promise.resolve({}),[selectedPath]);
   const lastAnimation = useRef<AssetRecord | null>(null);
   const [loading, setLoading] = useState(false);
   const [usages, setUsages] = useState<Array<{ type: string; id: string; detail?: string }> | null>(
@@ -133,7 +135,7 @@ function ProjectAssetsGallery() {
   }, [selectedPath, selected?.id, compareVersion, history]);
 
   useEffect(() => {
-    if (!selected?.isAnimation || !animPlaying || !selected.frameCount) return;
+    if (!selected?.isAnimation || !animPlaying || !animReady || !selected.frameCount) return;
     const frames = selected.frameCount;
     const startFrame = lastAnimation.current === selected ? animFrame : 0;
     lastAnimation.current = selected;
@@ -147,7 +149,7 @@ function ProjectAssetsGallery() {
     };
     handle = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(handle);
-  }, [selected, animPlaying]);
+  }, [selected, animPlaying,animReady]);
 
   useEffect(() => { setAnimFrame(0); lastAnimation.current = selected; }, [selected?.id, selected?.dataUrl]);
 
@@ -278,12 +280,14 @@ function ProjectAssetsGallery() {
         {selected && (
           <aside className="asset-detail panel">
             <div className="asset-inspector-preview">
-              {selected.isAnimation && selected.dataUrl ? (
+              {selected.isAnimation && (selected.dataUrl || selected.sourceFrames || selected.sourceSheet || selected.animationSourceError) ? (
                 <AnimationPreview
                   key={selected.id}
                   asset={selected}
                   frame={animFrame}
                   playing={animPlaying}
+                  loadSource={loadAnimationSource}
+                  onReady={setAnimReady}
                   onSeek={(frame) => { setAnimPlaying(false); setAnimFrame(frame); }}
                   onToggle={() => { if (!animPlaying && selected.loop === false && animFrame >= (selected.frameCount ?? 1) - 1) setAnimFrame(0); setAnimPlaying((p) => !p); }}
                   onStep={() => { setAnimPlaying(false); setAnimFrame((f) => (f + 1) % Math.max(1, selected.frameCount ?? 1)); }}

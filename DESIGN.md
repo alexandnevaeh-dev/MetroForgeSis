@@ -1,5 +1,8 @@
 # MetroForge design context
 
+## Animation source preview
+The asset inspector retains the forge workbench controls and canonical tokens. Its animation viewport reserves the existing 240px canvas limit during loading and errors so playback controls do not move. Independent source frames and source-sheet regions use one shared canvas extent derived from declared foot anchors and scale; nearest-neighbor drawing preserves pixel-art inspection. Playback starts after the source images are ready. Source failures keep disabled controls and an explicit retry action. Grid-sheet previews retain their existing frame order and metadata fallback.
+
 ## Jump navigation
 The shared Jump palette uses the existing copper, charcoal and utility typography tokens. A compact heading identifies the selected project, a search field and category controls stay above one scrolling result list, and a footer keeps keyboard guidance visible. Screen names lead; project and asset paths wrap on a secondary line. Selected results use the shared accent tint and an inset copper marker. The app's shared Modal owns native dialog background inertness and focus restoration; SearchField and Button own input and actions. No new palette or font is introduced.
 The room hierarchy preserves its two-line 52px row rhythm. Each option fits its 48px visible slot without nested padding, and external selection scrolls the actual row into view. One listbox tab stop owns keyboard selection; its active descendant always identifies a rendered option.

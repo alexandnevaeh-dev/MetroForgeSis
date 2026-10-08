@@ -57,7 +57,8 @@ func _ready() -> void:
 				var shape := body.get_node("CollisionShape2D") as CollisionShape2D
 				var bounds := Rect2(body.position-shape.shape.size*0.5,shape.shape.size)
 				if x >= bounds.position.x and x < bounds.end.x:
-					bay_height = floor_y-bounds.end.y
+					# Preserve authored rear-module scale inside tall enclosures.
+					bay_height = minf(bay_height, maxf(0.0, floor_y-bounds.end.y))
 					enclosed = true
 			if enclosed and tier > 0:
 				continue

@@ -415,16 +415,22 @@
       "wallTint": "668c88",
       "props": [
         {
-          "role": "sarcophagus",
-          "lift": 0,
-          "x": 512.0,
-          "height": 160
+          "role": "votive_lamp",
+          "lift": 112,
+          "x": 256,
+          "height": 64
+        },
+        {
+          "role": "chain_winch",
+          "lift": 192,
+          "x": 1024,
+          "height": 192
         },
         {
           "role": "iron_censer",
-          "lift": 192,
-          "x": 1536.0,
-          "height": 128
+          "lift": 128,
+          "x": 1536,
+          "height": 96
         }
       ],
       "columnTint": "8da59f",

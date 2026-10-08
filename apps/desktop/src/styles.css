@@ -2006,6 +2006,7 @@ textarea {
 
 .anim-viewport {
   width: min(100%, 320px);
+  height: 240px;
   overflow: hidden;
   background: var(--bg-root);
 }

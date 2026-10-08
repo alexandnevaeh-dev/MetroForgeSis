@@ -1475,6 +1475,19 @@ export function buildStormglassInteriorMasonry(options: RoomAssemblyOptions): Co
   if (!options.stormglassRoomTheme || options.stormglassRoomTheme === 'stairwell') return [];
   if (options.connections.some(connection => connection.direction === 'up')) return [];
   const floor = options.hasTileset ? floorTopPx(options.height, options.tileSize || 16) : options.height - 96;
+  if (options.stormglassRoomTheme === 'current-tunnel') {
+    // Keep the pit and its original raised crossing inside a tall chamber;
+    // lower sheltered passages frame either side without covering the ledges.
+    const spans = [
+      {x:0,width:options.width*0.25,clearance:256},
+      {x:options.width*0.25,width:options.width*0.3125,clearance:512},
+      {x:options.width*0.5625,width:options.width*0.4375,clearance:288},
+    ];
+    return spans.flatMap((span,index)=>[
+      {name:`MasonryRoof_${index}`,x:span.x,y:0,width:span.width,height:Math.max(64,floor-span.clearance)},
+      ...(index===0?[]:[{name:`MasonryPier_${index}`,x:span.x-32,y:floor-(index===1?256:288),width:64,height:64}]),
+    ]);
+  }
   if (options.stormglassRoomTheme === 'drowned-hall') {
     // Broad flooded arcade bays retain their existing low platforms. Taller
     // portals leave room for ordinary jumping instead of a low tunnel route.

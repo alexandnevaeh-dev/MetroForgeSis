@@ -332,8 +332,7 @@ func _check_stormglass_enemy_art_roster() -> void:
 
 func _check_stormglass_guardian_art_roster() -> void:
 	var actions := ["idle", "walk", "attack", "hurt", "death"]
-	for guardian_index in range(4):
-		var guardian_id := "boss_%03d" % guardian_index
+	for guardian_id in ["boss_000", "boss_001", "boss_002", "boss_final"]:
 		var uses_detailed_art := true
 		for action in actions:
 			var path := "res://assets/bosses/%s_%s.png" % [guardian_id, action]

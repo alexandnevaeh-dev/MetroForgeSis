@@ -45,6 +45,12 @@ export type AssetRecord = {
   frameHeight?: number;
   fps?: number;
   loop?: boolean;
+  sourceFrames?: string[];
+  sourceSheet?: string;
+  sourceRegions?: [number, number, number, number][];
+  frameFootAnchors?: [number, number][];
+  displayScale?: number;
+  animationSourceError?: string;
 };
 
 export type ActivityFilter =

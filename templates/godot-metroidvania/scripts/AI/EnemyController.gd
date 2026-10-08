@@ -381,9 +381,15 @@ func _process_melee_attack(delta: float) -> void:
 	_attack_timer -= delta
 	if _attack_timer > 0:
 		return
-	if _player_in_range() == null:
+	var player := _player_in_range()
+	if player == null:
 		return
 	_attack_timer = _combat_cooldown
+	# Patrol facing can point away from a nearby target when the attack starts.
+	# Keep the physical patrol and damage rules, but present the strike forward.
+	var target_x: float = player.global_position.x-global_position.x
+	if sprite and absf(target_x)>0.01:
+		sprite.scale.x = absf(sprite.scale.x)*signf(target_x)
 	_play_attack_animation()
 
 func _process_trap_attack(delta: float) -> void:
