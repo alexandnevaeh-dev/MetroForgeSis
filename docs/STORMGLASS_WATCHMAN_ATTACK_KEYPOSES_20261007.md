@@ -9,7 +9,7 @@ Sources are outside production assets at
 `E:/MetroForgeData/Development/stormglass-watchman-attack-20261007`.
 The windup SHA256 is `de2392ea8713935146c881fdadcb7db193446b2549ec14f85372a4f2b48113df`.
 The follow-through SHA256 is `06fd066647bfb7a72b963e4105dfefee98b29bd1a2848d02767a89cf6eb10aff`.
-Both are unchanged 1254×1254 RGBA sources generated using built-in imagegen;
+Both are unchanged 1254x1254 RGBA sources generated using built-in imagegen;
 this is not local NVIDIA image-inference evidence.
 
 The first contact attempt drifted in body/ground position and had only 21px
@@ -115,3 +115,7 @@ The left-facing preview correctly places the weapon left and rear cape right.
 The singleton idle is a matching stance, not a completed idle cycle. This
 coarse five-pose excerpt still needs additional contact/transition poses,
 combat synchronization, family integration and visual approval before admission.
+
+## Contact-source study 2026-10-08
+
+Two new unmodified built-in imagegen studies are retained on E: (`watchman-attack-contact-unaccepted-v3.png` and `watchman-attack-contact-right-v4.png`). V3 kept the planted silhouette but had only 35px visible right margin; it was not admitted. V4 shortens the forward blade for padding and remains a draft contact study. The cape stays behind the torso and there are no adjacent atlas frames. Its measured bounds and SHA256 are in the sibling JSON receipt. No native six-frame sequence or complete-family quality is claimed; production source assets and the existing five-frame proofs remain unchanged. This was built-in image generation, not local NVIDIA inference.

@@ -46,6 +46,8 @@ func _ready() -> void:
 	backwall.z_index = -70
 	interior_clip.add_child(backwall)
 	var floor_y := room_height - 64.0
+	if bool(config.get("vaultInfill",false)):
+		_add_vault_infill(floor_y)
 	for tier in range(maxi(1,int(ceil(room_height/480.0)))):
 		var bay_floor := floor_y-tier*480.0
 		for x in range(192,int(room_width),384):
@@ -103,6 +105,31 @@ func _ready() -> void:
 	_refresh_door_states()
 	EventBus.ability_acquired.connect(_refresh_door_states)
 
+## Recessed upper courses meet the roof without enlarging facade modules.
+## Opt-in decoration follows each real roof span and creates no collider.
+func _add_vault_infill(floor_y: float) -> void:
+	var facade_height := float(config.get("wallHeight",416.0))
+	for body in get_parent().get_parent().get_children():
+		if not body is StaticBody2D or not String(body.name).begins_with("MasonryRoof_"):
+			continue
+		var collision := body.get_node_or_null("CollisionShape2D") as CollisionShape2D
+		if collision == null or not collision.shape is RectangleShape2D:
+			continue
+		var bounds := Rect2(body.position-collision.shape.size*0.5,collision.shape.size)
+		var height := maxf(0.0,floor_y-facade_height-bounds.end.y)
+		if height<=0.0:
+			continue
+		var infill := Node2D.new()
+		infill.set_script(preload("res://scripts/world/StormglassMasonrySurface.gd"))
+		infill.name = "VaultInfill_"+String(body.name)
+		infill.position = Vector2(bounds.position.x,bounds.end.y)
+		infill.dimensions = Vector2(bounds.size.x,height)
+		infill.stone = Color(String(config.get("wallTint","46516b"))).darkened(0.45)
+		infill.z_as_relative = false
+		infill.z_index = -65
+		infill.set_meta("roof_span",Rect2(infill.position,infill.dimensions))
+		interior_clip.add_child(infill)
+
 ## A clipped visual course belongs to one real collider, so a split floor never
 ## paints over a descent opening. No collision, floor position, or stair rise changes.
 func _dress_collision_surfaces() -> void:
@@ -138,6 +165,8 @@ func _dress_collision_surfaces() -> void:
 			masonry.set_meta("collision_rect", rect)
 			add_child(masonry)
 			continue
+		if is_platform and bool(config.get("platformCorbels",true)):
+			_add_platform_corbels(body,rect)
 		# The stair_tread prop depicts a sloped mini-staircase. These colliders
 		# are flat landings, so use a flat stone course for truthful footing.
 		var role := "floor_course"
@@ -178,6 +207,23 @@ func _dress_collision_surfaces() -> void:
 			sprite.set_meta("asset_role",role)
 			holder.add_child(sprite)
 		surface_views.append(holder)
+
+## Rear-wall cantilever brackets meet the real landing underside. Decorative only.
+func _add_platform_corbels(body: StaticBody2D, rect: Rect2) -> void:
+	if rect.size.x < 64.0 or rect.end.y + 48.0 > room_height - 64.0:
+		return
+	var support := Node2D.new()
+	support.set_script(preload("res://scripts/world/StormglassPlatformCorbels.gd"))
+	support.name = "Corbels_" + String(body.name)
+	support.position = Vector2(rect.position.x,rect.end.y)
+	support.span = rect.size.x
+	support.stone = Color(String(config.get("columnTint","8599bd"))).darkened(0.4)
+	support.z_as_relative = false
+	support.z_index = 1
+	support.set_meta("collision_body",body)
+	support.set_meta("landing_rect",rect)
+	support.set_meta("support_rect",Rect2(support.position,Vector2(rect.size.x,48.0)))
+	interior_clip.add_child(support)
 
 func _refresh_door_states(_ability: String = "") -> void:
 	for pair: Dictionary in doorway_views:

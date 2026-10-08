@@ -447,28 +447,35 @@
         "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
         "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
       ],
-      "wallTint": "668c88",
+      "wallTint": "8c9eaa",
       "props": [
         {
           "role": "relic_altar",
           "lift": 0,
-          "x": 512.0,
+          "x": 256,
           "height": 160
         },
         {
           "role": "glass_reliquary",
           "lift": 0,
-          "x": 1536.0,
+          "x": 1536,
           "height": 128
+        },
+        {
+          "role": "ceremonial_banner",
+          "lift": 256,
+          "x": 1024,
+          "height": 160
         }
       ],
-      "columnTint": "8da59f",
+      "columnTint": "a1b1b8",
       "district": "flooded_halls",
       "wallHeight": 416,
-      "ambientColor": "0c1b21",
-      "wallRole": "burial_wall",
-      "stainedWindows": false,
-      "purpose": "Double-Jump Font"
+      "ambientColor": "101d27",
+      "wallRole": "marble_wall",
+      "stainedWindows": true,
+      "purpose": "Double-Jump Font",
+      "vaultInfill": true
     },
     "room_014": {
       "manifests": [
@@ -508,15 +515,21 @@
       "wallTint": "668c88",
       "props": [
         {
-          "role": "sarcophagus",
-          "lift": 0,
-          "x": 448.0,
-          "height": 160
+          "role": "votive_lamp",
+          "lift": 96,
+          "x": 192,
+          "height": 64
         },
         {
-          "role": "iron_censer",
-          "lift": 192,
-          "x": 1344.0,
+          "role": "chain_winch",
+          "lift": 224,
+          "x": 768,
+          "height": 192
+        },
+        {
+          "role": "gear_housing",
+          "lift": 80,
+          "x": 1184,
           "height": 128
         }
       ],

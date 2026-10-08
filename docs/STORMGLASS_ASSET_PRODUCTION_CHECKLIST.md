@@ -1,6 +1,6 @@
 # Stormglass asset production checklist
 
-Updated 2026-10-05. Scope: original side-view Stormglass only. The stylized top-down set has a separate art direction and must not share replacement character sheets or room materials by accident.
+Updated 2026-10-07. Earlier evidence rows retain their original fixture scope; the additions below record subsequent validated work. Scope: original side-view Stormglass only. The stylized top-down set has a separate art direction and must not share replacement character sheets or room materials by accident.
 
 Reference: user-supplied stage maps and [shared production discussion](https://copilot.microsoft.com/shares/W3c3Fw9C77zWfQh73eZgq). These inform architectural rhythm and production coverage; franchise pixels, characters, names, music and maps are not game assets.
 
@@ -28,9 +28,17 @@ Each shipped asset needs an original/source and license record, stable identifie
 | Eight-family input smoke and stairs | E:/MetroForgeData/Development/castle-room-families-20261004-v2/games/stormglass-castle/qa/castle-room-family-input/proof.json | 104 passing gameplay assertions: grounded spawn, jump, walk, attack playback, landing and eight first-staircase treads per room; full upper routes/door returns remain open |
 | Animation content audit | `scripts/audit-stormglass-animation-content.mjs`; E:/MetroForgeData/Development/stormglass-animation-content-20261004-v2/audit.json | 27 clips present; three combo sheets identical, distinct-core gate fails intentionally; no human-motion acceptance |
 | Focused source checks | Castle family, region and authored-animation tests | 24 passing tests; animation file checks do not prove natural movement |
-| Engine parity | Godot native renders; Unity/Unreal static fixture validation | Fresh native Unity/Unreal parity remains open; Unity capture rejected stale source-bound build |
-| Local NVIDIA | Fresh CUDA matrix passed; material study timed out | No successful fresh local image-generation result |
-| GitHub publication | Existing configured remote | Authentication token invalid; no upload claimed |
+| Engine parity | `unity-platformer-oneway-20261006/offline-editor.log`; `unreal-fresh-source-20261005-v1/summary.json` under E:/MetroForgeData/Development | Unity 6000.3.0f1 native upward passage, landing and legacy solids passed; full Unity campaign remains open. Unreal assembled 40 rooms but native compile is blocked by Windows Application Control 0x800711C7; gameplay and packaging unverified |
+| Local NVIDIA | E:/MetroForgeData/Development/local-nvidia-20261005-v2/extended-proof/result.json | Offline SDXL CUDA generation succeeded: 512x512, 20 steps, exit 0, 394.73s wall time, no download. Perspective/material output was not admitted as side-view game art. Recent Watchman source poses used built-in image generation, not local NVIDIA |
+| GitHub publication | E:/MetroForgeData/GitHubUpload/20261007/source-thumbnail-v1/publication.json | Reviewed development branch upload verified at 611bf3f016bef0a953d094d4a2b4abad261e5c2f; main and canonical index preserved. Publication does not establish production readiness |
+
+## Subsequent room and animation evidence
+
+- Opening gallery/backrooms, Drowned Hall (011), Current Tunnel (012), library reading hall (014) and Archive Gallery (021) have themed masonry candidates. These are selected room improvements, not evidence that every castle room has been rebuilt. Preserve original gameplay geometry and the separate top-down set.
+- The current melee-facing export completed the unchanged 34-step Godot campaign with six abilities, four bosses, 122 attacks, 140 damage and zero deaths. All 1903 input hashes remained unchanged. Evidence: `E:/MetroForgeData/Development/stormglass-watchman-actor-20261007/campaign-v1/preservation.json` and `native-summary.json`. NPC animation and ObjectDB teardown warnings remain; broader art/presentation job still failed at 255/382.
+- Independent Watchman sources and contact/recovery studies remain isolated drafts. Stable anchors, nonoverlapping source frames and natural target-facing checks are technical evidence; complete idle/walk/run/attack/hurt/death family quality and production admission remain open.
+- Desktop source-frame playback and thumbnails passed sixteen actual Electron checks, including first-frame pixels, unchanged Placeholder maturity, frame controls, metadata rejection, missing-file retry and narrow layout. Evidence: `E:/MetroForgeData/Development/animation-source-thumbnail-20261007/ui-v1/proof.json`. Source thumbnails do not rewrite artifact provenance.
+- Platformer is a separate eight-stage genre. Its fresh visible Godot campaign reached victory and preserved 705 source inputs (`E:/MetroForgeData/Development/platformer-20261007-fresh/completion.json`). It remains starter presentation; full Unity/Unreal campaigns and finished art are open.
 
 ## Production coverage
 

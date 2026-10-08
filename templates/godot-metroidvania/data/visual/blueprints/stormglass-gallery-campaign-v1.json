@@ -290,7 +290,8 @@
           "screenSpanH": 2,
           "screenSpanV": 2,
           "targetTileWidth": 64,
-          "targetTileHeight": 40
+          "targetTileHeight": 40,
+          "stormglassRoomTheme": "font-sanctuary"
         }
       },
       {
@@ -325,7 +326,8 @@
           "screenSpanH": 2,
           "screenSpanV": 1,
           "targetTileWidth": 56,
-          "targetTileHeight": 24
+          "targetTileHeight": 24,
+          "stormglassRoomTheme": "pressure-shaft"
         }
       },
       {

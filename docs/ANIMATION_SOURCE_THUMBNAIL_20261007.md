@@ -11,4 +11,4 @@ Validation evidence: `E:/MetroForgeData/Development/animation-source-thumbnail-2
 - Wide and narrow PNG captures retained; wide layout inspected.
 - Canonical Git index remained SHA256 `0803C77A5996B93D6E975DFA41AB9CEB9E7F078881FAF88BCF265D7AF7FB3918`.
 
-Game art quality, complete animation families and engine gameplay acceptance remain separate work. This change has not yet been uploaded to GitHub.
+Game art quality, complete animation families and engine gameplay acceptance remain separate work. The reviewed eight-file change was uploaded to the development branch at `611bf3f016bef0a953d094d4a2b4abad261e5c2f`; the remote commit, unchanged main and canonical index were verified. Receipt: `E:/MetroForgeData/GitHubUpload/20261007/source-thumbnail-v1/publication.json`.

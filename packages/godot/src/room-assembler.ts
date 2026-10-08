@@ -40,7 +40,7 @@ export interface RoomConnection {
 export function stormglassGalleryDescentPits(
   width: number, tileSize: number, connections: RoomConnection[], theme: unknown,roomId?:string,
 ): PitGap[] {
-  if (!['gallery','rest','undercroft','secret'].includes(String(theme))) return [];
+  if (!['gallery','rest','undercroft','secret','pressure-shaft'].includes(String(theme))) return [];
   const down = connections.filter(connection => connection.direction === 'down');
   return down.flatMap((connection, slot) => {
     if(connection.requirements.length)return [];
@@ -1475,6 +1475,35 @@ export function buildStormglassInteriorMasonry(options: RoomAssemblyOptions): Co
   if (!options.stormglassRoomTheme || options.stormglassRoomTheme === 'stairwell') return [];
   if (options.connections.some(connection => connection.direction === 'up')) return [];
   const floor = options.hasTileset ? floorTopPx(options.height, options.tileSize || 16) : options.height - 96;
+  if (options.stormglassRoomTheme === 'pressure-shaft') {
+    const entryWidth = options.width / 7;
+    const naveWidth = options.width * 9 / 28;
+    const exitX = entryWidth + naveWidth;
+    // Raised pressure ledges remain in the high chamber. The down sensor and
+    // original pit keep their floor opening beneath the sheltered exit hall.
+    const spans = [
+      {x:0,width:entryWidth,clearance:256},
+      {x:entryWidth,width:naveWidth,clearance:448},
+      {x:exitX,width:options.width-exitX,clearance:288},
+    ];
+    return spans.flatMap((span,index)=>[
+      {name:`MasonryRoof_${index}`,x:span.x,y:0,width:span.width,height:Math.max(64,floor-span.clearance)},
+      ...(index===0?[]:[{name:`MasonryPier_${index}`,x:span.x-32,y:floor-(index===1?256:288),width:64,height:64}]),
+    ]);
+  }
+  if (options.stormglassRoomTheme === 'font-sanctuary') {
+    // The pickup alcove opens into a high practice nave; both original
+    // jump ledges remain clear, with a sheltered exit toward the library.
+    const spans = [
+      {x:0,width:options.width*0.3125,clearance:384},
+      {x:options.width*0.3125,width:options.width*0.375,clearance:640},
+      {x:options.width*0.6875,width:options.width*0.3125,clearance:320},
+    ];
+    return spans.flatMap((span,index)=>[
+      {name:`MasonryRoof_${index}`,x:span.x,y:0,width:span.width,height:Math.max(64,floor-span.clearance)},
+      ...(index===0?[]:[{name:`MasonryPier_${index}`,x:span.x-32,y:floor-(index===1?384:320),width:64,height:index===1?128:64}]),
+    ]);
+  }
   if (options.stormglassRoomTheme === 'current-tunnel') {
     // Keep the pit and its original raised crossing inside a tall chamber;
     // lower sheltered passages frame either side without covering the ledges.
