@@ -70,6 +70,7 @@ import type { ExternalVisualPackId } from '@metroforge/godot';
 import { ToolRegistry, exportProject, resolveGodotExecutableCanonical, readProjectGodotOverride, windowsExportTemplatesInstalled } from '@metroforge/tools';
 import { QAValidator, RepairEngineer, deriveValidationLevel, runQualityPass, runModernMetroidvaniaGate, modernGateToQAGateResult, scoreVisualQuality, fingerprintFile, planVisualRepairs, applyVisualRepairs, VISUAL_REPAIR_BUDGET, certifyVisualAssets, writeAssetFoundryReport, classifyAssetTier, buildAssetProvenanceReport, writeAssetProvenanceReport, buildProductionAssetFamilies, productionSliceReady, gateState, validateWorldSceneArchetypeIntegrity, type QAReport, type QAGateResult } from '@metroforge/qa';
 import { createProjectCheckpoint } from './project-checkpoint.js';
+import { finalizeAssembledProgressionProof } from './assembled-progression-proof.js';
 import { runRuntimeGateAsync } from '@metroforge/qa';
 import { assertPhaseArtifacts, phaseCompleteStatus } from './phase-contract.js';
 import { withCategory, type GenerationEvent } from './events.js';
@@ -820,7 +821,7 @@ export class GenerationPipeline {
     }
     if (!progressionProof.passed) {
       warnings.push(
-        `Progression proof failed: start=${progressionProof.startReachable} boss=${progressionProof.bossReachable} selfLocks=${progressionProof.selfLocks.length} unknown=${progressionProof.unknownAbilities.join(',') || 'none'}`,
+        `Provisional progression proof failed before assembly: start=${progressionProof.startReachable} boss=${progressionProof.bossReachable} selfLocks=${progressionProof.selfLocks.length} unknown=${progressionProof.unknownAbilities.join(',') || 'none'}`,
       );
     }
     if (errors.some((e) => e.includes('Unknown required abilities') || e.includes('missing required registered'))) {
@@ -828,9 +829,10 @@ export class GenerationPipeline {
     } else {
       const proofArtifacts = assertPhaseArtifacts(outputPath, ['progression_proof.json']);
       const progressionOk = reachable && worldReachable && progressionProof.passed && proofArtifacts.ok;
+      const waitingForGeometry = requestedEngine === 'godot' && reachable && worldReachable && proofArtifacts.ok && !progressionProof.movementFeasible;
       report(
         'progression_graph',
-        progressionOk ? 'PASSED' : 'FAILED',
+        progressionOk ? 'PASSED' : waitingForGeometry ? 'WARN' : 'FAILED',
         progressionOk
           ? `${progressionProof.trace.length} proof steps, boss ${progressionProof.bossRoomId}`
           : !reachable
@@ -839,7 +841,7 @@ export class GenerationPipeline {
               ? `${worldUnreachableRoomIds.length} room(s) unreachable via ability pickup`
               : !proofArtifacts.ok
                 ? `missing artifacts: ${proofArtifacts.missing.join(', ')}`
-                : 'Progression proof failed',
+                : waitingForGeometry ? 'Provisional proof awaits exported movement geometry' : 'Progression proof failed',
       );
     }
     createProjectCheckpoint(outputPath, 'after_world_progression');
@@ -1413,6 +1415,24 @@ export class GenerationPipeline {
       db.close();
       return { success: false, projectSlug: slug, outputPath, jobId: job.id, errors, warnings, phases };
     }
+    try {
+      const finalProof = finalizeAssembledProgressionProof({
+        outputPath, targetEngine: requestedEngine, worldGraph, progressionGraph,
+        knownTokens: nonAbilityGrantedTokens,
+      });
+      report('progression_graph', finalProof.passed ? 'PASSED' : 'FAILED',
+        finalProof.passed
+          ? finalProof.trace.length + ' proof steps, boss ' + finalProof.bossRoomId + '; assembled movement checked'
+          : 'Assembled progression proof failed');
+    } catch (error) {
+      const reason = 'Assembled progression proof unavailable: ' + (error instanceof Error ? error.message : String(error));
+      errors.push(reason);
+      report('progression_graph', 'FAILED', reason);
+      emit({ type: 'GenerationFailed', reason, phase: 'progression_graph' });
+      db.projects.updateStatus(project.id, 'failed');
+      db.close();
+      return { success: false, projectSlug: slug, outputPath, jobId: job.id, errors, warnings, phases };
+    }
     report('project_assembly', 'PASSED');
     writeAssetProvenanceReport(
       outputPath,
@@ -1692,6 +1712,22 @@ export class GenerationPipeline {
         // No mutation means the existing full validation remains authoritative.
         // Preserve its failures and stop rather than repeating expensive native runs.
         if (repairResult.repaired) {
+          try {
+            const repairedProof = finalizeAssembledProgressionProof({
+              outputPath, targetEngine: requestedEngine, worldGraph, progressionGraph,
+              knownTokens: nonAbilityGrantedTokens,
+            });
+            report('progression_graph', repairedProof.passed ? 'PASSED' : 'FAILED',
+              'Progression rechecked against emitted geometry after repair');
+          } catch (error) {
+            const reason = 'Repaired progression proof unavailable: ' + (error instanceof Error ? error.message : String(error));
+            errors.push(reason);
+            report('progression_graph', 'FAILED', reason);
+            emit({ type: 'GenerationFailed', reason, phase: 'progression_graph' });
+            db.projects.updateStatus(project.id, 'failed');
+            db.close();
+            return { success: false, projectSlug: slug, outputPath, jobId: job.id, errors, warnings, phases };
+          }
           qaReport = this.qa.validateProject(outputPath, project.id);
           db.validationResults.replaceByProject(project.id,qaReport.results);
           await runGodotGates(qaReport);
