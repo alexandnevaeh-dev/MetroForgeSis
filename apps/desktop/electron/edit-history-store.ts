@@ -1,4 +1,5 @@
-import { resolve as resolveProjectPath } from 'node:path';
+import { resolve as resolveProjectPath,join } from 'node:path';
+import {existsSync,readFileSync,writeFileSync,unlinkSync} from 'node:fs';
 import type { WorldGraph } from '@metroforge/schemas';
 import type { WorldEditCommand } from '@metroforge/generation';
 import {
@@ -20,6 +21,7 @@ type RoomHistoryPayload = {
   previousRoom: Record<string, unknown>;
   summary: string;
   nextRoom?: Record<string, unknown>;
+  scene?: {before:Buffer|null;after:Buffer|null};
   placement?: {
     saved: PlacementSaveSnapshot;
     before: { x: number; y: number };
@@ -97,13 +99,28 @@ export function recordRoomEdit(
   roomId: string,
   previousRoom: Record<string, unknown>,
   summary: string,
+  previousScene?: Buffer | null,
 ): void {
   roomHistoryFor(projectPath).push({
     id: `${Date.now()}`,
     type: 'room_edit',
-    payload: { roomId, previousRoom: structuredClone(previousRoom), summary },
+    payload: { roomId, previousRoom: structuredClone(previousRoom), summary,
+      ...(previousScene!==undefined?{scene:{before:previousScene,after:snapshotRoomScene(projectPath,roomId)},nextRoom:snapshotRoomRecord(projectPath,roomId)??undefined}:{}),
+    },
     timestamp: new Date().toISOString(),
   });
+}
+
+function roomScenePath(projectPath:string,roomId:string):string {
+  if(!/^[A-Za-z0-9_-]+$/.test(roomId))throw new Error('Invalid room scene identity');
+  return join(projectPath,'scenes','rooms',roomId+'.tscn');
+}
+export function snapshotRoomScene(projectPath:string,roomId:string):Buffer|null {
+  const file=roomScenePath(projectPath,roomId);return existsSync(file)?readFileSync(file):null;
+}
+function sameScene(a:Buffer|null,b:Buffer|null):boolean {return a===null?b===null:b!==null&&a.equals(b);}
+function restoreScene(file:string,bytes:Buffer|null):void {
+  if(bytes!==null)writeFileSync(file,bytes);else if(existsSync(file))unlinkSync(file);
 }
 
 export function recordLivePlacementEdit(
@@ -156,8 +173,23 @@ function travelRoomHistory(projectPath: string, direction: 'undo' | 'redo'): Pro
       const snapshot = direction === 'undo' ? payload.previousRoom : payload.nextRoom;
       if (!snapshot) return { success: false, errors: ['No room snapshot available for redo'] };
       const current = snapshotRoomRecord(projectPath, payload.roomId);
-      const result = restoreRoomRecord(projectPath, payload.roomId, snapshot);
-      if (!result.success) return result;
+      const currentScene=payload.scene?snapshotRoomScene(projectPath,payload.roomId):null;
+      const expectedRoom=direction==='undo'?payload.nextRoom:payload.previousRoom;
+      if(payload.scene&&JSON.stringify(current)!==JSON.stringify(expectedRoom))
+        return {success:false,errors:[`Room record changed outside this edit. ${direction==='undo'?'Undo':'Redo'} was not applied.`]};
+      if(payload.scene&&!sameScene(currentScene,direction==='undo'?payload.scene.after:payload.scene.before))
+        return {success:false,errors:[`Room scene changed outside this edit. ${direction==='undo'?'Undo':'Redo'} was not applied.`]};
+      const roomsFile=join(projectPath,'data','rooms','rooms.json');
+      const currentRooms=payload.scene?readFileSync(roomsFile):undefined;
+      try {
+        const result = restoreRoomRecord(projectPath, payload.roomId, snapshot);
+        if (!result.success) return result;
+        if(payload.scene)restoreScene(roomScenePath(projectPath,payload.roomId),direction==='undo'?payload.scene.before:payload.scene.after);
+      } catch(error) {
+        if(currentRooms!==undefined)writeFileSync(roomsFile,currentRooms);
+        if(payload.scene)restoreScene(roomScenePath(projectPath,payload.roomId),currentScene);
+        throw error;
+      }
       if (direction === 'undo' && current) payload.nextRoom = current;
     }
     if (direction === 'undo') history.popUndo();

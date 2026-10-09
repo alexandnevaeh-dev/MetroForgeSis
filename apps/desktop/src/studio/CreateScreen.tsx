@@ -4,9 +4,17 @@ import { useStudio } from './StudioContext.js';
 import { GENERATION_MODES, GENERATION_PROFILES } from './generation-options.js';
 import { openProjectInGodot, playGeneratedProject } from './godot-actions.js';
 import { Badge, Button, EmptyState, Input, Panel, Select, TextArea } from './ui/index.js';
-import { QUANTUM_ARCHETYPE, creationResultStatus, latestCreationPhases, parseCreationSeed, type CreationResult } from './creation-contract.js';
+import {
+  QUANTUM_ARCHETYPE,
+  creationResultStatus,
+  latestCreationPhases,
+  parseCreationSeed,
+  type CreationResult,
+} from './creation-contract.js';
 
-function phaseTone(status: string): 'default' | 'accent' | 'success' | 'warning' | 'danger' | 'muted' {
+function phaseTone(
+  status: string,
+): 'default' | 'accent' | 'success' | 'warning' | 'danger' | 'muted' {
   const s = status.toUpperCase();
   if (s === 'PASSED' || s === 'SUCCESS' || s === 'COMPLETED') return 'success';
   if (s === 'FAILED' || s === 'ERROR') return 'danger';
@@ -16,7 +24,13 @@ function phaseTone(status: string): 'default' | 'accent' | 'success' | 'warning'
   return 'default';
 }
 
-export function CreateScreen({ bridgeReady, active = true }: { bridgeReady: boolean | null; active?: boolean }) {
+export function CreateScreen({
+  bridgeReady,
+  active = true,
+}: {
+  bridgeReady: boolean | null;
+  active?: boolean;
+}) {
   const { setSelectedPath, refreshProjects, navigate, creationMode, setCreationMode } = useStudio();
   const [title, setTitle] = useState('Untitled Forge');
   const [prompt, setPrompt] = useState('');
@@ -24,21 +38,46 @@ export function CreateScreen({ bridgeReady, active = true }: { bridgeReady: bool
   const [mode, setMode] = useState('HYBRID_FREE');
   const [seed, setSeed] = useState('42');
   const [archetype, setArchetype] = useState('SIDE_VIEW_METROIDVANIA');
+  const [worldLayout, setWorldLayout] = useState<
+    'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region'
+  >('procedural');
   const [generating, setGenerating] = useState(false);
   const [scaffolding, setScaffolding] = useState(false);
   const submissionLock = useRef(false);
   const [result, setResult] = useState<CreationResult | null>(null);
   const quantum = archetype === QUANTUM_ARCHETYPE;
+  const stormglassGallery =
+    archetype === 'SIDE_VIEW_METROIDVANIA' &&
+    creationMode !== 'manual' &&
+    worldLayout !== 'procedural';
   const busy = generating || scaffolding;
   const parsedSeed = parseCreationSeed(seed, quantum);
-  const seedError = parsedSeed === null ? `Enter a whole-number seed from ${quantum ? '0' : '-2147483648'} to 2147483647.` : null;
-  const titleError = !title.trim() ? 'Enter a project title.' : quantum && (title.trim().length > 80 || /[\u0000-\u001f\u007f]/.test(title)) ? 'Use a title of up to 80 characters without line breaks.' : null;
+  const seedError =
+    parsedSeed === null
+      ? `Enter a whole-number seed from ${quantum ? '0' : '-2147483648'} to 2147483647.`
+      : null;
+  const titleError = !title.trim()
+    ? 'Enter a project title.'
+    : stormglassGallery && !title.trim().startsWith('Stormglass Reliquary')
+      ? 'Use Stormglass Reliquary as this campaign’s title, or choose a procedural world.'
+      : quantum && (title.trim().length > 80 || /[\u0000-\u001f\u007f]/.test(title))
+        ? 'Use a title of up to 80 characters without line breaks.'
+        : null;
   const resultStatus = creationResultStatus(result);
-  const [livePhases, setLivePhases] = useState<{ phase: string; status: string; message?: string }[]>([]);
+  const [livePhases, setLivePhases] = useState<
+    { phase: string; status: string; message?: string }[]
+  >([]);
   const [godotActionError, setGodotActionError] = useState<string | null>(null);
 
   const handleGenerate = useCallback(async () => {
-    if (submissionLock.current || !window.metroforge?.generateGame || !prompt.trim() || parsedSeed === null || titleError) return;
+    if (
+      submissionLock.current ||
+      !window.metroforge?.generateGame ||
+      !prompt.trim() ||
+      parsedSeed === null ||
+      titleError
+    )
+      return;
     submissionLock.current = true;
     setGenerating(true);
     setResult(null);
@@ -64,6 +103,7 @@ export function CreateScreen({ bridgeReady, active = true }: { bridgeReady: bool
         mode: quantum ? 'LOCAL_ONLY' : mode,
         seed: parsedSeed,
         archetype,
+        worldLayout: stormglassGallery ? worldLayout : 'procedural',
       });
       setResult(res);
       setLivePhases(latestCreationPhases(res.phases));
@@ -78,10 +118,30 @@ export function CreateScreen({ bridgeReady, active = true }: { bridgeReady: bool
       submissionLock.current = false;
       setGenerating(false);
     }
-  }, [title, prompt, profile, mode, parsedSeed, titleError, quantum, archetype, refreshProjects, setSelectedPath]);
+  }, [
+    title,
+    prompt,
+    profile,
+    mode,
+    parsedSeed,
+    titleError,
+    quantum,
+    archetype,
+    stormglassGallery,
+    worldLayout,
+    refreshProjects,
+    setSelectedPath,
+  ]);
 
   const handleScaffold = useCallback(async () => {
-    if (submissionLock.current || quantum || !window.metroforge?.scaffoldManualProject || parsedSeed === null || titleError) return;
+    if (
+      submissionLock.current ||
+      quantum ||
+      !window.metroforge?.scaffoldManualProject ||
+      parsedSeed === null ||
+      titleError
+    )
+      return;
     submissionLock.current = true;
     setScaffolding(true);
     setResult(null);
@@ -111,7 +171,19 @@ export function CreateScreen({ bridgeReady, active = true }: { bridgeReady: bool
       submissionLock.current = false;
       setScaffolding(false);
     }
-  }, [title, prompt, profile, mode, parsedSeed, titleError, quantum, archetype, refreshProjects, setSelectedPath, setCreationMode]);
+  }, [
+    title,
+    prompt,
+    profile,
+    mode,
+    parsedSeed,
+    titleError,
+    quantum,
+    archetype,
+    refreshProjects,
+    setSelectedPath,
+    setCreationMode,
+  ]);
 
   return (
     <section className="workspace-screen create-screen" hidden={!active}>
@@ -123,29 +195,72 @@ export function CreateScreen({ bridgeReady, active = true }: { bridgeReady: bool
 
       <div className="create-layout">
         <Panel level={1} className="create-commission" title="Commission">
-          <div className="archetype-grid" role="radiogroup" aria-label="Game archetype" onKeyDown={(event) => {
-            if (!['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
-            const radios = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button[role="radio"]:not(:disabled)'));
-            const index = radios.indexOf(event.target as HTMLButtonElement);
-            if (index < 0) return;
-            event.preventDefault();
-            const next = event.key === 'Home' ? 0 : event.key === 'End' ? radios.length - 1 : (index + (event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 1) + radios.length) % radios.length;
-            radios[next]?.focus();
-            radios[next]?.click();
-          }}>
+          <div
+            className="archetype-grid"
+            role="radiogroup"
+            aria-label="Game archetype"
+            onKeyDown={(event) => {
+              if (
+                !['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'].includes(
+                  event.key,
+                )
+              )
+                return;
+              const radios = Array.from(
+                event.currentTarget.querySelectorAll<HTMLButtonElement>(
+                  'button[role="radio"]:not(:disabled)',
+                ),
+              );
+              const index = radios.indexOf(event.target as HTMLButtonElement);
+              if (index < 0) return;
+              event.preventDefault();
+              const next =
+                event.key === 'Home'
+                  ? 0
+                  : event.key === 'End'
+                    ? radios.length - 1
+                    : (index +
+                        (event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 1) +
+                        radios.length) %
+                      radios.length;
+              radios[next]?.focus();
+              radios[next]?.click();
+            }}
+          >
             <button
               type="button"
               role="radio"
               aria-checked={archetype === 'SIDE_VIEW_METROIDVANIA'}
               tabIndex={archetype === 'SIDE_VIEW_METROIDVANIA' ? 0 : -1}
               className={
-                archetype === 'SIDE_VIEW_METROIDVANIA' ? 'archetype-card panel-l1 active' : 'archetype-card panel-l1'
+                archetype === 'SIDE_VIEW_METROIDVANIA'
+                  ? 'archetype-card panel-l1 active'
+                  : 'archetype-card panel-l1'
               }
               disabled={busy}
               onClick={() => setArchetype('SIDE_VIEW_METROIDVANIA')}
             >
               <strong>Side-view Metroidvania</strong>
               <span>Ability-gated rooms, vertical exploration, progression graph.</span>
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={archetype === 'SIDE_VIEW_PLATFORMER'}
+              tabIndex={archetype === 'SIDE_VIEW_PLATFORMER' ? 0 : -1}
+              className={
+                archetype === 'SIDE_VIEW_PLATFORMER'
+                  ? 'archetype-card panel-l1 active'
+                  : 'archetype-card panel-l1'
+              }
+              disabled={busy}
+              onClick={() => {
+                setArchetype('SIDE_VIEW_PLATFORMER');
+                setWorldLayout('procedural');
+              }}
+            >
+              <strong>Platformer</strong>
+              <span>Jump challenges, checkpoints, and stages played in order.</span>
             </button>
             <button
               type="button"
@@ -163,20 +278,80 @@ export function CreateScreen({ bridgeReady, active = true }: { bridgeReady: bool
               <strong>Top-down action adventure</strong>
               <span>Overworld, regions, dungeons, lock-and-key routing.</span>
             </button>
-            <button type="button" role="radio" aria-checked={quantum} tabIndex={quantum ? 0 : -1}
-              className={`archetype-card panel-l1 quantum-archetype${quantum ? ' active' : ''}`} disabled={busy}
-              onClick={() => { setArchetype(QUANTUM_ARCHETYPE); setCreationMode('assisted'); }}>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={quantum}
+              tabIndex={quantum ? 0 : -1}
+              className={`archetype-card panel-l1 quantum-archetype${quantum ? ' active' : ''}`}
+              disabled={busy}
+              onClick={() => {
+                setArchetype(QUANTUM_ARCHETYPE);
+                setCreationMode('assisted');
+              }}
+            >
               <strong>Quantum simulation roguelite</strong>
-              <span>Explore a connected sci-fi mine, reshape simulated terrain and stabilize the cascade.</span>
+              <span>
+                Explore a connected sci-fi mine, reshape simulated terrain and stabilize the
+                cascade.
+              </span>
               <span>Local playable preview • Godot</span>
             </button>
           </div>
 
+          {archetype === 'SIDE_VIEW_METROIDVANIA' && creationMode !== 'manual' && (
+            <label className="create-field">
+              World layout
+              <Select
+                aria-label="World layout"
+                value={worldLayout}
+                disabled={busy}
+                onChange={(event) => {
+                  const choice = event.target.value as
+                    'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region';
+                  setWorldLayout(choice);
+                  if (choice !== 'procedural') {
+                    setProfile('MEDIUM');
+                    if (title === 'Untitled Forge') setTitle('Stormglass Reliquary');
+                    if (!prompt.trim())
+                      setPrompt(
+                        'Explore the Stormglass Reliquary, a drowned cliff monastery with connected galleries, archive backrooms and service stairs. Recover Dash, Double Jump, Wall Slide, Wall Jump, Ground Slam and Air Dash to restore its weather seals.',
+                      );
+                  }
+                }}
+              >
+                <option value="procedural">Procedural world</option>
+                <option value="stormglass-gallery">Stormglass Gallery — 43 rooms</option>
+                <option value="stormglass-expanded-region">
+                  Stormglass Castle — 46 rooms (preview)
+                </option>
+              </Select>
+              {stormglassGallery && (
+                <span className="hint">
+                  {worldLayout === 'stormglass-expanded-region'
+                    ? 'Long galleries, deep stairs and an upstairs return route. Layout preview; full traversal and artwork review are still in progress.'
+                    : 'Connected galleries, service stairs and archive backrooms.'}{' '}
+                  Six movement abilities and four bosses. Godot campaign.
+                </span>
+              )}
+            </label>
+          )}
+
           <label className="create-field">
             Project title
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} disabled={busy} aria-invalid={!!titleError} aria-describedby={titleError ? 'create-title-error' : undefined} />
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              disabled={busy}
+              aria-invalid={!!titleError}
+              aria-describedby={titleError ? 'create-title-error' : undefined}
+            />
           </label>
-          {titleError && <p className="result error" id="create-title-error">{titleError}</p>}
+          {titleError && (
+            <p className="result error" id="create-title-error">
+              {titleError}
+            </p>
+          )}
 
           <label className="create-field">
             Game description
@@ -185,10 +360,14 @@ export function CreateScreen({ bridgeReady, active = true }: { bridgeReady: bool
               aria-label="Game description"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder={quantum ? 'A Quantum Diver enters the Probability Mines to stabilize its anchors and escape the cascade…' : 'A rain-soaked fortress of hanging gardens, where a lost smith hunts an echo stolen by the deep…'}
+              placeholder={
+                quantum
+                  ? 'A Quantum Diver enters the Probability Mines to stabilize its anchors and escape the cascade…'
+                  : 'A rain-soaked fortress of hanging gardens, where a lost smith hunts an echo stolen by the deep…'
+              }
               rows={4}
               maxLength={quantum ? 4000 : undefined}
-              style={{resize: 'none'}}
+              style={{ resize: 'none' }}
               disabled={busy}
             />
           </label>
@@ -196,17 +375,31 @@ export function CreateScreen({ bridgeReady, active = true }: { bridgeReady: bool
           <div className="row create-options">
             <label className="create-field">
               Profile
-              <Select aria-label="Profile" value={quantum ? 'TINY_TEST' : profile} onChange={(e) => setProfile(e.target.value)} disabled={busy || quantum}>
+              <Select
+                aria-label="Profile"
+                value={quantum ? 'TINY_TEST' : profile}
+                onChange={(e) => setProfile(e.target.value)}
+                disabled={busy || quantum || stormglassGallery}
+              >
                 {(quantum ? ['TINY_TEST'] : GENERATION_PROFILES).map((id) => (
                   <option key={id} value={id}>
-                    {quantum ? 'Probability Mines preview' : id.replace(/_/g, ' ')}
+                    {quantum
+                      ? 'Probability Mines preview'
+                      : stormglassGallery && id === 'MEDIUM'
+                        ? 'Stormglass campaign'
+                        : id.replace(/_/g, ' ')}
                   </option>
                 ))}
               </Select>
             </label>
             <label className="create-field">
               Mode
-              <Select aria-label="Mode" value={quantum ? 'LOCAL_ONLY' : mode} onChange={(e) => setMode(e.target.value)} disabled={busy || quantum}>
+              <Select
+                aria-label="Mode"
+                value={quantum ? 'LOCAL_ONLY' : mode}
+                onChange={(e) => setMode(e.target.value)}
+                disabled={busy || quantum}
+              >
                 {(quantum ? ['LOCAL_ONLY'] : GENERATION_MODES).map((id) => (
                   <option key={id} value={id}>
                     {quantum ? 'Local generation' : id.replace(/_/g, ' ')}
@@ -230,19 +423,31 @@ export function CreateScreen({ bridgeReady, active = true }: { bridgeReady: bool
               />
             </label>
           </div>
-          {seedError && <p className="result error" id="create-seed-error">{seedError}</p>}
+          {seedError && (
+            <p className="result error" id="create-seed-error">
+              {seedError}
+            </p>
+          )}
 
           <p className="hint">
-            {quantum ? 'Creates a playable Probability Mines preview with matching artwork and seeded terrain. Local generation only; run progress resets when closed.' : creationMode === 'manual'
-              ? 'Manual builds a playable TINY_TEST Godot project from the template — no LLM. You can still run Full AI later on this project.'
-              : 'Your description guides generation. Progress appears as each stage runs; created projects stay available for review.'}
+            {quantum
+              ? 'Creates a playable Probability Mines preview with matching artwork and seeded terrain. Local generation only; run progress resets when closed.'
+              : creationMode === 'manual'
+                ? 'Manual builds a playable TINY_TEST Godot project from the template — no LLM. You can still run Full AI later on this project.'
+                : 'Your description guides generation. Progress appears as each stage runs; created projects stay available for review.'}
           </p>
 
           <div className="row create-actions">
             <Button
               variant="primary"
               className="create-primary"
-              disabled={busy || bridgeReady !== true || parsedSeed === null || !!titleError || ((quantum || creationMode !== 'manual') && !prompt.trim())}
+              disabled={
+                busy ||
+                bridgeReady !== true ||
+                parsedSeed === null ||
+                !!titleError ||
+                ((quantum || creationMode !== 'manual') && !prompt.trim())
+              }
               aria-busy={busy}
               onClick={!quantum && creationMode === 'manual' ? handleScaffold : handleGenerate}
             >
@@ -250,21 +455,27 @@ export function CreateScreen({ bridgeReady, active = true }: { bridgeReady: bool
                 ? 'Forging template…'
                 : generating
                   ? 'Generating…'
-                  : quantum ? 'Create Quantum preview' : creationMode === 'manual'
-                    ? 'Create from template'
-                    : 'Generate Game'}
+                  : quantum
+                    ? 'Create Quantum preview'
+                    : creationMode === 'manual'
+                      ? 'Create from template'
+                      : 'Generate Game'}
             </Button>
             {!quantum && creationMode === 'manual' && (
               <Button
-                disabled={!prompt.trim() || busy || bridgeReady !== true || parsedSeed === null || !!titleError}
+                disabled={
+                  !prompt.trim() ||
+                  busy ||
+                  bridgeReady !== true ||
+                  parsedSeed === null ||
+                  !!titleError
+                }
                 onClick={handleGenerate}
               >
                 Generate with AI instead
               </Button>
             )}
-            {bridgeReady !== true && (
-              <Badge tone="warning">Bridge unavailable</Badge>
-            )}
+            {bridgeReady !== true && <Badge tone="warning">Bridge unavailable</Badge>}
           </div>
         </Panel>
 
@@ -312,10 +523,22 @@ export function CreateScreen({ bridgeReady, active = true }: { bridgeReady: bool
                 Game created at: <code className="mono">{result.outputPath}</code>
               </p>
               {result.exportPath && (
-                <p>Windows game: <code className="mono">{result.exportPath}/game.exe</code></p>
+                <p>
+                  Windows game: <code className="mono">{result.exportPath}/game.exe</code>
+                </p>
               )}
-              {result.validationPassed === false && <p className="result error" role="status">{result.errors?.length ? 'Game files were created, but tests failed. Review the errors before treating this game as ready.' : 'Game files were created. Gameplay tests still need to run before this game is verified.'}</p>}
-              {!!result.errors?.length && <p className="result error" role="alert">{result.errors.join('; ')}</p>}
+              {result.validationPassed === false && (
+                <p className="result error" role="status">
+                  {result.errors?.length
+                    ? 'Game files were created, but tests failed. Review the errors before treating this game as ready.'
+                    : 'Game files were created. Gameplay tests still need to run before this game is verified.'}
+                </p>
+              )}
+              {!!result.errors?.length && (
+                <p className="result error" role="alert">
+                  {result.errors.join('; ')}
+                </p>
+              )}
               <div className="row" style={{ marginTop: 'var(--space-3)' }}>
                 <Button variant="primary" onClick={() => navigate('Studio')}>
                   Open Generation Studio

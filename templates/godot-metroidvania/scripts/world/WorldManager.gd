@@ -121,6 +121,8 @@ func _load_room(room_id: String, spawn_side: String = "left") -> void:
 				incoming_health.current_health = _carried_health
 				incoming_health.health_changed.emit(incoming_health.current_health, incoming_health.max_health)
 		_position_player_for_spawn(player, spawn_side)
+		if _current_room.get_node_or_null("StairFlight_0"):
+			player.floor_snap_length = 32.0
 		_apply_room_containment(player, room_id)
 		_move_camera_to_room(player)
 
@@ -295,6 +297,24 @@ func _position_player_for_spawn(player: Node2D, spawn_side: String) -> void:
 		_:
 			player.position.x = SPAWN_MARGIN
 	player.position.y = player.position.y if spawn_side in ["top", "bottom"] else floor_y
+	# Only explicitly authored spatial ports override the legacy spawn convention.
+	# current_room_id still identifies the outgoing room at this point.
+	var port_direction := "up" if spawn_side == "top" else "down" if spawn_side == "bottom" else spawn_side
+	for door in _current_room.get_children():
+		if door.is_in_group("room_transition") and door.has_meta("metroforge_spatial_port") \
+			and door.target_room_id == GameManager.current_room_id and door.transition_direction == port_direction:
+			if spawn_side in ["left","right"]:
+				player.position.y = float(door.get_meta("metroforge_port_floor_y"))
+			else:
+				player.position.x = minf(room_width-SPAWN_MARGIN,door.position.x+SPAWN_MARGIN)
+				# A shaft's authored arrival may sit beside its descent opening.
+				# Keep the ordinary entry rule when no bounded anchor is provided.
+				var arrival_x = door.get_meta("metroforge_arrival_x") if door.has_meta("metroforge_arrival_x") else null
+				if spawn_side == "bottom" and typeof(arrival_x) in [TYPE_INT, TYPE_FLOAT] \
+					and is_finite(float(arrival_x)) and float(arrival_x) >= SPAWN_MARGIN \
+					and float(arrival_x) <= room_width-SPAWN_MARGIN:
+					player.position.x = float(arrival_x)
+			return
 
 
 func _apply_room_containment(player: Node, room_id: String) -> void:
@@ -339,5 +359,12 @@ func _move_camera_to_room(player: Node2D) -> void:
 					kit = kit_value
 			var room_info: Dictionary = _room_data.get(GameManager.current_room_id, {})
 			var archetype := String(room_info.get("archetype", ""))
-			camera.apply_room_bounds(Vector2(room_width, room_height), kit, archetype)
+			var masonry_top := room_height
+			var has_masonry := false
+			for body in _current_room.get_children():
+				if body is StaticBody2D and String(body.name).begins_with("MasonryRoof_"):
+					var shape := body.get_node("CollisionShape2D") as CollisionShape2D
+					masonry_top = minf(masonry_top,body.position.y+shape.shape.size.y*0.5)
+					has_masonry = true
+			camera.apply_room_bounds(Vector2(room_width, room_height), kit, archetype,masonry_top if has_masonry else -1.0,room_height-32.0 if has_masonry else -1.0)
 		camera.make_current()

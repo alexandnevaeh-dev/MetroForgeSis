@@ -1,3 +1,5 @@
+import {configureStormglassGalleryRoomKits} from './stormglass-room-kits.js';
+import {authoredStairApproaches} from './stair-movement-audit.js';
 import { cpSync, mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync, rmSync } from 'node:fs';
 import { join, dirname, sep } from 'node:path';
 import { getResourceRoot } from '@metroforge/shared';
@@ -29,6 +31,7 @@ import {
   buildRoomAssemblyOptions,
   buildPublishedRoomRecord,
   generateRoomScene,
+  resolveBossFrameSize,
   prepareRoomAssemblyContext,
   recompileRooms,
   resolveFloorPropPlacements,
@@ -132,6 +135,7 @@ function mergeManifestArtifacts(
 
 export class GodotProjectAssembler {
   recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult {
+    configureStormglassGalleryRoomKits(input.outputDir,input.gameDna,input.worldGraph);
     return recompileRooms(input);
   }
 
@@ -160,6 +164,12 @@ export class GodotProjectAssembler {
         filter: (src) => !isRollbackOnlyTemplatePath(src, templatePath),
       });
       stripRollbackOnlyAssets(input.outputDir);
+      configureStormglassGalleryRoomKits(input.outputDir,input.gameDna,input.worldGraph);
+      if (input.gameDna.identity.title.startsWith('Stormglass Reliquary')
+        && input.worldGraph.nodes.some(node => node.metadata?.stormglassRoomTheme)
+        && !existsSync(join(input.outputDir,'data/visual/stormglass-room-kits.json'))) {
+        warnings.push('Stormglass room architecture kit could not be admitted; fallback decoration is active. Check required modules, atlas bounds, and asset hashes.');
+      }
       if (input.externalVisualPack === 'metroforge-foundry-v3' && input.textureFiles) {
         expandFoundryTextureAliases(input.textureFiles);
       }
@@ -168,6 +178,7 @@ export class GodotProjectAssembler {
       mkdirSync(roomsDir, { recursive: true });
       const roomsData: Record<string, unknown> = {};
       let topDownOverworld: TopDownOverworld | undefined;
+      const deferredRoomScenes: Array<{roomId: string; index: number; options: ReturnType<typeof buildRoomAssemblyOptions>}> = [];
 
       if (genreUsesOverworldChunks(input.gameDna.archetype)) {
         const overworld =
@@ -309,8 +320,7 @@ export class GodotProjectAssembler {
           seed: input.gameDna.seed + i,
           textureExists,
         });
-        const sceneContent = generateRoomScene(roomId, i, opts);
-        writeFileSync(join(roomsDir, `${roomId}.tscn`), sceneContent);
+        deferredRoomScenes.push({roomId, index: i, options: opts});
         roomsData[roomId] = {
           ...buildPublishedRoomRecord(roomId, i, opts),
           layoutMetrics: previousLayouts[previousLayouts.length - 1]!.metrics,
@@ -374,6 +384,8 @@ export class GodotProjectAssembler {
       const movementFeasibility = validateMovementFeasibility(
         input.worldGraph,
         movementFeasibilityStats(movementJson as ReturnType<typeof buildMovementJson>),
+        undefined,
+        authoredStairApproaches(input.worldGraph,deferredRoomScenes),
       );
       writeFileSync(
         join(input.outputDir, 'playtest_route.json'),
@@ -385,6 +397,7 @@ export class GodotProjectAssembler {
               issueCount: movementFeasibility.issues.length,
               issues: movementFeasibility.issues,
               metrics: movementFeasibility.metrics,
+              authoredUpApproaches: movementFeasibility.authoredUpApproaches,
             },
           },
           null,
@@ -526,6 +539,13 @@ export class GodotProjectAssembler {
         patchCharacterSheetPathsForFoundryPack(input.outputDir, input.externalVisualPack);
       } else if (input.foundryThemed && genreSupports(input.gameDna.archetype, 'supportsPerRoomScenes')) {
         overlaidAuthoredPaths = overlayAuthoredVisualPolish(input.outputDir, templatePath);
+      }
+
+      // Resolve frame cells from the final emitted art, after generated textures and
+      // authored overlays replace template sheets. Earlier resolution read stale art.
+      for (const {roomId, index, options} of deferredRoomScenes) {
+        if (options.isBossRoom) options.bossFrameSize = resolveBossFrameSize(input.outputDir, options.bossId);
+        writeFileSync(join(roomsDir, `${roomId}.tscn`), generateRoomScene(roomId, index, options));
       }
 
       const incoming: AssetManifestEntry[] = [...(input.assetMetadata ?? [])];

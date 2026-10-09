@@ -1,0 +1,306 @@
+{
+  "version": 1,
+  "kit": "gallery-common-v1",
+  "archetype": "SIDE_VIEW_METROIDVANIA",
+  "atlas": "assets/architecture/stormglass/kits/gallery-common-v1/atlas.png",
+  "size": [
+    1254,
+    1254
+  ],
+  "sha256": "94265e847d0c35f2db03d9555255227e9c8b1775dacac1e49f9b8af263b37c32",
+  "entries": [
+    {
+      "role": "marble_wall",
+      "slot": 0,
+      "region": [
+        0,
+        0,
+        314,
+        314
+      ],
+      "opaqueBounds": [
+        58,
+        64,
+        225,
+        231
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "floor_course",
+      "slot": 1,
+      "region": [
+        314,
+        0,
+        313,
+        314
+      ],
+      "opaqueBounds": [
+        50,
+        177,
+        243,
+        117
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "ribbed_column",
+      "slot": 2,
+      "region": [
+        627,
+        0,
+        313,
+        314
+      ],
+      "opaqueBounds": [
+        126,
+        25,
+        90,
+        277
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "door_arch",
+      "slot": 3,
+      "region": [
+        940,
+        0,
+        314,
+        314
+      ],
+      "opaqueBounds": [
+        54,
+        40,
+        196,
+        256
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "stained_window",
+      "slot": 4,
+      "region": [
+        0,
+        314,
+        314,
+        313
+      ],
+      "opaqueBounds": [
+        100,
+        25,
+        139,
+        272
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "lantern",
+      "slot": 5,
+      "region": [
+        314,
+        314,
+        313,
+        313
+      ],
+      "opaqueBounds": [
+        112,
+        40,
+        113,
+        260
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "broken_column",
+      "slot": 6,
+      "region": [
+        627,
+        314,
+        313,
+        313
+      ],
+      "opaqueBounds": [
+        45,
+        103,
+        229,
+        195
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "recessed_arch_panel",
+      "slot": 7,
+      "region": [
+        940,
+        314,
+        314,
+        313
+      ],
+      "opaqueBounds": [
+        28,
+        33,
+        251,
+        266
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "door_closed",
+      "slot": 8,
+      "region": [
+        0,
+        627,
+        314,
+        313
+      ],
+      "opaqueBounds": [
+        64,
+        12,
+        212,
+        279
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "door_open",
+      "slot": 9,
+      "region": [
+        314,
+        627,
+        313,
+        313
+      ],
+      "opaqueBounds": [
+        54,
+        12,
+        212,
+        280
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "rune_gate_sealed",
+      "slot": 10,
+      "region": [
+        627,
+        627,
+        313,
+        313
+      ],
+      "opaqueBounds": [
+        49,
+        12,
+        212,
+        280
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "rune_gate_open",
+      "slot": 11,
+      "region": [
+        940,
+        627,
+        314,
+        313
+      ],
+      "opaqueBounds": [
+        46,
+        13,
+        211,
+        279
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "stair_tread",
+      "slot": 12,
+      "region": [
+        0,
+        940,
+        314,
+        314
+      ],
+      "opaqueBounds": [
+        83,
+        112,
+        196,
+        120
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "threshold_trim",
+      "slot": 13,
+      "region": [
+        314,
+        940,
+        313,
+        314
+      ],
+      "opaqueBounds": [
+        94,
+        71,
+        139,
+        180
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "checkpoint_shrine",
+      "slot": 14,
+      "region": [
+        627,
+        940,
+        313,
+        314
+      ],
+      "opaqueBounds": [
+        56,
+        6,
+        200,
+        273
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "relic_pedestal",
+      "slot": 15,
+      "region": [
+        940,
+        940,
+        314,
+        314
+      ],
+      "opaqueBounds": [
+        105,
+        41,
+        96,
+        231
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    }
+  ],
+  "candidateOnly": true,
+  "productionApproved": false,
+  "admission": "Uniform atlas bounds and alpha margins passed; native visual and transition state proof pending",
+  "generator": "built-in image_gen",
+  "promptSummary": "Original orthographic Gothic modular stone/brass/turquoise kit; sixteen isolated parts including closed/open door and sealed/unsealed gate states. Final targeted correction shrank stair and corner trim."
+}

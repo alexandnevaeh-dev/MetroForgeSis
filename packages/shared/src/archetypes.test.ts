@@ -42,9 +42,15 @@ describe('GenreDefinition capabilities', () => {
     expect(side.defaultProgression).toBe('ABILITY_GATED');
     expect(top.perspective).toBe('TOP_DOWN');
     expect(top.defaultProgression).toBe('ITEM_GATED');
-    expect(Object.keys(GENRE_DEFINITIONS)).toEqual([
+    const platformer = getGenreDefinition('SIDE_VIEW_PLATFORMER');
+    expect(platformer.perspective).toBe('SIDE_VIEW');
+    expect(platformer.defaultProgression).toBe('OPEN');
+    expect(platformer.capabilities.supportsLockedAbilityGates).toBe(false);
+    expect(platformer.capabilities.supportsJumping).toBe(true);
+    expect(Object.keys(GENRE_DEFINITIONS).sort()).toEqual([
       'QUANTUM_SIMULATION_ROGUELITE',
       'SIDE_VIEW_METROIDVANIA',
+      'SIDE_VIEW_PLATFORMER',
       'TOP_DOWN_ACTION_ADVENTURE',
     ]);
   });

@@ -95,3 +95,7 @@ export {
 export { parseRoomSceneCollision } from './scene-collision.js';
 export type { SceneCollision, SceneCollisionRect } from './scene-collision.js';
 export { buildCastleInteriorLayout } from './castle-interior-layout.js';
+export { buildCastleRegionPlan, supportsCastleRegionPlan, type CastleRegionPlan } from './castle-region-plan.js';
+export { applyStormglassGalleryBlueprint } from './stormglass-gallery-graph.js';
+export { generateStormglassGalleryCampaign, applyStormglassGalleryDnaContract } from './stormglass-campaign-recipe.js';
+export {exportedStairApproaches} from './exported-stair-audit.js';

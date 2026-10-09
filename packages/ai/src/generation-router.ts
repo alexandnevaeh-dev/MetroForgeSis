@@ -5,6 +5,8 @@ import type { AICapability } from './types.js';
 import { buildTextRoutingContext } from './mode-routing.js';
 
 export interface GenerationRequest {
+  signal?: AbortSignal;
+  onProviderAttempt?: (provider: string, error?: string) => void;
   capability: ModelCapability;
   /** Human-readable task label for logging/routing context (e.g. "game_dna"). Falls back
    *  to `capability` itself when omitted. */
@@ -111,13 +113,19 @@ export class GenerationRouter {
 
     const start = Date.now();
     try {
-      const response = await this.fallback.withFallback(routingContext, (provider) =>
-        provider.generateText({
+      const response = await this.fallback.withFallback(routingContext, async (provider) => {
+        request.signal?.throwIfAborted();
+        request.onProviderAttempt?.(provider.id);
+        try { return await provider.generateText({
+          signal: request.signal,
           prompt: request.prompt,
           systemPrompt: request.systemPrompt,
           jsonMode: request.jsonMode ?? request.capability === 'JSON_GENERATION',
-        }),
-      );
+        }); } catch (error) {
+          request.onProviderAttempt?.(provider.id, error instanceof Error ? error.message : 'Provider request failed');
+          throw error;
+        }
+      });
       return {
         result: response.text,
         modelId: response.model,

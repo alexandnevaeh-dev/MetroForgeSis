@@ -15,11 +15,17 @@ import {
   resolveFloorPropPlacements,
   stormglassTargetRoomSize,
   buildStormglassEncounterPlacements,
+  stormglassGalleryDescentPits,
 } from '../src/room-assembler.js';
 import { foundryBackdropCoverScale } from '../src/foundry-visual-pack.js';
 import { generateWorldTopology } from '@metroforge/procedural';
 import { generateGameContent } from '@metroforge/procedural';
-import { GameDNASchema } from '@metroforge/schemas';
+import { GameDNASchema, type WorldGraph } from '@metroforge/schemas';
+import { buildStormglassGalleryBlueprint, stormglassGalleryPort } from './stormglass-gallery-blueprint.js';
+import {authoredStairApproaches} from './stair-movement-audit.js';
+import {validateMovementFeasibility,DEFAULT_MOVEMENT_STATS} from '@metroforge/procedural';
+import {exportedStairApproaches} from './exported-stair-audit.js';
+import {mkdirSync,readFileSync,writeFileSync} from 'node:fs';
 
 describe('Stormglass level-design sizing contract', () => {
   it('matches reference side-view hall and shaft extents while keeping quiet chambers distinct', () => {
@@ -362,7 +368,7 @@ describe('Stormglass opening-room geometry contract', () => {
     'traversal', 'save', 'secret', 'miniboss', 'ability_gate',
   ];
 
-  it.each([...expectedPlatforms.entries()])('%s preserves its authored platform silhouette and blueprint', (roomId, expected) => {
+  it.each([...expectedPlatforms.entries()])('%s preserves its authored platform silhouette and blueprint', (roomId: string, expected: NonNullable<ReturnType<typeof expectedPlatforms.get>>) => {
     const index = Number(roomId.slice(-3));
     const roomIds = [...expectedPlatforms.keys()];
     const ctx = {
@@ -440,6 +446,177 @@ describe('Stormglass opening-room geometry contract', () => {
     expect(room.pits).toEqual([]);
     expect(scene).toContain('[node name="Floor" type="StaticBody2D"');
     expect(scene).not.toContain('[node name="FloorRight" type="StaticBody2D"');
+  });
+});
+
+describe('Expanded gallery ceiling-door access', () => {
+  const dna = GameDNASchema.parse({
+    ...mediumDna,
+    identity: {...mediumDna.identity, title: 'Stormglass Reliquary'},
+    technical: {...mediumDna.technical, tileSize:32},
+    movement: {...mediumDna.movement, jumpHeight:160},
+    world: {...mediumDna.world, biomeCount:1},
+  });
+  const options = (profile: 'gallery'|'expanded-region', roomId = 'room_001') => {
+    const plan=buildStormglassGalleryBlueprint(profile);
+    const graph:WorldGraph={version:'0.1.0',seed:1,
+      nodes:plan.rooms.map(r=>({id:r.id,type:'room',label:r.name,metadata:{
+        archetype:r.theme==='rest'?'save':r.theme==='stairwell'?'traversal':'combat',stormglassRoomTheme:r.theme,
+        stormglassRegionProfile:profile,stormglassCampaignLayout:'stormglass-gallery-campaign-v1',
+        targetTileWidth:r.width/32,targetTileHeight:r.height/32,
+      }})),
+      edges:plan.links.map((l,i)=>({id:`edge_${i}`,from:l.from,to:l.to,transition:l.direction,requirements:l.requirements,optional:l.optional,bidirectional:true})),
+      regions:[],
+    };
+    const ids=plan.rooms.map(r=>r.id),ctx=prepareRoomAssemblyContext(graph,undefined,ids);
+    return buildRoomAssemblyOptions(roomId,ids.indexOf(roomId),ctx,dna,undefined,{value:0},path=>path==='assets/tilesets/biome_0/source.png');
+  };
+  it('gives the expanded lock a connected approach while preserving the pre-Dash floor opening',()=>{
+    const opts=options('expanded-region');
+    expect(opts.stairFlights).toHaveLength(3);expect(opts.platforms).toHaveLength(4);
+    expect(opts.platforms!.at(-1)).toMatchObject({x:512,y:128,width:416});
+    expect(opts.pits).toContainEqual({x:1472,width:128});
+    expect(opts.connections.find(c=>c.targetRoomId==='room_043')!.requirements).toEqual(['dash']);
+    const scene=generateRoomScene('room_001',0,opts);
+    expect((scene.match(/one_way_collision = true/g)??[])).toHaveLength(7);
+  });
+  it('keeps the original gallery flat and legacy stair collision solid',()=>{
+    expect(options('gallery').stairFlights).toBeUndefined();
+    expect(options('gallery').platforms).toEqual([]);
+    const scene=generateRoomScene('room_002',2,options('gallery','room_002'));
+    expect(scene).not.toContain('one_way_collision = true');
+    expect(scene).not.toContain('metroforge_arrival_x');
+  });
+  it('exports the bounded shaft-base arrival and rejects invalid scene anchors',()=>{
+    const opts=options('expanded-region','room_043');
+    expect(generateRoomScene('room_043',13,opts)).toContain('metadata/metroforge_arrival_x = 112');
+    for(const arrivalX of [NaN,111,913]) {
+      const altered={...opts,spatialPorts:opts.spatialPorts!.map(p=>p.direction==='down'?{...p,arrivalX}:p)};
+      expect(()=>generateRoomScene('room_043',13,altered)).toThrow(/Invalid spatial arrival anchor/);
+    }
+  });
+  it('gives the expanded checkpoint reverse access while retaining its save point and lower opening',()=>{
+    const opts=options('expanded-region','room_006');
+    expect(opts.stairFlights).toHaveLength(6);expect(opts.platforms).toHaveLength(4);
+    expect(opts.pits).toContainEqual({x:448,width:128});
+    expect(opts.hasSavePoint).toBe(true);
+    expect(opts.connections.find(c=>c.targetRoomId==='room_005')!.direction).toBe('down');
+    expect(opts.connections.find(c=>c.targetRoomId==='room_045')!.direction).toBe('up');
+    const scene=generateRoomScene('room_006',6,opts);
+    expect((scene.match(/one_way_collision = true/g)??[])).toHaveLength(10);
+    expect(scene).toContain('[node name="SavePoint"');
+    expect(options('gallery','room_006').stairFlights).toBeUndefined();
+    for(const flight of opts.stairFlights!)expect(Math.min(flight.from.x,flight.to.x)>=416||Math.max(flight.from.x,flight.to.x)<=288).toBe(true);
+    expect(opts.platforms!.every(p=>p.x+p.width<=288||p.x>=416)).toBe(true);
+    // Service descent lands on floor; the lower-room exit remains a distinct hole.
+    expect(opts.pits!.every(p=>p.x+p.width<=288||p.x>=416)).toBe(true);
+  });
+  it('keeps the tower return well open while providing a safe bottom arrival for reverse ascent',()=>{
+    const opts=options('expanded-region','room_045');
+    expect(opts.spatialPorts!.find(p=>p.direction==='down')!.arrivalX).toBe(112);
+    expect(generateRoomScene('room_045',45,opts)).toContain('metadata/metroforge_arrival_x = 112');
+    for(const flight of opts.stairFlights!)expect(Math.min(flight.from.x,flight.to.x)>=576||Math.max(flight.from.x,flight.to.x)<=448).toBe(true);
+    expect(opts.platforms!.every(p=>p.x+p.width<=448||p.x>=576)).toBe(true);
+  });
+  const gatedGraph:WorldGraph={version:'0.1.0',seed:1,nodes:[],regions:[],edges:[{
+    id:'up',from:'room_001',to:'room_043',transition:'up',requirements:['dash'],optional:true,bidirectional:true,
+  }]};
+  const audit = (opts:ReturnType<typeof options>,jumpHeight=160) => validateMovementFeasibility(
+    gatedGraph,{...DEFAULT_MOVEMENT_STATS,jumpHeight},undefined,
+    authoredStairApproaches(gatedGraph,[{roomId:'room_001',options:opts}]),
+  );
+  it('audits real compiler collision inputs as a physical approach, retaining the Dash lock',()=>{
+    const opts=options('expanded-region');
+    const report=audit(opts);
+    expect(report.feasible).toBe(true);
+    expect(report.authoredUpApproaches).toEqual([{edgeId:'up',flightCount:3,finalJumpPx:17}]);
+    expect(generateRoomScene('room_001',1,opts)).toContain('required_abilities = PackedStringArray("dash")');
+    expect(gatedGraph.edges[0]!.requirements).toEqual(['dash']);
+  });
+  it('retains the generic up/Dash rejection without emitted one-way landings',()=>{
+    for(const opts of [options('gallery'),{...options('expanded-region'),hasTileset:false},
+      {...options('expanded-region'),stairFlightsOneWay:false},{...options('expanded-region'),platforms:[]}]) {
+      expect(audit(opts).issues[0]!.reason).toContain('dash cannot satisfy up gate');
+    }
+  });
+  it('rejects interrupted, excessively steep or non-finite flights and floor-pit starts',()=>{
+    for(const mutate of [
+      (o:ReturnType<typeof options>)=>{o.stairFlights![1]!.from.x+=64;},
+      (o:ReturnType<typeof options>)=>{o.stairFlights![0]!.to.x=160;},
+      (o:ReturnType<typeof options>)=>{o.stairFlights![0]!.to.y=NaN;},
+      (o:ReturnType<typeof options>)=>{o.pits!.push({x:128,width:64});},
+    ]) {const opts=options('expanded-region');mutate(opts);expect(audit(opts).feasible).toBe(false);}
+  });
+  it('rejects a blocked walking corridor or final jump and respects actual jump height',()=>{
+    const opts=options('expanded-region');
+    const approaches=authoredStairApproaches(gatedGraph,[{roomId:'room_001',options:opts}]);
+    for(const solid of [{x:400,y:500,width:32,height:128},{x:520,y:75,width:40,height:32}]) {
+      const modified=structuredClone(approaches);modified.up!.solids.push(solid);
+      expect(validateMovementFeasibility(gatedGraph,{...DEFAULT_MOVEMENT_STATS,jumpHeight:160},undefined,modified).feasible).toBe(false);
+    }
+    expect(audit(opts,16).feasible).toBe(false);
+    expect(audit(opts,17).feasible).toBe(true);
+  });
+  it('never attaches an approach to a different edge target or mismatched runtime lock',()=>{
+    const opts=options('expanded-region');
+    opts.connections.find(c=>c.targetRoomId==='room_043')!.requirements=[];
+    expect(audit(opts).feasible).toBe(false);
+    const approaches=authoredStairApproaches(gatedGraph,[{roomId:'room_001',options:options('expanded-region')}]);
+    approaches.up!.to='other';
+    expect(validateMovementFeasibility(gatedGraph,DEFAULT_MOVEMENT_STATS,undefined,approaches).feasible).toBe(false);
+  });
+  it('independently audits the actual scene and rejects stale reports after collision/lock edits',()=>{
+    const root=`E:/MetroForgeData/Development/stormglass-movement-audit-20261009/scene-tests/${process.pid}-${Date.now()}`;
+    for(const folder of ['scenes/rooms','scenes/player','scenes/world'])mkdirSync(root+'/'+folder,{recursive:true});
+    for(const file of ['scenes/player/Player.tscn','scenes/world/RoomTransition.tscn'])
+      writeFileSync(root+'/'+file,readFileSync('templates/godot-metroidvania/'+file));
+    const scene=generateRoomScene('room_001',1,options('expanded-region')),file=root+'/scenes/rooms/room_001.tscn';
+    writeFileSync(file,scene);
+    const auditScene=()=>validateMovementFeasibility(gatedGraph,{...DEFAULT_MOVEMENT_STATS,jumpHeight:160},undefined,exportedStairApproaches(root,gatedGraph));
+    expect(auditScene().authoredUpApproaches).toEqual([{edgeId:'up',flightCount:3,finalJumpPx:17}]);
+    for(const altered of [
+      scene.replaceAll('one_way_collision = true','one_way_collision = false'),
+      scene.replace('polygon = PackedVector2Array(144, 704','polygon = PackedVector2Array(160, 704'),
+      scene.replaceAll('required_abilities = PackedStringArray("dash")','required_abilities = PackedStringArray("double_jump")'),
+      scene.replace('position = Vector2(500, 32)','position = Vector2(2400, 32)'),
+      scene+'\n[node name="Blocker" type="StaticBody2D" parent="."]\nposition = Vector2(416, 548)\n\n[node name="CollisionShape2D" type="CollisionShape2D" parent="Blocker"]\nshape = SubResource("platform_3_shape")\n',
+      scene.replace('[node name="FloorLeft" type="StaticBody2D" parent="."]','[node name="FloorLeft" type="StaticBody2D" parent="."]\ncollision_layer = 0'),
+    ].entries()) {writeFileSync(file,altered[1]);expect(auditScene().feasible,`scene mutation ${altered[0]}`).toBe(false);}
+    writeFileSync(file,scene);
+    writeFileSync(root+'/scenes/world/RoomTransition.tscn','[gd_scene]\nsize = Vector2(1, 1)\n');
+    expect(auditScene().feasible).toBe(false);
+  });
+});
+
+describe('Reference-gallery downward door access', () => {
+  const down = [{ direction: 'down' as const, targetRoomId: 'room_002', requirements: [] }];
+  it('opens the pre-Dash archive branch and checkpoint return on the sensor columns', () => {
+    expect(stormglassGalleryDescentPits(4096, 32, down, 'gallery')).toEqual([{x:1984,width:128}]);
+    expect(stormglassGalleryDescentPits(1024, 32, down, 'rest')).toEqual([{x:448,width:128}]);
+  });
+  it('preserves gated weak-floor and swimming interactions', () => {
+    for (const requirement of ['ground_slam', 'swim', 'dash'])
+      expect(stormglassGalleryDescentPits(4096, 32, [{...down[0]!,requirements:[requirement]}], 'gallery')).toEqual([]);
+  });
+  it('does not carve ordinary rooms or upward connections', () => {
+    for (const theme of [undefined, 'stairwell', 'shrine'])
+      expect(stormglassGalleryDescentPits(4096, 32, down, theme)).toEqual([]);
+    expect(stormglassGalleryDescentPits(4096, 32, [{...down[0]!,direction:'up'}], 'gallery')).toEqual([]);
+  });
+  it('keeps the Echo service loop and Memorial return open at their authored downward ports', () => {
+    const blueprint = buildStormglassGalleryBlueprint();
+    for (const [roomId, targetId, pitX] of [['room_007', 'room_040', 448], ['room_004', 'room_042', 960]] as const) {
+      const room = blueprint.rooms.find(r => r.id === roomId)!;
+      const connection = { direction: 'down' as const, targetRoomId: targetId!, requirements: [], optional: true };
+      const port = stormglassGalleryPort(roomId!, targetId!, 'down')!;
+      const pits = stormglassGalleryDescentPits(room.width, 32, [connection], room.theme, roomId);
+      expect(pits).toEqual([{ x: pitX, width: 128 }]);
+      expect(pits[0]!.x).toBeLessThanOrEqual(port.x);
+      expect(pits[0]!.x + pits[0]!.width).toBeGreaterThanOrEqual(port.x + 24);
+      for (const requirement of ['ground_slam', 'swim', 'dash'])
+        expect(stormglassGalleryDescentPits(room.width, 32, [{ ...connection, requirements: [requirement] }], room.theme, roomId)).toEqual([]);
+      expect(stormglassGalleryDescentPits(room.width, 32, [{ ...connection, direction: 'up' }], room.theme, roomId)).toEqual([]);
+    }
   });
 });
 
@@ -675,6 +852,13 @@ describe('generateRoomScene combat sprites', () => {
     expect(scene).toContain('assets/bosses/boss_final_walk.png');
     expect(scene).toContain('assets/bosses/boss_final_hurt.png');
     expect(scene).toContain('assets/bosses/boss_final_attack.png');
+  });
+
+  it('slices fallback guardians at their emitted dimensions while keeping authored guardians at 160px', () => {
+    const options = { ...baseOptions, hasEnemy: false, enemyIndex: 0, isBossRoom: true, bossId: 'boss_002' };
+    expect(generateRoomScene('room_boss', 1, { ...options, bossFrameSize: 96 }))
+      .toContain('frame_size = Vector2i(96, 96)');
+    expect(generateRoomScene('room_boss', 1, options)).toContain('frame_size = Vector2i(160, 160)');
   });
 
   it('embeds relic item pickups', () => {
@@ -1039,7 +1223,7 @@ describe('multi-screen castle room sizing', () => {
     } as import('../src/room-assembler.js').RoomAssemblyContext;
     return buildRoomAssemblyOptions('room_000', 0, ctx, mediumDna, undefined, { value: 0 }, () => false, dimensions);
   }
-  it.each(['tutorial', 'combat', 'connector', 'traversal', 'set_piece'])('gives %s at least three camera widths and vertical exploration space', archetype => {
+  it.each(['tutorial', 'combat', 'connector', 'traversal', 'set_piece'])('gives %s at least three camera widths and vertical exploration space', (archetype: string) => {
     const room = assemble(archetype);
     expect(room.width).toBeGreaterThanOrEqual(3 * 240 * 16 / 9);
     expect(room.height).toBeGreaterThanOrEqual(3 * 240);

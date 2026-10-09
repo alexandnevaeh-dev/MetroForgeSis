@@ -27,11 +27,28 @@ extends AnimatedSprite2D
 @export var extra_animation_sheets: Dictionary = {}
 
 static var _clean_cache: Dictionary = {}
+var _clip_presentations: Dictionary = {}
+var _default_presentation_scale := Vector2.ONE
+var _default_presentation_offset := Vector2.ZERO
+var _has_frame_anchors := false
+var _presentation_flip := false
 
 func _ready() -> void:
 	_build_frames()
+	_default_presentation_scale = scale
+	_default_presentation_offset = offset
+	animation_changed.connect(_apply_clip_presentation)
+	frame_changed.connect(_on_presentation_frame_changed)
 	_apply_contact_filter()
 	play("idle")
+
+func _process(_delta: float) -> void:
+	if _has_frame_anchors and flip_h != _presentation_flip:
+		_apply_clip_presentation()
+
+func _on_presentation_frame_changed() -> void:
+	if _clip_presentations.get(String(animation),{}).has("frameOffsets"):
+		_apply_clip_presentation()
 
 func _apply_contact_filter() -> void:
 	## Palette red/cream/magenta still composites at the feet after knockout.
@@ -181,7 +198,7 @@ func _load_prefixed_sheets(frames: SpriteFrames) -> void:
 	## When the assembler only patches walk/hurt/death/attack, still pick up idle/fly/telegraph
 	## sheets that share the same character prefix (enemy_001_idle.png next to enemy_001_walk.png).
 	var prefix := _sheet_prefix()
-	var extras := ["idle", "fly", "hover", "telegraph", "recovery", "talk", "listen", "attack_2", "attack_3", "attack_projectile", "attack_burst"]
+	var extras := ["idle", "locomotion", "fly", "hover", "telegraph", "recovery", "talk", "listen", "attack_2", "attack_3", "attack_projectile", "attack_burst"]
 	for anim_name in extras:
 		var path := "%s_%s.png" % [prefix, anim_name]
 		var res_path := path if path.begins_with("res://") else "res://" + path
@@ -191,7 +208,7 @@ func _load_prefixed_sheets(frames: SpriteFrames) -> void:
 			frames.add_animation(anim_name)
 		else:
 			frames.clear(anim_name)
-		var looping: bool = anim_name in ["idle", "fly", "hover", "telegraph", "recovery", "talk", "listen"]
+		var looping: bool = anim_name in ["idle", "locomotion", "fly", "hover", "telegraph", "recovery", "talk", "listen"]
 		frames.set_animation_loop(anim_name, looping)
 		_load_animation_frames(frames, anim_name, path, false)
 
@@ -218,6 +235,13 @@ func _load_animation_metadata(frames: SpriteFrames) -> void:
 		var entry = parsed[anim_name]
 		if typeof(entry) != TYPE_DICTIONARY:
 			continue
+		if entry.has("fps") and (not typeof(entry.fps) in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(entry.fps)) or float(entry.fps)<=0.0):
+			continue
+		if entry.has("loop") and not typeof(entry.loop)==TYPE_BOOL:
+			continue
+		if entry.has("sourceSheet") or entry.has("sourceFrames"):
+			if not _load_source_regions(frames,String(anim_name),entry):
+				continue
 		if entry.has("fps"):
 			frames.set_animation_speed(anim_name, float(entry["fps"]))
 		if entry.has("loop"):
@@ -250,6 +274,7 @@ func _load_pose_overrides(frames: SpriteFrames) -> void:
 		if tex == null:
 			continue
 		var atlas := AtlasTexture.new()
+		atlas.filter_clip = true
 		atlas.atlas = tex
 		atlas.region = Rect2(0, 0, frame_size.x, frame_size.y)
 		frames.add_frame(anim, atlas, 1.0)
@@ -291,6 +316,7 @@ func _load_animation_frames(frames: SpriteFrames, anim: String, path: String, co
 					)
 			for i in range(sheet_frame_count):
 				var atlas := AtlasTexture.new()
+				atlas.filter_clip = true
 				atlas.atlas = tex
 				atlas.region = Rect2(i * frame_size.x, 0, frame_size.x, frame_size.y)
 				frames.add_frame(anim, atlas, 1.0)
@@ -305,3 +331,92 @@ func _load_animation_frames(frames: SpriteFrames, anim: String, path: String, co
 	frames.add_frame(anim, fallback, 1.0)
 	if copy_to_idle:
 		frames.add_frame("idle", fallback, 1.0)
+
+## Generated strips may carry larger source cells. Keep their pixels intact and use one
+## shared display scale/foot anchor, rather than slicing them as arbitrary 64px cells.
+func _load_source_regions(frames: SpriteFrames, anim: String, entry: Dictionary) -> bool:
+	var path := "res://"+String(entry.get("sourceSheet",""))
+	var regions: Variant = entry.get("sourceRegions",[])
+	var display_scale := float(entry.get("displayScale",0.0))
+	var anchor_y := float(entry.get("footAnchorY",-1.0))
+	var anchors: Variant = entry.get("frameFootAnchors")
+	var has_anchors := entry.has("frameFootAnchors")
+	var independent := entry.has("sourceFrames")
+	var paths: Variant = entry.get("sourceFrames",[])
+	if not regions is Array or regions.is_empty() or not is_finite(display_scale) or display_scale<=0.0 or (not has_anchors and (not is_finite(anchor_y) or anchor_y<0.0)):
+		return false
+	if independent:
+		if entry.has("sourceSheet") or not has_anchors or not paths is Array or paths.size()!=regions.size() or not typeof(entry.get("frameCount")) in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(entry.frameCount)) or float(entry.frameCount)!=regions.size():
+			return false
+		for source in paths:
+			if not source is String or not source.begins_with("assets/") or not source.ends_with(".png") or source.contains("\\") or source.contains(":") or source.split("/").has("..") or not ResourceLoader.exists("res://"+source):
+				return false
+	elif not ResourceLoader.exists(path):
+		return false
+	if has_anchors and (not anchors is Array or anchors.size()!=regions.size()):
+		return false
+	var texture: Texture2D = null if independent else load(path)
+	if not independent and texture == null:
+		return false
+	var prepared: Array[AtlasTexture] = []
+	var common_height := -1.0
+	var frame_offsets: Array[Vector2] = []
+	for value in regions:
+		if independent:
+			texture = load("res://"+String(paths[prepared.size()]))
+			if texture == null:
+				return false
+		if not value is Array or value.size()!=4:
+			return false
+		for coordinate in value:
+			if not typeof(coordinate) in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(coordinate)):
+				return false
+		var rect := Rect2(float(value[0]),float(value[1]),float(value[2]),float(value[3]))
+		if rect.size.x<=0.0 or rect.size.y<=0.0 or not Rect2(Vector2.ZERO,texture.get_size()).encloses(rect) or (not has_anchors and anchor_y>rect.size.y):
+			return false
+		if has_anchors:
+			var anchor: Variant = anchors[prepared.size()]
+			if not anchor is Array or anchor.size()!=2 or not typeof(anchor[0]) in [TYPE_INT,TYPE_FLOAT] or not typeof(anchor[1]) in [TYPE_INT,TYPE_FLOAT]:
+				return false
+			var point := Vector2(float(anchor[0]),float(anchor[1]))
+			if not is_finite(point.x) or not is_finite(point.y) or point.x<0 or point.y<0 or point.x>rect.size.x or point.y>rect.size.y:
+				return false
+			frame_offsets.append(rect.size*0.5-point)
+		if common_height>=0.0 and common_height!=rect.size.y:
+			return false
+		common_height=rect.size.y
+		var atlas := AtlasTexture.new()
+		atlas.atlas=texture
+		atlas.region=rect
+		atlas.filter_clip=true
+		prepared.append(atlas)
+	frames.clear(anim)
+	for atlas in prepared:
+		frames.add_frame(anim,atlas,1.0)
+	_clip_presentations[anim]={"scale":display_scale,"offset":Vector2(0,common_height*0.5-anchor_y)}
+	if has_anchors:
+		_clip_presentations[anim]["frameOffsets"] = frame_offsets
+		_has_frame_anchors = true
+	return true
+
+func _apply_clip_presentation() -> void:
+	var direction := -1.0 if scale.x<0.0 else 1.0
+	var presentation: Dictionary = _clip_presentations.get(String(animation),{})
+	var factor := float(presentation.get("scale",1.0))
+	scale=Vector2(absf(_default_presentation_scale.x)*factor*direction,_default_presentation_scale.y*factor)
+	offset=presentation.get("offset",_default_presentation_offset)
+	var frame_offsets: Array = presentation.get("frameOffsets",[])
+	if not frame_offsets.is_empty():
+		offset=frame_offsets[clampi(frame,0,frame_offsets.size()-1)]
+		if flip_h:
+			offset.x=-offset.x
+	_presentation_flip=flip_h
+
+## Parent controllers set family scale after this sprite's _ready(). Preserve
+## clip presentation factors instead of replacing their rendered scale.
+func set_base_presentation_scale(base_scale: Vector2) -> bool:
+	if not is_finite(base_scale.x) or not is_finite(base_scale.y) or base_scale.x<=0.0 or base_scale.y<=0.0:
+		return false
+	_default_presentation_scale=base_scale
+	_apply_clip_presentation()
+	return true

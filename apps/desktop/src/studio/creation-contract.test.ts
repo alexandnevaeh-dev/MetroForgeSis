@@ -9,10 +9,10 @@ it('replaces running progress with the final result while retaining stage order'
 });
 
 describe('creation seed contract', () => {
-  it.each([0,42,2147483647])('retains Quantum seed %s without fallback',seed=>{
+  it.each([0,42,2147483647])('retains Quantum seed %s without fallback',(seed: number)=>{
     expect(parseCreationSeed(String(seed),true)).toBe(seed);
   });
-  it.each(['',' ','1.5','-1','2147483648','Infinity','not a seed'])('rejects invalid Quantum seed %s',value=>{
+  it.each(['',' ','1.5','-1','2147483648','Infinity','not a seed'])('rejects invalid Quantum seed %s',(value: string)=>{
     expect(parseCreationSeed(value,true)).toBeNull();
   });
   it('retains signed seeds for the existing two genres',()=>{

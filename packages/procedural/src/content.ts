@@ -263,19 +263,33 @@ export function generateGameContent(
   seed: number,
   bossRoomId: string,
   roomIds: string[],
+  options?: { bossRoomIds?: readonly string[]; enemyNames?: readonly string[]; bossNames?: readonly string[]; biomeCount?: number },
 ): GameContent {
   const rng = new SeededRNG(seed);
-  const defaults = PROFILE_DEFAULTS[profile];
+  const authoredBossRooms = options?.bossRoomIds;
+  if (authoredBossRooms && (authoredBossRooms.length === 0 || new Set(authoredBossRooms).size !== authoredBossRooms.length || authoredBossRooms.some(id => !roomIds.includes(id)) || authoredBossRooms[authoredBossRooms.length - 1] !== bossRoomId)) {
+    throw new Error('Authored boss rooms must be unique campaign rooms ending at the final boss');
+  }
+  if (options?.biomeCount !== undefined && (!Number.isSafeInteger(options.biomeCount) || options.biomeCount < 1 || options.biomeCount > 32)) {
+    throw new Error('Authored biome count must be an integer between 1 and 32');
+  }
+  const defaults = { ...PROFILE_DEFAULTS[profile], ...(authoredBossRooms ? { bosses: authoredBossRooms.length } : {}), ...(options?.biomeCount !== undefined ? {biomes:options.biomeCount} : {}) };
+  for (const [label,names,count] of [['enemy',options?.enemyNames,defaults.enemies],['boss',options?.bossNames,defaults.bosses]] as const) {
+    if (names && (names.length !== count || new Set(names).size !== count || names.some(name => typeof name !== 'string' || !name.trim()))) {
+      throw new Error(`Authored ${label} names must match the roster budget and be unique nonempty names`);
+    }
+  }
 
   const enemies: Enemy[] = [];
   for (let i = 0; i < defaults.enemies; i++) {
     const combatType = enemyCombatTypeForIndex(i);
     const cooldown =
       combatType === 'summon' ? 3.5 : combatType === 'trap' ? 2.2 : combatType === 'beam' ? 2.0 : 1.5;
+    const generatedName = rng.pick(ENEMY_NAMES);
     enemies.push(
       EnemySchema.parse({
         id: `enemy_${i.toString().padStart(3, '0')}`,
-        name: rng.pick(ENEMY_NAMES),
+        name: options?.enemyNames?.[i] ?? generatedName,
         biomeId: `biome_${i % defaults.biomes}`,
         health: 20 + rng.int(0, 30),
         damage: 5 + rng.int(0, 10),
@@ -290,7 +304,8 @@ export function generateGameContent(
   const bosses: Boss[] = [];
   for (let i = 0; i < defaults.bosses; i++) {
     const isFinal = i === defaults.bosses - 1;
-    const name = isFinal ? BOSS_NAMES[0]! : rng.pick(BOSS_NAMES);
+    const generatedName = isFinal ? BOSS_NAMES[0]! : rng.pick(BOSS_NAMES);
+    const name = options?.bossNames?.[i] ?? generatedName;
     const lore = `A powerful guardian of the ${gameDna.identity.title} depths.`;
     const attacks = ['slam', 'projectile'] as string[];
     bosses.push(
@@ -302,7 +317,7 @@ export function generateGameContent(
           isFinal,
           attacks: isFinal ? [...attacks, 'area_burst'] : attacks,
         }),
-        arenaRoomId: isFinal ? bossRoomId : `room_${(i * 2 + 3).toString().padStart(3, '0')}`,
+        arenaRoomId: authoredBossRooms?.[i] ?? (isFinal ? bossRoomId : `room_${(i * 2 + 3).toString().padStart(3, '0')}`),
         health: isFinal ? 200 : 100 + rng.int(0, 50),
         phases: [
           {

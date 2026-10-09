@@ -72,6 +72,7 @@ class SqlJsStatement implements SqliteStatement {
 class SqlJsDatabase implements SqliteDatabase {
   readonly #db: Database;
   readonly #dbPath: string;
+  #transactionOpen = false;
 
   constructor(db: Database, dbPath: string) {
     this.#db = db;
@@ -80,6 +81,8 @@ class SqlJsDatabase implements SqliteDatabase {
 
   exec(sql: string): void {
     this.#db.exec(sql);
+    if (/^\s*BEGIN\b/i.test(sql)) this.#transactionOpen = true;
+    if (/^\s*(COMMIT|ROLLBACK)\b/i.test(sql)) this.#transactionOpen = false;
     this.persist();
   }
 
@@ -93,6 +96,9 @@ class SqlJsDatabase implements SqliteDatabase {
   }
 
   private persist(): void {
+    // Exporting sql.js during a transaction can finalize/reopen the database.
+    // Publish the file only after commit or rollback, never after each insert.
+    if (this.#transactionOpen) return;
     const data = this.#db.export();
     writeFileSync(this.#dbPath, Buffer.from(data));
   }

@@ -56,12 +56,82 @@ export interface MovementFeasibilityIssue {
 export interface MovementFeasibilityReport {
   feasible: boolean;
   issues: MovementFeasibilityIssue[];
+  /** Static geometry evidence, not a native traversal or reverse-route receipt. */
+  authoredUpApproaches: {edgeId: string; flightCount: number; finalJumpPx: number}[];
   metrics: {
     jumpApexPx: number;
     dashReachPx: number;
     airDashReachPx: number;
     upTransitionGapPx: number;
   };
+}
+
+/** Actual compiler collision inputs for one directed edge, never an acceptance flag. */
+export interface AuthoredStairApproach {
+  from: string;
+  to: string;
+  width: number;
+  height: number;
+  floorY: number;
+  oneWay: boolean;
+  flights: {from: {x: number; y: number}; to: {x: number; y: number}; thickness: number}[];
+  landings: {x: number; y: number; width: number; height: number}[];
+  pits: {x: number; width: number}[];
+  solids: {x: number; y: number; width: number; height: number}[];
+  door: {x: number; y: number};
+}
+
+// Player.tscn: body 24x48, foot origin; RoomTransition.tscn: 24x80 at door origin.
+// Intersect the foot path with each solid inflated by the player's body. Open
+// bounds allow contact with a support surface, but reject any body penetration.
+function clearFootPath(a: {x:number;y:number}, b: {x:number;y:number}, solids: AuthoredStairApproach['solids']): boolean {
+  return !solids.some(r => {
+    let low = 0, high = 1;
+    for (const [start, delta, min, max] of [
+      [a.x,b.x-a.x,r.x-12+0.01,r.x+r.width+12-0.01],
+      [a.y,b.y-a.y,r.y+0.01,r.y+r.height+48-0.01],
+    ]) {
+      if (Math.abs(delta!) < 0.001) {
+        if (start! <= min! || start! >= max!) return false;
+      } else {
+        const first = (min!-start!)/delta!, last = (max!-start!)/delta!;
+        low = Math.max(low,Math.min(first,last)); high = Math.min(high,Math.max(first,last));
+        if (low > high) return false;
+      }
+    }
+    return low <= high;
+  });
+}
+
+function stairApproachJump(approach: AuthoredStairApproach, stats: MovementStats): number | null {
+  const {width,height,floorY,flights,landings,pits,solids,door} = approach;
+  const values = [width,height,floorY,door.x,door.y,stats.jumpHeight,
+    ...flights.flatMap(f=>[f.from.x,f.from.y,f.to.x,f.to.y,f.thickness]),
+    ...[...landings,...solids].flatMap(r=>[r.x,r.y,r.width,r.height]),...pits.flatMap(p=>[p.x,p.width])];
+  if (!approach.oneWay || !flights.length || flights.length>64 || values.some(v=>!Number.isFinite(v)) ||
+    width<=0 || height<=0 || floorY<=0 || floorY>height || stats.jumpHeight<0 ||
+    [...landings,...solids].some(r=>r.width<=0||r.height<=0) || pits.some(p=>p.width<=0) ||
+    door.x<0 || door.x+24>width || door.y<0 || door.y+80>height) return null;
+  let previous = flights[0]!.from;
+  if (Math.abs(previous.y-floorY)>0.01 || pits.some(p=>previous.x+12>p.x&&previous.x-12<p.x+p.width)) return null;
+  for (const flight of flights) {
+    const {from,to} = flight, run = Math.abs(to.x-from.x), rise = from.y-to.y;
+    if (flight.thickness<=0 || run<=0 || rise<=0 || rise>run ||
+      Math.abs(from.x-previous.x)>0.01 || Math.abs(from.y-previous.y)>0.01 ||
+      [from,to].some(p=>p.x<12||p.x>width-12||p.y<48||p.y>floorY) ||
+      !clearFootPath(from,to,solids)) return null;
+    previous = to;
+  }
+  for (const landing of landings) {
+    if (Math.abs(landing.y-previous.y)>0.01 || previous.x<landing.x || previous.x>landing.x+landing.width) continue;
+    const left = Math.max(landing.x+12,door.x-12+1), right = Math.min(landing.x+landing.width-12,door.x+24+12-1);
+    if (left>right) continue;
+    const foot = {x:(left+right)/2,y:landing.y};
+    const jump = Math.max(0,foot.y-(door.y+80-1));
+    if (jump<=stats.jumpHeight && clearFootPath(previous,foot,solids) &&
+      clearFootPath(foot,{...foot,y:foot.y-jump},solids)) return jump;
+  }
+  return null;
 }
 
 /** Transitions an ability can legitimately unlock in generated room layouts. */
@@ -137,6 +207,7 @@ export function validateMovementFeasibility(
   graph: WorldGraph,
   stats: MovementStats = DEFAULT_MOVEMENT_STATS,
   layout: RoomLayoutDefaults = DEFAULT_ROOM_LAYOUT,
+  authoredStairs: Readonly<Record<string, AuthoredStairApproach>> = {},
 ): MovementFeasibilityReport {
   const upGap = upTransitionGapPx(layout);
   const metrics = {
@@ -147,6 +218,7 @@ export function validateMovementFeasibility(
   };
 
   const issues: MovementFeasibilityIssue[] = [];
+  const authoredUpApproaches: MovementFeasibilityReport['authoredUpApproaches'] = [];
 
   for (const edge of graph.edges) {
     if (edge.requirements.length === 0) continue;
@@ -154,6 +226,17 @@ export function validateMovementFeasibility(
     const transition = normalizeTransition(edge.transition);
     const primaryAbility = edge.requirements.find((req) => isRegisteredAbilityId(req));
     if (!primaryAbility) continue;
+
+    const approach = authoredStairs[edge.id];
+    if (transition==='up' && approach?.from===edge.from && approach.to===edge.to) {
+      const finalJumpPx = stairApproachJump(approach,stats);
+      if (finalJumpPx!==null) {
+        authoredUpApproaches.push({edgeId:edge.id,flightCount:approach.flights.length,finalJumpPx});
+        // Ordinary walking/jumping reaches this sensor; requirements still lock
+        // the door at runtime. The ability is not being credited with upward lift.
+        continue;
+      }
+    }
 
     if (!abilitySupportsTransition(primaryAbility, transition)) {
       issues.push({
@@ -206,6 +289,7 @@ export function validateMovementFeasibility(
   return {
     feasible: issues.length === 0,
     issues,
+    authoredUpApproaches,
     metrics,
   };
 }

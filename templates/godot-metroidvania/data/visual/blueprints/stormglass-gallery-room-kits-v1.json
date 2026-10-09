@@ -1,0 +1,1253 @@
+{
+  "version": 1,
+  "rooms": {
+    "room_000": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json"
+      ],
+      "props": [
+        {
+          "role": "ceremonial_banner",
+          "x": 576,
+          "height": 160,
+          "lift": 192
+        },
+        {
+          "role": "rest_bench",
+          "x": 896,
+          "height": 72,
+          "lift": 0
+        }
+      ]
+    },
+    "room_001": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json"
+      ],
+      "props": [
+        {
+          "role": "ceremonial_banner",
+          "x": 1024,
+          "height": 160,
+          "lift": 192
+        },
+        {
+          "role": "memorial_niche",
+          "x": 2048,
+          "height": 160,
+          "lift": 96
+        }
+      ]
+    },
+    "room_002": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json"
+      ],
+      "props": [
+        {
+          "role": "bookcase",
+          "x": 160,
+          "height": 224,
+          "lift": 0
+        },
+        {
+          "role": "reading_desk",
+          "x": 800,
+          "height": 112,
+          "lift": 0
+        },
+        {
+          "role": "star_chart",
+          "x": 512,
+          "height": 144,
+          "lift": 224
+        }
+      ]
+    },
+    "room_003": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json"
+      ],
+      "props": [
+        {
+          "role": "relic_altar",
+          "x": 512,
+          "height": 144,
+          "lift": 0
+        },
+        {
+          "role": "glass_reliquary",
+          "x": 768,
+          "height": 128,
+          "lift": 0
+        },
+        {
+          "role": "ceremonial_banner",
+          "x": 384,
+          "height": 160,
+          "lift": 224
+        }
+      ]
+    },
+    "room_004": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "props": [
+        {
+          "role": "burial_wall",
+          "x": 384,
+          "height": 224,
+          "lift": 0
+        },
+        {
+          "role": "sarcophagus",
+          "x": 896,
+          "height": 96,
+          "lift": 0
+        },
+        {
+          "role": "ossuary_niches",
+          "x": 1536,
+          "height": 192,
+          "lift": 64
+        },
+        {
+          "role": "votive_lamp",
+          "x": 1152,
+          "height": 96,
+          "lift": 160
+        }
+      ],
+      "wallRole": "burial_wall",
+      "wallHeight": 352,
+      "stainedWindows": false
+    },
+    "room_005": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "props": [
+        {
+          "role": "gear_housing",
+          "x": 192,
+          "height": 192,
+          "lift": 0
+        },
+        {
+          "role": "chapel_bell",
+          "x": 512,
+          "height": 192,
+          "lift": 960
+        },
+        {
+          "role": "chain_winch",
+          "x": 768,
+          "height": 128,
+          "lift": 480
+        },
+        {
+          "role": "service_ladder",
+          "x": 864,
+          "height": 256,
+          "lift": 256
+        }
+      ],
+      "stainedWindows": false
+    },
+    "room_006": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json"
+      ],
+      "props": [
+        {
+          "role": "checkpoint_shrine",
+          "x": 150,
+          "height": 128,
+          "lift": 0
+        },
+        {
+          "role": "rest_bench",
+          "x": 640,
+          "height": 72,
+          "lift": 0
+        }
+      ]
+    },
+    "room_007": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "props": [
+        {
+          "role": "memorial_statue",
+          "x": 320,
+          "height": 160,
+          "lift": 0
+        },
+        {
+          "role": "iron_censer",
+          "x": 768,
+          "height": 112,
+          "lift": 192
+        }
+      ],
+      "wallRole": "ossuary_niches",
+      "wallHeight": 320,
+      "stainedWindows": false
+    },
+    "room_040": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "props": [
+        {
+          "role": "gear_housing",
+          "x": 192,
+          "height": 192,
+          "lift": 0
+        },
+        {
+          "role": "chapel_bell",
+          "x": 512,
+          "height": 192,
+          "lift": 960
+        },
+        {
+          "role": "chain_winch",
+          "x": 768,
+          "height": 128,
+          "lift": 480
+        },
+        {
+          "role": "service_ladder",
+          "x": 864,
+          "height": 256,
+          "lift": 256
+        }
+      ],
+      "stainedWindows": false
+    },
+    "room_041": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json"
+      ],
+      "props": [
+        {
+          "role": "bookcase",
+          "x": 320,
+          "height": 224,
+          "lift": 0
+        },
+        {
+          "role": "reading_desk",
+          "x": 768,
+          "height": 112,
+          "lift": 0
+        },
+        {
+          "role": "scroll_rack",
+          "x": 1152,
+          "height": 160,
+          "lift": 0
+        }
+      ],
+      "stainedWindows": false
+    },
+    "room_042": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "props": [
+        {
+          "role": "memorial_statue",
+          "x": 192,
+          "height": 160,
+          "lift": 0
+        },
+        {
+          "role": "iron_censer",
+          "x": 768,
+          "height": 112,
+          "lift": 480
+        }
+      ],
+      "stainedWindows": false
+    },
+    "room_008": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "8599bd",
+      "props": [
+        {
+          "role": "ceremonial_banner",
+          "lift": 192,
+          "x": 768.0,
+          "height": 160
+        },
+        {
+          "role": "memorial_statue",
+          "lift": 0,
+          "x": 2304.0,
+          "height": 128
+        }
+      ],
+      "columnTint": "b8c7e0",
+      "district": "reliquary",
+      "wallHeight": 416,
+      "ambientColor": "101725",
+      "wallRole": "marble_wall",
+      "stainedWindows": true,
+      "purpose": "Bell Warden"
+    },
+    "room_009": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "8599bd",
+      "props": [
+        {
+          "role": "ceremonial_banner",
+          "lift": 192,
+          "x": 512.0,
+          "height": 160
+        },
+        {
+          "role": "memorial_statue",
+          "lift": 0,
+          "x": 1536.0,
+          "height": 128
+        }
+      ],
+      "columnTint": "b8c7e0",
+      "district": "reliquary",
+      "wallHeight": 416,
+      "ambientColor": "101725",
+      "wallRole": "marble_wall",
+      "stainedWindows": true,
+      "purpose": "Castle Floodgate"
+    },
+    "room_010": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "668c88",
+      "props": [
+        {
+          "role": "sarcophagus",
+          "lift": 0,
+          "x": 448.0,
+          "height": 160
+        },
+        {
+          "role": "iron_censer",
+          "lift": 192,
+          "x": 1344.0,
+          "height": 128
+        }
+      ],
+      "columnTint": "8da59f",
+      "district": "flooded_halls",
+      "wallHeight": 416,
+      "ambientColor": "0c1b21",
+      "wallRole": "burial_wall",
+      "stainedWindows": false,
+      "purpose": "Flooded Antechamber"
+    },
+    "room_011": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "668c88",
+      "props": [
+        {
+          "role": "sarcophagus",
+          "lift": 0,
+          "x": 512.0,
+          "height": 160
+        },
+        {
+          "role": "iron_censer",
+          "lift": 192,
+          "x": 1536.0,
+          "height": 128
+        }
+      ],
+      "columnTint": "8da59f",
+      "district": "flooded_halls",
+      "wallHeight": 416,
+      "ambientColor": "0c1b21",
+      "wallRole": "burial_wall",
+      "stainedWindows": false,
+      "purpose": "Drowned Hall"
+    },
+    "room_012": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "668c88",
+      "props": [
+        {
+          "role": "votive_lamp",
+          "lift": 112,
+          "x": 256,
+          "height": 64
+        },
+        {
+          "role": "chain_winch",
+          "lift": 192,
+          "x": 1024,
+          "height": 192
+        },
+        {
+          "role": "iron_censer",
+          "lift": 128,
+          "x": 1536,
+          "height": 96
+        }
+      ],
+      "columnTint": "8da59f",
+      "district": "flooded_halls",
+      "wallHeight": 416,
+      "ambientColor": "0c1b21",
+      "wallRole": "burial_wall",
+      "stainedWindows": false,
+      "purpose": "Current Tunnel"
+    },
+    "room_013": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "8c9eaa",
+      "props": [
+        {
+          "role": "relic_altar",
+          "lift": 0,
+          "x": 256,
+          "height": 160
+        },
+        {
+          "role": "glass_reliquary",
+          "lift": 0,
+          "x": 1536,
+          "height": 128
+        },
+        {
+          "role": "ceremonial_banner",
+          "lift": 256,
+          "x": 1024,
+          "height": 160
+        }
+      ],
+      "columnTint": "a1b1b8",
+      "district": "flooded_halls",
+      "wallHeight": 416,
+      "ambientColor": "101d27",
+      "wallRole": "marble_wall",
+      "stainedWindows": true,
+      "purpose": "Double-Jump Font",
+      "vaultInfill": true
+    },
+    "room_014": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "668c88",
+      "props": [
+        {
+          "role": "reading_desk",
+          "lift": 0,
+          "x": 512.0,
+          "height": 160
+        },
+        {
+          "role": "book_stack",
+          "lift": 0,
+          "x": 1536.0,
+          "height": 128
+        }
+      ],
+      "columnTint": "8da59f",
+      "district": "flooded_halls",
+      "wallHeight": 416,
+      "ambientColor": "0c1b21",
+      "wallRole": "bookcase",
+      "stainedWindows": false,
+      "purpose": "Sunken Library"
+    },
+    "room_015": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "668c88",
+      "props": [
+        {
+          "role": "votive_lamp",
+          "lift": 96,
+          "x": 192,
+          "height": 64
+        },
+        {
+          "role": "chain_winch",
+          "lift": 224,
+          "x": 768,
+          "height": 192
+        },
+        {
+          "role": "gear_housing",
+          "lift": 80,
+          "x": 1184,
+          "height": 128
+        }
+      ],
+      "columnTint": "8da59f",
+      "district": "flooded_halls",
+      "wallHeight": 416,
+      "ambientColor": "0c1b21",
+      "wallRole": "burial_wall",
+      "stainedWindows": false,
+      "purpose": "Pressure Shaft"
+    },
+    "room_016": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "739ba0",
+      "props": [
+        {
+          "role": "rest_bench",
+          "lift": 0,
+          "x": 768.0,
+          "height": 72
+        },
+        {
+          "role": "candle_cluster",
+          "lift": 0,
+          "x": 2304.0,
+          "height": 128
+        },
+        {
+          "role": "votive_lamp",
+          "lift": 128,
+          "x": 384,
+          "height": 64
+        }
+      ],
+      "columnTint": "90a8b0",
+      "district": "flooded_halls",
+      "wallHeight": 384,
+      "ambientColor": "102126",
+      "wallRole": "marble_wall",
+      "stainedWindows": true,
+      "purpose": "Water Shrine"
+    },
+    "room_017": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "668c88",
+      "props": [
+        {
+          "role": "sarcophagus",
+          "lift": 0,
+          "x": 512.0,
+          "height": 160
+        },
+        {
+          "role": "iron_censer",
+          "lift": 192,
+          "x": 1536.0,
+          "height": 128
+        }
+      ],
+      "columnTint": "8da59f",
+      "district": "flooded_halls",
+      "wallHeight": 416,
+      "ambientColor": "0c1b21",
+      "wallRole": "burial_wall",
+      "stainedWindows": false,
+      "purpose": "Under-Arch Cache"
+    },
+    "room_018": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "668c88",
+      "props": [
+        {
+          "role": "ceremonial_banner",
+          "lift": 192,
+          "x": 512.0,
+          "height": 160
+        },
+        {
+          "role": "memorial_statue",
+          "lift": 0,
+          "x": 1536.0,
+          "height": 128
+        }
+      ],
+      "columnTint": "8da59f",
+      "district": "flooded_halls",
+      "wallHeight": 416,
+      "ambientColor": "0c1b21",
+      "wallRole": "burial_wall",
+      "stainedWindows": false,
+      "purpose": "Drowned Guardian"
+    },
+    "room_019": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "668c88",
+      "props": [
+        {
+          "role": "chain_winch",
+          "lift": 96,
+          "x": 448.0,
+          "height": 128
+        },
+        {
+          "role": "iron_censer",
+          "lift": 192,
+          "x": 1344.0,
+          "height": 128
+        }
+      ],
+      "columnTint": "8da59f",
+      "district": "flooded_halls",
+      "wallHeight": 416,
+      "ambientColor": "0c1b21",
+      "wallRole": "burial_wall",
+      "stainedWindows": false,
+      "purpose": "Floodgate Ascent"
+    },
+    "room_020": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "8e806e",
+      "props": [
+        {
+          "role": "reading_desk",
+          "lift": 0,
+          "x": 448.0,
+          "height": 160
+        },
+        {
+          "role": "scroll_rack",
+          "lift": 0,
+          "x": 1344.0,
+          "height": 128
+        }
+      ],
+      "columnTint": "b1a18d",
+      "district": "collapsed_archive",
+      "wallHeight": 416,
+      "ambientColor": "15121e",
+      "wallRole": "bookcase",
+      "stainedWindows": false,
+      "purpose": "Collapsed Vestibule"
+    },
+    "room_021": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "8e806e",
+      "props": [
+        {
+          "role": "reading_desk",
+          "lift": 0,
+          "x": 512.0,
+          "height": 160
+        },
+        {
+          "role": "scroll_rack",
+          "lift": 0,
+          "x": 1536.0,
+          "height": 128
+        }
+      ],
+      "columnTint": "b1a18d",
+      "district": "collapsed_archive",
+      "wallHeight": 416,
+      "ambientColor": "15121e",
+      "wallRole": "bookcase",
+      "stainedWindows": false,
+      "purpose": "Archive Gallery"
+    },
+    "room_022": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "8e806e",
+      "props": [
+        {
+          "role": "reading_desk",
+          "lift": 0,
+          "x": 512.0,
+          "height": 160
+        },
+        {
+          "role": "scroll_rack",
+          "lift": 0,
+          "x": 1536.0,
+          "height": 128
+        }
+      ],
+      "columnTint": "b1a18d",
+      "district": "collapsed_archive",
+      "wallHeight": 416,
+      "ambientColor": "15121e",
+      "wallRole": "bookcase",
+      "stainedWindows": false,
+      "purpose": "Collapse Shaft"
+    },
+    "room_023": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "8e806e",
+      "props": [
+        {
+          "role": "relic_altar",
+          "lift": 0,
+          "x": 512.0,
+          "height": 160
+        },
+        {
+          "role": "glass_reliquary",
+          "lift": 0,
+          "x": 1536.0,
+          "height": 128
+        }
+      ],
+      "columnTint": "b1a18d",
+      "district": "collapsed_archive",
+      "wallHeight": 416,
+      "ambientColor": "15121e",
+      "wallRole": "bookcase",
+      "stainedWindows": false,
+      "purpose": "Slam Reliquary"
+    },
+    "room_024": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "8e806e",
+      "props": [
+        {
+          "role": "reading_desk",
+          "lift": 0,
+          "x": 768.0,
+          "height": 160
+        },
+        {
+          "role": "scroll_rack",
+          "lift": 0,
+          "x": 2304.0,
+          "height": 128
+        }
+      ],
+      "columnTint": "b1a18d",
+      "district": "collapsed_archive",
+      "wallHeight": 416,
+      "ambientColor": "15121e",
+      "wallRole": "bookcase",
+      "stainedWindows": false,
+      "purpose": "Glyph Hall"
+    },
+    "room_025": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "8e806e",
+      "props": [
+        {
+          "role": "reading_desk",
+          "lift": 0,
+          "x": 448.0,
+          "height": 160
+        },
+        {
+          "role": "scroll_rack",
+          "lift": 0,
+          "x": 1344.0,
+          "height": 128
+        }
+      ],
+      "columnTint": "b1a18d",
+      "district": "collapsed_archive",
+      "wallHeight": 416,
+      "ambientColor": "15121e",
+      "wallRole": "bookcase",
+      "stainedWindows": false,
+      "purpose": "Puzzle Chamber"
+    },
+    "room_026": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "8e806e",
+      "props": [
+        {
+          "role": "rest_bench",
+          "lift": 0,
+          "x": 512.0,
+          "height": 72
+        },
+        {
+          "role": "candle_cluster",
+          "lift": 0,
+          "x": 1536.0,
+          "height": 128
+        }
+      ],
+      "columnTint": "b1a18d",
+      "district": "collapsed_archive",
+      "wallHeight": 416,
+      "ambientColor": "15121e",
+      "wallRole": "bookcase",
+      "stainedWindows": false,
+      "purpose": "Reliquary Rest"
+    },
+    "room_027": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "8e806e",
+      "props": [
+        {
+          "role": "reading_desk",
+          "lift": 0,
+          "x": 448.0,
+          "height": 160
+        },
+        {
+          "role": "scroll_rack",
+          "lift": 0,
+          "x": 1344.0,
+          "height": 128
+        }
+      ],
+      "columnTint": "b1a18d",
+      "district": "collapsed_archive",
+      "wallHeight": 416,
+      "ambientColor": "15121e",
+      "wallRole": "bookcase",
+      "stainedWindows": false,
+      "purpose": "Glyph Wall Secret"
+    },
+    "room_028": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "8e806e",
+      "props": [
+        {
+          "role": "ceremonial_banner",
+          "lift": 192,
+          "x": 512.0,
+          "height": 160
+        },
+        {
+          "role": "memorial_statue",
+          "lift": 0,
+          "x": 1536.0,
+          "height": 128
+        }
+      ],
+      "columnTint": "b1a18d",
+      "district": "collapsed_archive",
+      "wallHeight": 416,
+      "ambientColor": "15121e",
+      "wallRole": "bookcase",
+      "stainedWindows": false,
+      "purpose": "Sentinel Dais"
+    },
+    "room_029": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "8e806e",
+      "props": [
+        {
+          "role": "reading_desk",
+          "lift": 0,
+          "x": 512.0,
+          "height": 160
+        },
+        {
+          "role": "scroll_rack",
+          "lift": 0,
+          "x": 1536.0,
+          "height": 128
+        }
+      ],
+      "columnTint": "b1a18d",
+      "district": "collapsed_archive",
+      "wallHeight": 416,
+      "ambientColor": "15121e",
+      "wallRole": "bookcase",
+      "stainedWindows": false,
+      "purpose": "Ruins Lift"
+    },
+    "room_030": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "7b91b8",
+      "props": [
+        {
+          "role": "gear_housing",
+          "lift": 0,
+          "x": 512.0,
+          "height": 160
+        },
+        {
+          "role": "chapel_bell",
+          "lift": 192,
+          "x": 1536.0,
+          "height": 128
+        }
+      ],
+      "columnTint": "b8c7e0",
+      "district": "storm_belfry",
+      "wallHeight": 416,
+      "ambientColor": "0d1529",
+      "wallRole": "marble_wall",
+      "stainedWindows": true,
+      "purpose": "Frozen Approach"
+    },
+    "room_031": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "7b91b8",
+      "props": [
+        {
+          "role": "gear_housing",
+          "lift": 0,
+          "x": 256.0,
+          "height": 160
+        },
+        {
+          "role": "chapel_bell",
+          "lift": 192,
+          "x": 768.0,
+          "height": 128
+        }
+      ],
+      "columnTint": "b8c7e0",
+      "district": "storm_belfry",
+      "wallHeight": 416,
+      "ambientColor": "0d1529",
+      "wallRole": "marble_wall",
+      "stainedWindows": true,
+      "purpose": "Storm Bridge"
+    },
+    "room_032": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "7b91b8",
+      "props": [
+        {
+          "role": "gear_housing",
+          "lift": 0,
+          "x": 448.0,
+          "height": 160
+        },
+        {
+          "role": "chapel_bell",
+          "lift": 192,
+          "x": 1344.0,
+          "height": 128
+        }
+      ],
+      "columnTint": "b8c7e0",
+      "district": "storm_belfry",
+      "wallHeight": 416,
+      "ambientColor": "0d1529",
+      "wallRole": "marble_wall",
+      "stainedWindows": true,
+      "purpose": "Frozen Clock Shaft"
+    },
+    "room_033": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "7b91b8",
+      "props": [
+        {
+          "role": "relic_altar",
+          "lift": 0,
+          "x": 448.0,
+          "height": 160
+        },
+        {
+          "role": "glass_reliquary",
+          "lift": 0,
+          "x": 1344.0,
+          "height": 128
+        },
+        {
+          "lift": 384,
+          "x": 896,
+          "height": 160,
+          "role": "chapel_bell"
+        }
+      ],
+      "columnTint": "b8c7e0",
+      "district": "storm_belfry",
+      "wallHeight": 416,
+      "ambientColor": "0d1529",
+      "wallRole": "marble_wall",
+      "stainedWindows": true,
+      "purpose": "Air-Dash Belfry"
+    },
+    "room_034": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "7b91b8",
+      "props": [
+        {
+          "role": "gear_housing",
+          "lift": 0,
+          "x": 512.0,
+          "height": 160
+        },
+        {
+          "role": "chapel_bell",
+          "lift": 192,
+          "x": 1536.0,
+          "height": 128
+        }
+      ],
+      "columnTint": "b8c7e0",
+      "district": "storm_belfry",
+      "wallHeight": 416,
+      "ambientColor": "0d1529",
+      "wallRole": "marble_wall",
+      "stainedWindows": true,
+      "purpose": "Wind Corridor"
+    },
+    "room_035": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "7b91b8",
+      "props": [
+        {
+          "role": "gear_housing",
+          "lift": 0,
+          "x": 512.0,
+          "height": 160
+        },
+        {
+          "role": "chapel_bell",
+          "lift": 192,
+          "x": 1536.0,
+          "height": 128
+        }
+      ],
+      "columnTint": "b8c7e0",
+      "district": "storm_belfry",
+      "wallHeight": 416,
+      "ambientColor": "0d1529",
+      "wallRole": "marble_wall",
+      "stainedWindows": true,
+      "purpose": "Broken Bell Rise"
+    },
+    "room_036": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "7b91b8",
+      "props": [
+        {
+          "role": "rest_bench",
+          "lift": 0,
+          "x": 256.0,
+          "height": 72
+        },
+        {
+          "role": "candle_cluster",
+          "lift": 0,
+          "x": 768.0,
+          "height": 128
+        }
+      ],
+      "columnTint": "b8c7e0",
+      "district": "storm_belfry",
+      "wallHeight": 416,
+      "ambientColor": "0d1529",
+      "wallRole": "marble_wall",
+      "stainedWindows": true,
+      "purpose": "Bell Alcove"
+    },
+    "room_037": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "7b91b8",
+      "props": [
+        {
+          "role": "gear_housing",
+          "lift": 0,
+          "x": 512.0,
+          "height": 160
+        },
+        {
+          "role": "chapel_bell",
+          "lift": 192,
+          "x": 1536.0,
+          "height": 128
+        }
+      ],
+      "columnTint": "b8c7e0",
+      "district": "storm_belfry",
+      "wallHeight": 416,
+      "ambientColor": "0d1529",
+      "wallRole": "marble_wall",
+      "stainedWindows": true,
+      "purpose": "Frost Cavern Secret"
+    },
+    "room_038": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "7b91b8",
+      "props": [
+        {
+          "role": "ceremonial_banner",
+          "lift": 192,
+          "x": 768.0,
+          "height": 160
+        },
+        {
+          "role": "memorial_statue",
+          "lift": 0,
+          "x": 2304.0,
+          "height": 128
+        }
+      ],
+      "columnTint": "b8c7e0",
+      "district": "storm_belfry",
+      "wallHeight": 416,
+      "ambientColor": "0d1529",
+      "wallRole": "marble_wall",
+      "stainedWindows": true,
+      "purpose": "Tempest Abbot Arena"
+    },
+    "room_039": {
+      "manifests": [
+        "assets/architecture/stormglass/kits/gallery-common-v1/manifest.json",
+        "assets/architecture/stormglass/kits/archive-reliquary-v1/manifest.json",
+        "assets/architecture/stormglass/kits/undercroft-service-v1/manifest.json"
+      ],
+      "wallTint": "7b91b8",
+      "props": [
+        {
+          "role": "gear_housing",
+          "lift": 0,
+          "x": 768.0,
+          "height": 160
+        },
+        {
+          "role": "chapel_bell",
+          "lift": 192,
+          "x": 2304.0,
+          "height": 128
+        }
+      ],
+      "columnTint": "b8c7e0",
+      "district": "storm_belfry",
+      "wallHeight": 416,
+      "ambientColor": "0d1529",
+      "wallRole": "marble_wall",
+      "stainedWindows": true,
+      "purpose": "Restored Reliquary"
+    }
+  }
+}

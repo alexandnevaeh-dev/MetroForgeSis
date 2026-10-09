@@ -1806,6 +1806,13 @@ export class AssetPipeline {
           ),
         'animation',
       );
+      if (options.gameDna.archetype === 'SIDE_VIEW_METROIDVANIA' || options.gameDna.archetype === 'SIDE_VIEW_PLATFORMER') {
+        recordAsset(
+          authoredEnemySheet(`${enemyId}_run.png`, `assets/enemies/${enemyId}_run.png`, 'run') ??
+            this.buildRunSheetAsset(enemyId, enemySpec, `assets/enemies/${enemyId}_run.png`, 12, tileSize, enemySource),
+          'animation',
+        );
+      }
       recordAsset(
         authoredEnemySheet(`${enemyId}_hurt.png`, `assets/enemies/${enemyId}_hurt.png`, 'hurt') ??
           this.buildHurtSheetAsset(
@@ -2210,6 +2217,8 @@ export class AssetPipeline {
       recordAsset(bossAsset, 'boss');
 
       const bossSource = bossAsset.fallbackGenerated ? undefined : bossAsset.buffer;
+      const sideViewBossRun = options.gameDna.archetype === 'SIDE_VIEW_METROIDVANIA'
+        || options.gameDna.archetype === 'SIDE_VIEW_PLATFORMER';
       const authoredBossSheet = (
         filename: string,
         path: string,
@@ -2241,6 +2250,13 @@ export class AssetPipeline {
           ),
         'animation',
       );
+      if (sideViewBossRun) {
+        recordAsset(
+          authoredBossSheet(`${bossId}_run.png`, `assets/bosses/${bossId}_run.png`, 'run') ??
+            this.buildRunSheetAsset(bossId, bossSpec, `assets/bosses/${bossId}_run.png`, 12, tileSize, bossSource),
+          'animation',
+        );
+      }
       recordAsset(
         authoredBossSheet(`${bossId}_hurt.png`, `assets/bosses/${bossId}_hurt.png`, 'hurt') ??
           this.buildHurtSheetAsset(
@@ -2306,7 +2322,7 @@ export class AssetPipeline {
         mkdirSync(animSidecarDir, { recursive: true });
         writeFileSync(
           join(animSidecarDir, `${bossId}_animations.json`),
-          JSON.stringify(buildBossAnimationSidecar(), null, 2),
+          JSON.stringify(buildBossAnimationSidecar(sideViewBossRun), null, 2),
         );
       }
       if (options.profile === 'VISUAL_VERTICAL_SLICE') {

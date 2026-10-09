@@ -26,17 +26,61 @@ const CONDITION_DECAL_FAMILIES := [
 	["frozen_bell", "frozen_gears", "frozen_icicles", "frozen_window"],
 ]
 static var _texture_metrics_cache: Dictionary = {}
+var _region_plan_key: String = ""
+var _region_plan_cache: Dictionary = {}
 
 const CONDITION_LABELS := ["intact_nave", "flooded_undercroft", "collapsed_archive", "frozen_bell_tower"]
 
 
 func _ready() -> void:
-	_spawn_authored_panorama()
+	if _spawn_themed_room_kit():
+		return
+	if not _room_region_plan().is_empty():
+		_spawn_region_masonry()
+	else:
+		_spawn_authored_panorama()
 	_spawn_authored_architecture()
 	_spawn_interior_chambers()
+	call_deferred("_spawn_region_furnishings")
 	call_deferred("_spawn_authored_props")
 	call_deferred("_spawn_condition_decals")
 	queue_redraw()
+
+func _spawn_themed_room_kit() -> bool:
+	var path := "res://data/visual/stormglass-room-kits.json"
+	if not FileAccess.file_exists(path):
+		return false
+	var saved: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+	if not saved is Dictionary or saved.get("version") != 1 or not saved.get("rooms") is Dictionary:
+		return false
+	var value: Variant = saved.rooms.get(room_id)
+	if not value is Dictionary:
+		return false
+	# Keep the existing room presentation if the opt-in kit is incomplete.
+	var manifests: Variant = value.get("manifests", [])
+	if not manifests is Array or manifests.is_empty():
+		return false
+	for manifest_path: String in manifests:
+		if not FileAccess.file_exists("res://" + manifest_path):
+			return false
+		var manifest: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://" + manifest_path))
+		if not manifest is Dictionary or not manifest.get("entries") is Array:
+			return false
+		if not ResourceLoader.exists("res://" + String(manifest.get("atlas", ""))):
+			return false
+	var kit := Node2D.new()
+	kit.name = "ThemedRoomKit"
+	kit.set_script(load("res://scripts/world/StormglassRoomKit.gd"))
+	kit.room_id = room_id
+	kit.room_width = float(room_width)
+	kit.room_height = float(room_height)
+	kit.config = value
+	for name in ["Background","FarSky","MidGround","NearGround","Foreground"]:
+		var old := get_parent().get_node_or_null(name) as CanvasItem
+		if old:
+			old.visible = false
+	add_child(kit)
+	return true
 
 
 static func background_settings(biome: String) -> Dictionary:
@@ -302,13 +346,15 @@ func _spawn_authored_architecture() -> void:
 func _spawn_interior_chambers() -> void:
 	# Opt-in authored room plan. Real floors and doorway headers live in the compiled scene;
 	# these matching arches give each upstairs/downstairs chamber its architectural identity.
-	var path := "res://data/visual/castle-interiors.json"
-	if not FileAccess.file_exists(path):
-		return
-	var raw: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
-	if not raw is Dictionary or raw.get("version", 0) != 1 or not raw.get("rooms") is Dictionary:
-		return
-	var plan: Variant = raw["rooms"].get(room_id)
+	var plan: Variant = _room_region_plan()
+	if plan.is_empty():
+		var path := "res://data/visual/castle-interiors.json"
+		if not FileAccess.file_exists(path):
+			return
+		var raw: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+		if not raw is Dictionary or raw.get("version", 0) != 1 or not raw.get("rooms") is Dictionary:
+			return
+		plan = raw["rooms"].get(room_id)
 	if not plan is Dictionary or not plan.get("sections") is Array:
 		return
 	var texture := load("res://assets/architecture/stormglass/grand_arch.png") as Texture2D
@@ -321,6 +367,9 @@ func _spawn_interior_chambers() -> void:
 			continue
 		var floor_y := float(section["floorY"])
 		var x := float(section["x"]) + float(section["width"]) * 0.5
+		if plan.has("returnRoute") and absf(x - float(plan.returnRoute.shaftX)) < 256.0:
+			# A central hall arch must not appear to stand across the open return well.
+			x -= 384.0
 		if not is_finite(x) or not is_finite(floor_y) or x < 0 or x > room_width or floor_y < 400 or floor_y > room_height:
 			continue
 		var sprite := Sprite2D.new()
@@ -336,6 +385,97 @@ func _spawn_interior_chambers() -> void:
 		sprite.set_meta("chamber_name", section.get("name", "Chamber"))
 		sprite.set_meta("storey", section.get("storey", ""))
 		add_child(sprite)
+
+
+func _spawn_region_furnishings() -> void:
+	var plan := _room_region_plan()
+	if plan.is_empty():
+		return
+	await get_tree().physics_frame
+	# Reuse original registered Stormglass parts in chamber-specific assemblies.
+	# Tall rear details remain below the ceiling and every base has full collision support.
+	var roles := {
+		"Gate Vestibule": ["intact_statue", "intact_sconce"],
+		"Watch Hall": ["intact_banner", "intact_statue"],
+		"Scribe Reading Room": ["archive_bookcase", "archive_books"],
+		"Sentinel Armory": ["intact_banner", "intact_statue"],
+		"Lens Workshop": ["frozen_gears", "archive_books"],
+		"Moon Study": ["archive_bookcase", "lancet_window"],
+		"Bell Keeper Chamber": ["frozen_bell", "frozen_gears"],
+		"Choir Recess": ["intact_altar", "intact_banner"],
+		"Star Chart Cabinet": ["archive_bookcase", "lancet_window"],
+		"Lantern Rest Chamber": ["intact_sconce", "intact_altar"],
+	}
+	for section: Dictionary in plan.sections:
+		var assets: Array = roles.get(String(section.name), [])
+		var specs: Array = []
+		if plan.get("furnishings") is Array:
+			for value: Variant in plan.furnishings:
+				if value is Dictionary and value.get("sectionId") == section.id:
+					specs.append(value)
+		else:
+			# Older projects retain their tested legacy layout until regenerated.
+			for index in range(assets.size()):
+				specs.append({"id": "RegionFurnishing_" + String(section.id) + "_" + str(index), "role": assets[index], "x": float(section.x) + float(section.width) * (0.35 if index == 0 else 0.65), "floorY": section.floorY, "targetHeight": 224.0 if index == 0 or assets[index] == "lancet_window" else 128.0, "mounting": "rear-wall" if assets[index] in ["intact_banner", "intact_sconce", "lancet_window"] else "floor"})
+		for spec: Dictionary in specs:
+			if not spec.get("id") is String or not String(spec.id).begins_with("RegionFurnishing_"):
+				continue
+			var role := String(spec.get("role", ""))
+			if role not in ["intact_statue", "intact_sconce", "intact_banner", "archive_bookcase", "archive_books", "frozen_gears", "frozen_bell", "intact_altar", "lancet_window"]:
+				continue
+			var path := "res://assets/architecture/stormglass/lancet_window.png" if role == "lancet_window" else CONDITION_DECAL_ROOT + "/" + role + ".png"
+			if spec.has("asset") and "res://" + String(spec.asset) != path:
+				continue
+			if not ResourceLoader.exists(path):
+				continue
+			var texture := load(path) as Texture2D
+			if texture == null:
+				continue
+			var wall_mounted: bool = spec.get("mounting") == "rear-wall"
+			var target_height := float(spec.get("targetHeight", 0))
+			if not is_finite(target_height) or target_height < 32.0 or target_height > 384.0 or spec.get("mounting") not in ["rear-wall", "floor"]:
+				continue
+			var size_scale := target_height / texture.get_height()
+			var half_width := _texture_half_width(texture) * size_scale
+			var x := float(spec.get("x", NAN))
+			var floor_y := float(section.floorY)
+			if not is_finite(x) or float(spec.get("floorY", NAN)) != floor_y:
+				continue
+			# Keep the entire image clear of both doorway thresholds.
+			if x - texture.get_width() * size_scale * 0.5 < float(section.x) + 160.0 or x + texture.get_width() * size_scale * 0.5 > float(section.x) + float(section.width) - 160.0:
+				continue
+			if not _region_surface_supported(x, floor_y, half_width):
+				continue
+			var sprite := Sprite2D.new()
+			sprite.name = String(spec.id)
+			sprite.texture = texture
+			sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			sprite.scale = Vector2.ONE * size_scale
+			sprite.position = Vector2(x, floor_y - 384.0 if wall_mounted else floor_y - target_height * 0.5 + _texture_bottom_inset(texture) * size_scale)
+			sprite.z_as_relative = false
+			sprite.z_index = -2
+			sprite.set_meta("chamber_name", section.name)
+			sprite.set_meta("asset_role", role)
+			sprite.set_meta("support_y", floor_y)
+			sprite.set_meta("support_half_width", half_width)
+			sprite.set_meta("mounting", "rear-wall" if wall_mounted else "floor")
+			add_child(sprite)
+
+
+func _region_surface_supported(x: float, floor_y: float, half_width: float) -> bool:
+	var room := get_parent() as Node2D
+	if room == null:
+		return false
+	# A local ray checks this storey, including the far edges of the opaque footprint.
+	# Never snap an upper-storey prop to the entrance floor or bridge a shaft visually.
+	for fraction in [-1.0, -0.5, 0.0, 0.5, 1.0]:
+		var sample_x: float = x + half_width * float(fraction)
+		var query := PhysicsRayQueryParameters2D.create(room.to_global(Vector2(sample_x, floor_y - 8.0)), room.to_global(Vector2(sample_x, floor_y + 8.0)), 1)
+		query.collide_with_areas = false
+		var hit := get_world_2d().direct_space_state.intersect_ray(query)
+		if hit.is_empty() or not hit.get("collider") is StaticBody2D or absf(room.to_local(hit.position).y - floor_y) > 1.0:
+			return false
+	return true
 
 
 func _spawn_authored_windows(floor_y: float) -> void:
@@ -481,6 +621,9 @@ func _condition_decal_scale(decal_name: String) -> float:
 
 
 func _spawn_authored_props() -> void:
+	# Region chambers own their furnishings; whole-room fractions cannot describe storeys.
+	if not _room_region_plan().is_empty():
+		return
 	# Wait for StaticBody2D floor and platform shapes to enter the physics world, then anchor each
 	# prop to actual collision. This prevents lanterns, shards and pedestals from hovering over
 	# pits or clipping into raised architecture when a room uses a nonstandard floor profile.
@@ -748,3 +891,68 @@ func _draw_boss_sanctum(floor_y: float) -> void:
 		var x := room_width * (0.14 + i * 0.144)
 		draw_line(Vector2(x, floor_y - 40), Vector2(x, floor_y - 178 - (i % 2) * 42), STONE_LIT, 12)
 		draw_circle(Vector2(x, floor_y - 32), 8, [TEAL, ROSE, AMBER][i % 3])
+
+func _room_region_plan() -> Dictionary:
+	# Decoration passes share one validated snapshot per room instance. A new
+	# room load reads edited data again; never retain room records globally.
+	var key := "%s:%d:%d" % [room_id, room_width, room_height]
+	if _region_plan_key != key:
+		_region_plan_key = key
+		_region_plan_cache = _read_room_region_plan()
+	return _region_plan_cache
+
+func _read_room_region_plan() -> Dictionary:
+	var path := "res://data/rooms/rooms.json"
+	if not FileAccess.file_exists(path):
+		return {}
+	var records: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+	if not records is Dictionary or not records.get("rooms") is Dictionary:
+		return {}
+	var record: Variant = records["rooms"].get(room_id, {})
+	if not record is Dictionary:
+		return {}
+	var plan: Variant = record.get("castleRegionPlan", {})
+	if not plan is Dictionary or plan.get("version", 0) != 1 or not plan.get("sections") is Array:
+		return {}
+	if float(plan.get("width", 0)) != room_width or float(plan.get("height", 0)) != room_height:
+		return {}
+	return plan
+
+func _spawn_region_masonry() -> void:
+	var modules: Variant = _room_region_plan().get("facadeModules", [])
+	if modules is Array and not modules.is_empty():
+		var holder := Node2D.new()
+		holder.name = "RegionFacadeModules"
+		holder.z_as_relative = false
+		holder.z_index = -30
+		var shared_material := ShaderMaterial.new()
+		shared_material.shader = load("res://scripts/world/CastleRegionMasonry.gdshader")
+		var facade_texture := load("res://assets/architecture/stormglass/masonry-fill-v1.png") as Texture2D
+		if facade_texture != null:
+			shared_material.set_shader_parameter("facade_texture", facade_texture)
+			shared_material.set_shader_parameter("use_authored_texture", true)
+		for module in modules:
+			if not module is Dictionary or module.get("collision", true) != false:
+				continue
+			var facade := ColorRect.new()
+			facade.name = String(module.get("id", "FacadeModule"))
+			facade.position = Vector2(float(module.get("x", 0)), float(module.get("y", 0)))
+			facade.size = Vector2(float(module.get("width", 0)), float(module.get("height", 0)))
+			facade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			facade.material = shared_material
+			facade.set_meta("module_layer", "facade")
+			facade.set_meta("section_id", String(module.get("sectionId", "")))
+			holder.add_child(facade)
+		add_child(holder)
+		return
+	var wall := ColorRect.new()
+	wall.name = "RegionMasonryCourses"
+	wall.size = Vector2(room_width, room_height)
+	wall.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	wall.z_as_relative = false
+	wall.z_index = -30
+	var material := ShaderMaterial.new()
+	material.shader = load("res://scripts/world/CastleRegionMasonry.gdshader")
+	material.set_shader_parameter("region_size", wall.size)
+	wall.material = material
+	add_child(wall)

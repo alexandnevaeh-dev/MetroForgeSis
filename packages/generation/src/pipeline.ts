@@ -29,12 +29,14 @@ import {
   engineOutputSlug,
 } from '@metroforge/shared';
 import { remapGameDnaAbilities } from './remap-project-abilities.js';
+import { loadStormglassPlayerAssets } from './stormglass-player-assets.js';
 import { createDatabase, type MetroForgeDatabase } from '@metroforge/database';
 import { bootstrapProviders, licenseFieldsForArtifact, OllamaEmbeddingProvider, HardwareProfiler } from '@metroforge/ai';
 import { generateGameDNA, type GameDNATextSource } from '@metroforge/ai';
 import { GameDNASchema, ProjectMetadataSchema, VisualConstitutionSchema, type GenerationJob } from '@metroforge/schemas';
 import {
   generateWorldTopology,
+  generatePlatformerWorld,
   validateReachability,
   validateWorldConnectivity,
   validateWorldReachability,
@@ -59,7 +61,8 @@ import {
   MIN_FULL_WORLD_ZONES,
 } from '@metroforge/procedural';
 import { AssetPipeline, loadVisualReferenceLibrary, shouldUseFoundryCourierKit,shouldUseCanopyEnvironment,decorateCanopyWorld } from '@metroforge/assets';
-import { GodotProjectAssembler, loadExternalVisualPack } from '@metroforge/godot';
+import { GodotProjectAssembler, loadExternalVisualPack, applyStormglassGalleryBlueprint, applyStormglassGalleryDnaContract } from '@metroforge/godot';
+import {selectAuthoredWorld,type WorldLayoutChoice} from './world-layout.js';
 import { UnityProjectAssembler } from '@metroforge/unity';
 import { UnrealProjectAssembler } from '@metroforge/unreal';
 import { assertEngineOutputIsolation, EngineOutputCollisionError, writeEngineManifest } from '@metroforge/engines';
@@ -67,6 +70,7 @@ import type { ExternalVisualPackId } from '@metroforge/godot';
 import { ToolRegistry, exportProject, resolveGodotExecutableCanonical, readProjectGodotOverride, windowsExportTemplatesInstalled } from '@metroforge/tools';
 import { QAValidator, RepairEngineer, deriveValidationLevel, runQualityPass, runModernMetroidvaniaGate, modernGateToQAGateResult, scoreVisualQuality, fingerprintFile, planVisualRepairs, applyVisualRepairs, VISUAL_REPAIR_BUDGET, certifyVisualAssets, writeAssetFoundryReport, classifyAssetTier, buildAssetProvenanceReport, writeAssetProvenanceReport, buildProductionAssetFamilies, productionSliceReady, gateState, validateWorldSceneArchetypeIntegrity, type QAReport, type QAGateResult } from '@metroforge/qa';
 import { createProjectCheckpoint } from './project-checkpoint.js';
+import { runRuntimeGateAsync } from '@metroforge/qa';
 import { assertPhaseArtifacts, phaseCompleteStatus } from './phase-contract.js';
 import { withCategory, type GenerationEvent } from './events.js';
 import {
@@ -87,8 +91,9 @@ import { inheritDerivativeLicense } from './derivative-license.js';
 import { runQuantumGeneration } from './quantum-generation.js';
 
 export interface GenerateOptions {
+  worldLayout?: WorldLayoutChoice;
   prompt: string;
-  /** Optional project title entered in the desktop commission. */
+  /** Optional title entered in the desktop commission. */
   title?: string;
   profile: GenerationProfile;
   mode: GenerationMode;
@@ -124,6 +129,7 @@ export interface GenerateOptions {
   signal?: AbortSignal;
   /** Per-provider Settings toggles (missing ⇒ enabled). */
   providerEnabled?: Record<string, boolean>;
+  /** Non-secret local server/model preferences captured when the job starts. */
   textConnectionSettings?: Record<string,string>;
   /** Override NVIDIA_IMAGE_MODEL (Settings prefs / CLI). */
   nvidiaImageModel?: string;
@@ -262,7 +268,7 @@ export class GenerationPipeline {
     };
 
     const requestedEngine = options.targetEngine ?? DEFAULT_TARGET_ENGINE;
-    const baseSlug = options.slug ?? (slugify(options.prompt.slice(0, 60)) || 'untitled-game');
+    const baseSlug = options.slug ?? (slugify((options.title?.trim() || options.prompt).slice(0, 60)) || 'untitled-game');
     const slug = engineOutputSlug(baseSlug, requestedEngine);
     const outputBase = resolveGeneratedGamesPath(config, cwd);
     // Defense-in-depth on top of the CLI-layer check (apps/cli/src/commands/create.ts) — this
@@ -307,6 +313,7 @@ export class GenerationPipeline {
       mode: options.mode,
       seed: options.seed,
       prompt: options.prompt,
+      archetype: options.archetype,
     });
 
     const maybePause = async (
@@ -429,6 +436,7 @@ export class GenerationPipeline {
       const textSource: GameDNATextSource = {
         health: 'healthy',
         async generateText(req) {
+          emit({ type: 'TaskStarted', phase: 'game_dna', task: 'game_design', message: 'Requesting game design from configured AI providers' });
           const result = await generationRouter.generate({
             capability: 'JSON_GENERATION',
             task: 'game_dna',
@@ -436,7 +444,10 @@ export class GenerationPipeline {
             systemPrompt: req.systemPrompt,
             jsonMode: req.jsonMode,
             mode: options.mode,
+            signal: options.signal,
+            onProviderAttempt: (provider, error) => emit({ type: 'TaskProgress', phase: 'game_dna', task: 'game_design', current: 0, total: 1, provider, message: error ? `${provider}: ${error}` : `Requesting game design from ${provider}` }),
           });
+          emit({ type: 'Log', phase: 'game_dna', provider: result.provider, modelId: result.modelId, message: `Game design response from ${result.provider} / ${result.modelId}` });
           return { text: result.result };
         },
       };
@@ -457,11 +468,24 @@ export class GenerationPipeline {
       writeFileSync(gameDnaCheckpointPath, JSON.stringify(gameDna, null, 2));
     }
 
+    if (options.title?.trim()) gameDna.identity.title = options.title.trim().slice(0, 120);
+    if (gameDna.archetype === 'TOP_DOWN_ACTION_ADVENTURE' && /hd[\s-]?2d/i.test(options.prompt)) {
+      gameDna.technical.tileSize = 32;
+      if (!/hd[\s-]?2d/i.test(gameDna.identity.visualStyle)) {
+        gameDna.identity.visualStyle = `HD-2D ${gameDna.identity.visualStyle}`;
+      }
+    }
+    writeFileSync(gameDnaCheckpointPath, JSON.stringify(gameDna, null, 2));
+
     // Normalize LLM/deterministic ability ids onto registered runtime implementations.
     // No-op for TOP_DOWN_ACTION_ADVENTURE — see remapGameDnaAbilities's own doc comment
     // (packages/generation/src/remap-project-abilities.ts) for why.
     const abilityRemap = remapGameDnaAbilities(gameDna);
     gameDna = abilityRemap.dna;
+    if (options.worldLayout === 'stormglass-gallery' || options.worldLayout === 'stormglass-expanded-region') {
+      gameDna = applyStormglassGalleryDnaContract(gameDna);
+      writeFileSync(gameDnaCheckpointPath, JSON.stringify(gameDna, null, 2));
+    }
     if (options.profile === 'VISUAL_VERTICAL_SLICE') {
       gameDna.technical.tileSize = 32;
       writeFileSync(gameDnaCheckpointPath, JSON.stringify(gameDna, null, 2));
@@ -487,7 +511,7 @@ export class GenerationPipeline {
           `Unknown required abilities remain after remap (no runtime implementation): ${unknownRequired.join(', ')}`,
         );
       }
-      if (options.profile === 'RELEASE_CANDIDATE') {
+      if (options.profile === 'RELEASE_CANDIDATE' && genreSupports(gameDna.archetype,'supportsLockedAbilityGates')) {
         const missingRc = missingReleaseCandidateAbilities(enabledAbilityIds);
         if (missingRc.length > 0) {
           errors.push(
@@ -659,17 +683,28 @@ export class GenerationPipeline {
           ...(shouldUseCanopyEnvironment(gameDna)?{layoutStyle:'ruined_canopy' as const}:{}),
         })
       : null;
-    const roomCount = topDownWorld
+    let authoredWorld: ReturnType<typeof selectAuthoredWorld> = null;
+    try {
+      authoredWorld = selectAuthoredWorld(gameDna, {worldLayout:options.worldLayout,targetEngine:requestedEngine,seed:options.seed,worldOverride:options.worldOverride});
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : String(error));
+      report('world_graph', 'FAILED');
+      db.projects.updateStatus(project.id, 'failed');
+      db.close();
+      return {success:false,projectSlug:slug,outputPath,jobId:job.id,errors,warnings,phases};
+    }
+    const roomCount = authoredWorld ? authoredWorld.roomIds.length : topDownWorld
       ? topDownWorld.roomIds.length
       : (options.worldOverride?.roomCount ?? resolveRoomCount(options.profile, options.seed));
-    const biomeCount = options.worldOverride?.biomeCount ?? defaults.biomes;
+    const biomeCount = authoredWorld ? authoredWorld.worldGraph.regions.length : options.worldOverride?.biomeCount ?? defaults.biomes;
     // FULL_WORLD_TEST_CONFIG-style callers (worldOverride.biomeCount >= MIN_FULL_WORLD_ZONES) get
     // the richer full-world generator (zones/shortcuts/breakable walls/teaching rooms/tease
     // metadata — see packages/procedural/src/world-design.ts) instead of the plain topology, so a
     // real end-to-end run through this override actually exercises world_design_metroidvania
     // rather than producing a wider-but-still-plain world that gate would just skip or fail
     // trivially on "no tease/no combat gate."
-    const { worldGraph, progressionGraph, roomIds } = topDownWorld
+    let { worldGraph, progressionGraph, roomIds } = authoredWorld ?? (gameDna.archetype === 'SIDE_VIEW_PLATFORMER'
+      ? generatePlatformerWorld({seed:options.seed,roomCount,biomeCount,abilities:[],bossCount:1,profile:options.profile}) : topDownWorld
       ? topDownWorld
       : biomeCount >= MIN_FULL_WORLD_ZONES
         ? generateFullMetroidvaniaWorld({
@@ -687,7 +722,14 @@ export class GenerationPipeline {
             abilities: abilityIds,
             bossCount: defaults.bosses,
             profile: options.profile,
-          });
+          }));
+    const galleryGraph = requestedEngine === 'godot' ? applyStormglassGalleryBlueprint(gameDna, worldGraph) : null;
+    if (galleryGraph) {
+      worldGraph = galleryGraph;
+      // Keep the final boss last: content generation uses the final room id as its boss target.
+      const addedRoomIds = galleryGraph.nodes.filter(n => n.type === 'room' && !roomIds.includes(n.id)).map(n => n.id);
+      roomIds = [...roomIds.slice(0,-1), ...addedRoomIds, roomIds[roomIds.length-1]!];
+    }
     writeFileSync(join(outputPath, 'world_graph.json'), JSON.stringify(worldGraph, null, 2));
     writeFileSync(join(outputPath, 'progression_graph.json'), JSON.stringify(progressionGraph, null, 2));
     emit({
@@ -809,8 +851,13 @@ export class GenerationPipeline {
     }
 
     report('enemy_families', 'RUNNING');
-    const bossRoomId = roomIds[roomIds.length - 1]!;
-    const gameContent = generateGameContent(gameDna, options.profile, options.seed, bossRoomId, roomIds);
+    const bossRoomId = authoredWorld?.finalBossRoomId ?? roomIds[roomIds.length - 1]!;
+    const gameContent = generateGameContent(gameDna, options.profile, options.seed, bossRoomId, roomIds, authoredWorld ? {
+      bossRoomIds:authoredWorld.bossRoomIds,
+      enemyNames:authoredWorld.enemyNames,
+      bossNames:authoredWorld.bossNames,
+      biomeCount:authoredWorld.worldGraph.regions.length,
+    } : gameDna.archetype === 'SIDE_VIEW_PLATFORMER' ? {bossRoomIds:[bossRoomId],biomeCount} : undefined);
     report('enemy_families', 'PASSED', `${gameContent.enemies.length} enemies`);
     report('bosses', 'PASSED', `${gameContent.bosses.length} bosses`);
     if (!(await maybePause('bosses', 'bosses', 'Review boss encounters before asset generation'))) {
@@ -1138,6 +1185,48 @@ export class GenerationPipeline {
       }
       warnings.push(`EXTERNAL_VISUAL_PACK_ACTIVE: ${pack.id} (${pack.assets.length} authored assets)`);
     }
+    if (options.worldLayout === 'stormglass-gallery' || options.worldLayout === 'stormglass-expanded-region') {
+      const generatedSidecarPath = join(outputPath, 'assets/characters/player_animations.json');
+      const generatedSidecar = textureFiles.get('assets/characters/player_animations.json')
+        ?? (existsSync(generatedSidecarPath) ? readFileSync(generatedSidecarPath) : undefined);
+      const pack = loadStormglassPlayerAssets(getResourceRoot(), generatedSidecar);
+      const metadataTemplate = assetMetadata.find(entry => entry.path.startsWith('assets/characters/'));
+      if (!metadataTemplate) throw new Error('Stormglass player candidate requires generated player metadata');
+      for (const [path, buffer] of pack.textures) textureFiles.set(path, buffer);
+      for (const asset of pack.assets) assetMetadata.push({
+        ...metadataTemplate,
+        id: `authored_cape_${asset.destination.split('/').pop()!.replace('.png', '')}`,
+        path: asset.destination,
+        provider: `authored-candidate:${pack.id}`,
+        modelId: undefined,
+        selectedProvider: `authored-candidate:${pack.id}`,
+        selectedModel: undefined,
+        fallbackGenerated: false,
+        fallbackDepth: 0,
+        fallbackReason: undefined,
+        critiquePassed: false,
+        critiqueScore: 0,
+        maturity: 'QA_REVIEW' as const,
+        productionReady: false,
+        productionAllowed: false,
+        sourceType: 'compiled' as const,
+        sourcePath: asset.sourcePath,
+        promptHash: undefined,
+        compiler: undefined,
+        styleFingerprint: undefined,
+        generationBackend: undefined,
+        foundryQaPassed: undefined,
+        foundryQaScore: undefined,
+        foundryLicense: undefined,
+        repairCount: 0,
+        sourceLicense: 'unknown',
+        derivedLicense: 'unknown',
+        parentArtifactIds: [],
+        transformation: 'byte-copy-with-measured-runtime-atlas-regions',
+        godotResourcePath: `res://${asset.destination}`,
+      });
+      warnings.push(`STORMGLASS_PLAYER_CANDIDATE_ACTIVE: ${pack.clips.length} repaired clips; remaining movement states and other actors still require matching art; productionReady=false`);
+    }
     for (const meta of assetMetadata) {
       Object.assign(meta, licenseFieldsForArtifact(meta, assetMetadata));
       const parentId = meta.parentArtifactIds?.[0];
@@ -1407,7 +1496,7 @@ export class GenerationPipeline {
     // installed, generation still proceeds (it always could, for local-only text generation),
     // but the skip is recorded as an explicit SKIPPED gate with reason GODOT_NOT_AVAILABLE
     // rather than silently treating the project as fully validated.
-    const runGodotGates = (target: QAReport): void => {
+    const runGodotGates = async (target: QAReport): Promise<void> => {
       if (requestedEngine !== 'godot') {
         pushGate(target, {
           gate: 'godot_imports',
@@ -1513,7 +1602,8 @@ export class GenerationPipeline {
         return;
       }
 
-      const headlessGate = this.qa.validateGodotHeadless(godotPath, outputPath);
+      const headlessGate = await runRuntimeGateAsync('validateGodotHeadless', [godotPath, outputPath]);
+      throwIfCancelled(options.signal);
       pushGate(target, headlessGate);
 
       if (!headlessGate.passed) {
@@ -1542,21 +1632,24 @@ export class GenerationPipeline {
       }
 
       emit({ type: 'RuntimeValidationStarted' });
-      const runtimeGate = this.qa.validateGodotRuntime(godotPath, outputPath);
+      const runtimeGate = await runRuntimeGateAsync('validateGodotRuntime', [godotPath, outputPath]);
+      throwIfCancelled(options.signal);
       pushGate(target, runtimeGate);
       emit({
         type: 'RuntimeValidationCompleted',
         passed: runtimeGate.passed,
         message: runtimeGate.message,
       });
-      pushGate(target, this.qa.validateGameplayScreenshot(outputPath, {
+      pushGate(target, await runRuntimeGateAsync('validateGameplayScreenshot', [outputPath, {
         required: options.profile === 'RELEASE_CANDIDATE',
         godotPath,
         headlessOutput: String(runtimeGate.details?.output ?? ''),
-      }));
+      }]));
+      throwIfCancelled(options.signal);
 
       if (runtimeGate.passed) {
-        const playtestGate = this.qa.validateGodotPlaytest(godotPath, outputPath);
+        const playtestGate = await runRuntimeGateAsync('validateGodotPlaytest', [godotPath, outputPath]);
+        throwIfCancelled(options.signal);
         pushGate(target, playtestGate);
       } else {
         pushGate(target, {
@@ -1569,7 +1662,8 @@ export class GenerationPipeline {
     };
 
     let qaReport = this.qa.validateProject(outputPath, project.id);
-    runGodotGates(qaReport);
+    db.validationResults.replaceByProject(project.id,qaReport.results);
+    await runGodotGates(qaReport);
     qaReport.passed = qaReport.results.every((r) => r.passed);
 
     // Bounded repair loop (max 3 attempts) — each attempt re-runs the *full* gate set
@@ -1595,9 +1689,14 @@ export class GenerationPipeline {
         const repairResult = this.repair.repair(outputPath, qaReport);
         if (repairResult.repaired) warnings.push(...repairResult.actions);
 
-        qaReport = this.qa.validateProject(outputPath, project.id);
-        runGodotGates(qaReport);
-        qaReport.passed = qaReport.results.every((r) => r.passed);
+        // No mutation means the existing full validation remains authoritative.
+        // Preserve its failures and stop rather than repeating expensive native runs.
+        if (repairResult.repaired) {
+          qaReport = this.qa.validateProject(outputPath, project.id);
+          db.validationResults.replaceByProject(project.id,qaReport.results);
+          await runGodotGates(qaReport);
+          qaReport.passed = qaReport.results.every((r) => r.passed);
+        }
 
         repairAttempts.push({
           attempt,
@@ -1681,6 +1780,7 @@ export class GenerationPipeline {
     }
     }
 
+    db.validationResults.replaceByProject(project.id,qaReport.results);
     writeFileSync(
       join(outputPath, 'validation_report.json'),
       JSON.stringify(
@@ -1714,6 +1814,16 @@ export class GenerationPipeline {
       validationLevel === 'RUNTIME_VALIDATED' ||
       (validationLevel === 'STATIC_VALIDATED' &&
         (Boolean(options.skipRuntimeValidation) || requestedEngine !== 'godot'));
+
+    // Runtime smoke proves systems run; a failed screenshot or victory run is
+    // still an overall validation failure and must remain visible in app results.
+    const failedRuntimeProofs = qaReport.results.filter(result =>
+      ['godot_imports', 'godot_runtime', 'godot_playtest', 'gameplay_screenshot_qa'].includes(result.gate)
+      && !result.passed);
+    if (failedRuntimeProofs.length) {
+      validationPassed = false;
+      warnings.push(`RUNTIME_PROOFS_FAILED: ${failedRuntimeProofs.map(result => result.gate).join(', ')}`);
+    }
 
     // A top-down project reaching this point with godot_runtime genuinely PASSED but
     // godot_playtest SKIPPED is not a legitimate outcome — every documented SKIPPED reason above
@@ -1793,6 +1903,7 @@ export class GenerationPipeline {
     // Re-written after the quality-pass block (rather than only once, earlier) so a regression
     // that block introduces is reflected in the file actually shipped alongside the project, not
     // only in an in-memory qaReport nothing else re-reads.
+    db.validationResults.replaceByProject(project.id,qaReport.results);
     writeFileSync(
       join(outputPath, 'validation_report.json'),
       JSON.stringify(
@@ -1811,7 +1922,7 @@ export class GenerationPipeline {
 
     report(
       'final_qa',
-      validationPassed ? 'PASSED' : validationLevel === 'NEEDS_RUNTIME_VALIDATION' ? 'SKIPPED' : 'WARN',
+      validationPassed && qaReport.passed ? 'PASSED' : validationLevel === 'NEEDS_RUNTIME_VALIDATION' ? 'SKIPPED' : 'WARN',
       `${validationLevel}: ${qaReport.results.filter((r) => r.passed).length}/${qaReport.results.length} gates passed`,
     );
 

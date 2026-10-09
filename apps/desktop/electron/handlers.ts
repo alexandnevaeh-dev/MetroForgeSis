@@ -1,3 +1,4 @@
+import { readValidationSnapshot } from './validation-snapshot.js';
 import { readTopDownTerrain } from './topdown-terrain.js';
 import { resolvePropAsset } from './prop-asset.js';
 import { topDownRoomRecords } from './topdown-room-records.js';
@@ -120,6 +121,7 @@ import {
   canRedoWorld,
   listWorldEditHistory,
   recordRoomEdit,
+  snapshotRoomScene,
   recordLivePlacementEdit,
   undoRoomEdit,
   redoRoomEdit,
@@ -432,6 +434,7 @@ export function registerIpcHandlers(cwd: string): void {
         mode: GenerationMode;
         seed: number;
         generationControl?: GenerationControlMode;
+        worldLayout?: 'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region';
         archetype?: GameArchetype;
         externalVisualPack?: ExternalVisualPackId;
         targetEngine?: 'unity';
@@ -1259,6 +1262,7 @@ export function registerIpcHandlers(cwd: string): void {
         mode: GenerationMode;
         seed: number;
         generationControl?: GenerationControlMode;
+        worldLayout?: 'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region';
         archetype?: GameArchetype;
         externalVisualPack?: ExternalVisualPackId;
         targetEngine?: 'unity';
@@ -1744,12 +1748,13 @@ export function registerIpcHandlers(cwd: string): void {
     ) => {
       assertProjectPath(projectPath, cwd);
       const previous = snapshotRoomRecord(projectPath, patch.roomId);
+      const previousScene=existsSync(join(projectPath,'data','world','overworld.json'))?undefined:snapshotRoomScene(projectPath,patch.roomId);
 
       markProjectDirty(projectPath, `Edit room ${patch.roomId}`);
       markProjectCompiling(projectPath, 'Recompiling room');
       const result = applyRoomEditAndRecompile(projectPath, patch);
       if (result.success) {
-        if (previous) recordRoomEdit(projectPath, patch.roomId, previous, `Edit room ${patch.roomId}`);
+        if (previous) recordRoomEdit(projectPath, patch.roomId, previous, `Edit room ${patch.roomId}`,previousScene);
         markProjectClean(projectPath);
       } else {
         markProjectDirty(projectPath, `Room ${patch.roomId} save failed; draft retained`);
@@ -1762,7 +1767,11 @@ export function registerIpcHandlers(cwd: string): void {
     'regenerate-room',
     async (_event, projectPath: string, roomId: string, scope?: 'full' | 'geometry' | 'encounter') => {
       assertProjectPath(projectPath, cwd);
-      return regenerateRoom(projectPath, roomId, scope ?? 'full');
+      const previous=snapshotRoomRecord(projectPath,roomId);
+      const previousScene=existsSync(join(projectPath,'data','world','overworld.json'))?undefined:snapshotRoomScene(projectPath,roomId);
+      const result=regenerateRoom(projectPath,roomId,scope ?? 'full');
+      if(result.success&&previous)recordRoomEdit(projectPath,roomId,previous,'Regenerate room',previousScene);
+      return result;
     },
   );
 
@@ -2201,6 +2210,8 @@ export function registerIpcHandlers(cwd: string): void {
 
   ipcMain.handle('get-validation-results', async (_event, projectPath: string) => {
     assertProjectPath(projectPath, cwd);
+    const snapshot=readValidationSnapshot(projectPath);
+    if(snapshot!==null)return snapshot;
     const slug = basename(projectPath);
     const config = loadConfig();
     const dataDir = config.dataDir || join(cwd, '.metroforge');

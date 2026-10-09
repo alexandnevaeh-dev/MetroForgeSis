@@ -329,12 +329,16 @@ function applyRoomEditUnchecked(
       delete geometryReset.platforms;
       delete geometryReset.pits;
       delete geometryReset.blueprint;
+      delete geometryReset.castleRegionPlan;
       roomsData[patch.roomId] = geometryReset;
     } else if (options.regenerate === 'encounter') {
       const encounterReset = { ...existing };
       delete encounterReset.forceEnemy;
       roomsData[patch.roomId] = encounterReset;
-    } else delete roomsData[patch.roomId];
+    } else {
+      // Full regeneration refreshes content while retaining authored playable bounds.
+      roomsData[patch.roomId] = { width: existing.width, height: existing.height };
+    }
     writeFileSync(join(projectPath, 'data', 'rooms', 'rooms.json'), JSON.stringify({ rooms: roomsData }, null, 2));
     const rebuilt = new GodotProjectAssembler().recompileRooms({
       outputDir: projectPath,

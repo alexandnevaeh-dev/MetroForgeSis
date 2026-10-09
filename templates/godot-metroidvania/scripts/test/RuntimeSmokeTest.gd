@@ -6,6 +6,9 @@ extends Node
 ## calls get_tree().quit() itself so no external --quit-after is required.
 
 const CaptureGuard := preload("res://scripts/test/CaptureGuard.gd")
+const RegionCaptureCoverage := preload("res://scripts/test/RegionCaptureCoverage.gd")
+const RoomKitBounds := preload("res://scripts/test/RoomKitBounds.gd")
+const SpriteGroundContact := preload("res://scripts/test/SpriteGroundContact.gd")
 
 var _results: Array[Dictionary] = []
 var _runtime_capture_manifest: Array[Dictionary] = []
@@ -83,9 +86,7 @@ func _ready() -> void:
 
 		var player_sprite: AnimatedSprite2D = player.get_node_or_null("Sprite")
 		if player_sprite and player_sprite.sprite_frames:
-			var player_frame_size: Vector2i = player_sprite.get("frame_size")
-			var contact_inset := player_sprite.offset.y + float(player_frame_size.y) / 2.0
-			_check("player_sprite_ground_contact_aligned", contact_inset >= 1.0 and contact_inset <= 6.0)
+			_check("player_sprite_ground_contact_aligned", SpriteGroundContact.aligned(player_sprite))
 			_check("player_has_attack_animation", player_sprite.sprite_frames.has_animation("attack"))
 			_check("player_has_hurt_animation", player_sprite.sprite_frames.has_animation("hurt"))
 			_check("player_has_idle_animation", player_sprite.sprite_frames.has_animation("idle"))
@@ -189,7 +190,31 @@ func _check_stormglass_level_blueprint() -> void:
 	if rooms_file:
 		rooms_file.close()
 	var rooms: Dictionary = rooms_json.data.get("rooms", {}) if rooms_ok and typeof(rooms_json.data) == TYPE_DICTIONARY else {}
-	_check("stormglass_blueprint_has_40_rooms", rooms.size() == 40)
+	var gallery_campaign := FileAccess.file_exists("res://data/visual/stormglass-room-kits.json")
+	var graph: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://world_graph.json"))
+	var expanded_campaign := false
+	if graph is Dictionary:
+		for node in graph.get("nodes", []):
+			if node is Dictionary and node.get("metadata", {}).get("stormglassRegionProfile") == "expanded-region":
+				expanded_campaign = true
+	_check("stormglass_expanded_profile_has_admitted_room_kits", not expanded_campaign or gallery_campaign)
+	if expanded_campaign and not gallery_campaign:
+		return
+	var expected_count := 46 if expanded_campaign else 43 if gallery_campaign else 40
+	var gallery_nodes: Dictionary = {}
+	if gallery_campaign:
+		var recipe_id := "stormglass-expanded-region-campaign-v1" if expanded_campaign else "stormglass-gallery-campaign-v1"
+		var recipe: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/visual/blueprints/%s.json" % recipe_id))
+		var recipe_valid: bool = recipe is Dictionary and recipe.get("id") == recipe_id and recipe.get("worldGraph") is Dictionary
+		_check("stormglass_gallery_campaign_recipe_valid", recipe_valid)
+		if not recipe_valid:
+			return
+		for node in recipe.worldGraph.get("nodes", []):
+			if node.get("type") == "room":
+				gallery_nodes[String(node.id)] = node
+		_check("stormglass_gallery_recipe_has_%d_unique_rooms" % expected_count, gallery_nodes.size() == expected_count)
+		_check("stormglass_gallery_authored_doors_match_reciprocal_graph", _gallery_doors_match(rooms, recipe.worldGraph.get("edges", []), expanded_campaign))
+	_check("stormglass_blueprint_has_%d_rooms" % expected_count, rooms.size() == expected_count)
 	var enemies_file := FileAccess.open("res://data/enemies/enemies.json", FileAccess.READ)
 	var enemies_json := JSON.new()
 	var enemies_ok := enemies_file != null and enemies_json.parse(enemies_file.get_as_text()) == OK
@@ -213,19 +238,22 @@ func _check_stormglass_level_blueprint() -> void:
 		and int(enemy_counts_by_biome.get("biome_0", 0)) == 20
 	_check("stormglass_enemy_roster_uses_one_continuous_biome", roster_is_one_continuous_biome)
 	_check("stormglass_enemy_roster_names_are_unique", enemy_names.size() == 20)
-	var archetypes_match := rooms.size() == 40
-	var dimensions_match := rooms.size() == 40
+	var archetypes_match := rooms.size() == expected_count
+	var dimensions_match := rooms.size() == expected_count
 	var combat_density_match := true
 	var traversal_density_match := true
 	var encounter_door_clearance_match := true
 	var encounter_instance_ids_unique := true
 	var encounter_biomes_match := true
-	for index in range(expected_archetypes.size()):
+	for index in range(expected_count):
 		var room_id := "room_%03d" % index
 		var room: Dictionary = rooms.get(room_id, {})
-		var expected_archetype: String = expected_archetypes[index]
+		var expected_metadata: Dictionary = gallery_nodes.get(room_id, {}).get("metadata", {}) if gallery_campaign else {}
+		var expected_archetype: String = String(expected_metadata.get("archetype", "")) if gallery_campaign else expected_archetypes[index]
 		archetypes_match = archetypes_match and String(room.get("worldArchetype", "")) == expected_archetype
 		var expected_size: Vector2i = expected_sizes.get(expected_archetype, Vector2i.ZERO)
+		if gallery_campaign:
+			expected_size = Vector2i(int(expected_metadata.get("targetTileWidth", 0)), int(expected_metadata.get("targetTileHeight", 0)))
 		dimensions_match = dimensions_match and int(room.get("width", 0)) == expected_size.x * 32 and int(room.get("height", 0)) == expected_size.y * 32
 		var enemy_ids: Array = room.get("enemies", [])
 		if expected_archetype == "combat":
@@ -264,6 +292,41 @@ func _check_stormglass_level_blueprint() -> void:
 	_check("stormglass_blueprint_guardian_arenas_match", arenas_match)
 
 
+func _gallery_doors_match(rooms: Dictionary, edges: Array, expanded_campaign: bool = false) -> bool:
+	var authored := ["room_000","room_001","room_002","room_003","room_004","room_005","room_006","room_007","room_040","room_041","room_042"]
+	if expanded_campaign:
+		authored.append_array(["room_043", "room_044", "room_045"])
+	var opposite := {"left":"right","right":"left","up":"down","down":"up"}
+	var expected: Dictionary = {}
+	for id in authored:
+		expected[id] = []
+	for edge in edges:
+		if not authored.has(edge.get("from")) and not authored.has(edge.get("to")):
+			continue
+		var direction := String(edge.get("transition", ""))
+		if not opposite.has(direction) or not edge.get("bidirectional", false):
+			return false
+		for side in [0,1]:
+			var from_id := String(edge.get("from")) if side==0 else String(edge.get("to"))
+			var to_id := String(edge.get("to")) if side==0 else String(edge.get("from"))
+			if expected.has(from_id):
+				expected[from_id].append({"targetRoomId":to_id,"direction":direction if side==0 else opposite[direction],"requirements":edge.get("requirements", []),"optional":edge.get("optional", false)})
+	for id in authored:
+		var connections: Array = rooms.get(id, {}).get("connections", [])
+		if connections.size()!=expected[id].size():
+			return false
+		for intended in expected[id]:
+			var matches := 0
+			for actual in connections:
+				var required: Array = actual.get("requirements", []).duplicate()
+				var wanted: Array = intended.requirements.duplicate()
+				required.sort(); wanted.sort()
+				if actual.get("targetRoomId")==intended.targetRoomId and actual.get("direction")==intended.direction and bool(actual.get("optional",false))==bool(intended.optional) and required==wanted:
+					matches += 1
+			if matches!=1:
+				return false
+	return true
+
 func _check_stormglass_enemy_art_roster() -> void:
 	# The detailed Gothic sheets are materially larger than the former geometric placeholders.
 	# Check every gameplay roster slot so a later generator change cannot quietly bring the
@@ -282,8 +345,7 @@ func _check_stormglass_enemy_art_roster() -> void:
 
 func _check_stormglass_guardian_art_roster() -> void:
 	var actions := ["idle", "walk", "attack", "hurt", "death"]
-	for guardian_index in range(4):
-		var guardian_id := "boss_%03d" % guardian_index
+	for guardian_id in ["boss_000", "boss_001", "boss_002", "boss_final"]:
 		var uses_detailed_art := true
 		for action in actions:
 			var path := "res://assets/bosses/%s_%s.png" % [guardian_id, action]
@@ -1871,6 +1933,10 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 	var rooms: Dictionary = parsed.get("rooms", {})
 	var captured_biomes: Dictionary = {}
 	var captured_regions: Dictionary = {}
+	var captured_rooms: Dictionary = {}
+	var graph_data: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://world_graph.json"))
+	var authored_graph: Dictionary = graph_data if graph_data is Dictionary else {}
+	var region_coverage := RegionCaptureCoverage.membership(authored_graph, rooms)
 	var captured_gothic_opening_rooms: Dictionary = {}
 	var stormglass_surface_rooms_checked := 0
 	var stormglass_placeholder_layers_hidden := true
@@ -1880,6 +1946,8 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 	var stormglass_floor_foundations_present := true
 	var stormglass_water_zone_visuals_hidden := true
 	var stormglass_rooms_share_castle_interior := true
+	var uses_modular_rooms := FileAccess.file_exists("res://data/visual/stormglass-room-kits.json")
+	var stormglass_modular_backgrounds_match_rooms := true
 	var stormglass_condition_decals_present := true
 	var stormglass_condition_metadata_matches_rooms := true
 	var stormglass_surface_materials_match_districts := true
@@ -1904,16 +1972,18 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 		await get_tree().process_frame
 		# Room loads instantiate a new Player — never reuse a stale reference.
 		var _player := get_tree().get_first_node_in_group("player")
-		if _player == null:
-			push_warning("visual slice capture: no player in %s" % String(room_id))
+		if _player == null or GameManager.current_room_id != String(room_id):
+			push_warning("visual slice capture: requested room not loaded: %s" % String(room_id))
 			continue
 		var actual_biome := String(info.get("biomeId", ""))
 		var expected_castle_base: String = preload("res://scripts/world/StormglassDecor.gd").castle_background_path(actual_biome)
 		var room_index := maxi(0, String(room_id).trim_prefix("room_").to_int())
-		var region_id := "region_%d" % int(room_index / 10)
+		var region_id := String(region_coverage.roomRegions.get(String(room_id), ""))
 		var loaded_room := world.get("_current_room") as Node
 		if actual_biome == "biome_0" and loaded_room != null:
 			stormglass_surface_rooms_checked += 1
+			if uses_modular_rooms:
+				stormglass_modular_backgrounds_match_rooms = RoomKitBounds.matches(loaded_room) and stormglass_modular_backgrounds_match_rooms
 			for body in loaded_room.get_children():
 				var label := String(body.name)
 				if not body is StaticBody2D or not (label == "Floor" or label.begins_with("FloorSeg") or label.begins_with("FloorSection_") or label.begins_with("Platform_") or label.begins_with("Shell") or label == "PaintedShell"):
@@ -2009,10 +2079,11 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 			captured_biomes[actual_biome] = true
 			await _capture_runtime_state(actual_biome, "biome room %s" % actual_biome, {"roomId": String(room_id), "biomeId": actual_biome, "runtimeState": "biome"})
 			_save_report_shot(actual_biome, "%s.png" % actual_biome)
-		if not captured_regions.has(region_id):
-			captured_regions[region_id] = true
-			await _capture_runtime_state(region_id, "connected district %s" % region_id, {"roomId": String(room_id), "biomeId": actual_biome, "regionId": region_id, "runtimeState": "region"})
-			_save_report_shot(region_id, "%s.png" % region_id)
+		if not region_id.is_empty() and not captured_regions.has(region_id):
+			var region_shot_ok := await _capture_runtime_state(region_id, "authored region %s" % region_id, {"roomId": String(room_id), "biomeId": actual_biome, "regionId": region_id, "runtimeState": "region"})
+			if region_shot_ok:
+				captured_regions[region_id] = true
+				_save_report_shot(region_id, "%s.png" % region_id)
 		var enemies: Array = info.get("enemies", [])
 		for enemy_id in enemies:
 			var enemy_key := String(enemy_id)
@@ -2028,8 +2099,10 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 					await get_tree().process_frame
 				await _capture_runtime_state(alias, "enemy %s" % alias, {"roomId": String(room_id), "biomeId": actual_biome, "entityId": enemy_key, "enemyArchetype": alias, "runtimeState": "enemy"})
 				_save_report_shot(alias, "%s.png" % alias)
-		var shot_id := "slice_%s" % tag
-		await _capture_runtime_state(shot_id, "visual-slice room %s" % tag, {"roomId": String(room_id), "biomeId": tag, "runtimeState": "room"})
+		var shot_id := "slice_%s_%s" % [tag, String(room_id)]
+		var room_shot_ok := await _capture_runtime_state(shot_id, "visual-slice room %s" % tag, {"roomId": String(room_id), "biomeId": actual_biome, "regionId": region_id, "runtimeState": "room"})
+		if room_shot_ok and not region_id.is_empty():
+			captured_rooms[String(room_id)] = region_id
 		_save_report_shot(shot_id, String(mapping[tag]))
 		if tag == "tutorial":
 			_save_report_shot(shot_id, "hud.png")
@@ -2039,9 +2112,14 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 			await _capture_named_screenshot("slice_boss_combat")
 			_save_report_shot("slice_boss_combat", "09-boss-combat.png")
 	_check("stormglass_visual_slice_uses_one_continuous_biome", captured_biomes.size() == 1 and captured_biomes.has("biome_0"))
-	_check("stormglass_visual_slice_captures_four_connected_regions", captured_regions.size() == 4)
+	_check("stormglass_visual_slice_covers_all_authored_region_rooms", RegionCaptureCoverage.complete(region_coverage, captured_regions, captured_rooms))
+	_check("stormglass_visual_slice_captures_connected_authored_regions", bool(region_coverage.valid) and captured_regions.size() == region_coverage.regions.size() and RegionCaptureCoverage.connected(authored_graph, rooms))
+	print("AUTHORED_REGION_COVERAGE " + JSON.stringify({"expectedRegions":region_coverage.regions.keys(), "capturedRegions":captured_regions.keys(), "expectedRooms":rooms.size(), "capturedRooms":captured_rooms.size(), "errors":region_coverage.errors}))
 	_check("visual_slice_captures_all_ten_authored_gothic_rooms", captured_gothic_opening_rooms.size() == 10)
-	_check("stormglass_visual_slice_checks_all_40_room_surfaces", stormglass_surface_rooms_checked == 40)
+	if uses_modular_rooms:
+		_check("stormglass_visual_slice_checks_all_configured_room_surfaces",stormglass_surface_rooms_checked==rooms.size() and rooms.size()>0)
+	else:
+		_check("stormglass_visual_slice_checks_all_40_room_surfaces", stormglass_surface_rooms_checked == 40)
 	_check("stormglass_all_masonry_exactly_matches_real_collision", stormglass_masonry_rectangles_checked >= 40 and stormglass_masonry_matches_collision)
 	_check("stormglass_all_rooms_hide_placeholder_tile_layers", stormglass_placeholder_layers_hidden)
 	_check("stormglass_all_rooms_match_platform_art_to_collision", stormglass_platform_trims_match_collision)
@@ -2049,7 +2127,10 @@ func _capture_visual_slice_rooms(world: Node) -> void:
 	_check("stormglass_all_existing_floor_colliders_are_dressed", stormglass_floor_strips_present)
 	_check("stormglass_all_existing_floors_have_painted_foundations", stormglass_floor_foundations_present)
 	_check("stormglass_water_zones_use_authored_panorama_visuals", stormglass_water_zone_visuals_hidden)
-	_check("stormglass_all_40_rooms_share_one_castle_interior_background", stormglass_rooms_share_castle_interior)
+	if uses_modular_rooms:
+		_check("stormglass_modular_backgrounds_match_all_loaded_room_bounds",stormglass_surface_rooms_checked==rooms.size() and stormglass_surface_rooms_checked>0 and stormglass_modular_backgrounds_match_rooms)
+	else:
+		_check("stormglass_all_40_rooms_share_one_castle_interior_background", stormglass_rooms_share_castle_interior)
 	_check("stormglass_all_40_rooms_have_two_authored_condition_decals", stormglass_condition_decals_present)
 	_check("stormglass_condition_metadata_matches_each_room_district", stormglass_condition_metadata_matches_rooms)
 	_check("stormglass_platform_materials_match_castle_condition", stormglass_surface_materials_match_districts)
@@ -2897,16 +2978,19 @@ func _check_breakable_wall(player: Node, world: Node) -> void:
 	# Setup positioning (not gameplay): place the player directly above the obstacle rather than
 	# walking/platforming there, so the physics that follow — falling, landing, jumping, slamming —
 	# are the only things actually under test.
-	(current_player as Node2D).global_position = floor_pos + Vector2(0, -96)
+	# Start below overhead platforms. A 96px setup drop can land on a different
+	# collider and falsely report a failed slam. The player origin is its feet.
+	(current_player as Node2D).global_position = floor_pos + Vector2(0, -8)
 	if current_player is CharacterBody2D:
 		(current_player as CharacterBody2D).velocity = Vector2.ZERO
 	for i in range(50):
 		await get_tree().physics_frame
-		if current_player.is_on_floor():
+		if i >= 3 and current_player.is_on_floor():
 			break
 	# Real collision, not a scripted assertion: gravity alone should have settled the player on
 	# top of the still-solid floor, not through it.
 	_check("breakable_wall_blocks_before_ability", is_instance_valid(floor_node) and current_player.is_on_floor())
+	_check("breakable_wall_setup_contacts_target_before_ability", _player_contacts_collider(current_player, floor_node))
 
 	# Real input attempt at breaking it without the ability: jump to get airborne (try_ground_slam
 	# requires not being on the floor — see AbilityController.gd), then hold move_down the same way
@@ -2931,13 +3015,14 @@ func _check_breakable_wall(player: Node, world: Node) -> void:
 	if current_player == null:
 		_check("breakable_wall_breaks_with_ability", false)
 		return
-	(current_player as Node2D).global_position = floor_pos + Vector2(0, -96)
+	(current_player as Node2D).global_position = floor_pos + Vector2(0, -8)
 	if current_player is CharacterBody2D:
 		(current_player as CharacterBody2D).velocity = Vector2.ZERO
 	for i in range(50):
 		await get_tree().physics_frame
-		if current_player.is_on_floor():
+		if i >= 3 and current_player.is_on_floor():
 			break
+	_check("breakable_wall_setup_contacts_target_with_ability", _player_contacts_collider(current_player, floor_node))
 	await _attempt_ground_slam(current_player)
 	for i in range(35):
 		await get_tree().physics_frame
@@ -2962,6 +3047,14 @@ func _check_breakable_wall(player: Node, world: Node) -> void:
 	var restored_floor := _find_node_in_group(world, "weak_floor")
 	_check("breakable_wall_stays_broken_after_save_load", restored_floor == null or not is_instance_valid(restored_floor))
 
+
+func _player_contacts_collider(player: Node, target: Node) -> bool:
+	if not is_instance_valid(player) or not is_instance_valid(target) or not player is CharacterBody2D:
+		return false
+	for index in player.get_slide_collision_count():
+		if player.get_slide_collision(index).get_collider() == target:
+			return true
+	return false
 
 ## Gets the player airborne (jump, buffered if still falling from a prior setup) and then holds
 ## move_down for several physics frames — not just one — so a real is_action_just_pressed edge is

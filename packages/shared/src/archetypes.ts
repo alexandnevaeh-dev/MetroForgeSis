@@ -88,7 +88,7 @@ export interface GenreDefinition {
   referenceTags: string[];
 }
 
-export const GENRE_DEFINITIONS: Record<GameArchetype, GenreDefinition> = {
+const CORE_GENRE_DEFINITIONS: Record<Exclude<GameArchetype,'SIDE_VIEW_PLATFORMER'>, GenreDefinition> = {
   QUANTUM_SIMULATION_ROGUELITE: {
     id: 'QUANTUM_SIMULATION_ROGUELITE',
     displayName: 'Quantum Simulation Roguelite',
@@ -225,6 +225,20 @@ export const GENRE_DEFINITIONS: Record<GameArchetype, GenreDefinition> = {
   },
 };
 
+export const GENRE_DEFINITIONS: Record<GameArchetype, GenreDefinition> = {
+  ...CORE_GENRE_DEFINITIONS,
+  SIDE_VIEW_PLATFORMER: {
+    ...CORE_GENRE_DEFINITIONS.SIDE_VIEW_METROIDVANIA,
+    id:'SIDE_VIEW_PLATFORMER',displayName:'Platformer',
+    defaultWorldTopology:'LINEAR',defaultProgression:'OPEN',
+    capabilities:{...CORE_GENRE_DEFINITIONS.SIDE_VIEW_METROIDVANIA.capabilities,
+      supportsLockedAbilityGates:false,supportsElevationLayers:false,
+      supportsSideViewQualityPass:false,qualityPassProfile:'none'},
+    runtime:{...CORE_GENRE_DEFINITIONS.SIDE_VIEW_METROIDVANIA.runtime},
+    referenceTags:['readable_jump_arcs','linear_stage_progression','grounded_checkpoints','platform_traversal','distinct_stage_landmarks'],
+  },
+};
+
 export function getGenreDefinition(id: GameArchetype | undefined | null): GenreDefinition {
   return GENRE_DEFINITIONS[resolveGameArchetype(id)];
 }
@@ -292,6 +306,7 @@ function toLegacyPlugin(def: GenreDefinition): GameArchetypePlugin {
 }
 
 export const GAME_ARCHETYPE_PLUGINS: Record<GameArchetype, GameArchetypePlugin> = {
+  SIDE_VIEW_PLATFORMER: toLegacyPlugin(GENRE_DEFINITIONS.SIDE_VIEW_PLATFORMER),
   SIDE_VIEW_METROIDVANIA: toLegacyPlugin(GENRE_DEFINITIONS.SIDE_VIEW_METROIDVANIA),
   TOP_DOWN_ACTION_ADVENTURE: toLegacyPlugin(GENRE_DEFINITIONS.TOP_DOWN_ACTION_ADVENTURE),
   QUANTUM_SIMULATION_ROGUELITE: toLegacyPlugin(GENRE_DEFINITIONS.QUANTUM_SIMULATION_ROGUELITE),
@@ -306,6 +321,7 @@ export function isTopDownArchetype(id: GameArchetype | undefined): boolean {
 }
 
 export function resolveGameArchetype(value: string | undefined | null): GameArchetype {
+  if (value === 'SIDE_VIEW_PLATFORMER') return 'SIDE_VIEW_PLATFORMER';
   if (value === 'QUANTUM_SIMULATION_ROGUELITE') return 'QUANTUM_SIMULATION_ROGUELITE';
   if (value === 'TOP_DOWN_ACTION_ADVENTURE') return 'TOP_DOWN_ACTION_ADVENTURE';
   return 'SIDE_VIEW_METROIDVANIA';
@@ -313,6 +329,7 @@ export function resolveGameArchetype(value: string | undefined | null): GameArch
 
 /** Infer from a prompt only when the caller did not pass an explicit archetype. */
 export function inferGameArchetypeFromPrompt(prompt: string): GameArchetype {
+  if (/\bplatformer\b|\bplateformer\b/i.test(prompt) && !/\bmetroidvania\b/i.test(prompt)) return 'SIDE_VIEW_PLATFORMER';
   if (/\bquantum divergence\b|\bquantum\b.*\b(?:simulation|roguelite)\b/i.test(prompt)) return 'QUANTUM_SIMULATION_ROGUELITE';
   if (/\btop[\s-]?down\b/i.test(prompt) || /\baction[\s-]?adventure\b/i.test(prompt)) {
     return 'TOP_DOWN_ACTION_ADVENTURE';

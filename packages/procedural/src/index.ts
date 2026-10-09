@@ -1,4 +1,5 @@
 export { SeededRNG } from './rng.js';
+export { generatePlatformerWorld } from './platformer-world.js';
 export {
   generateWorldTopology,
   validateReachability,
@@ -20,6 +21,7 @@ export type {
   MovementFeasibilityIssue,
   MovementFeasibilityReport,
   RoomLayoutDefaults,
+  AuthoredStairApproach,
 } from './movement-feasibility.js';
 export {
   attachPlaytestPersona,

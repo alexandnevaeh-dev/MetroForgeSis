@@ -25,6 +25,9 @@ function run(executable, args) {
 // Use the executable directly: the JS esbuild service needs pipe creation that
 // some Windows environments deny. No source transforms or typechecks are skipped.
 const tsc = join(root, 'node_modules', 'typescript', 'bin', 'tsc');
+// Electron resolves workspace packages through their dist exports. Rebuild the
+// generation dependency graph first so a fresh desktop cannot run stale code.
+run(process.execPath, [tsc, '--build', join(root, 'packages', 'generation', 'tsconfig.json'), join(root, 'packages', 'core', 'tsconfig.json'), '--force']);
 run(process.execPath, [tsc, '-p', join(desktop, 'tsconfig.json'), '--noEmit']);
 run(process.execPath, [tsc, '--build', join(desktop, 'tsconfig.electron.json'), '--force']);
 run(binary, [

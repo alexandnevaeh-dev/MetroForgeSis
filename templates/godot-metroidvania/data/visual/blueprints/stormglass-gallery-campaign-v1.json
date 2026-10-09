@@ -1,0 +1,1546 @@
+{
+  "version": 1,
+  "id": "stormglass-gallery-campaign-v1",
+  "worldGraph": {
+    "version": "0.1.0",
+    "seed": 20260930,
+    "nodes": [
+      {
+        "id": "room_000",
+        "type": "room",
+        "label": "West Arrival Gallery",
+        "metadata": {
+          "archetype": "tutorial",
+          "environmentArchetype": "armory",
+          "roomPurpose": "Readable entrance and first view of the processional gallery",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 1,
+          "targetTileWidth": 96,
+          "targetTileHeight": 24,
+          "stormglassRoomTheme": "arrival"
+        },
+        "position": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": "room_001",
+        "type": "room",
+        "label": "Stormglass Processional Gallery",
+        "metadata": {
+          "archetype": "combat",
+          "environmentArchetype": "castle_hall",
+          "roomPurpose": "Long architectural spine with a descending exploration branch",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 3,
+          "screenSpanV": 2,
+          "targetTileWidth": 128,
+          "targetTileHeight": 24,
+          "stormglassRoomTheme": "gallery"
+        },
+        "position": {
+          "x": 3072,
+          "y": 0
+        }
+      },
+      {
+        "id": "room_002",
+        "type": "room",
+        "label": "Archivist Stairwell",
+        "metadata": {
+          "archetype": "traversal",
+          "environmentArchetype": "castle_hall",
+          "roomPurpose": "Uneven landings connect the gallery, shrine and lower passage",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 3,
+          "screenSpanV": 2,
+          "targetTileWidth": 32,
+          "targetTileHeight": 48,
+          "stormglassRoomTheme": "stairwell"
+        },
+        "position": {
+          "x": 4096,
+          "y": 768
+        }
+      },
+      {
+        "id": "room_003",
+        "type": "room",
+        "label": "Veilblade Reliquary",
+        "metadata": {
+          "archetype": "ability_shrine",
+          "environmentArchetype": "clock_tower",
+          "roomPurpose": "Sheltered ability discovery beside the stairwell",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [
+            "dash"
+          ],
+          "screenSpanH": 1,
+          "screenSpanV": 4,
+          "targetTileWidth": 32,
+          "targetTileHeight": 24,
+          "stormglassRoomTheme": "shrine"
+        },
+        "position": {
+          "x": 3072,
+          "y": 768
+        }
+      },
+      {
+        "id": "room_004",
+        "type": "room",
+        "label": "Lower Memorial Passage",
+        "metadata": {
+          "archetype": "combat",
+          "environmentArchetype": "clock_tower",
+          "roomPurpose": "A distinct lower route with an encounter and return landmark",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 1,
+          "screenSpanV": 4,
+          "targetTileWidth": 64,
+          "targetTileHeight": 24,
+          "stormglassRoomTheme": "undercroft"
+        },
+        "position": {
+          "x": 5120,
+          "y": 1536
+        }
+      },
+      {
+        "id": "room_005",
+        "type": "room",
+        "label": "Bell Service Stair",
+        "metadata": {
+          "archetype": "traversal",
+          "environmentArchetype": "chapel",
+          "roomPurpose": "Return ascent to the checkpoint and access to a hidden branch",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 2,
+          "targetTileWidth": 32,
+          "targetTileHeight": 48,
+          "stormglassRoomTheme": "stairwell"
+        },
+        "position": {
+          "x": 7168,
+          "y": 768
+        }
+      },
+      {
+        "id": "room_006",
+        "type": "room",
+        "label": "Lantern Checkpoint",
+        "metadata": {
+          "archetype": "save",
+          "environmentArchetype": "chapel",
+          "roomPurpose": "The loop closes beside a save point before the boss approach",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 2,
+          "targetTileWidth": 32,
+          "targetTileHeight": 24,
+          "stormglassRoomTheme": "rest"
+        },
+        "position": {
+          "x": 7168,
+          "y": 0
+        }
+      },
+      {
+        "id": "room_007",
+        "type": "room",
+        "label": "Sealed Echo Chamber",
+        "metadata": {
+          "archetype": "secret",
+          "environmentArchetype": "chapel",
+          "roomPurpose": "Optional chamber reached from the lower service stair",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 2,
+          "targetTileWidth": 32,
+          "targetTileHeight": 24,
+          "stormglassRoomTheme": "secret"
+        },
+        "position": {
+          "x": 8192,
+          "y": 1536
+        }
+      },
+      {
+        "id": "room_008",
+        "type": "room",
+        "label": "Bell Warden",
+        "metadata": {
+          "archetype": "miniboss",
+          "environmentArchetype": "castle_hall",
+          "roomPurpose": "miniboss",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 3,
+          "screenSpanV": 2,
+          "targetTileWidth": 96,
+          "targetTileHeight": 36,
+          "bossArena": true,
+          "zoneBossOf": "zone_0"
+        }
+      },
+      {
+        "id": "room_009",
+        "type": "room",
+        "label": "Castle Floodgate",
+        "metadata": {
+          "archetype": "ability_gate",
+          "environmentArchetype": "chapel",
+          "roomPurpose": "ability_gate",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 2,
+          "targetTileWidth": 64,
+          "targetTileHeight": 40
+        }
+      },
+      {
+        "id": "room_010",
+        "type": "room",
+        "label": "Flooded Antechamber",
+        "metadata": {
+          "archetype": "tutorial",
+          "environmentArchetype": "crypt",
+          "roomPurpose": "tutorial",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 1,
+          "targetTileWidth": 56,
+          "targetTileHeight": 24
+        }
+      },
+      {
+        "id": "room_011",
+        "type": "room",
+        "label": "Drowned Hall",
+        "metadata": {
+          "archetype": "combat",
+          "environmentArchetype": "chapel",
+          "roomPurpose": "combat",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 2,
+          "targetTileWidth": 64,
+          "targetTileHeight": 40,
+          "stormglassRoomTheme": "drowned-hall"
+        }
+      },
+      {
+        "id": "room_012",
+        "type": "room",
+        "label": "Current Tunnel",
+        "metadata": {
+          "archetype": "traversal",
+          "environmentArchetype": "chapel",
+          "roomPurpose": "traversal",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 2,
+          "targetTileWidth": 64,
+          "targetTileHeight": 40,
+          "stormglassRoomTheme": "current-tunnel"
+        }
+      },
+      {
+        "id": "room_013",
+        "type": "room",
+        "label": "Double-Jump Font",
+        "metadata": {
+          "archetype": "ability_shrine",
+          "environmentArchetype": "chapel",
+          "roomPurpose": "ability_shrine",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [
+            "double_jump",
+            "wall_slide",
+            "wall_jump"
+          ],
+          "screenSpanH": 2,
+          "screenSpanV": 2,
+          "targetTileWidth": 64,
+          "targetTileHeight": 40,
+          "stormglassRoomTheme": "font-sanctuary"
+        }
+      },
+      {
+        "id": "room_014",
+        "type": "room",
+        "label": "Sunken Library",
+        "metadata": {
+          "archetype": "combat",
+          "environmentArchetype": "library",
+          "roomPurpose": "combat",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 2,
+          "targetTileWidth": 64,
+          "targetTileHeight": 40,
+          "stormglassRoomTheme": "library-reading"
+        }
+      },
+      {
+        "id": "room_015",
+        "type": "room",
+        "label": "Pressure Shaft",
+        "metadata": {
+          "archetype": "traversal",
+          "environmentArchetype": "crypt",
+          "roomPurpose": "traversal",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 1,
+          "targetTileWidth": 56,
+          "targetTileHeight": 24,
+          "stormglassRoomTheme": "pressure-shaft"
+        }
+      },
+      {
+        "id": "room_016",
+        "type": "room",
+        "label": "Water Shrine",
+        "metadata": {
+          "archetype": "save",
+          "environmentArchetype": "castle_hall",
+          "roomPurpose": "save",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 3,
+          "screenSpanV": 2,
+          "targetTileWidth": 96,
+          "targetTileHeight": 36,
+          "stormglassRoomTheme": "water-refuge"
+        }
+      },
+      {
+        "id": "room_017",
+        "type": "room",
+        "label": "Under-Arch Cache",
+        "metadata": {
+          "archetype": "secret",
+          "environmentArchetype": "chapel",
+          "roomPurpose": "secret",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 2,
+          "targetTileWidth": 64,
+          "targetTileHeight": 40,
+          "stormglassRoomTheme": "cache-drop"
+        }
+      },
+      {
+        "id": "room_018",
+        "type": "room",
+        "label": "Drowned Guardian",
+        "metadata": {
+          "archetype": "miniboss",
+          "environmentArchetype": "chapel",
+          "roomPurpose": "miniboss",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 2,
+          "targetTileWidth": 64,
+          "targetTileHeight": 40,
+          "bossArena": true,
+          "zoneBossOf": "zone_1"
+        }
+      },
+      {
+        "id": "room_019",
+        "type": "room",
+        "label": "Floodgate Ascent",
+        "metadata": {
+          "archetype": "ability_gate",
+          "environmentArchetype": "crypt",
+          "roomPurpose": "ability_gate",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 1,
+          "targetTileWidth": 56,
+          "targetTileHeight": 24,
+          "stormglassRoomTheme": "floodgate-ascent"
+        }
+      },
+      {
+        "id": "room_020",
+        "type": "room",
+        "label": "Collapsed Vestibule",
+        "metadata": {
+          "archetype": "tutorial",
+          "environmentArchetype": "crypt",
+          "roomPurpose": "tutorial",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 1,
+          "targetTileWidth": 56,
+          "targetTileHeight": 24,
+          "stormglassRoomTheme": "archive-vestibule"
+        }
+      },
+      {
+        "id": "room_021",
+        "type": "room",
+        "label": "Archive Gallery",
+        "metadata": {
+          "archetype": "combat",
+          "environmentArchetype": "chapel",
+          "roomPurpose": "combat",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 2,
+          "targetTileWidth": 64,
+          "targetTileHeight": 40,
+          "stormglassRoomTheme": "archive-gallery"
+        }
+      },
+      {
+        "id": "room_022",
+        "type": "room",
+        "label": "Collapse Shaft",
+        "metadata": {
+          "archetype": "traversal",
+          "environmentArchetype": "chapel",
+          "roomPurpose": "traversal",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 2,
+          "targetTileWidth": 64,
+          "targetTileHeight": 40
+        }
+      },
+      {
+        "id": "room_023",
+        "type": "room",
+        "label": "Slam Reliquary",
+        "metadata": {
+          "archetype": "ability_shrine",
+          "environmentArchetype": "chapel",
+          "roomPurpose": "ability_shrine",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [
+            "ground_slam"
+          ],
+          "screenSpanH": 2,
+          "screenSpanV": 2,
+          "targetTileWidth": 64,
+          "targetTileHeight": 40
+        }
+      },
+      {
+        "id": "room_024",
+        "type": "room",
+        "label": "Glyph Hall",
+        "metadata": {
+          "archetype": "combat",
+          "environmentArchetype": "castle_hall",
+          "roomPurpose": "combat",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 3,
+          "screenSpanV": 2,
+          "targetTileWidth": 96,
+          "targetTileHeight": 36
+        }
+      },
+      {
+        "id": "room_025",
+        "type": "room",
+        "label": "Puzzle Chamber",
+        "metadata": {
+          "archetype": "ability_gate",
+          "environmentArchetype": "crypt",
+          "roomPurpose": "ability_gate",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 1,
+          "targetTileWidth": 56,
+          "targetTileHeight": 24
+        }
+      },
+      {
+        "id": "room_026",
+        "type": "room",
+        "label": "Reliquary Rest",
+        "metadata": {
+          "archetype": "save",
+          "environmentArchetype": "chapel",
+          "roomPurpose": "save",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 2,
+          "targetTileWidth": 64,
+          "targetTileHeight": 40
+        }
+      },
+      {
+        "id": "room_027",
+        "type": "room",
+        "label": "Glyph Wall Secret",
+        "metadata": {
+          "archetype": "secret",
+          "environmentArchetype": "crypt",
+          "roomPurpose": "secret",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 1,
+          "targetTileWidth": 56,
+          "targetTileHeight": 24
+        }
+      },
+      {
+        "id": "room_028",
+        "type": "room",
+        "label": "Sentinel Dais",
+        "metadata": {
+          "archetype": "miniboss",
+          "environmentArchetype": "chapel",
+          "roomPurpose": "miniboss",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 2,
+          "targetTileWidth": 64,
+          "targetTileHeight": 40,
+          "bossArena": true,
+          "zoneBossOf": "zone_2"
+        }
+      },
+      {
+        "id": "room_029",
+        "type": "room",
+        "label": "Ruins Lift",
+        "metadata": {
+          "archetype": "ability_gate",
+          "environmentArchetype": "chapel",
+          "roomPurpose": "ability_gate",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 2,
+          "targetTileWidth": 64,
+          "targetTileHeight": 40
+        }
+      },
+      {
+        "id": "room_030",
+        "type": "room",
+        "label": "Frozen Approach",
+        "metadata": {
+          "archetype": "tutorial",
+          "environmentArchetype": "chapel",
+          "roomPurpose": "tutorial",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 2,
+          "targetTileWidth": 64,
+          "targetTileHeight": 40
+        }
+      },
+      {
+        "id": "room_031",
+        "type": "room",
+        "label": "Storm Bridge",
+        "metadata": {
+          "archetype": "combat",
+          "environmentArchetype": "clock_tower",
+          "roomPurpose": "combat",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 1,
+          "screenSpanV": 4,
+          "targetTileWidth": 32,
+          "targetTileHeight": 72
+        }
+      },
+      {
+        "id": "room_032",
+        "type": "room",
+        "label": "Frozen Clock Shaft",
+        "metadata": {
+          "archetype": "traversal",
+          "environmentArchetype": "crypt",
+          "roomPurpose": "traversal",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 1,
+          "targetTileWidth": 56,
+          "targetTileHeight": 24
+        }
+      },
+      {
+        "id": "room_033",
+        "type": "room",
+        "label": "Air-Dash Belfry",
+        "metadata": {
+          "archetype": "ability_shrine",
+          "environmentArchetype": "crypt",
+          "roomPurpose": "ability_shrine",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [
+            "air_dash"
+          ],
+          "screenSpanH": 2,
+          "screenSpanV": 1,
+          "targetTileWidth": 56,
+          "targetTileHeight": 24
+        }
+      },
+      {
+        "id": "room_034",
+        "type": "room",
+        "label": "Wind Corridor",
+        "metadata": {
+          "archetype": "combat",
+          "environmentArchetype": "chapel",
+          "roomPurpose": "combat",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 2,
+          "targetTileWidth": 64,
+          "targetTileHeight": 40
+        }
+      },
+      {
+        "id": "room_035",
+        "type": "room",
+        "label": "Broken Bell Rise",
+        "metadata": {
+          "archetype": "traversal",
+          "environmentArchetype": "chapel",
+          "roomPurpose": "traversal",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 2,
+          "targetTileWidth": 64,
+          "targetTileHeight": 40
+        }
+      },
+      {
+        "id": "room_036",
+        "type": "room",
+        "label": "Bell Alcove",
+        "metadata": {
+          "archetype": "save",
+          "environmentArchetype": "clock_tower",
+          "roomPurpose": "save",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 1,
+          "screenSpanV": 4,
+          "targetTileWidth": 32,
+          "targetTileHeight": 72
+        }
+      },
+      {
+        "id": "room_037",
+        "type": "room",
+        "label": "Frost Cavern Secret",
+        "metadata": {
+          "archetype": "secret",
+          "environmentArchetype": "chapel",
+          "roomPurpose": "secret",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 2,
+          "targetTileWidth": 64,
+          "targetTileHeight": 40
+        }
+      },
+      {
+        "id": "room_038",
+        "type": "room",
+        "label": "Tempest Abbot Arena",
+        "metadata": {
+          "archetype": "boss",
+          "environmentArchetype": "castle_hall",
+          "roomPurpose": "boss",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 3,
+          "screenSpanV": 2,
+          "targetTileWidth": 96,
+          "targetTileHeight": 36,
+          "bossArena": true,
+          "zoneBossOf": "zone_3"
+        }
+      },
+      {
+        "id": "room_039",
+        "type": "room",
+        "label": "Restored Reliquary",
+        "metadata": {
+          "archetype": "transition",
+          "environmentArchetype": "castle_hall",
+          "roomPurpose": "transition",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 3,
+          "screenSpanV": 2,
+          "targetTileWidth": 96,
+          "targetTileHeight": 36
+        }
+      },
+      {
+        "id": "room_040",
+        "type": "room",
+        "label": "Echo Service Descent",
+        "metadata": {
+          "archetype": "traversal",
+          "environmentArchetype": "chapel",
+          "roomPurpose": "Backroom descent below the Echo Chamber into the archive vault",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 2,
+          "targetTileWidth": 32,
+          "targetTileHeight": 48,
+          "stormglassRoomTheme": "stairwell"
+        },
+        "position": {
+          "x": 8192,
+          "y": 2304
+        }
+      },
+      {
+        "id": "room_041",
+        "type": "room",
+        "label": "Memorial Archive Vault",
+        "metadata": {
+          "archetype": "secret",
+          "environmentArchetype": "chapel",
+          "roomPurpose": "A lower furnished backroom passage linking two service stairs",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 2,
+          "targetTileWidth": 48,
+          "targetTileHeight": 24,
+          "stormglassRoomTheme": "archive"
+        },
+        "position": {
+          "x": 6656,
+          "y": 3072
+        }
+      },
+      {
+        "id": "room_042",
+        "type": "room",
+        "label": "Memorial Return Stair",
+        "metadata": {
+          "archetype": "traversal",
+          "environmentArchetype": "chapel",
+          "roomPurpose": "Return ascent reconnecting the vault to the main memorial passage",
+          "biomeIndex": 0,
+          "regionIndex": 0,
+          "grantsAbilities": [],
+          "screenSpanH": 2,
+          "screenSpanV": 2,
+          "targetTileWidth": 32,
+          "targetTileHeight": 48,
+          "stormglassRoomTheme": "stairwell"
+        },
+        "position": {
+          "x": 5632,
+          "y": 2304
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "stormglass_007",
+        "from": "room_008",
+        "to": "room_009",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_008",
+        "from": "room_009",
+        "to": "room_010",
+        "requirements": [
+          "dash"
+        ],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "transition": "right",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_009",
+        "from": "room_010",
+        "to": "room_011",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_010",
+        "from": "room_011",
+        "to": "room_012",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_011",
+        "from": "room_012",
+        "to": "room_013",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_012",
+        "from": "room_013",
+        "to": "room_014",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_013",
+        "from": "room_014",
+        "to": "room_015",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_014",
+        "from": "room_015",
+        "to": "room_016",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_015",
+        "from": "room_016",
+        "to": "room_018",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_016",
+        "from": "room_018",
+        "to": "room_019",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_017",
+        "from": "room_019",
+        "to": "room_020",
+        "requirements": [
+          "double_jump"
+        ],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "transition": "right",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_018",
+        "from": "room_020",
+        "to": "room_021",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_019",
+        "from": "room_021",
+        "to": "room_022",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_020",
+        "from": "room_022",
+        "to": "room_023",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_021",
+        "from": "room_023",
+        "to": "room_024",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_022",
+        "from": "room_024",
+        "to": "room_025",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_023",
+        "from": "room_025",
+        "to": "room_026",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_024",
+        "from": "room_026",
+        "to": "room_028",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_025",
+        "from": "room_028",
+        "to": "room_029",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_026",
+        "from": "room_029",
+        "to": "room_030",
+        "requirements": [
+          "ground_slam"
+        ],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "transition": "down",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_027",
+        "from": "room_030",
+        "to": "room_031",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_028",
+        "from": "room_031",
+        "to": "room_032",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_029",
+        "from": "room_032",
+        "to": "room_033",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_030",
+        "from": "room_033",
+        "to": "room_034",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_031",
+        "from": "room_034",
+        "to": "room_035",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_032",
+        "from": "room_035",
+        "to": "room_036",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_033",
+        "from": "room_036",
+        "to": "room_038",
+        "requirements": [
+          "air_dash"
+        ],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "transition": "right",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_034",
+        "from": "room_038",
+        "to": "room_039",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {}
+      },
+      {
+        "id": "stormglass_037",
+        "from": "room_015",
+        "to": "room_017",
+        "requirements": [],
+        "optional": true,
+        "bidirectional": false,
+        "kind": "shortcut",
+        "transition": "down",
+        "metadata": {
+          "loopType": "secret_return"
+        }
+      },
+      {
+        "id": "stormglass_038",
+        "from": "room_017",
+        "to": "room_018",
+        "requirements": [],
+        "optional": true,
+        "bidirectional": true,
+        "kind": "shortcut",
+        "transition": "right",
+        "metadata": {
+          "loopType": "secret_return"
+        }
+      },
+      {
+        "id": "stormglass_039",
+        "from": "room_025",
+        "to": "room_027",
+        "requirements": [
+          "ground_slam"
+        ],
+        "optional": true,
+        "bidirectional": false,
+        "kind": "shortcut",
+        "transition": "down",
+        "metadata": {
+          "loopType": "secret_return"
+        }
+      },
+      {
+        "id": "stormglass_040",
+        "from": "room_027",
+        "to": "room_028",
+        "requirements": [],
+        "optional": true,
+        "bidirectional": true,
+        "kind": "shortcut",
+        "transition": "right",
+        "metadata": {
+          "loopType": "secret_return"
+        }
+      },
+      {
+        "id": "stormglass_041",
+        "from": "room_035",
+        "to": "room_037",
+        "requirements": [],
+        "optional": true,
+        "bidirectional": false,
+        "kind": "shortcut",
+        "transition": "down",
+        "metadata": {
+          "loopType": "secret_return"
+        }
+      },
+      {
+        "id": "stormglass_042",
+        "from": "room_037",
+        "to": "room_036",
+        "requirements": [],
+        "optional": true,
+        "bidirectional": true,
+        "kind": "shortcut",
+        "transition": "right",
+        "metadata": {
+          "loopType": "secret_return"
+        }
+      },
+      {
+        "id": "gallery_rebuild_0",
+        "from": "room_000",
+        "to": "room_001",
+        "transition": "right",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {
+          "authoredRegion": "stormglass-gallery-world-within-world-v1"
+        }
+      },
+      {
+        "id": "gallery_rebuild_1",
+        "from": "room_001",
+        "to": "room_006",
+        "transition": "right",
+        "requirements": [
+          "dash"
+        ],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {
+          "authoredRegion": "stormglass-gallery-world-within-world-v1"
+        }
+      },
+      {
+        "id": "gallery_rebuild_2",
+        "from": "room_001",
+        "to": "room_002",
+        "transition": "down",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {
+          "authoredRegion": "stormglass-gallery-world-within-world-v1"
+        }
+      },
+      {
+        "id": "gallery_rebuild_3",
+        "from": "room_002",
+        "to": "room_003",
+        "transition": "left",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {
+          "authoredRegion": "stormglass-gallery-world-within-world-v1"
+        }
+      },
+      {
+        "id": "gallery_rebuild_4",
+        "from": "room_002",
+        "to": "room_004",
+        "transition": "right",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {
+          "authoredRegion": "stormglass-gallery-world-within-world-v1"
+        }
+      },
+      {
+        "id": "gallery_rebuild_5",
+        "from": "room_004",
+        "to": "room_005",
+        "transition": "right",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {
+          "authoredRegion": "stormglass-gallery-world-within-world-v1"
+        }
+      },
+      {
+        "id": "gallery_rebuild_6",
+        "from": "room_005",
+        "to": "room_006",
+        "transition": "up",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {
+          "authoredRegion": "stormglass-gallery-world-within-world-v1"
+        }
+      },
+      {
+        "id": "gallery_rebuild_7",
+        "from": "room_005",
+        "to": "room_007",
+        "transition": "right",
+        "requirements": [],
+        "optional": true,
+        "bidirectional": true,
+        "kind": "shortcut",
+        "metadata": {
+          "authoredRegion": "stormglass-gallery-world-within-world-v1",
+          "legacyKind": "secret"
+        }
+      },
+      {
+        "id": "gallery_rebuild_8",
+        "from": "room_006",
+        "to": "room_008",
+        "transition": "right",
+        "requirements": [],
+        "optional": false,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {
+          "authoredRegion": "stormglass-gallery-world-within-world-v1"
+        }
+      },
+      {
+        "id": "gallery_backroom_0",
+        "from": "room_007",
+        "to": "room_040",
+        "transition": "down",
+        "requirements": [],
+        "optional": true,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {
+          "authoredRegion": "stormglass-gallery-world-within-world-v1"
+        }
+      },
+      {
+        "id": "gallery_backroom_1",
+        "from": "room_040",
+        "to": "room_041",
+        "transition": "left",
+        "requirements": [],
+        "optional": true,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {
+          "authoredRegion": "stormglass-gallery-world-within-world-v1"
+        }
+      },
+      {
+        "id": "gallery_backroom_2",
+        "from": "room_041",
+        "to": "room_042",
+        "transition": "left",
+        "requirements": [],
+        "optional": true,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {
+          "authoredRegion": "stormglass-gallery-world-within-world-v1"
+        }
+      },
+      {
+        "id": "gallery_backroom_3",
+        "from": "room_042",
+        "to": "room_004",
+        "transition": "up",
+        "requirements": [],
+        "optional": true,
+        "bidirectional": true,
+        "kind": "normal",
+        "metadata": {
+          "authoredRegion": "stormglass-gallery-world-within-world-v1"
+        }
+      }
+    ],
+    "regions": [
+      {
+        "id": "region_0",
+        "name": "Region 0",
+        "biomeId": "biome_0",
+        "roomIds": [
+          "room_000",
+          "room_001",
+          "room_002",
+          "room_003",
+          "room_004",
+          "room_005",
+          "room_006",
+          "room_007",
+          "room_008",
+          "room_009",
+          "room_010",
+          "room_011",
+          "room_012",
+          "room_013",
+          "room_014",
+          "room_015",
+          "room_016",
+          "room_017",
+          "room_018",
+          "room_019",
+          "room_020",
+          "room_021",
+          "room_022",
+          "room_023",
+          "room_024",
+          "room_025",
+          "room_026",
+          "room_027",
+          "room_028",
+          "room_029",
+          "room_030",
+          "room_031",
+          "room_032",
+          "room_033",
+          "room_034",
+          "room_035",
+          "room_036",
+          "room_037",
+          "room_038",
+          "room_039",
+          "room_040",
+          "room_041",
+          "room_042"
+        ]
+      }
+    ]
+  },
+  "progressionGraph": {
+    "version": "0.1.0",
+    "seed": 20260930,
+    "startNodeId": "room_000",
+    "endNodeId": "room_038",
+    "nodes": [
+      {
+        "id": "room_000",
+        "type": "room",
+        "label": "Start",
+        "required": true
+      },
+      {
+        "id": "ability_dash",
+        "type": "ability",
+        "label": "dash",
+        "required": true
+      },
+      {
+        "id": "ability_double_jump",
+        "type": "ability",
+        "label": "double_jump",
+        "required": true
+      },
+      {
+        "id": "ability_wall_slide",
+        "type": "ability",
+        "label": "wall_slide",
+        "required": true
+      },
+      {
+        "id": "ability_wall_jump",
+        "type": "ability",
+        "label": "wall_jump",
+        "required": true
+      },
+      {
+        "id": "ability_air_dash",
+        "type": "ability",
+        "label": "air_dash",
+        "required": true
+      },
+      {
+        "id": "ability_ground_slam",
+        "type": "ability",
+        "label": "ground_slam",
+        "required": true
+      },
+      {
+        "id": "room_038",
+        "type": "boss",
+        "label": "Tempest Abbot",
+        "required": true
+      }
+    ],
+    "edges": [
+      {
+        "from": "room_000",
+        "to": "ability_dash",
+        "requires": []
+      },
+      {
+        "from": "ability_dash",
+        "to": "ability_double_jump",
+        "requires": [
+          "dash"
+        ]
+      },
+      {
+        "from": "ability_double_jump",
+        "to": "ability_wall_slide",
+        "requires": [
+          "double_jump"
+        ]
+      },
+      {
+        "from": "ability_wall_slide",
+        "to": "ability_wall_jump",
+        "requires": [
+          "wall_slide"
+        ]
+      },
+      {
+        "from": "ability_wall_jump",
+        "to": "ability_air_dash",
+        "requires": [
+          "wall_jump"
+        ]
+      },
+      {
+        "from": "ability_air_dash",
+        "to": "ability_ground_slam",
+        "requires": [
+          "air_dash"
+        ]
+      },
+      {
+        "from": "ability_ground_slam",
+        "to": "room_038",
+        "requires": [
+          "ground_slam"
+        ]
+      }
+    ],
+    "abilities": [
+      "dash",
+      "double_jump",
+      "wall_slide",
+      "wall_jump",
+      "air_dash",
+      "ground_slam"
+    ],
+    "criticalPath": [
+      "room_000",
+      "ability_dash",
+      "ability_double_jump",
+      "ability_wall_slide",
+      "ability_wall_jump",
+      "ability_air_dash",
+      "ability_ground_slam",
+      "room_038"
+    ]
+  },
+  "productionReady": false
+}

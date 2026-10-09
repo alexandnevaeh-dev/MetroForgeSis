@@ -1,0 +1,285 @@
+{
+  "version": 1,
+  "kit": "undercroft-service-v1",
+  "atlas": "assets/architecture/stormglass/kits/undercroft-service-v1/atlas.png",
+  "sha256": "0739553c22222c5922a8fbd420010e440f504f5832f102ba12475eb41dd79b0f",
+  "entries": [
+    {
+      "role": "burial_wall",
+      "region": [
+        0,
+        0,
+        314,
+        314
+      ],
+      "opaqueBounds": [
+        76,
+        96,
+        194,
+        182
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "funerary_arch",
+      "region": [
+        314,
+        0,
+        313,
+        314
+      ],
+      "opaqueBounds": [
+        78,
+        67,
+        176,
+        211
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "sarcophagus",
+      "region": [
+        627,
+        0,
+        313,
+        314
+      ],
+      "opaqueBounds": [
+        53,
+        164,
+        202,
+        112
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "ossuary_niches",
+      "region": [
+        940,
+        0,
+        314,
+        314
+      ],
+      "opaqueBounds": [
+        66,
+        89,
+        173,
+        192
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "iron_censer",
+      "region": [
+        0,
+        314,
+        314,
+        313
+      ],
+      "opaqueBounds": [
+        114,
+        45,
+        110,
+        237
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "votive_lamp",
+      "region": [
+        314,
+        314,
+        313,
+        313
+      ],
+      "opaqueBounds": [
+        111,
+        79,
+        116,
+        203
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "memorial_statue",
+      "region": [
+        627,
+        314,
+        313,
+        313
+      ],
+      "opaqueBounds": [
+        108,
+        57,
+        100,
+        226
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "burial_door",
+      "region": [
+        940,
+        314,
+        314,
+        313
+      ],
+      "opaqueBounds": [
+        70,
+        57,
+        166,
+        224
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "chapel_bell",
+      "region": [
+        0,
+        627,
+        314,
+        313
+      ],
+      "opaqueBounds": [
+        67,
+        47,
+        208,
+        207
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "gear_housing",
+      "region": [
+        314,
+        627,
+        313,
+        313
+      ],
+      "opaqueBounds": [
+        89,
+        44,
+        161,
+        210
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "chain_winch",
+      "region": [
+        627,
+        627,
+        313,
+        313
+      ],
+      "opaqueBounds": [
+        84,
+        46,
+        159,
+        220
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "service_ladder",
+      "region": [
+        940,
+        627,
+        314,
+        313
+      ],
+      "opaqueBounds": [
+        101,
+        49,
+        108,
+        221
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "maintenance_scaffold",
+      "region": [
+        0,
+        940,
+        314,
+        314
+      ],
+      "opaqueBounds": [
+        82,
+        38,
+        190,
+        190
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "service_lever_off",
+      "region": [
+        314,
+        940,
+        313,
+        314
+      ],
+      "opaqueBounds": [
+        124,
+        30,
+        110,
+        192
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "service_lever_on",
+      "region": [
+        627,
+        940,
+        313,
+        314
+      ],
+      "opaqueBounds": [
+        122,
+        32,
+        77,
+        195
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    },
+    {
+      "role": "service_doorway",
+      "region": [
+        940,
+        940,
+        314,
+        314
+      ],
+      "opaqueBounds": [
+        68,
+        14,
+        169,
+        218
+      ],
+      "anchor": "opaque-bottom-center",
+      "filterClip": true
+    }
+  ],
+  "candidateOnly": true,
+  "productionApproved": false,
+  "admission": "All 16 uniform slots passed alpha margins. Native integration pending.",
+  "generator": "built-in image_gen",
+  "promptFile": "assets/undercroft-service-v1/prompts.json"
+}
