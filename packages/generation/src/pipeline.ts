@@ -482,7 +482,7 @@ export class GenerationPipeline {
     // (packages/generation/src/remap-project-abilities.ts) for why.
     const abilityRemap = remapGameDnaAbilities(gameDna);
     gameDna = abilityRemap.dna;
-    if (options.worldLayout === 'stormglass-gallery' || options.worldLayout === 'stormglass-expanded-region') {
+    if (options.worldLayout === 'stormglass-gallery' || options.worldLayout === 'stormglass-expanded-region' || options.worldLayout === 'stormglass-archive-wing') {
       gameDna = applyStormglassGalleryDnaContract(gameDna);
       writeFileSync(gameDnaCheckpointPath, JSON.stringify(gameDna, null, 2));
     }
@@ -1185,7 +1185,7 @@ export class GenerationPipeline {
       }
       warnings.push(`EXTERNAL_VISUAL_PACK_ACTIVE: ${pack.id} (${pack.assets.length} authored assets)`);
     }
-    if (options.worldLayout === 'stormglass-gallery' || options.worldLayout === 'stormglass-expanded-region') {
+    if (options.worldLayout === 'stormglass-gallery' || options.worldLayout === 'stormglass-expanded-region' || options.worldLayout === 'stormglass-archive-wing') {
       const generatedSidecarPath = join(outputPath, 'assets/characters/player_animations.json');
       const generatedSidecar = textureFiles.get('assets/characters/player_animations.json')
         ?? (existsSync(generatedSidecarPath) ? readFileSync(generatedSidecarPath) : undefined);

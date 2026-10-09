@@ -78,11 +78,21 @@ export function parseRoomSceneCollision(text: string, resolveScene?: (path: stri
       ? { solid: node.type === 'StaticBody2D' && (numeric(node.props.collision_layer, 1) & 1) !== 0 } : body;
     if ((node.type === 'CollisionShape2D' || node.type === 'CollisionPolygon2D') && physicsBody?.solid && node.props.disabled !== 'true') {
       const id = /^SubResource\("([^"]+)"\)$/.exec(node.props.shape ?? '')?.[1], shape = id ? node.shapes.get(id) : undefined;
-      if (!shape || shape.type !== 'RectangleShape2D') throw new Error(`Unsupported static collision shape: ${path}`);
-      const size = vector(shape.props.size, { x: 20, y: 20 }); if (size.x <= 0 || size.y <= 0) throw new Error('Invalid collision dimensions');
-      const points = [{ x: -size.x / 2, y: -size.y / 2 }, { x: size.x / 2, y: -size.y / 2 }, { x: size.x / 2, y: size.y / 2 }, { x: -size.x / 2, y: size.y / 2 }].map(p => ({ x: matrix[0] * p.x + matrix[2] * p.y + matrix[4], y: matrix[1] * p.x + matrix[3] * p.y + matrix[5] }));
+      let local:Point[];
+      if(node.type==='CollisionPolygon2D'){
+        const packed=/^PackedVector2Array\((.*)\)$/.exec(node.props.polygon??'');
+        if(!packed)throw new Error(`Unsupported collision polygon: ${path}`);
+        const values=packed[1]!.split(',').map(value=>numeric(value,NaN));
+        if(values.length<6||values.length>128||values.length%2||values.some(v=>Math.abs(v)>1e6))throw new Error('Invalid collision polygon coordinates');
+        local=Array.from({length:values.length/2},(_,i)=>({x:values[i*2]!,y:values[i*2+1]!}));
+      }else{
+        if (!shape || shape.type !== 'RectangleShape2D') throw new Error(`Unsupported static collision shape: ${path}`);
+        const size = vector(shape.props.size, { x: 20, y: 20 }); if (size.x <= 0 || size.y <= 0) throw new Error('Invalid collision dimensions');
+        local=[{ x: -size.x / 2, y: -size.y / 2 }, { x: size.x / 2, y: -size.y / 2 }, { x: size.x / 2, y: size.y / 2 }, { x: -size.x / 2, y: size.y / 2 }];
+      }
+      const points = local.map(p => ({ x: matrix[0] * p.x + matrix[2] * p.y + matrix[4], y: matrix[1] * p.x + matrix[3] * p.y + matrix[5] }));
       const left = Math.min(...points.map(p => p.x)), top = Math.min(...points.map(p => p.y));
-      rects.push({ path, x: left, y: top, w: Math.max(...points.map(p => p.x)) - left, h: Math.max(...points.map(p => p.y)) - top, ...(Math.abs(matrix[1]) > 1e-9 || Math.abs(matrix[2]) > 1e-9 ? { points } : {}) });
+      rects.push({ path, x: left, y: top, w: Math.max(...points.map(p => p.x)) - left, h: Math.max(...points.map(p => p.y)) - top, ...(node.type==='CollisionPolygon2D'||Math.abs(matrix[1]) > 1e-9 || Math.abs(matrix[2]) > 1e-9 ? { points } : {}) });
     }
     for (const child of node.children) visit(child, matrix, path === '.' ? child.name : path + '/' + child.name, physicsBody);
   }

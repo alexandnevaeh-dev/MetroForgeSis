@@ -4,6 +4,14 @@ const grid = '[node name="Room" type="Node2D"]\n[node name="Ground" type="TileMa
 const shape = '[sub_resource type="RectangleShape2D" id="box"]\nsize = Vector2(640, 64)\n';
 const floor = '[node name="Floor" type="StaticBody2D" parent="."]\nposition = Vector2(320, 288)\n[node name="Collision" type="CollisionShape2D" parent="Floor"]\nshape = SubResource("box")\n';
 describe('authored Godot collision preview', () => {
+  it('preserves stair polygon edges instead of filling their bounding rectangle',()=>{
+    const scene=grid+'[node name="StairFlight" type="StaticBody2D" parent="."]\nposition = Vector2(16, 0)\n[node name="Collision" type="CollisionPolygon2D" parent="StairFlight"]\npolygon = PackedVector2Array(32, 256, 320, 160, 320, 192, 32, 288)\n';
+    expect(parseRoomSceneCollision(scene).rects[0]).toEqual({path:'StairFlight/Collision',x:48,y:160,w:288,h:128,points:[{x:48,y:256},{x:336,y:160},{x:336,y:192},{x:48,y:288}]});
+  });
+  it('rejects incomplete polygon coordinates',()=>{
+    const scene=grid+'[node name="StairFlight" type="StaticBody2D" parent="."]\n[node name="Collision" type="CollisionPolygon2D" parent="StairFlight"]\npolygon = PackedVector2Array(32, 256, 320)\n';
+    expect(()=>parseRoomSceneCollision(scene)).toThrow(/polygon coordinates/);
+  });
   it('uses actual scene grid and rectangle positions rather than painted cells', () => {
     expect(parseRoomSceneCollision(shape + grid + floor)).toMatchObject({ tileSize: 32, widthTiles: 20, heightTiles: 10, source: 'godot_scene', rects: [{ path: 'Floor/Collision', x: 0, y: 256, w: 640, h: 64 }] });
   });

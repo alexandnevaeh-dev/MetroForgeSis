@@ -412,7 +412,7 @@ export type MetroforgeBridge = {
     validationInvalidated?: boolean;
   }>;
   generateGame: (opts: {
-    worldLayout?: 'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region';
+    worldLayout?: 'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region' | 'stormglass-archive-wing';
     title?: string;
     prompt: string;
     profile: string;

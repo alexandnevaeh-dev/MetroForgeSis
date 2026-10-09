@@ -1,4 +1,5 @@
 import {buildStormglassGalleryBlueprint,buildStormglassGalleryStairPlatforms,buildStormglassStairFlights,stormglassGalleryPort,type StormglassRegionProfile} from './stormglass-gallery-blueprint.js';
+import {buildStormglassArchiveChamber} from './stormglass-archive-chamber.js';
 import {buildPlatformerStageLayout} from './platformer-stage-layout.js';
 import { buildCastleRegionPlan, supportsCastleRegionPlan, type CastleRegionPlan } from './castle-region-plan.js';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -40,10 +41,14 @@ export interface RoomConnection {
 export function stormglassGalleryDescentPits(
   width: number, tileSize: number, connections: RoomConnection[], theme: unknown,roomId?:string,profile:StormglassRegionProfile='gallery',
 ): PitGap[] {
-  if (!['gallery','rest','undercroft','secret','pressure-shaft',...(profile==='expanded-region'?['stairwell']:[])].includes(String(theme))) return [];
+  if (!['gallery','rest','undercroft','secret','pressure-shaft',...(profile!=='gallery'?['stairwell','archive','archive-loft','archive-vault']:[])].includes(String(theme))) return [];
   const down = connections.filter(connection => connection.direction === 'down');
   return down.flatMap((connection, slot) => {
-    if(connection.requirements.length)return [];
+    // Preserve the canonical earned-Dash west descent; the logical lock remains
+    // on its sensor while the physical return has an ordinary service opening.
+    const archiveReturn=profile!=='gallery'&&roomId==='room_043'&&connection.targetRoomId==='room_001'
+      &&connection.requirements.length===1&&connection.requirements[0]==='dash';
+    if(connection.requirements.length&&!archiveReturn)return [];
     const port=roomId?stormglassGalleryPort(roomId,connection.targetRoomId,'down',profile):undefined;
     const center=port?port.x+12:width/2+slot*48;
     return [{x:Math.floor((center-tileSize*2)/tileSize)*tileSize,width:tileSize*4}];
@@ -83,6 +88,7 @@ export interface RoomAssemblyOptions {
   tileCells?: TileCell[];
   /** Explicit Studio paint, including an empty layout; do not procedurally refill. */
   tileCellsAuthored?: boolean;
+  archiveChamberPlan?: ReturnType<typeof buildStormglassArchiveChamber>;
   castleRegionPlan?: CastleRegionPlan;
   /** Opt-in authored gallery theme; stairwell exits belong above the top landing. */
   stormglassRoomTheme?: string;
@@ -199,6 +205,7 @@ export interface PublishedRoomRecord {
   tileCells?: TileCell[];
   /** Explicit Studio paint, including an empty layout; do not procedurally refill. */
   tileCellsAuthored?: boolean;
+  archiveChamberPlan?: ReturnType<typeof buildStormglassArchiveChamber>;
   castleRegionPlan?: CastleRegionPlan;
   weakFloors?: { x: number; width: number; targetRoomId: string }[];
   waterZones?: { x: number; y: number; width: number; height: number; targetRoomId: string }[];
@@ -763,7 +770,7 @@ export function buildRoomAssemblyOptions(
     typeof nodeMeta.targetTileWidth === 'number' ? nodeMeta.targetTileWidth * tileSize : undefined;
   const targetH =
     typeof nodeMeta.targetTileHeight === 'number' ? nodeMeta.targetTileHeight * tileSize : undefined;
-  const regionProfile:StormglassRegionProfile=nodeMeta.stormglassRegionProfile==='expanded-region'?'expanded-region':'gallery';
+  const regionProfile:StormglassRegionProfile=nodeMeta.stormglassRegionProfile==='archive-wing'?'archive-wing':nodeMeta.stormglassRegionProfile==='expanded-region'?'expanded-region':'gallery';
   const galleryRoom = cleanStormglassRooms && gameDna.archetype === 'SIDE_VIEW_METROIDVANIA'
     ? buildStormglassGalleryBlueprint(regionProfile).rooms.find(room=>room.id===roomId && room.theme===nodeMeta.stormglassRoomTheme && room.width===targetW && room.height===targetH)
     : undefined;
@@ -842,18 +849,18 @@ export function buildRoomAssemblyOptions(
     // The upstairs lock is an actual ceiling doorway. Its entry hall needs
     // continuous physical access to a landing before the ordinary Up jump;
     // Dash remains the logical lock, never a substitute for vertical geometry.
-    if(regionProfile==='expanded-region'&&['room_001','room_006'].includes(roomId)) {
+    if(regionProfile!=='gallery'&&['room_001','room_006'].includes(roomId)) {
       layout.platforms.push(...buildStormglassGalleryStairPlatforms(height));
     }
     layout.pits.splice(0,layout.pits.length,...stormglassGalleryDescentPits(width,tileSize,connections,galleryRoom.theme,roomId,regionProfile));
-    if(regionProfile==='expanded-region'&&galleryRoom.theme==='stairwell') {
+    if(regionProfile!=='gallery'&&galleryRoom.theme==='stairwell') {
       // Side doors in deep shafts need a supported landing at the shared room
       // elevation, even when that side is between alternating stair turns.
       for(const connection of connections.filter(c=>c.direction==='left'||c.direction==='right')) {
         const port=stormglassGalleryPort(roomId,connection.targetRoomId,connection.direction,regionProfile);
         if(port) layout.platforms.push({x:connection.direction==='left'?32:width-224,y:port.floorY,width:192,height:32});
       }
-      if(roomId==='room_045') {
+      if(['room_043','room_045'].includes(roomId)) {
         const parts=layout.platforms.flatMap(p=>p.x>=576||p.x+p.width<=448?[p]:[
           {...p,width:448-p.x},{...p,x:576,width:p.x+p.width-576},
         ].filter(part=>part.width>0));
@@ -905,6 +912,10 @@ export function buildRoomAssemblyOptions(
         rect.width > 512 && castleRegionPlan.floors.includes(rect.y))];
     }
   }
+  if(regionProfile==='archive-wing'&&['room_044','room_046','room_047'].includes(roomId)&&galleryRoom&&(width!==galleryRoom.width||height!==galleryRoom.height))
+    throw new Error('Archive chamber bounds belong to the connected wing plan; update the plan before resizing');
+  const archiveChamber=regionProfile==='archive-wing'?buildStormglassArchiveChamber(roomId):undefined;
+  if(archiveChamber)layout.platforms.splice(0,layout.platforms.length,...archiveChamber.platforms);
   const foundryKit = overrides?.visualKit === 'foundry';
   const authoredParallax = overrides?.authoredParallax === true;
   // V3 rivet-atlas remap is only for the frozen metroforge-foundry-v3 pack.
@@ -935,8 +946,8 @@ export function buildRoomAssemblyOptions(
     worldGraphArchetype,
     stormglassRoomTheme: typeof nodeMeta.stormglassRoomTheme === "string" ? nodeMeta.stormglassRoomTheme : undefined,
     platformerStage: authoredPlatformerSize,
-    stairFlights:galleryRoom && (galleryRoom.theme==='stairwell'||(regionProfile==='expanded-region'&&['room_001','room_006'].includes(roomId)))?buildStormglassStairFlights(height,galleryRoom.id==="room_042",regionProfile==='expanded-region'&&roomId==='room_006'?{left:288,right:416}:regionProfile==='expanded-region'&&roomId==='room_045'):undefined,
-    stairFlightsOneWay:regionProfile==='expanded-region'&&!!galleryRoom,
+    stairFlights:archiveChamber?.flights ?? (galleryRoom && (galleryRoom.theme==='stairwell'||(regionProfile!=='gallery'&&['room_001','room_006'].includes(roomId)))?buildStormglassStairFlights(height,galleryRoom.id==="room_042",regionProfile!=='gallery'&&roomId==='room_006'?{left:288,right:416}:regionProfile!=='gallery'&&['room_043','room_045'].includes(roomId)):undefined),
+    stairFlightsOneWay:regionProfile!=='gallery'&&!!galleryRoom,
     spatialPorts:galleryRoom?connections.flatMap(connection=>{const port=stormglassGalleryPort(roomId,connection.targetRoomId,connection.direction,regionProfile);return port?[port]:[];}):undefined,
     ...(roomId === 'room_003' && grantsAbilities.length > 0 ? {
       entityPlacements: [
@@ -955,6 +966,7 @@ export function buildRoomAssemblyOptions(
     } : {}),
     tileCells,
     ...(castleRegionPlan ? { castleRegionPlan } : {}),
+    ...(archiveChamber ? {archiveChamberPlan:archiveChamber} : {}),
     ...(cleanStormglassRooms ? { tileCellsAuthored: true } : {}),
     platforms: layout.platforms,
     pits: layout.pits,
@@ -1121,6 +1133,7 @@ export function buildPublishedRoomRecord(
     ...(opts.stairFlights?.length?{stairFlights:opts.stairFlights,...(opts.stairFlightsOneWay?{stairFlightsOneWay:true}:{})}:{}),
     ...(opts.stormglassRoomTheme ? {masonryRects:[...buildRoomBoundaryColliders(opts),...buildStormglassInteriorMasonry(opts)]} : {}),
     ...(opts.castleRegionPlan ? { castleRegionPlan: opts.castleRegionPlan } : {}),
+    ...(opts.archiveChamberPlan ? {archiveChamberPlan:opts.archiveChamberPlan} : {}),
     ...(opts.tileCellsAuthored ? { tileCellsAuthored: true } : {}),
     weakFloors: deriveWeakFloors(opts.connections, opts.width).map((wf) => ({
       x: wf.x,
@@ -1496,6 +1509,7 @@ export interface CollisionRect {
  * occupy the unused canvas: it is architecture, not another playable storey.
  * Vertical transition rooms retain their open stair shaft. */
 export function buildStormglassInteriorMasonry(options: RoomAssemblyOptions): CollisionRect[] {
+  if (['archive-loft','archive-vault'].includes(String(options.stormglassRoomTheme))) return [];
   if (!options.stormglassRoomTheme || options.stormglassRoomTheme === 'stairwell') return [];
   if (options.connections.some(connection => connection.direction === 'up')) return [];
   const floor = options.hasTileset ? floorTopPx(options.height, options.tileSize || 16) : options.height - 96;
@@ -2386,6 +2400,7 @@ export function recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult
         // record may also own explicit collision surfaces (Stormglass/undo): keep
         // those on ordinary recompilation so restoring tiles restores traversal.
         opts.castleRegionPlan = override?.tileCells !== undefined ? undefined : storedPaint?.castleRegionPlan;
+        opts.archiveChamberPlan = override?.tileCells !== undefined ? undefined : storedPaint?.archiveChamberPlan;
         opts.tileCells = authoredCells;
         opts.tileCellsAuthored = true;
         const generatedPlatforms=opts.platforms;
@@ -2398,7 +2413,7 @@ export function recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult
         // mandatory descent. Re-derive these graph-owned ports after saved geometry.
         if (input.gameDna.identity?.title?.startsWith('Stormglass Reliquary') && input.gameDna.archetype === 'SIDE_VIEW_METROIDVANIA') {
           const meta=ctx.worldGraphNodesById.get(roomId)?.metadata;
-          const doorPits = stormglassGalleryDescentPits(opts.width, opts.tileSize, opts.connections, meta?.stormglassRoomTheme,opts.spatialPorts?.length?roomId:undefined,meta?.stormglassRegionProfile==='expanded-region'?'expanded-region':'gallery');
+          const doorPits = stormglassGalleryDescentPits(opts.width, opts.tileSize, opts.connections, meta?.stormglassRoomTheme,opts.spatialPorts?.length?roomId:undefined,meta?.stormglassRegionProfile==='archive-wing'?'archive-wing':meta?.stormglassRegionProfile==='expanded-region'?'expanded-region':'gallery');
           opts.pits = [...opts.pits, ...doorPits.filter(pit => !opts.pits!.some(saved => saved.x <= pit.x && saved.x + saved.width >= pit.x + pit.width))];
           const floorRow = Math.floor(opts.height / opts.tileSize) - 2;
           opts.tileCells = opts.tileCells.filter(cell => cell.y < floorRow || !doorPits.some(pit => cell.x * opts.tileSize >= pit.x && cell.x * opts.tileSize < pit.x + pit.width));

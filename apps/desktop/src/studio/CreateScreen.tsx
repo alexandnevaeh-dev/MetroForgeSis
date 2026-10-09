@@ -39,7 +39,7 @@ export function CreateScreen({
   const [seed, setSeed] = useState('42');
   const [archetype, setArchetype] = useState('SIDE_VIEW_METROIDVANIA');
   const [worldLayout, setWorldLayout] = useState<
-    'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region'
+    'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region' | 'stormglass-archive-wing'
   >('procedural');
   const [generating, setGenerating] = useState(false);
   const [scaffolding, setScaffolding] = useState(false);
@@ -308,7 +308,7 @@ export function CreateScreen({
                 disabled={busy}
                 onChange={(event) => {
                   const choice = event.target.value as
-                    'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region';
+                    'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region' | 'stormglass-archive-wing';
                   setWorldLayout(choice);
                   if (choice !== 'procedural') {
                     setProfile('MEDIUM');
@@ -322,13 +322,14 @@ export function CreateScreen({
               >
                 <option value="procedural">Procedural world</option>
                 <option value="stormglass-gallery">Stormglass Gallery — 43 rooms</option>
+                <option value="stormglass-archive-wing">Stormglass Archive Wing — 48 rooms (candidate)</option>
                 <option value="stormglass-expanded-region">
                   Stormglass Castle — 46 rooms (preview)
                 </option>
               </Select>
               {stormglassGallery && (
                 <span className="hint">
-                  {worldLayout === 'stormglass-expanded-region'
+                  {worldLayout === 'stormglass-expanded-region' || worldLayout === 'stormglass-archive-wing'
                     ? 'Long galleries, deep stairs and an upstairs return route. Layout preview; full traversal and artwork review are still in progress.'
                     : 'Connected galleries, service stairs and archive backrooms.'}{' '}
                   Six movement abilities and four bosses. Godot campaign.

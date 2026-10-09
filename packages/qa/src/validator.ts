@@ -32,7 +32,7 @@ import {
   type EnvironmentArchetypeId,
 } from '@metroforge/procedural';
 import type { ProgressionGraph } from '@metroforge/schemas';
-import { auditRoomArchetypeFidelity } from '@metroforge/godot';
+import { auditRoomArchetypeFidelity, exportedStairApproaches } from '@metroforge/godot';
 import { critiqueGameplayScreenshot, critiqueScreenshotDiversity } from '@metroforge/assets';
 import { parseSmokeTestOutput } from './smoke-output.js';
 import { parsePlaytestOutput, summarizePlaytestBalance } from './playtest-output.js';
@@ -356,6 +356,8 @@ export class QAValidator {
       const feasibility = validateMovementFeasibility(
         worldGraph,
         movementStatsFromJson(movementRaw),
+        undefined,
+        exportedStairApproaches(projectPath,worldGraph),
       );
       movementFeasible = feasibility.feasible;
       movementIssueCount = feasibility.issues.length;

@@ -118,9 +118,10 @@ export function configureStormglassGalleryRoomKits(
   )
     return false;
   const expanded = graph.nodes.some(
-    (node) => node.metadata.stormglassRegionProfile === 'expanded-region',
+    (node) => node.metadata.stormglassRegionProfile !== undefined && ['expanded-region','archive-wing'].includes(String(node.metadata.stormglassRegionProfile)),
   );
-  const blueprint = buildStormglassGalleryBlueprint(expanded ? 'expanded-region' : 'gallery'),
+  const archiveWing=graph.nodes.some(node=>node.metadata.stormglassRegionProfile==='archive-wing');
+  const blueprint = buildStormglassGalleryBlueprint(archiveWing ? 'archive-wing' : expanded ? 'expanded-region' : 'gallery'),
     tileSize = dna.technical.tileSize;
   if (
     !blueprint.rooms.every((room) => {
@@ -189,8 +190,21 @@ export function configureStormglassGalleryRoomKits(
         ],
       };
     }
+    if(archiveWing){
+      config.rooms.room_046={...structuredClone(config.rooms.room_041),props:[],archiveBays:[
+        {id:'RecordsReadingDesk',kind:'scribe-desk',x:512,width:192,height:40},
+        {id:'RecordsLedger',kind:'ledger-pedestal',x:960,width:96,height:72},
+        {id:'RecordsBookRecess',kind:'book-recess',x:1088,width:256,height:128},
+      ]};
+      config.rooms.room_047={...structuredClone(config.rooms.room_041),props:[],archiveBays:[
+        {id:'VaultReadingDesk',kind:'scribe-desk',x:512,width:192,height:40},
+        {id:'VaultLedger',kind:'ledger-pedestal',x:960,width:96,height:72},
+        {id:'VaultScrollCabinet',kind:'scroll-cabinet',x:1152,width:192,height:128},
+      ]};
+      config.rooms.room_044.archiveBays.find((bay:any)=>bay.kind==='ledger-pedestal').x=4720;
+    }
     const fullCampaign =
-      campaignRooms.length === (expanded ? 46 : 43) &&
+      campaignRooms.length === (archiveWing ? 48 : expanded ? 46 : 43) &&
       campaignRooms.every(
         (node) => node.metadata.stormglassCampaignLayout === 'stormglass-gallery-campaign-v1',
       );

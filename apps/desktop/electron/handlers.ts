@@ -434,7 +434,7 @@ export function registerIpcHandlers(cwd: string): void {
         mode: GenerationMode;
         seed: number;
         generationControl?: GenerationControlMode;
-        worldLayout?: 'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region';
+        worldLayout?: 'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region' | 'stormglass-archive-wing';
         archetype?: GameArchetype;
         externalVisualPack?: ExternalVisualPackId;
         targetEngine?: 'unity';
@@ -1262,7 +1262,7 @@ export function registerIpcHandlers(cwd: string): void {
         mode: GenerationMode;
         seed: number;
         generationControl?: GenerationControlMode;
-        worldLayout?: 'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region';
+        worldLayout?: 'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region' | 'stormglass-archive-wing';
         archetype?: GameArchetype;
         externalVisualPack?: ExternalVisualPackId;
         targetEngine?: 'unity';

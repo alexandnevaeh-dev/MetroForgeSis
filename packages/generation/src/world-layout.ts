@@ -1,6 +1,6 @@
 import { generateStormglassGalleryCampaign } from '@metroforge/godot';
 import type { GameDNA } from '@metroforge/schemas';
-export type WorldLayoutChoice = 'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region';
+export type WorldLayoutChoice = 'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region' | 'stormglass-archive-wing';
 export function selectAuthoredWorld(
   dna: GameDNA,
   request: {
@@ -11,14 +11,14 @@ export function selectAuthoredWorld(
   },
 ) {
   if (!request.worldLayout || request.worldLayout === 'procedural') return null;
-  if (!['stormglass-gallery', 'stormglass-expanded-region'].includes(request.worldLayout))
+  if (!['stormglass-gallery', 'stormglass-expanded-region', 'stormglass-archive-wing'].includes(request.worldLayout))
     throw new Error('Unknown world layout');
   if (request.targetEngine && request.targetEngine !== 'godot')
     throw new Error('Stormglass Gallery currently requires Godot');
   const campaign = generateStormglassGalleryCampaign(
     dna,
     request.seed,
-    request.worldLayout === 'stormglass-expanded-region' ? 'expanded-region' : 'gallery',
+    request.worldLayout === 'stormglass-archive-wing' ? 'archive-wing' : request.worldLayout === 'stormglass-expanded-region' ? 'expanded-region' : 'gallery',
   );
   if (!campaign)
     throw new Error(

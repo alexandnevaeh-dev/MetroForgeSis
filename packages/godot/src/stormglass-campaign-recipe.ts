@@ -22,14 +22,14 @@ export function generateStormglassGalleryCampaign(dna:GameDNA,seed:number,profil
  worldGraph.seed=seed;progressionGraph.seed=seed;
  for(const node of worldGraph.nodes)if(node.type==='room')node.metadata.stormglassCampaignLayout=recipe.id;
  const blueprint=buildStormglassGalleryBlueprint(profile);
- if(profile==='expanded-region') {
+ if(profile!=='gallery') {
   const owned=new Set(blueprint.rooms.map(room=>room.id));
   worldGraph.edges=worldGraph.edges.filter(edge=>!owned.has(edge.from)&&!owned.has(edge.to));
   blueprint.links.forEach((link,index)=>worldGraph.edges.push({id:`stormglass_expanded_${index}`,from:link.from,to:link.to,transition:link.direction,requirements:[...link.requirements],optional:link.optional,bidirectional:true,kind:'normal',metadata:{authoredRegion:blueprint.id}}));
  }
  for(const room of blueprint.rooms){
   let node=worldGraph.nodes.find(node=>node.id===room.id);
-  if(!node&&profile==='expanded-region') {
+  if(!node&&profile!=='gallery') {
    const source=worldGraph.nodes.find(node=>node.id==='room_007')!;
    node={...structuredClone(source),id:room.id,label:room.name,metadata:{biomeIndex:source.metadata.biomeIndex,archetype:room.theme==='stairwell'?'traversal':'secret',stormglassCampaignLayout:recipe.id,grantsAbilities:[]}};
    worldGraph.nodes.push(node);
@@ -37,7 +37,7 @@ export function generateStormglassGalleryCampaign(dna:GameDNA,seed:number,profil
   }
   if(!node)throw new Error('Stormglass recipe room missing: '+room.id);
   node.metadata.stormglassRoomPosition={x:room.x,y:room.y};
-  if(profile==='expanded-region') {
+  if(profile!=='gallery') {
    node.label=room.name;
    Object.assign(node.metadata,{stormglassRegionProfile:profile,stormglassRoomTheme:room.theme,roomPurpose:room.purpose,targetTileWidth:room.width/32,targetTileHeight:room.height/32});
   }
@@ -55,5 +55,5 @@ export function generateStormglassGalleryCampaign(dna:GameDNA,seed:number,profil
   'Hollow Chorister','Censer Idol','Marble Hound','Runebound Sentinel','Graveglass Worm',
   'Bellbound Cantor','Memorial Ward','Chainbound Shade','Reliquary Lancer','Vault Custodian'];
  const bossNames=['Veilblade Castellan','Drowned Bellkeeper','Archivist of Ash','Tempest Abbot'];
- return {worldGraph,progressionGraph,roomIds,finalBossRoomId,bossRoomIds,enemyNames,bossNames,layoutId:profile==='expanded-region'?blueprint.id:recipe.id};
+ return {worldGraph,progressionGraph,roomIds,finalBossRoomId,bossRoomIds,enemyNames,bossNames,layoutId:profile!=='gallery'?blueprint.id:recipe.id};
 }
