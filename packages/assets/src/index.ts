@@ -73,7 +73,7 @@ export {
   TOP_DOWN_FACINGS,
 } from './topdown-player-sprites.js';
 export type { TopDownAction, TopDownFacing } from './topdown-player-sprites.js';
-export { canopyEnvironment, canopyTerrainV2, CANOPY_PROP_KINDS } from './topdown-canopy-environment.js';
+export { canopyEnvironment, canopyTerrainV2, canopyTerrainV3, canopyTerrainV4, CANOPY_PROP_KINDS } from './topdown-canopy-environment.js';
 export { decorateCanopyWorld } from './canopy-room-decoration.js';
 export { shouldUseCanopyEnvironment } from './canopy-environment-selection.js';
 export { generateStormglassPlayerSheet, stormglassFrameCount } from './sideview-stormglass-player.js';

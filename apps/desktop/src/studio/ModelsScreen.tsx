@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ScreenHeader } from './ScreenHeader.js';
+import {LocalImageModelPreparation} from './LocalImageModelPreparation.js';
 import { useStudio } from './StudioContext.js';
 import type { CatalogModel, HardwareSnapshot } from './metroforge-api.js';
 import { computeHardwareFit, formatMbAsGb, type HardwareFitKind } from './aiOpsShared.js';
@@ -306,6 +307,7 @@ export function ModelsScreen() {
         }
       />
 
+      <LocalImageModelPreparation disabled={busy} />
       {loadError && (
         <div className="result error" role="alert">
           {loadError}{' '}

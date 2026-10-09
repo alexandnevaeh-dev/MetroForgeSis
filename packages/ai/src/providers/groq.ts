@@ -10,7 +10,7 @@ export class GroqProvider extends BaseHttpTextProvider {
     super({
       ...config,
       baseUrl: config.baseUrl || 'https://api.groq.com/openai/v1',
-      defaultModel: config.defaultModel || 'llama-3.3-70b-versatile',
+      defaultModel: config.defaultModel || process.env.GROQ_DEFAULT_MODEL || 'openai/gpt-oss-20b',
       priority: config.priority ?? 75,
     });
   }
@@ -21,7 +21,7 @@ export class GroqProvider extends BaseHttpTextProvider {
       headers: { Authorization: `Bearer ${this.apiKey}` },
       signal: AbortSignal.timeout(10000),
     });
-    if (!res.ok) return [this.config.defaultModel];
+    if (!res.ok) throw new Error(`${this.name} model discovery failed: ${res.status}`);
     const data = (await res.json()) as { data?: { id: string }[] };
     return (data.data ?? []).map((m) => m.id);
   }

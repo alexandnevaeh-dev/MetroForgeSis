@@ -189,6 +189,7 @@ export class NvidiaProvider extends BaseHttpTextProvider {
       throw new NvidiaProviderError('NVIDIA_AUTH_FAILED', 'NVIDIA NIM API key not configured');
     }
 
+    request.signal?.throwIfAborted();
     const model = this.config.defaultModel;
     const { url, init } = this.buildRequest(model, request);
     const start = Date.now();
@@ -196,10 +197,12 @@ export class NvidiaProvider extends BaseHttpTextProvider {
     let lastError: NvidiaProviderError | null = null;
 
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+      request.signal?.throwIfAborted();
       let res: Response;
       try {
-        res = await fetch(url, { ...init, signal: AbortSignal.timeout(120000) });
+        res = await fetch(url, { ...init, signal: request.signal ? AbortSignal.any([request.signal, AbortSignal.timeout(120000)]) : AbortSignal.timeout(120000) });
       } catch (err) {
+        request.signal?.throwIfAborted();
         const isTimeout = err instanceof Error && err.name === 'TimeoutError';
         lastError = new NvidiaProviderError(
           isTimeout ? 'NVIDIA_TIMEOUT' : 'NVIDIA_PROVIDER_UNAVAILABLE',

@@ -319,7 +319,8 @@ export function buildGameplayPack(input: AssemblyInput): GameplayPack {
       floorTop,
       spawnX: 100,
       spawnY: floorTop,
-      solids: collectRoomCollisionRects(opts),
+      solids: collectRoomCollisionRects(opts).map(rect => opts.platformerStage && rect.name?.startsWith('Platform_')
+        ? { ...rect, oneWay: true } : rect),
       doors,
       gates,
       npcs: opts.npcs.map((npc, index) => {

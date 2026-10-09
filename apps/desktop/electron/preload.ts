@@ -1,6 +1,13 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('metroforge', {
+  prepareLocalImageModel: (id: string) => ipcRenderer.invoke('prepare-local-image-model', id),
+  cancelLocalImageModel: (id: string) => ipcRenderer.invoke('cancel-local-image-model', id),
+  onLocalImageModelProgress: (callback: (data: {id:string;completed:number;total:number;percent:number}) => void) => {
+    const handler = (_: unknown, data: {id:string;completed:number;total:number;percent:number}) => callback(data);
+    ipcRenderer.on('local-image-model-progress', handler);
+    return () => ipcRenderer.removeListener('local-image-model-progress', handler);
+  },
   importGameSetAssets: (projectPath: string) => ipcRenderer.invoke('import-game-set-assets', projectPath) as Promise<{ success: boolean; added?: number; skipped?: number; excludedQa?: number; error?: string }>,
   getVersion: () => ipcRenderer.invoke('get-version') as Promise<string>,
   getConfig: () => ipcRenderer.invoke('get-config'),
@@ -67,6 +74,7 @@ contextBridge.exposeInMainWorld('metroforge', {
   getAudioPreview: (projectPath: string, relPath: string) =>
     ipcRenderer.invoke('get-audio-preview', projectPath, relPath),
   generateAsset: (request: Record<string, unknown>) => ipcRenderer.invoke('generate-asset', request),
+  getManualArtDirection: (projectPath: string) => ipcRenderer.invoke('get-manual-art-direction', projectPath),
   listRooms: (projectPath: string) => ipcRenderer.invoke('list-rooms', projectPath),
   updateRoom: (projectPath: string, patch: Record<string, unknown>) =>
     ipcRenderer.invoke('update-room', projectPath, patch),
@@ -120,6 +128,7 @@ contextBridge.exposeInMainWorld('metroforge', {
   undoRoomEdit: (projectPath: string) => ipcRenderer.invoke('undo-room-edit', projectPath),
   redoRoomEdit: (projectPath: string) => ipcRenderer.invoke('redo-room-edit', projectPath),
   generateGame: (opts: {
+    worldLayout?: 'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region';
     title?: string;
     prompt: string;
     profile: string;

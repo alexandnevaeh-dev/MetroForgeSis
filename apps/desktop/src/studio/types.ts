@@ -24,6 +24,7 @@ export type GenerationState = {
 };
 
 export type AssetRecord = {
+  manualArtDirection?: {styleDirection: string; negativePrompt: string};
   imagePlan?: { profile: string };
   id: string;
   path: string;
@@ -45,6 +46,12 @@ export type AssetRecord = {
   frameHeight?: number;
   fps?: number;
   loop?: boolean;
+  sourceFrames?: string[];
+  sourceSheet?: string;
+  sourceRegions?: [number, number, number, number][];
+  frameFootAnchors?: [number, number][];
+  displayScale?: number;
+  animationSourceError?: string;
 };
 
 export type ActivityFilter =

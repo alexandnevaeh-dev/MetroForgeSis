@@ -46,6 +46,26 @@ function fallbackVisualStyle(prompt: string): string {
   return 'HD pixel art';
 }
 
+/** Explicit tile/grid phrases take precedence over a profile default. Sprite and
+ * screen dimensions are deliberately excluded. Existing saved DNA is untouched. */
+function requestedTileSize(prompt: string): number | undefined {
+  const sizes = new Set<number>();
+  const patterns = [
+    /\b(\d+)\s*(?:px|pixels?)?\s+(?:terrain\s+)?(?:tiles?|(?:terrain\s+)?grid)\b/gi,
+    /\btile\s+size\s*(?:of|:|=)?\s*(\d+)\s*(?:px|pixels?)?\b/gi,
+    /\b(\d+)\s*[x×]\s*\1\s*(?:px|pixels?)?\s+tiles?\b/gi,
+  ];
+  for (const pattern of patterns) for (const match of prompt.matchAll(pattern)) {
+    if (/\b(?:no|not|without|avoid)\s*$/i.test(prompt.slice(Math.max(0,match.index!-12),match.index))) continue;
+    const size = Number(match[1]);
+    if (Number.isSafeInteger(size) && size >= 8 && size <= 128) sizes.add(size);
+  }
+  return sizes.size === 1 ? [...sizes][0] : undefined;
+}
+function fallbackTileSize(input: GameDNAInput): number {
+  return requestedTileSize(input.prompt) ?? (input.profile === 'VISUAL_VERTICAL_SLICE' ? 32 : 16);
+}
+
 export function createDeterministicGameDNA(input: GameDNAInput): GameDNA {
   const defaults = PROFILE_DEFAULTS[input.profile];
   const archetype = resolveGameArchetype(input.archetype ?? inferGameArchetypeFromPrompt(input.prompt));
@@ -59,14 +79,14 @@ export function createDeterministicGameDNA(input: GameDNAInput): GameDNA {
     identity: {
       title,
       tagline: input.prompt.slice(0, 120),
-      genre: genre.displayName.includes('Metroidvania') ? 'Metroidvania' : 'Action-Adventure',
+      genre: archetype === 'SIDE_VIEW_PLATFORMER' ? 'Platformer' : genre.displayName.includes('Metroidvania') ? 'Metroidvania' : 'Action-Adventure',
       subgenre: 'Action-Adventure',
       tone: 'dark',
       visualStyle: fallbackVisualStyle(input.prompt),
     },
     technical: {
       resolution: { width: 1920, height: 1080 },
-      tileSize: input.profile === 'VISUAL_VERTICAL_SLICE' ? 32 : 16,
+      tileSize: fallbackTileSize(input),
       targetPlaytimeHours:
         input.profile === 'TINY_TEST' || input.profile === 'VISUAL_VERTICAL_SLICE'
           ? 0.5
@@ -96,7 +116,7 @@ export function createDeterministicGameDNA(input: GameDNAInput): GameDNA {
           jumpHeight: 120,
           gravity: 980,
         },
-    abilities: genreUsesDungeonTools(archetype)
+    abilities: archetype === 'SIDE_VIEW_PLATFORMER' ? [] : genreUsesDungeonTools(archetype)
       ? pickTopDownDungeonItems(input.profile)
       : pickRegisteredAbilities(input.profile),
     world: {
@@ -131,7 +151,8 @@ export async function generateGameDNA(
   input: GameDNAInput,
   provider: GameDNATextSource | null,
 ): Promise<{ dna: GameDNA; source: 'ai' | 'deterministic' }> {
-  if (resolveGameArchetype(input.archetype ?? inferGameArchetypeFromPrompt(input.prompt)) === 'QUANTUM_SIMULATION_ROGUELITE') {
+  const archetype = resolveGameArchetype(input.archetype ?? inferGameArchetypeFromPrompt(input.prompt));
+  if (archetype === 'QUANTUM_SIMULATION_ROGUELITE') {
     throw new Error('Quantum requires its dedicated generation contract; generic room DNA is unsupported');
   }
   if (!provider || provider.health === 'unavailable') {
@@ -140,12 +161,14 @@ export async function generateGameDNA(
 
   try {
     const defaults = PROFILE_DEFAULTS[input.profile];
+    const identityGenre = archetype === 'SIDE_VIEW_PLATFORMER' ? 'Platformer' : genreSupports(archetype,'supportsFreePlanarMovement') ? 'Action-Adventure' : 'Metroidvania';
     const response = await provider.generateText({
       systemPrompt: `You are a game designer. Output ONLY valid JSON matching this structure:
 {
   "version": "0.1.0",
-  "identity": { "title": string, "tagline": string, "genre": "Metroidvania", "tone": string, "visualStyle": string },
-  "technical": { "resolution": { "width": 1920, "height": 1080 }, "tileSize": ${input.profile === 'VISUAL_VERTICAL_SLICE' ? 32 : 16}, "targetPlaytimeHours": number, "difficulty": "easy"|"normal"|"hard" },
+  "archetype": "${archetype}",
+  "identity": { "title": string, "tagline": string, "genre": "${identityGenre}", "tone": string, "visualStyle": string },
+  "technical": { "resolution": { "width": 1920, "height": 1080 }, "tileSize": ${fallbackTileSize(input)}, "targetPlaytimeHours": number, "difficulty": "easy"|"normal"|"hard" },
   "combat": { "style": string, "meleeEnabled": boolean, "rangedEnabled": boolean },
   "movement": { "walkSpeed": 200, "runSpeed": 350, "jumpHeight": 120, "gravity": 980, "grappleSpeed": 620, "swimSpeed": 180, "phaseDuration": 0.22 },
   "abilities": [{ "id": string, "name": string, "category": string, "enabled": boolean }],
@@ -154,15 +177,18 @@ export async function generateGameDNA(
   "seed": ${input.seed},
   "profile": "${input.profile}"
 }`,
-      prompt: `Create Game DNA for: ${input.prompt}\n\n${buildGenreDesignBrief(resolveGameArchetype(input.archetype ?? inferGameArchetypeFromPrompt(input.prompt)))}`,
+      prompt: `Create Game DNA for: ${input.prompt}\n\n${buildGenreDesignBrief(archetype)}`,
       jsonMode: true,
       temperature: 0.7,
     });
 
     const parsed = JSON.parse(response.text);
+    parsed.archetype = archetype;
+    if (parsed.identity && typeof parsed.identity === 'object') parsed.identity.genre = identityGenre;
+    const explicitTileSize = requestedTileSize(input.prompt);
+    if (explicitTileSize !== undefined && parsed.technical && typeof parsed.technical === 'object') parsed.technical.tileSize = explicitTileSize;
     const dna = GameDNASchema.parse(parsed);
-    if (input.archetype) dna.archetype = input.archetype;
-    dna.abilities = genreUsesDungeonTools(dna.archetype)
+    dna.abilities = dna.archetype === 'SIDE_VIEW_PLATFORMER' ? [] : genreUsesDungeonTools(dna.archetype)
       ? pickTopDownDungeonItems(input.profile)
       : pickRegisteredAbilities(input.profile);
     return { dna, source: 'ai' };

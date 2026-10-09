@@ -39,6 +39,9 @@ export class UnrealProjectAssembler {
       mkdirSync(input.outputDir, { recursive: true });
       copyDir(TEMPLATE_DIR, input.outputDir);
       const pack = buildGameplayPack(input);
+      if (pack.rooms.some(room => room.solids.some(solid => solid.oneWay))) {
+        warnings.push('Unreal runtime does not yet implement jump-through ledges; Platformer one-way collision requires native implementation and validation.');
+      }
       writeSharedProjectData(input, pack);
 
       writeFileSync(

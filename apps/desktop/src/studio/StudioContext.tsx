@@ -16,6 +16,8 @@ const STORAGE_KEY = 'metroforge.activeProjectPath';
 const MODE_KEY = 'metroforge.creationMode';
 
 export type GeneratorPrefill = {
+  styleDirection?: string;
+  negativePrompt?: string;
   description?: string;
   assetType?: string;
   assetId?: string;

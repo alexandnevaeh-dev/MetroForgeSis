@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { GodotProjectAssembler } from '@metroforge/godot';
-import { generateGameContent, generateWorldTopology, generateTopDownWorld } from '@metroforge/procedural';
+import { generateGameContent, generateWorldTopology, generateTopDownWorld, generatePlatformerWorld,generateAudioBible,generateMusicFromAudioBible,synthesizeAllSfx } from '@metroforge/procedural';
 import {
   GameDNASchema,
   ProjectMetadataSchema,
@@ -80,7 +80,7 @@ export function scaffoldManualProject(options: ScaffoldManualProjectOptions): Sc
     version: PRODUCT.schemaVersion,
     identity: {
       title,
-      genre: genre.displayName.includes('Metroidvania') ? 'Metroidvania' : 'Action-Adventure',
+      genre: archetype === 'SIDE_VIEW_PLATFORMER' ? 'Platformer' : genre.displayName.includes('Metroidvania') ? 'Metroidvania' : 'Action-Adventure',
       tone: 'molten industrial',
       visualStyle: 'pixel art',
     },
@@ -106,7 +106,7 @@ export function scaffoldManualProject(options: ScaffoldManualProjectOptions): Sc
           knockbackDecay: DEFAULT_TOP_DOWN_MOVEMENT.knockbackDecay,
         }
       : { walkSpeed: 200, runSpeed: 350, jumpHeight: 120, gravity: 980 },
-    abilities: genreUsesDungeonTools(archetype)
+    abilities: archetype === 'SIDE_VIEW_PLATFORMER' ? [] : genreUsesDungeonTools(archetype)
       ? pickTopDownDungeonItems(profile)
       : pickRegisteredAbilities(profile),
     world: { biomeCount: defaults.biomes, roomCount: defaults.roomsMin },
@@ -124,7 +124,7 @@ export function scaffoldManualProject(options: ScaffoldManualProjectOptions): Sc
   const topDownWorld = genreUsesOverworldChunks(archetype)
     ? generateTopDownWorld({ seed, profile, tileSize: dna.technical.tileSize })
     : undefined;
-  const topology = topDownWorld ?? generateWorldTopology({
+  const topology = topDownWorld ?? (archetype === 'SIDE_VIEW_PLATFORMER' ? generatePlatformerWorld : generateWorldTopology)({
     seed,
     roomCount: defaults.roomsMin,
     biomeCount: defaults.biomes,
@@ -133,7 +133,12 @@ export function scaffoldManualProject(options: ScaffoldManualProjectOptions): Sc
     profile,
   });
   const bossRoomId = topology.roomIds[topology.roomIds.length - 1] ?? topology.roomIds[0]!;
-  const gameContent = generateGameContent(dna, profile, seed, bossRoomId, topology.roomIds);
+  const gameContent = generateGameContent(dna, profile, seed, bossRoomId, topology.roomIds,archetype === 'SIDE_VIEW_PLATFORMER' ? {bossRoomIds:[bossRoomId]} : undefined);
+  const audioFiles=archetype === 'SIDE_VIEW_PLATFORMER' ? synthesizeAllSfx() : undefined;
+  if(audioFiles){
+    const music=generateMusicFromAudioBible(generateAudioBible(dna,profile,seed),seed);
+    for(const [id,buffer] of music.audio)audioFiles.set(id,buffer);
+  }
 
   const assembler = new GodotProjectAssembler();
   const assembled = assembler.assemble({
@@ -143,6 +148,7 @@ export function scaffoldManualProject(options: ScaffoldManualProjectOptions): Sc
     progressionGraph: topology.progressionGraph,
     roomIds: topology.roomIds,
     gameContent,
+    audioFiles,
     overworld: topDownWorld?.overworld,
   });
   errors.push(...assembled.errors);

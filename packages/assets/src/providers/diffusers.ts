@@ -47,6 +47,8 @@ export interface DiffusersConfig {
   gpuTimeoutMs?: number;
   /** Includes cold Python/tokenizer startup; independent of image generation. */
   promptCheckTimeoutMs?: number;
+  /** Full runtime/device discovery includes cold CUDA DLL imports on Windows. */
+  backendProbeTimeoutMs?: number;
   warmupTimeoutMs?: number;
   generationTimeoutMs?: number;
 }
@@ -56,6 +58,15 @@ interface WorkerResponse {
   error?: string;
   provider?: string;
   model_id?: string;
+  model_path?: string;
+  revision?: string;
+  precision?: string;
+  variant?: string | null;
+  files?: string[];
+  model_acquisition?: {model_id?:string;model_path?:string;revision?:string;precision?:string;variant?:string|null;cached_before?:boolean};
+  pipeline_load_ms?: number;
+  attention_processors?: string[];
+  inference_ms?: number;
   seed?: number;
   device?: string;
   offload_strategy?: string;
@@ -150,6 +161,24 @@ const DEFAULT_VENV_PYTHON = join(
   process.platform === 'win32' ? 'python.exe' : 'python',
 );
 
+const WORKER_PHASES = new Set(['request_received','backend_resolving','runtime_loading','runtime_ready','model_ready','prompt_validated','pipeline_loading','pipeline_ready','denoising','denoising_complete','pipeline_returned','encoding','encoded']);
+export type DiffusersWorkerStage = {phase: string; elapsedMs: number; allocatedMb?: number; reservedMb?: number};
+export function parseDiffusersWorkerStage(line: string): DiffusersWorkerStage | undefined {
+  if (line.length > 4096) return undefined;
+  try {
+    const data = JSON.parse(line) as Record<string, unknown>;
+    if (typeof data.phase !== 'string' || !WORKER_PHASES.has(data.phase) || typeof data.elapsedMs !== 'number' || !Number.isSafeInteger(data.elapsedMs) || data.elapsedMs < 0) return undefined;
+    const result: DiffusersWorkerStage = {phase:data.phase,elapsedMs:data.elapsedMs};
+    for (const key of ['allocatedMb','reservedMb'] as const) {
+      if (data[key] !== undefined) {
+        if (typeof data[key] !== 'number' || !Number.isFinite(data[key]) || data[key] < 0 || data[key] > 1048576) return undefined;
+        result[key]=data[key];
+      }
+    }
+    return result;
+  } catch {return undefined;}
+}
+
 function terminateWorker(proc: ReturnType<typeof spawn>): void {
   if (proc.killed) return;
   if (process.platform === 'win32' && proc.pid) {
@@ -194,6 +223,7 @@ export class DiffusersProvider implements ImageGenerator {
   private promptCheckTimeoutMs: number;
   private warmupTimeoutMs: number;
   private generationTimeoutMs: number;
+  private backendProbeTimeoutMs: number;
   private openvinoServer?: ReturnType<typeof spawn>;
   private openvinoStartedAt?: number;
   private openvinoQueue: Promise<unknown> = Promise.resolve();
@@ -230,6 +260,10 @@ export class DiffusersProvider implements ImageGenerator {
       config.warmupTimeoutMs ?? Number(process.env.METROFORGE_OPENVINO_WARMUP_TIMEOUT_MS ?? 600000);
     this.generationTimeoutMs = config.generationTimeoutMs ?? this.gpuTimeoutMs;
     this.promptCheckTimeoutMs = config.promptCheckTimeoutMs ?? 120_000;
+    this.backendProbeTimeoutMs = config.backendProbeTimeoutMs ?? 120_000;
+    if (!Number.isFinite(this.backendProbeTimeoutMs) || this.backendProbeTimeoutMs <= 0) {
+      throw new RangeError('backendProbeTimeoutMs must be a positive finite number');
+    }
     if (!Number.isFinite(this.promptCheckTimeoutMs) || this.promptCheckTimeoutMs <= 0) {
       throw new RangeError('promptCheckTimeoutMs must be a positive finite number');
     }
@@ -384,7 +418,7 @@ export class DiffusersProvider implements ImageGenerator {
     const seed = request.seed ?? Math.floor(Math.random() * 2 ** 31);
     const requestedBackend = this.device === 'auto' ? 'auto' : this.device;
     const backend =
-      requestedBackend === 'auto' ? await this.resolveAutoBackend() : requestedBackend;
+      requestedBackend === 'auto' ? await this.resolveAutoBackend(request.signal) : requestedBackend;
     const payload = {
       action: 'generate',
       model_id: this.modelId,
@@ -446,7 +480,11 @@ export class DiffusersProvider implements ImageGenerator {
         executionPath: res.execution_path,
         timings: res.timings,
         workerReused: res.workerReused,
-        modelCacheHit: res.modelCacheHit,
+        modelCacheHit: res.modelCacheHit ?? res.model_acquisition?.cached_before,
+        preparedModel: res.model_acquisition,
+        pipelineLoadMs: res.pipeline_load_ms,
+        inferenceMs: res.inference_ms,
+        attentionProcessors: res.attention_processors,
         compiledComponentCacheHit: res.compiledComponentCacheHit,
         tokenizerCacheHit: res.tokenizerCacheHit,
         schedulerCacheHit: res.schedulerCacheHit,
@@ -469,9 +507,26 @@ export class DiffusersProvider implements ImageGenerator {
     };
   }
 
+  /** Download once, outside the image inference deadline. No model is loaded. */
+  async prepareModel(options: {
+    signal?: AbortSignal;
+    precision?: 'fp16' | 'fp32';
+    timeoutMs?: number;
+    onProgress?: (progress: { completed: number; total: number; percent: number }) => void;
+  } = {}) {
+    throwIfCancelled(options.signal);
+    const timeoutMs = options.timeoutMs ?? 3_600_000;
+    if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new RangeError('Model preparation timeout must be positive and finite');
+    const response = await this.runWorker({action: 'prepare_model', model_id: this.modelId, precision: options.precision ?? 'fp16'},
+      {timeoutMs, signal: options.signal, onProgress: options.onProgress});
+    if (!response.ok || !response.model_path) throw new Error(response.error ?? 'Model preparation did not produce a complete local model');
+    return {modelId: response.model_id ?? this.modelId, modelPath: response.model_path, revision: response.revision,
+      precision: response.precision, variant: response.variant, fileCount: response.files?.length ?? 0};
+  }
+
   private runWorker(
     payload: Record<string, unknown>,
-    options: { timeoutMs?: number; signal?: AbortSignal } = {},
+    options: { timeoutMs?: number; signal?: AbortSignal; onProgress?: (progress: { completed: number; total: number; percent: number }) => void } = {},
   ): Promise<WorkerResponse> {
     const timeoutMs =
       options.timeoutMs ?? Number(process.env.METROFORGE_CPU_DIFFUSION_TIMEOUT_MS ?? 120000);
@@ -483,6 +538,7 @@ export class DiffusersProvider implements ImageGenerator {
 
       let stdout = '';
       let stderr = '';
+      let lastStage: DiffusersWorkerStage | undefined;
       let settled = false;
       const finish = (fn: () => void) => {
         if (settled) return;
@@ -506,8 +562,9 @@ export class DiffusersProvider implements ImageGenerator {
         const progress = last
           ? `; last reported worker progress ${last[2]}/${last[3]} (${last[1]}%)`
           : '; no worker progress reported';
+        const stage = lastStage ? `; phase ${lastStage.phase} after ${lastStage.elapsedMs}ms${lastStage.allocatedMb !== undefined ? `; GPU allocated ${lastStage.allocatedMb} MiB, reserved ${lastStage.reservedMb ?? 'unknown'} MiB` : ''}` : '';
         finish(() =>
-          reject(new Error(`Diffusers worker timed out after ${timeoutMs}ms${progress}`)),
+          reject(new Error(`Diffusers worker timed out after ${timeoutMs}ms${progress}${stage}`)),
         );
       }, timeoutMs);
 
@@ -518,6 +575,15 @@ export class DiffusersProvider implements ImageGenerator {
       });
       proc.stderr.on('data', (chunk: Buffer) => {
         stderr += chunk.toString();
+        for (const match of stderr.matchAll(/METROFORGE_WORKER_STAGE (\{[^\r\n]*\})/g)) {
+          const stage=parseDiffusersWorkerStage(match[1]);if(stage)lastStage=stage;
+        }
+        const reports = [...stderr.matchAll(/(\d{1,3})%\|[^\r\n]*?\|\s*(\d+)\/(\d+)/g)];
+        const last = reports.at(-1);
+        if (last && options.onProgress) {
+          const completed = Number(last[2]), total = Number(last[3]), percent = Number(last[1]);
+          if (total > 0 && completed <= total && percent <= 100) options.onProgress({completed, total, percent});
+        }
       });
 
       proc.on('error', (err) => {
@@ -546,10 +612,10 @@ export class DiffusersProvider implements ImageGenerator {
     });
   }
 
-  private async resolveAutoBackend(): Promise<'cuda' | 'openvino_gpu' | 'cpu'> {
+  private async resolveAutoBackend(signal?: AbortSignal): Promise<'cuda' | 'openvino_gpu' | 'cpu'> {
     const health = await this.runWorker(
       { action: 'health', model_id: this.modelId },
-      { timeoutMs: 4_000 },
+      { timeoutMs: this.backendProbeTimeoutMs, signal },
     );
     const selected = health.selected_backend;
     return selected === 'cuda' || selected === 'openvino_gpu' ? selected : 'cpu';

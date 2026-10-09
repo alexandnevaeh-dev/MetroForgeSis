@@ -1,6 +1,7 @@
-export { runRuntimeGateAsync } from './runtime-gate-worker.js';
 export { QAValidator, RepairEngineer, gateState, validateWorldSceneArchetypeIntegrity } from './validator.js';
 export type { QAGateResult, QAReport, QAGateState } from './validator.js';
+export { runRuntimeGateAsync } from './runtime-gate-worker.js';
+export type { RuntimeGateMethod } from './runtime-gate-worker.js';
 export { detectProjectEngine, validateForeignEngineProject } from './engine-validator.js';
 export { deriveValidationLevel } from './validation-level.js';
 export type { ValidationLevel } from './validation-level.js';
@@ -71,4 +72,3 @@ export type {
   QualityCategory,
   QualityScorecard,
 } from './quality-types.js';
-

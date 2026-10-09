@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync, statSy
 import { join } from 'node:path';
 import { spawnCapturedSync as spawnSync } from './process-capture.js';
 import { critiqueGameplayScreenshot } from '@metroforge/assets';
+import { parseSmokeTestOutput } from './smoke-output.js';
 import {
   getPlatformInfo,
   isolatedUserDataEnvironment,
@@ -214,10 +215,8 @@ export function captureGameplayScreenshots(opts: {
       '--resolution',
       readViewportResolution(opts.projectPath),
       scene,
-      '--quit-after',
-      '3600',
     ],
-      timeoutMs: 90_000,
+      timeoutMs: 300_000,
       windowsHide: true,
       env: isolatedUserDataEnvironment(opts.userDataDir),
     });
@@ -262,14 +261,14 @@ export function captureGameplayScreenshots(opts: {
       getPlatformInfo().capabilities.godotRenderingDriver,
       '--audio-driver',
       'Dummy',
+      '--position',
+      '-10000,-10000',
       '--resolution',
       readViewportResolution(opts.projectPath),
       scene,
-      '--quit-after',
-      '3600',
     ],
     timeoutMs: 300_000,
-    windowsHide: false,
+    windowsHide: true,
     env: {
       METROFORGE_CAPTURE: '1',
       METROFORGE_CAPTURE_STRATEGY: 'windowed_gpu',
@@ -298,7 +297,10 @@ export function captureGameplayScreenshots(opts: {
     telemetry.strategy = 'windowed_gpu';
   } else {
     telemetry.strategy = 'failed';
-    telemetry.reason = windowed.exitCode !== 0 || windowed.killed
+    const smoke = parseSmokeTestOutput(windowed.output);
+    telemetry.reason = !windowed.killed && smoke.ranToCompletion && smoke.failed.length > 0
+      ? `Windowed runtime completed with ${smoke.failed.length} failed gameplay checks`
+      : windowed.exitCode !== 0 || windowed.killed
       ? 'Windowed capture process failed or timed out'
       : !existsSync(screenshotPath) || statSync(screenshotPath).mtimeMs < windowedStartedAt
         ? 'Windowed capture did not produce a fresh screenshot'

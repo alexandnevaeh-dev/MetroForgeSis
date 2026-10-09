@@ -11,7 +11,6 @@ Requires: pip install -r workers/requirements-diffusers.txt
 from __future__ import annotations
 
 import base64
-import hashlib
 import json
 import os
 import shutil
@@ -45,6 +44,35 @@ _controlnet_pipeline_key = None
 _ip_adapter_pipeline = None
 _ip_adapter_pipeline_key = None
 _openvino_pipelines: dict[tuple[str, str, int, int], Any] = {}
+_worker_started = time.perf_counter()
+
+
+def _worker_stage(phase, device=None):
+    """Fixed stage labels and numeric counters only; never prompts, paths or credentials."""
+    payload = {"phase": phase, "elapsedMs": int((time.perf_counter() - _worker_started) * 1000)}
+    if device == "cuda" and "torch" in sys.modules:
+        torch = sys.modules["torch"]
+        payload.update(allocatedMb=round(torch.cuda.memory_allocated() / 1048576, 1),
+                       reservedMb=round(torch.cuda.memory_reserved() / 1048576, 1))
+    line = json.dumps(payload)
+    sys.stderr.write("\nMETROFORGE_WORKER_STAGE " + line + "\n")
+    sys.stderr.flush()
+    destination = os.environ.get("METROFORGE_DIFFUSERS_STAGE_LOG")
+    if destination:
+        try:
+            path = Path(destination).resolve()
+            if path.is_absolute() and (os.name != "nt" or path.drive.lower() == "e:"):
+                path.parent.mkdir(parents=True, exist_ok=True)
+                with path.open("a", encoding="utf-8") as log:
+                    log.write(line + "\n")
+        except (OSError, ValueError):
+            pass  # Optional diagnosis cannot invalidate the generation request.
+
+
+def _denoising_stage(pipe, step, timestep, values):
+    if step + 1 == len(pipe.scheduler.timesteps):
+        _worker_stage("denoising_complete", "cuda" if str(getattr(pipe, "_execution_device", "cpu")).startswith("cuda") else None)
+    return values
 
 
 def read_request() -> dict[str, Any]:
@@ -102,27 +130,9 @@ def _model_is_cached(model_id: str) -> bool:
 
 
 def _ensure_model_available(model_id: str) -> dict[str, Any]:
-    # A registered local model is a directory, not a Hugging Face repository ID.
-    if os.path.isdir(model_id):
-        if not os.path.isfile(os.path.join(model_id, "model_index.json")):
-            raise ValueError(f"Local model is missing model_index.json: {model_id}")
-        return {"cached_before": True, "downloaded": False, "download_ms": 0, "cached_after": True}
-    if os.path.isabs(model_id):
-        raise ValueError(f"Local model directory does not exist: {model_id}")
-    cached_before = _model_is_cached(model_id)
-    download_ms = 0
-    if not cached_before:
-        from huggingface_hub import snapshot_download
-
-        download_start = time.perf_counter()
-        snapshot_download(repo_id=model_id, max_workers=1)
-        download_ms = int((time.perf_counter() - download_start) * 1000)
-    return {
-        "cached_before": cached_before,
-        "downloaded": not cached_before,
-        "download_ms": download_ms,
-        "cached_after": _model_is_cached(model_id),
-    }
+    from diffusers_model_cache import read_prepared
+    prepared = read_prepared(model_id)
+    return {**prepared, "cached_before": True, "downloaded": False, "download_ms": 0, "cached_after": True}
 
 
 def _cpu_dtype_for_runtime() -> str:
@@ -400,6 +410,15 @@ def _offload_strategy(device: str) -> str:
     return strategy
 
 
+def _attention_processors(pipe):
+    processors = []
+    for name in ("unet", "transformer"):
+        values = getattr(getattr(pipe, name, None), "attn_processors", None)
+        if isinstance(values, dict):
+            processors.extend(values.values())
+    return processors
+
+
 def _move_pipe(pipe, device: str = "cpu"):
     import torch
 
@@ -435,6 +454,7 @@ def _local_style_adapter(value):
     if value is None:
         return None
     import math
+    import hashlib
     if not isinstance(value, dict) or set(value) != {"path", "sha256", "scale"}:
         raise ValueError("LOCAL_STYLE_ADAPTER_INVALID_FIELDS")
     if not isinstance(value["path"], str) or not isinstance(value["sha256"], str):
@@ -501,6 +521,7 @@ def get_pipeline(model_id: str, device: str = "cpu", local_files_only: bool = Fa
 
 
 def _openvino_model_path(source_model_id: str, revision: str | None) -> str:
+    import hashlib
     key = hashlib.sha256(f"{source_model_id}|{revision or 'main'}|int8|openvino".encode("utf-8")).hexdigest()[:16]
     return os.path.join(OPENVINO_CACHE_ROOT, key)
 
@@ -768,12 +789,14 @@ def get_ip_adapter_pipeline(base_model_id: str, device: str = "cpu"):
 
 
 def generate_image(req: dict[str, Any]) -> dict[str, Any]:
+    _worker_stage("request_received")
     style = _local_style_adapter(req.get("local_style_adapter"))
     if style and req.get("conditioning_mode") in {"controlnet_canny", "ip_adapter"}:
         raise ValueError("LOCAL_STYLE_ADAPTER_CONDITIONING_UNSUPPORTED")
     model_id = req.get("model_id", "stabilityai/sdxl-turbo")
     prompt = req.get("prompt", "game asset")
     negative = req.get("negative_prompt", "blurry, low quality, text, watermark")
+    _worker_stage("backend_resolving")
     requested_backend = _resolve_backend(req)
     if style and requested_backend == "openvino_gpu":
         raise ValueError("LOCAL_STYLE_ADAPTER_OPENVINO_UNSUPPORTED")
@@ -801,6 +824,7 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
     if requested_backend == "openvino_gpu":
         return _generate_openvino_image(req, full_prompt, width, height, steps, seed)
 
+    _worker_stage("runtime_loading")
     import torch
 
     compute_backend = requested_backend
@@ -808,6 +832,7 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
     generator = torch.Generator(device=device).manual_seed(seed)
     dtype = _torch_dtype(device)
     total_start = time.perf_counter()
+    _worker_stage("runtime_ready", device)
 
     applied_conditioning = None
     if init_image is not None and conditioning_mode == "controlnet_canny":
@@ -857,16 +882,25 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
         )
     else:
         model_acquisition = _ensure_model_available(model_id)
-        budget = check_prompt({"model_id": model_id, "prompt": full_prompt, "negative_prompt": negative})
+        _worker_stage("model_ready", device)
+        load_model = model_acquisition["model_path"]
+        budget = check_prompt({"model_id": load_model, "prompt": full_prompt, "negative_prompt": negative})
         if budget["anyOverflow"]:
             raise ValueError("Prompt exceeds model token budget: " + json.dumps(budget))
+        _worker_stage("prompt_validated", device)
         pipeline_start = time.perf_counter()
-        pipe = get_pipeline(model_id, device, local_files_only=True, style=style)
+        _worker_stage("pipeline_loading", device)
+        pipe = get_pipeline(load_model, device, local_files_only=True, style=style)
+        _worker_stage("pipeline_ready", device)
         pipeline_load_ms = int((time.perf_counter() - pipeline_start) * 1000)
         inference_start = time.perf_counter()
         # Distilled Turbo models require classifier-free guidance to be disabled.
         generation_options = {"guidance_scale": 0.0} if "turbo" in model_id.lower() else {}
         _assert_prompt_budget(pipe, full_prompt, negative)
+        import inspect
+        if "callback_on_step_end" in inspect.signature(pipe.__call__).parameters:
+            generation_options["callback_on_step_end"] = _denoising_stage
+        _worker_stage("denoising", device)
         result = pipe(
             prompt=full_prompt,
             negative_prompt=negative,
@@ -878,9 +912,12 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
         )
         inference_ms = int((time.perf_counter() - inference_start) * 1000)
 
+    _worker_stage("pipeline_returned", device)
     image = result.images[0]
     buf = BytesIO()
+    _worker_stage("encoding", device)
     image.save(buf, format="PNG")
+    _worker_stage("encoded", device)
     total_ms = int((time.perf_counter() - total_start) * 1000)
 
     return {
@@ -907,6 +944,7 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
         "effectiveWidth": image.width,
         "effectiveHeight": image.height,
         "execution_path": "diffusers_torch_" + device,
+        "attention_processors": sorted({type(processor).__name__ for processor in _attention_processors(pipe)}),
         "timings": {"totalMs": total_ms},
         "model_acquisition": model_acquisition if init_image is None and not conditioning_mode else None,
         "pipeline_load_ms": pipeline_load_ms if init_image is None and not conditioning_mode else None,
@@ -962,11 +1000,20 @@ def _assert_prompt_budget(pipe, prompt: str, negative: str) -> None:
 def main() -> None:
     req = read_request()
     action = req.get("action", "health")
+    if action == "prepare_model":
+        from diffusers_model_cache import prepare_model
+        write_response({"ok": True, **prepare_model(req.get("model_id", "stabilityai/sdxl-turbo"), req.get("precision", "fp16"))})
+        return
     if action == "health":
         write_response(health_check(req))
         return
     if action == "check_prompt":
         try:
+            # Tokenization needs no model runtime. This worker exits after the request;
+            # generation workers retain their own Torch configuration and CUDA validation.
+            os.environ["USE_TORCH"] = "0"
+            os.environ["USE_TF"] = "0"
+            os.environ["USE_TORCH_XLA"] = "0"
             write_response(check_prompt(req))
         except Exception as exc:
             write_response({"ok": False, "error": str(exc), "provider": "diffusers"})

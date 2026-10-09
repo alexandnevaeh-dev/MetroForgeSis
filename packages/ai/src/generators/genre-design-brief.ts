@@ -7,7 +7,9 @@ import { genreSupports, getGenreDefinition } from '@metroforge/shared';
  */
 export function buildGenreDesignBrief(archetype: GameArchetype): string {
   const genre = getGenreDefinition(archetype);
-  const spatial = genreSupports(archetype, 'supportsFreePlanarMovement')
+  const spatial = archetype === 'SIDE_VIEW_PLATFORMER'
+    ? 'Platformer: ordered stages built around readable jump challenges, safe checkpoints and a clear finish. Use basic movement from the start; do not add mandatory ability locks or Metroidvania return routes.'
+    : genreSupports(archetype, 'supportsFreePlanarMovement')
     ? 'Top-down adventure: readable floor routes, distinct room landmarks, directional combat and dungeon tools; do not design platform jumps or side-view-only routes.'
     : 'Metroidvania: an interconnected world with ability-gated return routes, memorable landmarks, varied long halls and vertical chambers. Movement and combat should complement exploration.';
   return [

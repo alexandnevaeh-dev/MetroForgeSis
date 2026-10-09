@@ -63,7 +63,7 @@ import {
   PARALLAX_STRIP_SIZE,
 } from './parallax-strip.js';
 import { ImageProviderRegistry } from './image-router.js';
-import { canopyTerrainV2,canopyEnvironment,CANOPY_PROP_KINDS } from './topdown-canopy-environment.js';
+import { canopyTerrainV4,canopyEnvironment,CANOPY_PROP_KINDS } from './topdown-canopy-environment.js';
 import { shouldUseCanopyEnvironment } from './canopy-environment-selection.js';
 import {buildCanopyActorFamily,canopyEffect,canopyIcon,canopyPickup,canopyEffectMetadata,CANOPY_EFFECT_IDS,type CanopyActorKind} from './topdown-canopy-art.js';
 import { registerFoundryImageProviders } from './foundry/register.js';
@@ -1049,6 +1049,26 @@ export function buildManualImagePrompt(description: string, styleHint: string, g
   return `${desc}. Art style: ${style}. For ${title}. ${projection} ${role}`;
 }
 
+/** Shared rendering style does not transfer the player's outfit to other characters. */
+export function manualAssetStyleHint(visualStyle: string, playerGuidelines: string | undefined, assetType: string): string {
+  return [visualStyle, assetType === 'player_sprite' ? playerGuidelines : undefined].filter(Boolean).join('. ');
+}
+
+/** An explicitly authored brief uses the subject unchanged and only role-relevant framing. */
+export function buildDirectedManualImagePrompt(description: string, styleDirection: string, archetype: GameDNA['archetype'], assetType: string): string {
+  const camera = genreSupports(archetype, 'supportsFreePlanarMovement') ? 'Top-down, overhead three-quarter view' : 'Side-view';
+  const role = ['player_sprite', 'enemy', 'boss', 'npc'].includes(assetType)
+    ? 'full-body sprite, feet grounded, isolated on flat magenta'
+    : assetType === 'prop' ? 'complete grounded prop, isolated on flat magenta'
+      : assetType === 'background' ? 'continuous environment, biome architecture'
+        : assetType === 'portrait' ? 'head and shoulders portrait'
+          : assetType === 'character_concept' ? 'full-body character concept'
+            : assetType === 'ui_panel' ? 'interface panel, no text, flat magenta'
+              : ['tile', 'tileset'].includes(assetType) ? 'seamless tile texture'
+                : 'centered isolated asset, flat magenta';
+  return `${sanitizeImagePromptText(description)}. ${sanitizeImagePromptText(styleDirection)}. ${camera}, ${role}.`;
+}
+
 function loadCheckpoint(outputDir: string, relPath: string): Buffer | null {
   const full = checkpointFullPath(outputDir, relPath);
   if (!existsSync(full)) return null;
@@ -1883,8 +1903,8 @@ export class AssetPipeline {
           signal: options.signal,
           tileSize,
           spec: enemySpec,
-          // EnemyController.gd only ever plays "idle"/"walk"/"attack"/"hurt"/"death" by name (no
-          // "run" check exists), and attack/hurt/death already have real multi-frame sheets wired
+          // EnemyController.gd also uses the run strip for charge/fast movement.
+          // Run/attack/hurt/death already have multi-frame sheets wired
           // via attack_sheet_path/hurt_sheet_path/death_sheet_path — generating single-frame pose
           // stills for those names would make AnimatedAssetSprite.gd's _load_pose_overrides()
           // clear() and replace those sheets with a static frame. Only "idle" is both consumed
@@ -2017,9 +2037,9 @@ export class AssetPipeline {
           ),
         'animation',
       );
-      if (authoredKit && npcId === 'npc_000') {
+      {
         for (const extra of ['idle', 'talk', 'listen'] as const) {
-          const extraAsset = this.materializeAuthoredCourier({
+          const extraAsset = (authoredKit && npcId === 'npc_000' ? this.materializeAuthoredCourier({
             id: `${npcId}_${extra}`,
             path: `assets/npcs/${npcId}_${extra}.png`,
             filename: `npc_000_${extra}.png`,
@@ -2030,13 +2050,17 @@ export class AssetPipeline {
             frameCount: 4,
             expectedFrameWidth: npcSpec.width,
             kit: authoredKit,
-          });
-          if (extraAsset) recordAsset(extraAsset, 'animation');
+          }) : null) ?? this.buildProgressionSheetAsset(
+            npcId, {name:extra,frameCount:4,fps:6,loop:true,mode:'progression-oscillate',poseKey:`npc_${extra}`,minUniqueFrameRatio:0.5},
+            npcSpec, `assets/npcs/${npcId}_${extra}.png`, tileSize, npcAsset.buffer,
+          );
+          recordAsset(withMaturity({...extraAsset, fallbackGenerated: extraAsset.fallbackGenerated || npcAsset.fallbackGenerated}), 'animation');
         }
       }
       }
       const portraitRole = role.replace(/[^a-z0-9_]/gi, '_').toLowerCase();
-      const portraitPath = `assets/ui/portraits/${portraitRole}.png`;
+      for (const portraitKey of new Set([portraitRole, npcId])) {
+      const portraitPath = `assets/ui/portraits/${portraitKey}.png`;
       if (!assets.some((a) => a.path === portraitPath)) {
         const portrait = this.pixelArt.process(npcAsset.buffer, {
           targetWidth: 72,
@@ -2046,7 +2070,7 @@ export class AssetPipeline {
         writeCheckpoint(options.outputDir, portraitPath, portrait.buffer);
         recordAsset(
           {
-            id: `portrait_${portraitRole}`,
+            id: `portrait_${portraitKey}`,
             path: portraitPath,
             buffer: portrait.buffer,
             // A portrait crop of procedural NPC art carries no new content beyond the parent's
@@ -2071,6 +2095,7 @@ export class AssetPipeline {
           },
           'portrait',
         );
+      }
       }
     }
 
@@ -2396,7 +2421,7 @@ export class AssetPipeline {
       const authoredMasonry =
         !cachedTileset && authoredKit ? loadAuthoredKitTileset(authoredKit, b, tileSize) : null;
       let canopyAtlas = !cachedTileset && shouldUseCanopyEnvironment(options.gameDna)
-        ? canopyTerrainV2() : null;
+        ? canopyTerrainV4() : null;
 
       if (cachedTileset) {
         processedBuffer = cachedTileset;
@@ -2409,11 +2434,11 @@ export class AssetPipeline {
         processedBuffer = canopyAtlas.bytes;
         critiquePassed = false;
         critiqueScore = 0; // Unscored draft; native functionality is not visual approval.
-        provider = 'metroforge-canopy-procedural-v2';
+        provider = 'metroforge-canopy-terrain-v4';
         fallback = false;
         modelId = undefined;
         writeCheckpoint(options.outputDir,tilesetPath,processedBuffer);
-        writeCheckpoint(options.outputDir,`assets/tilesets/biome_${b}/terrain.json`,Buffer.from(JSON.stringify({tileSize,roles:canopyAtlas.roles,style:'ruined-canopy-v2',productionApproved:false},null,2)));
+        writeCheckpoint(options.outputDir,`assets/tilesets/biome_${b}/terrain.json`,Buffer.from(JSON.stringify({tileSize,roles:canopyAtlas.roles,style:'ruined-canopy-v4',productionApproved:false},null,2)));
         warnings.push(`Canopy woodland terrain biome_${b} uses original procedural draft art; production visual review is pending.`);
       } else if (authoredMasonry) {
         // Hand-authored 32px foundry masonry atlas (256×192) — the Foundry visual slice's
@@ -2565,11 +2590,11 @@ export class AssetPipeline {
       // An unavailable provider must not turn a woodland request back into generic walls.
       // Keep the failed-provider warning, then select the original woodland draft fallback.
       if(fallback&&shouldUseCanopyEnvironment(options.gameDna)) {
-        canopyAtlas=canopyTerrainV2();processedBuffer=canopyAtlas.bytes;
-        critiquePassed=false;critiqueScore=0;provider='metroforge-canopy-procedural-v2';
+        canopyAtlas=canopyTerrainV4();processedBuffer=canopyAtlas.bytes;
+        critiquePassed=false;critiqueScore=0;provider='metroforge-canopy-terrain-v4';
         fallback=false;modelId=undefined;
         writeCheckpoint(options.outputDir,tilesetPath,processedBuffer);
-        writeCheckpoint(options.outputDir,`assets/tilesets/biome_${b}/terrain.json`,Buffer.from(JSON.stringify({tileSize,roles:canopyAtlas.roles,style:'ruined-canopy-v2',productionApproved:false},null,2)));
+        writeCheckpoint(options.outputDir,`assets/tilesets/biome_${b}/terrain.json`,Buffer.from(JSON.stringify({tileSize,roles:canopyAtlas.roles,style:'ruined-canopy-v4',productionApproved:false},null,2)));
         warnings.push(`Canopy woodland terrain biome_${b} uses original procedural draft art after provider failure; production visual review is pending.`);
       }
       if (terrainVisualTemplate)
@@ -3132,7 +3157,7 @@ export class AssetPipeline {
       }
     }
 
-    if(assets.some(asset=>asset.provider==='metroforge-canopy-procedural-v2'&&asset.path.endsWith('/source.png'))) {
+    if(assets.some(asset=>['metroforge-canopy-procedural-v2','metroforge-canopy-terrain-v3','metroforge-canopy-terrain-v4'].includes(asset.provider)&&asset.path.endsWith('/source.png'))) {
       for(const kind of CANOPY_PROP_KINDS) {
         const art=canopyEnvironment(kind),path=`assets/props/canopy/${kind}.png`;
         writeCheckpoint(options.outputDir,path,art.bytes);
@@ -4639,6 +4664,8 @@ export class AssetPipeline {
     artBible?: ArtBible;
     styleBible?: StyleBible;
     description: string;
+    styleDirection?: string;
+    negativePrompt?: string;
     assetType: string;
     assetId: string;
     relPath: string;
@@ -4669,7 +4696,7 @@ export class AssetPipeline {
     const tileSize = opts.gameDna.technical.tileSize;
     const existingFullPath = join(opts.outputDir, opts.relPath);
     const plan = manualImagePlan(opts.assetType, opts.assetId, existsSync(existingFullPath) ? readFileSync(existingFullPath) : undefined, opts.backgroundDetail);
-    const negativePrompt = applyStyleNegativePrompt(
+    const negativePrompt = opts.negativePrompt ?? applyStyleNegativePrompt(
       opts.styleBible,
       opts.artBible?.negativePrompts.join(', '),
     );
@@ -4706,10 +4733,11 @@ export class AssetPipeline {
     const { profile, width, height } = plan;
     const shape: SpriteSpec['shape'] = plan.grounded ? 'humanoid' : 'item';
 
-    const actor = ['player_sprite', 'enemy', 'boss', 'npc', 'character_concept'].includes(opts.assetType);
-    const styleHint = [opts.gameDna.identity.visualStyle,
-      actor ? opts.artBible?.characterGuidelines.player : undefined].filter(Boolean).join('. ');
-    const prompt = applyStylePrompt(
+    const styleHint = manualAssetStyleHint(opts.gameDna.identity.visualStyle,
+      opts.artBible?.characterGuidelines.player, opts.assetType);
+    const prompt = opts.styleDirection !== undefined
+      ? buildDirectedManualImagePrompt(opts.description, opts.styleDirection, opts.gameDna.archetype, opts.assetType)
+      : applyStylePrompt(
       opts.styleBible,
       opts.assetType === 'tileset' || opts.assetType === 'tile'
         ? 'TILE_SOURCE'

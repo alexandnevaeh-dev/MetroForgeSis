@@ -28,6 +28,22 @@ const png = () => {
 afterEach(() => vi.clearAllMocks());
 
 describe('manual pipeline uses role-aware compile and retains source proof', () => {
+  it('sends the authored style/exclusions without legacy project-prefix expansion', async () => {
+    mkdirSync('E:/MetroForgeData/Temp/manual-profile-tests', { recursive: true });
+    const output = mkdtempSync('E:/MetroForgeData/Temp/manual-profile-tests/brief-');
+    mock.health.mockResolvedValue(false);
+    mock.select.mockResolvedValue({generator: {id:'fixture',generateImage:mock.generate},warnings:[],fallbackDepth:0});
+    mock.generate.mockResolvedValue({image:png(),provider:'fixture',modelId:'controlled',fallbackGenerated:false});
+    const subject='Ash librarian, brass book';
+    await new AssetPipeline().generateManual({gameDna:dna,description:subject,styleDirection:'HD pixel art, charcoal cloth',
+      negativePrompt:'text, watermark',assetType:'enemy',assetId:'librarian',relPath:'assets/librarian.png',outputDir:output,seed:42,
+      styleBible:{promptPrefixes:{CHARACTER:'irrelevant cavernous shafts and ability-gated traversal'}} as any});
+    const request=mock.generate.mock.calls[0][0];
+    expect(request.prompt).toContain(subject);
+    expect(request.prompt).toContain('charcoal cloth');
+    expect(request.prompt).not.toContain('ability-gated');
+    expect(request.negativePrompt).toBe('text, watermark');
+  });
   it.each([
     ['background', 'BACKGROUND', 640, 360],
     ['portrait', 'PORTRAIT', 256, 256],

@@ -9,7 +9,8 @@ export const CANOPY_EFFECT_IDS=['hit_spark','death_puff','dash_trail','pickup_sp
 // New source art for the canopy set. Pixel clusters, shared lighting and grounded anchors.
 const C = { ink:'#18232f', dark:'#263d43', wood:'#655447', woodLight:'#a18c65',
   green:'#428276', leaf:'#82b987', pale:'#dae2b5', gold:'#eeb866', blue:'#63d8d3',
-  stone:'#657781', stoneLight:'#a1b0ae', violet:'#946485', red:'#e07b80' };
+  stone:'#657781', stoneLight:'#a1b0ae', violet:'#946485', red:'#e07b80',
+  coral:'#d06465', coralShadow:'#8d3f56', coralLight:'#f1a18b', brass:'#b99668' };
 function canvas(width: number, height: number, offsetY=0) {
   const rgba = new Uint8Array(width * height * 4);
   let clipStart=0,clipEnd=width;
@@ -37,7 +38,7 @@ export function canopyActor(kind: CanopyActorKind, action: CanopyAction='idle', 
     if(action==='death' && frame>=Math.ceil(count/2)) {
       const collapsed=frame/(count-1);
       p.oval(cx,base-1,kind==='boss'?34:18,kind==='boss'?6:3,C.ink);
-      p.oval(cx,base-8,kind==='boss'?30:16,Math.max(3,12-collapsed*8),kind==='hero'?C.gold:kind==='ranged'?C.violet:C.wood);
+      p.oval(cx,base-8,kind==='boss'?30:16,Math.max(3,12-collapsed*8),kind==='hero'?C.coral:kind==='ranged'?C.violet:C.wood);
       p.oval(cx-(kind==='boss'?23:13),base-8,kind==='boss'?12:7,5,C.woodLight);
       p.line(cx-5,base-10,cx+16,base-7,C.pale,2);
       for(let n=0;n<8;n++)p.rect(cx-12+n*3,base-9+(n%3),2,1,n%2?C.dark:C.gold);
@@ -85,14 +86,14 @@ export function canopyActor(kind: CanopyActorKind, action: CanopyAction='idle', 
       continue;
     }
     const mage=kind==='ranged', npc=kind==='npc', hero=kind==='hero';
-    const coat=hero?C.gold:mage?C.violet:npc?C.blue:C.green;
+    const coat=hero?C.coral:mage?C.violet:npc?C.blue:C.green;
     p.oval(cx,base-1,14,3,C.ink);
     const waist=top+19+dead*4;
     const flutter=Math.sin(phase-.7)*(moving?3:1.2);
     // Cloth follows the previous gait phase, behind the body and planted feet.
     p.line(cx-8,top+11,cx-13+flutter,waist+12,C.ink,5);
-    p.line(cx-8,top+12,cx-12+flutter,waist+10,hero?C.green:mage?C.dark:C.wood,4);
-    p.line(cx-8,top+14,cx-10+flutter,waist+9,hero?C.leaf:C.stoneLight,1);
+    p.line(cx-8,top+12,cx-12+flutter,waist+10,hero?C.coralShadow:mage?C.dark:C.wood,4);
+    p.line(cx-8,top+14,cx-10+flutter,waist+9,hero?C.coralLight:C.stoneLight,1);
     // One planted foot at every gait phase; the other leg lifts and passes.
     for(const side of [-1,1]) {
       const lift=moving?Math.max(0,Math.round(side*gait)):0;
@@ -105,12 +106,12 @@ export function canopyActor(kind: CanopyActorKind, action: CanopyAction='idle', 
     }
     p.oval(cx,waist,12,17-dead*5,C.ink);
     p.oval(cx-1,waist-1,10,15-dead*5,coat);
-    p.line(cx-5,top+16,cx-7,waist+10,hero?'#c98948':mage?'#60455f':'#28635f',3);
-    p.line(cx+1,top+13,cx+3,waist+8,hero?'#ffe09b':mage?'#bb8fa5':'#70b2a2',2);
+    p.line(cx-5,top+16,cx-7,waist+10,hero?C.coralShadow:mage?'#60455f':'#28635f',3);
+    p.line(cx+1,top+13,cx+3,waist+8,hero?C.coralLight:mage?'#bb8fa5':'#70b2a2',2);
     for(let n=0;n<5;n++)p.rect(cx-7+n*3,waist+9+(n%2),1,2,C.pale);
     p.line(cx-6,top+12,cx-9,waist+11,hero?C.pale:C.leaf,2);
     p.line(cx+6,top+12,cx+10,waist+8,C.dark,2);
-    p.rect(cx-10,waist+5,20,3,C.wood);p.rect(cx-2,waist+5,4,4,C.gold);
+    p.rect(cx-10,waist+5,20,3,C.wood);p.rect(cx-2,waist+5,4,4,hero?C.brass:C.gold);
     p.rect(cx+5,waist+3,4,7,C.ink);p.rect(cx+6,waist+4,3,4,C.woodLight);
     p.line(cx-8,top+13,cx+7,waist+4,C.dark,2);p.rect(cx-3,waist-1,3,3,C.pale);
     p.oval(cx,top+2,10,10,C.ink); p.oval(cx-1,top+1,8,8,hero?C.pale:coat);
@@ -120,7 +121,7 @@ export function canopyActor(kind: CanopyActorKind, action: CanopyAction='idle', 
       p.rect(cx-11,top-5,22,3,C.green);p.line(cx-7,top-7,cx+6,top-8,C.leaf,1);
       for(let n=0;n<3;n++)p.rect(cx-7+n*3,top-1,2,3,C.wood);
       p.rect(cx+6,top-12,3,8,C.leaf);p.rect(cx+8,top-13,5,3,C.pale);
-      p.line(cx-6,top+10,cx+5,top+11,C.green,3);p.line(cx-6,top+12,cx-10+flutter,top+19,C.leaf,2);
+      p.line(cx-6,top+10,cx+5,top+11,C.coralShadow,3);p.line(cx-6,top+12,cx-10+flutter,top+19,C.coralLight,2);
     } else if(kind==='melee') {
       p.oval(cx-9,top+12,5,4,C.ink);p.oval(cx-9,top+11,4,3,C.stoneLight);
       p.oval(cx+9,top+12,4,3,C.stone);p.line(cx+7,top+11,cx+11,top+11,C.pale,1);
@@ -160,14 +161,16 @@ export function canopyActor(kind: CanopyActorKind, action: CanopyAction='idle', 
       const angles: Record<CanopyFacing,number>={N:-Math.PI/2,NE:-Math.PI/4,E:0,SE:Math.PI/4,S:Math.PI/2,SW:3*Math.PI/4,W:Math.PI,NW:-3*Math.PI/4};
       const sweep=u<.28?-.9-u/.28*.4:u<.64?-1.3+(u-.28)/.36*2.7:1.4-(u-.64)/.36;
       const angle=angles[facing]+(attack?sweep:0.4+gait*.055);
-      const hx=cx+(left?-11:11),hy=waist+2+gait*.3;
-      p.line(hx,hy,hx+Math.cos(angle)*19,hy+Math.sin(angle)*12,C.ink,4);
-      p.line(hx,hy,hx+Math.cos(angle)*18,hy+Math.sin(angle)*12,hero?C.pale:C.woodLight,2);
-      p.line(hx+Math.cos(angle)*5,hy+Math.sin(angle)*4,hx+Math.cos(angle)*13,hy+Math.sin(angle)*9,hero?C.blue:C.gold,1);
-      p.rect(hx-1,hy-1,3,3,C.gold);
+      // Keep the complete sword and active trail inside the authored 64px cell.
+      // The prior off-centre hand plus 21px trail clipped east/northeast poses.
+      const hx=cx+(left?-8:8),hy=waist+2+gait*.3;
+      p.line(hx,hy,hx+Math.cos(angle)*16,hy+Math.sin(angle)*10,C.ink,3);
+      p.line(hx,hy,hx+Math.cos(angle)*15,hy+Math.sin(angle)*10,hero?C.pale:C.woodLight,2);
+      p.line(hx+Math.cos(angle)*5,hy+Math.sin(angle)*4,hx+Math.cos(angle)*12,hy+Math.sin(angle)*8,hero?C.blue:C.gold,1);
+      p.rect(hx-1,hy-1,3,3,hero?C.brass:C.gold);
       if(attack&&u>.28&&u<.65)for(let n=0;n<5;n++) {
         const a=angle-n*.12;
-        p.line(hx+Math.cos(a)*21,hy+Math.sin(a)*14,hx+Math.cos(a-.12)*21,hy+Math.sin(a-.12)*14,n<2?C.pale:C.blue,1);
+        p.line(hx+Math.cos(a)*18,hy+Math.sin(a)*12,hx+Math.cos(a-.12)*18,hy+Math.sin(a-.12)*12,n<2?C.pale:C.blue,1);
       }
     }
     if(action==='hurt')p.rect(cx-5,top+8,10,2,C.red);

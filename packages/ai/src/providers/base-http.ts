@@ -69,13 +69,14 @@ export abstract class BaseHttpTextProvider implements TextGenerationProvider {
 
   async generateText(request: TextGenerationRequest): Promise<TextGenerationResponse> {
     if (!this.apiKey) throw new Error(`${this.name} API key not configured`);
+    request.signal?.throwIfAborted();
     const model = this.config.defaultModel;
     const start = Date.now();
     const { url, init } = this.buildRequest(model, request);
 
     const res = await fetch(url, {
       ...init,
-      signal: AbortSignal.timeout(120000),
+      signal: request.signal ? AbortSignal.any([request.signal, AbortSignal.timeout(120000)]) : AbortSignal.timeout(120000),
     });
 
     if (res.status === 429) throw new Error(`${this.name}: rate limit exceeded`);

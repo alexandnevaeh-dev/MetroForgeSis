@@ -111,6 +111,7 @@ const TEMPLATE_STATIC_FILES = [
   'scripts/core/EventBus.gd',
   'scripts/UI/TitleScreen.gd',
   'scripts/test/RuntimeSmokeTest.gd',
+  'scripts/test/SpriteGroundContact.gd',
   'scenes/test/RuntimeSmokeTest.tscn',
   'scenes/world/NPC.tscn',
   'scripts/world/NPC.gd',
@@ -251,6 +252,10 @@ export class QAValidator {
         ? 'scripts/player/TopDownPlayerController.gd'
         : 'scripts/player/PlayerController.gd',
     ];
+    const smokeSourcePath = join(projectPath, 'scripts/test/RuntimeSmokeTest.gd');
+    if (existsSync(smokeSourcePath) && readFileSync(smokeSourcePath, 'utf8').includes('res://scripts/test/SpriteGroundContact.gd')) {
+      requiredFiles.push('scripts/test/SpriteGroundContact.gd');
+    }
     const missingFiles = requiredFiles.filter((f) => !existsSync(join(projectPath, f)));
     results.push({
       gate: 'required_files',
@@ -373,6 +378,7 @@ export class QAValidator {
         details: {
           issues: feasibility.issues,
           metrics: feasibility.metrics,
+          authoredUpApproaches: feasibility.authoredUpApproaches,
         },
       });
     } catch {
@@ -921,11 +927,11 @@ export class QAValidator {
       projectPath,
       '--scene',
       'res://scenes/test/RuntimeSmokeTest.tscn',
-      '--quit-after',
-      '1800',
     ], {
       encoding: 'utf-8',
-      timeout: 90000,
+      // Full campaign checks exceed 1800 rendered frames. The scene exits after
+      // its result marker; a wall-clock watchdog bounds crashes and hangs.
+      timeout: 300000,
       windowsHide: true,
       env: options?.userDataDir
         ? { ...process.env, ...isolatedUserDataEnvironment(options.userDataDir) }

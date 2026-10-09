@@ -5,9 +5,9 @@ import { join } from 'node:path';
 import { scaffoldManualProject } from './scaffold-manual-project.js';
 
 describe('manual project genre isolation', () => {
-  it.each(['TOP_DOWN_ACTION_ADVENTURE', 'SIDE_VIEW_METROIDVANIA'] as const)(
+  it.each(['TOP_DOWN_ACTION_ADVENTURE', 'SIDE_VIEW_METROIDVANIA', 'SIDE_VIEW_PLATFORMER'] as const)(
     'keeps %s graph and route in its own level set',
-    (archetype) => {
+    (archetype: 'TOP_DOWN_ACTION_ADVENTURE' | 'SIDE_VIEW_METROIDVANIA' | 'SIDE_VIEW_PLATFORMER') => {
       const outputDir = mkdtempSync(join(tmpdir(), 'metroforge-genre-'));
       try {
         const result = scaffoldManualProject({
@@ -31,6 +31,12 @@ describe('manual project genre isolation', () => {
           expect(ids).toContain('room_000');
           expect(ids).not.toContain('overworld');
           expect(route).not.toContain('dungeon_000');
+          if(archetype === 'SIDE_VIEW_PLATFORMER'){
+            const music=readFileSync(join(outputDir,'audio/music/biome_0.wav'));
+            expect(music.subarray(0,4).toString()).toBe('RIFF');
+            expect(music.length).toBeGreaterThan(44000);
+            expect(readFileSync(join(outputDir,'scenes/rooms/room_000.tscn'),'utf8')).toContain('one_way_collision = true');
+          }
         }
       } finally {
         rmSync(outputDir, { recursive: true, force: true });

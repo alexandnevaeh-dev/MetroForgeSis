@@ -72,6 +72,7 @@ export type GenerationPhaseState = {
 };
 
 export type AssetListItem = {
+  manualArtDirection?: {styleDirection: string; negativePrompt: string};
   imagePlan?: GeneratedAssetRef['imagePlan'];
   propAsset?: { image: string; layout: Record<string, unknown> };
   propAssetError?: string;
@@ -250,6 +251,9 @@ export type CredentialStatus = {
 };
 
 export type MetroforgeBridge = {
+  prepareLocalImageModel: (id:string) => Promise<{success:boolean;error?:string;modelId?:string;modelPath?:string;revision?:string;precision?:string;fileCount?:number}>;
+  cancelLocalImageModel: (id:string) => Promise<{cancelled:boolean}>;
+  onLocalImageModelProgress: (callback:(data:{id:string;completed:number;total:number;percent:number})=>void) => (()=>void);
   getCredentialStatus: () => Promise<CredentialStatus>;
   saveCredential: (id: string, value: string) => Promise<CredentialStatus>;
   removeCredential: (id: string) => Promise<CredentialStatus>;
@@ -456,6 +460,8 @@ export type MetroforgeBridge = {
   generateAsset: (request: {
     projectPath: string;
     description: string;
+    styleDirection?: string;
+    negativePrompt?: string;
     assetType: string;
     generationMode?: string;
     variants?: number;
@@ -464,6 +470,7 @@ export type MetroforgeBridge = {
     backgroundDetail?: 'standard' | 'detailed';
     seed?: number;
   }) => Promise<GenerateAssetResponse>;
+  getManualArtDirection: (projectPath: string) => Promise<{styleDirection: string; negativePrompt: string}>;
   listRooms: (projectPath: string) => Promise<Array<Record<string, unknown> & { id: string }>>;
   importGameSetAssets: (projectPath: string) => Promise<{ success: boolean; added?: number; skipped?: number; excludedQa?: number; error?: string }>;
   updateRoom: (

@@ -1,5 +1,5 @@
-import { readValidationSnapshot } from './validation-snapshot.js';
 import { readTopDownTerrain } from './topdown-terrain.js';
+import {readActiveRoomKits} from './room-kit-inspector.js';
 import { resolvePropAsset } from './prop-asset.js';
 import { topDownRoomRecords } from './topdown-room-records.js';
 import { latestPhases } from './latest-phases.js';
@@ -14,6 +14,7 @@ import { join, resolve as resolvePath, basename, dirname } from 'node:path';
 import { getVersionString } from '@metroforge/core';
 import { loadConfig, resolveGeneratedGamesPath, isPathWithinRoot, type GameArchetype, parseProviderEnabledMap, isProviderEnabledSettingKey } from '@metroforge/shared';
 import { validateTextConnectionSetting, textConnectionValue } from '@metroforge/shared/provider-toggles';
+import {readValidationSnapshot} from './validation-snapshot.js';
 import {
   GenerationPipeline,
   readEditableLoot,
@@ -31,6 +32,7 @@ import {
   saveEditableItem,
   computeOverallProgress,
   generateManualAsset,
+  readManualArtDirection,
   loadProjectContext,
   buildDependencyGraph,
   findAssetUsages,
@@ -108,6 +110,7 @@ import {
   statusToLegacyHealth,
   createVisionCritic,
   registerFoundryImageProviders,
+  DiffusersProvider,
 } from '@metroforge/assets';
 import type { GenerationMode, GenerationProfile } from '@metroforge/shared';
 import { writeVisualSliceApproval, readVisualSliceApproval } from '@metroforge/shared';
@@ -407,6 +410,36 @@ export function registerIpcHandlers(cwd: string): void {
   ipcMain.handle('save-credential', (event, id: unknown, value: unknown) => { checkCredentialSender(event); return credentials.save(id, value); });
   ipcMain.handle('remove-credential', (event, id: unknown) => { checkCredentialSender(event); return credentials.remove(id); });
   void applyStoredConcurrency(dataDir);
+  const modelPreparations = new Map<string, { controller: AbortController; owner: number }>();
+  ipcMain.handle('prepare-local-image-model', async (event, id: unknown) => {
+    checkCredentialSender(event);
+    if (typeof id !== 'string' || !/^[A-Za-z0-9_-]{1,80}$/.test(id)) return {success:false,error:'Invalid preparation request'};
+    if (modelPreparations.size) return {success:false,error:'A local model preparation is already running'};
+    const controller = new AbortController();
+    modelPreparations.set(id, {controller, owner:event.sender.id});
+    const abort = () => controller.abort();
+    event.sender.once('destroyed', abort);
+    try {
+      const prefs = await loadAppPreferences(dataDir);
+      if (parseProviderEnabledMap(prefs).diffusers === false) throw new Error('Enable Diffusers in provider settings before preparing a local artwork model');
+      const provider = new DiffusersProvider({pythonPath:process.env.DIFFUSERS_PYTHON,modelId:process.env.DIFFUSERS_MODEL_ID});
+      const result = await workerPool.run('image', () => provider.prepareModel({signal:controller.signal,
+        onProgress: progress => { if (!event.sender.isDestroyed()) event.sender.send('local-image-model-progress', {id,...progress}); }}));
+      return {success:true,...result};
+    } catch (error) {
+      return {success:false,error:error instanceof Error ? error.message : 'Local model preparation failed'};
+    } finally {
+      modelPreparations.delete(id);
+      event.sender.removeListener('destroyed', abort);
+    }
+  });
+  ipcMain.handle('cancel-local-image-model', (event, id: unknown) => {
+    checkCredentialSender(event);
+    const work = typeof id === 'string' ? modelPreparations.get(id) : undefined;
+    if (!work || work.owner !== event.sender.id) return {cancelled:false};
+    work.controller.abort();
+    return {cancelled:true};
+  });
 
   /** Canonical Godot path for Settings / Doctor / Preview / Play / QA / export â€” prefs beat env. */
   async function resolveCanonicalGodot(
@@ -428,13 +461,13 @@ export function registerIpcHandlers(cwd: string): void {
       const appendEvent = generationEventStore.createDeferredAppender();
       let generationFailure: string | null = null;
       const payload = job.payload as {
+        worldLayout?: 'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region' | 'stormglass-archive-wing';
         title?: string;
         prompt: string;
         profile: GenerationProfile;
         mode: GenerationMode;
         seed: number;
         generationControl?: GenerationControlMode;
-        worldLayout?: 'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region' | 'stormglass-archive-wing';
         archetype?: GameArchetype;
         externalVisualPack?: ExternalVisualPackId;
         targetEngine?: 'unity';
@@ -1256,13 +1289,13 @@ export function registerIpcHandlers(cwd: string): void {
     async (
       event,
       opts: {
+        worldLayout?: 'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region' | 'stormglass-archive-wing';
         title?: string;
         prompt: string;
         profile: GenerationProfile;
         mode: GenerationMode;
         seed: number;
         generationControl?: GenerationControlMode;
-        worldLayout?: 'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region' | 'stormglass-archive-wing';
         archetype?: GameArchetype;
         externalVisualPack?: ExternalVisualPackId;
         targetEngine?: 'unity';
@@ -1354,6 +1387,10 @@ export function registerIpcHandlers(cwd: string): void {
         sourceType:
           (artifact.sourceType as string | undefined) ?? (meta.sourceType as string | undefined),
         manual: artifact.manual as boolean | undefined,
+        manualArtDirection: artifact.manualArtDirection && typeof artifact.manualArtDirection === 'object'
+          && typeof (artifact.manualArtDirection as Record<string, unknown>).styleDirection === 'string'
+          && typeof (artifact.manualArtDirection as Record<string, unknown>).negativePrompt === 'string'
+          ? artifact.manualArtDirection as {styleDirection: string; negativePrompt: string} : undefined,
         prompt: artifact.prompt as string | undefined,
         seed: artifact.seed as number | undefined,
         dataUrl: loadAssetThumbnail(projectPath, path),
@@ -1374,6 +1411,7 @@ export function registerIpcHandlers(cwd: string): void {
           path: relPath,
           category,
           imagePlan: undefined,
+          manualArtDirection: undefined,
           provider: undefined,
           modelId: undefined,
           fallbackGenerated: undefined,
@@ -1408,6 +1446,12 @@ export function registerIpcHandlers(cwd: string): void {
     return { dataUrl: loadAssetThumbnail(projectPath, relPath) };
   });
 
+  ipcMain.handle('get-manual-art-direction', (event, projectPath: string) => {
+    checkCredentialSender(event);
+    assertProjectPath(projectPath, cwd);
+    return readManualArtDirection(projectPath);
+  });
+
   ipcMain.handle(
     'generate-asset',
     async (
@@ -1415,6 +1459,8 @@ export function registerIpcHandlers(cwd: string): void {
       request: {
         projectPath: string;
         description: string;
+        styleDirection?: string;
+        negativePrompt?: string;
         assetType: string;
         assetId?: string;
         operation?: 'create' | 'replace';
@@ -1446,6 +1492,8 @@ export function registerIpcHandlers(cwd: string): void {
           generateManualAsset({
             projectPath: request.projectPath,
             description: request.description,
+            styleDirection: request.styleDirection,
+            negativePrompt: request.negativePrompt,
             assetType: request.assetType as import('@metroforge/generation').ManualAssetType,
             assetId: request.assetId,
             operation: request.operation,
@@ -1466,6 +1514,8 @@ export function registerIpcHandlers(cwd: string): void {
           generateManualAsset({
             projectPath: request.projectPath,
             description: request.description,
+            styleDirection: request.styleDirection,
+            negativePrompt: request.negativePrompt,
             assetType: request.assetType as import('@metroforge/generation').ManualAssetType,
             operation: 'create',
             seed: request.seed === undefined ? undefined : (request.seed + i * 997) % 2147483648,
@@ -1732,10 +1782,12 @@ export function registerIpcHandlers(cwd: string): void {
       return topDownRoomRecords(overworld);
     }
     const project = loadProjectContext(projectPath);
+    const activeRoomKits = readActiveRoomKits(projectPath, project.roomIds);
     return project.roomIds.map((id) => ({
       id,
       ...(project.roomsData[id] ?? {}),
       tileSize: project.roomsData[id]?.tileSize ?? project.gameDna.technical?.tileSize,
+      ...(activeRoomKits[id] ? {themedRoomKit:activeRoomKits[id]} : {}),
     }));
   });
 
@@ -1767,10 +1819,10 @@ export function registerIpcHandlers(cwd: string): void {
     'regenerate-room',
     async (_event, projectPath: string, roomId: string, scope?: 'full' | 'geometry' | 'encounter') => {
       assertProjectPath(projectPath, cwd);
-      const previous=snapshotRoomRecord(projectPath,roomId);
+      const previous = snapshotRoomRecord(projectPath, roomId);
       const previousScene=existsSync(join(projectPath,'data','world','overworld.json'))?undefined:snapshotRoomScene(projectPath,roomId);
-      const result=regenerateRoom(projectPath,roomId,scope ?? 'full');
-      if(result.success&&previous)recordRoomEdit(projectPath,roomId,previous,'Regenerate room',previousScene);
+      const result = regenerateRoom(projectPath, roomId, scope ?? 'full');
+      if (result.success && previous) recordRoomEdit(projectPath, roomId, previous, 'Regenerate room',previousScene);
       return result;
     },
   );

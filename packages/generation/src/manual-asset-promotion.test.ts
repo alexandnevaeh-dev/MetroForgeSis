@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
-import { generateManualAsset } from './manual-asset.js';
+import { generateManualAsset, readManualArtDirection } from './manual-asset.js';
 import { listAssetHistory, restoreAssetVersion } from './asset-history.js';
 
 const fixture = vi.hoisted(() => ({ generate: vi.fn(), failManifest: false }));
@@ -114,14 +114,40 @@ describe('manual artwork promotion', () => {
       }),
     );
     put('validation_report.json', JSON.stringify({ passed: true, productionReady: true }));
-    fixture.generate.mockImplementation(async (opts) => generated(opts));
+    fixture.generate.mockImplementation(async (opts: Parameters<typeof generated>[0]) => generated(opts));
   });
   afterEach(() => {
     fixture.failManifest = false;
     rmSync(project, { recursive: true, force: true });
   });
+  it('reads an editable rendering/light brief and deduplicated authored exclusions without mutating the project', () => {
+    const style=JSON.stringify({renderingStyle:'HD pixel art',lighting:'warm upper-left light',negativePrompts:['text','watermark'],promptPrefixes:{CHARACTER:'long traversal and full castle scene instructions'}});
+    put('style_bible.json',style);
+    put('design_bible.json',JSON.stringify({art:{negativePrompts:['watermark','photorealistic']}}));
+    expect(readManualArtDirection(project)).toEqual({styleDirection:'HD pixel art, warm upper-left light',negativePrompt:'text, watermark, photorealistic'});
+    expect(bytes('style_bible.json')).toBe(style);
+    expect(bytes(path)).toBe('original artwork');
+  });
+  it('passes authored style and exclusions to the staged generation request', async () => {
+    expect((await generateManualAsset({...request(),styleDirection:'Painted bronze armor',negativePrompt:'text'})).success).toBe(true);
+    expect(fixture.generate.mock.calls[0][0]).toMatchObject({description:request().description,styleDirection:'Painted bronze armor',negativePrompt:'text'});
+    expect(registry().artifacts.find((asset:any)=>asset.id==='player').manualArtDirection)
+      .toEqual({styleDirection:'Painted bronze armor',negativePrompt:'text'});
+    expect((await restoreAssetVersion(project,'player',1)).success).toBe(true);
+    expect(registry().artifacts.find((asset:any)=>asset.id==='player').manualArtDirection).toBeUndefined();
+    expect(registry().assetHistory.player.some((version:any)=>version.artifact.manualArtDirection?.styleDirection==='Painted bronze armor')).toBe(true);
+  });
+  it('rejects invalid brief fields before inference and leaves artwork untouched', async () => {
+    for(const patch of [{styleDirection:''},{styleDirection:5},{styleDirection:'x'.repeat(2001)},{negativePrompt:[]},{negativePrompt:'x'.repeat(4001)}]){
+      expect((await generateManualAsset({...request(),...patch} as any)).success).toBe(false);
+    }
+    expect(fixture.generate).not.toHaveBeenCalled();
+    expect(bytes(path)).toBe('original artwork');
+    put('style_bible.json',JSON.stringify({negativePrompts:'not an array'}));
+    expect(()=>readManualArtDirection(project)).toThrow('exclusions are invalid');
+  });
   it('stages inference and snapshots old bytes before replacing the registered nested path', async () => {
-    fixture.generate.mockImplementation(async (opts) => {
+    fixture.generate.mockImplementation(async (opts: Parameters<typeof generated>[0]) => {
       expect(opts.outputDir).not.toBe(project);
       expect(readFileSync(join(opts.outputDir, path), 'utf8')).toBe('original artwork');
       const result = generated(opts);
@@ -156,7 +182,7 @@ describe('manual artwork promotion', () => {
   });
   it('does not rewrite live images or registry when provider fails after checkpointing', async () => {
     const before = bytes('generation_manifest.json');
-    fixture.generate.mockImplementation(async (opts) => {
+    fixture.generate.mockImplementation(async (opts: Parameters<typeof generated>[0]) => {
       generated(opts);
       throw new Error('Provider unavailable');
     });
@@ -166,12 +192,12 @@ describe('manual artwork promotion', () => {
     expect(bytes('generation_manifest.json')).toBe(before);
   });
   it('refuses fallback artwork and unexpected paths', async () => {
-    fixture.generate.mockImplementation(async (opts) => ({
+    fixture.generate.mockImplementation(async (opts: Parameters<typeof generated>[0]) => ({
       ...generated(opts),
       fallbackGenerated: true,
     }));
     expect((await generateManualAsset(request())).success).toBe(false);
-    fixture.generate.mockImplementation(async (opts) => ({
+    fixture.generate.mockImplementation(async (opts: Parameters<typeof generated>[0]) => ({
       ...generated(opts),
       path: 'assets/wrong.png',
     }));
@@ -179,7 +205,7 @@ describe('manual artwork promotion', () => {
     expect(bytes(path)).toBe('original artwork');
   });
   it('preserves concurrent user edits instead of overwriting a changed project', async () => {
-    fixture.generate.mockImplementation(async (opts) => {
+    fixture.generate.mockImplementation(async (opts: Parameters<typeof generated>[0]) => {
       const result = generated(opts);
       put(path, 'user edit');
       return result;
@@ -222,7 +248,7 @@ describe('manual artwork promotion', () => {
   });
   it('locks generation and restore while a provider is in flight', async () => {
     let finish!: () => void;
-    fixture.generate.mockImplementation(async (opts) => {
+    fixture.generate.mockImplementation(async (opts: Parameters<typeof generated>[0]) => {
       await new Promise<void>((resolve) => {
         finish = resolve;
       });
@@ -291,7 +317,7 @@ describe('manual artwork promotion', () => {
   });
   it.each([null, [], {}, 'ultra', 1024])(
     'rejects malformed detail %j before calling the provider',
-    async (value) => {
+    async (value: unknown) => {
       const before = bytes('generation_manifest.json');
       const result = await generateManualAsset({ ...request(), backgroundDetail: value as any });
       expect(result.success).toBe(false);

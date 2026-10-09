@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { GameDNASchema } from '@metroforge/schemas';
 import { AssetPipeline } from './asset-pipeline.js';
 import { decodePngRgba } from './png.js';
-import { canopyEnvironment,canopyTerrainV2 } from './topdown-canopy-environment.js';
+import { canopyEnvironment,canopyTerrainV2,canopyTerrainV3,canopyTerrainV4 } from './topdown-canopy-environment.js';
 import { shouldUseCanopyEnvironment } from './canopy-environment-selection.js';
 import {ImageProviderRegistry} from './image-router.js';
 import {canopyIcon,canopyPickup} from './topdown-canopy-art.js';
@@ -13,19 +13,27 @@ import {canopyIcon,canopyPickup} from './topdown-canopy-art.js';
 const dna=GameDNASchema.parse(JSON.parse(readFileSync(new URL('./fixtures/canopy-game-dna.json',import.meta.url),'utf8')));
 
 describe('shared canopy environment',()=>{
-  it('preserves the atlas bytes verified by the native canopy visual run',()=>{
+  it('preserves the recoverable legacy v2 atlas bytes',()=>{
     const hash=createHash('sha256').update(canopyTerrainV2().bytes).digest('hex');
     expect(hash).toBe('fec49cab6c7dc0fa5693b6009d2ec13cc99ad8b01db770fbe4da0a48fc98cd11');
   });
+  it('preserves the recoverable v3 atlas bytes',()=>{
+    expect(createHash('sha256').update(canopyTerrainV3().bytes).digest('hex')).toBe('07c3cafc05a0aa05391c7891e8d49db0bf4f55523d057dae84b6e25984b1dc55');
+  });
   it('exports material variants and shore masks within the actual atlas',()=>{
-    const terrain=canopyTerrainV2(),image=decodePngRgba(terrain.bytes);
+    const terrain=canopyTerrainV4(),image=decodePngRgba(terrain.bytes);
     expect(new Set(terrain.roles.map(role=>role.role)).size).toBe(terrain.roles.length);
     for(const role of terrain.roles){
       expect(role.col*32+32).toBeLessThanOrEqual(image.width);
       expect(role.row*32+32).toBeLessThanOrEqual(image.height);
       expect(image.rgba[((role.row*32+16)*image.width+role.col*32+16)*4+3]).toBe(255);
     }
-    for(let mask=0;mask<16;mask++)expect(terrain.roles.some(role=>role.role===`water_edge_${mask}`)).toBe(true);
+    for(let mask=0;mask<16;mask++){
+      expect(terrain.roles.some(role=>role.role===`water_edge_${mask}`)).toBe(true);
+      expect(terrain.roles.some(role=>role.role===`wall_edge_${mask}`)).toBe(true);
+      for(let variant=0;variant<4;variant++)expect(terrain.roles.some(role=>role.role===`wall_edge_${mask}_variant_${variant}`)).toBe(true);
+    }
+    expect(image.height).toBe(544);
   });
   it('keeps ground anchors inside all large landmark images',()=>{
     for(const kind of ['root_arch','vine_gate','seed_shrine','crown','bridge']){
@@ -52,19 +60,19 @@ describe('shared canopy environment',()=>{
       expect(discovery).not.toHaveBeenCalled();
     } finally {discovery.mockRestore();}
     const atlas=result.assets.find(asset=>asset.path==='assets/tilesets/biome_0/source.png');
-    expect(atlas?.buffer.equals(canopyTerrainV2().bytes)).toBe(true);
+    expect(atlas?.buffer.equals(canopyTerrainV4().bytes)).toBe(true);
     const tiles=result.assets.filter(asset=>asset.path.startsWith('assets/tilesets/biome_0/'));
     expect(tiles.length).toBeGreaterThan(1);
     for(const asset of tiles){expect(asset.maturity).toBe('QA_REVIEW');expect(asset.productionReady).toBe(false);expect(asset.productionAllowed).toBe(false);expect(asset.critiqueScore).toBe(0);}
     const metadata=JSON.parse(readFileSync(join(outputDir,'assets/tilesets/biome_0/terrain.json'),'utf8'));
-    expect(metadata.roles).toEqual(canopyTerrainV2().roles);
+    expect(metadata.roles).toEqual(canopyTerrainV4().roles);
     expect(metadata.productionApproved).toBe(false);
     expect(result.warnings.some(message=>message.includes('production visual review is pending'))).toBe(true);
     const props=result.assets.filter(asset=>asset.path.startsWith('assets/props/canopy/'));
     expect(props).toHaveLength(14);
     for(const prop of props){expect(prop.maturity).toBe('QA_REVIEW');expect(prop.productionAllowed).toBe(false);expect(prop.critiqueScore).toBe(0);}
     const actor=result.assets.find(asset=>asset.path==='assets/characters/player_run_W.png')!;
-    expect(createHash('sha256').update(actor.buffer).digest('hex')).toBe('0571b5ddeb732e1070df243f98a09703bdf609f8c5b338454eb9f188fe153b7f');
+    expect(createHash('sha256').update(actor.buffer).digest('hex')).toBe('f1f55480977327fa29ee2444887d7c413df733c18488e865dea39a68ea39e0e1');
     for(const [path,hash] of [
       ['assets/enemies/enemy_001_attack.png','9bd8f106bf85383a5c58c0a4795a6465774f572a714e4fb6f8710b5e29c1c826'],
       ['assets/bosses/boss_final_run.png','e7f625326c8814306c7af3229ab9cffd9382c92273152aff8246c71d2bb04185'],

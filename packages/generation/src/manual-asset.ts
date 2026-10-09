@@ -37,6 +37,8 @@ export type ManualAssetType =
 export type ManualGenerationMode = 'image_only' | 'game_asset' | 'complete_entity';
 
 export interface ManualAssetRequest {
+  styleDirection?: string;
+  negativePrompt?: string;
   backgroundDetail?: 'standard' | 'detailed';
   projectPath: string;
   description: string;
@@ -51,6 +53,22 @@ export interface ManualAssetRequest {
   commercialSafe?: boolean;
   nvidiaImageModel?: string;
   hardwareProfile?: string;
+}
+
+/** Editable asset brief; whole-scene prompt prefixes stay in the project bible. */
+export function readManualArtDirection(projectPath: string): {styleDirection: string; negativePrompt: string} {
+  const dna = GameDNASchema.parse(JSON.parse(readFileSync(assetFile(projectPath, 'game_dna.json'), 'utf8')));
+  const stylePath = assetFile(projectPath, 'style_bible.json');
+  const designPath = assetFile(projectPath, 'design_bible.json');
+  const style = existsSync(stylePath) ? JSON.parse(readFileSync(stylePath, 'utf8')) as Partial<StyleBible> : undefined;
+  const art = existsSync(designPath) ? (JSON.parse(readFileSync(designPath, 'utf8')) as DesignBible).art : undefined;
+  const fields = [style?.renderingStyle ?? dna.identity.visualStyle, style?.lighting];
+  if (fields.some(value => value !== undefined && typeof value !== 'string')) throw new Error('Project style direction is invalid');
+  if ((style?.negativePrompts !== undefined && !Array.isArray(style.negativePrompts)) || (art?.negativePrompts !== undefined && !Array.isArray(art.negativePrompts))) throw new Error('Project artwork exclusions are invalid');
+  const negatives = [...(style?.negativePrompts ?? []), ...(art?.negativePrompts ?? [])];
+  if (negatives.some(value => typeof value !== 'string')) throw new Error('Project artwork exclusions are invalid');
+  return {styleDirection: [...new Set(fields.filter((value): value is string => !!value?.trim()).map(value=>value.trim()))].join(', '),
+    negativePrompt: [...new Set(negatives.map(value=>value.trim()).filter(Boolean))].join(', ')};
 }
 
 export interface ManualAssetResult {
@@ -112,6 +130,10 @@ export async function generateManualAsset(request: ManualAssetRequest): Promise<
   try {
     if (!request.description?.trim() || request.description.length > 8000)
       throw new Error('Enter a prompt of 1–8000 characters');
+    if (request.styleDirection !== undefined && (typeof request.styleDirection !== 'string' || !request.styleDirection.trim() || request.styleDirection.length > 2000))
+      throw new Error('Enter a style direction of 1–2000 characters');
+    if (request.negativePrompt !== undefined && (typeof request.negativePrompt !== 'string' || request.negativePrompt.length > 4000))
+      throw new Error('Artwork exclusions must be text of at most 4000 characters');
     const types = [
       'character_concept',
       'player_sprite',
@@ -263,6 +285,8 @@ export async function generateManualAsset(request: ManualAssetRequest): Promise<
       artBible,
       styleBible,
       description: request.description,
+      styleDirection: request.styleDirection,
+      negativePrompt: request.negativePrompt,
       assetType: request.assetType,
       assetId,
       relPath,
@@ -357,6 +381,9 @@ export async function generateManualAsset(request: ManualAssetRequest): Promise<
       ...licenseFieldsForProvider(asset.provider),
       manual: true,
       prompt: request.description,
+      manualArtDirection: request.styleDirection !== undefined
+        ? {styleDirection: request.styleDirection, negativePrompt: request.negativePrompt ?? ''}
+        : undefined,
       seed,
       dirty: false,
       dirtyReason: undefined,

@@ -10,7 +10,7 @@ export class GeminiProvider extends BaseHttpTextProvider {
     super({
       ...config,
       baseUrl: config.baseUrl || 'https://generativelanguage.googleapis.com/v1beta',
-      defaultModel: config.defaultModel || 'gemini-2.0-flash',
+      defaultModel: config.defaultModel || process.env.GEMINI_DEFAULT_MODEL || 'gemini-flash-latest',
       priority: config.priority ?? 80,
     });
   }
@@ -20,7 +20,7 @@ export class GeminiProvider extends BaseHttpTextProvider {
     const res = await fetch(`${this.config.baseUrl}/models?key=${this.apiKey}`, {
       signal: AbortSignal.timeout(10000),
     });
-    if (!res.ok) return [this.config.defaultModel];
+    if (!res.ok) throw new Error(`${this.name} model discovery failed: ${res.status}`);
     const data = (await res.json()) as { models?: { name: string }[] };
     return (data.models ?? []).map((m) => m.name.replace('models/', ''));
   }

@@ -7,6 +7,7 @@ import { useStudio } from './StudioContext.js';
 import { GENERATION_MODES } from './generation-options.js';
 import { Button, Input, Select, TextArea } from './ui/index.js';
 import type { GenerateAssetResponse, GenerateAssetVariantResult } from './metroforge-api.js';
+import {LocalImageModelPreparation} from './LocalImageModelPreparation.js';
 
 const ASSET_TYPES = [
   ['character_concept', 'Character concept'],
@@ -51,11 +52,18 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
     "An ancient obsidian sword with glowing violet runes, matching this project's art style.",
   );
   const [assetType, setAssetType] = useState('weapon');
+  const [styleDirection, setStyleDirection] = useState('');
+  const [negativePrompt, setNegativePrompt] = useState('');
+  const [styleLoading, setStyleLoading] = useState(true);
+  const [styleError, setStyleError] = useState('');
+  const styleRead = useRef(0);
+  const artDirectionPrefill = useRef<{styleDirection: string; negativePrompt: string} | undefined>(undefined);
   const [mode, setMode] = useState('HYBRID_FREE');
   const [seed, setSeed] = useState('42');
   const [variants, setVariants] = useState(1);
   const [backgroundDetail, setBackgroundDetail] = useState<'standard' | 'detailed'>('standard');
   const [busy, setBusy] = useState(false);
+  const [modelPreparing, setModelPreparing] = useState(false);
   const [inspecting, setInspecting] = useState(false);
   const [results, setResults] = useState<GenerateAssetVariantResult[]>([]);
   const [selected, setSelected] = useState<{ id: string; path: string } | null>(null);
@@ -78,6 +86,26 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
       inspection.current++;
     };
   }, []);
+
+  const loadStyleDirection = async () => {
+    const token = ++styleRead.current;
+    setStyleLoading(true);
+    setStyleError('');
+    try {
+      if (!window.metroforge?.getManualArtDirection) throw new Error('Desktop connection unavailable. Reopen the app and retry.');
+      const brief = await window.metroforge.getManualArtDirection(projectPath);
+      if (!mounted.current || styleRead.current !== token) return;
+      if (typeof brief?.styleDirection !== 'string' || !brief.styleDirection.trim() || typeof brief.negativePrompt !== 'string') throw new Error('Project art direction is invalid. Check its style bible and retry.');
+      const direction = artDirectionPrefill.current ?? brief;
+      setStyleDirection(direction.styleDirection);
+      setNegativePrompt(direction.negativePrompt);
+    } catch (err) {
+      if (mounted.current && styleRead.current === token) setStyleError(err instanceof Error ? err.message : String(err));
+    } finally {
+      if (mounted.current && styleRead.current === token) setStyleLoading(false);
+    }
+  };
+  useEffect(() => {void loadStyleDirection(); return () => {styleRead.current++;};}, [projectPath]);
 
   const inspectAsset = async (assetPath: string, assetId?: string) => {
     const token = ++inspection.current;
@@ -127,6 +155,15 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
 
   useEffect(() => {
     if (!generatorPrefill) return;
+    if (typeof generatorPrefill.styleDirection === 'string' && generatorPrefill.styleDirection.trim()) {
+      const direction = {styleDirection: generatorPrefill.styleDirection, negativePrompt: generatorPrefill.negativePrompt ?? ''};
+      artDirectionPrefill.current = direction;
+      setStyleDirection(direction.styleDirection);
+      setNegativePrompt(direction.negativePrompt);
+    } else if (generatorPrefill.assetId) {
+      artDirectionPrefill.current = undefined;
+      void loadStyleDirection();
+    }
     if (generatorPrefill.description) setDescription(generatorPrefill.description);
     if (generatorPrefill.assetType && ASSET_TYPES.some(([id]) => id === generatorPrefill.assetType))
       setAssetType(generatorPrefill.assetType);
@@ -151,7 +188,7 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
   }, [generatorPrefill, projectPath]);
 
   const handleGenerate = async (replace = false) => {
-    if (action.current || inspecting) return;
+    if (action.current || inspecting || styleLoading || styleError || !styleDirection.trim()) return;
     setError('');
     const parsedSeed = seed.trim() === '' ? undefined : Number(seed);
     if (
@@ -186,6 +223,8 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
       const response = await window.metroforge.generateAsset({
         projectPath,
         description,
+        styleDirection,
+        negativePrompt,
         assetType,
         generationMode: mode,
         variants: replace ? 1 : variants,
@@ -254,6 +293,16 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
           {selectedProject?.archetype?.replace(/_/g, ' ').toLowerCase() ?? 'project style'}. Artwork
           stays in this project's asset set. Switching projects clears this selection.
         </p>
+        {mode === 'LOCAL_ONLY' && <LocalImageModelPreparation disabled={busy || inspecting} onBusyChange={setModelPreparing} />}
+        <label><span id="asset-style-direction-label">Style direction</span>
+          <TextArea aria-labelledby="asset-style-direction-label" rows={2} maxLength={2000}
+            disabled={busy || styleLoading} value={styleDirection} onChange={e=>setStyleDirection(e.target.value)} /></label>
+        <p className="hint">A concise project style for this artwork. Review or edit it before generating; the camera follows your game's genre.</p>
+        <label><span id="asset-negative-prompt-label">Exclude</span>
+          <TextArea aria-labelledby="asset-negative-prompt-label" rows={2} maxLength={4000}
+            disabled={busy || styleLoading} value={negativePrompt} onChange={e=>setNegativePrompt(e.target.value)} /></label>
+        {styleLoading && <p className="hint" role="status">Loading project art direction…</p>}
+        {styleError && <div><p className="hint" role="alert">{styleError}</p><Button onClick={()=>void loadStyleDirection()}>Retry art direction</Button></div>}
         <label>
           <span id="asset-prompt-label">Prompt</span>
           <TextArea
@@ -350,13 +399,13 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
           <Button
             variant="primary"
             aria-busy={busy}
-            disabled={busy || inspecting || !description.trim()}
+            disabled={busy || modelPreparing || inspecting || styleLoading || !!styleError || !styleDirection.trim() || !description.trim()}
             onClick={() => void handleGenerate()}
           >
             {variants > 1 ? `Generate ${variants} alternatives` : 'Generate alternative'}
           </Button>
           <Button
-            disabled={busy || inspecting || !selected || !description.trim()}
+            disabled={busy || modelPreparing || inspecting || styleLoading || !!styleError || !styleDirection.trim() || !selected || !description.trim()}
             onClick={() => void handleGenerate(true)}
           >
             Replace selected
@@ -383,7 +432,7 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
         {results.map((result, index) => (
           <div
             key={`${result.asset?.id ?? 'failed'}-${index}`}
-            className={result.success ? 'result success' : 'result error'}
+            className={!result.success ? 'result error' : result.asset?.productionReady === true ? 'result success' : 'result'}
           >
             <p>
               Alternative {index + 1} ·{' '}
@@ -398,6 +447,12 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
             )}
             {result.success && result.asset?.executionMetadata?.actualDevice && (
               <p className="hint">Generated on {result.asset.executionMetadata.actualDevice}</p>
+            )}
+            {result.success && (result.asset?.critiquePassed === false || result.asset?.maturity === 'REJECTED') && (
+              <p role="status">Automated check rejected this image{result.asset?.critiqueScore !== undefined ? ` (score ${result.asset.critiqueScore})` : ''}. Saved for inspection; review before use.</p>
+            )}
+            {result.success && result.asset?.critiquePassed !== false && result.asset?.maturity !== 'REJECTED' && result.asset?.productionReady !== true && (
+              <p role="status">Draft image saved for review{result.asset?.critiqueScore !== undefined ? ` (automated score ${result.asset.critiqueScore})` : ''}. Verify appearance and animation before game use.</p>
             )}
             {result.success && result.asset && (
               <Button

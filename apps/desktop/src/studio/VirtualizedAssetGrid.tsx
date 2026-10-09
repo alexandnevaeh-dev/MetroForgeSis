@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AssetRecord } from './types.js';
 import { Badge } from './ui/index.js';
+import { AnimationThumbnail } from './AnimationThumbnail.js';
 
 const CARD_HEIGHT = 148;
 const CARD_WIDTH = 148;
@@ -41,9 +42,10 @@ interface VirtualizedAssetGridProps {
   assets: AssetRecord[];
   selectedId?: string;
   onSelect: (asset: AssetRecord) => void;
+  loadSource: (path: string) => Promise<{dataUrl?:string}>;
 }
 
-export function VirtualizedAssetGrid({ assets, selectedId, onSelect }: VirtualizedAssetGridProps) {
+export function VirtualizedAssetGrid({ assets, selectedId, onSelect, loadSource }: VirtualizedAssetGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(640);
@@ -104,7 +106,9 @@ export function VirtualizedAssetGrid({ assets, selectedId, onSelect }: Virtualiz
                 }
               }}
             >
-              {asset.dataUrl ? (
+              {asset.sourceFrames || asset.sourceSheet || asset.animationSourceError ? (
+                <AnimationThumbnail asset={asset} loadSource={loadSource} />
+              ) : asset.dataUrl ? (
                 <img src={asset.dataUrl} alt={asset.id} />
               ) : (
                 <div className="asset-placeholder">{asset.category}</div>

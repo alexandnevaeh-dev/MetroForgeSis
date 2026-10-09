@@ -20,6 +20,20 @@ const dna: GameDNA = {
 };
 
 describe('UnrealProjectAssembler', () => {
+  it('retains Platformer ledge data and warns about missing native one-way behavior', () => {
+    const outputDir=join(tmpdir(),`mf-unreal-platformer-${Date.now()}`);
+    const roomIds=['room_000','room_001'];
+    const worldGraph: WorldGraph={version:'0.1.0',seed:9,nodes:roomIds.map(id=>({id,type:'room',label:id,metadata:{archetype:'tutorial',platformerStage:true,targetTileWidth:64,targetTileHeight:24}})),edges:[],regions:[]};
+    const progressionGraph: ProgressionGraph={version:'0.1.0',seed:9,startNodeId:roomIds[0]!,endNodeId:roomIds[1]!,nodes:[],edges:[],abilities:[],criticalPath:roomIds};
+    const result=new UnrealProjectAssembler().assemble({outputDir,roomIds,worldGraph,progressionGraph,
+      gameDna:{...dna,archetype:'SIDE_VIEW_PLATFORMER',abilities:[]},
+      textureFiles:new Map([['assets/tilesets/biome_0/source.png',Buffer.from('path presence fixture')]])});
+    expect(result.success).toBe(true);
+    expect(result.warnings).toContainEqual(expect.stringContaining('does not yet implement jump-through ledges'));
+    const pack=JSON.parse(readFileSync(join(outputDir,'Content/Raw/gameplay.json'),'utf8'));
+    expect(pack.rooms.some((room: {solids: Array<{oneWay?:boolean}>})=>room.solids.some(solid=>solid.oneWay))).toBe(true);
+    rmSync(outputDir,{recursive:true,force:true});
+  });
   it('writes a Paper2D C++ project with plugins enabled', () => {
     const outputDir = join(tmpdir(), `mf-unreal-${Date.now()}`);
     mkdirSync(outputDir, { recursive: true });
