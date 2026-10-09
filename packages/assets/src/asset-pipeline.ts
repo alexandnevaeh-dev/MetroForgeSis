@@ -4661,6 +4661,7 @@ export class AssetPipeline {
   async generateManual(opts: {
     gameDna: GameDNA;
     backgroundDetail?: 'standard' | 'detailed';
+    sourceDetail?: 'standard' | 'detailed';
     artBible?: ArtBible;
     styleBible?: StyleBible;
     description: string;
@@ -4695,7 +4696,7 @@ export class AssetPipeline {
   }): Promise<GeneratedAsset> {
     const tileSize = opts.gameDna.technical.tileSize;
     const existingFullPath = join(opts.outputDir, opts.relPath);
-    const plan = manualImagePlan(opts.assetType, opts.assetId, existsSync(existingFullPath) ? readFileSync(existingFullPath) : undefined, opts.backgroundDetail);
+    const plan = manualImagePlan(opts.assetType, opts.assetId, existsSync(existingFullPath) ? readFileSync(existingFullPath) : undefined, opts.backgroundDetail, opts.sourceDetail);
     const negativePrompt = opts.negativePrompt ?? applyStyleNegativePrompt(
       opts.styleBible,
       opts.artBible?.negativePrompts.join(', '),

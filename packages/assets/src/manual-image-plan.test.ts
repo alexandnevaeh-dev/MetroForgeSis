@@ -12,6 +12,22 @@ function source(width = 32, height = 16, alpha = 255) {
 }
 
 describe('manual art canvas and processing contracts', () => {
+  it('uses detailed source size without enlarging an enemy sprite', () => {
+    expect(manualImagePlan('enemy', 'librarian', undefined, undefined, 'detailed')).toMatchObject({ width: 64, height: 64, sourceWidth: 1024, sourceHeight: 1024 });
+    expect(manualImagePlan('enemy', 'librarian')).toMatchObject({ sourceWidth: 512, sourceHeight: 512 });
+  });
+  it('preserves replacement canvas and aspect ratio at detailed source size', () => {
+    const plan = manualImagePlan('prop', 'desk', source(64, 96), undefined, 'detailed');
+    expect(plan).toMatchObject({ width: 64, height: 96, sourceWidth: 680, sourceHeight: 1024 });
+    const compiled = decodePngRgba(compileManualImage(source(32, 48), plan));
+    expect([compiled.width, compiled.height]).toEqual([64, 96]);
+  });
+  it.each([null, [], {}, 'ultra', 1024])('rejects invalid source detail %j', value => {
+    expect(() => manualImagePlan('enemy', 'librarian', undefined, undefined, value as any)).toThrow('Choose standard or detailed source artwork');
+  });
+  it('keeps background canvas detail separate from source detail', () => {
+    expect(() => manualImagePlan('background', 'hall', undefined, undefined, 'detailed')).toThrow('Use background detail');
+  });
   it.each([
     ['background', 'BACKGROUND', 640, 360],
     ['portrait', 'PORTRAIT', 256, 256],

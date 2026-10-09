@@ -40,6 +40,7 @@ export interface ManualAssetRequest {
   styleDirection?: string;
   negativePrompt?: string;
   backgroundDetail?: 'standard' | 'detailed';
+  sourceDetail?: 'standard' | 'detailed';
   projectPath: string;
   description: string;
   assetType: ManualAssetType;
@@ -177,6 +178,12 @@ export async function generateManualAsset(request: ManualAssetRequest): Promise<
       ].includes(request.generationMode)
     )
       throw new Error('Unknown generation mode');
+    if (request.sourceDetail !== undefined) {
+      if (!['standard', 'detailed'].includes(request.sourceDetail))
+        throw new Error('Choose standard or detailed source artwork');
+      if (request.assetType === 'background')
+        throw new Error('Use background detail for background artwork');
+    }
     if (request.backgroundDetail !== undefined) {
       if (!['standard', 'detailed'].includes(request.backgroundDetail))
         throw new Error('Choose standard or detailed background artwork');
@@ -291,6 +298,7 @@ export async function generateManualAsset(request: ManualAssetRequest): Promise<
       assetId,
       relPath,
       backgroundDetail: request.backgroundDetail,
+      sourceDetail: request.sourceDetail,
       outputDir: stage,
       seed,
       mode: request.generationMode ?? 'HYBRID_FREE',

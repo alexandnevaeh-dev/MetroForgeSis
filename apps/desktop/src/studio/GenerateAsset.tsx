@@ -62,6 +62,7 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
   const [seed, setSeed] = useState('42');
   const [variants, setVariants] = useState(1);
   const [backgroundDetail, setBackgroundDetail] = useState<'standard' | 'detailed'>('standard');
+  const [sourceDetail, setSourceDetail] = useState<'standard' | 'detailed'>('standard');
   const [busy, setBusy] = useState(false);
   const [modelPreparing, setModelPreparing] = useState(false);
   const [inspecting, setInspecting] = useState(false);
@@ -232,6 +233,7 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
         operation: replace ? 'replace' : 'create',
         seed: parsedSeed,
         backgroundDetail: !replace && assetType === 'background' ? backgroundDetail : undefined,
+        sourceDetail: assetType !== 'background' ? sourceDetail : undefined,
       });
       if (!mounted.current) return;
       const list = variantsFrom(response);
@@ -378,6 +380,23 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
             />
           </label>
         </div>
+        {assetType !== 'background' && (
+          <label>
+            <span id="asset-source-detail-label">Source detail</span>
+            <Select
+              aria-labelledby="asset-source-detail-label"
+              value={sourceDetail}
+              disabled={busy}
+              onChange={(e) => setSourceDetail(e.target.value as 'standard' | 'detailed')}
+            >
+              <option value="standard">Standard (default)</option>
+              <option value="detailed">Detailed - up to 1024 px</option>
+            </Select>
+            <span className="hint">
+              Detailed suits SDXL artwork and uses more memory. Game image dimensions stay the same.
+            </span>
+          </label>
+        )}
         {assetType === 'background' && (
           <label>
             <span id="asset-background-detail-label">Background detail</span>

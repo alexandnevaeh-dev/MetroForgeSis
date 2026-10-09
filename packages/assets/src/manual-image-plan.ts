@@ -18,7 +18,13 @@ export function manualImagePlan(
   id: string,
   existing?: Buffer,
   backgroundDetail?: 'standard' | 'detailed',
+  sourceDetail?: 'standard' | 'detailed',
 ): ManualImagePlan {
+  if (sourceDetail !== undefined) {
+    if (!['standard', 'detailed'].includes(sourceDetail))
+      throw new Error('Choose standard or detailed source artwork');
+    if (type === 'background') throw new Error('Use background detail for background artwork');
+  }
   if (backgroundDetail !== undefined) {
     if (!['standard', 'detailed'].includes(backgroundDetail))
       throw new Error('Choose standard or detailed background artwork');
@@ -54,7 +60,7 @@ export function manualImagePlan(
     throw new Error('Artwork canvas must be between 1 and 4096 pixels per side');
   }
   // Match canvas proportions without the legacy fourfold upscale of large background plates.
-  const longest = Math.min(1024, Math.max(profile === 'BACKGROUND' ? 1024 : 512, width, height));
+  const longest = Math.min(1024, Math.max(profile === 'BACKGROUND' || sourceDetail === 'detailed' ? 1024 : 512, width, height));
   const ratio = longest / Math.max(width, height);
   const sourceWidth = Math.max(8, Math.round((width * ratio) / 8) * 8);
   const sourceHeight = Math.max(8, Math.round((height * ratio) / 8) * 8);

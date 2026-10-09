@@ -468,6 +468,7 @@ export type MetroforgeBridge = {
     assetId?: string;
     operation?: 'create' | 'replace';
     backgroundDetail?: 'standard' | 'detailed';
+    sourceDetail?: 'standard' | 'detailed';
     seed?: number;
   }) => Promise<GenerateAssetResponse>;
   getManualArtDirection: (projectPath: string) => Promise<{styleDirection: string; negativePrompt: string}>;

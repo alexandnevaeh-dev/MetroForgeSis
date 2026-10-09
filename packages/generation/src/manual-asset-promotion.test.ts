@@ -302,6 +302,27 @@ describe('manual artwork promotion', () => {
     expect(registry().artifacts[1].dirty).toBeUndefined();
     expect(bytes('assets/characters/player_walk.png')).toBe('existing animation');
   });
+  it('passes detailed source selection for actor replacement without changing other assets', async () => {
+    const result = await generateManualAsset({ ...request(), sourceDetail: 'detailed' });
+    expect(result.success).toBe(true);
+    expect(fixture.generate.mock.calls[0][0].sourceDetail).toBe('detailed');
+    expect(bytes('assets/characters/player_walk.png')).toBe('existing animation');
+  });
+  it.each([null, [], {}, 'ultra', 1024])('rejects malformed source detail %j before provider or manifest writes', async value => {
+    const before = bytes('generation_manifest.json');
+    const result = await generateManualAsset({ ...request(), sourceDetail: value as any });
+    expect(result.success).toBe(false);
+    expect(result.errors.join()).toContain('Choose standard or detailed source');
+    expect(fixture.generate).not.toHaveBeenCalled();
+    expect(bytes('generation_manifest.json')).toBe(before);
+    expect(bytes(path)).toBe('original artwork');
+  });
+  it('rejects source detail for a background before calling the provider', async () => {
+    const result = await generateManualAsset({ ...request(), assetType: 'background', sourceDetail: 'detailed' });
+    expect(result.success).toBe(false);
+    expect(result.errors.join()).toContain('Use background detail');
+    expect(fixture.generate).not.toHaveBeenCalled();
+  });
   it('passes detailed background creation through the service without modifying existing art', async () => {
     const result = await generateManualAsset({
       projectPath: project,

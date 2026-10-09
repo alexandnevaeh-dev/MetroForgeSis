@@ -160,3 +160,6 @@ world-map-position.ts owns display coordinate precedence for WorldMapPreview, it
 ## QA report snapshots
 QA reads the complete saved project report when present and otherwise retains legacy database results. Invalidated or malformed reports do not revive older passing results. Generation replaces current database snapshots atomically at validation checkpoints, preserving failures and other projects. QA badges retain explicit PASS, FAIL, BLOCKED and SKIPPED states; the passed filter excludes skipped checks. QAScreen and the shared Badge remain the UI owners, using existing tokens. Technical validation remains separate from visual approval and production readiness.
 
+
+## Manual artwork source detail
+Non-background Workshop artwork has an accessible Source detail Select with Standard (existing source size) and Detailed (up to1024pixels). Standard retains existing behavior. The choice changes the provider source request and saved imagePlan; game output canvas and replacement dimensions remain unchanged. Detailed suits SDXL and costs more memory. Busy generation disables the control. Background detail remains its separate new-background canvas choice. Invalid or background source-detail requests fail before generation. Provider failures retain the editable form and existing retry flow; this option does not imply visual approval.
