@@ -75,6 +75,7 @@ export function compileManualImage(source: Buffer, plan: ManualImagePlan): Buffe
     targetHeight: plan.height,
     skipQuantize: true,
     fitOpaque: plan.grounded,
+    fitOpaqueSelection: 'whole-matte',
     preserveAlphaGradient: plan.profile === 'VFX_TEXTURE' || !plan.transparent,
   }).buffer;
   const { rgba } = decodePngRgba(compiled);

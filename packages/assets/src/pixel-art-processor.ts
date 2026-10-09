@@ -22,6 +22,8 @@ export interface PixelArtOptions {
    * into ~86% of the target frame, bottom-centered. Characters only — never tilesets or plates.
    */
   fitOpaque?: boolean;
+  /** Manual single-subject artwork keeps the complete matte; scene extraction retains its heuristic. */
+  fitOpaqueSelection?: 'scene-actor' | 'whole-matte';
   /**
    * Adds a 1px silhouette outline in this exact RGB color around the final, already-binarized
    * subject — every previously-transparent pixel 4-adjacent to an opaque one becomes this color
@@ -70,7 +72,7 @@ export class PixelArtProcessor {
 
     const scaled = options.fitOpaque
       ? {
-          rgba: fitOpaqueIntoFrame(rgba, width, height, options.targetWidth, options.targetHeight),
+          rgba: fitOpaqueIntoFrame(rgba, width, height, options.targetWidth, options.targetHeight, 0.86, options.fitOpaqueSelection),
           width: options.targetWidth,
           height: options.targetHeight,
         }
@@ -376,9 +378,12 @@ export function fitOpaqueIntoFrame(
   dstW: number,
   dstH: number,
   occupy = 0.86,
+  selection: 'scene-actor' | 'whole-matte' = 'scene-actor',
 ): Uint8Array {
   const out = new Uint8Array(dstW * dstH * 4);
-  const subject = pickActorSubjectBounds(rgba, srcW, srcH, dstW, dstH);
+  const subject = selection === 'whole-matte'
+    ? opaquePixelBounds(rgba, srcW, srcH)
+    : pickActorSubjectBounds(rgba, srcW, srcH, dstW, dstH);
   if (!subject) return out;
   const bw = subject.x1 - subject.x0 + 1;
   const bh = subject.y1 - subject.y0 + 1;

@@ -28,6 +28,29 @@ function paintRect(
 }
 
 describe('fitOpaque actor compile', () => {
+  it('keeps a large manual subject and detached book without changing scene-actor defaults', () => {
+    const w = 256, h = 256;
+    const rgba = new Uint8Array(w * h * 4);
+    paintRect(rgba, w, 30, 20, 220, 220, [40, 70, 180]);
+    paintRect(rgba, w, 234, 90, 246, 104, [190, 80, 40]);
+    const source = encodePng(w, h, rgba);
+    const processor = new PixelArtProcessor();
+    const full = decodePngRgba(processor.process(source, {
+      targetWidth: 64, targetHeight: 64, fitOpaque: true,
+      fitOpaqueSelection: 'whole-matte', skipQuantize: true,
+    }).buffer);
+    const hasColor = (pixels: Uint8Array, color: number[]) => {
+      for (let i = 0; i < pixels.length; i += 4)
+        if (pixels[i + 3] && color.every((value, c) => pixels[i + c] === value)) return true;
+      return false;
+    };
+    expect(hasColor(full.rgba, [40, 70, 180])).toBe(true);
+    expect(hasColor(full.rgba, [190, 80, 40])).toBe(true);
+    expect(opaquePixelBounds(full.rgba, 64, 64)?.y1).toBe(63);
+    const implicit = processor.process(source, { targetWidth: 64, targetHeight: 64, fitOpaque: true });
+    const explicit = processor.process(source, { targetWidth: 64, targetHeight: 64, fitOpaque: true, fitOpaqueSelection: 'scene-actor' });
+    expect(implicit.buffer.equals(explicit.buffer)).toBe(true);
+  });
   it('extracts a small standing figure from a scene instead of scaling the architecture', () => {
     const w = 256;
     const h = 256;

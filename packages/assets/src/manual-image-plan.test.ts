@@ -12,6 +12,21 @@ function source(width = 32, height = 16, alpha = 255) {
 }
 
 describe('manual art canvas and processing contracts', () => {
+  it('preserves the large actor and attached book in a grounded manual canvas', () => {
+    const width = 256, height = 256;
+    const rgba = new Uint8Array(width * height * 4);
+    for (const [x0, y0, x1, y1, r, g, b] of [[30, 20, 220, 220, 40, 70, 180], [220, 95, 238, 98, 190, 80, 40], [234, 90, 246, 104, 190, 80, 40]])
+      for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) rgba.set([r, g, b, 255], (y * width + x) * 4);
+    const out = decodePngRgba(compileManualImage(encodePng(width, height, rgba), manualImagePlan('enemy', 'folio')));
+    let body = 0, book = 0;
+    for (let i = 0; i < out.rgba.length; i += 4) {
+      if (out.rgba[i + 3] && out.rgba[i] === 40 && out.rgba[i + 2] === 180) body++;
+      if (out.rgba[i + 3] && out.rgba[i] === 190 && out.rgba[i + 2] === 40) book++;
+    }
+    expect(body).toBeGreaterThan(1000);
+    expect(book).toBeGreaterThan(0);
+    expect([out.width, out.height]).toEqual([64, 64]);
+  });
   it('uses detailed source size without enlarging an enemy sprite', () => {
     expect(manualImagePlan('enemy', 'librarian', undefined, undefined, 'detailed')).toMatchObject({ width: 64, height: 64, sourceWidth: 1024, sourceHeight: 1024 });
     expect(manualImagePlan('enemy', 'librarian')).toMatchObject({ sourceWidth: 512, sourceHeight: 512 });
