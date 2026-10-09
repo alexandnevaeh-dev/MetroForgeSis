@@ -36,6 +36,7 @@ import {
   recompileRooms,
   resolveFloorPropPlacements,
   applyStormglassEncounterComposition,
+  applyStormglassArchiveEncounterComposition,
   type RecompileRoomsInput,
   type RecompileRoomsResult,
 } from './room-assembler.js';
@@ -312,6 +313,7 @@ export class GodotProjectAssembler {
         if (input.gameDna.identity.title.startsWith('Stormglass Reliquary')) {
           applyStormglassEncounterComposition(roomId, i, opts, input.gameContent?.enemies ?? []);
         }
+        applyStormglassArchiveEncounterComposition(roomId, opts, input.gameContent?.enemies ?? []);
         compositionByRoom[roomId] = composeEnvironment({
           gameDna: input.gameDna,
           styleBible: input.styleBible,

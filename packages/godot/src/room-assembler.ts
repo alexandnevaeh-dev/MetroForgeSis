@@ -714,6 +714,50 @@ export function applyStormglassEncounterComposition(
   ];
 }
 
+/** Optional chamber encounters belong to the archive profile's measured floor lanes.
+ * Fresh exports get one guard per reward room. Authored membership, coordinates and
+ * explicit removal take precedence during Studio recompilation. */
+export function applyStormglassArchiveEncounterComposition(
+  roomId: string,
+  opts: RoomAssemblyOptions,
+  enemyDefinitions: ReadonlyArray<{id: string; movement?: string; combat?: {type: string}}>,
+  authoredPlacements?: EntityPlacement[],
+  forceEnemy?: boolean,
+  preserveRewardPositions = false,
+): void {
+  if (opts.isBossRoom || !['room_046', 'room_047'].includes(roomId) ||
+      !['archive-loft', 'archive-vault'].includes(opts.stormglassRoomTheme ?? '')) return;
+  if (authoredPlacements !== undefined) {
+    opts.entityPlacements = authoredPlacements;
+    opts.hasEnemy = forceEnemy ?? authoredPlacements.some(p => p.kind === 'enemy');
+    return;
+  }
+  if (forceEnemy === false) { opts.hasEnemy = false; return; }
+  // Painting invalidates procedural stairs, but never removes authored guards.
+  // Only a fresh, measured chamber may receive a procedural encounter.
+  if (!opts.archiveChamberPlan) return;
+  const loft = roomId === 'room_046';
+  const definitionId = loft ? 'enemy_000' : 'enemy_007';
+  const definition = enemyDefinitions.find(enemy => enemy.id === definitionId);
+  if (!definition || definition.movement !== (loft ? 'patrol' : 'teleport') ||
+      definition.combat?.type !== (loft ? 'melee' : 'burst'))
+    throw new Error('Archive guard requires the matching generated Stormglass enemy definition: ' + definitionId);
+  const defaults = resolveEntityPlacements(opts.entityPlacements, {
+    width: opts.width, height: opts.height, tileSize: opts.tileSize,
+    hasEnemy: false, enemyIndex: opts.enemyIndex, abilityPickups: opts.abilityPickups,
+    hasSavePoint: opts.hasSavePoint, npcs: opts.npcs,
+    hasItemPickup: opts.hasItemPickup, itemId: opts.itemId,
+  });
+  opts.hasEnemy = true;
+  opts.entityPlacements = [...defaults.filter(p => p.kind !== 'enemy').map(p =>
+    p.kind === 'item_pickup' && !preserveRewardPositions ? {...p, x: 1280} : p), {
+    kind: 'enemy', id: roomId + '_reward_guard', definitionId,
+    // Keep the 672..864 service well and its return approach free. The optional
+    // floor curio remains reachable; no arena lock or progression grant is added.
+    x: 1088, y: opts.archiveChamberPlan.lowerFloorY,
+  }];
+}
+
 export function buildRoomAssemblyOptions(
   roomId: string,
   index: number,
@@ -2160,6 +2204,7 @@ frame_count = 4
 hurt_sheet_path = "assets/enemies/${enemyId}_hurt.png"
 death_sheet_path = "assets/enemies/${enemyId}_death.png"
 attack_sheet_path = "assets/enemies/${enemyId}_attack.png"
+extra_animation_sheets = {}
 `;
     }
   }
@@ -2454,7 +2499,13 @@ export function recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult
           (opts.worldGraphArchetype === 'combat' || opts.worldGraphArchetype === 'traversal')) {
         applyStormglassEncounterComposition(roomId, i, opts, input.gameContent?.enemies ?? []);
       }
-      if (input.regenerateEncounterRoomIds?.includes(roomId)) {
+      applyStormglassArchiveEncounterComposition(roomId, opts, input.gameContent?.enemies ?? [],
+        input.regenerateEncounterRoomIds?.includes(roomId) && opts.archiveChamberPlan
+          ? undefined : override?.entityPlacements ?? existingRecord?.entityPlacements,
+        override?.hasEnemy ?? existingRecord?.forceEnemy,
+        Boolean(input.regenerateEncounterRoomIds?.includes(roomId)));
+      if (input.regenerateEncounterRoomIds?.includes(roomId) &&
+          !['archive-loft', 'archive-vault'].includes(opts.stormglassRoomTheme ?? '')) {
         const combat = defaultEntityPlacements({
           width: opts.width, height: opts.height, tileSize: opts.tileSize,
           hasEnemy: opts.hasEnemy, enemyIndex: opts.enemyIndex,

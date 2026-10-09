@@ -336,8 +336,16 @@ function applyRoomEditUnchecked(
       delete encounterReset.forceEnemy;
       roomsData[patch.roomId] = encounterReset;
     } else {
-      // Full regeneration refreshes content while retaining authored playable bounds.
-      roomsData[patch.roomId] = { width: existing.width, height: existing.height };
+      // Keep explicit enemy presence; only Regenerate Encounter resets that
+      // authored choice. Archive reward guards/curios also own their coordinates.
+      const node = project.worldGraph.nodes.find(node => node.id === patch.roomId);
+      const archive = node?.metadata.stormglassRegionProfile === 'archive-wing' &&
+        ['room_046', 'room_047'].includes(patch.roomId);
+      roomsData[patch.roomId] = {
+        width: existing.width, height: existing.height,
+        ...(typeof existing.forceEnemy === 'boolean' ? { forceEnemy: existing.forceEnemy } : {}),
+        ...(archive && Array.isArray(existing.entityPlacements) ? { entityPlacements: existing.entityPlacements } : {}),
+      };
     }
     writeFileSync(join(projectPath, 'data', 'rooms', 'rooms.json'), JSON.stringify({ rooms: roomsData }, null, 2));
     const rebuilt = new GodotProjectAssembler().recompileRooms({
