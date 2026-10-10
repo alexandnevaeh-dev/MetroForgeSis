@@ -12,6 +12,15 @@ var _current_room: Node2D = null
 var _room_data: Dictionary = {}
 var _transitioning: bool = false
 var _room_scenes: Dictionary = {}
+var _pending_room_preloads: Dictionary = {}
+
+func _exit_tree() -> void:
+	# Threaded requests retain loader state until their result is collected, even
+	# when the player never enters that neighbor. Join only this world's requests.
+	for path in _pending_room_preloads:
+		if ResourceLoader.load_threaded_get_status(path) != ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
+			ResourceLoader.load_threaded_get(path)
+	_pending_room_preloads.clear()
 ## Last door/load profile. Walk-to-door time is measured by WorldPerfCapture, not here.
 var last_transition_profile: Dictionary = {}
 ## Health-continuity fix: every room is its own scene with its own embedded Player node (see
@@ -228,6 +237,7 @@ func _ensure_packed(room_id: String) -> PackedScene:
 	var packed: PackedScene = null
 	if status == ResourceLoader.THREAD_LOAD_LOADED:
 		packed = ResourceLoader.load_threaded_get(path) as PackedScene
+		_pending_room_preloads.erase(path)
 	elif ResourceLoader.exists(path):
 		packed = load(path) as PackedScene
 	if packed:
@@ -242,7 +252,8 @@ func _preload_room(room_id: String) -> void:
 		return
 	var status := ResourceLoader.load_threaded_get_status(path)
 	if status == ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
-		ResourceLoader.load_threaded_request(path)
+		if ResourceLoader.load_threaded_request(path) == OK:
+			_pending_room_preloads[path] = true
 
 func _preload_neighbors(room_id: String) -> void:
 	var info: Dictionary = _room_data.get(room_id, {})
