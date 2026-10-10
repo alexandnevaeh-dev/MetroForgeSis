@@ -1,3 +1,4 @@
+import {placeFurnishings,surfaceBays,type FurnishingRequest} from './furnishing-layout.js';
 import { parseTerrainPresentation } from './terrain-presentation.js';
 import { readBackgroundFraming } from './background-framing.js';
 import { existsSync, readFileSync } from 'node:fs';
@@ -424,6 +425,27 @@ export function buildGameplayPack(input: AssemblyInput): GameplayPack {
           : undefined,
       },
     });
+    const room = rooms[rooms.length-1]!;
+    const requests: FurnishingRequest[] = [];
+    const missing: {id:string;reason:string}[] = [];
+    const append = (id:string,role:string,asset:string,x:number,floorY:number,targetHeight:number,mounting:'floor'|'rear-wall',sectionId?:string) => {
+      const bytes=textureBuffer(input,asset),size=bytes&&readPngSize(bytes);
+      if(!size){missing.push({id,reason:'artwork-unavailable'});return;}
+      requests.push({id,role,asset,x,floorY,width:size.width*targetHeight/size.height,height:targetHeight,mounting,sectionId});
+    };
+    if(opts.castleRegionPlan){
+      for(const item of opts.castleRegionPlan.furnishings)
+        append(item.id,item.role,item.asset,item.x,item.mounting==='rear-wall'?item.floorY-384+item.targetHeight/2:item.floorY,item.targetHeight,item.mounting,item.sectionId);
+    }else{
+      for(const [index,bay] of surfaceBays(room).slice(0,4).entries()){
+        const asset=`assets/props/${room.biomeId}/${room.biomeId}_prop_${index}.png`;
+        const bytes=textureBuffer(input,asset),size=bytes&&readPngSize(bytes);
+        if(size)append(`SurfaceFixture_${index}`,'legacy-fixture',asset,bay.x,bay.floorY,size.height*0.85,'floor');
+      }
+    }
+    const furnishingLayout=placeFurnishings(room,requests);
+    room.furnishings=furnishingLayout.placements;
+    room.furnishingOmissions=[...missing,...furnishingLayout.omissions];
   }
 
   if (!rooms.some((room) => room.enemy) && rooms.length > 0) {
@@ -442,6 +464,10 @@ export function buildGameplayPack(input: AssemblyInput): GameplayPack {
       combat: 'melee',
     };
     enemyIds.push(enemyId);
+    // Fallback enemies are assigned after room composition; recheck their visual lane.
+    const checked=placeFurnishings(host,host.furnishings??[]);
+    host.furnishings=checked.placements;
+    host.furnishingOmissions=[...(host.furnishingOmissions??[]),...checked.omissions];
   }
 
   return {

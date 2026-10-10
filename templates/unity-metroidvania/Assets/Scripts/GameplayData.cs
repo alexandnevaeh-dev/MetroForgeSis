@@ -131,6 +131,16 @@ public class GameplayStairFlight
 }
 
 [Serializable]
+public class GameplayFurnishing
+{
+    public string id, role, asset, mounting, layer, anchor, collision;
+    public float x, floorY, width, height;
+}
+
+[Serializable]
+public class GameplayFurnishingOmission { public string id, reason; }
+
+[Serializable]
 public class GameplayRoom
 {
     public string id;
@@ -144,6 +154,8 @@ public class GameplayRoom
     public float spawnX;
     public float spawnY;
     public GameplayRect[] solids;
+    public GameplayFurnishing[] furnishings;
+    public GameplayFurnishingOmission[] furnishingOmissions;
     public GameplayStairFlight[] stairFlights;
     public GameplayDoor[] doors;
     public GameplayGate[] gates;

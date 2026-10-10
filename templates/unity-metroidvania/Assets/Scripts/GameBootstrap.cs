@@ -1287,6 +1287,29 @@ public class GameBootstrap : MonoBehaviour
 
     private void PlaceRoomProps(GameplayRoom room)
     {
+        // Null preserves legacy packs. An explicit empty list means all requests were omitted.
+        if (room.furnishings != null)
+        {
+            foreach(var item in room.furnishings)
+            {
+                if(item == null || item.collision != "none" || item.width <= 0 || item.height <= 0)
+                    continue;
+                var sprite = LoadStreamingSprite(item.asset, new Vector2(0.5f, 0f));
+                if(sprite == null) { Debug.LogWarning("FOUNDRY_FURNISHING_OMITTED artwork-unavailable " + item.id); continue; }
+                var go = new GameObject(item.id);
+                go.transform.SetParent(RoomParent, false);
+                go.transform.position = Coord.FromGodot(item.x, item.floorY, room.height);
+                go.transform.localScale = new Vector3(item.width / sprite.rect.width, item.height / sprite.rect.height, 1f);
+                var sr = go.AddComponent<SpriteRenderer>();
+                sr.sprite = sprite;
+                sr.sortingOrder = item.layer == "rear" ? -1 : 3;
+                // Furniture adds no Collider2D; reward/support collision remains separate.
+                Debug.Log("FOUNDRY_FURNISHING_PLACED " + item.id + " anchor=" + item.anchor);
+            }
+            foreach(var omission in room.furnishingOmissions ?? new GameplayFurnishingOmission[0])
+                Debug.Log("FOUNDRY_FURNISHING_OMITTED " + omission.id + " reason=" + omission.reason);
+            return;
+        }
         var biome = string.IsNullOrEmpty(room.biomeId) ? "biome_0" : room.biomeId;
         var xs = new[] { 0.22f, 0.44f, 0.66f, 0.84f };
         for (var i = 0; i < 4; i++)

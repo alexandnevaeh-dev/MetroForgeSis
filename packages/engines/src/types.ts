@@ -1,4 +1,5 @@
 /** Engine-neutral playable IR. Coordinates are Godot 2D pixels (origin top-left, +Y down). */
+import type {FurnishingPlacement,FurnishingOmission} from './furnishing-layout.js';
 import type { Dialogue } from '@metroforge/schemas';
 
 export interface GameplayNpc {
@@ -110,6 +111,8 @@ export interface GameplayRoom {
   spawnX: number;
   spawnY: number;
   solids: GameplayRect[];
+  furnishings?: FurnishingPlacement[];
+  furnishingOmissions?: FurnishingOmission[];
   stairFlights?: { from: {x:number;y:number}; to: {x:number;y:number}; thickness: number; oneWay: boolean }[];
   doors: GameplayDoor[];
   gates: GameplayGate[];

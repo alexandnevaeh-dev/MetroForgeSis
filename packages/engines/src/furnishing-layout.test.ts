@@ -1,0 +1,16 @@
+import {describe,it,expect} from 'vitest';
+import {floorSupports,placeFurnishings,surfaceBays,type FurnishingRequest} from './furnishing-layout.js';
+import type {GameplayRoom} from './types.js';
+const room=():GameplayRoom=>({id:'archive',index:0,width:1024,height:600,biomeId:'biome_0',archetype:'traversal',tileSize:32,floorTop:500,spawnX:64,spawnY:500,solids:[{name:'Floor_left',x:0,y:500,width:448,height:64},{name:'Floor_right',x:576,y:500,width:448,height:64}],doors:[],gates:[],victory:false,backgrounds:{}});
+const prop=(x=300):FurnishingRequest=>({id:'desk',role:'archive-desk',asset:'assets/architecture/stormglass/desk.png',x,floorY:500,width:80,height:64,mounting:'floor'});
+describe('architectural furnishing placement',()=>{
+ it('omits a full footprint crossing a real floor gap and preserves its authored position',()=>{const r=room(),request=prop(450.56),before=JSON.stringify(r);expect(placeFurnishings(r,[request])).toEqual({placements:[],omissions:[{id:'desk',reason:'unsupported-full-footprint'}]});expect(request.x).toBe(450.56);expect(JSON.stringify(r)).toBe(before);});
+ it('joins adjacent tiles but never joins opposite sides of a gap',()=>{const r=room();r.solids=[{x:0,y:500,width:32,height:32},{x:32,y:500,width:32,height:32},{x:96,y:500,width:32,height:32}];expect(floorSupports(r,500).map(s=>[s.left,s.right])).toEqual([[0,64],[96,128]]);});
+ it('accepts a decorative object on tested one-way support without adding collision',()=>{const r=room();r.solids[0]!.oneWay=true;const result=placeFurnishings(r,[prop()]);expect(result.placements[0]).toMatchObject({x:300,floorY:500,collision:'none',anchor:'Floor_left',layer:'front'});});
+ it('protects door arrival and return space',()=>{const r=room();r.doors=[{direction:'left',targetRoomId:'hall',x:280,y:380,width:64,height:120,requirements:[],optional:false,spawnSide:'right'}];expect(placeFurnishings(r,[prop()]).omissions[0]?.reason).toBe('door-arrival-or-return');});
+ it('rejects floor furniture intersecting a stair approach',()=>{const r=room();r.stairFlights=[{from:{x:260,y:500},to:{x:440,y:400},thickness:32,oneWay:true}];expect(placeFurnishings(r,[prop()]).omissions[0]?.reason).toBe('stair-flight-clearance');});
+ it('keeps rear scenery visual overlap separate from physical headroom',()=>{const r=room();r.solids.push({x:260,y:440,width:120,height:24});expect(placeFurnishings(r,[prop()]).omissions[0]?.reason).toBe('solid-or-overhead-clearance');expect(placeFurnishings(r,[{...prop(),mounting:'rear-wall'}]).placements[0]?.collision).toBe('none');});
+ it('keeps actor silhouettes readable',()=>{const r=room();r.enemy={id:'caster',x:300,y:500};expect(placeFurnishings(r,[prop()]).omissions[0]?.reason).toBe('actor-or-arrival-readability');});
+ it('rejects invalid paths, duplicate identity and room bounds',()=>{const r=room();expect(placeFurnishings(r,[{...prop(),asset:'../private.png'}]).omissions[0]?.reason).toBe('invalid-request');expect(placeFurnishings(r,[prop(),prop()]).omissions[0]?.reason).toBe('invalid-request');expect(placeFurnishings(r,[prop(-50)]).omissions[0]?.reason).toBe('outside-room');});
+ it('derives fixture bays from actual disconnected support courses',()=>{expect(surfaceBays(room()).map(b=>b.x)).toEqual([224,800]);});
+});
