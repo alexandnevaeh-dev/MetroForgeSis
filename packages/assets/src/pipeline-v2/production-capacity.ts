@@ -45,7 +45,10 @@ function canonical(value: unknown): string {
 export function generationRequestHash(spec: ImmutableGenerationSpecification): string { return createHash('sha256').update(canonical(spec)).digest('hex'); }
 
 export function buildGenerationSpecification(request: AssetRequestV2, input: { model: string; prompt: string; negativePrompt?: string; width: number; height: number; localStyleAdapter?: LocalStyleAdapter }): ImmutableGenerationSpecification {
-  return { version:'asset_generation_spec_v1', model:input.model, prompt:input.prompt, negativePrompt:input.negativePrompt, seed:request.seed, width:input.width, height:input.height, steps:request.inferenceSteps??6, scheduler:request.scheduler??'PNDM', guidance:request.guidance??7.5, category:request.category, animation:request.animation, visualBibleVersion:request.visualBibleVersion, visualBibleHash:request.visualBibleHash, outputRole:request.runtimeUse, ...(input.localStyleAdapter === undefined ? {} : {localStyleAdapter:validateLocalStyleAdapter(input.localStyleAdapter)}) };
+  // The generic SD1.5 preview recipe is not an SDXL base recipe. Use the validated
+  // model-native defaults only when the caller omitted each field; explicit choices win.
+  const sdxlBase=input.model==='stabilityai/stable-diffusion-xl-base-1.0';
+  return { version:'asset_generation_spec_v1', model:input.model, prompt:input.prompt, negativePrompt:input.negativePrompt, seed:request.seed, width:input.width, height:input.height, steps:request.inferenceSteps??(sdxlBase?20:6), scheduler:request.scheduler??(sdxlBase?'Euler':'PNDM'), guidance:request.guidance??(sdxlBase?5:7.5), category:request.category, animation:request.animation, visualBibleVersion:request.visualBibleVersion, visualBibleHash:request.visualBibleHash, outputRole:request.runtimeUse, ...(input.localStyleAdapter === undefined ? {} : {localStyleAdapter:validateLocalStyleAdapter(input.localStyleAdapter)}) };
 }
 
 export function currentCapacityProfile(input: Partial<CapacityProfile> = {}): CapacityProfile { return { totalSystemRamMb:Math.round(totalmem()/1048576),availableSystemRamMb:Math.round(freemem()/1048576),devices:[],backend:'local-openvino',...input }; }
@@ -74,9 +77,14 @@ export class LocalImageExecutionBackend implements ProductionExecutionBackend {
   async generate(spec:ImmutableGenerationSpecification,requestHash:string):Promise<ProductionExecutionResult>{
     const style=spec.localStyleAdapter===undefined?undefined:validateLocalStyleAdapter(spec.localStyleAdapter);
     if(style&&!this.provider.supportsLocalStyleAdapters)throw new ProductionCapacityError('BACKEND_PROTOCOL_ERROR','Selected provider does not support local style adapters');
-    const started=Date.now();const result=await this.provider.generateImage({profile:profileForCategory(spec.category),prompt:spec.prompt,negativePrompt:spec.negativePrompt,width:spec.width,height:spec.height,seed:spec.seed,inferenceSteps:spec.steps,...(style?{localStyleAdapter:style}:{})});
+    const started=Date.now();const result=await this.provider.generateImage({profile:profileForCategory(spec.category),prompt:spec.prompt,negativePrompt:spec.negativePrompt,width:spec.width,height:spec.height,seed:spec.seed,inferenceSteps:spec.steps,guidance:spec.guidance,scheduler:spec.scheduler,...(style?{localStyleAdapter:style}:{})});
     if(!localStyleAdapterMatches(style,result.executionMetadata?.localStyleAdapter))throw new ProductionCapacityError('BACKEND_PROTOCOL_ERROR','Local style adapter provenance does not match the request');
-    const image=result.image;return {requestHash,image,sourceHash:sha256Bytes(image).toLowerCase(),backendType:'local',backendId:this.id,model:result.modelId,device:String(result.executionMetadata?.actualDevice??this.device),durationMs:Date.now()-started,effectiveParameters:{width:spec.width,height:spec.height,steps:spec.steps,scheduler:spec.scheduler,guidance:spec.guidance,seed:spec.seed,...(style?{localStyleAdapter:style}:{})},executionMetadata:result.executionMetadata};
+    if(result.fallbackGenerated)throw new ProductionCapacityError('BACKEND_PROTOCOL_ERROR','Local provider returned a placeholder');
+    const metadata=result.executionMetadata;
+    const effective={width:metadata?.effectiveWidth,height:metadata?.effectiveHeight,steps:metadata?.effectiveSteps,scheduler:metadata?.effectiveScheduler,guidance:metadata?.effectiveGuidance,seed:result.seed};
+    for(const [key,value] of Object.entries({width:spec.width,height:spec.height,steps:spec.steps,scheduler:spec.scheduler,guidance:spec.guidance,seed:spec.seed}))
+      if(effective[key as keyof typeof effective]!==value)throw new ProductionCapacityError('BACKEND_PROTOCOL_ERROR',`Local provider did not execute immutable parameter ${key}`);
+    const image=result.image;return {requestHash,image,sourceHash:sha256Bytes(image).toLowerCase(),backendType:'local',backendId:this.id,model:result.modelId,device:typeof metadata?.actualDevice==='string'?metadata.actualDevice:undefined,durationMs:Date.now()-started,effectiveParameters:{...effective,...(style?{localStyleAdapter:style}:{})},executionMetadata:metadata};
   }
 }
 

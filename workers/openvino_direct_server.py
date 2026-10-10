@@ -7,6 +7,7 @@ import os
 import sys
 import time
 from io import BytesIO
+from image_sampling import validate_sampling_request
 from pathlib import Path
 
 os.environ.setdefault("HF_HUB_OFFLINE", "1")
@@ -139,6 +140,10 @@ def generate(req: dict) -> dict:
         raise RuntimeError("OPENVINO_MODEL_UNSUPPORTED: SD1.5 requires dimensions >=128 divisible by 8 and 1..20 steps")
     _diagnostic_path = req.get("diagnostic_path") or _diagnostic_path
     diagnostic("request_started", width=width, height=height, steps=steps, seed=int(req.get("seed",42)))
+    validate_sampling_request(req)
+    if req.get("scheduler", "PNDM") != "PNDM":
+        raise RuntimeError("OPENVINO_MODEL_UNSUPPORTED: only PNDM is supported")
+    guidance = float(req.get("guidance", 7.5))
     warm = warmup(req)
     compile_hit = warm["compileCacheHit"]
     import numpy as np
@@ -167,7 +172,7 @@ def generate(req: dict) -> dict:
         unet_ms += int((time.perf_counter() - step_started) * 1000)
         scheduler_started = time.perf_counter()
         uncond, conditioned = np.split(noise, 2, axis=0)
-        latents = scheduler.step(torch.from_numpy(uncond + 7.5 * (conditioned - uncond)), timestep, latents).prev_sample
+        latents = scheduler.step(torch.from_numpy(uncond + guidance * (conditioned - uncond)), timestep, latents).prev_sample
         scheduler_ms += int((time.perf_counter() - scheduler_started) * 1000)
         diagnostic("inference_step_complete", step=index, stepCount=len(scheduler.timesteps), durationMs=int((time.perf_counter()-step_started)*1000))
     diagnostic("vae_decode_started")
@@ -181,7 +186,7 @@ def generate(req: dict) -> dict:
     _state = "READY"
     timings = warm["timings"] | {"tokenizerMs": tokenizer_ms, "textEncoderInferenceMs": text_ms, "unetInferenceMs": unet_ms, "vaeInferenceMs": vae_ms, "schedulerMs": scheduler_ms, "pngEncodeMs": png_encode_ms, "totalMs": int((time.perf_counter() - started) * 1000)}
     diagnostic("request_complete", timings=timings, pngBytes=len(buffer.getvalue()))
-    return {"ok": True, "provider": "diffusers", "model_id": requested_model, "seed": int(req.get("seed", 42)), "compute_backend": "openvino", "device": _runtime["device"], "execution_path": "direct_openvino_persistent", "width": width, "height": height, "steps": steps, "dtype": "int8_weights_fp32_compute", "image_base64": base64.b64encode(buffer.getvalue()).decode("ascii"), "timings": timings, "workerReused": True, "modelCacheHit": True, "compiledComponentCacheHit": compile_hit, "tokenizerCacheHit": True, "schedulerCacheHit": True, "memory": memory(), "runtime": readiness()}
+    return {"ok": True, "provider": "diffusers", "model_id": requested_model, "seed": int(req.get("seed", 42)), "compute_backend": "openvino", "device": _runtime["device"], "execution_path": "direct_openvino_persistent", "width": width, "height": height, "steps": steps, "dtype": "int8_weights_fp32_compute", "image_base64": base64.b64encode(buffer.getvalue()).decode("ascii"), "timings": timings, "workerReused": True, "modelCacheHit": True, "compiledComponentCacheHit": compile_hit, "tokenizerCacheHit": True, "schedulerCacheHit": True, "effectiveSteps": steps, "effectiveGuidance": guidance, "effectiveScheduler": "PNDM", "effectiveWidth": width, "effectiveHeight": height, "memory": memory(), "runtime": readiness()}
 
 
 def unload() -> dict:

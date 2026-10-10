@@ -56,6 +56,7 @@ export interface DiffusersConfig {
 }
 
 interface WorkerResponse {
+  effectiveScheduler?: string;
   localStyleAdapter?: LocalStyleAdapter | null;
   ok: boolean;
   error?: string;
@@ -419,6 +420,8 @@ export class DiffusersProvider implements ImageGenerator {
 
   async generateImage(request: ImageGenRequest): Promise<ImageGenResult> {
     throwIfCancelled(request.signal);
+    if(request.guidance!==undefined&&(!Number.isFinite(request.guidance)||request.guidance<0||request.guidance>50))throw new Error('Guidance must be a finite number from 0 to 50');
+    if(request.scheduler!==undefined&&!['PNDM','Euler','DDIM'].includes(request.scheduler))throw new Error('Unsupported requested scheduler');
     const localStyleAdapter = request.localStyleAdapter === undefined ? undefined : validateLocalStyleAdapter(request.localStyleAdapter);
     if (localStyleAdapter && ['controlnet_canny', 'ip_adapter'].includes(request.conditioning?.mode ?? ''))
       throw new Error('Local style adapter does not support this conditioning mode');
@@ -429,6 +432,8 @@ export class DiffusersProvider implements ImageGenerator {
     if (localStyleAdapter && backend === 'openvino_gpu') throw new Error('Local style adapter does not support OpenVINO');
     const payload = {
       action: 'generate',
+      ...(request.guidance===undefined?{}:{guidance:request.guidance}),
+      ...(request.scheduler===undefined?{}:{scheduler:request.scheduler}),
       ...(localStyleAdapter ? { local_style_adapter: localStyleAdapter } : {}),
       model_id: this.modelId,
       base_model_path: this.baseModelPath,
@@ -473,6 +478,8 @@ export class DiffusersProvider implements ImageGenerator {
     if (!localStyleAdapterMatches(localStyleAdapter, res.localStyleAdapter)) {
       throw new Error('Diffusers worker local style adapter provenance does not match the request');
     }
+    if(request.guidance!==undefined&&res.effectiveGuidance!==request.guidance)throw new Error('Worker guidance provenance does not match the request');
+    if(request.scheduler!==undefined&&res.effectiveScheduler!==request.scheduler)throw new Error('Worker scheduler provenance does not match the request');
 
     return {
       image: Buffer.from(res.image_base64, 'base64'),
@@ -513,6 +520,7 @@ export class DiffusersProvider implements ImageGenerator {
         effectiveNegativePrompt: res.effectiveNegativePrompt,
         effectiveSteps: res.effectiveSteps,
         effectiveGuidance: res.effectiveGuidance,
+        effectiveScheduler: res.effectiveScheduler,
         effectiveWidth: res.effectiveWidth,
         effectiveHeight: res.effectiveHeight,
         promptBudget: res.promptBudget,

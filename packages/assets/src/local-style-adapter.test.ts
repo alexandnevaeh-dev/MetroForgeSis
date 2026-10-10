@@ -15,7 +15,7 @@ const result = { image:Buffer.from('fixture'),provider:'fixture',modelId:'fixtur
 const spec = buildGenerationSpecification({id:'caster',category:'enemy',runtimeUse:'enemy',artDirection:'pixel',seed:12,dimensions:{width:64,height:64}}, {model:'fixture',prompt:'folio caster',width:64,height:64});
 const capacity = {totalSystemRamMb:32000,availableSystemRamMb:24000,devices:['GPU'],backend:'fixture'};
 function provider(echo: unknown = style, supported = true) {
-  return {id:'fixture',checkHealth:vi.fn(async()=>true),supportsLocalStyleAdapters:supported,generateImage:vi.fn(async()=>({...result,executionMetadata:{localStyleAdapter:echo}}))} as ImageGenerator & {generateImage:ReturnType<typeof vi.fn>};
+  return {id:'fixture',checkHealth:vi.fn(async()=>true),supportsLocalStyleAdapters:supported,generateImage:vi.fn(async()=>({...result,executionMetadata:{localStyleAdapter:echo,effectiveWidth:64,effectiveHeight:64,effectiveSteps:6,effectiveGuidance:7.5,effectiveScheduler:"PNDM"}}))} as ImageGenerator & {generateImage:ReturnType<typeof vi.fn>};
 }
 
 describe('local adapter contract', () => {

@@ -20,6 +20,7 @@ import time
 from io import BytesIO
 from pathlib import Path
 from typing import Any
+from image_sampling import configure_sampling, effective_scheduler, validate_sampling_request
 
 os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
 
@@ -681,6 +682,8 @@ def _get_openvino_pipeline(req: dict[str, Any], width: int, height: int):
 
 
 def _generate_openvino_image(req: dict[str, Any], full_prompt: str, width: int, height: int, steps: int, seed: int) -> dict[str, Any]:
+    if "guidance" in req or "scheduler" in req:
+        raise RuntimeError("OPENVINO_MODEL_UNSUPPORTED: direct diagnostic does not support sampling overrides")
     if req.get("conditioning_mode") or req.get("init_image_base64"):
         raise RuntimeError("OPENVINO_MODEL_UNSUPPORTED: conditioning is not implemented")
     if (width, height, steps, seed) != (384, 384, 6, 42):
@@ -789,6 +792,7 @@ def get_ip_adapter_pipeline(base_model_id: str, device: str = "cpu"):
 
 
 def generate_image(req: dict[str, Any]) -> dict[str, Any]:
+    validate_sampling_request(req)
     _worker_stage("request_received")
     style = _local_style_adapter(req.get("local_style_adapter"))
     if style and req.get("conditioning_mode") in {"controlnet_canny", "ip_adapter"}:
@@ -838,6 +842,7 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
     if init_image is not None and conditioning_mode == "controlnet_canny":
         applied_conditioning = "controlnet_canny"
         pipe = get_controlnet_pipeline(conditioning_base_model, device)
+        generation_options = configure_sampling(req, pipe, conditioning_base_model)
         control_image = _canny_control_image(init_image)
         _assert_prompt_budget(pipe, full_prompt, negative)
         result = pipe(
@@ -849,11 +854,13 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
             height=height,
             num_inference_steps=max(steps, 20),
             generator=generator,
+            **generation_options,
         )
     elif init_image is not None and conditioning_mode == "ip_adapter":
         applied_conditioning = "ip_adapter"
         pipe = get_ip_adapter_pipeline(conditioning_base_model, device)
         pipe.set_ip_adapter_scale(strength)
+        generation_options = configure_sampling(req, pipe, conditioning_base_model)
         _assert_prompt_budget(pipe, full_prompt, negative)
         result = pipe(
             prompt=full_prompt,
@@ -863,11 +870,12 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
             height=height,
             num_inference_steps=max(steps, 20),
             generator=generator,
+            **generation_options,
         )
     elif init_image is not None and conditioning_mode:
         applied_conditioning = "img2img"
         pipe = get_img2img_pipeline(model_id, device, style)
-        generation_options = {"guidance_scale": 0.0} if "turbo" in model_id.lower() else {}
+        generation_options = configure_sampling(req, pipe, model_id)
         _assert_prompt_budget(pipe, full_prompt, negative)
         result = pipe(
             prompt=full_prompt,
@@ -895,7 +903,7 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
         pipeline_load_ms = int((time.perf_counter() - pipeline_start) * 1000)
         inference_start = time.perf_counter()
         # Distilled Turbo models require classifier-free guidance to be disabled.
-        generation_options = {"guidance_scale": 0.0} if "turbo" in model_id.lower() else {}
+        generation_options = configure_sampling(req, pipe, model_id)
         _assert_prompt_budget(pipe, full_prompt, negative)
         import inspect
         if "callback_on_step_end" in inspect.signature(pipe.__call__).parameters:
@@ -939,8 +947,9 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
         "effective_prompt": full_prompt,
         "effectivePrompt": full_prompt,
         "effectiveNegativePrompt": negative,
-        "effectiveSteps": max(steps, 20) if init_image is not None and conditioning_mode == "controlnet_canny" else steps,
+        "effectiveSteps": max(steps, 20) if init_image is not None and conditioning_mode in {"controlnet_canny", "ip_adapter"} else steps,
         "effectiveGuidance": getattr(pipe, "guidance_scale", None),
+        "effectiveScheduler": effective_scheduler(pipe),
         "effectiveWidth": image.width,
         "effectiveHeight": image.height,
         "execution_path": "diffusers_torch_" + device,

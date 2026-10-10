@@ -39,6 +39,9 @@ export interface ImageGenRequest {
    *  running a step-count quality experiment against the Apple-native MPS profile — see
    *  docs/audit/MODERN_COHESION_TEST_PROJECT.md). */
   inferenceSteps?: number;
+  /** Explicit sampling requests must be reflected in effective provider metadata. */
+  guidance?: number;
+  scheduler?: string;
 }
 
 /** Structured provider health — richer than a bare boolean; never includes API keys. */
