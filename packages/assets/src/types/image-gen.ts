@@ -89,6 +89,7 @@ export interface ImageGenResult {
 }
 
 export interface ImageGenerator {
+  supportsImageConditioning?: readonly ImageConditioningMode[];
   supportsLocalStyleAdapters?: boolean;
   id: string;
   checkHealth(): Promise<boolean>;

@@ -1,5 +1,9 @@
 # Metroforge UI behavior contract
 
+## Workshop replacement reference
+
+GenerateAsset owns replacement-only reference mode and strength, using existing Select/Input controls. Defaults preserve the existing identity-reference request. Structure redraw explicitly uses saved source artwork (compiled image if source is absent), img2img and default strength0.35; it may use a compatible local style. Lower redraw strength changes less; identity strength controls likeness. Choices reset on project or selected-asset changes and disable during mutation/preparation/inspection. New alternatives omit replacement settings. Explicit reference settings require a compatible enabled local provider and matching effective mode/strength before output writes; source hashes record supplied reference provenance. History, source preservation, canvas dimensions and review requirements remain authoritative. A selected reference does not certify pose or anatomy preservation.
+
 ## Manual actor review status
 
 Workshop, AssetsGallery and VirtualizedAssetGrid use asset-review.ts for review messages and labels. A manual actor with unavailable or deterministic-only vision review stays COMPILED with visual review pending, without a numeric quality score or rejection message. Explicit source-image rejection remains rejected even with a high automated score. An automated source pass still requires human inspection of the compiled sprite and animation; it does not certify game use or production readiness. Gallery IPC sends only the validated actor-review summary, not private provider paths. Source and compiled artwork remain available for inspection. Legacy asset records retain their existing review behavior.

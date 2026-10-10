@@ -214,6 +214,7 @@ export function parseOpenVinoWorkerLine(line: string): WorkerResponse | undefine
 /** Spawns local Python diffusers worker for SDXL generation */
 export class DiffusersProvider implements ImageGenerator {
   readonly supportsLocalStyleAdapters = true;
+  readonly supportsImageConditioning = ['img2img', 'ip_adapter', 'controlnet_canny'] as const;
   id = 'diffusers';
   private enabled: boolean;
   private pythonPath: string;

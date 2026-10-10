@@ -53,6 +53,7 @@ export interface ImageProviderRegistration {
 }
 
 export interface ImageRoutingContext {
+  requireLocalConditioningMode?: import('./types/image-gen.js').ImageConditioningMode;
   /** Explicit local style requests cannot fall through to a provider that ignores them. */
   requireLocalStyleAdapter?: boolean;
   mode?: GenerationMode;
@@ -120,6 +121,7 @@ export class ImageProviderRegistry {
       (context.hardware?.profile ?? context.hardwareProfile) === 'LOW_RESOURCE' && !flags.localOnly;
     return this.registrations
       .filter((r) => {
+        if (context.requireLocalConditioningMode && (!r.local || !r.provider.supportsImageConditioning?.includes(context.requireLocalConditioningMode))) return false;
         if (context.requireLocalStyleAdapter && (!r.local || !r.provider.supportsLocalStyleAdapters)) return false;
         if ((flags.localOnly || flags.offline) && !r.local) return false;
         const cost = resolveImageCostClass(r.local, r.costClass);
@@ -163,6 +165,7 @@ export class ImageProviderRegistry {
     const flags = imageModeFlags(context.mode);
     const modeCandidates = this.registrations.filter((r) => {
       if (context.requireLocalStyleAdapter && (!r.local || !r.provider.supportsLocalStyleAdapters)) return false;
+      if (context.requireLocalConditioningMode && (!r.local || !r.provider.supportsImageConditioning?.includes(context.requireLocalConditioningMode))) return false;
       if ((flags.localOnly || flags.offline) && !r.local) return false;
       const cost = resolveImageCostClass(r.local, r.costClass);
       if (flags.freeOnly && !allowedByFreeOnly(cost)) return false;
@@ -222,6 +225,7 @@ export async function explainImageProviderRouting(
   context: ImageRoutingContext = {},
 ): Promise<ImageRoutingExplanation> {
   const routingContext: ImageRoutingContext = {
+    requireLocalConditioningMode: context.requireLocalConditioningMode,
     requireLocalStyleAdapter: context.requireLocalStyleAdapter,
     mode: context.mode,
     hardwareProfile: context.hardware?.profile ?? context.hardwareProfile,
@@ -234,6 +238,10 @@ export async function explainImageProviderRouting(
   const rejected: ImageRoutingExplanation['rejected'] = [];
 
   for (const reg of registry.list()) {
+    if (context.requireLocalConditioningMode && (!reg.local || !reg.provider.supportsImageConditioning?.includes(context.requireLocalConditioningMode))) {
+      rejected.push({modelId:reg.provider.id,provider:reg.provider.id,reasons:['Requested local reference conditioning is unsupported by this route']});
+      continue;
+    }
     if (context.requireLocalStyleAdapter && (!reg.local || !reg.provider.supportsLocalStyleAdapters)) {
       rejected.push({modelId:reg.provider.id,provider:reg.provider.id,reasons:['Requested local style adapter is unsupported by this route']});
       continue;

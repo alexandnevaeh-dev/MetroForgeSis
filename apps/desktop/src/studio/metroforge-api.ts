@@ -458,6 +458,8 @@ export type MetroforgeBridge = {
   ) => Promise<{ dataUrl?: string; cells?: unknown; atlasSize?: number; tileSize?: number; roles?: Record<string,[number,number]> }>;
   getAudioPreview: (projectPath: string, relPath: string) => Promise<{ dataUrl?: string }>;
   generateAsset: (request: {
+    referenceMode?: 'ip_adapter' | 'img2img';
+    referenceStrength?: number;
     projectPath: string;
     description: string;
     styleDirection?: string;

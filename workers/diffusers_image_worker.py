@@ -722,6 +722,9 @@ def _generate_openvino_image(req: dict[str, Any], full_prompt: str, width: int, 
 
 def get_img2img_pipeline(model_id: str, device: str = "cpu", style=None):
     global _img2img_pipeline, _img2img_pipeline_key
+    # Resolve the prepared snapshot exactly as text-to-image does. Hub IDs may
+    # otherwise resolve a different cache or look for unavailable full weights.
+    model_id = _ensure_model_available(model_id)["model_path"]
     key = (model_id, device, _offload_strategy(device), _style_key(style))
     if _img2img_pipeline is not None and _img2img_pipeline_key == key:
         return _img2img_pipeline
@@ -735,7 +738,7 @@ def get_img2img_pipeline(model_id: str, device: str = "cpu", style=None):
     if os.path.isfile(os.path.join(model_id, "unet", "diffusion_pytorch_model.fp16.safetensors")):
         load_options["variant"] = "fp16"
     pipe = AutoPipelineForImage2Image.from_pretrained(
-        model_id, torch_dtype=_torch_dtype(device), **load_options
+        model_id, torch_dtype=_torch_dtype(device), local_files_only=True, **load_options
     )
     _img2img_pipeline = _move_pipe(_apply_local_style(pipe, style), device)
     _img2img_pipeline_key = key
@@ -874,6 +877,7 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
         )
     elif init_image is not None and conditioning_mode:
         applied_conditioning = "img2img"
+        model_acquisition = _ensure_model_available(model_id)
         pipe = get_img2img_pipeline(model_id, device, style)
         generation_options = configure_sampling(req, pipe, model_id)
         _assert_prompt_budget(pipe, full_prompt, negative)
@@ -955,7 +959,7 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
         "execution_path": "diffusers_torch_" + device,
         "attention_processors": sorted({type(processor).__name__ for processor in _attention_processors(pipe)}),
         "timings": {"totalMs": total_ms},
-        "model_acquisition": model_acquisition if init_image is None and not conditioning_mode else None,
+        "model_acquisition": model_acquisition,
         "pipeline_load_ms": pipeline_load_ms if init_image is None and not conditioning_mode else None,
         "inference_ms": inference_ms if init_image is None and not conditioning_mode else None,
         "duration_ms": total_ms,

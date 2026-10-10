@@ -21,6 +21,17 @@ class MockImageGenerator implements ImageGenerator {
 }
 
 describe('ImageProviderRegistry', () => {
+  it('routes an explicit local reference only to compatible enabled local providers',async()=>{
+    const registry=new ImageProviderRegistry();
+    const remote={id:'remote',supportsImageConditioning:['img2img'] as const,checkHealth:vi.fn(async()=>true),generateImage:vi.fn()};
+    const unsupported={id:'local-no-reference',checkHealth:vi.fn(async()=>true),generateImage:vi.fn()};
+    const compatible={id:'local-reference',supportsImageConditioning:['img2img'] as const,checkHealth:vi.fn(async()=>true),generateImage:vi.fn()};
+    registry.register({provider:remote,local:false,priority:100});registry.register({provider:unsupported,local:true,priority:90});registry.register({provider:compatible,local:true,priority:10});
+    expect((await registry.selectHealthy({requireLocalConditioningMode:'img2img',mode:'LOCAL_ONLY'})).generator?.id).toBe('local-reference');
+    expect(remote.checkHealth).not.toHaveBeenCalled();expect(unsupported.checkHealth).not.toHaveBeenCalled();
+    expect((await registry.selectHealthy({requireLocalConditioningMode:'img2img',mode:'NVIDIA_ONLY'})).generator).toBeNull();
+    const explanation=await explainImageProviderRouting(registry,{requireLocalConditioningMode:'img2img'});expect(explanation.rejected.map(x=>x.provider)).toEqual(expect.arrayContaining(['remote','local-no-reference']));
+  });
   it('routes an explicit adapter only to a capable local provider without probing incompatible routes', async () => {
     const registry=new ImageProviderRegistry();
     const remote={id:'remote',supportsLocalStyleAdapters:true,checkHealth:vi.fn(async()=>true),generateImage:vi.fn()};

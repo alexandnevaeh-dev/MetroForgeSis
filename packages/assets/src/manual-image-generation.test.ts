@@ -28,6 +28,28 @@ const png = () => {
 afterEach(() => vi.clearAllMocks());
 
 describe('manual pipeline uses role-aware compile and retains source proof', () => {
+  it.each(['img2img', 'ip_adapter'] as const)('uses original full-resolution reference with explicit %s and records its hash', async (mode) => {
+    mkdirSync('E:/MetroForgeData/Temp/manual-profile-tests',{recursive:true});const output=mkdtempSync('E:/MetroForgeData/Temp/manual-profile-tests/reference-');mkdirSync(join(output,'assets'));
+    const source=png();const compiled=encodePng(16,16,new Uint8Array(16*16*4).fill(255));
+    writeFileSync(join(output,'assets/caster.png'),compiled);writeFileSync(join(output,'assets/caster_source.png'),source);
+    mock.health.mockResolvedValue(false);mock.select.mockResolvedValue({generator:{id:'fixture',supportsImageConditioning:[mode],generateImage:mock.generate},warnings:[],fallbackDepth:0});
+    mock.generate.mockResolvedValue({image:source,provider:'fixture',modelId:'controlled',fallbackGenerated:false,executionMetadata:{effectiveConditioningMode:mode,effectiveConditioningStrength:0.4}});
+    const asset=await new AssetPipeline().generateManual({gameDna:dna,description:'Folio caster',assetType:'enemy',assetId:'caster',relPath:'assets/caster.png',outputDir:output,seed:42,referenceMode:mode,referenceStrength:0.4});
+    expect(mock.select).toHaveBeenCalledWith(expect.objectContaining({requireLocalConditioningMode:mode}));
+    const request=mock.generate.mock.calls.at(-1)![0];expect(request.conditioning).toMatchObject({mode,strength:0.4,image:source});
+    expect(asset.executionMetadata?.manualReference).toMatchObject({mode,strength:0.4,sourceHash:request.conditioning.sourceHash});
+    expect(request.conditioning.sourceHash).toMatch(/^[a-f0-9]{64}$/);expect(asset.imagePlan).toMatchObject({width:16,height:16});
+  });
+  it('allows style plus explicit img2img and rejects missing conditioning echo before overwriting', async()=>{
+    mkdirSync('E:/MetroForgeData/Temp/manual-profile-tests',{recursive:true});const output=mkdtempSync('E:/MetroForgeData/Temp/manual-profile-tests/style-reference-');mkdirSync(join(output,'assets'));const source=png();writeFileSync(join(output,'assets/caster.png'),source);
+    const localStyleAdapter={path:resolve('E:/adapter.safetensors'),sha256:'a'.repeat(64),scale:1};
+    mock.health.mockResolvedValue(false);mock.select.mockResolvedValue({generator:{id:'fixture',supportsLocalStyleAdapters:true,supportsImageConditioning:['img2img'],generateImage:mock.generate},warnings:[],fallbackDepth:0});
+    mock.generate.mockResolvedValue({image:source,provider:'fixture',modelId:'controlled',fallbackGenerated:false,executionMetadata:{localStyleAdapter}});
+    const opts={gameDna:dna,description:'Folio caster',assetType:'enemy',assetId:'caster',relPath:'assets/caster.png',outputDir:output,seed:42,referenceMode:'img2img' as const,referenceStrength:0.35,localStyleAdapter};
+    await expect(new AssetPipeline().generateManual(opts)).rejects.toThrow('did not apply the selected reference');expect(readFileSync(join(output,'assets/caster.png'))).toEqual(source);
+    mock.generate.mockResolvedValue({image:source,provider:'fixture',modelId:'controlled',fallbackGenerated:false,executionMetadata:{localStyleAdapter,effectiveConditioningMode:'img2img',effectiveConditioningStrength:0.35}});
+    expect((await new AssetPipeline().generateManual(opts)).executionMetadata?.manualReference).toMatchObject({mode:'img2img',strength:0.35});
+  });
   it.each([false, true])('keeps actor review pending when vision is unavailable or falls back to deterministic validation (%s)', async (available) => {
     mkdirSync('E:/MetroForgeData/Temp/manual-profile-tests', { recursive: true });
     const output = mkdtempSync('E:/MetroForgeData/Temp/manual-profile-tests/pending-actor-');

@@ -65,6 +65,8 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
   const [backgroundDetail, setBackgroundDetail] = useState<'standard' | 'detailed'>('standard');
   const [sourceDetail, setSourceDetail] = useState<'standard' | 'detailed'>('standard');
   const [localStyleId,setLocalStyleId]=useState('');
+  const [referenceMode,setReferenceMode]=useState<'ip_adapter'|'img2img'>('ip_adapter');
+  const [referenceStrength,setReferenceStrength]=useState('0.55');
   const [localStyles,setLocalStyles]=useState<Array<{id:string;label:string;available:boolean;reason?:string}>>([]);
   const [localStylesLoading,setLocalStylesLoading]=useState(true);
   const [localStylesError,setLocalStylesError]=useState('');
@@ -86,6 +88,7 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
   const mounted = useRef(true);
   const action = useRef(false);
   const inspection = useRef(0);
+  useEffect(()=>{setReferenceMode('ip_adapter');setReferenceStrength('0.55');},[projectPath,selected?.id]);
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -208,9 +211,11 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
   const handleGenerate = async (replace = false) => {
     if (action.current || inspecting || styleLoading || styleError || !styleDirection.trim()) return;
     setError('');
-    if(localStyleId && (replace || localStylesLoading || localStylesError || !localStyles.some(s=>s.id===localStyleId&&s.available))) {
-      setError(replace?'Local art styles create new artwork. Choose None to replace using the current reference.':'Selected local art style is unavailable. Retry loading styles or choose None.');return;
+    if(localStyleId && ((replace && referenceMode!=='img2img') || localStylesLoading || localStylesError || !localStyles.some(s=>s.id===localStyleId&&s.available))) {
+      setError(replace&&referenceMode!=='img2img'?'Choose structure redraw to combine a local style with replacement, or choose None for identity reference.':'Selected local art style is unavailable. Retry loading styles or choose None.');return;
     }
+    const strength=Number(referenceStrength);
+    if(replace&&(!Number.isFinite(strength)||strength<=0||strength>1)){setError('Reference strength must be greater than 0 and at most 1.');return;}
     const parsedSeed = seed.trim() === '' ? undefined : Number(seed);
     if (
       parsedSeed !== undefined &&
@@ -251,6 +256,7 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
         variants: replace ? 1 : variants,
         assetId: replace ? selected!.id : undefined,
         operation: replace ? 'replace' : 'create',
+        ...(replace && (referenceMode==='img2img'||strength!==0.55) ? {referenceMode,referenceStrength:strength} : {}),
         seed: parsedSeed,
         backgroundDetail: !replace && assetType === 'background' ? backgroundDetail : undefined,
         sourceDetail: assetType !== 'background' ? sourceDetail : undefined,
@@ -407,8 +413,20 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
             <option value="">None · use the project brief</option>
             {localStyles.map(style=><option key={style.id} value={style.id} disabled={!style.available}>{style.label}{style.available?'':' · unavailable'}</option>)}
           </Select>
-          <small id="asset-local-style-help">Optional local SDXL style for new artwork. Provider mode still applies. Replacements use the current reference with None selected.</small>
+          <small id="asset-local-style-help">Optional local SDXL style. Replacements support this style with structure redraw. Identity reference uses None. Provider mode still applies.</small>
         </label>
+        {selected&&<>
+          <label><span id="asset-reference-mode-label">Replacement reference</span>
+            <Select aria-labelledby="asset-reference-mode-label" aria-describedby="asset-reference-help" value={referenceMode} disabled={busy||modelPreparing||inspecting} onChange={e=>{const value=e.target.value as 'ip_adapter'|'img2img';setReferenceMode(value);setReferenceStrength(value==='img2img'?'0.35':'0.55');}}>
+              <option value="ip_adapter">Identity reference (default)</option>
+              <option value="img2img">Structure redraw (local img2img)</option>
+            </Select>
+          </label>
+          <label><span id="asset-reference-strength-label">Reference strength</span>
+            <Input type="number" min="0.01" max="1" step="0.01" aria-labelledby="asset-reference-strength-label" aria-describedby="asset-reference-help" value={referenceStrength} disabled={busy||modelPreparing||inspecting} onChange={e=>setReferenceStrength(e.target.value)} />
+          </label>
+          <small id="asset-reference-help">Applies only to Replace selected. Structure redraw starts from the saved source; lower strength changes less. Identity reference controls likeness. Explicit settings require a compatible local provider. Inspect pose and anatomy after generation.</small>
+        </>}
         {localStylesLoading&&<p role="status">Checking local art styles…</p>}
         {localStylesError&&<div role="alert">{localStylesError} <Button disabled={busy||localStylesLoading} onClick={()=>void loadLocalStyles()}>Retry styles</Button></div>}
         {localStyles.filter(style=>!style.available).map(style=><p key={style.id}>{style.label}: {style.reason}</p>)}

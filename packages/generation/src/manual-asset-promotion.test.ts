@@ -8,6 +8,7 @@ import { listAssetHistory, restoreAssetVersion } from './asset-history.js';
 const fixture = vi.hoisted(() => ({ generate: vi.fn(), failManifest: false }));
 vi.mock('@metroforge/assets', async () => ({
   validateLocalStyleAdapter: (await vi.importActual<typeof import('@metroforge/assets')>('@metroforge/assets')).validateLocalStyleAdapter,
+  manualReferenceOptions: (await vi.importActual<typeof import('@metroforge/assets')>('@metroforge/assets')).manualReferenceOptions,
   localStyleAdapterMatches: (await vi.importActual<typeof import('@metroforge/assets')>('@metroforge/assets')).localStyleAdapterMatches,
   AssetPipeline: class {
     generateManual = fixture.generate;
@@ -44,6 +45,20 @@ const dna = {
   profile: 'TINY_TEST',
 };
 describe('manual artwork promotion', () => {
+  it('forwards explicit styled redraw while preserving previous source in history',async()=>{
+    const localStyleAdapter={path:resolve('E:/adapter.safetensors'),sha256:'a'.repeat(64),scale:1};
+    fixture.generate.mockImplementation((opts:any)=>({...generated(opts),executionMetadata:{localStyleAdapter,effectiveConditioningMode:'img2img',effectiveConditioningStrength:0.35}}));
+    const result=await generateManualAsset({...request(),referenceMode:'img2img',referenceStrength:0.35,localStyleAdapter});
+    expect(result.success).toBe(true);expect(fixture.generate).toHaveBeenCalledWith(expect.objectContaining({referenceMode:'img2img',referenceStrength:0.35,localStyleAdapter}));
+    const history=listAssetHistory(project,'player');expect(history).toHaveLength(1);
+    expect(bytes(history[0].sourceBackupPath!)).toBe('original source');expect(bytes('assets/characters/player_walk.png')).toBe('existing animation');
+  });
+  it('rejects malformed reference options before staging or provider execution',async()=>{
+    for(const extra of [{referenceMode:'none'},{referenceMode:'img2img',referenceStrength:0},{referenceMode:'img2img',operation:'create',assetId:undefined}] as any[]){
+      const result=await generateManualAsset({...request(),...extra});expect(result.success).toBe(false);
+    }
+    expect(fixture.generate).not.toHaveBeenCalled();expect(bytes(path)).toBe('original artwork');expect(bytes(source)).toBe('original source');expect(existsSync(join(project,'.metroforge/manual-art'))).toBe(false);
+  });
   it('rejects a generated style request with missing applied provenance before promotion', async () => {
     fixture.generate.mockImplementation(generated);
     const result=await generateManualAsset({...request(),operation:'create',assetId:undefined,localStyleAdapter:{path:resolve('E:/adapter.safetensors'),sha256:'a'.repeat(64),scale:1}});

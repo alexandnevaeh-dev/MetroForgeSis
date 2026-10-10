@@ -1468,6 +1468,8 @@ export function registerIpcHandlers(cwd: string): void {
       request: {
         projectPath: string;
         description: string;
+        referenceMode?: 'ip_adapter' | 'img2img';
+        referenceStrength?: number;
         styleDirection?: string;
         negativePrompt?: string;
         assetType: string;
@@ -1509,6 +1511,8 @@ export function registerIpcHandlers(cwd: string): void {
             assetType: request.assetType as import('@metroforge/generation').ManualAssetType,
             assetId: request.assetId,
             operation: request.operation,
+            referenceMode: request.referenceMode,
+            referenceStrength: request.referenceStrength,
             seed: request.seed,
             generationMode: request.generationMode,
             backgroundDetail: request.backgroundDetail,
@@ -1533,6 +1537,8 @@ export function registerIpcHandlers(cwd: string): void {
             negativePrompt: request.negativePrompt,
             assetType: request.assetType as import('@metroforge/generation').ManualAssetType,
             operation: 'create',
+            referenceMode: request.referenceMode,
+            referenceStrength: request.referenceStrength,
             seed: request.seed === undefined ? undefined : (request.seed + i * 997) % 2147483648,
             generationMode: request.generationMode,
             backgroundDetail: request.backgroundDetail,

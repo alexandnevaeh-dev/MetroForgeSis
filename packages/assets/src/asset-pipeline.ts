@@ -96,6 +96,7 @@ import {
   missingRequiredTileRoles,
 } from './tile-roles.js';
 import { createHash } from 'node:crypto';
+import { manualReferenceOptions, type ManualReferenceMode } from './manual-reference.js';
 import type { ImageGenerationProfile } from './types/vision.js';
 import type { ImageGenerator, ImageConditioning } from './types/image-gen.js';
 import type { GenerationMode, GenerationProfile } from '@metroforge/shared';
@@ -860,6 +861,7 @@ export const VFX_TEXTURES: VfxSpec[] = [
  *  before this was routed — only the selection mechanism moved from ad hoc sequential
  *  `if`s to a registry the same shape as the text-generation routing uses. */
 async function resolveImageGenerator(options: {
+  requireLocalConditioningMode?: import('./types/image-gen.js').ImageConditioningMode;
   requireLocalStyleAdapter?: boolean;
   comfyuiUrl?: string;
   diffusersPython?: string;
@@ -914,6 +916,7 @@ async function resolveImageGenerator(options: {
   });
 
   const selected = await registry.selectHealthy({
+    requireLocalConditioningMode: options.requireLocalConditioningMode,
     requireLocalStyleAdapter: options.requireLocalStyleAdapter,
     mode: options.mode,
     hardwareProfile: options.hardwareProfile,
@@ -4430,6 +4433,7 @@ export class AssetPipeline {
      *  reach Foundry routing for a migrated call site. */
     mode?: GenerationMode;
     manualPlan?: ManualImagePlan;
+    requireConditioningEcho?: boolean;
     foregroundIsolationProvider?: ForegroundIsolationProvider;
   }): Promise<GeneratedAsset> {
     if (opts.resume) {
@@ -4495,10 +4499,16 @@ export class AssetPipeline {
         localStyleAdapter: opts.localStyleAdapter,
       });
       if (outcome.ok) {
+        if (opts.requireConditioningEcho && (!opts.conditioning ||
+            outcome.executionMetadata?.effectiveConditioningMode !== opts.conditioning.mode ||
+            outcome.executionMetadata?.effectiveConditioningStrength !== opts.conditioning.strength))
+          throw new Error('Image provider did not apply the selected reference mode and strength; existing artwork was preserved');
         buffer = outcome.buffer;
         provider = outcome.provider;
         modelId = outcome.modelId;
         executionMetadata = outcome.executionMetadata;
+        if (opts.requireConditioningEcho && opts.conditioning) executionMetadata = { ...executionMetadata,
+          manualReference: { mode: opts.conditioning.mode, strength: opts.conditioning.strength, sourceHash: opts.conditioning.sourceHash } };
         fallback = false;
         if (outcome.backend === 'foundry') {
           foundryQaPassed = outcome.qaPassed;
@@ -4695,6 +4705,8 @@ export class AssetPipeline {
 
   /** Project-aware single-asset generation for the manual asset workspace. */
   async generateManual(opts: {
+    referenceMode?: ManualReferenceMode;
+    referenceStrength?: number;
     localStyleAdapter?: LocalStyleAdapter;
     gameDna: GameDNA;
     backgroundDetail?: 'standard' | 'detailed';
@@ -4736,7 +4748,8 @@ export class AssetPipeline {
     const localStyleAdapter = opts.localStyleAdapter === undefined ? undefined : validateLocalStyleAdapter(opts.localStyleAdapter);
     const existingFullPath = join(opts.outputDir, opts.relPath);
     const sourceCandidate = join(opts.outputDir, derivedSourceRelPath(opts.relPath));
-    if (localStyleAdapter && (existsSync(existingFullPath) || existsSync(sourceCandidate)))
+    const reference = manualReferenceOptions(opts.referenceMode, opts.referenceStrength, existsSync(existingFullPath) || existsSync(sourceCandidate));
+    if (localStyleAdapter && (existsSync(existingFullPath) || existsSync(sourceCandidate)) && reference?.mode !== 'img2img')
       throw new Error('Local style adapters currently support new artwork only; replacement reference conditioning is unsupported');
     const plan = manualImagePlan(opts.assetType, opts.assetId, existsSync(existingFullPath) ? readFileSync(existingFullPath) : undefined, opts.backgroundDetail, opts.sourceDetail);
     const negativePrompt = opts.negativePrompt ?? applyStyleNegativePrompt(
@@ -4744,6 +4757,7 @@ export class AssetPipeline {
       opts.artBible?.negativePrompts.join(', '),
     );
     const { generator: imageGen } = await resolveImageGenerator({
+      requireLocalConditioningMode: reference?.mode,
       requireLocalStyleAdapter: !!localStyleAdapter,
       comfyuiUrl: opts.comfyuiUrl,
       diffusersPython: opts.diffusersPython,
@@ -4768,6 +4782,7 @@ export class AssetPipeline {
 
     if(localStyleAdapter&&!imageGen)
       throw new Error('Selected local art style requires an enabled, healthy local Diffusers provider compatible with provider mode. Choose a local mode or None.');
+    if (reference && !imageGen) throw new Error('Selected reference mode requires an enabled, healthy compatible local image provider');
     const vlm = createVisionCritic({
       ollamaBaseUrl: opts.ollamaBaseUrl,
       nvidiaApiKey: opts.nvidiaApiKey,
@@ -4803,7 +4818,8 @@ export class AssetPipeline {
         ? existingFullPath
         : null;
     const conditioning: ImageConditioning | undefined = conditioningPath
-      ? { mode: 'ip_adapter', image: readFileSync(conditioningPath), strength: 0.55 }
+      ? { mode: reference?.mode ?? 'ip_adapter', image: readFileSync(conditioningPath), strength: reference?.strength ?? 0.55,
+          ...(reference ? { sourceHash: createHash('sha256').update(readFileSync(conditioningPath)).digest('hex') } : {}) }
       : undefined;
 
     return this.generateSprite({
@@ -4833,6 +4849,7 @@ export class AssetPipeline {
       seed: opts.seed,
       outputDir: opts.outputDir,
       conditioning,
+      requireConditioningEcho: !!reference,
       localStyleAdapter,
       allowProceduralFallback: false,
       mode: opts.mode,

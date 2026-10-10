@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { AssetPipeline, derivedSourceRelPath, validateLocalStyleAdapter, localStyleAdapterMatches, type GeneratedAsset, type LocalStyleAdapter } from '@metroforge/assets';
+import { AssetPipeline, derivedSourceRelPath, validateLocalStyleAdapter, localStyleAdapterMatches, manualReferenceOptions, type ManualReferenceMode, type GeneratedAsset, type LocalStyleAdapter } from '@metroforge/assets';
 import { licenseFieldsForProvider } from '@metroforge/ai';
 import { GameDNASchema, type DesignBible, type StyleBible } from '@metroforge/schemas';
 import { loadConfig, genreSupports } from '@metroforge/shared';
@@ -38,6 +38,8 @@ export type ManualAssetType =
 export type ManualGenerationMode = 'image_only' | 'game_asset' | 'complete_entity';
 
 export interface ManualAssetRequest {
+  referenceMode?: ManualReferenceMode;
+  referenceStrength?: number;
   localStyleId?: string;
   localStyleScale?: number;
   localStyleAdapter?: LocalStyleAdapter;
@@ -133,6 +135,7 @@ export async function generateManualAsset(request: ManualAssetRequest): Promise<
   const warnings: string[] = [];
   let release: (() => void) | undefined;
   try {
+    const reference = manualReferenceOptions(request.referenceMode, request.referenceStrength, request.operation === 'replace' || !!request.assetId);
     if (!request.description?.trim() || request.description.length > 8000)
       throw new Error('Enter a prompt of 1–8000 characters');
     if (request.styleDirection !== undefined && (typeof request.styleDirection !== 'string' || !request.styleDirection.trim() || request.styleDirection.length > 2000))
@@ -199,7 +202,7 @@ export async function generateManualAsset(request: ManualAssetRequest): Promise<
     const localStyleAdapter = request.localStyleId!==undefined
       ? resolveManualStyleAdapter(request.localStyleId,request.localStyleScale===undefined?1:request.localStyleScale)
       : request.localStyleAdapter === undefined ? undefined : validateLocalStyleAdapter(request.localStyleAdapter);
-    if (localStyleAdapter && (request.operation === 'replace' || request.assetId))
+    if (localStyleAdapter && (request.operation === 'replace' || request.assetId) && reference?.mode !== 'img2img')
       throw new Error('Local style adapters currently support new artwork only; create a separate candidate instead of replacing artwork');
     release = lockAssetMutation(request.projectPath);
     const watched = new Map<string, Buffer | null>();
@@ -304,6 +307,8 @@ export async function generateManualAsset(request: ManualAssetRequest): Promise<
       styleBible,
       description: request.description,
       styleDirection: request.styleDirection,
+      referenceMode: reference?.mode,
+      referenceStrength: reference?.strength,
       negativePrompt: request.negativePrompt,
       assetType: request.assetType,
       assetId,
