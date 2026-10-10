@@ -18,6 +18,10 @@
       "types": "./dist/constants.d.ts",
       "import": "./dist/constants.js"
     },
+    "./manual-actor-review": {
+      "types": "./dist/manual-actor-review.d.ts",
+      "import": "./dist/manual-actor-review.js"
+    },
     "./archetypes": {
       "types": "./dist/archetypes.d.ts",
       "import": "./dist/archetypes.js"

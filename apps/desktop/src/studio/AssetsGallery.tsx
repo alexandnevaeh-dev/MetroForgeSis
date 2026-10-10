@@ -1,4 +1,5 @@
 import { TerrainPresentationEditor } from './TerrainPresentationEditor.js';
+import { assetReviewPresentation } from './asset-review.js';
 import { previewFrameAtTime } from './animation-clock.js';
 import { AnimationPreview } from './AnimationPreview.js';
 import { LootDefinitionEditor } from './LootDefinitionEditor.js';
@@ -335,7 +336,8 @@ function ProjectAssetsGallery() {
               </dd>
               <dt>QA</dt>
               <dd>
-                {selected.critiquePassed ? 'Passed' : 'Needs review'} ({selected.critiqueScore ?? '—'})
+                {assetReviewPresentation(selected).label}
+                {assetReviewPresentation(selected).score !== undefined ? ` (${assetReviewPresentation(selected).score})` : ''}
               </dd>
               {selected.prompt && (
                 <>

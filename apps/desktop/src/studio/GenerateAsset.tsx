@@ -1,4 +1,5 @@
 import { registeredAssetId } from './asset-identity.js';
+import { assetReviewPresentation } from './asset-review.js';
 import { useEffect, useRef, useState } from 'react';
 import { ScreenHeader } from './ScreenHeader.js';
 import { ProjectSelect } from './ProjectSelect.js';
@@ -498,11 +499,9 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
             {result.success && result.asset?.executionMetadata?.actualDevice && (
               <p className="hint">Generated on {result.asset.executionMetadata.actualDevice}</p>
             )}
-            {result.success && (result.asset?.critiquePassed === false || result.asset?.maturity === 'REJECTED') && (
-              <p role="status">Automated check rejected this image{result.asset?.critiqueScore !== undefined ? ` (score ${result.asset.critiqueScore})` : ''}. Saved for inspection; review before use.</p>
-            )}
-            {result.success && result.asset?.critiquePassed !== false && result.asset?.maturity !== 'REJECTED' && result.asset?.productionReady !== true && (
-              <p role="status">Draft image saved for review{result.asset?.critiqueScore !== undefined ? ` (automated score ${result.asset.critiqueScore})` : ''}. Verify appearance and animation before game use.</p>
+            {result.success && result.asset && result.asset.productionReady !== true && (
+              <p role="status">{assetReviewPresentation(result.asset).message}
+                {assetReviewPresentation(result.asset).score !== undefined ? ` (automated score ${assetReviewPresentation(result.asset).score})` : ''}</p>
             )}
             {result.success && result.asset && (
               <Button

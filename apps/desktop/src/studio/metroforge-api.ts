@@ -101,7 +101,7 @@ export type GeneratedAssetRef = {
   provider?: string;
   modelId?: string;
   imagePlan?: { profile: string; width: number; height: number; sourceWidth: number; sourceHeight: number; transparent: boolean };
-  executionMetadata?: { actualDevice?: string; computeBackend?: string };
+  executionMetadata?: { actualDevice?: string; computeBackend?: string; manualActorReview?: import('./asset-review.js').ManualActorReview };
   fallbackGenerated?: boolean;
   critiquePassed?: boolean;
   critiqueScore?: number;

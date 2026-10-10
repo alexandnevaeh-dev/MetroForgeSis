@@ -5,7 +5,7 @@ import { AssetPipeline } from './asset-pipeline.js';
 import { decodePngRgba, encodePng } from './png.js';
 import type { GameDNA } from '@metroforge/schemas';
 
-const mock = vi.hoisted(() => ({ generate: vi.fn(), select: vi.fn(), health: vi.fn() }));
+const mock = vi.hoisted(() => ({ generate: vi.fn(), select: vi.fn(), health: vi.fn(), critique: vi.fn() }));
 vi.mock('./image-router.js', () => ({
   ImageProviderRegistry: class {
     selectHealthy = mock.select;
@@ -13,7 +13,7 @@ vi.mock('./image-router.js', () => ({
 }));
 vi.mock('./foundry/register.js', () => ({ registerFoundryImageProviders: vi.fn() }));
 vi.mock('./vision-critic-factory.js', () => ({
-  createVisionCritic: () => ({ isAvailable: mock.health }),
+  createVisionCritic: () => ({ isAvailable: mock.health, critique: mock.critique }),
 }));
 const dna = {
   archetype: 'SIDE_VIEW_METROIDVANIA',
@@ -28,6 +28,40 @@ const png = () => {
 afterEach(() => vi.clearAllMocks());
 
 describe('manual pipeline uses role-aware compile and retains source proof', () => {
+  it.each([false, true])('keeps actor review pending when vision is unavailable or falls back to deterministic validation (%s)', async (available) => {
+    mkdirSync('E:/MetroForgeData/Temp/manual-profile-tests', { recursive: true });
+    const output = mkdtempSync('E:/MetroForgeData/Temp/manual-profile-tests/pending-actor-');
+    const raw = png();
+    mock.health.mockResolvedValue(available);
+    mock.select.mockResolvedValue({ generator: { id: 'fixture', generateImage: mock.generate }, warnings: [], fallbackDepth: 0 });
+    mock.generate.mockResolvedValue({ image: raw, provider: 'fixture', modelId: 'controlled', fallbackGenerated: false });
+    mock.critique.mockResolvedValue({ passed: true, score: 75, issues: [], tags: ['deterministic-check'], description: 'VLM unavailable' });
+    const asset = await new AssetPipeline().generateManual({ gameDna: dna, description: 'One folio caster', assetType: 'enemy', assetId: 'caster', relPath: 'assets/caster.png', outputDir: output, seed: 42 });
+    expect(asset).toMatchObject({ critiquePassed: false, critiqueScore: 0, maturity: 'COMPILED', productionAllowed: false, productionReady: false,
+      executionMetadata: { manualActorReview: { state: 'pending', scope: 'source-image', humanReviewRequired: true } } });
+    expect(readFileSync(join(output, asset.sourcePath!))).toEqual(raw);
+  });
+  it.each(['player_sprite', 'enemy', 'boss', 'npc'])('retains a high-score critic rejection for manual %s and supplies the actual brief', async (assetType) => {
+    mkdirSync('E:/MetroForgeData/Temp/manual-profile-tests', { recursive: true });
+    const output = mkdtempSync('E:/MetroForgeData/Temp/manual-profile-tests/rejected-actor-');
+    const raw = png();
+    mock.health.mockResolvedValue(true);
+    mock.select.mockResolvedValue({ generator: { id: 'fixture', generateImage: mock.generate }, warnings: [], fallbackDepth: 0 });
+    mock.generate.mockResolvedValue({ image: raw, provider: 'fixture', modelId: 'controlled', fallbackGenerated: false });
+    mock.critique.mockResolvedValue({ passed: false, score: 95, issues: ['Two figures; required folio missing'], tags: [], description: 'Rejected actor composition' });
+    const asset = await new AssetPipeline().generateManual({ gameDna: dna, description: 'One right-facing caster holding an open brown folio',
+      styleDirection: 'charcoal cloth, tiny turquoise pupil', negativePrompt: 'multiple figures, empty hands',
+      assetType, assetId: 'caster', relPath: 'assets/caster.png', outputDir: output, seed: 42 });
+    expect(asset).toMatchObject({ critiquePassed: false, critiqueScore: 95, maturity: 'REJECTED', productionAllowed: false, productionReady: false });
+    expect(readFileSync(join(output, asset.sourcePath!))).toEqual(raw);
+    expect(readFileSync(join(output, asset.path))).toEqual(asset.buffer);
+    const request = mock.critique.mock.calls.at(-1)![0];
+    expect(request.image).toEqual(raw);
+    expect(request.artDirection).toContain('One right-facing caster holding an open brown folio');
+    expect(request.artDirection).toContain('charcoal cloth, tiny turquoise pupil');
+    expect(request.artDirection).toContain('multiple figures, empty hands');
+    expect(request.artDirection).toContain('exactly one complete actor');
+  });
   it('explains an unavailable styled route before vision or image generation', async () => {
     mock.select.mockResolvedValue({generator:null,warnings:[],fallbackDepth:0});
     await expect(new AssetPipeline().generateManual({gameDna:dna,description:'Folio caster',assetType:'enemy',assetId:'caster',relPath:'assets/caster.png',outputDir:'E:/MetroForgeData/Development/stormglass-style-bridge-20261009/unavailable-route',seed:42,localStyleAdapter:{path:resolve('E:/adapter.safetensors'),sha256:'a'.repeat(64),scale:1}})).rejects.toThrow('Choose a local mode or None');

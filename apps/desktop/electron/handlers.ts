@@ -1,4 +1,5 @@
 import { readTopDownTerrain } from './topdown-terrain.js';
+import { manualActorReview } from '@metroforge/shared';
 import {readActiveRoomKits} from './room-kit-inspector.js';
 import { resolvePropAsset } from './prop-asset.js';
 import { topDownRoomRecords } from './topdown-room-records.js';
@@ -1377,6 +1378,7 @@ export function registerIpcHandlers(cwd: string): void {
         ...resolvePropAsset(projectPath, path),
         provider: artifact.provider as string | undefined,
         imagePlan: artifact.imagePlan as { profile: string } | undefined,
+        manualActorReview: manualActorReview((artifact.executionMetadata as Record<string, unknown> | undefined)?.manualActorReview),
         modelId: artifact.modelId as string | undefined,
         fallbackGenerated: artifact.fallbackGenerated as boolean | undefined,
         critiquePassed: artifact.critiquePassed as boolean | undefined,
@@ -1412,6 +1414,7 @@ export function registerIpcHandlers(cwd: string): void {
           path: relPath,
           category,
           imagePlan: undefined,
+          manualActorReview: undefined,
           manualArtDirection: undefined,
           provider: undefined,
           modelId: undefined,

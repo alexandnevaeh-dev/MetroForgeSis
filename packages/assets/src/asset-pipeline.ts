@@ -4550,8 +4550,10 @@ export class AssetPipeline {
 
     const det = runDeterministicAssetChecks(processed.buffer, opts.spec.width, opts.spec.height);
     if (opts.manualPlan && !det.passed) throw new Error('Generated artwork failed image validation');
+    const manualActor = !!opts.manualPlan && ['CHARACTER', 'ENEMY', 'BOSS', 'NPC'].includes(opts.profile);
     let critiquePassed = det.passed;
     let critiqueScore = 70;
+    let actorReviewState: 'pending' | 'passed' | 'rejected' | undefined = manualActor ? 'pending' : undefined;
 
     if (opts.vlmAvailable && (!opts.manualPlan || ['CHARACTER', 'ENEMY', 'BOSS', 'NPC'].includes(opts.profile))) {
       throwIfCancelled(opts.signal);
@@ -4564,10 +4566,22 @@ export class AssetPipeline {
         assetType,
         artDirection: opts.artDirection,
       });
-      // Soft-pass: remote gens with score >= 70 are QA_REVIEW, not REJECTED, when critic is strict.
-      // Hard fail remains when deterministic checks fail (blank/corrupt/wrong dims).
-      critiquePassed = det.passed && critiqueEffectivelyPassed(critique.passed, critique.score);
+      // An explicit actor rejection (wrong subject, anatomy or composition) must not
+      // become a pass merely because the critic also supplied a high numeric score.
+      critiquePassed = det.passed && (manualActor
+        ? critique.passed === true
+        : critiqueEffectivelyPassed(critique.passed, critique.score));
       critiqueScore = Math.min(critique.score, det.passed ? 100 : 50);
+      if (manualActor) actorReviewState = critique.tags.includes('deterministic-check')
+        ? 'pending' : critiquePassed ? 'passed' : 'rejected';
+    }
+
+    if (manualActor) {
+      // File validity and fallback deterministic checks cannot assess subject count,
+      // facing, anatomy or the requested tool. Keep unreviewed actors compiled only.
+      if (actorReviewState === 'pending') { critiquePassed = false; critiqueScore = 0; }
+      executionMetadata = { ...executionMetadata, manualActorReview: { state: actorReviewState,
+        scope: 'source-image', humanReviewRequired: true } };
     }
 
     writeCheckpoint(opts.outputDir, opts.path, processed.buffer);
@@ -4583,6 +4597,12 @@ export class AssetPipeline {
       fallbackGenerated: fallback,
       critiquePassed,
       critiqueScore,
+      // The shared maturity inference retains legacy score soft-passes. Manual actors
+      // have stricter admission: preserve rejected output for inspection, not game use.
+      ...(manualActor
+        ? { maturity: actorReviewState === 'pending' ? 'COMPILED' as const
+          : actorReviewState === 'rejected' ? 'REJECTED' as const : 'QA_REVIEW' as const }
+        : {}),
       sourceType: fallback ? undefined : 'compiled',
       sourcePath,
       fallbackDepth: fallback ? 1 : 0,
@@ -4592,7 +4612,7 @@ export class AssetPipeline {
       selectedProvider: provider,
       selectedModel: modelId,
       requestedCapability: 'IMAGE_GENERATION',
-      productionAllowed: !fallback,
+      productionAllowed: !fallback && (!manualActor || actorReviewState === 'passed'),
       promptHash: hashPrompt(opts.prompt),
       requestedProvider: opts.imageGen?.id,
       requestedModel: undefined,
@@ -4802,7 +4822,13 @@ export class AssetPipeline {
       negativePrompt,
       vlm,
       vlmAvailable,
-      artDirection: opts.gameDna.identity.visualStyle,
+      artDirection: ['CHARACTER', 'ENEMY', 'BOSS', 'NPC'].includes(plan.profile)
+        ? [opts.gameDna.identity.visualStyle, `Authored actor brief: ${opts.description}`,
+          opts.styleDirection ? `Material and style: ${opts.styleDirection}` : '',
+          negativePrompt ? `Exclude: ${negativePrompt}` : '',
+          'Evaluate exactly one complete actor: no alternate views or additional figures. Check requested facing, held tool and anatomy. Reject missing required tools, distorted hands, or scenery inside the actor frame. A high score must not override a failed requirement.']
+          .filter(Boolean).join('\n')
+        : opts.gameDna.identity.visualStyle,
       tileSize,
       seed: opts.seed,
       outputDir: opts.outputDir,

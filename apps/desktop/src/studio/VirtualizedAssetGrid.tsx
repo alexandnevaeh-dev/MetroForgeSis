@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AssetRecord } from './types.js';
 import { Badge } from './ui/index.js';
 import { AnimationThumbnail } from './AnimationThumbnail.js';
+import { assetReviewPresentation, manualActorReview } from './asset-review.js';
 
 const CARD_HEIGHT = 148;
 const CARD_WIDTH = 148;
@@ -32,6 +33,7 @@ function maturityLabel(asset: AssetRecord): string {
 function maturityTone(asset: AssetRecord): 'success' | 'warning' | 'danger' | 'muted' | 'info' {
   const raw = (asset.maturity ?? '').toUpperCase();
   if (asset.productionReady || raw === 'PRODUCTION_READY') return 'success';
+  if (manualActorReview(asset.manualActorReview)?.state === 'pending' && raw !== 'REJECTED') return 'warning';
   if (asset.critiquePassed === false || raw === 'REJECTED') return 'danger';
   if (asset.fallbackGenerated || raw === 'PLACEHOLDER' || raw === 'QA_REVIEW') return 'warning';
   if (raw === 'COMPILED' || raw === 'GENERATED_SOURCE') return 'info';
@@ -122,12 +124,13 @@ export function VirtualizedAssetGrid({ assets, selectedId, onSelect, loadSource 
                     {asset.provider}
                   </Badge>
                 ) : null}
-                {typeof asset.critiqueScore === 'number' ? (
+                {asset.manualActorReview || typeof asset.critiqueScore === 'number' ? (
                   <Badge
-                    tone={asset.critiquePassed === false ? 'danger' : asset.critiquePassed ? 'success' : 'muted'}
+                    tone={assetReviewPresentation(asset).tone}
                     className="asset-qa-badge"
                   >
-                    QA {asset.critiqueScore}
+                    {assetReviewPresentation(asset).label}
+                    {assetReviewPresentation(asset).score !== undefined ? ` (${assetReviewPresentation(asset).score})` : ''}
                   </Badge>
                 ) : null}
               </div>

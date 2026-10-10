@@ -24,6 +24,7 @@ export type GenerationState = {
 };
 
 export type AssetRecord = {
+  manualActorReview?: import('./asset-review.js').ManualActorReview;
   manualArtDirection?: {styleDirection: string; negativePrompt: string};
   imagePlan?: { profile: string };
   id: string;

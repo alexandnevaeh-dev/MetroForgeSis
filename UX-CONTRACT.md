@@ -1,5 +1,9 @@
 # Metroforge UI behavior contract
 
+## Manual actor review status
+
+Workshop, AssetsGallery and VirtualizedAssetGrid use asset-review.ts for review messages and labels. A manual actor with unavailable or deterministic-only vision review stays COMPILED with visual review pending, without a numeric quality score or rejection message. Explicit source-image rejection remains rejected even with a high automated score. An automated source pass still requires human inspection of the compiled sprite and animation; it does not certify game use or production readiness. Gallery IPC sends only the validated actor-review summary, not private provider paths. Source and compiled artwork remain available for inspection. Legacy asset records retain their existing review behavior.
+
 ## Workshop local art style
 
 GenerateAssetWorkspace owns an optional Local art style choice, reset to None when switching projects. Existing shared Select, labels, dense warm editor theme and native keyboard behavior remain canonical. A project-scoped desktop read lists the curated cached Pixel art XL adapter without loading inference, downloading weights or exposing model paths. Pending catalog checks disable style selection; failed reads offer Retry styles while ordinary None generation remains usable. Stale reads after retry, project switch or unmount are ignored.
