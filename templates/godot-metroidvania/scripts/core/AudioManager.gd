@@ -142,6 +142,11 @@ func request_quit(exit_code: int = 0) -> void:
 	if _quit_requested:
 		return
 	_quit_requested = true
+	# A play request can still be queued during startup. Clearing its stream before
+	# the first playback frames leaves the mixer holding the pending playback.
+	# Mark closing first so no new sounds can enter, then settle queued requests.
+	await get_tree().process_frame
+	await get_tree().process_frame
 	stop_all_audio()
 	# Allow the mixer to retire looping playback before SceneTree destroys players.
 	# This also runs while paused and ignores hit-stop's Engine.time_scale.
