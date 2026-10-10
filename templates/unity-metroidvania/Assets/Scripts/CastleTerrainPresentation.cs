@@ -15,24 +15,28 @@ public static class CastleTerrainPresentation
         if (!Caps.TryGetValue(root, out var cap))
         {
             var texture = StreamingArtCache.GetTexture(root, asset, FilterMode.Point, TextureWrapMode.Clamp);
-            if (texture == null) return false;
-            var pixels = texture.GetPixels32();
-            // Strip transparent sky padding above the stone. Choose a continuous opaque
-            // center span so feet meet a readable surface rather than the PNG's empty border.
-            var left = texture.width / 10;
-            var width = texture.width - left * 2;
-            var top = -1;
-            for (var y = texture.height - 1; y >= 0; y--)
+            if (texture != null)
             {
-                var opaque = 0;
-                for (var x = left; x < left + width; x++)
-                    if (pixels[y * texture.width + x].a >= 240) opaque++;
-                if (opaque >= width * 0.98f) { top = y; break; }
-            }
-            if (top < 0) return false;
-            cap = Sprite.Create(texture, new Rect(left, 0, width, top + 1),
-                new Vector2(0.5f, 1f), 1f, 0, SpriteMeshType.FullRect);
-            Caps[root] = cap;
+                var pixels = texture.GetPixels32();
+                // Strip transparent sky padding above the stone. Choose a continuous opaque
+                // center span so feet meet a readable surface rather than the PNG's empty border.
+                var left = texture.width / 10;
+                var width = texture.width - left * 2;
+                var top = -1;
+                for (var y = texture.height - 1; y >= 0; y--)
+                {
+                    var opaque = 0;
+                    for (var x = left; x < left + width; x++)
+                        if (pixels[y * texture.width + x].a >= 240) opaque++;
+                    if (opaque >= width * 0.98f) { top = y; break; }
+                }
+                if (top >= 0)
+                {
+                    cap = Sprite.Create(texture, new Rect(left, 0, width, top + 1),
+                        new Vector2(0.5f, 1f), 1f, 0, SpriteMeshType.FullRect);
+                    Caps[root] = cap;
+                }
+                }
         }
 
         // Detailed opaque masonry follows the actual wall and floor footprint.
@@ -47,6 +51,9 @@ public static class CastleTerrainPresentation
                 Fill[root] = fill;
             }
         }
+        // Coping is optional; masonry alone is valid on any collision surface.
+        // Without either asset preserve the caller's legacy terrain path.
+        if (fill == null && cap == null) return false;
         var isWall = rect.height > rect.width * 1.35f;
         if (isWall && fill == null) return false;
 
@@ -86,6 +93,7 @@ public static class CastleTerrainPresentation
             facade.color = new Color(0.72f, 0.77f, 0.85f, 1f);
         }
 
+        if (cap == null) return true;
         var face = new GameObject("CastleStoneCoping");
         face.transform.SetParent(solid, false);
         face.transform.localPosition = new Vector3(0, rect.height * 0.5f, 0);

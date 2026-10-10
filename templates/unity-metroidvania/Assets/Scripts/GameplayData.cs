@@ -148,6 +148,7 @@ public class GameplayRoom
     public float width;
     public float height;
     public string biomeId;
+    public string terrainMaterial;
     public string archetype;
     public float tileSize;
     public float floorTop;

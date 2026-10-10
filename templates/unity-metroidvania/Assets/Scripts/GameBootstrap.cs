@@ -762,7 +762,7 @@ public class GameBootstrap : MonoBehaviour
         var sr = go.AddComponent<SpriteRenderer>();
         sr.sortingOrder = 1;
         var isWall = rect.height > rect.width * 1.35f;
-        if (!string.IsNullOrEmpty(room.backgrounds?.interior) &&
+        if ((room.terrainMaterial == "stormglass-masonry-v1" || !string.IsNullOrEmpty(room.backgrounds?.interior)) &&
             CastleTerrainPresentation.Apply(_streamingRoot, go.transform, rect, sr)) return;
         var rel = isWall
             ? $"assets/tilesets/{room.biomeId}/wall.png"
