@@ -75,6 +75,7 @@ contextBridge.exposeInMainWorld('metroforge', {
     ipcRenderer.invoke('get-audio-preview', projectPath, relPath),
   generateAsset: (request: Record<string, unknown>) => ipcRenderer.invoke('generate-asset', request),
   getManualArtDirection: (projectPath: string) => ipcRenderer.invoke('get-manual-art-direction', projectPath),
+  getManualStyleAdapters: (projectPath: string) => ipcRenderer.invoke('get-manual-style-adapters', projectPath),
   listRooms: (projectPath: string) => ipcRenderer.invoke('list-rooms', projectPath),
   updateRoom: (projectPath: string, patch: Record<string, unknown>) =>
     ipcRenderer.invoke('update-room', projectPath, patch),

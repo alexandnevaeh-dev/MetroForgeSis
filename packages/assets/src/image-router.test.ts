@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { ImageProviderRegistry, explainImageProviderRouting } from './image-router.js';
 import type { ImageGenerator, ImageGenRequest, ImageGenResult } from './types/image-gen.js';
 
@@ -21,6 +21,29 @@ class MockImageGenerator implements ImageGenerator {
 }
 
 describe('ImageProviderRegistry', () => {
+  it('routes an explicit adapter only to a capable local provider without probing incompatible routes', async () => {
+    const registry=new ImageProviderRegistry();
+    const remote={id:'remote',supportsLocalStyleAdapters:true,checkHealth:vi.fn(async()=>true),generateImage:vi.fn()};
+    const unsupported={id:'local-no-style',checkHealth:vi.fn(async()=>true),generateImage:vi.fn()};
+    const capable={id:'local-style',supportsLocalStyleAdapters:true,checkHealth:vi.fn(async()=>true),generateImage:vi.fn()};
+    registry.register({provider:remote,local:false,priority:100});registry.register({provider:unsupported,local:true,priority:90});registry.register({provider:capable,local:true,priority:10});
+    expect((await registry.selectHealthy({requireLocalStyleAdapter:true})).generator?.id).toBe('local-style');
+    expect(remote.checkHealth).not.toHaveBeenCalled();expect(unsupported.checkHealth).not.toHaveBeenCalled();
+    const explanation=await explainImageProviderRouting(registry,{requireLocalStyleAdapter:true});
+    expect(explanation.rejected.map(x=>x.provider)).toEqual(expect.arrayContaining(['remote','local-no-style']));
+  });
+  it('retains generation-mode restrictions for an explicit local adapter', async () => {
+    const registry=new ImageProviderRegistry();
+    registry.register({provider:{id:'diffusers',supportsLocalStyleAdapters:true,checkHealth:vi.fn(async()=>true),generateImage:vi.fn()},local:true,priority:10});
+    expect((await registry.selectHealthy({requireLocalStyleAdapter:true,mode:'NVIDIA_ONLY'})).generator).toBeNull();
+    expect((await registry.selectHealthy({requireLocalStyleAdapter:true,mode:'LOCAL_ONLY'})).generator?.id).toBe('diffusers');
+  });
+  it('never substitutes an incompatible provider after the capable route becomes unavailable', async () => {
+    const registry=new ImageProviderRegistry();
+    registry.register({provider:new MockImageGenerator('incompatible',true),local:true,priority:100});
+    registry.register({provider:{id:'unavailable-style',supportsLocalStyleAdapters:true,checkHealth:vi.fn(async()=>false),generateImage:vi.fn()},local:true,priority:10});
+    expect((await registry.selectHealthy({requireLocalStyleAdapter:true})).generator).toBeNull();
+  });
   it('selects the highest-priority healthy candidate', async () => {
     const registry = new ImageProviderRegistry();
     registry.register({ provider: new MockImageGenerator('low', true), local: true, priority: 10 });

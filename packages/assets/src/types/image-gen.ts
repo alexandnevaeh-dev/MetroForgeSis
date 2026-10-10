@@ -14,7 +14,14 @@ export interface ImageConditioning {
   referenceMechanism?: 'IP_ADAPTER' | 'IMG2IMG' | 'CONTROLNET';
 }
 
+export interface LocalStyleAdapter {
+  path: string;
+  sha256: string;
+  scale: number;
+}
+
 export interface ImageGenRequest {
+  localStyleAdapter?: LocalStyleAdapter;
   profile: ImageGenerationProfile;
   prompt: string;
   negativePrompt?: string;
@@ -79,6 +86,7 @@ export interface ImageGenResult {
 }
 
 export interface ImageGenerator {
+  supportsLocalStyleAdapters?: boolean;
   id: string;
   checkHealth(): Promise<boolean>;
   /** Optional richer health; when absent, boolean checkHealth is mapped. */

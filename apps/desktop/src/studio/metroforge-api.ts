@@ -469,9 +469,12 @@ export type MetroforgeBridge = {
     operation?: 'create' | 'replace';
     backgroundDetail?: 'standard' | 'detailed';
     sourceDetail?: 'standard' | 'detailed';
+    localStyleId?: string;
+    localStyleScale?: number;
     seed?: number;
   }) => Promise<GenerateAssetResponse>;
   getManualArtDirection: (projectPath: string) => Promise<{styleDirection: string; negativePrompt: string}>;
+  getManualStyleAdapters: (projectPath:string) => Promise<Array<{id:string;label:string;available:boolean;reason?:string}>>;
   listRooms: (projectPath: string) => Promise<Array<Record<string, unknown> & { id: string }>>;
   importGameSetAssets: (projectPath: string) => Promise<{ success: boolean; added?: number; skipped?: number; excludedQa?: number; error?: string }>;
   updateRoom: (

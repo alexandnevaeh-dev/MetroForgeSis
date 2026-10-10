@@ -24,6 +24,8 @@ export class FoundryAssetGenerationGateway implements AssetGenerationGateway {
   constructor(private readonly foundry: AssetFoundry) {}
 
   async generate(request: AssetGenerationRequest): Promise<AssetGenerationOutcome> {
+    if (request.localStyleAdapter !== undefined)
+      return { ok: false, backend: this.backend, failureClass: 'unsupported-capability', message: 'Foundry does not support local style adapters', fallbackEligible: true };
     try {
       const result = await this.foundry.fulfill({
         id: request.id,

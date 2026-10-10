@@ -11,6 +11,8 @@ import {
   resolvePythonExecutable,
 } from '@metroforge/shared';
 import { conditioningPayload } from '../image-conditioning.js';
+import { validateLocalStyleAdapter, localStyleAdapterMatches } from '../local-style-adapter.js';
+import type { LocalStyleAdapter } from '../types/image-gen.js';
 export type { ImageGenRequest, ImageGenResult };
 
 /** Keep tokenizer diagnostics out of the generation error shown in the workshop. */
@@ -54,6 +56,7 @@ export interface DiffusersConfig {
 }
 
 interface WorkerResponse {
+  localStyleAdapter?: LocalStyleAdapter | null;
   ok: boolean;
   error?: string;
   provider?: string;
@@ -209,6 +212,7 @@ export function parseOpenVinoWorkerLine(line: string): WorkerResponse | undefine
 
 /** Spawns local Python diffusers worker for SDXL generation */
 export class DiffusersProvider implements ImageGenerator {
+  readonly supportsLocalStyleAdapters = true;
   id = 'diffusers';
   private enabled: boolean;
   private pythonPath: string;
@@ -415,12 +419,17 @@ export class DiffusersProvider implements ImageGenerator {
 
   async generateImage(request: ImageGenRequest): Promise<ImageGenResult> {
     throwIfCancelled(request.signal);
+    const localStyleAdapter = request.localStyleAdapter === undefined ? undefined : validateLocalStyleAdapter(request.localStyleAdapter);
+    if (localStyleAdapter && ['controlnet_canny', 'ip_adapter'].includes(request.conditioning?.mode ?? ''))
+      throw new Error('Local style adapter does not support this conditioning mode');
     const seed = request.seed ?? Math.floor(Math.random() * 2 ** 31);
     const requestedBackend = this.device === 'auto' ? 'auto' : this.device;
     const backend =
       requestedBackend === 'auto' ? await this.resolveAutoBackend(request.signal) : requestedBackend;
+    if (localStyleAdapter && backend === 'openvino_gpu') throw new Error('Local style adapter does not support OpenVINO');
     const payload = {
       action: 'generate',
+      ...(localStyleAdapter ? { local_style_adapter: localStyleAdapter } : {}),
       model_id: this.modelId,
       base_model_path: this.baseModelPath,
       ip_adapter_repo: this.ipAdapterRepo,
@@ -461,6 +470,9 @@ export class DiffusersProvider implements ImageGenerator {
     if (!res.ok || !res.image_base64) {
       throw new Error(diffusersGenerationError(res.error ?? 'Diffusers worker failed'));
     }
+    if (!localStyleAdapterMatches(localStyleAdapter, res.localStyleAdapter)) {
+      throw new Error('Diffusers worker local style adapter provenance does not match the request');
+    }
 
     return {
       image: Buffer.from(res.image_base64, 'base64'),
@@ -474,6 +486,7 @@ export class DiffusersProvider implements ImageGenerator {
       productionAllowed: true,
       fallbackReason: res.fallback_reason ?? undefined,
       executionMetadata: {
+        ...(localStyleAdapter ? { localStyleAdapter: validateLocalStyleAdapter(res.localStyleAdapter) } : {}),
         computeBackend: backend,
         actualDevice: res.device,
         offloadStrategy: res.offload_strategy,

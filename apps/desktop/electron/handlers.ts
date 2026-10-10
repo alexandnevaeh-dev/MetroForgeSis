@@ -33,6 +33,7 @@ import {
   computeOverallProgress,
   generateManualAsset,
   readManualArtDirection,
+  listManualStyleAdapters,
   loadProjectContext,
   buildDependencyGraph,
   findAssetUsages,
@@ -1451,6 +1452,11 @@ export function registerIpcHandlers(cwd: string): void {
     assertProjectPath(projectPath, cwd);
     return readManualArtDirection(projectPath);
   });
+  ipcMain.handle('get-manual-style-adapters', (event, projectPath: string) => {
+    checkCredentialSender(event);
+    assertProjectPath(projectPath,cwd);
+    return listManualStyleAdapters();
+  });
 
   ipcMain.handle(
     'generate-asset',
@@ -1466,6 +1472,8 @@ export function registerIpcHandlers(cwd: string): void {
         operation?: 'create' | 'replace';
         backgroundDetail?: 'standard' | 'detailed';
         sourceDetail?: 'standard' | 'detailed';
+        localStyleId?: string;
+        localStyleScale?: number;
         seed?: number;
         generationMode?: GenerationMode;
         variants?: number;
@@ -1502,6 +1510,8 @@ export function registerIpcHandlers(cwd: string): void {
             generationMode: request.generationMode,
             backgroundDetail: request.backgroundDetail,
             sourceDetail: request.sourceDetail,
+            localStyleId: request.localStyleId,
+            localStyleScale: request.localStyleScale,
             nvidiaImageModel,
             hardwareProfile: hw.profile,
             providerEnabled: parseProviderEnabledMap(prefs),
@@ -1524,6 +1534,8 @@ export function registerIpcHandlers(cwd: string): void {
             generationMode: request.generationMode,
             backgroundDetail: request.backgroundDetail,
             sourceDetail: request.sourceDetail,
+            localStyleId: request.localStyleId,
+            localStyleScale: request.localStyleScale,
             nvidiaImageModel,
             hardwareProfile: hw.profile,
             providerEnabled: parseProviderEnabledMap(prefs),

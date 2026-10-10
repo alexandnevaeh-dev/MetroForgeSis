@@ -63,6 +63,11 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
   const [variants, setVariants] = useState(1);
   const [backgroundDetail, setBackgroundDetail] = useState<'standard' | 'detailed'>('standard');
   const [sourceDetail, setSourceDetail] = useState<'standard' | 'detailed'>('standard');
+  const [localStyleId,setLocalStyleId]=useState('');
+  const [localStyles,setLocalStyles]=useState<Array<{id:string;label:string;available:boolean;reason?:string}>>([]);
+  const [localStylesLoading,setLocalStylesLoading]=useState(true);
+  const [localStylesError,setLocalStylesError]=useState('');
+  const localStylesRead=useRef(0);
   const [busy, setBusy] = useState(false);
   const [modelPreparing, setModelPreparing] = useState(false);
   const [inspecting, setInspecting] = useState(false);
@@ -107,6 +112,17 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
     }
   };
   useEffect(() => {void loadStyleDirection(); return () => {styleRead.current++;};}, [projectPath]);
+  const loadLocalStyles=async()=>{
+    const token=++localStylesRead.current;
+    setLocalStylesLoading(true);setLocalStylesError('');
+    try {
+      if(!window.metroforge?.getManualStyleAdapters)throw new Error('Local style choices unavailable. Reopen the app and retry.');
+      const options=await window.metroforge.getManualStyleAdapters(projectPath);
+      if(mounted.current&&localStylesRead.current===token)setLocalStyles(options);
+    }catch(err){if(mounted.current&&localStylesRead.current===token)setLocalStylesError(err instanceof Error?err.message:String(err));}
+    finally{if(mounted.current&&localStylesRead.current===token)setLocalStylesLoading(false);}
+  };
+  useEffect(()=>{void loadLocalStyles();return()=>{localStylesRead.current++;};},[projectPath]);
 
   const inspectAsset = async (assetPath: string, assetId?: string) => {
     const token = ++inspection.current;
@@ -191,6 +207,9 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
   const handleGenerate = async (replace = false) => {
     if (action.current || inspecting || styleLoading || styleError || !styleDirection.trim()) return;
     setError('');
+    if(localStyleId && (replace || localStylesLoading || localStylesError || !localStyles.some(s=>s.id===localStyleId&&s.available))) {
+      setError(replace?'Local art styles create new artwork. Choose None to replace using the current reference.':'Selected local art style is unavailable. Retry loading styles or choose None.');return;
+    }
     const parsedSeed = seed.trim() === '' ? undefined : Number(seed);
     if (
       parsedSeed !== undefined &&
@@ -234,6 +253,7 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
         seed: parsedSeed,
         backgroundDetail: !replace && assetType === 'background' ? backgroundDetail : undefined,
         sourceDetail: assetType !== 'background' ? sourceDetail : undefined,
+        localStyleId: localStyleId || undefined,
       });
       if (!mounted.current) return;
       const list = variantsFrom(response);
@@ -380,6 +400,17 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
             />
           </label>
         </div>
+        <label>
+          <span id="asset-local-style-label">Local art style</span>
+          <Select aria-labelledby="asset-local-style-label" aria-describedby="asset-local-style-help" value={localStyleId} disabled={busy||localStylesLoading} onChange={e=>setLocalStyleId(e.target.value)}>
+            <option value="">None · use the project brief</option>
+            {localStyles.map(style=><option key={style.id} value={style.id} disabled={!style.available}>{style.label}{style.available?'':' · unavailable'}</option>)}
+          </Select>
+          <small id="asset-local-style-help">Optional local SDXL style for new artwork. Provider mode still applies. Replacements use the current reference with None selected.</small>
+        </label>
+        {localStylesLoading&&<p role="status">Checking local art styles…</p>}
+        {localStylesError&&<div role="alert">{localStylesError} <Button disabled={busy||localStylesLoading} onClick={()=>void loadLocalStyles()}>Retry styles</Button></div>}
+        {localStyles.filter(style=>!style.available).map(style=><p key={style.id}>{style.label}: {style.reason}</p>)}
         {assetType !== 'background' && (
           <label>
             <span id="asset-source-detail-label">Source detail</span>

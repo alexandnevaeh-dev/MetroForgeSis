@@ -7,6 +7,8 @@ export * from './events.js';
 export * from './progress.js';
 export * from './world-edit.js';
 export { generateManualAsset, readManualArtDirection } from './manual-asset.js';
+export { listManualStyleAdapters, resolveManualStyleAdapter } from './manual-style-catalog.js';
+export type { ManualStyleOption } from './manual-style-catalog.js';
 export type { ManualAssetRequest, ManualAssetResult, ManualAssetType } from './manual-asset.js';
 export { loadProjectContext } from './project-loader.js';
 export {

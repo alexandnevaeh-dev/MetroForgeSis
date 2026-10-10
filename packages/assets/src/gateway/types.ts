@@ -1,5 +1,5 @@
 import type { FoundryAssetType } from '@metroforge/schemas';
-import type { ImageConditioning } from '../types/image-gen.js';
+import type { ImageConditioning, LocalStyleAdapter } from '../types/image-gen.js';
 import type { ImageGenerationProfile } from '../types/vision.js';
 
 /** Which generation backend actually produced (or attempted to produce) an asset. */
@@ -16,6 +16,7 @@ export type AssetGenerationBackend = 'legacy' | 'foundry' | 'foundry-with-legacy
  * implementation (see foundry-gateway.ts / legacy-gateway.ts).
  */
 export interface AssetGenerationRequest {
+  localStyleAdapter?: LocalStyleAdapter;
   id: string;
   assetType: FoundryAssetType;
   path: string;

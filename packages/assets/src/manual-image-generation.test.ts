@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { AssetPipeline } from './asset-pipeline.js';
 import { decodePngRgba, encodePng } from './png.js';
 import type { GameDNA } from '@metroforge/schemas';
@@ -28,6 +28,30 @@ const png = () => {
 afterEach(() => vi.clearAllMocks());
 
 describe('manual pipeline uses role-aware compile and retains source proof', () => {
+  it('explains an unavailable styled route before vision or image generation', async () => {
+    mock.select.mockResolvedValue({generator:null,warnings:[],fallbackDepth:0});
+    await expect(new AssetPipeline().generateManual({gameDna:dna,description:'Folio caster',assetType:'enemy',assetId:'caster',relPath:'assets/caster.png',outputDir:'E:/MetroForgeData/Development/stormglass-style-bridge-20261009/unavailable-route',seed:42,localStyleAdapter:{path:resolve('E:/adapter.safetensors'),sha256:'a'.repeat(64),scale:1}})).rejects.toThrow('Choose a local mode or None');
+    expect(mock.health).not.toHaveBeenCalled();expect(mock.generate).not.toHaveBeenCalled();
+  });
+  it('forwards an explicit adapter through manual generation and preserves its proven metadata', async () => {
+    mkdirSync('E:/MetroForgeData/Temp/manual-profile-tests',{recursive:true});
+    const output=mkdtempSync('E:/MetroForgeData/Temp/manual-profile-tests/style-');
+    const localStyleAdapter={path:resolve('E:/adapter.safetensors'),sha256:'a'.repeat(64),scale:1};
+    mock.health.mockResolvedValue(false);
+    mock.select.mockResolvedValue({generator:{id:'fixture',supportsLocalStyleAdapters:true,generateImage:mock.generate},warnings:[],fallbackDepth:0});
+    mock.generate.mockResolvedValue({image:png(),provider:'fixture',modelId:'controlled',fallbackGenerated:false,executionMetadata:{localStyleAdapter}});
+    const asset=await new AssetPipeline().generateManual({gameDna:dna,description:'Folio caster',assetType:'enemy',assetId:'caster',relPath:'assets/caster.png',outputDir:output,seed:42,localStyleAdapter});
+    expect(mock.select).toHaveBeenCalledWith(expect.objectContaining({requireLocalStyleAdapter:true}));
+    expect(mock.generate.mock.calls[0][0].localStyleAdapter).toMatchObject({sha256:localStyleAdapter.sha256,scale:1});
+    expect(asset.executionMetadata?.localStyleAdapter).toEqual(localStyleAdapter);
+    expect(readFileSync(join(output,asset.sourcePath!)).equals(png())).toBe(true);
+  });
+  it('rejects styled replacement before provider selection and preserves the current image', async () => {
+    mkdirSync('E:/MetroForgeData/Temp/manual-profile-tests',{recursive:true});const output=mkdtempSync('E:/MetroForgeData/Temp/manual-profile-tests/style-replace-');
+    mkdirSync(join(output,'assets'));const existing=png();writeFileSync(join(output,'assets/caster.png'),existing);
+    await expect(new AssetPipeline().generateManual({gameDna:dna,description:'Folio caster',assetType:'enemy',assetId:'caster',relPath:'assets/caster.png',outputDir:output,seed:42,localStyleAdapter:{path:resolve('E:/adapter.safetensors'),sha256:'a'.repeat(64),scale:1}})).rejects.toThrow('new artwork only');
+    expect(mock.select).not.toHaveBeenCalled();expect(mock.generate).not.toHaveBeenCalled();expect(readFileSync(join(output,'assets/caster.png')).equals(existing)).toBe(true);
+  });
   it('isolates an opaque actor before compilation while retaining the original provider source', async () => {
     mkdirSync('E:/MetroForgeData/Temp/manual-profile-tests', { recursive: true });
     const output = mkdtempSync('E:/MetroForgeData/Temp/manual-profile-tests/matte-');

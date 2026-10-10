@@ -53,6 +53,8 @@ export interface ImageProviderRegistration {
 }
 
 export interface ImageRoutingContext {
+  /** Explicit local style requests cannot fall through to a provider that ignores them. */
+  requireLocalStyleAdapter?: boolean;
   mode?: GenerationMode;
   /** When LOW_RESOURCE, prefer remote/hosted providers (local VRAM is insufficient). */
   hardwareProfile?: 'LOW_RESOURCE' | 'BALANCED' | 'HIGH_QUALITY' | string;
@@ -118,6 +120,7 @@ export class ImageProviderRegistry {
       (context.hardware?.profile ?? context.hardwareProfile) === 'LOW_RESOURCE' && !flags.localOnly;
     return this.registrations
       .filter((r) => {
+        if (context.requireLocalStyleAdapter && (!r.local || !r.provider.supportsLocalStyleAdapters)) return false;
         if ((flags.localOnly || flags.offline) && !r.local) return false;
         const cost = resolveImageCostClass(r.local, r.costClass);
         if (flags.freeOnly && !allowedByFreeOnly(cost)) return false;
@@ -159,6 +162,7 @@ export class ImageProviderRegistry {
     let fallbackDepth = 0;
     const flags = imageModeFlags(context.mode);
     const modeCandidates = this.registrations.filter((r) => {
+      if (context.requireLocalStyleAdapter && (!r.local || !r.provider.supportsLocalStyleAdapters)) return false;
       if ((flags.localOnly || flags.offline) && !r.local) return false;
       const cost = resolveImageCostClass(r.local, r.costClass);
       if (flags.freeOnly && !allowedByFreeOnly(cost)) return false;
@@ -218,6 +222,7 @@ export async function explainImageProviderRouting(
   context: ImageRoutingContext = {},
 ): Promise<ImageRoutingExplanation> {
   const routingContext: ImageRoutingContext = {
+    requireLocalStyleAdapter: context.requireLocalStyleAdapter,
     mode: context.mode,
     hardwareProfile: context.hardware?.profile ?? context.hardwareProfile,
     hardware: context.hardware,
@@ -229,6 +234,10 @@ export async function explainImageProviderRouting(
   const rejected: ImageRoutingExplanation['rejected'] = [];
 
   for (const reg of registry.list()) {
+    if (context.requireLocalStyleAdapter && (!reg.local || !reg.provider.supportsLocalStyleAdapters)) {
+      rejected.push({modelId:reg.provider.id,provider:reg.provider.id,reasons:['Requested local style adapter is unsupported by this route']});
+      continue;
+    }
     const vram = evaluateVramFit(reg, routingContext);
     if (reg.local && !vram.ok) {
       rejected.push({

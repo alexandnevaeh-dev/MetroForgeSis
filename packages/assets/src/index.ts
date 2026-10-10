@@ -218,10 +218,12 @@ export type {
   ImageGenerator,
   ImageConditioning,
   ImageConditioningMode,
+  LocalStyleAdapter,
   ImageProviderHealthStatus,
   ImageProviderHealthReport,
 } from './types/image-gen.js';
 export { healthReportIsSelectable, resolveImageProviderHealth } from './types/image-gen.js';
+export { validateLocalStyleAdapter, localStyleAdapterMatches } from './local-style-adapter.js';
 export type {
   ImageEditRequest,
   ImageEditResult,

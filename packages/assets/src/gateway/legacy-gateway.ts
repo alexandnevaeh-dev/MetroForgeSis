@@ -1,4 +1,5 @@
 import { throwIfCancelled } from '@metroforge/shared';
+import { validateLocalStyleAdapter, localStyleAdapterMatches } from '../local-style-adapter.js';
 import type { ImageGenerator } from '../types/image-gen.js';
 import type { ImageGenerationProfile } from '../types/vision.js';
 import { sanitizeImagePromptText } from '../sanitize-image-prompt.js';
@@ -45,6 +46,11 @@ export class LegacyAssetGenerationGateway implements AssetGenerationGateway {
     }
     try {
       throwIfCancelled(request.signal);
+      if (request.localStyleAdapter !== undefined) {
+        validateLocalStyleAdapter(request.localStyleAdapter);
+        if (!this.imageGen.supportsLocalStyleAdapters)
+          return { ok: false, backend: this.backend, failureClass: 'unsupported-capability', message: 'Selected provider does not support local style adapters', fallbackEligible: false };
+      }
       const profile: ImageGenerationProfile = request.imageProfile ?? ASSET_TYPE_TO_PROFILE[request.assetType] ?? 'CONCEPT_ART';
       const result = await this.imageGen.generateImage({
         profile,
@@ -55,8 +61,11 @@ export class LegacyAssetGenerationGateway implements AssetGenerationGateway {
         seed: request.seed,
         signal: request.signal,
         conditioning: request.conditioning,
+        ...(request.localStyleAdapter ? { localStyleAdapter: request.localStyleAdapter } : {}),
       });
       if (result.fallbackGenerated) throw new Error('Image provider returned a procedural placeholder');
+      if (request.localStyleAdapter && !localStyleAdapterMatches(request.localStyleAdapter, result.executionMetadata?.localStyleAdapter))
+        return { ok: false, backend: this.backend, failureClass: 'unsupported-capability', message: 'Selected provider did not apply the requested local style adapter', fallbackEligible: false };
       return {
         ok: true,
         backend: this.backend,

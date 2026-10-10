@@ -1,12 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { join, dirname, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { generateManualAsset, readManualArtDirection } from './manual-asset.js';
 import { listAssetHistory, restoreAssetVersion } from './asset-history.js';
 
 const fixture = vi.hoisted(() => ({ generate: vi.fn(), failManifest: false }));
-vi.mock('@metroforge/assets', () => ({
+vi.mock('@metroforge/assets', async () => ({
+  validateLocalStyleAdapter: (await vi.importActual<typeof import('@metroforge/assets')>('@metroforge/assets')).validateLocalStyleAdapter,
+  localStyleAdapterMatches: (await vi.importActual<typeof import('@metroforge/assets')>('@metroforge/assets')).localStyleAdapterMatches,
   AssetPipeline: class {
     generateManual = fixture.generate;
   },
@@ -42,6 +44,27 @@ const dna = {
   profile: 'TINY_TEST',
 };
 describe('manual artwork promotion', () => {
+  it('rejects a generated style request with missing applied provenance before promotion', async () => {
+    fixture.generate.mockImplementation(generated);
+    const result=await generateManualAsset({...request(),operation:'create',assetId:undefined,localStyleAdapter:{path:resolve('E:/adapter.safetensors'),sha256:'a'.repeat(64),scale:1}});
+    expect(result.success).toBe(false);expect(result.errors.join(' ')).toContain('did not record');expect(bytes(path)).toBe('original artwork');expect(bytes(source)).toBe('original source');
+  });
+  it('rejects unknown catalog selections and ambiguous descriptors before mutation', async () => {
+    const unknown=await generateManualAsset({...request(),operation:'create',assetId:undefined,localStyleId:'unknown'});
+    expect(unknown.success).toBe(false);expect(unknown.errors.join(' ')).toContain('Unknown');
+    const ambiguous=await generateManualAsset({...request(),localStyleId:'pixel-art-xl',localStyleAdapter:{path:resolve('E:/adapter.safetensors'),sha256:'a'.repeat(64),scale:1}});
+    expect(ambiguous.errors.join(' ')).toContain('one local style');expect(fixture.generate).not.toHaveBeenCalled();expect(existsSync(join(project,'.metroforge/manual-art'))).toBe(false);
+  });
+  it('rejects malformed adapter requests before mutation or provider execution', async () => {
+    const result=await generateManualAsset({...request(),operation:'create',assetId:undefined,localStyleAdapter:{path:'relative.safetensors',sha256:'a'.repeat(64),scale:1}});
+    expect(result.success).toBe(false);expect(result.errors.join(' ')).toContain('absolute');expect(fixture.generate).not.toHaveBeenCalled();
+    expect(bytes(path)).toBe('original artwork');expect(existsSync(join(project,'.metroforge/manual-art'))).toBe(false);
+  });
+  it('refuses styled replacement without changing source, runtime or history', async () => {
+    const result=await generateManualAsset({...request(),localStyleAdapter:{path:resolve('E:/adapter.safetensors'),sha256:'a'.repeat(64),scale:1}});
+    expect(result.success).toBe(false);expect(result.errors.join(' ')).toContain('new artwork only');expect(fixture.generate).not.toHaveBeenCalled();
+    expect(bytes(path)).toBe('original artwork');expect(bytes(source)).toBe('original source');expect(existsSync(join(project,'.metroforge/manual-art'))).toBe(false);
+  });
   let project: string;
   const path = 'assets/characters/castle/player_still.png';
   const source = 'assets/characters/castle/player_still_source.png';

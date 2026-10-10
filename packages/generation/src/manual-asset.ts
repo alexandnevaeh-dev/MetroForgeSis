@@ -1,11 +1,12 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { AssetPipeline, derivedSourceRelPath, type GeneratedAsset } from '@metroforge/assets';
+import { AssetPipeline, derivedSourceRelPath, validateLocalStyleAdapter, localStyleAdapterMatches, type GeneratedAsset, type LocalStyleAdapter } from '@metroforge/assets';
 import { licenseFieldsForProvider } from '@metroforge/ai';
 import { GameDNASchema, type DesignBible, type StyleBible } from '@metroforge/schemas';
 import { loadConfig, genreSupports } from '@metroforge/shared';
 import { listAssetHistory, type AssetVersionRecord } from './asset-history.js';
 import { randomUUID } from 'node:crypto';
+import { resolveManualStyleAdapter } from './manual-style-catalog.js';
 import {
   assertAssetId,
   assetFile,
@@ -37,6 +38,9 @@ export type ManualAssetType =
 export type ManualGenerationMode = 'image_only' | 'game_asset' | 'complete_entity';
 
 export interface ManualAssetRequest {
+  localStyleId?: string;
+  localStyleScale?: number;
+  localStyleAdapter?: LocalStyleAdapter;
   styleDirection?: string;
   negativePrompt?: string;
   backgroundDetail?: 'standard' | 'detailed';
@@ -190,6 +194,13 @@ export async function generateManualAsset(request: ManualAssetRequest): Promise<
       if (request.assetType !== 'background')
         throw new Error('Background detail applies only to new background images');
     }
+    if(request.localStyleId!==undefined&&request.localStyleAdapter!==undefined)throw new Error('Choose one local style selection');
+    if(request.localStyleScale!==undefined&&request.localStyleId===undefined)throw new Error('Style strength requires a local style selection');
+    const localStyleAdapter = request.localStyleId!==undefined
+      ? resolveManualStyleAdapter(request.localStyleId,request.localStyleScale===undefined?1:request.localStyleScale)
+      : request.localStyleAdapter === undefined ? undefined : validateLocalStyleAdapter(request.localStyleAdapter);
+    if (localStyleAdapter && (request.operation === 'replace' || request.assetId))
+      throw new Error('Local style adapters currently support new artwork only; create a separate candidate instead of replacing artwork');
     release = lockAssetMutation(request.projectPath);
     const watched = new Map<string, Buffer | null>();
     const watch = (path: string) => {
@@ -299,6 +310,7 @@ export async function generateManualAsset(request: ManualAssetRequest): Promise<
       relPath,
       backgroundDetail: request.backgroundDetail,
       sourceDetail: request.sourceDetail,
+      localStyleAdapter,
       outputDir: stage,
       seed,
       mode: request.generationMode ?? 'HYBRID_FREE',
@@ -326,6 +338,8 @@ export async function generateManualAsset(request: ManualAssetRequest): Promise<
       throw new Error(
         asset.fallbackReason ?? 'Image provider failed; existing artwork was preserved',
       );
+    if(localStyleAdapter&&!localStyleAdapterMatches(localStyleAdapter,asset.executionMetadata?.localStyleAdapter))
+      throw new Error('Generated artwork did not record the requested local style adapter; existing artwork was preserved');
     if (asset.id !== assetId || asset.path !== relPath || !asset.buffer?.length)
       throw new Error('Image provider returned an unexpected asset');
     if (asset.sourcePath && asset.sourcePath !== sourceRel)

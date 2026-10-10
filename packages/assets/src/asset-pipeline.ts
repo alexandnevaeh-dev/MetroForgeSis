@@ -59,6 +59,8 @@ import { manualImagePlan, compileManualImage, type ManualImagePlan } from './man
 import { isolateManualForeground } from './manual-foreground-isolation.js';
 import type { ForegroundIsolationProvider } from './pipeline-v2/isolate.js';
 import { DiffusersProvider } from './providers/diffusers.js';
+import { validateLocalStyleAdapter } from './local-style-adapter.js';
+import type { LocalStyleAdapter } from './types/image-gen.js';
 import {
   generateParallaxStrip,
   farPlateLooksLikeOutdoorLandscape,
@@ -858,6 +860,7 @@ export const VFX_TEXTURES: VfxSpec[] = [
  *  before this was routed — only the selection mechanism moved from ad hoc sequential
  *  `if`s to a registry the same shape as the text-generation routing uses. */
 async function resolveImageGenerator(options: {
+  requireLocalStyleAdapter?: boolean;
   comfyuiUrl?: string;
   diffusersPython?: string;
   diffusersModelId?: string;
@@ -911,6 +914,7 @@ async function resolveImageGenerator(options: {
   });
 
   const selected = await registry.selectHealthy({
+    requireLocalStyleAdapter: options.requireLocalStyleAdapter,
     mode: options.mode,
     hardwareProfile: options.hardwareProfile,
     hardware: options.hardware,
@@ -4391,6 +4395,7 @@ export class AssetPipeline {
   }
 
   private async generateSprite(opts: {
+    localStyleAdapter?: LocalStyleAdapter;
     id: string;
     path: string;
     spec: SpriteSpec;
@@ -4487,6 +4492,7 @@ export class AssetPipeline {
         localOnly: opts.mode === 'LOCAL_ONLY' || opts.mode === 'OFFLINE',
         signal: opts.signal,
         conditioning: opts.conditioning,
+        localStyleAdapter: opts.localStyleAdapter,
       });
       if (outcome.ok) {
         buffer = outcome.buffer;
@@ -4669,6 +4675,7 @@ export class AssetPipeline {
 
   /** Project-aware single-asset generation for the manual asset workspace. */
   async generateManual(opts: {
+    localStyleAdapter?: LocalStyleAdapter;
     gameDna: GameDNA;
     backgroundDetail?: 'standard' | 'detailed';
     sourceDetail?: 'standard' | 'detailed';
@@ -4706,13 +4713,18 @@ export class AssetPipeline {
     providerEnabled?: Record<string, boolean>;
   }): Promise<GeneratedAsset> {
     const tileSize = opts.gameDna.technical.tileSize;
+    const localStyleAdapter = opts.localStyleAdapter === undefined ? undefined : validateLocalStyleAdapter(opts.localStyleAdapter);
     const existingFullPath = join(opts.outputDir, opts.relPath);
+    const sourceCandidate = join(opts.outputDir, derivedSourceRelPath(opts.relPath));
+    if (localStyleAdapter && (existsSync(existingFullPath) || existsSync(sourceCandidate)))
+      throw new Error('Local style adapters currently support new artwork only; replacement reference conditioning is unsupported');
     const plan = manualImagePlan(opts.assetType, opts.assetId, existsSync(existingFullPath) ? readFileSync(existingFullPath) : undefined, opts.backgroundDetail, opts.sourceDetail);
     const negativePrompt = opts.negativePrompt ?? applyStyleNegativePrompt(
       opts.styleBible,
       opts.artBible?.negativePrompts.join(', '),
     );
     const { generator: imageGen } = await resolveImageGenerator({
+      requireLocalStyleAdapter: !!localStyleAdapter,
       comfyuiUrl: opts.comfyuiUrl,
       diffusersPython: opts.diffusersPython,
       diffusersModelId: opts.diffusersModelId,
@@ -4734,6 +4746,8 @@ export class AssetPipeline {
       providerEnabled: opts.providerEnabled,
     });
 
+    if(localStyleAdapter&&!imageGen)
+      throw new Error('Selected local art style requires an enabled, healthy local Diffusers provider compatible with provider mode. Choose a local mode or None.');
     const vlm = createVisionCritic({
       ollamaBaseUrl: opts.ollamaBaseUrl,
       nvidiaApiKey: opts.nvidiaApiKey,
@@ -4763,7 +4777,6 @@ export class AssetPipeline {
       buildManualImagePrompt(opts.description, styleHint, opts.gameDna.identity.title, opts.gameDna.archetype, opts.assetType),
     );
 
-    const sourceCandidate = join(opts.outputDir, derivedSourceRelPath(opts.relPath));
     const conditioningPath = existsSync(sourceCandidate)
       ? sourceCandidate
       : existsSync(existingFullPath)
@@ -4794,6 +4807,7 @@ export class AssetPipeline {
       seed: opts.seed,
       outputDir: opts.outputDir,
       conditioning,
+      localStyleAdapter,
       allowProceduralFallback: false,
       mode: opts.mode,
       manualPlan: plan,
