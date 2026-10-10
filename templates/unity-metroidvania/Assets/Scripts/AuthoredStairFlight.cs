@@ -6,7 +6,7 @@ public class AuthoredStairFlight : MonoBehaviour
 {
     private Mesh mesh;
     private Material material;
-    public static void Create(GameplayStairFlight flight, float roomHeight, Transform parent, Sprite floor)
+    public static void Create(GameplayStairFlight flight, float roomHeight, Transform parent, Sprite floor, bool worldAlignedMasonry = false)
     {
         if (flight == null || flight.thickness <= 0f || float.IsNaN(flight.thickness) || float.IsInfinity(flight.thickness) || Vector2.Distance(flight.from,flight.to)<1f)
             throw new ArgumentException("Invalid authored stair flight");
@@ -21,9 +21,15 @@ public class AuthoredStairFlight : MonoBehaviour
         var body=go.AddComponent<Rigidbody2D>();body.bodyType=RigidbodyType2D.Static;
         owner.mesh=new Mesh{name="Authored stair ribbon"};owner.mesh.vertices=new[]{new Vector3(a.x,a.y,0),new Vector3(b.x,b.y,0),new Vector3(points[2].x,points[2].y,0),new Vector3(points[3].x,points[3].y,0)};
         owner.mesh.triangles=new[]{0,1,2,0,2,3};var span=Vector2.Distance(a,b)/32f;owner.mesh.uv=new[]{new Vector2(0,1),new Vector2(span,1),new Vector2(span,0),new Vector2(0,0)};owner.mesh.RecalculateBounds();
+        if (worldAlignedMasonry)
+        {
+            var uv = new Vector2[points.Length];
+            for (int i=0;i<points.Length;i++) uv[i]=points[i]/128f;
+            owner.mesh.uv=uv;
+        }
         var texture=floor!=null?floor.texture:Texture2D.whiteTexture;
         if(floor!=null)texture.wrapMode=TextureWrapMode.Repeat;
-        owner.material=new Material(Shader.Find("Sprites/Default"));owner.material.mainTexture=texture;owner.material.color=floor!=null?Color.white:new Color(.22f,.2f,.18f,1f);
+        owner.material=new Material(Shader.Find("Sprites/Default"));owner.material.mainTexture=texture;owner.material.color=worldAlignedMasonry?new Color(.75f,.8f,.86f,1f):floor!=null?Color.white:new Color(.22f,.2f,.18f,1f);
         go.AddComponent<MeshFilter>().sharedMesh=owner.mesh;var renderer=go.AddComponent<MeshRenderer>();renderer.sharedMaterial=owner.material;renderer.sortingOrder=1;
     }
     private void OnDestroy(){if(mesh!=null)Destroy(mesh);if(material!=null)Destroy(material);}

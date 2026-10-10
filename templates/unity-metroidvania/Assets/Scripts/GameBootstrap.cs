@@ -534,8 +534,11 @@ public class GameBootstrap : MonoBehaviour
                 var tCol = Time.realtimeSinceStartup;
                 foreach (var solid in room.solids)
                     CreateSolid(solid, room);
+                var castleSurfaces = room.terrainMaterial == "stormglass-masonry-v1" || !string.IsNullOrEmpty(room.backgrounds?.interior);
+                var stairMasonry = castleSurfaces ? CastleTerrainPresentation.GetMasonry(_streamingRoot) : null;
+                var stairSurface = stairMasonry ?? LoadSlicedSprite($"assets/tilesets/{room.biomeId}/floor.png", Vector4.zero);
                 foreach (var flight in room.stairFlights ?? System.Array.Empty<GameplayStairFlight>())
-                    AuthoredStairFlight.Create(flight, room.height, RoomParent, LoadSlicedSprite($"assets/tilesets/{room.biomeId}/floor.png", Vector4.zero));
+                    AuthoredStairFlight.Create(flight, room.height, RoomParent, stairSurface, stairMasonry != null);
                 foreach (var door in room.doors)
                 {
                     CreateDoor(door, room);

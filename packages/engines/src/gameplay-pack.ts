@@ -369,7 +369,7 @@ export function buildGameplayPack(input: AssemblyInput): GameplayPack {
       biomeId: published.biomeId,
       archetype: published.archetype,
       tileSize,
-      ...(input.gameDna.archetype === 'SIDE_VIEW_METROIDVANIA' && (opts.stormglassRoomTheme || opts.castleRegionPlan)
+      ...(input.gameDna.archetype === 'SIDE_VIEW_METROIDVANIA' && (opts.stormglassRoomTheme || opts.castleRegionPlan || input.worldGraph.nodes.find(node=>node.id===roomId)?.metadata?.stormglassCampaignLayout === 'stormglass-gallery-campaign-v1')
         ? { terrainMaterial: 'stormglass-masonry-v1' as const } : {}),
       floorTop,
       spawnX: 100,

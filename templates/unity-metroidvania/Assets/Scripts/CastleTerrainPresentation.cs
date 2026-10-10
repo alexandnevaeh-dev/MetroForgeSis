@@ -11,6 +11,7 @@ public static class CastleTerrainPresentation
 
     public static bool Apply(string root, Transform solid, GameplayRect rect, SpriteRenderer renderer)
     {
+        var fill = GetMasonry(root);
         const string asset = "assets/architecture/stormglass/floor_strip.png";
         if (!Caps.TryGetValue(root, out var cap))
         {
@@ -31,36 +32,24 @@ public static class CastleTerrainPresentation
                     if (opaque >= width * 0.98f) { top = y; break; }
                 }
                 if (top >= 0)
-                {
-                    cap = Sprite.Create(texture, new Rect(left, 0, width, top + 1),
-                        new Vector2(0.5f, 1f), 1f, 0, SpriteMeshType.FullRect);
-                    Caps[root] = cap;
-                }
-                }
+                cap = Sprite.Create(texture, new Rect(left, 0, width, top + 1),
+                    new Vector2(0.5f, 1f), 1f, 0, SpriteMeshType.FullRect);
+            }
+            // Remember absent optional coping so room loads do not repeatedly probe disk.
+            Caps[root] = cap;
         }
 
-        // Detailed opaque masonry follows the actual wall and floor footprint.
-        // Material scale never changes the physics transform or collider dimensions.
-        if (!Fill.TryGetValue(root, out var fill))
-        {
-            var texture = StreamingArtCache.GetTexture(root, "assets/architecture/stormglass/masonry-fill-v1.png", FilterMode.Point, TextureWrapMode.Repeat);
-            if (texture != null)
-            {
-                fill = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height),
-                    new Vector2(0.5f, 0.5f), texture.width / 128f, 0, SpriteMeshType.FullRect);
-                Fill[root] = fill;
-            }
-        }
-        // Coping is optional; masonry alone is valid on any collision surface.
-        // Without either asset preserve the caller's legacy terrain path.
-        if (fill == null && cap == null) return false;
+        if (cap == null && fill == null) return false;
         var isWall = rect.height > rect.width * 1.35f;
         if (isWall && fill == null) return false;
 
         // Opaque backing keeps decorative background stairs out of solid collision volumes.
         if (_foundation == null)
-            _foundation = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 4, 4),
-                new Vector2(0.5f, 0.5f), 4f, 0, SpriteMeshType.FullRect);
+        {
+            var white = Texture2D.whiteTexture;
+            _foundation = Sprite.Create(white, new Rect(0, 0, white.width, white.height),
+                new Vector2(0.5f, 0.5f), white.width, 0, SpriteMeshType.FullRect);
+        }
         renderer.sprite = fill != null ? fill : _foundation;
         renderer.drawMode = fill != null ? SpriteDrawMode.Tiled : SpriteDrawMode.Sliced;
         renderer.tileMode = SpriteTileMode.Continuous;
@@ -93,16 +82,29 @@ public static class CastleTerrainPresentation
             facade.color = new Color(0.72f, 0.77f, 0.85f, 1f);
         }
 
-        if (cap == null) return true;
-        var face = new GameObject("CastleStoneCoping");
-        face.transform.SetParent(solid, false);
-        face.transform.localPosition = new Vector3(0, rect.height * 0.5f, 0);
-        var stone = face.AddComponent<SpriteRenderer>();
-        stone.sprite = cap;
-        stone.sortingOrder = renderer.sortingOrder + 2;
-        stone.drawMode = SpriteDrawMode.Tiled;
-        stone.tileMode = SpriteTileMode.Continuous;
-        stone.size = new Vector2(rect.width, Mathf.Min(rect.height, cap.rect.height));
+        if (cap != null)
+        {
+            var face = new GameObject("CastleStoneCoping");
+            face.transform.SetParent(solid, false);
+            face.transform.localPosition = new Vector3(0, rect.height * 0.5f, 0);
+            var stone = face.AddComponent<SpriteRenderer>();
+            stone.sprite = cap;
+            stone.sortingOrder = renderer.sortingOrder + 2;
+            stone.drawMode = SpriteDrawMode.Tiled;
+            stone.tileMode = SpriteTileMode.Continuous;
+            stone.size = new Vector2(rect.width, Mathf.Min(rect.height, cap.rect.height));
+        }
         return true;
     }
+    public static Sprite GetMasonry(string root)
+    {
+        if (Fill.TryGetValue(root, out var fill)) return fill;
+        var texture = StreamingArtCache.GetTexture(root, "assets/architecture/stormglass/masonry-fill-v1.png", FilterMode.Point, TextureWrapMode.Repeat);
+        if (texture == null) return null;
+        fill = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height),
+            new Vector2(.5f, .5f), texture.width / 128f, 0, SpriteMeshType.FullRect);
+        Fill[root] = fill;
+        return fill;
+    }
+
 }
