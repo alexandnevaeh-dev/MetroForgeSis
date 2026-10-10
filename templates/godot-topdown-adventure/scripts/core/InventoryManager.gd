@@ -15,6 +15,8 @@ var _collected_counts: Dictionary = {}
 ## slot name -> equipped item id (empty string = nothing equipped)
 var _equipped: Dictionary = {}
 var _opened_chests: Dictionary = {}
+var _opened_doors: Dictionary = {}
+var _pressed_switches: Dictionary = {}
 
 func _ready() -> void:
 	_load_item_definitions()
@@ -98,6 +100,8 @@ func get_display_entries() -> Array:
 	return entries
 
 func reset_for_new_game() -> void:
+	_opened_doors.clear()
+	_pressed_switches.clear()
 	_opened_chests.clear()
 	_collected_counts.clear()
 	_equipped.clear()
@@ -108,9 +112,23 @@ func get_save_data() -> Dictionary:
 		"collected_counts": _collected_counts.duplicate(),
 		"equipped": _equipped.duplicate(),
 		"opened_chests": _opened_chests.duplicate(),
+		"opened_doors": _opened_doors.duplicate(),
+		"pressed_switches": _pressed_switches.duplicate(),
 	}
 
 func restore_save_data(data: Dictionary) -> void:
+	_opened_doors.clear()
+	_pressed_switches.clear()
+	var doors: Variant = data.get("opened_doors", {})
+	if doors is Dictionary:
+		for key in doors:
+			if key is String and doors[key] is String:
+				_opened_doors[key] = doors[key]
+	var switches: Variant = data.get("pressed_switches", {})
+	if switches is Dictionary:
+		for key in switches:
+			if key is String and switches[key] is bool and switches[key]:
+				_pressed_switches[key] = true
 	_opened_chests.clear()
 	var saved_chests: Variant = data.get("opened_chests", {})
 	if saved_chests is Dictionary:
@@ -250,3 +268,17 @@ func grant_chest_reward(area_id: String, chest_id: String, item_id: String, amou
 		_opened_chests.erase(key)
 		return false
 	return true
+
+func is_door_opened(area_id: String, door_id: String) -> bool:
+	return not door_id.is_empty() and _opened_doors.has(JSON.stringify([area_id, door_id]))
+
+func mark_door_opened(area_id: String, door_id: String, method: String) -> void:
+	if not door_id.is_empty():
+		_opened_doors[JSON.stringify([area_id, door_id])] = method
+
+func is_switch_pressed(area_id: String, switch_id: String) -> bool:
+	return not switch_id.is_empty() and _pressed_switches.has(JSON.stringify([area_id, switch_id]))
+
+func mark_switch_pressed(area_id: String, switch_id: String) -> void:
+	if not switch_id.is_empty():
+		_pressed_switches[JSON.stringify([area_id, switch_id])] = true

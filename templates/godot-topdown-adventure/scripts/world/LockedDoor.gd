@@ -14,6 +14,7 @@ const GENERATED_TEXTURE_PATH := "res://assets/generated/gate/interactive_ability
 
 @export var key_id: String = ""
 @export var door_id: String = ""
+@export var area_id: String = ""
 @export var target_area_id: String = ""
 
 signal opened(method: String)
@@ -24,6 +25,8 @@ var _area: Area2D
 var _sprite: Sprite2D
 
 func _ready() -> void:
+	if area_id.is_empty():
+		area_id = GameManager.current_room_id
 	add_to_group("interactable")
 	add_to_group("locked_door")
 	collision_layer = 1
@@ -56,6 +59,8 @@ func _ready() -> void:
 	_area.add_child(area_shape)
 	add_child(_area)
 	_area.body_entered.connect(_on_body_entered)
+	if InventoryManager.is_door_opened(area_id, door_id):
+		_apply_open_state(false)
 
 func interact(_player: Node) -> void:
 	if unlocked:
@@ -70,15 +75,25 @@ func interact(_player: Node) -> void:
 func unlock(method: String = "script") -> void:
 	if unlocked:
 		return
-	unlocked = true
+	if InventoryManager.is_door_opened(area_id, door_id):
+		_apply_open_state(false)
+		return
+	InventoryManager.mark_door_opened(area_id, door_id, method)
+	_apply_open_state(true)
 	opened.emit(method)
+	AudioManager.play_sfx("pickup")
+
+func _apply_open_state(animate: bool) -> void:
+	unlocked = true
 	set_collision_layer_value(1, false)
 	modulate = Color(0.5, 0.9, 0.6, 1.0)
-	AudioManager.play_sfx("pickup")
 	# Real motion instead of an instant tint swap — the panel visibly retracts (slides up, fades
 	# toward translucent) rather than just changing color in place, giving the unlock a readable
 	# "parting" beat.
-	if _sprite:
+	if _sprite and not animate:
+		_sprite.position.y -= 14.0
+		_sprite.modulate.a = 0.4
+	if _sprite and animate:
 		var tween := create_tween()
 		tween.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
 		tween.tween_property(_sprite, "position:y", _sprite.position.y - 14.0, 0.35)

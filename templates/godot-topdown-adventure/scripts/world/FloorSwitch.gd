@@ -10,10 +10,17 @@ const UNPRESSED_MODULATE := Color(0.85, 0.95, 0.6, 1.0)
 const PRESSED_MODULATE := Color(0.5, 0.5, 0.5, 1.0)
 
 @export var opens_door_id: String = ""
+@export var switch_id: String = ""
+@export var area_id: String = ""
+var _pressed := false
+var _state_id := ""
 
 var _sprite: CanvasItem
 
 func _ready() -> void:
+	if area_id.is_empty():
+		area_id = GameManager.current_room_id
+	_state_id = "authored:" + switch_id if not switch_id.is_empty() else "position:" + JSON.stringify([opens_door_id, position.x, position.y])
 	collision_layer = 32
 	collision_mask = 2
 	monitoring = true
@@ -39,14 +46,21 @@ func _ready() -> void:
 		add_child(vis)
 		_sprite = vis
 
+	if InventoryManager.is_switch_pressed(area_id, _state_id):
+		_pressed = true
+		_sprite.modulate = PRESSED_MODULATE
+		_sprite.scale.y *= 0.6
+
 func _on_body_entered(body: Node2D) -> void:
-	if not body.is_in_group("player"):
+	if _pressed or not body.is_in_group("player"):
 		return
+	_pressed = true
+	InventoryManager.mark_switch_pressed(area_id, _state_id)
 	if _sprite:
 		# A real press-down beat (a quick flatten-and-settle) instead of an instant tint swap.
 		var tween := create_tween()
 		tween.tween_property(_sprite, "modulate", PRESSED_MODULATE, 0.15)
 		tween.parallel().tween_property(_sprite, "scale:y", _sprite.scale.y * 0.6, 0.15)
 	for door in get_tree().get_nodes_in_group("locked_door"):
-		if door is LockedDoor and door.door_id == opens_door_id:
+		if door is LockedDoor and door.door_id == opens_door_id and door.area_id == area_id:
 			door.unlock("floor_switch")
