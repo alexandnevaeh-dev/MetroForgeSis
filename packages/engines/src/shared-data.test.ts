@@ -2,7 +2,7 @@ import {mkdtempSync,readFileSync,writeFileSync,rmSync} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {it,expect} from 'vitest';
-import type {GameDNA} from '@metroforge/schemas';
+import {BossSchema,type GameDNA} from '@metroforge/schemas';
 import {writeSharedProjectData} from './shared-data.js';
 const dna: GameDNA = {
   version: '0.1.0',
@@ -31,5 +31,23 @@ it('indexes supplied PNGs without replacing an existing library or history', () 
   writeFileSync(path,preserved);
   writeSharedProjectData(input);
   expect(readFileSync(path,'utf8')).toBe(preserved);
+ } finally {rmSync(outputDir,{recursive:true,force:true});}
+});
+
+it('preserves authored boss definitions in an engine-neutral catalog', () => {
+ const outputDir=mkdtempSync(join(tmpdir(),'mf-boss-catalog-'));
+ try {
+  const bosses=[BossSchema.parse({
+   id:'boss_weather', name:'Weather Warden', lore:'Original storm guardian',
+   arenaRoomId:'room_002', health:420,
+   phases:[{phase:1,healthThreshold:.5,attacks:['lightning'],telegraphDuration:.6,recoveryWindow:.3}],
+  })];
+  writeSharedProjectData({
+   outputDir,gameDna:dna,roomIds:[],
+   worldGraph:{version:'0.1.0',seed:3,nodes:[],edges:[],regions:[]},
+   progressionGraph:{version:'0.1.0',seed:3,startNodeId:'',endNodeId:'',nodes:[],edges:[],abilities:[],criticalPath:[]},
+   gameContent:{enemies:[],bosses,quests:[],items:[],npcs:[],dialogues:[],shops:[]},
+  });
+  expect(JSON.parse(readFileSync(join(outputDir,'data/bosses/bosses.json'),'utf8'))).toEqual({bosses});
  } finally {rmSync(outputDir,{recursive:true,force:true});}
 });

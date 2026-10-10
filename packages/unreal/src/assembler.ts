@@ -78,6 +78,10 @@ export class UnrealProjectAssembler {
         mkdirSync(dirname(dest), { recursive: true });
         cpSync(abs, dest);
       };
+      for (const relative of ['bosses/bosses.json','items/items.json','loot/loot_tables.json','enemies/enemies.json','npcs/npcs.json','dialogues/dialogues.json','quests/quests.json','shops/shops.json']) {
+        const source = join(input.outputDir, 'data', relative);
+        if (existsSync(source)) copyIntoRaw(source, 'data/' + relative);
+      }
       if (input.textureFiles) {
         for (const [rel, buffer] of input.textureFiles) {
           const dest = join(rawRoot, rel);

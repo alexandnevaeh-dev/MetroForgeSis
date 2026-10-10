@@ -67,7 +67,7 @@ export function writeSharedProjectData(
   );
 
   if (input.gameContent) {
-    for (const key of ['npcs', 'dialogues', 'quests', 'shops'] as const) {
+    for (const key of ['bosses', 'npcs', 'dialogues', 'quests', 'shops'] as const) {
       mkdirSync(join(input.outputDir, 'data', key), { recursive: true });
       writeFileSync(join(input.outputDir, 'data', key, `${key}.json`),
         JSON.stringify({ [key]: input.gameContent[key] }, null, 2));

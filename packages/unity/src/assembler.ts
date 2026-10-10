@@ -102,7 +102,7 @@ DefaultImporter:
       );
 
       // Runtime catalogs must ship in players, not only beside the editor project.
-      for (const relative of ['items/items.json', 'loot/loot_tables.json', 'enemies/enemies.json', 'npcs/npcs.json', 'dialogues/dialogues.json', 'quests/quests.json', 'shops/shops.json']) {
+      for (const relative of ['bosses/bosses.json', 'items/items.json', 'loot/loot_tables.json', 'enemies/enemies.json', 'npcs/npcs.json', 'dialogues/dialogues.json', 'quests/quests.json', 'shops/shops.json']) {
         const source = join(input.outputDir, 'data', relative);
         if (!existsSync(source)) continue;
         const target = join(input.outputDir, 'Assets', 'StreamingAssets', 'data', relative);
