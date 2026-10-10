@@ -15,6 +15,7 @@ const OPEN_TEXTURE_PATH := "res://assets/generated/chest/interactive_chest_open.
 
 @export var item_id: String = ""
 @export var chest_id: String = ""
+@export var area_id: String = ""
 @export var amount: int = 1
 
 var opened: bool = false
@@ -22,6 +23,8 @@ var _sprite: Sprite2D
 var _fallback: ColorRect
 
 func _ready() -> void:
+	if area_id.is_empty():
+		area_id = GameManager.current_room_id
 	add_to_group("interactable")
 	collision_layer = 32
 	collision_mask = 0
@@ -44,22 +47,31 @@ func _ready() -> void:
 		_fallback.size = Vector2(20, 18)
 		add_child(_fallback)
 
-func interact(_player: Node) -> void:
+	opened = InventoryManager.is_chest_opened(area_id, chest_id)
 	if opened:
+		_apply_open_visual(false)
+
+func interact(_player: Node) -> void:
+	if opened or InventoryManager.is_chest_opened(area_id, chest_id):
+		opened = true
+		_apply_open_visual(false)
 		return
-	if not InventoryManager.grant_item(item_id, amount):
+	if not InventoryManager.grant_chest_reward(area_id, chest_id, item_id, amount):
 		push_warning("ChestPickup: unknown item_id '%s'" % item_id)
 		return
 	opened = true
 	AudioManager.play_sfx("pickup")
 	VFXManager.play("pickup_spark", global_position)
+	_apply_open_visual(true)
+
+func _apply_open_visual(animate: bool) -> void:
 	if _sprite and ResourceLoader.exists(OPEN_TEXTURE_PATH):
 		_sprite.texture = load(OPEN_TEXTURE_PATH)
 	else:
 		modulate = Color(0.6, 0.6, 0.6, 1.0)
 	# A real, readable open transition instead of an instant texture swap -- a quick pop-and-
 	# settle scale tween, timed short enough not to delay the player from moving on.
-	if _sprite:
+	if _sprite and animate:
 		_sprite.scale = Vector2(1.35, 0.75)
 		var tween := create_tween()
 		tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)

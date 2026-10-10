@@ -14,6 +14,7 @@ var _item_defs: Dictionary = {}
 var _collected_counts: Dictionary = {}
 ## slot name -> equipped item id (empty string = nothing equipped)
 var _equipped: Dictionary = {}
+var _opened_chests: Dictionary = {}
 
 func _ready() -> void:
 	_load_item_definitions()
@@ -97,6 +98,7 @@ func get_display_entries() -> Array:
 	return entries
 
 func reset_for_new_game() -> void:
+	_opened_chests.clear()
 	_collected_counts.clear()
 	_equipped.clear()
 	apply_stat_bonuses(false)
@@ -105,9 +107,16 @@ func get_save_data() -> Dictionary:
 	return {
 		"collected_counts": _collected_counts.duplicate(),
 		"equipped": _equipped.duplicate(),
+		"opened_chests": _opened_chests.duplicate(),
 	}
 
 func restore_save_data(data: Dictionary) -> void:
+	_opened_chests.clear()
+	var saved_chests: Variant = data.get("opened_chests", {})
+	if saved_chests is Dictionary:
+		for key in saved_chests:
+			if key is String and saved_chests[key] is bool and saved_chests[key]:
+				_opened_chests[key] = true
 	_collected_counts = data.get("collected_counts", {}).duplicate()
 	_equipped = data.get("equipped", {}).duplicate()
 	_ensure_default_loadout()
@@ -222,3 +231,22 @@ func _sum_effect(effect_type: String) -> float:
 			if effect.get("type", "") == effect_type:
 				total += float(effect.get("value", 0)) * (1 if category in EQUIP_SLOTS else count)
 	return total
+
+## Area and authored chest IDs distinguish containers, even when their rewards match.
+func _chest_key(area_id: String, chest_id: String) -> String:
+	return JSON.stringify([area_id, chest_id])
+
+func is_chest_opened(area_id: String, chest_id: String) -> bool:
+	return not chest_id.is_empty() and _opened_chests.has(_chest_key(area_id, chest_id))
+
+func grant_chest_reward(area_id: String, chest_id: String, item_id: String, amount: int) -> bool:
+	if is_chest_opened(area_id, chest_id) or get_item_definition(item_id).is_empty() or amount <= 0:
+		return false
+	var key := _chest_key(area_id, chest_id)
+	# Record before grant_item emits collection events, so synchronous saves include it.
+	if not chest_id.is_empty():
+		_opened_chests[key] = true
+	if not grant_item(item_id, amount):
+		_opened_chests.erase(key)
+		return false
+	return true
