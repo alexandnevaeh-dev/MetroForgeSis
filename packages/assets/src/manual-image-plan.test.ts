@@ -12,6 +12,14 @@ function source(width = 32, height = 16, alpha = 255) {
 }
 
 describe('manual art canvas and processing contracts', () => {
+  it.each(['enemy', 'prop', 'weapon', 'item', 'ui_icon', 'ui_panel', 'vfx_texture'])('preserves neutral pixels in an existing %s matte', type => {
+    const rgba = new Uint8Array(256 * 256 * 4);
+    for (let y = 30; y < 220; y++) for (let x = 90; x < 166; x++) rgba.set([82, 84, 87, 255], (y * 256 + x) * 4);
+    const output = decodePngRgba(compileManualImage(encodePng(256, 256, rgba), manualImagePlan(type, 'gray')));
+    let gray = 0;
+    for (let i = 0; i < output.rgba.length; i += 4) if (output.rgba[i + 3] && output.rgba[i] === 82) gray++;
+    expect(gray).toBeGreaterThan(output.width * output.height * 0.05);
+  });
   it('preserves the large actor and attached book in a grounded manual canvas', () => {
     const width = 256, height = 256;
     const rgba = new Uint8Array(width * height * 4);

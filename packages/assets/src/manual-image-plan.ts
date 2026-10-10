@@ -1,6 +1,7 @@
 import type { ImageGenerationProfile } from './types/vision.js';
 import { decodePngRgba, knockoutVfxBackground } from './png.js';
 import { PixelArtProcessor } from './pixel-art-processor.js';
+import { hasRealAlpha } from './pipeline-v2/isolate.js';
 
 export interface ManualImagePlan {
   profile: ImageGenerationProfile;
@@ -69,7 +70,8 @@ export function manualImagePlan(
 
 export function compileManualImage(source: Buffer, plan: ManualImagePlan): Buffer {
   // Opaque architecture, portraits and concept plates never pass through chroma knockout.
-  const input = plan.transparent ? knockoutVfxBackground(source) : source;
+  const keepMatte = plan.transparent && hasRealAlpha(source);
+  const input = plan.transparent && !keepMatte ? knockoutVfxBackground(source) : source;
   const compiled = new PixelArtProcessor().process(input, {
     targetWidth: plan.width,
     targetHeight: plan.height,

@@ -28,6 +28,29 @@ const png = () => {
 afterEach(() => vi.clearAllMocks());
 
 describe('manual pipeline uses role-aware compile and retains source proof', () => {
+  it('isolates an opaque actor before compilation while retaining the original provider source', async () => {
+    mkdirSync('E:/MetroForgeData/Temp/manual-profile-tests', { recursive: true });
+    const output = mkdtempSync('E:/MetroForgeData/Temp/manual-profile-tests/matte-');
+    const raw = png(); const pixels = decodePngRgba(raw);
+    for (let y = 0; y < pixels.height; y++) for (let x = 0; x < pixels.width; x++)
+      if (x < 20 || x >= 60 || y < 4 || y >= 36) pixels.rgba[(y * pixels.width + x) * 4 + 3] = 0;
+    const masked = encodePng(pixels.width, pixels.height, pixels.rgba);
+    mock.health.mockResolvedValue(false);
+    mock.select.mockResolvedValue({ generator: { id: 'fixture', generateImage: mock.generate }, warnings: [], fallbackDepth: 0 });
+    mock.generate.mockResolvedValue({ image: raw, provider: 'fixture', modelId: 'controlled', fallbackGenerated: false });
+    const segmentForeground = vi.fn().mockResolvedValue({ ok: true, buffer: masked, model: 'u2net' });
+    const asset = await new AssetPipeline().generateManual({
+      gameDna: dna, description: 'Single gray-robed caster', assetType: 'enemy', assetId: 'caster',
+      relPath: 'assets/caster.png', outputDir: output, seed: 42,
+      foregroundIsolationProvider: { segmentForeground },
+    });
+    expect(segmentForeground).toHaveBeenCalledWith(raw);
+    expect(asset.executionMetadata?.foregroundIsolation).toMatchObject({ applied: true, matteSource: 'segmentation_model', model: 'u2net' });
+    expect(readFileSync(join(output, asset.sourcePath!)).equals(raw)).toBe(true);
+    const compiled = decodePngRgba(asset.buffer);
+    expect([compiled.width, compiled.height]).toEqual([64, 64]);
+    expect(compiled.rgba.some((value, i) => i % 4 === 3 && value === 0)).toBe(true);
+  });
   it('sends the authored style/exclusions without legacy project-prefix expansion', async () => {
     mkdirSync('E:/MetroForgeData/Temp/manual-profile-tests', { recursive: true });
     const output = mkdtempSync('E:/MetroForgeData/Temp/manual-profile-tests/brief-');
@@ -80,7 +103,10 @@ describe('manual pipeline uses role-aware compile and retains source proof', () 
     expect(mock.generate.mock.calls[0][0]).toMatchObject({ profile });
     expect(decodePngRgba(asset.buffer)).toMatchObject({ width, height });
     expect(readFileSync(join(output, 'assets/castle_source.png'))).toEqual(raw);
-    expect(asset.executionMetadata).toEqual({ actualDevice: 'fixture' });
+    expect(asset.executionMetadata).toEqual({
+      actualDevice: 'fixture',
+      foregroundIsolation: { applied: false, matteSource: type === 'prop' ? 'unavailable_fallback' : 'skipped_category' },
+    });
     expect(asset.imagePlan).toMatchObject({ profile, width, height });
   });
   it('requests full local detail and rejects invalid sizing before selecting a provider', async () => {

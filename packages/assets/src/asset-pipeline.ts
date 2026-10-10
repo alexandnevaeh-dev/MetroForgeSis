@@ -56,6 +56,9 @@ import {
 import { BOSS_ANIMATION_SPEC, buildBossAnimationSidecar } from './boss-animation-spec.js';
 import { PixelArtProcessor } from './pixel-art-processor.js';
 import { manualImagePlan, compileManualImage, type ManualImagePlan } from './manual-image-plan.js';
+import { isolateManualForeground } from './manual-foreground-isolation.js';
+import type { ForegroundIsolationProvider } from './pipeline-v2/isolate.js';
+import { DiffusersProvider } from './providers/diffusers.js';
 import {
   generateParallaxStrip,
   farPlateLooksLikeOutdoorLandscape,
@@ -4422,6 +4425,7 @@ export class AssetPipeline {
      *  reach Foundry routing for a migrated call site. */
     mode?: GenerationMode;
     manualPlan?: ManualImagePlan;
+    foregroundIsolationProvider?: ForegroundIsolationProvider;
   }): Promise<GeneratedAsset> {
     if (opts.resume) {
       const cached = loadCheckpoint(opts.outputDir, opts.path);
@@ -4522,9 +4526,15 @@ export class AssetPipeline {
       writeCheckpoint(opts.outputDir, sourcePath, buffer);
     }
 
-    const spriteSource = fallback || opts.manualPlan ? buffer : knockoutVfxBackground(buffer);
+    let normalizationSource = buffer;
+    if (opts.manualPlan) {
+      const isolation = await isolateManualForeground(buffer, opts.manualPlan, opts.foregroundIsolationProvider);
+      normalizationSource = isolation.buffer;
+      executionMetadata = { ...executionMetadata, foregroundIsolation: isolation.metadata };
+    }
+    const spriteSource = fallback || opts.manualPlan ? normalizationSource : knockoutVfxBackground(buffer);
     const processed = opts.manualPlan
-      ? { buffer: compileManualImage(buffer, opts.manualPlan) }
+      ? { buffer: compileManualImage(normalizationSource, opts.manualPlan) }
       : this.compileActorFrame(
       spriteSource,
       opts.spec.width,
@@ -4677,6 +4687,7 @@ export class AssetPipeline {
     comfyuiUrl?: string;
     diffusersPython?: string;
     diffusersModelId?: string;
+    foregroundIsolationProvider?: ForegroundIsolationProvider;
     nvidiaApiKey?: string;
     nvidiaApiBaseUrl?: string;
     nvidiaImageModel?: string;
@@ -4786,6 +4797,11 @@ export class AssetPipeline {
       allowProceduralFallback: false,
       mode: opts.mode,
       manualPlan: plan,
+      foregroundIsolationProvider: opts.foregroundIsolationProvider ?? (
+        process.env.METROFORGE_U2NET_WEIGHTS_PATH
+          ? new DiffusersProvider({ pythonPath: opts.diffusersPython })
+          : undefined
+      ),
     });
   }
 }
