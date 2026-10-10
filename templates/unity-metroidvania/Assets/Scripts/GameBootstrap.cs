@@ -297,16 +297,21 @@ public class GameBootstrap : MonoBehaviour
             c.pixelPerfect = true;
             go.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             go.AddComponent<GraphicRaycaster>();
-            if (UnityEngine.EventSystems.EventSystem.current == null)
-            {
-                var es = new GameObject("EventSystem");
-                es.AddComponent<UnityEngine.EventSystems.EventSystem>();
+        }
+        // Generated scenes already contain HUD; they still need a UI event system.
+        if (canvas.GetComponent<UnityEngine.UI.GraphicRaycaster>() == null)
+            canvas.AddComponent<UnityEngine.UI.GraphicRaycaster>();
+        var eventSystem = UnityEngine.EventSystems.EventSystem.current;
+        if (eventSystem == null)
+            eventSystem = new GameObject("EventSystem").AddComponent<UnityEngine.EventSystems.EventSystem>();
+        if (eventSystem.GetComponent<UnityEngine.EventSystems.BaseInputModule>() == null)
+        {
 #if ENABLE_INPUT_SYSTEM
-                es.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
+            var module = eventSystem.gameObject.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
+            if (module.actionsAsset == null) module.AssignDefaultActions();
 #else
-                es.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
+            eventSystem.gameObject.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
 #endif
-            }
         }
         var textGo = new GameObject("Status");
         textGo.transform.SetParent(canvas.transform, false);
