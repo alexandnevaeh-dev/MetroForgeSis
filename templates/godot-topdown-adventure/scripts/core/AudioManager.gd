@@ -29,11 +29,14 @@ var _sfx_pool: Array[AudioStreamPlayer] = []
 var _sfx_pool_cursor := 0
 var _music_player: AudioStreamPlayer
 var _current_music_id: String = ""
+var _quit_requested: bool = false
 var _sfx_cache: Dictionary = {}
 var _missing_sfx_warned: Dictionary = {}
 var _last_played_frame: Dictionary = {}
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	get_tree().auto_accept_quit = false
 	_ensure_buses()
 	for i in range(SFX_POOL_SIZE):
 		var player := AudioStreamPlayer.new()
@@ -51,7 +54,7 @@ func _ready() -> void:
 ## one per call, and silently no-ops (with a one-time warning) if the file wasn't generated
 ## rather than crashing — a project shouldn't fail to run because one SFX is missing.
 func play_sfx(sfx_name: String) -> void:
-	if sfx_name.is_empty():
+	if _quit_requested or sfx_name.is_empty():
 		return
 
 	# Collapse truly simultaneous duplicate triggers (e.g. several hits landing the same
@@ -75,7 +78,7 @@ func play_sfx(sfx_name: String) -> void:
 ## biome ids in exploration rooms, "boss" in boss arenas). No-ops if that track is
 ## already playing, so same-biome room transitions don't restart the loop.
 func play_music(track_id: String, loop: bool = true) -> void:
-	if track_id.is_empty():
+	if _quit_requested or track_id.is_empty():
 		return
 	if track_id == _current_music_id and _music_player.playing:
 		return
@@ -130,7 +133,7 @@ func _load_sfx(sfx_name: String) -> AudioStream:
 ## Plays a one-shot dialogue voice clip from a res:// path when TTS assets were generated.
 ## Silently no-ops if the file is missing so dialogue still works without voice lines.
 func play_dialogue_voice(voice_path: String) -> void:
-	if voice_path.is_empty():
+	if _quit_requested or voice_path.is_empty():
 		return
 	if not ResourceLoader.exists(voice_path):
 		return
@@ -174,3 +177,29 @@ func _set_bus_volume(bus_name: String, linear: float) -> void:
 	if idx < 0:
 		return
 	AudioServer.set_bus_volume_db(idx, linear_to_db(maxf(0.0001, linear)))
+
+## Close through this manager so queued playback and mixer references can retire.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		request_quit()
+
+func request_quit(exit_code: int = 0) -> void:
+	if _quit_requested:
+		return
+	_quit_requested = true
+	# Startup play requests need to settle before their streams are cleared.
+	await get_tree().process_frame
+	await get_tree().process_frame
+	stop_all_audio()
+	await get_tree().create_timer(0.2, true, false, true).timeout
+	get_tree().quit(exit_code)
+
+func stop_all_audio() -> void:
+	_music_player.stop()
+	_music_player.stream = null
+	_current_music_id = ""
+	for player in _sfx_pool:
+		player.stop()
+		player.stream = null
+	_sfx_cache.clear()
+	_last_played_frame.clear()
