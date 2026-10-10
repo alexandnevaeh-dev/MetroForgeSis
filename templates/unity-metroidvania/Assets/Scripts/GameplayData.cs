@@ -15,6 +15,7 @@ public class GameplayRect
 [Serializable]
 public class GameplaySpriteClip
 {
+    public GameplaySpriteRegion[] frameRegions;
     public string ownerId;
     public string clip;
     public string relativePath;
@@ -53,6 +54,12 @@ public class GameplaySpatialPort
     public float floorY;
     public float arrivalX;
     public bool hasArrivalX;
+}
+
+[Serializable]
+public class GameplaySpriteRegion
+{
+    public float x, y, width, height, pivotX, pivotY;
 }
 
 [Serializable]

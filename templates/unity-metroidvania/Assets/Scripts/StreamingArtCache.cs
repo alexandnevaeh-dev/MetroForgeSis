@@ -8,6 +8,29 @@ using UnityEngine;
 /// </summary>
 public static class StreamingArtCache
 {
+    public static Sprite[] GetAtlas(string root, string path, GameplaySpriteRegion[] regions, FilterMode filter, float pixelsPerUnit)
+    {
+        if(regions == null || regions.Length == 0 || float.IsNaN(pixelsPerUnit) || float.IsInfinity(pixelsPerUnit) || pixelsPerUnit <= 0)
+            throw new System.ArgumentException("Invalid animation atlas scale or frames");
+        var key=new System.Text.StringBuilder(AssetKey(root,path)).Append("|atlas|").Append(filter).Append('|').Append(pixelsPerUnit.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        foreach(var r in regions)key.Append('|').Append(JsonUtility.ToJson(r));
+        var cacheKey=key.ToString();
+        if(Sheets.TryGetValue(cacheKey,out var cached)&&cached!=null)return cached;
+        var texture=GetTexture(root,path,filter,TextureWrapMode.Clamp);
+        if(texture==null)return null;
+        var frames=new Sprite[regions.Length];
+        for(int i=0;i<regions.Length;i++)
+        {
+            var r=regions[i];
+            if(r==null || !Finite(r.x)||!Finite(r.y)||!Finite(r.width)||!Finite(r.height)||!Finite(r.pivotX)||!Finite(r.pivotY)
+                ||r.x<0||r.y<0||r.width<=0||r.height<=0||r.x+r.width>texture.width||r.y+r.height>texture.height
+                ||r.pivotX<0||r.pivotX>1||r.pivotY<0||r.pivotY>1)
+                throw new System.ArgumentException("Invalid animation atlas region");
+            frames[i]=Sprite.Create(texture,new Rect(r.x,texture.height-r.y-r.height,r.width,r.height),new Vector2(r.pivotX,r.pivotY),pixelsPerUnit,0,SpriteMeshType.FullRect);
+        }
+        Sheets[cacheKey]=frames;return frames;
+    }
+    private static bool Finite(float value)=>!float.IsNaN(value)&&!float.IsInfinity(value);
     private static readonly Dictionary<string, Texture2D> Textures = new Dictionary<string, Texture2D>();
     private static readonly Dictionary<string, Sprite> Sprites = new Dictionary<string, Sprite>();
     private static readonly Dictionary<string, Sprite[]> Sheets = new Dictionary<string, Sprite[]>();

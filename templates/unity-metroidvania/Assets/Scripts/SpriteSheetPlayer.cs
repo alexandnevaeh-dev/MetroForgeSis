@@ -73,7 +73,9 @@ public class SpriteSheetPlayer : MonoBehaviour
             // idle boot baseline across all poses, including airborne and attack poses.
             if (clip.pivotY == 0f && GroundContactInset > 0f)
                 pivot.y = GroundContactInset * ValidPixelsPerUnit(clip.pixelsPerUnit) / fh;
-            var frames = StreamingArtCache.GetSheet(streamingRoot, clip.relativePath, fw, fh, pivot, clip.smoothFiltering ? FilterMode.Bilinear : FilterMode.Point, clip.pixelsPerUnit);
+            var frames = clip.frameRegions != null && clip.frameRegions.Length > 0
+                ? StreamingArtCache.GetAtlas(streamingRoot, clip.relativePath, clip.frameRegions, clip.smoothFiltering ? FilterMode.Bilinear : FilterMode.Point, clip.pixelsPerUnit)
+                : StreamingArtCache.GetSheet(streamingRoot, clip.relativePath, fw, fh, pivot, clip.smoothFiltering ? FilterMode.Bilinear : FilterMode.Point, clip.pixelsPerUnit);
             if (frames == null || frames.Length == 0)
                 continue;
             var needed = Mathf.Max(1, clip.frameCount);

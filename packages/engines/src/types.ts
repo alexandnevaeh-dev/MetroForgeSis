@@ -25,6 +25,8 @@ export interface GameplayRect {
 }
 
 export interface GameplaySpriteClip {
+  /** Explicit top-left atlas regions and normalized grounded pivots. */
+  frameRegions?: { x: number; y: number; width: number; height: number; pivotX: number; pivotY: number }[];
   ownerId: string;
   clip: string;
   relativePath: string;

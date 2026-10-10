@@ -32,6 +32,11 @@ const COMBAT = {
 } as const;
 
 interface ClipSpec {
+  sourceSheet?: string;
+  sourceRegions?: number[][];
+  frameFootAnchors?: number[][];
+  footAnchorY?: number;
+  displayScale?: number;
   pixelsPerUnit?: number;
   smoothFiltering?: boolean;
   pivotX?: number;
@@ -50,16 +55,22 @@ function loadClipSpecs(jsonPath: string, supplied?: Buffer): Record<string, Clip
     const parsed = JSON.parse(supplied ? supplied.toString('utf-8') : readFileSync(jsonPath, 'utf-8')) as Record<string, Partial<ClipSpec>>;
     const out: Record<string, ClipSpec> = {};
     for (const [clip, spec] of Object.entries(parsed)) {
+      const atlas = spec.sourceSheet !== undefined || spec.sourceRegions !== undefined;
       out[clip] = {
+        sourceSheet: spec.sourceSheet,
+        sourceRegions: spec.sourceRegions,
+        frameFootAnchors: spec.frameFootAnchors,
+        footAnchorY: spec.footAnchorY,
+        displayScale: spec.displayScale,
         pixelsPerUnit: spec.pixelsPerUnit,
         smoothFiltering: spec.smoothFiltering,
         pivotX: spec.pivotX,
         pivotY: spec.pivotY,
         frameWidth: spec.frameWidth,
         frameHeight: spec.frameHeight,
-        frameCount: Number(spec.frameCount) || 1,
-        fps: Number(spec.fps) || 8,
-        loop: spec.loop !== false,
+        frameCount: atlas ? Number(spec.frameCount) : Number(spec.frameCount) || 1,
+        fps: atlas ? Number(spec.fps) : Number(spec.fps) || 8,
+        loop: atlas ? spec.loop as boolean : spec.loop !== false,
         impactFrame: spec.impactFrame,
       };
     }
@@ -85,6 +96,39 @@ function clipFromSheet(
   specs: Record<string, ClipSpec>,
   pivotY: number,
 ): GameplaySpriteClip | null {
+  const atlas = specs[clip];
+  if (atlas?.sourceSheet !== undefined || atlas?.sourceRegions !== undefined) {
+    if (!atlas.sourceSheet || !/^assets\/[a-zA-Z0-9_/-]+\.png$/.test(atlas.sourceSheet)
+      || !Array.isArray(atlas.sourceRegions) || atlas.sourceRegions.length !== atlas.frameCount
+      || !Number.isFinite(atlas.displayScale) || atlas.displayScale! <= 0 || atlas.displayScale! > 2)
+      throw new Error(`Invalid authored animation atlas: ${ownerId}/${clip}`);
+    const source = textureBuffer(input, atlas.sourceSheet);
+    const size = source && readPngSize(source);
+    if (!size) throw new Error(`Missing authored animation sheet: ${atlas.sourceSheet}`);
+    if (atlas.smoothFiltering !== undefined && typeof atlas.smoothFiltering !== 'boolean')
+      throw new Error(`Invalid authored animation filtering: ${ownerId}/${clip}`);
+    if (atlas.frameFootAnchors !== undefined && (!Array.isArray(atlas.frameFootAnchors) || atlas.frameFootAnchors.length !== atlas.frameCount))
+      throw new Error(`Invalid authored foot anchor count: ${ownerId}/${clip}`);
+    const frameRegions = atlas.sourceRegions.map((region, index) => {
+      if (!Array.isArray(region) || region.length !== 4 || !region.every(Number.isInteger))
+        throw new Error(`Invalid authored region: ${ownerId}/${clip}`);
+      const [x,y,width,height] = region as [number,number,number,number];
+      const anchor = atlas.frameFootAnchors?.[index] ?? [width/2,atlas.footAnchorY];
+      if (x<0 || y<0 || width<=0 || height<=0 || x+width>size.width || y+height>size.height
+        || !Array.isArray(anchor) || anchor.length!==2 || !anchor.every(Number.isFinite)
+        || anchor[0]!<0 || anchor[0]!>width || anchor[1]!<0 || anchor[1]!>height)
+        throw new Error(`Out-of-bounds authored frame or anchor: ${ownerId}/${clip}`);
+      return {x,y,width,height,pivotX:anchor[0]!/width,pivotY:1-anchor[1]!/height};
+    });
+    if (!Number.isFinite(atlas.fps) || atlas.fps<=0 || !Number.isInteger(atlas.frameCount) || atlas.frameCount<1 || typeof atlas.loop !== 'boolean'
+      || (atlas.impactFrame !== undefined && (!Number.isInteger(atlas.impactFrame) || atlas.impactFrame<0 || atlas.impactFrame>=atlas.frameCount)))
+      throw new Error(`Invalid authored animation timing: ${ownerId}/${clip}`);
+    return {ownerId,clip,relativePath:atlas.sourceSheet,frameWidth:frameRegions[0]!.width,
+      frameHeight:frameRegions[0]!.height,frameCount:atlas.frameCount,frameRegions,
+      pixelsPerUnit:1/atlas.displayScale!,smoothFiltering:atlas.smoothFiltering ?? true,fps:atlas.fps,loop:atlas.loop,
+      pivotX:frameRegions[0]!.pivotX,pivotY:frameRegions[0]!.pivotY,
+      impactFrame:atlas.impactFrame ?? Math.floor(atlas.frameCount/2),hasImpactFrame:atlas.impactFrame!==undefined};
+  }
   const buf = textureBuffer(input, rel);
   if (!buf) return null;
   const size = readPngSize(buf);
@@ -152,6 +196,7 @@ function collectSprites(input: AssemblyInput, enemyIds: string[]): GameplaySprit
     'hurt',
     'death',
     'dash',
+    'air_dash',
     'wall_slide',
     'wall_jump',
     'swim',
