@@ -448,6 +448,9 @@ export type MetroforgeBridge = {
   }>;
   listAssets: (projectPath: string) => Promise<AssetListItem[]>;
   getAssetPreview: (projectPath: string, relPath: string) => Promise<{ dataUrl?: string }>;
+  readMaterialArtwork: (projectPath: string, assetId: string) => Promise<{inspectionHash:string;sourceHash:string;imageHash:string;width:number;height:number;sourceDataUrl:string;imageDataUrl:string}>;
+  previewMaterialArtwork: (projectPath: string, assetId: string, inspectionHash: string, rules: unknown) => Promise<{draftId:string;changedPixels:number;sourceDataUrl:string;imageDataUrl:string;sourceHash:string;imageHash:string}>;
+  applyMaterialArtwork: (projectPath: string, assetId: string, draftId: string) => Promise<{success:boolean;path:string;version:number;sourceHash:string;imageHash:string}>;
   getAssetUsages: (
     projectPath: string,
     assetId: string,

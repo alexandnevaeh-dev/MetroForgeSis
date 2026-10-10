@@ -51,6 +51,9 @@ import {
   readReviewState,
   listAssetHistory,
   restoreAssetVersion,
+  readMaterialArtwork,
+  previewMaterialArtwork,
+  applyMaterialArtwork,
   assessPreviewReadiness,
   createProjectCheckpoint,
   listProjectCheckpoints,
@@ -1618,6 +1621,18 @@ export function registerIpcHandlers(cwd: string): void {
   ipcMain.handle('get-asset-history', async (_event, projectPath: string, assetId: string) => {
     assertReadableProjectPath(projectPath, cwd);
     return listAssetHistory(projectPath, assetId);
+  });
+  ipcMain.handle('read-material-artwork', async (_event, projectPath: string, assetId: string) => {
+    assertReadableProjectPath(projectPath, cwd);
+    return readMaterialArtwork(projectPath, assetId);
+  });
+  ipcMain.handle('preview-material-artwork', async (_event, projectPath: string, assetId: string, inspectionHash: string, rules: unknown) => {
+    assertReadableProjectPath(projectPath, cwd);
+    return previewMaterialArtwork(projectPath, assetId, inspectionHash, rules);
+  });
+  ipcMain.handle('apply-material-artwork', async (_event, projectPath: string, assetId: string, draftId: string) => {
+    assertReadableProjectPath(projectPath, cwd);
+    return applyMaterialArtwork(projectPath, assetId, draftId);
   });
 
   ipcMain.handle(

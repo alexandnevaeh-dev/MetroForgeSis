@@ -1,0 +1,9 @@
+# Actor material color correction
+
+The Asset workshop extends its existing selected-artwork inspector with Correct actor colors. It uses the shared Button, Input and native Select controls, forge tokens and inline status/error feedback. The source viewport is reserved at272px, with intentional internal scrolling for2×/4× inspection. Keyboard users enter source pixel coordinates and activate Sample pixel; rectangle coordinates provide a non-drag editing path.
+
+Color rules match original source pixels inside bounded rectangles. Tolerance includes nearby colors; shading can retain relative brightness or use one flat color. Later overlapping matches win without cascading prior replacement colors. Preview colors changes no project files. Apply colors commits exactly that reviewed source/game pair, preserving both preimages and prior provenance in existing version history. Restore supports both source and compiled image.
+
+Source, game image, registry and game DNA fingerprints guard inspection and apply. Project/asset scoped preview tokens expire after ten minutes; four previews bound the cache. Conflicts preserve entered rules and require a new inspection/preview. Successful saves refresh the inspector, retain the expanded editor and persist the acknowledgement in the Workshop feedback area. Actor review remains pending and runtime validation is invalidated. Derived animation files remain intact but dependent records are marked dirty.
+
+This initial capability supports static manually generated player/enemy/boss/NPC images with a saved source and valid compilation plan. It does not recolor animation sheets, redraw anatomy or approve artwork. Local foreground separation can be required for opaque grounded sources. Color parameters/previews are transient; only Apply saves. Unapproved actors remain separate from gameplay admission and production acceptance.

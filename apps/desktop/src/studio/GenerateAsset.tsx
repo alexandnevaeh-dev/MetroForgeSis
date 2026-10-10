@@ -9,6 +9,7 @@ import { GENERATION_MODES } from './generation-options.js';
 import { Button, Input, Select, TextArea } from './ui/index.js';
 import type { GenerateAssetResponse, GenerateAssetVariantResult } from './metroforge-api.js';
 import {LocalImageModelPreparation} from './LocalImageModelPreparation.js';
+import {MaterialColorEditor} from './MaterialColorEditor.js';
 
 const ASSET_TYPES = [
   ['character_concept', 'Character concept'],
@@ -76,6 +77,8 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
   const [inspecting, setInspecting] = useState(false);
   const [results, setResults] = useState<GenerateAssetVariantResult[]>([]);
   const [selected, setSelected] = useState<{ id: string; path: string } | null>(null);
+  const [artworkRevision, setArtworkRevision] = useState(0);
+  const [materialEditorOpen, setMaterialEditorOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
@@ -154,6 +157,7 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
       ]);
       if (!current()) return;
       setSelected({ id, path: assetPath });
+      setArtworkRevision(value=>value+1);
       setPreviewUrl(preview?.dataUrl ?? null);
       setHistory(versions.records ?? []);
       setUsages(used.usedIn);
@@ -549,6 +553,7 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
       </div>
       <aside className="panel form-stack">
         <h3>Selected artwork</h3>
+        {selected && <MaterialColorEditor key={`${selected.id}:${artworkRevision}`} projectPath={projectPath} assetId={selected.id} disabled={busy||inspecting||modelPreparing} open={materialEditorOpen} onOpenChange={setMaterialEditorOpen} onBusy={setBusy} onSaved={async()=>{await inspectAsset(selected.path,selected.id);setStatus('Colors saved. Restart the game preview and inspect the artwork. Visual review is still required.');}} />}
         <dl className="settings-dl">
           <dt>Asset</dt>
           <dd>{selected?.id ?? 'Select an alternative'}</dd>

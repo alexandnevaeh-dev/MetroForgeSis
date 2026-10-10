@@ -1,0 +1,13 @@
+/* Actor source-color correction uses the existing workbench controls and typography. */
+.material-color-editor { min-width: 0; }
+.material-color-editor summary { cursor: pointer; font-weight: 600; }
+.material-color-editor > * { margin-block: 8px; }
+.material-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+.material-fields label { min-width: 0; }
+.material-source-viewport { height: 272px; overflow: auto; }
+.material-source-pick { display: block; padding: 0; cursor: crosshair; }
+.material-source-pick canvas { display: block; image-rendering: pixelated; max-width: none; }
+.material-result { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+.material-result figure { margin: 0; min-width: 0; }
+.material-result img { width: 100%; aspect-ratio: 1; object-fit: contain; image-rendering: pixelated; }
+.material-feedback { min-height: 3em; }

@@ -19,6 +19,11 @@ export {
   compileBossCombatSheets,
   POSE_TRANSFORMS,
 } from './png.js';
+export { applyMaterialColors, validateMaterialColorRules } from './material-colors.js';
+export type { MaterialColorRule } from './material-colors.js';
+export { compileManualImage } from './manual-image-plan.js';
+export type { ManualImagePlan } from './manual-image-plan.js';
+export { isolateManualForeground } from './manual-foreground-isolation.js';
 export type { ProgressionSheetOptions, AttackArcKind, PoseTransformSpec } from './png.js';
 export {
   PLAYER_ANIMATION_SPEC,

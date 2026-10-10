@@ -168,6 +168,9 @@ contextBridge.exposeInMainWorld('metroforge', {
   getConcurrencyStatus: () => ipcRenderer.invoke('get-concurrency-status'),
   getAssetHistory: (projectPath: string, assetId: string) =>
     ipcRenderer.invoke('get-asset-history', projectPath, assetId),
+  readMaterialArtwork: (projectPath: string, assetId: string) => ipcRenderer.invoke('read-material-artwork', projectPath, assetId),
+  previewMaterialArtwork: (projectPath: string, assetId: string, inspectionHash: string, rules: unknown) => ipcRenderer.invoke('preview-material-artwork', projectPath, assetId, inspectionHash, rules),
+  applyMaterialArtwork: (projectPath: string, assetId: string, draftId: string) => ipcRenderer.invoke('apply-material-artwork', projectPath, assetId, draftId),
   restoreAssetVersion: (projectPath: string, assetId: string, version: number) =>
     ipcRenderer.invoke('restore-asset-version', projectPath, assetId, version),
   executeAiCommand: (projectPath: string, input: string, selectedRoomId?: string) =>
