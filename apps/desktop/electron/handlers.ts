@@ -475,7 +475,7 @@ export function registerIpcHandlers(cwd: string): void {
         generationControl?: GenerationControlMode;
         archetype?: GameArchetype;
         externalVisualPack?: ExternalVisualPackId;
-        targetEngine?: 'unity';
+        targetEngine?: 'godot' | 'unity' | 'unreal';
       };
       try {
         const prefs = await loadAppPreferences(dataDir);
@@ -1303,7 +1303,7 @@ export function registerIpcHandlers(cwd: string): void {
         generationControl?: GenerationControlMode;
         archetype?: GameArchetype;
         externalVisualPack?: ExternalVisualPackId;
-        targetEngine?: 'unity';
+        targetEngine?: 'godot' | 'unity' | 'unreal';
       },
     ) =>
       new Promise((resolve) => {

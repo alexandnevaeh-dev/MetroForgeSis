@@ -38,6 +38,8 @@ export function CreateScreen({
   const [mode, setMode] = useState('HYBRID_FREE');
   const [seed, setSeed] = useState('42');
   const [archetype, setArchetype] = useState('SIDE_VIEW_METROIDVANIA');
+  const [targetEngine, setTargetEngine] = useState<'godot'|'unity'|'unreal'>('godot');
+  const [resultEngine, setResultEngine] = useState<'godot'|'unity'|'unreal'>('godot');
   const [worldLayout, setWorldLayout] = useState<
     'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region' | 'stormglass-archive-wing'
   >('procedural');
@@ -80,6 +82,8 @@ export function CreateScreen({
       return;
     submissionLock.current = true;
     setGenerating(true);
+    const engine = creationMode === 'manual' || archetype !== 'SIDE_VIEW_METROIDVANIA' ? 'godot' : targetEngine;
+    setResultEngine(engine);
     setResult(null);
     setLivePhases([]);
 
@@ -99,6 +103,7 @@ export function CreateScreen({
       const res = await window.metroforge.generateGame({
         title,
         prompt,
+        targetEngine: engine,
         profile: quantum ? 'TINY_TEST' : profile,
         mode: quantum ? 'LOCAL_ONLY' : mode,
         seed: parsedSeed,
@@ -129,6 +134,8 @@ export function CreateScreen({
     archetype,
     stormglassGallery,
     worldLayout,
+    targetEngine,
+    creationMode,
     refreshProjects,
     setSelectedPath,
   ]);
@@ -144,6 +151,7 @@ export function CreateScreen({
       return;
     submissionLock.current = true;
     setScaffolding(true);
+    setResultEngine('godot');
     setResult(null);
     try {
       const res = await window.metroforge.scaffoldManualProject({
@@ -256,6 +264,7 @@ export function CreateScreen({
               disabled={busy}
               onClick={() => {
                 setArchetype('SIDE_VIEW_PLATFORMER');
+                  setTargetEngine('godot');
                 setWorldLayout('procedural');
               }}
             >
@@ -273,7 +282,7 @@ export function CreateScreen({
                   : 'archetype-card panel-l1'
               }
               disabled={busy}
-              onClick={() => setArchetype('TOP_DOWN_ACTION_ADVENTURE')}
+              onClick={() => { setArchetype('TOP_DOWN_ACTION_ADVENTURE'); setTargetEngine('godot'); }}
             >
               <strong>Top-down action adventure</strong>
               <span>Overworld, regions, dungeons, lock-and-key routing.</span>
@@ -287,6 +296,7 @@ export function CreateScreen({
               disabled={busy}
               onClick={() => {
                 setArchetype(QUANTUM_ARCHETYPE);
+                  setTargetEngine('godot');
                 setCreationMode('assisted');
               }}
             >
@@ -299,6 +309,14 @@ export function CreateScreen({
             </button>
           </div>
 
+          {creationMode !== 'manual' && <label className="create-field">Game engine
+            <Select aria-label="Game engine" value={targetEngine} disabled={busy} onChange={event=>setTargetEngine(event.target.value as 'godot'|'unity'|'unreal')}>
+              <option value="godot">Godot</option>
+              <option value="unity" disabled={archetype!=='SIDE_VIEW_METROIDVANIA'}>Unity — source project</option>
+              <option value="unreal" disabled={archetype!=='SIDE_VIEW_METROIDVANIA'}>Unreal — source project</option>
+            </Select>
+            <span className="hint">{archetype!=='SIDE_VIEW_METROIDVANIA'?'This game type currently uses Godot.':targetEngine==='godot'?'Create a Godot game for local preview.':'Creates a native engine source project. Compilation, gameplay tests and packaging still need engine-specific validation.'}</span>
+          </label>}
           {archetype === 'SIDE_VIEW_METROIDVANIA' && creationMode !== 'manual' && (
             <label className="create-field">
               World layout
@@ -332,7 +350,7 @@ export function CreateScreen({
                   {worldLayout === 'stormglass-expanded-region' || worldLayout === 'stormglass-archive-wing'
                     ? 'Long galleries, deep stairs and an upstairs return route. Layout preview; full traversal and artwork review are still in progress.'
                     : 'Connected galleries, service stairs and archive backrooms.'}{' '}
-                  Six movement abilities and four bosses. Godot campaign.
+                  Six movement abilities and four bosses. {targetEngine === 'godot' ? 'Godot campaign.' : 'Native source campaign; engine traversal remains unverified.'}
                 </span>
               )}
             </label>
@@ -540,12 +558,13 @@ export function CreateScreen({
                   {result.errors.join('; ')}
                 </p>
               )}
+              {resultEngine !== 'godot' && <p className="hint">Native source created. Gameplay and packaged-player validation remain pending.</p>}
               <div className="row" style={{ marginTop: 'var(--space-3)' }}>
                 <Button variant="primary" onClick={() => navigate('Studio')}>
                   Open Generation Studio
                 </Button>
                 <Button onClick={() => navigate('Dashboard')}>Project Dashboard</Button>
-                <Button
+                {resultEngine === 'godot' && <Button
                   variant="primary"
                   onClick={async () => {
                     setGodotActionError(null);
@@ -555,8 +574,8 @@ export function CreateScreen({
                   }}
                 >
                   Open in Godot
-                </Button>
-                <Button
+                </Button>}
+                {resultEngine !== 'unreal' && <Button
                   onClick={async () => {
                     setGodotActionError(null);
                     if (result.outputPath) {
@@ -564,8 +583,8 @@ export function CreateScreen({
                     }
                   }}
                 >
-                  Play
-                </Button>
+                  {resultEngine === 'unity' ? 'Preview in Unity' : 'Play'}
+                </Button>}
               </div>
             </>
           ) : (

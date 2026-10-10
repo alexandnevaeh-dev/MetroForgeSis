@@ -42,7 +42,7 @@ public class EnemyActor : MonoBehaviour
     public void ConfigureMovement(string movement)
     {
         stationary = string.Equals(movement, "stationary", System.StringComparison.OrdinalIgnoreCase);
-        _body.linearVelocity = Vector2.zero;
+        if (_body.bodyType != RigidbodyType2D.Static) _body.linearVelocity = Vector2.zero;
         _body.bodyType = stationary ? RigidbodyType2D.Static : RigidbodyType2D.Dynamic;
     }
 
@@ -75,7 +75,7 @@ public class EnemyActor : MonoBehaviour
         _attackWindup = 0f;
         _animator?.Play("idle", true);
         if (_body != null)
-            _body.linearVelocity = Vector2.zero;
+            if (_body.bodyType != RigidbodyType2D.Static) _body.linearVelocity = Vector2.zero;
     }
 
     private void Update()
@@ -136,7 +136,7 @@ public class EnemyActor : MonoBehaviour
         if (stationary) return;
         if (_dead)
         {
-            _body.linearVelocity = Vector2.zero;
+            if (_body.bodyType != RigidbodyType2D.Static) _body.linearVelocity = Vector2.zero;
             return;
         }
         var speed = (_attackPending || _clipLock > 0f || _player == null || _player.Dead) ? 0f : _dir * WalkSpeed;
@@ -169,7 +169,7 @@ public class EnemyActor : MonoBehaviour
         {
             _dead = true;
             // Keep the final grounded pose fixed after disabling combat colliders.
-            _body.linearVelocity = Vector2.zero;
+            if (_body.bodyType != RigidbodyType2D.Static) _body.linearVelocity = Vector2.zero;
             _body.simulated = false;
             OnDefeated?.Invoke(this);
             _clipLock = 2f;

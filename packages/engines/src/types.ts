@@ -53,6 +53,7 @@ export interface GameplayDoor {
   width: number;
   height: number;
   spawnSide: string;
+  spatial?: { authored: boolean; floorY: number; arrivalX?: number; hasArrivalX?: boolean };
   requirements: string[];
   optional: boolean;
 }
@@ -107,6 +108,7 @@ export interface GameplayRoom {
   spawnX: number;
   spawnY: number;
   solids: GameplayRect[];
+  stairFlights?: { from: {x:number;y:number}; to: {x:number;y:number}; thickness: number; oneWay: boolean }[];
   doors: GameplayDoor[];
   gates: GameplayGate[];
   enemy?: GameplayActor;

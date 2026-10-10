@@ -424,7 +424,7 @@ export type MetroforgeBridge = {
     seed: number;
     generationControl?: string;
     externalVisualPack?: ExternalVisualPackId;
-    targetEngine?: 'unity';
+    targetEngine?: 'godot' | 'unity' | 'unreal';
     archetype?: string;
   }) => Promise<{
     success: boolean;

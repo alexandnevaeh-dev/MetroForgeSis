@@ -54,6 +54,7 @@ public class AcceptanceDriver : MonoBehaviour
     private string _lastRoom;
     private float _transitionMs = -1f;
     private bool _captureEnabled;
+    private readonly HashSet<string> _testedNpcIds = new HashSet<string>();
     private bool _loggedHold;
     private bool _finished;
     private bool _ascending;
@@ -114,12 +115,12 @@ public class AcceptanceDriver : MonoBehaviour
         _feature["player_invuln"] = "pending";
         _feature["abilities"] = "pending";
         _feature["gates"] = "pending";
-        _feature["npc_interaction"] = "not_implemented";
+        _feature["npc_interaction"] = "pending";
         _feature["save_continue"] = "pending";
         _feature["respawn"] = "pending";
         _feature["boss_phases"] = "pending";
         _feature["victory"] = "pending";
-        _notImplemented.Add("npc_interaction: no NPC actors in Unity adapter or gameplay pack");
+        _notImplemented.Add("npc_quest_shop_actions: authoritative quest/shop runtime not implemented");
     }
 
     private IEnumerator Run()
@@ -134,6 +135,11 @@ public class AcceptanceDriver : MonoBehaviour
         {
             if (GetComponent<AssetCatalogDriver>() == null)
                 gameObject.AddComponent<AssetCatalogDriver>();
+            yield break;
+        }
+        if (_mode == "groundslam")
+        {
+            gameObject.AddComponent<GroundSlamValidationDriver>();
             yield break;
         }
         if (_mode == "motion" || _mode == "hitch")
@@ -219,6 +225,7 @@ public class AcceptanceDriver : MonoBehaviour
         var combatKilled = false;
         var combatOnceVerified = false;
         var combatFollowUp = false;
+        var observedEnemies=new HashSet<EnemyActor>();
         var invulnHeld = false;
         var deaths = 0;
         _game.Player.OnDied += () => deaths++;
@@ -238,7 +245,12 @@ public class AcceptanceDriver : MonoBehaviour
                 Fail("escaped_room_bounds", "Player escaped " + roomBounds.id + " at " + location);
                 yield break;
             }
+            var observedEnemy=UnityEngine.Object.FindFirstObjectByType<EnemyActor>();
+            if(observedEnemy!=null && observedEnemies.Add(observedEnemy))
+                observedEnemy.OnDefeated += defeated => {combatKilled=true;_feature["combat_kill"]="passed";Note("combat_defeat_observed "+defeated.EnemyId);};
             yield return CollectRoomAbilities();
+            if (_finished) yield break;
+            yield return TestRoomNpcInteraction();
             if (_finished) yield break;
             if (_game.CurrentRoom != null && _game.CurrentRoom.victory && !_game.Victory &&
                 (_game.CurrentRoom.enemy == null || !_game.CurrentRoom.enemy.isBoss || _game.BossDefeated(_game.CurrentRoom)))
@@ -246,7 +258,21 @@ public class AcceptanceDriver : MonoBehaviour
                 yield return NavigateVictory();
                 if (_finished) yield break;
             }
+            var plannedDoor = ProgressionRoutePlanner.NextDoor(_game.Pack, _game.CurrentRoomId, _game.Player.Abilities, _game.BossDefeated);
+            if (plannedDoor != null && !(_game.CurrentRoom.enemy != null && _game.CurrentRoom.enemy.isBoss && !_game.BossDefeated(_game.CurrentRoom)))
+            {
+                yield return NavigateProgressionDoor(plannedDoor);
+                if (_finished) yield break;
+                continue;
+            }
             var ascentDoor = RequiredAscentDoor();
+            var descentDoor = RequiredDescentDoor();
+            if (descentDoor != null)
+            {
+                yield return NavigateDescent(descentDoor);
+                if (_finished) yield break;
+                continue;
+            }
             if (ascentDoor != null)
             {
                 yield return NavigateAscent(ascentDoor);
@@ -331,8 +357,7 @@ public class AcceptanceDriver : MonoBehaviour
             if (_game.Victory)
             {
                 _feature["victory"] = "passed";
-                if (_captureEnabled)
-                    yield return Capture("victory");
+                yield return Capture("victory");
                 break;
             }
             var living = UnityEngine.Object.FindFirstObjectByType<EnemyActor>();
@@ -399,6 +424,7 @@ public class AcceptanceDriver : MonoBehaviour
         if (_mode == "all" || _mode == "perf")
             yield return MeasurePerf(3f);
 
+        if (_feature["npc_interaction"] == "pending") _feature["npc_interaction"] = "inconclusive";
         var failed = HasFailure();
         if (failed)
             Fail("acceptance_failed", Summarize());
@@ -626,6 +652,114 @@ public class AcceptanceDriver : MonoBehaviour
         return Supported(feet) && !Supported(feet + Vector2.right * Mathf.Sign(direction) * 40f);
     }
 
+    private IEnumerator TestRoomNpcInteraction()
+    {
+        var ui=UnityEngine.Object.FindFirstObjectByType<NpcDialogueUI>();
+        if(ui==null)yield break;
+        foreach(var npc in UnityEngine.Object.FindObjectsByType<NpcActor>(FindObjectsSortMode.None))
+        {
+            if(npc==null||!npc.isActiveAndEnabled||_testedNpcIds.Contains(npc.Definition.id))continue;
+            var roomId=_game.CurrentRoomId;ReleaseAll();_ascending=true;
+            _ascentTargetX=npc.transform.position.x+(_game.Player.transform.position.x<npc.transform.position.x?-48f:48f);
+            var until=Mathf.Min(_deadline,Time.unscaledTime+Mathf.Abs(_ascentTargetX-_game.Player.transform.position.x)/Mathf.Max(1f,_game.Pack.movement.walkSpeed)+10f);
+            while(_game.CurrentRoomId==roomId&&Time.unscaledTime<until&&Vector2.Distance(_game.Player.transform.position,npc.transform.position)>80f)
+            {
+                if(_game.Player.transform.position.y>npc.transform.position.y+80f&&Mathf.Abs(_game.Player.transform.position.x-npc.transform.position.x)<96f&&(_game.CurrentRoom.stairFlights?.Length??0)>0)
+                {
+                    _ascentTargetX=_game.CurrentRoom.width-64f;
+                    var detourUntil=Mathf.Min(_deadline,Time.unscaledTime+12f);
+                    while(_game.CurrentRoomId==roomId&&_game.Player.transform.position.y>npc.transform.position.y+8f&&Time.unscaledTime<detourUntil)yield return null;
+                    Note("npc_lower_floor_detour "+npc.Definition.id+" player="+_game.Player.transform.position);
+                    _ascentTargetX=npc.transform.position.x+(_game.Player.transform.position.x<npc.transform.position.x?-48f:48f);
+                }
+                if(NeedsGapJump(_game.Player,Mathf.Sign(_ascentTargetX-_game.Player.transform.position.x)))Pulse(KeyCode.Space);yield return null;
+            }
+            _ascending=false;ReleaseAll();
+            Note("npc_approach npc="+npc.Definition.id+" player="+_game.Player.transform.position+" actor="+npc.transform.position+" distance="+Vector2.Distance(_game.Player.transform.position,npc.transform.position)+" blocked="+_game.Player.InputBlocked);
+            yield return Capture("npc_approach_"+npc.Definition.id);
+            if(Vector2.Distance(_game.Player.transform.position,npc.transform.position)>96f){Fail("npc_approach_failed",npc.Definition.id);yield break;}
+            Pulse(KeyCode.E);yield return new WaitForSecondsRealtime(.15f);
+            if(!ui.IsOpen||!_game.Player.InputBlocked){Fail("npc_dialogue_not_opened",npc.Definition.id);yield break;}
+            yield return Capture("npc_dialogue_"+npc.Definition.id);
+            var steps=0;
+            while(ui.IsOpen&&steps++<20)
+            {
+                if(ui.ChoiceCount>0)
+                {
+                    UnityEngine.UI.Button choice=null;
+                    foreach(var button in ui.GetComponentsInChildren<UnityEngine.UI.Button>())
+                        if(button.name.StartsWith("Choice",StringComparison.Ordinal)&&button.interactable){choice=button;break;}
+                    if(choice!=null)choice.onClick.Invoke();else Pulse(KeyCode.Escape);
+                }
+                else Pulse(KeyCode.E);
+                yield return new WaitForSecondsRealtime(.15f);
+            }
+            if(ui.IsOpen||_game.Player.InputBlocked||Time.timeScale==0){Fail("npc_dialogue_did_not_release",npc.Definition.id);yield break;}
+            _testedNpcIds.Add(npc.Definition.id);_feature["npc_interaction"]="passed";Note("npc_dialogue_completed "+npc.Definition.id+" room="+roomId);
+        }
+    }
+
+    private IEnumerator NavigateProgressionDoor(GameplayDoor door)
+    {
+        var room=_game.CurrentRoom;
+        Note("progression_plan from="+room.id+" target="+door.targetRoomId+" direction="+door.direction);
+        if(door.direction=="up"){yield return NavigateAscent(door);yield break;}
+        if(door.direction=="down"){yield return NavigateDescent(door);yield break;}
+        ReleaseAll();_ascending=true;
+        var floor=door.spatial!=null&&door.spatial.authored?door.spatial.floorY:room.floorTop;
+        var steps=0;
+        while(_game.CurrentRoomId==room.id&&Mathf.Abs(room.height-_game.Player.transform.position.y-floor)>8f&&room.stairFlights!=null&&room.stairFlights.Length>0)
+        {
+            var foot=room.height-_game.Player.transform.position.y;var upward=foot>floor;
+            GameplayStairFlight selected=null;Vector2 target=Vector2.zero;
+            foreach(var flight in room.stairFlights)
+            {
+                var end=upward?flight.to:flight.from;
+                if(upward?(end.y>=foot-12f||end.y<floor-8f):(end.y<=foot+12f||end.y>floor+8f))continue;
+                if(foot<Mathf.Min(flight.from.y,flight.to.y)-16f||foot>Mathf.Max(flight.from.y,flight.to.y)+16f)continue;
+                if(selected==null||Mathf.Abs(end.y-foot)<Mathf.Abs(target.y-foot)){selected=flight;target=end;}
+            }
+            if(selected==null||steps++>room.stairFlights.Length+2){_ascending=false;ReleaseAll();Fail("progression_stair_path_missing",room.id+" foot="+foot+" floor="+floor);yield break;}
+            if(!upward && selected.oneWay)
+            {
+                // At a reversing junction, the uphill ribbon occupies the same X path.
+                // Walk around its outside edge, then catch the lower flight naturally.
+                _ascentTargetX=Mathf.Clamp(selected.to.x+Mathf.Sign(selected.to.x-target.x)*74f,64f,room.width-64f);
+                var stepOffUntil=Mathf.Min(_deadline,Time.unscaledTime+5f);
+                while(_game.CurrentRoomId==room.id && room.height-_game.Player.transform.position.y<foot+40f && Time.unscaledTime<stepOffUntil)yield return null;
+                Note("progression_step_off room="+room.id+" foot="+(room.height-_game.Player.transform.position.y));
+            }
+            _ascentTargetX=target.x;if(upward&&selected.oneWay)Pulse(KeyCode.Space);
+            var until=Mathf.Min(_deadline,Time.unscaledTime+15f);var landed=false;
+            while(_game.CurrentRoomId==room.id&&Time.unscaledTime<until)
+            {
+                var body=_game.Player.GetComponent<Rigidbody2D>();
+                if(Mathf.Abs(body.position.x-target.x)<14f&&Mathf.Abs(body.position.y-(room.height-target.y))<6f&&Mathf.Abs(body.linearVelocity.y)<8f){landed=true;break;}
+                yield return null;
+            }
+            Note("progression_floor_step room="+room.id+" landed="+landed+" target="+target+" player="+_game.Player.transform.position);
+            if(_game.CurrentRoomId!=room.id)break;
+            if(!landed){_ascending=false;ReleaseAll();Fail("progression_floor_landing_failed",room.id+" -> "+door.targetRoomId);yield break;}
+            yield return new WaitForSeconds(.1f);
+        }
+        if(_game.CurrentRoomId==room.id)
+        {
+            _ascentTargetX=door.x+door.width/2f;
+            var until=Mathf.Min(_deadline,Time.unscaledTime+Mathf.Abs(_game.Player.transform.position.x-_ascentTargetX)/Mathf.Max(1f,_game.Pack.movement.walkSpeed)+6f);
+            var nextAttack=Time.unscaledTime;
+            while(_game.CurrentRoomId==room.id&&Time.unscaledTime<until)
+            {
+                var direction=Mathf.Sign(_ascentTargetX-_game.Player.transform.position.x);
+                if(NeedsGapJump(_game.Player,direction))Pulse(KeyCode.Space);
+                if(Time.unscaledTime>=nextAttack){_held.Remove(KeyCode.J);Pulse(KeyCode.J);nextAttack=Time.unscaledTime+.45f;}
+                yield return null;
+            }
+        }
+        _ascending=false;ReleaseAll();
+        if(_game.CurrentRoomId!=door.targetRoomId){Fail("progression_door_not_reached",room.id+" -> "+door.targetRoomId);yield break;}
+        Note("progression_door_entered "+room.id+" -> "+door.targetRoomId);
+    }
+
     private IEnumerator NavigateVictory()
     {
         var roomId = _game.CurrentRoomId;
@@ -679,6 +813,41 @@ public class AcceptanceDriver : MonoBehaviour
         return upward;
     }
 
+    private GameplayDoor RequiredDescentDoor()
+    {
+        foreach (var door in _game.CurrentRoom?.doors ?? Array.Empty<GameplayDoor>())
+            if (door != null && !door.optional && door.direction == "down" && !_roomsVisited.Contains(door.targetRoomId)) return door;
+        return null;
+    }
+
+    private IEnumerator NavigateDescent(GameplayDoor door)
+    {
+        var room = _game.CurrentRoom;
+        foreach (var requirement in door.requirements ?? Array.Empty<string>())
+            if (!_game.Player.Abilities.Contains(requirement))
+            { Fail("descent_ability_missing", requirement + " in " + room.id); yield break; }
+        ReleaseAll();
+        // The same steering used for ledges reaches the authored opening without a warp.
+        _ascending = true;
+        _ascentTargetX = door.x + door.width / 2f;
+        var until = Mathf.Min(_deadline, Time.unscaledTime + 12f);
+        var observedSlam = false;
+        while (_game.CurrentRoomId == room.id && Time.unscaledTime < until)
+        {
+            if (Mathf.Abs(_game.Player.transform.position.x - _ascentTargetX) < 12f) _held.Add(KeyCode.S);
+            observedSlam |= _game.Player.IsGroundSlamming;
+            yield return null;
+        }
+        _ascending = false;
+        ReleaseAll();
+        if (_game.CurrentRoomId != door.targetRoomId)
+        { Fail("descent_transition_failed", room.id + " -> " + door.targetRoomId); yield break; }
+        if (Array.IndexOf(door.requirements ?? Array.Empty<string>(), "ground_slam") >= 0 && !observedSlam)
+        { Fail("descent_slam_not_observed", room.id); yield break; }
+        Note("descent_transition " + room.id + " -> " + door.targetRoomId + " slam=" + observedSlam);
+        if (_captureEnabled) yield return Capture("descent_" + room.id);
+    }
+
     private IEnumerator NavigateAscent(GameplayDoor door)
     {
         var room = _game.CurrentRoom;
@@ -701,6 +870,11 @@ public class AcceptanceDriver : MonoBehaviour
             if (!_game.Player.Abilities.Contains(requirement))
             { Fail("ascent_ability_missing", requirement + " in " + room.id); yield break; }
         }
+        if (room.stairFlights != null && room.stairFlights.Length > 0)
+        {
+            yield return NavigateAuthoredStairFlights(room, door);
+            yield break;
+        }
         var ledges = new List<GameplayRect>();
         foreach (var solid in room.solids ?? Array.Empty<GameplayRect>())
             if (solid.name != null && solid.name.StartsWith("Platform_")) ledges.Add(solid);
@@ -709,9 +883,11 @@ public class AcceptanceDriver : MonoBehaviour
         ReleaseAll();
         _ascending = true;
         _ascentTargetX = ledges[0].x - 56f;
+        Note("ascent_approach room=" + room.id + " targetX=" + _ascentTargetX + " player=" + _game.Player.transform.position);
         var until = Mathf.Min(_deadline, Time.unscaledTime + 6f);
         while (_game.CurrentRoomId == room.id && Time.unscaledTime < until &&
             Mathf.Abs(_game.Player.transform.position.x - _ascentTargetX) > 4f) yield return null;
+        Note("ascent_approach_result from=" + room.id + " current=" + _game.CurrentRoomId + " player=" + _game.Player.transform.position);
         yield return new WaitForSeconds(.15f);
         foreach (var ledge in ledges)
         {
@@ -738,7 +914,12 @@ public class AcceptanceDriver : MonoBehaviour
             _ascentTargetX = door.x + door.width / 2;
             Pulse(KeyCode.Space);
             until = Mathf.Min(_deadline, Time.unscaledTime + 3f);
-            while (_game.CurrentRoomId == room.id && Time.unscaledTime < until) yield return null;
+            var nextJump=Time.unscaledTime;
+            while (_game.CurrentRoomId == room.id && Time.unscaledTime < until)
+            {
+                if(Mathf.Abs(_game.Player.transform.position.x-_ascentTargetX)<12f){_held.Add(KeyCode.W);if(Time.unscaledTime>=nextJump){Pulse(KeyCode.Space);nextJump=Time.unscaledTime+.8f;}}
+                yield return null;
+            }
         }
         _ascending = false;
         ReleaseAll();
@@ -746,6 +927,44 @@ public class AcceptanceDriver : MonoBehaviour
         { Fail("ascent_transition_failed", room.id + " -> " + door.targetRoomId); yield break; }
         Note("ascent_transition " + room.id + " -> " + door.targetRoomId);
         if (_captureEnabled) yield return Capture("ascent_" + room.id);
+    }
+
+    private IEnumerator NavigateAuthoredStairFlights(GameplayRoom room, GameplayDoor door)
+    {
+        var sourceFoot=room.height-_game.Player.transform.position.y;
+        var flights = new List<GameplayStairFlight>();
+        foreach(var authored in room.stairFlights)if(authored.to.y<sourceFoot-12f)flights.Add(authored);
+        flights.Sort((a,b)=>b.from.y.CompareTo(a.from.y));
+        ReleaseAll(); _ascending = true;
+        Note("authored_stair_start room="+room.id+" player="+_game.Player.transform.position+" flights="+flights.Count);
+        yield return Capture("authored_stair_start_"+room.id);
+        for (var i=0;i<flights.Count;i++)
+        {
+            var flight=flights[i];
+            // Enter on the authored support, keeping away from the return doorway.
+            if(i==0){_ascentTargetX=flight.from.x;var approach=Mathf.Min(_deadline,Time.unscaledTime+6f);while(_game.CurrentRoomId==room.id&&Time.unscaledTime<approach&&Mathf.Abs(_game.Player.transform.position.x-_ascentTargetX)>8f)yield return null;}
+            if(_game.CurrentRoomId!=room.id)break;
+            var gap=i>0&&Vector2.Distance(flights[i-1].to,flight.from)>40f;
+            _ascentTargetX=flight.to.x;
+            // A short jump clears the next one-way ribbon at a reversing landing.
+            if(gap || (flight.oneWay && (i>0 || sourceFoot<room.floorTop-12f)))Pulse(KeyCode.Space);
+            var until=Mathf.Min(_deadline,Time.unscaledTime+15f);var landed=false;
+            while(_game.CurrentRoomId==room.id&&Time.unscaledTime<until)
+            {
+                var body=_game.Player.GetComponent<Rigidbody2D>();
+                if(Mathf.Abs(body.position.x-flight.to.x)<14f&&Mathf.Abs(body.position.y-(room.height-flight.to.y))<6f&&Mathf.Abs(body.linearVelocity.y)<8f){landed=true;break;}
+                yield return null;
+            }
+            Note("authored_stair_landing room="+room.id+" index="+i+" landed="+landed+" current="+_game.CurrentRoomId+" player="+_game.Player.transform.position);
+            if(_game.CurrentRoomId!=room.id)break;
+            if(!landed){_ascending=false;ReleaseAll();yield return Capture("failed_authored_flight_"+room.id+"_"+i);Fail("ascent_flight_landing_failed",room.id+" flight="+i);yield break;}
+            yield return new WaitForSeconds(.1f);
+        }
+        if(_game.CurrentRoomId==room.id){_ascentTargetX=door.x+door.width/2;Pulse(KeyCode.Space);var until=Mathf.Min(_deadline,Time.unscaledTime+5f);var nextJump=Time.unscaledTime;while(_game.CurrentRoomId==room.id&&Time.unscaledTime<until){if(Mathf.Abs(_game.Player.transform.position.x-_ascentTargetX)<12f){_held.Add(KeyCode.W);if(Time.unscaledTime>=nextJump){Pulse(KeyCode.Space);nextJump=Time.unscaledTime+.8f;}}yield return null;}}
+        _ascending=false;ReleaseAll();
+        if(_game.CurrentRoomId!=door.targetRoomId){Fail("ascent_transition_failed",room.id+" -> "+door.targetRoomId);yield break;}
+        Note("ascent_transition "+room.id+" -> "+door.targetRoomId);
+        yield return Capture("authored_ascent_"+room.id);
     }
 
     private IEnumerator Hold(KeyCode key, float seconds)
@@ -845,9 +1064,12 @@ public class AcceptanceDriver : MonoBehaviour
     {
         switch (code)
         {
+            case KeyCode.E: return UnityEngine.InputSystem.Key.E;
+            case KeyCode.Escape: return UnityEngine.InputSystem.Key.Escape;
             case KeyCode.A: return UnityEngine.InputSystem.Key.A;
             case KeyCode.D: return UnityEngine.InputSystem.Key.D;
             case KeyCode.W: return UnityEngine.InputSystem.Key.W;
+            case KeyCode.S: return UnityEngine.InputSystem.Key.S;
             case KeyCode.Space: return UnityEngine.InputSystem.Key.Space;
             case KeyCode.J: return UnityEngine.InputSystem.Key.J;
             case KeyCode.Z: return UnityEngine.InputSystem.Key.Z;
@@ -1065,7 +1287,7 @@ public class AcceptanceDriver : MonoBehaviour
             if (dx < -3f) _held.Add(KeyCode.A);
         }
 
-        if (_mode == "catalog" || _mode == "motion" || _mode == "hitch" || _mode == "combatstall" || _mode == "roomtransition")
+        if (_mode == "groundslam" || _mode == "catalog" || _mode == "motion" || _mode == "hitch" || _mode == "combatstall" || _mode == "roomtransition")
             return;
         var direction = (_held.Contains(KeyCode.D) ? 1f : 0f) - (_held.Contains(KeyCode.A) ? 1f : 0f);
         if (!_ascending && _pulse == KeyCode.None && _game != null && NeedsGapJump(_game.Player, direction))

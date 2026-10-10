@@ -20,6 +20,7 @@ public class PlayerActor : MonoBehaviour
             _wraithChain?.Cancel();
             _emberSeal?.Cancel();
             _dashTime = 0f;
+            IsGroundSlamming = false;
             _veilStep = false;
             if (_hit != null) _hit.enabled = false;
         }
@@ -48,12 +49,14 @@ public class PlayerActor : MonoBehaviour
     private float _dashCooldown;
     private bool _veilStep;
     public bool IsDashing => _dashTime > 0f;
+    public bool IsGroundSlamming { get; private set; }
     public bool IsVeilStepping => _veilStep && _dashTime > 0f;
     private bool _grounded;
     private bool _wasGrounded;
     private bool _airJumpUsed;
     private readonly ContactPoint2D[] _wallContacts = new ContactPoint2D[8];
     public bool IsWallSliding { get; private set; }
+    public bool IsGrounded => _grounded;
     private float _clipLock;
     private float _health = 100f;
     private bool _healHeld;
@@ -79,6 +82,7 @@ public class PlayerActor : MonoBehaviour
     public void Revive(float health = -1f)
     {
         Dead = false;
+        IsGroundSlamming = false;
         IsWallSliding = false;
         _airJumpUsed = false;
         _jumpBuffer = 0f;
@@ -186,6 +190,7 @@ public class PlayerActor : MonoBehaviour
 
         if (dashPressed)
             TryDash(move.x != 0f ? move.x : animator != null && animator.FlipX ? -1f : 1f);
+        if (ReadDownHeld()) TryGroundSlam();
 
         if (move.x != 0f && animator != null)
             animator.FlipX = move.x < 0f;
@@ -220,7 +225,7 @@ public class PlayerActor : MonoBehaviour
     // It protects against damage during movement without disabling solid collisions.
     public bool TryDash(float direction)
     {
-        if (Dead || InputBlocked || Pack == null || _body == null || (_wraithChain != null && _wraithChain.IsPulling) || _dashCooldown > 0f || _dashTime > 0f)
+        if (Dead || InputBlocked || Pack == null || _body == null || IsGroundSlamming || (_wraithChain != null && _wraithChain.IsPulling) || _dashCooldown > 0f || _dashTime > 0f)
             return false;
         if (!Abilities.Contains("dash") && !Abilities.Contains("phase"))
             return false;
@@ -243,11 +248,29 @@ public class PlayerActor : MonoBehaviour
         _clipLock = Mathf.Max(_clipLock, seconds);
     }
 
+    public bool TryGroundSlam()
+    {
+        if (Dead || InputBlocked || Pack == null || _body == null || _grounded || IsDashing ||
+            IsGroundSlamming || !Abilities.Contains("ground_slam") ||
+            (_wraithChain != null && _wraithChain.IsPulling)) return false;
+        IsGroundSlamming = true;
+        _jumpBuffer = 0f;
+        _coyote = 0f;
+        return true;
+    }
+
     private void FixedUpdate()
     {
         IsWallSliding = false;
         if (Dead || Pack == null || (_wraithChain != null && _wraithChain.IsPulling))
             return;
+        if (IsGroundSlamming)
+        {
+            var speed = Pack.movement.groundSlamSpeed;
+            if (float.IsNaN(speed) || float.IsInfinity(speed) || speed <= 0f) speed = 900f;
+            _body.linearVelocity = new Vector2(0f, -speed);
+            return;
+        }
         var move = ReadMove();
         var run = ReadRun();
         var target = move.x * (run ? Pack.movement.runSpeed : Pack.movement.walkSpeed);
@@ -350,6 +373,7 @@ public class PlayerActor : MonoBehaviour
             if (contact.normal.y > 0.5f && _body.linearVelocity.y <= 0.1f)
             {
                 _grounded = true;
+                IsGroundSlamming = false;
                 _airJumpUsed = false;
             }
         }
@@ -409,6 +433,7 @@ public class PlayerActor : MonoBehaviour
     {
         if (Dead) return;
         Dead = true;
+        IsGroundSlamming = false;
         IsWallSliding = false;
         _health = 0f;
         _dashTime = 0f;
@@ -454,6 +479,15 @@ public class PlayerActor : MonoBehaviour
         return Input.GetKey(KeyCode.H);
     }
 
+    private static bool ReadDownHeld()
+    {
+#if ENABLE_INPUT_SYSTEM
+        foreach (var device in InputSystem.devices)
+            if (device is Keyboard kb && kb.enabled && (kb.sKey.isPressed || kb.downArrowKey.isPressed)) return true;
+#endif
+        return Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow);
+    }
+
     private static bool ReadButton(string name)
     {
 #if ENABLE_INPUT_SYSTEM
@@ -490,13 +524,29 @@ public class DoorSensor : MonoBehaviour
     public string[] Requirements;
     public System.Action<DoorSensor> OnEnter;
 
-    private void OnTriggerEnter2D(Collider2D other)
+    private void OnTriggerEnter2D(Collider2D other) { TryEnter(other); }
+    private void OnTriggerStay2D(Collider2D other) { TryEnter(other); }
+    private void TryEnter(Collider2D other)
     {
-        // Attack hitboxes are child colliders. Only the player's body may change rooms.
-        if (other == null || other.GetComponent<PlayerActor>() == null)
-            return;
+        // Body-only callbacks are rechecked so input/ability changes inside a sensor work.
+        if (!isActiveAndEnabled || other == null) return;
+        var player=other.GetComponent<PlayerActor>();
+        if(player==null||player.InputBlocked||player.Dead)return;
+        var body=player.GetComponent<Rigidbody2D>();
+        if(SpawnSide=="bottom")
+        {
+#if ENABLE_INPUT_SYSTEM
+            var keyboard=Keyboard.current;
+            var up=keyboard!=null&&(keyboard.wKey.isPressed||keyboard.upArrowKey.isPressed);
+#else
+            var up=Input.GetKey(KeyCode.W)||Input.GetKey(KeyCode.UpArrow);
+#endif
+            if(!up||body==null||body.linearVelocity.y<=0f)return;
+        }
+        if(SpawnSide=="top"&&(body==null||player.IsGrounded||body.linearVelocity.y>=0f))return;
         OnEnter?.Invoke(this);
     }
+
 }
 
 public class GateBlocker : MonoBehaviour

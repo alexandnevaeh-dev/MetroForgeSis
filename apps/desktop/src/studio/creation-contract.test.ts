@@ -40,3 +40,5 @@ describe('created files and passing tests remain separate', () => {
     expect(creationResultStatus({success:true,cancelled:true})).toEqual({label:'Cancelled',tone:'warning'});
   });
 });
+
+it('labels static validation separately from completed gameplay tests',()=>{expect(creationResultStatus({success:true,validationPassed:true,validationLevel:'STATIC_VALIDATED'})).toEqual({label:'Static checks passed',tone:'info'});});

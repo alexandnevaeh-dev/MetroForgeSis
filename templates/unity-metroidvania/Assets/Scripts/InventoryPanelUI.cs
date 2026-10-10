@@ -41,7 +41,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
   if(pressed&&!held){if(IsOpen)Close();else Open();}held=pressed;
   if(IsOpen&&(game==null||game.Player==null||game.OnTitleScreen))Close();
  }
- public void Open(){if(panel==null||IsOpen||game==null||game.Player==null||game.Player.Dead||game.OnTitleScreen)return;blockedPlayer=game.Player;blockedPlayer.InputBlocked=true;priorTimeScale=Time.timeScale;Time.timeScale=0;page=0;panel.SetActive(true);panel.transform.SetAsLastSibling();Refresh();}
+ public void Open(){if(panel==null||IsOpen||game==null||game.Player==null||game.Player.Dead||game.Player.InputBlocked||game.OnTitleScreen)return;blockedPlayer=game.Player;blockedPlayer.InputBlocked=true;priorTimeScale=Time.timeScale;Time.timeScale=0;page=0;panel.SetActive(true);panel.transform.SetAsLastSibling();Refresh();}
  public void Close(){if(!IsOpen)return;panel.SetActive(false);Time.timeScale=priorTimeScale;if(blockedPlayer!=null)blockedPlayer.InputBlocked=false;blockedPlayer=null;}
  void OnDisable(){Close();}
  void OnDestroy(){if(blockedPlayer!=null){blockedPlayer.InputBlocked=false;Time.timeScale=priorTimeScale;}}

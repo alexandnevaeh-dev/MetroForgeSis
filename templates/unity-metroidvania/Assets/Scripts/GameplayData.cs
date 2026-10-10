@@ -4,6 +4,7 @@ using UnityEngine;
 [Serializable]
 public class GameplayRect
 {
+    public bool oneWay;
     public string name;
     public float x;
     public float y;
@@ -40,8 +41,18 @@ public class GameplayDoor
     public float width;
     public float height;
     public string spawnSide;
+    public GameplaySpatialPort spatial;
     public string[] requirements;
     public bool optional;
+}
+
+[Serializable]
+public class GameplaySpatialPort
+{
+    public bool authored;
+    public float floorY;
+    public float arrivalX;
+    public bool hasArrivalX;
 }
 
 [Serializable]
@@ -104,6 +115,15 @@ public class GameplayCheckpoint
 }
 
 [Serializable]
+public class GameplayStairFlight
+{
+    public Vector2 from;
+    public Vector2 to;
+    public float thickness;
+    public bool oneWay;
+}
+
+[Serializable]
 public class GameplayRoom
 {
     public string id;
@@ -117,8 +137,10 @@ public class GameplayRoom
     public float spawnX;
     public float spawnY;
     public GameplayRect[] solids;
+    public GameplayStairFlight[] stairFlights;
     public GameplayDoor[] doors;
     public GameplayGate[] gates;
+    public GameplayNpc[] npcs;
     public GameplayActor enemy;
     public GameplayActor abilityPickup;
     public GameplayActor[] abilityPickups;
@@ -141,6 +163,7 @@ public class GameplayMovement
     public float deceleration;
     public float airAcceleration;
     public float maxFallSpeed;
+    public float groundSlamSpeed = 900f;
     public float dashSpeed;
     public float dashDuration;
     public float dashCooldown;
@@ -178,6 +201,7 @@ public class GameplayPack
     public GameplayAbility[] abilities;
     public GameplayRoom[] rooms;
     public GameplaySpriteClip[] sprites;
+    public GameplayDialogue[] dialogues;
 }
 
 public static class Coord
@@ -192,3 +216,8 @@ public static class Coord
         return FromGodot(rect.x + rect.width * 0.5f, rect.y + rect.height * 0.5f, roomHeight);
     }
 }
+
+[Serializable] public class GameplayNpc {public string id,definitionId,spriteId,name,role,shopId;public float x,y;public string[] dialogueIds,questIds;}
+[Serializable] public class GameplayDialogue {public string id;public GameplayDialogueLine[] lines;}
+[Serializable] public class GameplayDialogueLine {public string speaker,text,portrait,voicePath;public GameplayDialogueChoice[] choices;}
+[Serializable] public class GameplayDialogueChoice {public string id,text,nextDialogueId,action;public bool end;}

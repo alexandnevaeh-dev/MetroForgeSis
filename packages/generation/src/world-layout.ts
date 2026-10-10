@@ -13,8 +13,8 @@ export function selectAuthoredWorld(
   if (!request.worldLayout || request.worldLayout === 'procedural') return null;
   if (!['stormglass-gallery', 'stormglass-expanded-region', 'stormglass-archive-wing'].includes(request.worldLayout))
     throw new Error('Unknown world layout');
-  if (request.targetEngine && request.targetEngine !== 'godot')
-    throw new Error('Stormglass Gallery currently requires Godot');
+  if (request.targetEngine && !['godot','unity','unreal'].includes(request.targetEngine))
+    throw new Error('Unknown target engine for Stormglass Gallery');
   const campaign = generateStormglassGalleryCampaign(
     dna,
     request.seed,

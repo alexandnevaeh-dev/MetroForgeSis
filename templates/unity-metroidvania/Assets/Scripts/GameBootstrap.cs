@@ -39,6 +39,7 @@ public class GameBootstrap : MonoBehaviour
     private PlayerActor _player;
     private LootRuntime _loot;
     private InventoryPanelUI _inventoryPanel;
+    private NpcDialogueUI _npcDialogue;
     private Camera _camera;
     private Text _hud;
     private Button _titleReturnBtn;
@@ -355,11 +356,13 @@ public class GameBootstrap : MonoBehaviour
         _inventoryPanel = canvas.AddComponent<InventoryPanelUI>();
         _inventoryPanel.Initialize(this, WriteSave);
         canvas.AddComponent<BossEncounterHUD>().Initialize(this, _hud.font);
+        _npcDialogue = canvas.AddComponent<NpcDialogueUI>();
+        _npcDialogue.Initialize(this);
     }
 
     private void Update()
     {
-        if (ReadTitleReturn())
+        if ((_npcDialogue == null || !_npcDialogue.BlocksTitleReturn) && ReadTitleReturn())
             ReturnToTitle();
         WriteUiLayout();
         if (_player == null || _room == null || _camera == null)
@@ -526,6 +529,8 @@ public class GameBootstrap : MonoBehaviour
                 var tCol = Time.realtimeSinceStartup;
                 foreach (var solid in room.solids)
                     CreateSolid(solid, room);
+                foreach (var flight in room.stairFlights ?? System.Array.Empty<GameplayStairFlight>())
+                    AuthoredStairFlight.Create(flight, room.height, RoomParent, LoadSlicedSprite($"assets/tilesets/{room.biomeId}/floor.png", Vector4.zero));
                 foreach (var door in room.doors)
                 {
                     CreateDoor(door, room);
@@ -542,6 +547,8 @@ public class GameBootstrap : MonoBehaviour
                 if (room.grappleAnchors != null)
                     foreach (var anchor in room.grappleAnchors)
                         CreateGrappleAnchor(room, anchor);
+                foreach(var npc in room.npcs ?? System.Array.Empty<GameplayNpc>())
+                    NpcActor.Create(npc, room.height, RoomParent, Pack.sprites, _streamingRoot, _npcDialogue);
                 if (HasPoint(room.checkpoint))
                     CreateCheckpoint(room);
                 if (room.victory)
@@ -736,6 +743,15 @@ public class GameBootstrap : MonoBehaviour
         go.transform.position = Coord.RectCenter(rect, room.height);
         var box = go.AddComponent<BoxCollider2D>();
         box.size = new Vector2(rect.width, rect.height);
+        if (rect.oneWay)
+        {
+            var platform = go.AddComponent<PlatformEffector2D>();
+            platform.useOneWay = true;
+            platform.useOneWayGrouping = true;
+            platform.surfaceArc = 170f;
+            platform.useSideFriction = false;
+            box.usedByEffector = true;
+        }
         var body = go.AddComponent<Rigidbody2D>();
         body.bodyType = RigidbodyType2D.Static;
         var sr = go.AddComponent<SpriteRenderer>();
@@ -808,23 +824,41 @@ public class GameBootstrap : MonoBehaviour
         }
         if (!_rooms.TryGetValue(sensor.TargetRoomId, out var next))
             return;
-        Vector2 spawn;
-        switch (sensor.SpawnSide)
-        {
-            case "left":
-                spawn = Coord.FromGodot(80f, next.floorTop, next.height);
-                break;
-            case "right":
-                spawn = Coord.FromGodot(next.width - 80f, next.floorTop, next.height);
-                break;
-            case "top":
-                spawn = Coord.FromGodot(next.width * 0.5f, 80f, next.height);
-                break;
-            default:
-                spawn = Coord.FromGodot(next.spawnX, next.spawnY, next.height);
-                break;
-        }
+        var spawn = ResolveDoorArrival(next, CurrentRoomId, sensor.SpawnSide);
         LoadRoom(sensor.TargetRoomId, spawn, true);
+    }
+
+    private static Vector2 ResolveDoorArrival(GameplayRoom next, string sourceRoomId, string spawnSide)
+    {
+        // Existing packs retain their ordinary entry convention.
+        float x = next.spawnX, y = next.spawnY;
+        switch (spawnSide)
+        {
+            case "left": x = 80f; y = next.floorTop; break;
+            case "right": x = next.width - 80f; y = next.floorTop; break;
+            case "top": x = next.width * 0.5f; y = 80f; break;
+        }
+        var direction = spawnSide == "top" ? "up" : spawnSide == "bottom" ? "down" : spawnSide;
+        foreach (var door in next.doors ?? System.Array.Empty<GameplayDoor>())
+        {
+            if (door.spatial == null || !door.spatial.authored || door.targetRoomId != sourceRoomId || door.direction != direction) continue;
+            if (spawnSide == "left" || spawnSide == "right")
+            {
+                x = spawnSide == "left" ? 112f : next.width - 112f;
+                y = door.spatial.floorY;
+            }
+            else
+            {
+                x = Mathf.Min(next.width - 112f, door.x + 112f);
+                if (spawnSide == "top") y = 120f;
+                if (spawnSide == "bottom" && door.spatial.hasArrivalX &&
+                    !float.IsNaN(door.spatial.arrivalX) && !float.IsInfinity(door.spatial.arrivalX) &&
+                    door.spatial.arrivalX >= 112f && door.spatial.arrivalX <= next.width - 112f)
+                    x = door.spatial.arrivalX;
+            }
+            break;
+        }
+        return Coord.FromGodot(x, y, next.height);
     }
 
     private void CreateGate(GameplayGate gate, GameplayRoom room)

@@ -30,6 +30,7 @@ export function creationResultStatus(result: CreationResult | null): {
   if (!result) return {label:'Idle',tone:'muted'};
   if (result.cancelled) return {label:'Cancelled',tone:'warning'};
   if (!result.success) return {label:'Failed',tone:'danger'};
+  if (result.validationPassed === true && result.validationLevel === 'STATIC_VALIDATED') return {label:'Static checks passed',tone:'info'};
   if (result.validationPassed === true) return {label:'Tests passed',tone:'success'};
   if (result.validationPassed === false) return {label:result.errors?.length ? 'Tests failed' : 'Tests pending',tone:'warning'};
   return {label:'Created',tone:'info'};

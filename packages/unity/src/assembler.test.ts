@@ -125,7 +125,8 @@ describe('UnityProjectAssembler', () => {
     expect(readFileSync(join(outputDir, 'Assets/Scripts/RoomTransitionDriver.cs'), 'utf-8')).toContain('cold_entry');
     expect(readFileSync(join(outputDir, 'Assets/Scripts/GameBootstrap.cs'), 'utf-8')).toContain('LastTransitionCached');
     expect(readFileSync(join(outputDir, 'Assets/Scripts/AmbientLoop.cs'), 'utf-8')).toContain('AuthoredRoomId');
-    expect(readFileSync(join(outputDir, 'Assets/Scripts/PlayerActor.cs'), 'utf-8')).toContain('Attack hitboxes are child colliders');
+    expect(readFileSync(join(outputDir, 'Assets/Scripts/PlayerActor.cs'))).toEqual(
+      readFileSync(new URL('../../../templates/unity-metroidvania/Assets/Scripts/PlayerActor.cs', import.meta.url)));
     expect(readFileSync(join(outputDir, 'Assets/Scripts/MotionCaptureDriver.cs'), 'utf-8')).toContain('WaitUntilSettled');
     expect(readFileSync(join(outputDir, 'Assets/Scripts/AmbientLoop.cs'), 'utf-8')).toContain('SteamPlume');
     expect(readFileSync(join(outputDir, 'Assets/Scripts/StreamingArtCache.cs'), 'utf-8')).toContain('PreloadTree');

@@ -261,11 +261,16 @@ export function buildGameplayPack(input: AssemblyInput): GameplayPack {
     const doors: GameplayDoor[] = opts.connections.map((conn) => {
       const slot = doorSlots[conn.direction] ?? 0;
       doorSlots[conn.direction] = slot + 1;
-      const box = doorPlacement(conn.direction, opts.width, floorY, slot);
+      const port = opts.spatialPorts?.find(p => p.direction === conn.direction && p.targetRoomId === conn.targetRoomId);
+      if (port && (![port.x, port.y, port.floorY].every(Number.isFinite) || (port.arrivalX !== undefined && (!Number.isFinite(port.arrivalX) || port.arrivalX < 112 || port.arrivalX > opts.width - 112))))
+        throw new Error(`Invalid spatial door anchor: ${roomId} -> ${conn.targetRoomId}`);
+      // Authored ports share the Godot transition's 24x80 sensor at the node origin.
+      const box = port ? { x: port.x, y: port.y, width: 24, height: 80 } : doorPlacement(conn.direction, opts.width, floorY, slot);
       return {
         direction: conn.direction,
         targetRoomId: conn.targetRoomId,
         ...box,
+        ...(port ? { spatial: { authored: true, floorY: port.floorY, ...(port.arrivalX !== undefined ? { arrivalX: port.arrivalX, hasArrivalX: true } : {}) } } : {}),
         spawnSide: spawnSideForEntry(conn.direction),
         requirements: [...conn.requirements],
         optional: conn.optional ?? false,
@@ -277,11 +282,13 @@ export function buildGameplayPack(input: AssemblyInput): GameplayPack {
     for (const conn of opts.connections) {
       if (conn.requirements.length === 0) continue;
       const requiredAbility = conn.requirements[0]!;
+      const port = opts.spatialPorts?.find(p => p.direction === conn.direction && p.targetRoomId === conn.targetRoomId);
+      const gateTop = port ? port.floorY - openingHeight : doorTop;
       if (conn.direction === 'left') {
         gates.push({
           requiredAbility,
           x: 0,
-          y: doorTop,
+          y: gateTop,
           width: tileSize,
           height: openingHeight,
           targetRoomId: conn.targetRoomId,
@@ -290,7 +297,7 @@ export function buildGameplayPack(input: AssemblyInput): GameplayPack {
         gates.push({
           requiredAbility,
           x: opts.width - tileSize,
-          y: doorTop,
+          y: gateTop,
           width: tileSize,
           height: openingHeight,
           targetRoomId: conn.targetRoomId,
@@ -319,8 +326,9 @@ export function buildGameplayPack(input: AssemblyInput): GameplayPack {
       floorTop,
       spawnX: 100,
       spawnY: floorTop,
-      solids: collectRoomCollisionRects(opts).map(rect => opts.platformerStage && rect.name?.startsWith('Platform_')
+      solids: collectRoomCollisionRects(opts).map(rect => rect.name?.startsWith('Platform_') && (opts.platformerStage === true || (opts.stairFlightsOneWay === true && !!opts.stairFlights?.length) || (opts.stormglassRoomTheme === 'stairwell' && !opts.stairFlights?.length))
         ? { ...rect, oneWay: true } : rect),
+      stairFlights: opts.stairFlights?.map(flight => ({ from: {...flight.from}, to: {...flight.to}, thickness: flight.thickness, oneWay: opts.stairFlightsOneWay === true })),
       doors,
       gates,
       npcs: opts.npcs.map((npc, index) => {
