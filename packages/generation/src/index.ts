@@ -164,3 +164,6 @@ export type { BiomeBackgroundSnapshot, BiomeBackground, CastleSpatialProfile } f
 export { readGodotRoomCollision } from './room-collision.js';
 export { importGameSetAssets } from './game-set-import.js';
 export { readMaterialArtwork, previewMaterialArtwork, applyMaterialArtwork } from './asset-material-edit.js';
+
+export {readArchiveFurnishingReview} from './archive-furnishing-review.js';
+export type {ArchiveFurnishingReview,ArchiveFurnishingReviewRow} from './archive-furnishing-review.js';

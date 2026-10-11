@@ -50,7 +50,8 @@ func _spawn_themed_room_kit() -> bool:
 	var path := "res://data/visual/stormglass-room-kits.json"
 	if not FileAccess.file_exists(path):
 		return false
-	var saved: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+	var source_bytes := FileAccess.get_file_as_bytes(path)
+	var saved: Variant = JSON.parse_string(source_bytes.get_string_from_utf8())
 	if not saved is Dictionary or saved.get("version") != 1 or not saved.get("rooms") is Dictionary:
 		return false
 	var value: Variant = saved.rooms.get(room_id)
@@ -75,6 +76,10 @@ func _spawn_themed_room_kit() -> bool:
 	kit.room_width = float(room_width)
 	kit.room_height = float(room_height)
 	kit.config = value
+	var source_digest := HashingContext.new()
+	source_digest.start(HashingContext.HASH_SHA256)
+	source_digest.update(source_bytes)
+	kit.source_hash = source_digest.finish().hex_encode()
 	for name in ["Background","FarSky","MidGround","NearGround","Foreground"]:
 		var old := get_parent().get_node_or_null(name) as CanvasItem
 		if old:

@@ -2086,6 +2086,16 @@ export function registerIpcHandlers(cwd: string): void {
     assertProjectPath(projectPath,cwd);
     return (await import('@metroforge/generation')).readArchiveFurnishings(projectPath,roomId);
   });
+  ipcMain.handle('read-archive-furnishing-review',async(_event,projectPath:string,roomId:string)=>{
+    assertProjectPath(projectPath,cwd);
+    const before=getPlaytestSession(projectPath);
+    if(!before?.running)throw Error('Start Play Preview and enter this room before reading native furnishings.');
+    const reply=await sendPlaytestCommand(projectPath,'get_state');
+    const after=getPlaytestSession(projectPath);
+    if(!after?.running||after.startedAt!==before.startedAt)throw Error('Play Preview changed. Read the native review again.');
+    if(!reply.ok)throw Error('Native review unavailable: '+(reply.error??'Restart Play Preview.'));
+    return (await import('@metroforge/generation')).readArchiveFurnishingReview(projectPath,roomId,reply.result);
+  });
   ipcMain.handle('save-archive-furnishing',async(_event,projectPath:string,roomId:string,edit:import('@metroforge/generation').ArchiveFurnishingEdit,revision:string)=>{
     assertProjectPath(projectPath,cwd);
     return (await import('@metroforge/generation')).saveArchiveFurnishing(projectPath,roomId,edit,revision);

@@ -7,6 +7,8 @@ var _auth_sent := false
 var _token := ""
 ## Last viewport pick (Ctrl+click or pick_at). Empty Dictionary means no selection.
 var _selection: Dictionary = {}
+var _archive_start_hashes: Dictionary = {}
+var _archive_scene_hashes: Dictionary = {}
 const PICK_RADIUS_PX := 64.0
 
 func _ready() -> void:
@@ -16,6 +18,7 @@ func _ready() -> void:
 		set_process_unhandled_input(false)
 		return
 	_token = OS.get_environment("METROFORGE_BRIDGE_TOKEN")
+	_capture_archive_sources()
 	var port := int(OS.get_environment("METROFORGE_BRIDGE_PORT"))
 	if _token.is_empty() or port < 1 or port > 65535:
 		set_process(false)
@@ -92,6 +95,7 @@ func execute_command(message: Dictionary) -> Dictionary:
 				"paused": get_tree().paused,
 				"scene": str(scene.scene_file_path) if scene else "",
 				"objects": _objects(scene),
+				"archiveFurnishings": _archive_furnishings(scene),
 			}
 			if not _selection.is_empty():
 				payload["selection"] = _selection
@@ -163,6 +167,46 @@ func _pick_key_better(candidate: Array, incumbent: Array) -> bool:
 		if candidate[i] > incumbent[i]:
 			return false
 	return false
+
+func _archive_hash(path: String) -> String:
+	if not FileAccess.file_exists(path):
+		return ""
+	var context := HashingContext.new()
+	context.start(HashingContext.HASH_SHA256)
+	context.update(FileAccess.get_file_as_bytes(path))
+	return context.finish().hex_encode()
+
+func _capture_archive_sources() -> void:
+	var paths := {"rooms":"data/rooms/rooms.json", "dna":"game_dna.json", "kitScript":"scripts/world/StormglassRoomKit.gd", "decorScript":"scripts/world/StormglassDecor.gd", "bridgeScript":"scripts/core/StudioRuntimeBridge.gd"}
+	for key in paths:
+		_archive_start_hashes[key] = _archive_hash("res://"+String(paths[key]))
+	var directory := DirAccess.open("res://scenes/rooms")
+	if directory == null:
+		return
+	var count := 0
+	for name in directory.get_files():
+		if name.begins_with("room_") and name.ends_with(".tscn") and count < 512:
+			_archive_scene_hashes[name.trim_suffix(".tscn")] = _archive_hash("res://scenes/rooms/"+name)
+			count += 1
+
+func _archive_furnishings(root: Node) -> Array:
+	var result: Array = []
+	if root == null:
+		return result
+	var queue: Array[Node] = [root]
+	var visited := 0
+	while not queue.is_empty() and visited < 2000 and result.size() < 16:
+		var node: Node = queue.pop_back()
+		visited += 1
+		if node.get_meta("archive_furnishing_review_complete", false) == true:
+			var id := String(node.get_meta("archive_furnishing_room_id", ""))
+			var sources := _archive_start_hashes.duplicate()
+			sources["config"] = String(node.get_meta("archive_furnishing_source_hash", ""))
+			sources["scene"] = String(_archive_scene_hashes.get(id, ""))
+			result.append({"roomId":id,"sourceHashes":sources,"reviews":node.get_meta("archive_furnishing_reviews", [])})
+		for child in node.get_children():
+			queue.append(child)
+	return result
 
 func _objects(root: Node) -> Array:
 	var result: Array = []

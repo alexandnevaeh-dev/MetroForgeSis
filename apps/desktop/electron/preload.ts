@@ -56,6 +56,7 @@ contextBridge.exposeInMainWorld('metroforge', {
   readEditableItems: (projectPath: string) => ipcRenderer.invoke('read-editable-items', projectPath),
   saveEditableItem: (projectPath: string, item: unknown, revision: string) => ipcRenderer.invoke('save-editable-item', projectPath, item, revision),
   readUnityRoomEdit: (projectPath: string, roomId: string) => ipcRenderer.invoke('read-unity-room-edit', projectPath, roomId),
+  readArchiveFurnishingReview:(projectPath:string,roomId:string)=>ipcRenderer.invoke('read-archive-furnishing-review',projectPath,roomId),
   readArchiveFurnishings:(projectPath:string,roomId:string)=>ipcRenderer.invoke('read-archive-furnishings',projectPath,roomId),
   saveArchiveFurnishing:(projectPath:string,roomId:string,edit:import('@metroforge/generation').ArchiveFurnishingEdit,revision:string)=>ipcRenderer.invoke('save-archive-furnishing',projectPath,roomId,edit,revision),
   restoreArchiveFurnishing:(projectPath:string,roomId:string,revision:string,historyToken:string)=>ipcRenderer.invoke('restore-archive-furnishing',projectPath,roomId,revision,historyToken),

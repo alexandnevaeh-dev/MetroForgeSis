@@ -10,29 +10,35 @@ function choose(data:ArchiveFurnishingState,id:string,undo:string[]=[],redo:stri
 }
 export function ArchiveFurnishingEditor({projectPath,roomId,disabled=false,onSaved}:{projectPath:string;roomId:string;disabled?:boolean;onSaved:()=>void}){
  const key=JSON.stringify([projectPath,roomId]),fieldId=useId(),alive=useRef(true),action=useRef(false);
- const [draft,setDraft]=useState<Draft|null>(drafts.get(key)??null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
+ const [draft,setDraft]=useState<Draft|null>(drafts.get(key)??null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[review,setReview]=useState<import('@metroforge/generation').ArchiveFurnishingReview|null>(null);
  const store=(next:Draft)=>{drafts.set(key,next);setDraft(next);};
  const reload=async()=>{
-  if(action.current)return;action.current=true;setBusy(true);setError('');setNotice('');
+  if(action.current)return;action.current=true;setBusy(true);setError('');setNotice('');setReview(null);
   try{if(!window.metroforge?.readArchiveFurnishings)throw Error('Desktop connection unavailable. Reopen the app.');const data=await window.metroforge.readArchiveFurnishings(projectPath,roomId);if(alive.current){const cached=drafts.get(key);const same=cached?.data.revision===data.revision;store(choose(data,cached?.id??'',same?cached!.undo:[],same?cached!.redo:[]));}}
   catch(e){if(alive.current)setError(String(e));}finally{action.current=false;if(alive.current)setBusy(false);}
  };
  useEffect(()=>{alive.current=true;if(!drafts.get(key)?.dirty)void reload();return()=>{alive.current=false;};},[key]);
- const update=(patch:Partial<Draft>)=>{if(draft)store({...draft,...patch,dirty:true});};
+ const update=(patch:Partial<Draft>)=>{setReview(null);if(draft)store({...draft,...patch,dirty:true});};
  const save=async()=>{
   if(action.current||!draft||disabled)return;
   const values=[draft.x,draft.width,draft.height,...(!draft.defaultFloor?[draft.floorY]:[])];
   if(values.some(v=>!v.trim()||!Number.isFinite(Number(v)))){setError('Enter finite furnishing dimensions and floor coordinates.');return;}
-  action.current=true;setBusy(true);setError('');setNotice('');
+  action.current=true;setBusy(true);setError('');setNotice('');setReview(null);
   try{const next=await window.metroforge!.saveArchiveFurnishing(projectPath,roomId,{id:draft.id,x:Number(draft.x),width:Number(draft.width),height:Number(draft.height),floorY:draft.defaultFloor?null:Number(draft.floorY)},draft.data.revision);
    if(alive.current){store(choose(next,draft.id,[...draft.undo,next.historyToken!],[]));setNotice('Furnishing saved. Restart Play Preview and review support, clearance and appearance.');onSaved();}}
   catch(e){if(alive.current)setError(String(e));}finally{action.current=false;if(alive.current)setBusy(false);}
  };
  const restore=async(direction:'undo'|'redo')=>{
   if(action.current||!draft||draft.dirty||disabled)return;const token=draft[direction].at(-1);if(!token)return;
-  action.current=true;setBusy(true);setError('');setNotice('');
+  action.current=true;setBusy(true);setError('');setNotice('');setReview(null);
   try{const next=await window.metroforge!.restoreArchiveFurnishing(projectPath,roomId,draft.data.revision,token);
    if(alive.current){store(choose(next,draft.id,direction==='undo'?draft.undo.slice(0,-1):[...draft.undo,next.historyToken!],direction==='redo'?draft.redo.slice(0,-1):[...draft.redo,next.historyToken!]));setNotice('Furnishing restored. Native review is required again.');onSaved();}}
+  catch(e){if(alive.current)setError(String(e));}finally{action.current=false;if(alive.current)setBusy(false);}
+ };
+ const readNative=async()=>{
+  if(action.current||!draft||draft.dirty)return;
+  action.current=true;setBusy(true);setError('');setNotice('');setReview(null);
+  try{const next=await window.metroforge!.readArchiveFurnishingReview(projectPath,roomId);if(alive.current){if(next.revision!==draft.data.revision)throw Error('Project changed. Reload furnishings and read the native review again.');setReview(next);}}
   catch(e){if(alive.current)setError(String(e));}finally{action.current=false;if(alive.current)setBusy(false);}
  };
  return <InspectorSection title="Archive furnishing authoring">
@@ -48,10 +54,12 @@ export function ArchiveFurnishingEditor({projectPath,roomId,disabled=false,onSav
    <Checkbox label="Use room floor" checked={draft.defaultFloor} disabled={busy||disabled} onChange={e=>update({defaultFloor:e.target.checked})}/>
    {!draft.defaultFloor&&<label><span>Assembly floor Y</span><Input type="number" min="0" max={draft.data.height} step="1" value={draft.floorY} disabled={busy||disabled} onChange={e=>update({floorY:e.target.value})}/></label>}
    <p className="hint">Saved edits preserve the requested size. Unsupported or obstructed assemblies are omitted in the native game. Furniture details may extend above the assembly body.</p>
-   <ButtonStrip><Button disabled={busy||disabled||!draft.dirty} onClick={()=>void save()}>Save furnishing</Button><Button disabled={busy||!draft.dirty} onClick={()=>{store(choose(draft.data,draft.id,draft.undo,draft.redo));setError('');setNotice('');}}>Discard furnishing draft</Button></ButtonStrip>
+   <ButtonStrip><Button disabled={busy||disabled||!draft.dirty} onClick={()=>void save()}>Save furnishing</Button><Button disabled={busy||!draft.dirty} onClick={()=>{store(choose(draft.data,draft.id,draft.undo,draft.redo));setError('');setNotice('');setReview(null);}}>Discard furnishing draft</Button></ButtonStrip>
    <ButtonStrip><Button disabled={busy||disabled||draft.dirty||!draft.undo.length} onClick={()=>void restore('undo')}>Undo furnishing</Button><Button disabled={busy||disabled||draft.dirty||!draft.redo.length} onClick={()=>void restore('redo')}>Redo furnishing</Button></ButtonStrip>
   </>}
   <Button disabled={busy||draft?.dirty} onClick={()=>void reload()}>Reload furnishings</Button>
+  <Button disabled={busy||!draft||draft.dirty} onClick={()=>void readNative()}>Read native furnishing review</Button>
+  {review&&<div role="status"><p>Native placement observation for {review.roomId}. Appearance and traversal approval remain pending.</p>{review.rows.map(row=><p key={row.id}>{row.id}: {row.status}{row.reason?' · '+row.reason.replaceAll('-',' '):''} · body height {row.actualHeight}/{row.requestedHeight}</p>)}</div>}
   {notice&&<p role="status">{notice}</p>}
  </InspectorSection>;
 }

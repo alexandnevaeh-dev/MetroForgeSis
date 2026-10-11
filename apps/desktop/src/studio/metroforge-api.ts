@@ -301,6 +301,7 @@ export type MetroforgeBridge = {
   readEditableTerrain: (projectPath: string, asset: string) => Promise<{ settings: import('@metroforge/engines').TerrainPresentation; image: {width: number; height: number}; revision: string; restartRequired: true }>;
   saveEditableTerrain: (projectPath: string, asset: string, settings: unknown, revision: string) => Promise<{ settings: import('@metroforge/engines').TerrainPresentation; image: {width: number; height: number}; revision: string; restartRequired: true; backup: string; runtimeSynchronized: boolean }>;
   readEditableItems: (projectPath: string) => Promise<{ items: Record<string, unknown>[]; revision: string; runtimeSupported: boolean }>;
+  readArchiveFurnishingReview:(projectPath:string,roomId:string)=>Promise<import('@metroforge/generation').ArchiveFurnishingReview>;
   readArchiveFurnishings:(projectPath:string,roomId:string)=>Promise<ArchiveFurnishingState>;
   saveArchiveFurnishing:(projectPath:string,roomId:string,edit:import('@metroforge/generation').ArchiveFurnishingEdit,revision:string)=>Promise<ArchiveFurnishingState>;
   restoreArchiveFurnishing:(projectPath:string,roomId:string,revision:string,historyToken:string)=>Promise<ArchiveFurnishingState>;

@@ -3,7 +3,7 @@ import {createHash,randomUUID} from 'node:crypto';
 import {validStormglassArchiveBays} from '@metroforge/godot';
 import {assetFile,commitAssetFiles,lockAssetMutation} from './asset-files.js';
 
-export type ArchiveFurnishing = {id:string;kind:string;x:number;width:number;height:number;floorY?:number};
+export type ArchiveFurnishing = {id:string;kind:string;x:number;width:number;height:number;floorY?:number;preserveSize?:boolean};
 export type ArchiveFurnishingEdit = {id:string;x:number;width:number;height:number;floorY:number|null};
 const configRel='data/visual/stormglass-room-kits.json';
 const hash=(bytes:Buffer)=>createHash('sha256').update(bytes).digest('hex');
@@ -17,11 +17,11 @@ function load(project:string,roomId:string){
   if(config.version!==1||!room||!Number.isFinite(room.width)||!Number.isFinite(room.height)||!validStormglassArchiveBays(config.rooms?.[roomId]?.archiveBays,room.width,room.height))throw Error('This room has no valid authored archive furnishings');
   const bays=config.rooms[roomId].archiveBays as Array<ArchiveFurnishing & Record<string,unknown>>;
   const revision=createHash('sha256').update(bytes).update(roomsBytes).update(scene).update(dnaBytes).digest('hex');
-  return {bytes,config,room,bays,revision};
+  return {bytes,config,room,bays,revision,sourceHashes:{config:hash(bytes),rooms:hash(roomsBytes),scene:hash(scene),dna:hash(dnaBytes)}};
 }
 export function readArchiveFurnishings(project:string,roomId:string){
   const state=load(project,roomId);
-  return {revision:state.revision,width:state.room.width as number,height:state.room.height as number,bays:state.bays.map(b=>({id:b.id,kind:b.kind,x:b.x,width:b.width,height:b.height,...(b.floorY!==undefined?{floorY:b.floorY}:{})}))};
+  return {revision:state.revision,sourceHashes:state.sourceHashes,width:state.room.width as number,height:state.room.height as number,bays:state.bays.map(b=>({id:b.id,kind:b.kind,x:b.x,width:b.width,height:b.height,...(b.preserveSize!==undefined?{preserveSize:b.preserveSize as boolean}:{}),...(b.floorY!==undefined?{floorY:b.floorY}:{})}))};
 }
 function promote(project:string,roomId:string,state:ReturnType<typeof load>,bytes:Buffer){
   // Retain a byte-exact preimage. No image, scene, collider, graph or reward is rewritten.

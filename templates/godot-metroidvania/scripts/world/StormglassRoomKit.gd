@@ -1,6 +1,7 @@
 extends Node2D
 ## Opt-in original room kit. Decoration never creates collision or transition logic.
 var room_id := ""
+var source_hash := ""
 var room_width := 0.0
 var room_height := 0.0
 var config: Dictionary = {}
@@ -117,6 +118,9 @@ func _spawn_archive_bays(bays: Array, floor_y: float) -> void:
 	await get_tree().physics_frame
 	var room := get_parent().get_parent() as Node2D
 	room.set_meta("archive_furnishing_reviews", [])
+	room.set_meta("archive_furnishing_source_hash", source_hash)
+	room.set_meta("archive_furnishing_room_id", room_id)
+	room.set_meta("archive_furnishing_review_complete", false)
 	for raw: Variant in bays:
 		if not raw is Dictionary:
 			continue
@@ -182,6 +186,7 @@ func _spawn_archive_bays(bays: Array, floor_y: float) -> void:
 		assembly.set_meta("decorative_only",true)
 		interior_clip.add_child(assembly)
 		_archive_review(room, spec, "placed", "", height)
+	room.set_meta("archive_furnishing_review_complete", true)
 
 func _archive_review(room: Node2D, spec: Dictionary, status: String, reason: String, actual_height: float = 0.0) -> void:
 	var rows: Array = room.get_meta("archive_furnishing_reviews", [])
