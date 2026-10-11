@@ -131,6 +131,12 @@ public class AcceptanceDriver : MonoBehaviour
             wait += Time.unscaledDeltaTime;
             yield return null;
         }
+        if (_mode == "region_route")
+        {
+            _captureEnabled=true;
+            gameObject.AddComponent<RegionRouteProbeDriver>();
+            yield break;
+        }
         if (_mode == "catalog")
         {
             if (GetComponent<AssetCatalogDriver>() == null)
@@ -707,6 +713,12 @@ public class AcceptanceDriver : MonoBehaviour
         if(door.direction=="down"){yield return NavigateDescent(door);yield break;}
         ReleaseAll();_ascending=true;
         var floor=door.spatial!=null&&door.spatial.authored?door.spatial.floorY:room.floorTop;
+        if(room.height-_game.Player.transform.position.y>floor+8f&&room.stairFlights!=null&&room.stairFlights.Length>0)yield return NavigateAuthoredStairFlights(room,door,true);
+        _ascending=true;
+        if(room.height-_game.Player.transform.position.y<floor-8f){
+            _ascentTargetX=door.x+door.width*.5f;var dropUntil=Mathf.Min(_deadline,Time.unscaledTime+Mathf.Abs(_game.Player.transform.position.x-_ascentTargetX)/Mathf.Max(1f,_game.Pack.movement.walkSpeed)+8f);
+            while(_game.CurrentRoomId==room.id&&room.height-_game.Player.transform.position.y<floor-8f&&Time.unscaledTime<dropUntil)yield return null;
+        }
         var steps=0;
         while(_game.CurrentRoomId==room.id&&Mathf.Abs(room.height-_game.Player.transform.position.y-floor)>8f&&room.stairFlights!=null&&room.stairFlights.Length>0)
         {
@@ -716,7 +728,10 @@ public class AcceptanceDriver : MonoBehaviour
             {
                 var end=upward?flight.to:flight.from;
                 if(upward?(end.y>=foot-12f||end.y<floor-8f):(end.y<=foot+12f||end.y>floor+8f))continue;
-                if(foot<Mathf.Min(flight.from.y,flight.to.y)-16f||foot>Mathf.Max(flight.from.y,flight.to.y)+16f)continue;
+                var onRibbon=foot>=Mathf.Min(flight.from.y,flight.to.y)-16f&&foot<=Mathf.Max(flight.from.y,flight.to.y)+16f;
+                var jumpRange=_game.Pack.movement.walkSpeed*2f*Mathf.Sqrt(2f*_game.Pack.movement.jumpHeight/_game.Pack.movement.gravity);
+                var nextGap=upward&&foot>=flight.from.y&&foot-flight.from.y<_game.Pack.movement.jumpHeight&&Mathf.Abs(flight.from.x-_game.Player.transform.position.x)<=jumpRange;
+                if(!onRibbon&&!nextGap)continue;
                 if(selected==null||Mathf.Abs(end.y-foot)<Mathf.Abs(target.y-foot)){selected=flight;target=end;}
             }
             if(selected==null||steps++>room.stairFlights.Length+2){_ascending=false;ReleaseAll();Fail("progression_stair_path_missing",room.id+" foot="+foot+" floor="+floor);yield break;}
@@ -889,30 +904,38 @@ public class AcceptanceDriver : MonoBehaviour
             Mathf.Abs(_game.Player.transform.position.x - _ascentTargetX) > 4f) yield return null;
         Note("ascent_approach_result from=" + room.id + " current=" + _game.CurrentRoomId + " player=" + _game.Player.transform.position);
         yield return new WaitForSeconds(.15f);
+        var ledgeIndex=0;
         foreach (var ledge in ledges)
         {
             if (_game.CurrentRoomId != room.id) break;
-            _ascentTargetX = ledge.x + ledge.width / 2;
-            Pulse(KeyCode.Space);
+            if(ledgeIndex++==0)
+            {
+                _ascending=false;ReleaseAll();var settle=Time.unscaledTime+2f;
+                while((!_game.Player.IsGrounded||Mathf.Abs(_game.Player.GetComponent<Rigidbody2D>().linearVelocity.x)>1f)&&Time.unscaledTime<settle)yield return null;
+                _ascending=true;_ascentTargetX=_game.Player.transform.position.x;Pulse(KeyCode.Space);
+                var clear=Time.unscaledTime+2f;while(_game.Player.transform.position.y<room.height-ledge.y+4f&&Time.unscaledTime<clear)yield return null;
+                Note("ascent_first_vertical_clear player="+_game.Player.transform.position);
+                _ascentTargetX=ledge.x+ledge.width/2;
+            }
+            else {_ascentTargetX=ledge.x+ledge.width/2;Pulse(KeyCode.Space);}
             yield return new WaitForSeconds(.15f);
             until = Mathf.Min(_deadline, Time.unscaledTime + 4f);
-            var landed = false;
+            var landed = false; var peakY=_game.Player.transform.position.y;
             while (_game.CurrentRoomId == room.id && Time.unscaledTime < until)
             {
-                var body = _game.Player.GetComponent<Rigidbody2D>();
+                var body = _game.Player.GetComponent<Rigidbody2D>(); peakY=Mathf.Max(peakY,body.position.y);
                 if (Mathf.Abs(body.position.y - (room.height - ledge.y)) < 2f &&
                     Mathf.Abs(body.linearVelocity.y) < 1f && body.position.x > ledge.x && body.position.x < ledge.x + ledge.width)
                 { landed = true; break; }
                 yield return null;
             }
             if (_game.CurrentRoomId != room.id) break;
-            if (!landed) { _ascending = false; ReleaseAll(); Fail("ascent_landing_failed", room.id + " " + ledge.name); yield break; }
+            Note("ascent_ledge_observation "+ledge.name+" landed="+landed+" peakY="+peakY+" targetY="+(room.height-ledge.y)+" position="+_game.Player.transform.position+" grounded="+_game.Player.IsGrounded); if (!landed) { _ascending = false; ReleaseAll(); yield return Capture("failed_ledge_"+room.id+"_"+ledge.name); Fail("ascent_landing_failed", room.id + " " + ledge.name); yield break; }
             yield return new WaitForSeconds(.1f);
         }
         if (_game.CurrentRoomId == room.id)
         {
             _ascentTargetX = door.x + door.width / 2;
-            Pulse(KeyCode.Space);
             until = Mathf.Min(_deadline, Time.unscaledTime + 3f);
             var nextJump=Time.unscaledTime;
             while (_game.CurrentRoomId == room.id && Time.unscaledTime < until)
@@ -924,17 +947,22 @@ public class AcceptanceDriver : MonoBehaviour
         _ascending = false;
         ReleaseAll();
         if (_game.CurrentRoomId != door.targetRoomId)
-        { Fail("ascent_transition_failed", room.id + " -> " + door.targetRoomId); yield break; }
+        { Note("ascent_final_position "+_game.Player.transform.position+" velocity="+_game.Player.GetComponent<Rigidbody2D>().linearVelocity); yield return Capture("failed_ascent_"+room.id); Fail("ascent_transition_failed", room.id + " -> " + door.targetRoomId); yield break; }
         Note("ascent_transition " + room.id + " -> " + door.targetRoomId);
         if (_captureEnabled) yield return Capture("ascent_" + room.id);
     }
 
-    private IEnumerator NavigateAuthoredStairFlights(GameplayRoom room, GameplayDoor door)
+    private List<GameplayStairFlight> PlanAuthoredFlightRoute(GameplayRoom room,GameplayDoor door,float foot)
+    {
+        return AuthoredSurfaceRoutePlanner.Plan(room,door,new Vector2(_game.Player.transform.position.x,foot),_game.Pack.movement,_game.Player.GetComponent<BoxCollider2D>().size.y);
+    }
+
+    private IEnumerator NavigateAuthoredStairFlights(GameplayRoom room, GameplayDoor door,bool floorOnly=false)
     {
         var sourceFoot=room.height-_game.Player.transform.position.y;
-        var flights = new List<GameplayStairFlight>();
-        foreach(var authored in room.stairFlights)if(authored.to.y<sourceFoot-12f)flights.Add(authored);
-        flights.Sort((a,b)=>b.from.y.CompareTo(a.from.y));
+        var flights = PlanAuthoredFlightRoute(room,door,sourceFoot);
+        if(flights==null){Fail("authored_connected_route_missing",room.id+" -> "+door.targetRoomId);yield break;}
+        foreach(var f in flights)Note("authored_route_flight "+f.from+" -> "+f.to);
         ReleaseAll(); _ascending = true;
         Note("authored_stair_start room="+room.id+" player="+_game.Player.transform.position+" flights="+flights.Count);
         yield return Capture("authored_stair_start_"+room.id);
@@ -942,12 +970,12 @@ public class AcceptanceDriver : MonoBehaviour
         {
             var flight=flights[i];
             // Enter on the authored support, keeping away from the return doorway.
-            if(i==0){_ascentTargetX=flight.from.x;var approach=Mathf.Min(_deadline,Time.unscaledTime+6f);while(_game.CurrentRoomId==room.id&&Time.unscaledTime<approach&&Mathf.Abs(_game.Player.transform.position.x-_ascentTargetX)>8f)yield return null;}
+            if(i==0||(Mathf.Abs(flights[i-1].to.y-flight.from.y)<8f&&Mathf.Abs(flights[i-1].to.x-flight.from.x)>40f)){_ascentTargetX=flight.from.x;var approach=Mathf.Min(_deadline,Time.unscaledTime+Mathf.Abs(_game.Player.transform.position.x-_ascentTargetX)/Mathf.Max(1f,_game.Pack.movement.walkSpeed)+10f);var nextAttack=Time.unscaledTime;while(_game.CurrentRoomId==room.id&&Time.unscaledTime<approach&&Mathf.Abs(_game.Player.transform.position.x-_ascentTargetX)>8f){if(NeedsGapJump(_game.Player,Mathf.Sign(_ascentTargetX-_game.Player.transform.position.x)))Pulse(KeyCode.Space);else if(Time.unscaledTime>=nextAttack){Pulse(KeyCode.J);nextAttack=Time.unscaledTime+.3f;}yield return null;}Note("authored_stair_approach_result room="+room.id+" position="+_game.Player.transform.position);}
             if(_game.CurrentRoomId!=room.id)break;
             var gap=i>0&&Vector2.Distance(flights[i-1].to,flight.from)>40f;
             _ascentTargetX=flight.to.x;
             // A short jump clears the next one-way ribbon at a reversing landing.
-            if(gap || (flight.oneWay && (i>0 || sourceFoot<room.floorTop-12f)))Pulse(KeyCode.Space);
+            if(gap || flight.oneWay)Pulse(KeyCode.Space);
             var until=Mathf.Min(_deadline,Time.unscaledTime+15f);var landed=false;
             while(_game.CurrentRoomId==room.id&&Time.unscaledTime<until)
             {
@@ -960,6 +988,7 @@ public class AcceptanceDriver : MonoBehaviour
             if(!landed){_ascending=false;ReleaseAll();yield return Capture("failed_authored_flight_"+room.id+"_"+i);Fail("ascent_flight_landing_failed",room.id+" flight="+i);yield break;}
             yield return new WaitForSeconds(.1f);
         }
+        if(floorOnly){_ascending=false;ReleaseAll();yield break;}
         if(_game.CurrentRoomId==room.id){_ascentTargetX=door.x+door.width/2;Pulse(KeyCode.Space);var until=Mathf.Min(_deadline,Time.unscaledTime+5f);var nextJump=Time.unscaledTime;while(_game.CurrentRoomId==room.id&&Time.unscaledTime<until){if(Mathf.Abs(_game.Player.transform.position.x-_ascentTargetX)<12f){_held.Add(KeyCode.W);if(Time.unscaledTime>=nextJump){Pulse(KeyCode.Space);nextJump=Time.unscaledTime+.8f;}}yield return null;}}
         _ascending=false;ReleaseAll();
         if(_game.CurrentRoomId!=door.targetRoomId){Fail("ascent_transition_failed",room.id+" -> "+door.targetRoomId);yield break;}

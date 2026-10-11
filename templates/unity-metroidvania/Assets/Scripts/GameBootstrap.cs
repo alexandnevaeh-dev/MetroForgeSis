@@ -1508,6 +1508,8 @@ public class GameBootstrap : MonoBehaviour
 
     private void WriteSave()
     {
+        if (!RegionRouteProbeDriver.SaveWritesAllowed)
+            return;
         if (_restoringSave || _player == null || _room == null)
             return;
         MainThreadProbe.SaveMarker.Begin();

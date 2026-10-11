@@ -1,58 +1,60 @@
-/** Stage a standalone Unity route probe so prior builds, QA and saves remain untouched. */
+/** Probe a source-bound Windows player in a fresh E: copy and save directory. */
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
-import {createHash} from 'node:crypto';
+import {randomUUID} from 'node:crypto';
 import {cpSync,existsSync,mkdirSync,readFileSync,readdirSync,statfsSync,writeFileSync} from 'node:fs';
 import {join,resolve} from 'node:path';
-const repo=resolve('.');
-const origin=resolve(process.argv[2]||'E:/MetroForgeData/TestArtifacts/engine-gpu-20261001/stormglass-unity/Builds/Windows');
-const timeoutArgument=process.argv.find(argument=>argument.startsWith('--timeout='));
-const timeout=timeoutArgument?Number(timeoutArgument.slice('--timeout='.length)):180;
-assert.ok(Number.isInteger(timeout)&&timeout>=15&&timeout<=600);
-const modeArgument=process.argv.find(argument=>argument.startsWith('--mode='));
-const mode=modeArgument?modeArgument.slice('--mode='.length):'normal_input';
-assert.ok(['normal_input','capture'].includes(mode));
-assert.match(origin,/^E:[/\\]/i);
-const bindingFile=join(origin,'source-binding.json');
-assert.ok(existsSync(bindingFile),'Build through SourceBoundBuild.BuildWindows before probing; a source-binding manifest is required');
-const binding=JSON.parse(readFileSync(bindingFile,'utf8'));
-assert.equal(binding.schema,'metroforge.unity.source-binding.v1');
-assert.equal(binding.inputsUnchanged,true,'Authored inputs changed during native build');
-const output=join(repo,'reports/game-tests/20261003-unity-route','run-'+Date.now());
-const portable=join(output,'portable');
-const sha=file=>createHash('sha256').update(readFileSync(file)).digest('hex');
+import {readRoutePlan,residentPath,sha,validateSourceBinding} from './lib/unity-route-probe.mjs';
+
+const args=process.argv.slice(2),positional=args.filter(a=>!a.startsWith('--'));
+assert.ok(positional.length<=1,'Provide one native build directory');
+for(const arg of args.filter(a=>a.startsWith('--')))assert.ok(arg==='--visible'||/^--(timeout|mode|route-plan|output-root)=/.test(arg),'Unknown argument: '+arg);
+const option=(name,fallback)=>args.find(a=>a.startsWith('--'+name+'='))?.slice(name.length+3)??fallback;
+const repo=residentPath(resolve('.'),'Repository');
+const origin=residentPath(resolve(positional[0]??'E:/MetroForgeData/TestArtifacts/engine-gpu-20261001/stormglass-unity/Builds/Windows'),'Native build');
+const timeout=Number(option('timeout','180')),mode=option('mode','normal_input'),visible=args.includes('--visible');
+assert.ok(Number.isInteger(timeout)&&timeout>=15&&timeout<=600,'Timeout must be 15–600 seconds');
+assert.ok(['normal_input','capture','region_route'].includes(mode),'Unsupported probe mode');
+const routeFile=option('route-plan',null);
+assert.equal(Boolean(routeFile),mode==='region_route','A route plan is required only for region_route');
+const route=routeFile?readRoutePlan(residentPath(routeFile,'Route plan')):null;
+const bound=validateSourceBinding(repo,origin);
+const outputRoot=residentPath(option('output-root',join(repo,'reports/game-tests/20261003-unity-route')),'Output root');
 const space=statfsSync(origin);assert.ok(space.bavail*space.bsize>1024*1024*1024,'Need at least 1 GiB free on E:');
+const output=join(outputRoot,'run-'+Date.now()+'-'+randomUUID()),portable=join(output,'portable');
 mkdirSync(portable,{recursive:true});
-for(const entry of readdirSync(origin,{withFileTypes:true})) {
- assert.ok(!entry.isSymbolicLink());
- if(entry.name==='qa')continue;
- cpSync(join(origin,entry.name),join(portable,entry.name),{recursive:entry.isDirectory()});
+for(const entry of readdirSync(origin,{withFileTypes:true})){
+ assert.ok(!entry.isSymbolicLink(),'Linked native build entry: '+entry.name);
+ if(entry.name!=='qa')cpSync(join(origin,entry.name),join(portable,entry.name),{recursive:entry.isDirectory()});
 }
-const hashes=Object.fromEntries(['ConduitFoundry.exe','UnityPlayer.dll','ConduitFoundry_Data/Managed/Assembly-CSharp.dll','ConduitFoundry_Data/StreamingAssets/gameplay.json'].map(file=>[file,sha(join(portable,file))]));
-const sources=Object.fromEntries(['GameBootstrap','CastleTerrainPresentation','PlayerActor','EnemyActor','BossController','AcceptanceDriver'].map(name=>['templates/unity-metroidvania/Assets/Scripts/'+name+'.cs',sha(join(repo,'templates/unity-metroidvania/Assets/Scripts/'+name+'.cs'))]));
-for(const [file,hash] of Object.entries(hashes))assert.equal(binding.artifacts.find(entry=>entry.path===file)?.sha256,hash,'Native artifact differs from the source-bound build: '+file);
-for(const [file,hash] of Object.entries(sources))assert.equal(binding.inputs.find(entry=>entry.path===file.replace('templates/unity-metroidvania/',''))?.sha256,hash,'Current template differs from the compiled source: '+file);
-const proof={output,origin,hashes,sources,bindingSha256:sha(bindingFile),binding,timeout,mode,scope:'Copied source-bound Unity Windows player; game-owned Input System events; no OS input, warps or health grants for traversal. Existing generic driver has separately labeled direct damage/save probes. Capture mode renders the actual native camera offscreen, not an OS window screenshot.',productionReady:false};
-const env={...process.env,TEMP:'E:/MetroForgeData/Temp',TMP:'E:/MetroForgeData/Temp',METROFORGE_GAME_SAVE_DIR:join(output,'saves'),APPDATA:'E:/MetroForgeData/AppData/UnityRoute',LOCALAPPDATA:'E:/MetroForgeData/AppData/UnityRouteLocal'};
+for(const [file,hash] of Object.entries(bound.hashes))assert.equal(sha(join(portable,file)),hash);
+const saveDir=join(output,'saves'),token=randomUUID();mkdirSync(saveDir);
+if(route)writeFileSync(join(saveDir,'route-probe-isolation.token'),token);
+for(const folder of ['temp','appdata','localappdata'])mkdirSync(join(output,folder));
+const env={...process.env,TEMP:join(output,'temp'),TMP:join(output,'temp'),APPDATA:join(output,'appdata'),LOCALAPPDATA:join(output,'localappdata'),METROFORGE_GAME_SAVE_DIR:saveDir,METROFORGE_ROUTE_PROBE_TOKEN:route?token:''};
+const planPath=route?join(output,'route-plan.json'):null;
+if(route){writeFileSync(planPath,readFileSync(routeFile));assert.equal(sha(planPath),route.planSha256,'Route plan changed before launch');}
 const log=join(output,'native.log');
-console.log(JSON.stringify({stage:'native-route-starting',output,origin}));
-try {
+const proof={output,origin,...bound,timeout,mode,visibleWindowRequested:visible,sourceSaveSha256:route?.sourceSaveSha256,routePlanSha256:route?.planSha256,scope:route?'Provided-save native input continuation; save hash binds bytes, external provenance establishes earning.':'Normal campaign driver; traversal uses game-owned input with separately labeled direct-damage/save/respawn diagnostics.',visualApproved:false,productionReady:false};
+console.log(JSON.stringify({stage:'native-route-starting',output,origin,mode}));
+try{
  const code=await new Promise((accept,reject)=>{
-  const child=spawn(join(portable,'ConduitFoundry.exe'),['-batchmode','-screen-width','960','-screen-height','600','-acceptance','-acceptanceMode='+mode,'-acceptanceTimeout='+timeout,'-logFile',log],{cwd:portable,env,windowsHide:true,stdio:'ignore'});
-  let error;const timer=setTimeout(()=>{error=new Error('Owned Unity route process exceeded its bounded timeout');const kill=spawn('taskkill.exe',['/PID',String(child.pid),'/T','/F'],{windowsHide:true,stdio:'ignore'});kill.on('error',()=>child.kill());},(timeout+60)*1000);
+  const child=spawn(join(portable,'ConduitFoundry.exe'),[...(visible?['-windowed']:['-batchmode']),'-screen-width','960','-screen-height','600','-acceptance','-acceptanceMode='+mode,'-acceptanceTimeout='+timeout,...(route?['-routeProbePlan='+planPath]:[]),'-logFile',log],{cwd:portable,env,windowsHide:!visible,stdio:'ignore'});
+  writeFileSync(join(output,'owned-native.json'),JSON.stringify({pid:child.pid,status:'running'}));
+  let error;const timer=setTimeout(()=>{error=new Error('Owned native process exceeded the bounded timeout');const kill=spawn('taskkill.exe',['/PID',String(child.pid),'/T','/F'],{windowsHide:true,stdio:'ignore'});kill.on('error',()=>child.kill());},(timeout+60)*1000);
   child.on('error',failure=>{clearTimeout(timer);reject(failure);});
-  child.on('close',code=>{clearTimeout(timer);if(error)reject(error);else accept(code);});
+  child.on('close',code=>{clearTimeout(timer);writeFileSync(join(output,'owned-native.json'),JSON.stringify({pid:child.pid,status:'terminal',exitCode:code}));if(error)reject(error);else accept(code);});
  });
  proof.exitCode=code;
- assert.ok(existsSync(join(portable,'qa/acceptance-result.json')),'Native result missing');
- proof.runtime=JSON.parse(readFileSync(join(portable,'qa/acceptance-result.json'),'utf8'));
- const logs=readFileSync(log,'utf8');
- proof.runtimeErrors=logs.split(/\r?\n/).filter(line=>/Exception:|Destroying GameObjects immediately|error CS\d+/.test(line));
- proof.passed=code===0&&proof.runtime.status==='PASS'&&proof.runtimeErrors.length===0;
- for(const [file,hash]of Object.entries(hashes))assert.equal(sha(join(portable,file)),hash);
+ const resultFile=join(portable,'qa',route?'region-route-result.json':'acceptance-result.json');
+ assert.ok(existsSync(resultFile),'Native result missing');proof.runtime=JSON.parse(readFileSync(resultFile,'utf8'));
+ proof.runtimeErrors=readFileSync(log,'utf8').split(/\r?\n/).filter(line=>/Exception:|Destroying GameObjects immediately|error CS\d+/.test(line));
+ proof.passed=code===0&&(route?proof.runtime.passed===true:proof.runtime.status==='PASS')&&proof.runtimeErrors.length===0;
+ for(const [file,hash] of Object.entries(bound.hashes))assert.equal(sha(join(portable,file)),hash);
+ for(const [file,hash] of Object.entries(bound.sources))assert.equal(sha(join(repo,file)),hash,'Runtime template changed during probe: '+file);
+ if(route){assert.equal(sha(route.plan.resumeSavePath),route.sourceSaveSha256,'Source save changed');assert.equal(sha(planPath),route.planSha256,'Route plan changed');proof.sourceSaveUnchanged=true;}
  if(!proof.passed)process.exitCode=1;
 }catch(error){proof.passed=false;proof.error=String(error.stack??error);process.exitCode=1;}
-mkdirSync(join(repo,'reports/game-tests/20261003-unity-route'),{recursive:true});
 writeFileSync(join(output,'proof.json'),JSON.stringify(proof,null,2));
-writeFileSync(join(repo,'reports/game-tests/20261003-unity-route/latest.json'),JSON.stringify(proof,null,2));
-console.log(JSON.stringify({passed:proof.passed,output,exitCode:proof.exitCode,room:proof.runtime?.room,rooms:proof.runtime?.roomsVisitedCount,reason:proof.runtime?.reason,errors:proof.runtimeErrors?.length,error:proof.error}));
+writeFileSync(join(outputRoot,'latest.json'),JSON.stringify(proof,null,2));
+console.log(JSON.stringify({passed:proof.passed,output,exitCode:proof.exitCode,room:proof.runtime?.room,rooms:proof.runtime?.roomsVisitedCount,transitions:proof.runtime?.transitions?.length,reason:proof.runtime?.reason,errors:proof.runtimeErrors?.length,error:proof.error}));
