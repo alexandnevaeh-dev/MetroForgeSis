@@ -185,10 +185,10 @@ func _update_sprite() -> void:
 	# a looping one (walk) never advances at all.
 	match _state:
 		CombatState.HURT:
-			if sprite.sprite_frames.has_animation("hurt") and not (sprite.animation == "hurt" and sprite.is_playing()):
+			if sprite.sprite_frames.has_animation("hurt") and sprite.animation != "hurt":
 				sprite.play("hurt")
 		CombatState.WINDUP, CombatState.ACTIVE, CombatState.RECOVERY:
-			if sprite.sprite_frames.has_animation("attack") and not (sprite.animation == "attack" and sprite.is_playing()):
+			if sprite.sprite_frames.has_animation("attack") and sprite.animation != "attack":
 				sprite.play("attack")
 		_:
 			if velocity.length() > 1.0:
@@ -204,6 +204,14 @@ func _begin_windup(dir: Vector2) -> void:
 	_state = CombatState.WINDUP
 	_state_time = ATTACK_WINDUP
 	velocity = Vector2.ZERO
+	_restart_combat_clip("attack")
+
+## Start once per accepted combat event. A finished non-looping clip holds its
+## last pose until the state changes; polling recovery must never replay a strike.
+func _restart_combat_clip(clip: StringName) -> void:
+	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation(clip):
+		sprite.stop()
+		sprite.play(clip)
 
 ## Mirrors BossController._spawn_projectile() — same scene, same owner_node/damage contract.
 func _spawn_projectile(direction: Vector2) -> void:
@@ -256,6 +264,8 @@ func _process_combat_state(delta: float) -> void:
 			_state = CombatState.CHASE
 
 func _on_hit(damage: float, kb: Vector2) -> void:
+	if health.invulnerable or not health.is_alive() or not is_finite(damage) or damage <= 0.0:
+		return
 	health.take_damage(damage)
 	if not health.is_alive():
 		return
@@ -263,6 +273,7 @@ func _on_hit(damage: float, kb: Vector2) -> void:
 	_knockback = kb
 	_state = CombatState.HURT
 	_state_time = HURT_DURATION
+	_restart_combat_clip("hurt")
 
 ## Same disclosed convention as BossController.gd's own _on_died() fix (this session's boss
 ## milestone): a real death sheet existed and was loaded but nothing ever played it or gave it
