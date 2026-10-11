@@ -6,14 +6,22 @@ var current_state: GameState = GameState.TITLE
 var current_room_id: String = ""
 var player_abilities: Array[String] = []
 var game_complete: bool = false
+var _respawn_timer: Timer
 
 func _ready() -> void:
+	_respawn_timer = Timer.new()
+	_respawn_timer.name = "DeathRecoveryDelay"
+	_respawn_timer.one_shot = true
+	_respawn_timer.process_mode = Node.PROCESS_MODE_ALWAYS
+	_respawn_timer.timeout.connect(_on_recovery_timeout)
+	add_child(_respawn_timer)
 	EventBus.game_started.connect(_on_game_started)
 	EventBus.ability_acquired.connect(_on_ability_acquired)
 	EventBus.boss_defeated.connect(_on_boss_defeated)
 	EventBus.player_died.connect(_on_player_died)
 
 func _on_game_started() -> void:
+	_respawn_timer.stop()
 	current_state = GameState.PLAYING
 	player_abilities.clear()
 	game_complete = false
@@ -40,9 +48,14 @@ func _on_boss_defeated(boss_id: String) -> void:
 ## GameHUD._on_player_died()) then hands off to _do_respawn(). Split into two functions so
 ## tests can drive the actual respawn logic directly without waiting through the real pause.
 func _on_player_died() -> void:
+	if current_state != GameState.PLAYING:
+		return
 	current_state = GameState.GAME_OVER
-	await get_tree().create_timer(1.0).timeout
-	_do_respawn()
+	_respawn_timer.start(1.0)
+
+func _on_recovery_timeout() -> void:
+	if current_state == GameState.GAME_OVER:
+		_do_respawn()
 
 ## Reuses the existing save/load system to respawn at the real last checkpoint (or the start
 ## room, for a fresh game with no save yet) rather than the previous behavior of teleporting the
@@ -50,6 +63,7 @@ func _on_player_died() -> void:
 ## and meant dying carried no real consequence. Player.tscn reads its restored health the same
 ## way a manual "Continue" load already does, via SaveManager.consume_pending_player_health().
 func _do_respawn() -> void:
+	_respawn_timer.stop()
 	if SaveManager.has_save():
 		SaveManager.load_game()
 	else:
