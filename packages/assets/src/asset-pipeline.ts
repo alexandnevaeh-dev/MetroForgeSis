@@ -96,6 +96,7 @@ import {
 } from './tile-roles.js';
 import { createHash } from 'node:crypto';
 import {enemyVisualPlan,type EnemyVisualDefinition} from './enemy-visual-plan.js';
+import { namedEnemyArtworkPlans, retainEnemyFamilyReview, assertCachedEnemyIdentities } from './enemy-artwork-review.js';
 import { manualReferenceOptions, type ManualReferenceMode } from './manual-reference.js';
 import type { ImageGenerationProfile } from './types/vision.js';
 import type { ImageGenerator, ImageConditioning } from './types/image-gen.js';
@@ -1150,6 +1151,11 @@ function loadManifestArtifacts(outputDir: string): GeneratedAsset[] | null {
           fallbackGenerated: Boolean(artifact.fallbackGenerated),
           critiquePassed: artifact.critiquePassed !== false,
           critiqueScore: Number(artifact.critiqueScore ?? 100),
+          executionMetadata: artifact.executionMetadata && typeof artifact.executionMetadata === 'object' && !Array.isArray(artifact.executionMetadata)
+            ? artifact.executionMetadata as Record<string, unknown> : undefined,
+          productionAllowed: typeof artifact.productionAllowed === 'boolean' ? artifact.productionAllowed : undefined,
+          proceduralProduction: typeof artifact.proceduralProduction === 'boolean' ? artifact.proceduralProduction : undefined,
+          fakeAnimation: typeof artifact.fakeAnimation === 'boolean' ? artifact.fakeAnimation : undefined,
           maturity:
             typeof artifact.maturity === 'string'
               ? (artifact.maturity as GeneratedAsset['maturity'])
@@ -1190,7 +1196,8 @@ export class AssetPipeline {
 
   async generate(options: AssetPipelineOptions): Promise<AssetPipelineResult> {
     const enemyDefinitions=options.enemies;
-    if(enemyDefinitions){const ids=new Set<string>();for(const enemy of enemyDefinitions){if(!/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/.test(enemy.id)||ids.has(enemy.id))throw Error('Enemy artwork identities must be unique safe asset IDs');ids.add(enemy.id);}}
+    if(enemyDefinitions){const ids=new Set<string>();for(const enemy of enemyDefinitions){if(!enemy||typeof enemy.id!=='string'||!/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/.test(enemy.id)||ids.has(enemy.id))throw Error('Enemy artwork identities must be unique safe asset IDs');ids.add(enemy.id);}}
+    const enemyArtworkPlans = namedEnemyArtworkPlans(enemyDefinitions, options.gameDna.archetype === 'SIDE_VIEW_METROIDVANIA' || options.gameDna.archetype === 'SIDE_VIEW_PLATFORMER');
     const assets: GeneratedAsset[] = [];
     const warnings: string[] = [];
     let fakeAnimationDetected = false;
@@ -1206,12 +1213,12 @@ export class AssetPipeline {
         Partial<Pick<GeneratedAsset, 'maturity' | 'productionReady' | 'sourceType'>>,
       assetType: string,
     ) => {
-      const finalized = withMaturity({
+      const finalized = retainEnemyFamilyReview(withMaturity({
         ...asset,
         proceduralProduction:
           asset.proceduralProduction ??
           proceduralProductionIntent(asset as GeneratedAsset, assetType),
-      });
+      }), enemyArtworkPlans);
       assets.push(finalized);
       options.onArtifact?.(finalized, assetType);
     };
@@ -1220,7 +1227,11 @@ export class AssetPipeline {
 
     if (options.resume) {
       const cachedAssets = loadManifestArtifacts(options.outputDir);
+      if (!cachedAssets && enemyArtworkPlans.some(({ definition }) => existsSync(join(options.outputDir, `assets/enemies/${definition.id}.png`)))) {
+        throw new Error('Named enemy artwork checkpoint is incomplete; generate a fresh candidate rather than reusing unverified pixels');
+      }
       if (cachedAssets) {
+        assertCachedEnemyIdentities(cachedAssets, enemyArtworkPlans);
         options.onTaskStarted?.('environment_assets', 'Resuming from generation_manifest.json');
         for (const asset of cachedAssets) {
           recordAsset(asset, inferAssetTypeFromPath(asset.path));
@@ -1228,7 +1239,7 @@ export class AssetPipeline {
         warnings.push(
           `Resumed ${cachedAssets.length} asset(s) from generation_manifest.json — skipped regeneration`,
         );
-        const degraded = cachedAssets.some((a) => isNonProductionMaturity(a.maturity));
+        const degraded = assets.some((a) => isNonProductionMaturity(a.maturity));
         return {
           assets,
           warnings,
