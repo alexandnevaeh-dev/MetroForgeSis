@@ -1,4 +1,8 @@
+import {RoomFurnishingInspector,furnishingChoices} from './RoomFurnishingInspector.js';
+import type {RoomFurnishingReview} from '@metroforge/engines';
 import { CastleBackdrop } from './CastleBackdrop.js';
+import type {RoomMasonryRect,RoomStairFlight} from './RoomMasonryPreview.js';
+import { validCastleRegionPreview, type CastleRegionPreview } from './CastleRegionBackdrop.js';
 import { BiomeBackgroundEditor, type CastleBackgroundPreview } from './BiomeBackgroundEditor.js';
 import { TopDownPropPicker } from './TopDownPropPicker.js';
 import { TopDownPropViewport } from './TopDownPropViewport.js';
@@ -31,6 +35,11 @@ import {
 } from './ui/index.js';
 
 type RoomRecord = {
+  nativeFurnishingReview?: RoomFurnishingReview;
+  themedRoomKit?: {wallRole:string;propRoles:string[]};
+  masonryRects?: RoomMasonryRect[];
+  stairFlights?: RoomStairFlight[];
+  castleRegionPlan?: CastleRegionPreview;
   editingMode?: 'topdown';
   tileSize?: number;
   tiles?: number[][];
@@ -110,6 +119,7 @@ export function RoomEditor() {
   const [rooms, setRooms] = useState<RoomRecord[]>([]);
   const [selectedRoomId, setSelectedRoomId] = useState('');
   const [query, setQuery] = useState('');
+  const [selectedFurnishingKey,setSelectedFurnishingKey]=useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewModeId>('visual');
@@ -197,6 +207,9 @@ export function RoomEditor() {
     if (selected?.editingMode === 'topdown' && viewMode !== 'visual' && viewMode !== 'debug') setViewMode('visual');
   }, [selected?.editingMode, viewMode]);
   useEffect(() => { setSelectedPropId(''); }, [selectedPath, selected?.id]);
+  useEffect(()=>{setSelectedFurnishingKey('');},[selectedPath,selected?.id]);
+  const furnishingItems=furnishingChoices(selected?.nativeFurnishingReview);
+  const activeFurnishing=furnishingItems.find(c=>c.key===selectedFurnishingKey)?.entry??furnishingItems[0]?.entry;
   const activePropId = selected?.propPlacements?.some(prop => prop.id === selectedPropId) ? selectedPropId : selected?.propPlacements?.[0]?.id;
   const activeBackground = castleBackground?.projectPath === selectedPath && castleBackground.biomeId === selected?.biomeId ? castleBackground : null;
   const hasGeometry = selected ? roomHasGeometry(selected, collision) : false;
@@ -487,7 +500,7 @@ export function RoomEditor() {
               ) : selected.editingMode === 'topdown' ? (
                 <TopDownPropViewport key={`${selectedPath}:${selected.id}`} projectPath={selectedPath} areaId={selected.id} terrainBrush={paintTool==='select'?undefined:paintTool==='erase'?0:terrainMaterial} onPaint={terrainTiles=>{void runRoomAction(()=>window.metroforge!.updateRoom(selectedPath,{roomId:selected.id,terrainTiles}));}} tiles={selected.tiles} tileSize={tileSize} width={selected.width ?? 0} height={selected.height ?? 0} props={selected.propPlacements} zoom={zoom} fit={fitRoom} selectedId={activePropId} onSelect={setSelectedPropId} busy={isSaving} onMove={(id,x,y) => { void runRoomAction(() => window.metroforge!.updateRoom(selectedPath, {roomId:selected.id,propPlacements:(selected.propPlacements ?? []).map(prop => prop.id===id ? {...prop,x,y} : prop)})); }} />
               ) : viewMode === 'visual' && selectedProject?.engine === 'unity' ? (
-                <UnityRoomGeometry key={`${selectedPath}:${selected.id}`} projectPath={selectedPath} roomId={selected.id} width={selected.width ?? 800} height={selected.height ?? 600} zoom={zoom} gridSnap={gridSnap} tileSize={tileSize} />
+                <UnityRoomGeometry key={`${selectedPath}:${selected.id}`} projectPath={selectedPath} roomId={selected.id} width={selected.width ?? 800} height={selected.height ?? 600} zoom={zoom} gridSnap={gridSnap} tileSize={tileSize} furnishing={activeFurnishing} castleMasonry={selected.nativeFurnishingReview?.material==='stormglass-masonry-v1'} />
               ) : viewMode === 'visual' ? (
                   <TilePaintEditor
                     key={`${selectedPath}:${selected.id}`}
@@ -495,7 +508,7 @@ export function RoomEditor() {
                     biomeId={selected.biomeId ?? 'biome_0'} tileSize={tileSize}
                     width={selected.width ?? 800} height={selected.height ?? 600}
                     initialCells={selected.tileCells} selectedTile={selectedTile}
-                    tool={paintTool} background={activeBackground}
+                    tool={paintTool} background={activeBackground} regionPlan={selected.castleRegionPlan} masonryRects={selected.masonryRects} stairFlights={selected.stairFlights}
                     collisionRects={collision?.rects} zoom={zoom} fit={fitRoom}
                     onSaved={() => loadRooms(selectedPath)}
                   />
@@ -521,6 +534,7 @@ export function RoomEditor() {
                       style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top left' }}
                     >
                       <RoomCanvasPreview
+                        projectPath={selectedPath}
                         background={activeBackground}
                     room={selected}
                         layer={viewMode}
@@ -583,13 +597,26 @@ export function RoomEditor() {
                   <InspectorSection title="Preview">
                     {hasGeometry ? (
                       <div className="room-mini-preview" aria-label="Room mini preview">
-                        <RoomCanvasPreview background={activeBackground} room={selected} layer="visual" collision={collision} mini />
+                        <RoomCanvasPreview projectPath={selectedPath} background={activeBackground} room={selected} layer="visual" collision={collision} mini />
                       </div>
                     ) : (
                       <p className="hint">No geometry thumbnail — room has no authored tiles/collision yet.</p>
                     )}
                   </InspectorSection>
-                  <BiomeBackgroundEditor key={JSON.stringify([selectedPath, selected.biomeId])} projectPath={selectedPath} biomeId={selected.biomeId ?? "biome_0"} onPreview={setCastleBackground} />
+                  {validCastleRegionPreview(selected.castleRegionPlan, selected.width ?? 800, selected.height ?? 600) ? (
+                    <InspectorSection title="Castle region material">
+                      <p className="hint">Local masonry follows this room’s saved chamber plan. Panorama settings apply to other rooms.</p>
+                      <p className="hint">The editor approximates the native stone shading. Play Preview to inspect architecture and lighting in game.</p>
+                      {selected.castleRegionPlan.furnishings?.length ? <p className="hint">Saved furnishings appear in their chamber positions. Play Preview checks floor support, lighting and clearance.</p> : <p className="hint">Regenerate this room to include its furnishing layout in the editor preview.</p>}
+                    </InspectorSection>
+                  ) : selected.themedRoomKit ? (
+                    <InspectorSection title="Room architecture">
+                      <p className="hint">Walls: {selected.themedRoomKit.wallRole.replaceAll('_',' ')}.</p>
+                      {selected.themedRoomKit.propRoles.length>0 && <p className="hint">Furnishings: {selected.themedRoomKit.propRoles.map(role=>role.replaceAll('_',' ')).join(', ')}.</p>}
+                      <p className="hint">The canvas shows built geometry. Play Preview shows this room’s architecture, decorations, and lighting.</p>
+                    </InspectorSection>
+                  ) : <BiomeBackgroundEditor key={JSON.stringify([selectedPath, selected.biomeId])} projectPath={selectedPath} biomeId={selected.biomeId ?? "biome_0"} onPreview={setCastleBackground} />}
+                  {selected.nativeFurnishingReview&&<RoomFurnishingInspector review={selected.nativeFurnishingReview} selectedKey={selectedFurnishingKey} onSelect={setSelectedFurnishingKey}/> }
                   <InspectorSection title="Room">
                     <dl className="settings-dl">
                       <dt>Name</dt>
@@ -881,6 +908,7 @@ export function RoomEditor() {
 }
 
 function RoomCanvasPreview({
+  projectPath,
   room,
   layer,
   collision,
@@ -896,6 +924,7 @@ function RoomCanvasPreview({
   setDragEntityKey,
   gridSnap = true,
 }: {
+  projectPath?: string;
   room: RoomRecord;
   layer: ViewModeId;
   collision?: RoomCollisionPreview | null;
@@ -914,8 +943,8 @@ function RoomCanvasPreview({
   const tileSize = collision?.tileSize ?? room.tileSize ?? TILE;
   const w = room.width ?? 800;
   const h = room.height ?? 600;
-  const showBackdrop = !!background && (layer === 'visual' || layer === 'entities');
-  const backdrop = showBackdrop ? <CastleBackdrop background={background} roomId={room.id} width={w} height={h} tileSize={tileSize} /> : null;
+  const showBackdrop = (!!background || !!room.castleRegionPlan || !!room.masonryRects?.length) && (layer === 'visual' || layer === 'entities');
+  const backdrop = showBackdrop ? <CastleBackdrop projectPath={projectPath} background={background} regionPlan={room.castleRegionPlan} masonryRects={room.masonryRects} stairFlights={room.stairFlights} roomId={room.id} width={w} height={h} tileSize={tileSize} /> : null;
   const scale = mini ? 0.18 : fill ? 0.55 : 0.35;
   const showTiles = layer === 'visual' || layer === 'collision';
   const showNav = layer === 'visual' || layer === 'navigation' || layer === 'progression';

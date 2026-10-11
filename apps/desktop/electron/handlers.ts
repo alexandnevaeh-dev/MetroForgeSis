@@ -1,6 +1,7 @@
 import { readTopDownTerrain } from './topdown-terrain.js';
 import { manualActorReview } from '@metroforge/shared';
 import {readActiveRoomKits} from './room-kit-inspector.js';
+import {readRoomFurnishingReviews} from './room-furnishing-review.js';
 import { resolvePropAsset } from './prop-asset.js';
 import { topDownRoomRecords } from './topdown-room-records.js';
 import { latestPhases } from './latest-phases.js';
@@ -1822,11 +1823,13 @@ export function registerIpcHandlers(cwd: string): void {
     }
     const project = loadProjectContext(projectPath);
     const activeRoomKits = readActiveRoomKits(projectPath, project.roomIds);
+    const furnishingReviews=detectProjectEngine(projectPath)==='unity'?readRoomFurnishingReviews(projectPath,project.roomIds):{};
     return project.roomIds.map((id) => ({
       id,
       ...(project.roomsData[id] ?? {}),
       tileSize: project.roomsData[id]?.tileSize ?? project.gameDna.technical?.tileSize,
       ...(activeRoomKits[id] ? {themedRoomKit:activeRoomKits[id]} : {}),
+      ...(furnishingReviews[id]?{nativeFurnishingReview:furnishingReviews[id]}:{}),
     }));
   });
 

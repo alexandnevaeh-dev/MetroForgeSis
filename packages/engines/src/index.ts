@@ -1,4 +1,5 @@
 export type { GameplayPack, GameplayRoom, GameplaySpriteClip, EngineManifest, EngineAssemblyResult } from './types.js';
+export type { RoomFurnishingReview,RoomFurnishingEntry,RoomFurnishingFootprint } from './types.js';
 export { buildGameplayPack } from './gameplay-pack.js';
 export { detectProjectEngine } from './detect.js';
 export { assertEngineOutputIsolation, EngineOutputCollisionError } from './isolation.js';

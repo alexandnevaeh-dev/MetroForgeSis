@@ -1,4 +1,6 @@
 import { CastleBackdrop } from './CastleBackdrop.js';
+import type {RoomMasonryRect,RoomStairFlight} from './RoomMasonryPreview.js';
+import type { CastleRegionPreview } from './CastleRegionBackdrop.js';
 import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Badge, Button, EmptyState, Panel } from './ui/index.js';
 
@@ -134,7 +136,10 @@ interface TilePaintEditorProps {
   selectedTile: TileCoord;
   tool?: TilePaintTool;
   background?: CastleBackgroundPreview | null;
-  collisionRects?: Array<{ x: number; y: number; w: number; h: number }>;
+  regionPlan?: CastleRegionPreview;
+  masonryRects?: RoomMasonryRect[];
+  stairFlights?: RoomStairFlight[];
+  collisionRects?: Array<{ x: number; y: number; w: number; h: number;points?:Array<{x:number;y:number}> }>;
   zoom?: number;
   fit?: boolean;
   onSaved?: () => void | Promise<void>;
@@ -154,6 +159,9 @@ export function TilePaintEditor({
   selectedTile,
   tool = 'select',
   background,
+  regionPlan,
+  masonryRects,
+  stairFlights,
   collisionRects = EMPTY_RECTS,
   zoom = 100,
   fit = true,
@@ -312,13 +320,19 @@ export function TilePaintEditor({
           </defs>
           <rect className="room-floor" width={width} height={height} />
           <CastleBackdrop
+            projectPath={projectPath}
             background={background}
+            regionPlan={regionPlan}
+            masonryRects={masonryRects}
+            stairFlights={stairFlights}
             roomId={roomId}
             width={width}
             height={height}
             tileSize={tileSize}
           />
-          {collisionRects.map((rect, i) => (
+          {collisionRects.map((rect, i) => rect.points ? (
+            <polygon key={`geometry-${i}`} className="room-occupancy room-tile-geometry" points={rect.points.map(p=>`${p.x},${p.y}`).join(' ')} />
+          ) : (
             <rect
               key={`geometry-${i}`}
               className="room-occupancy room-tile-geometry"

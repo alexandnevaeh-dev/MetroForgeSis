@@ -11,7 +11,7 @@ export interface FurnishingPlacement extends FurnishingRequest {
   /** Decorative only. Rewards keep their separately authored collision and pickup. */
   collision: 'none'; layer: 'rear' | 'front'; anchor: string;
 }
-export interface FurnishingOmission {id: string; reason: string}
+export interface FurnishingOmission {id: string; reason: string;role?:string;footprint?:{x:number;floorY:number;width:number;height:number}}
 const overlaps=(a:GameplayRect,b:GameplayRect)=>a.x<b.x+b.width&&a.x+a.width>b.x&&a.y<b.y+b.height&&a.y+a.height>b.y;
 
 /** Combine adjacent coplanar tiles, never bridge a gap between them. */
@@ -53,7 +53,9 @@ export function placeFurnishings(room:GameplayRoom,requests:FurnishingRequest[])
     else if([...(room.npcs??[]),...(room.enemy?[room.enemy]:[]),...(room.checkpoint?[room.checkpoint]:[]),{x:room.spawnX,y:room.spawnY}].some(a=>overlaps(box,{x:a.x-64,y:a.y-112,width:128,height:144})))reason='actor-or-arrival-readability';
     else if(placements.some(p=>overlaps(box,{x:p.x-p.width/2,y:p.floorY-p.height,width:p.width,height:p.height})))reason='furnishing-overlap';
     seen.add(request.id);
-    if(reason)omissions.push({id:request.id,reason});
+    if(reason)omissions.push({id:request.id,reason,
+      ...(typeof request.role==='string'?{role:request.role}:{}),
+      ...([request.x,request.floorY,request.width,request.height].every(Number.isFinite)&&request.width>0&&request.height>0?{footprint:{x:request.x,floorY:request.floorY,width:request.width,height:request.height}}:{})});
     else placements.push({...request,collision:'none',layer:request.renderLayer??(request.mounting==='rear-wall'?'rear':'front'),anchor:request.mounting==='floor'?support!.names.join('+'):`rear-plane:${request.sectionId??room.id}`});
   }
   return {placements,omissions};

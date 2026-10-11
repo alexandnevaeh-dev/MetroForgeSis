@@ -1,21 +1,40 @@
 import { useId } from 'react';
+import {RoomMasonryPreview,RoomStairPreview,validRoomMasonry,validStairFlights,type RoomMasonryRect,type RoomStairFlight} from './RoomMasonryPreview.js';
+import {
+  CastleRegionBackdrop,
+  validCastleRegionPreview,
+  type CastleRegionPreview,
+} from './CastleRegionBackdrop.js';
 import type { CastleBackgroundPreview } from './BiomeBackgroundEditor.js';
 
 /** Shared SVG counterpart of the native castle panorama; no room or asset mutations. */
-export function CastleBackdrop({
+export function CastleBackdrop(props:Parameters<typeof CastleBackdropArtwork>[0]&{masonryRects?:RoomMasonryRect[];stairFlights?:RoomStairFlight[]}){
+ return <svg x={0} y={0} width={props.width} height={props.height} viewBox={`0 0 ${props.width} ${props.height}`} overflow="hidden" pointerEvents="none">
+  <CastleBackdropArtwork {...props}/>
+  {validRoomMasonry(props.masonryRects,props.width,props.height)&&<RoomMasonryPreview rects={props.masonryRects}/>}
+  {validStairFlights(props.stairFlights,props.width,props.height)&&props.stairFlights.map((flight,index)=><RoomStairPreview key={index} flight={flight} index={index}/>)}
+ </svg>;
+}
+function CastleBackdropArtwork({
   background,
   roomId,
   width,
   height,
   tileSize,
+  regionPlan,
+  projectPath,
 }: {
   background: CastleBackgroundPreview | null | undefined;
   roomId: string;
   width: number;
   height: number;
   tileSize: number;
+  regionPlan?: CastleRegionPreview;
+  projectPath?: string;
 }) {
   const id = useId().replaceAll(':', '');
+  if (validCastleRegionPreview(regionPlan, width, height))
+    return <CastleRegionBackdrop plan={regionPlan} projectPath={projectPath} />;
   if (!background) return null;
   const profile = background.spatialProfile;
   if (!profile?.rooms.includes(roomId)) {

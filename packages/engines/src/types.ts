@@ -2,6 +2,16 @@
 import type {FurnishingPlacement,FurnishingOmission} from './furnishing-layout.js';
 import type { Dialogue } from '@metroforge/schemas';
 
+export interface RoomFurnishingFootprint {x:number;floorY:number;width:number;height:number}
+export interface RoomFurnishingEntry {
+  id:string;status:'placed'|'omitted';role?:string;anchor?:string;
+  layer?:'rear'|'front';collision?:'none';reason?:string;footprint?:RoomFurnishingFootprint;
+}
+export interface RoomFurnishingReview {
+  status:'ready'|'unavailable';source?:'unity-export';revision?:string;material?:'stormglass-masonry-v1';
+  entries?:RoomFurnishingEntry[];error?:string;
+}
+
 export interface GameplayNpc {
   id: string;
   definitionId: string;

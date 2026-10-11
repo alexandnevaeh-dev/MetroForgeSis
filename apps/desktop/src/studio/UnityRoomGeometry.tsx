@@ -1,3 +1,6 @@
+import {CastleRegionBackdrop} from './CastleRegionBackdrop.js';
+import {RoomFurnishingOutline} from './RoomFurnishingInspector.js';
+import type {RoomFurnishingEntry} from '@metroforge/engines';
 import { useEffect, useState, useRef, useId } from 'react';
 import { LiveEditSession, type LiveEditOperation } from '@metroforge/engines/live-edit-session';
 import { Button, Input, PropertyRow } from './ui/index.js';
@@ -11,7 +14,7 @@ const protectRoomDrafts=(event:BeforeUnloadEvent)=>{
  }
 };
 if(typeof window!=='undefined')window.addEventListener('beforeunload',protectRoomDrafts);
-export function UnityRoomGeometry({projectPath,roomId,width,height,zoom=100,gridSnap=false,tileSize=16}: {projectPath:string;roomId:string;width:number;height:number;zoom?:number;gridSnap?:boolean;tileSize?:number}) {
+export function UnityRoomGeometry({projectPath,roomId,width,height,zoom=100,gridSnap=false,tileSize=16,furnishing,castleMasonry=false}: {projectPath:string;roomId:string;width:number;height:number;zoom?:number;gridSnap?:boolean;tileSize?:number;furnishing?:RoomFurnishingEntry;castleMasonry?:boolean}) {
  const fieldId=useId();
  const scale=Number.isFinite(zoom)?Math.max(0.25,Math.min(4,zoom/100)):1;
  const snapStep=gridSnap&&Number.isFinite(tileSize)&&tileSize>0?tileSize:1;
@@ -40,13 +43,14 @@ export function UnityRoomGeometry({projectPath,roomId,width,height,zoom=100,grid
  },[key,projectPath,roomId,framingId,timingId]);
  useEffect(()=>{
   let alive=true;setBackgroundUrl(undefined);setBackgroundStatus('');
+  if(castleMasonry){setBackgroundStatus('Saved castle masonry preview · native furnishing artwork, lighting and camera scale require Play Preview.');return;}
   if(!draft?.farBackground)return;
   setBackgroundStatus('Loading room background…');
   void window.metroforge!.getAssetPreview(projectPath,`Assets/StreamingAssets/${draft.farBackground}`).then(result=>{
    if(!alive)return;setBackgroundUrl(result.dataUrl);setBackgroundStatus(result.dataUrl?'Static room overview · Unity camera framing, lighting and parallax are shown in Play Mode.':'The room background image is unavailable. Geometry remains editable.');
   }).catch(()=>{if(alive)setBackgroundStatus('The room background could not be loaded. Geometry remains editable.');});
   return()=>{alive=false;};
- },[projectPath,draft?.farBackground]);
+ },[projectPath,draft?.farBackground,castleMasonry]);
  const state=draft?.session.snapshot();
  const solids=state?.objects.filter(o=>o.id!==framingId&&o.id!==timingId);
  const framing=state?.objects.find(o=>o.id===framingId);
@@ -91,8 +95,10 @@ export function UnityRoomGeometry({projectPath,roomId,width,height,zoom=100,grid
    onPointerCancel={cancelDrag} onLostPointerCapture={cancelDrag}
    onKeyDown={e=>{if(e.key==='Escape'){cancelDrag();e.preventDefault();}}}>
    <rect width={width} height={height} fill="#171c24" />
-   {backgroundUrl&&<image data-room-background="far" href={backgroundUrl} x={-width*0.01} y={-height*0.01} width={width*1.02} height={height*1.02} preserveAspectRatio="xMidYMid slice" pointerEvents="none" />}
+   {castleMasonry&&<CastleRegionBackdrop plan={{version:1,width,height,sections:[{id:roomId,name:roomId,x:0,width,floorY:height,ceilingY:0}]}}/>}
+   {!castleMasonry&&backgroundUrl&&<image data-room-background="far" href={backgroundUrl} x={-width*0.01} y={-height*0.01} width={width*1.02} height={height*1.02} preserveAspectRatio="xMidYMid slice" pointerEvents="none" />}
    {solids?.map(o=><rect key={o.id} role="button" tabIndex={0} aria-label={`Select ${o.properties.name??'solid'} ${o.id}`} x={o.x+(drag?.id===o.id?drag.dx:0)} y={o.y+(drag?.id===o.id?drag.dy:0)} width={Number(o.properties.width)} height={Number(o.properties.height)} fill={selected===o.id?'#70b5e8':'#6a5746'} stroke={selected===o.id?'#d9f0ff':'#bd8756'} strokeWidth={2} onPointerDown={e=>{if(saving||e.button!==0)return;const svg=e.currentTarget.ownerSVGElement;if(!svg)return;const p=point(svg,e.clientX,e.clientY);if(!p)return;e.preventDefault();e.currentTarget.focus();svg.setPointerCapture(e.pointerId);setSelected(o.id);const next={id:o.id,pointerId:e.pointerId,startX:p.x,startY:p.y,x:o.x,y:o.y,dx:0,dy:0};dragRef.current=next;setDrag(next);}} onClick={()=>setSelected(o.id)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSelected(o.id);}}}/>)}
+   <RoomFurnishingOutline entry={furnishing}/>
   </svg>
   {object&&<fieldset disabled={saving}><legend>Selected solid</legend><div className="row">{(['x','y','width','height'] as const).map(field=><label key={field}>{field}<input aria-label={`Solid ${field}`} type="number" value={field==='x'||field==='y'?object[field]:Number(object.properties[field])} min={field==='width'||field==='height'?1:undefined} onChange={e=>{const value=e.currentTarget.valueAsNumber;if(!Number.isFinite(value)||((field==='width'||field==='height')&&value<=0))return;edit([field==='x'||field==='y'?{type:'move',objectId:object.id,x:field==='x'?value:object.x,y:field==='y'?value:object.y}:{type:'property',objectId:object.id,key:field,value}]);}} /></label>)}</div></fieldset>}
  </div>;
