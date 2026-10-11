@@ -103,7 +103,7 @@ export type GeneratedAssetRef = {
   provider?: string;
   modelId?: string;
   imagePlan?: { profile: string; width: number; height: number; sourceWidth: number; sourceHeight: number; transparent: boolean };
-  executionMetadata?: { actualDevice?: string; computeBackend?: string; manualActorReview?: import('./asset-review.js').ManualActorReview };
+  executionMetadata?: { actualDevice?: string; computeBackend?: string; manualActorReview?: import('./asset-review.js').ManualActorReview; manualPropReview?: import('./asset-review.js').ManualPropReview };
   fallbackGenerated?: boolean;
   critiquePassed?: boolean;
   critiqueScore?: number;
@@ -480,6 +480,7 @@ export type MetroforgeBridge = {
     operation?: 'create' | 'replace';
     backgroundDetail?: 'standard' | 'detailed';
     sourceDetail?: 'standard' | 'detailed';
+    propCanvas?: { width: number; height: number };
     localStyleId?: string;
     localStyleScale?: number;
     seed?: number;

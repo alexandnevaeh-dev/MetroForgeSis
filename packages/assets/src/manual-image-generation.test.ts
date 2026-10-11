@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { AssetPipeline } from './asset-pipeline.js';
@@ -26,8 +26,25 @@ const png = () => {
   return encodePng(80, 40, rgba);
 };
 afterEach(() => vi.clearAllMocks());
+beforeEach(() => vi.stubEnv('METROFORGE_U2NET_WEIGHTS_PATH', ''));
+afterEach(() => vi.unstubAllEnvs());
 
 describe('manual pipeline uses role-aware compile and retains source proof', () => {
+  it('retains valid wide prop artwork for review without production admission', async () => {
+    mkdirSync('E:/MetroForgeData/Temp/manual-profile-tests', {recursive:true});
+    const output=mkdtempSync('E:/MetroForgeData/Temp/manual-profile-tests/wide-desk-');
+    const raw=png();
+    mock.health.mockResolvedValue(true);
+    mock.select.mockResolvedValue({generator:{id:'fixture',generateImage:mock.generate},warnings:[],fallbackDepth:0});
+    mock.generate.mockResolvedValue({image:raw,provider:'fixture',modelId:'controlled',fallbackGenerated:false});
+    const asset=await new AssetPipeline().generateManual({gameDna:dna,description:'One original writing desk',assetType:'prop',assetId:'desk',relPath:'assets/desk.png',outputDir:output,seed:42,sourceDetail:'detailed',propCanvas:{width:192,height:64}});
+    expect(asset).toMatchObject({maturity:'COMPILED',critiquePassed:false,critiqueScore:0,productionReady:false,productionAllowed:false,
+      imagePlan:{width:192,height:64,sourceWidth:1024,sourceHeight:344},
+      executionMetadata:{manualPropReview:{state:'pending',scope:'source-image-and-native-placement',humanReviewRequired:true}}});
+    expect(readFileSync(join(output,asset.sourcePath!))).toEqual(raw);
+    expect(decodePngRgba(asset.buffer)).toMatchObject({width:192,height:64});
+    expect(mock.critique).not.toHaveBeenCalled();
+  });
   it.each(['img2img', 'ip_adapter'] as const)('uses original full-resolution reference with explicit %s and records its hash', async (mode) => {
     mkdirSync('E:/MetroForgeData/Temp/manual-profile-tests',{recursive:true});const output=mkdtempSync('E:/MetroForgeData/Temp/manual-profile-tests/reference-');mkdirSync(join(output,'assets'));
     const source=png();const compiled=encodePng(16,16,new Uint8Array(16*16*4).fill(255));
@@ -186,6 +203,7 @@ describe('manual pipeline uses role-aware compile and retains source proof', () 
     expect(asset.executionMetadata).toEqual({
       actualDevice: 'fixture',
       foregroundIsolation: { applied: false, matteSource: type === 'prop' ? 'unavailable_fallback' : 'skipped_category' },
+      ...(type === 'prop' ? { manualPropReview: {state:'pending',scope:'source-image-and-native-placement',humanReviewRequired:true} } : {}),
     });
     expect(asset.imagePlan).toMatchObject({ profile, width, height });
   });

@@ -98,6 +98,7 @@ import { createHash } from 'node:crypto';
 import {enemyVisualPlan,type EnemyVisualDefinition} from './enemy-visual-plan.js';
 import { namedEnemyArtworkPlans, retainEnemyFamilyReview, assertCachedEnemyIdentities } from './enemy-artwork-review.js';
 import { manualReferenceOptions, type ManualReferenceMode } from './manual-reference.js';
+import type { ManualPropCanvas } from './manual-prop-canvas.js';
 import type { ImageGenerationProfile } from './types/vision.js';
 import type { ImageGenerator, ImageConditioning } from './types/image-gen.js';
 import type { GenerationMode, GenerationProfile } from '@metroforge/shared';
@@ -4584,6 +4585,7 @@ export class AssetPipeline {
     const det = runDeterministicAssetChecks(processed.buffer, opts.spec.width, opts.spec.height);
     if (opts.manualPlan && !det.passed) throw new Error('Generated artwork failed image validation');
     const manualActor = !!opts.manualPlan && ['CHARACTER', 'ENEMY', 'BOSS', 'NPC'].includes(opts.profile);
+    const manualProp = !!opts.manualPlan && opts.profile === 'ENVIRONMENT';
     let critiquePassed = det.passed;
     let critiqueScore = 70;
     let actorReviewState: 'pending' | 'passed' | 'rejected' | undefined = manualActor ? 'pending' : undefined;
@@ -4617,6 +4619,15 @@ export class AssetPipeline {
         scope: 'source-image', humanReviewRequired: true } };
     }
 
+    if (manualProp) {
+      // PNG validity does not establish furnishings, support or native-camera readability.
+      critiquePassed = false;
+      critiqueScore = 0;
+      executionMetadata = { ...executionMetadata, manualPropReview: {
+        state: 'pending', scope: 'source-image-and-native-placement', humanReviewRequired: true,
+      } };
+    }
+
     writeCheckpoint(opts.outputDir, opts.path, processed.buffer);
 
     return withMaturity({
@@ -4635,7 +4646,7 @@ export class AssetPipeline {
       ...(manualActor
         ? { maturity: actorReviewState === 'pending' ? 'COMPILED' as const
           : actorReviewState === 'rejected' ? 'REJECTED' as const : 'QA_REVIEW' as const }
-        : {}),
+        : manualProp ? { maturity: 'COMPILED' as const, productionReady: false } : {}),
       sourceType: fallback ? undefined : 'compiled',
       sourcePath,
       fallbackDepth: fallback ? 1 : 0,
@@ -4645,7 +4656,7 @@ export class AssetPipeline {
       selectedProvider: provider,
       selectedModel: modelId,
       requestedCapability: 'IMAGE_GENERATION',
-      productionAllowed: !fallback && (!manualActor || actorReviewState === 'passed'),
+      productionAllowed: !fallback && !manualProp && (!manualActor || actorReviewState === 'passed'),
       promptHash: hashPrompt(opts.prompt),
       requestedProvider: opts.imageGen?.id,
       requestedModel: undefined,
@@ -4734,6 +4745,7 @@ export class AssetPipeline {
     gameDna: GameDNA;
     backgroundDetail?: 'standard' | 'detailed';
     sourceDetail?: 'standard' | 'detailed';
+    propCanvas?: ManualPropCanvas;
     artBible?: ArtBible;
     styleBible?: StyleBible;
     description: string;
@@ -4774,7 +4786,7 @@ export class AssetPipeline {
     const reference = manualReferenceOptions(opts.referenceMode, opts.referenceStrength, existsSync(existingFullPath) || existsSync(sourceCandidate));
     if (localStyleAdapter && (existsSync(existingFullPath) || existsSync(sourceCandidate)) && reference?.mode !== 'img2img')
       throw new Error('Local style adapters currently support new artwork only; replacement reference conditioning is unsupported');
-    const plan = manualImagePlan(opts.assetType, opts.assetId, existsSync(existingFullPath) ? readFileSync(existingFullPath) : undefined, opts.backgroundDetail, opts.sourceDetail);
+    const plan = manualImagePlan(opts.assetType, opts.assetId, existsSync(existingFullPath) ? readFileSync(existingFullPath) : undefined, opts.backgroundDetail, opts.sourceDetail, opts.propCanvas);
     const negativePrompt = opts.negativePrompt ?? applyStyleNegativePrompt(
       opts.styleBible,
       opts.artBible?.negativePrompts.join(', '),

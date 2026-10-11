@@ -1,5 +1,5 @@
 import { readTopDownTerrain } from './topdown-terrain.js';
-import { manualActorReview } from '@metroforge/shared';
+import { manualActorReview, manualPropReview } from '@metroforge/shared';
 import {readActiveRoomKits} from './room-kit-inspector.js';
 import {readRoomFurnishingReviews} from './room-furnishing-review.js';
 import { resolvePropAsset } from './prop-asset.js';
@@ -1385,6 +1385,7 @@ export function registerIpcHandlers(cwd: string): void {
         provider: artifact.provider as string | undefined,
         imagePlan: artifact.imagePlan as { profile: string } | undefined,
         manualActorReview: manualActorReview((artifact.executionMetadata as Record<string, unknown> | undefined)?.manualActorReview),
+        manualPropReview: manualPropReview((artifact.executionMetadata as Record<string, unknown> | undefined)?.manualPropReview),
         modelId: artifact.modelId as string | undefined,
         fallbackGenerated: artifact.fallbackGenerated as boolean | undefined,
         critiquePassed: artifact.critiquePassed as boolean | undefined,
@@ -1421,6 +1422,7 @@ export function registerIpcHandlers(cwd: string): void {
           category,
           imagePlan: undefined,
           manualActorReview: undefined,
+          manualPropReview: undefined,
           manualArtDirection: undefined,
           provider: undefined,
           modelId: undefined,
@@ -1483,6 +1485,7 @@ export function registerIpcHandlers(cwd: string): void {
         operation?: 'create' | 'replace';
         backgroundDetail?: 'standard' | 'detailed';
         sourceDetail?: 'standard' | 'detailed';
+        propCanvas?: { width: number; height: number };
         localStyleId?: string;
         localStyleScale?: number;
         seed?: number;
@@ -1523,6 +1526,7 @@ export function registerIpcHandlers(cwd: string): void {
             generationMode: request.generationMode,
             backgroundDetail: request.backgroundDetail,
             sourceDetail: request.sourceDetail,
+            propCanvas: request.propCanvas,
             localStyleId: request.localStyleId,
             localStyleScale: request.localStyleScale,
             nvidiaImageModel,
@@ -1549,6 +1553,7 @@ export function registerIpcHandlers(cwd: string): void {
             generationMode: request.generationMode,
             backgroundDetail: request.backgroundDetail,
             sourceDetail: request.sourceDetail,
+            propCanvas: request.propCanvas,
             localStyleId: request.localStyleId,
             localStyleScale: request.localStyleScale,
             nvidiaImageModel,

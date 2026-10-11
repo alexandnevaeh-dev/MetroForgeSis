@@ -12,3 +12,17 @@ export function manualActorReview(value: unknown): ManualActorReview | undefined
       review.scope !== 'source-image' || review.humanReviewRequired !== true) return undefined;
   return { state: review.state as ManualActorReview['state'], scope: 'source-image', humanReviewRequired: true };
 }
+
+export type ManualPropReview = {
+  state: 'pending';
+  scope: 'source-image-and-native-placement';
+  humanReviewRequired: true;
+};
+
+/** Expose only the furnishing review summary, never provider configuration. */
+export function manualPropReview(value: unknown): ManualPropReview | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const review = value as Record<string, unknown>;
+  if (review.state !== 'pending' || review.scope !== 'source-image-and-native-placement' || review.humanReviewRequired !== true) return undefined;
+  return {state:'pending',scope:'source-image-and-native-placement',humanReviewRequired:true};
+}

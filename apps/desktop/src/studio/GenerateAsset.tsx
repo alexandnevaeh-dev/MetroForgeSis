@@ -6,7 +6,7 @@ import { ProjectSelect } from './ProjectSelect.js';
 import { NoProjectHint } from './NoProjectHint.js';
 import { useStudio } from './StudioContext.js';
 import { GENERATION_MODES } from './generation-options.js';
-import { Button, Input, Select, TextArea } from './ui/index.js';
+import { Button, Checkbox, Input, Select, TextArea } from './ui/index.js';
 import type { GenerateAssetResponse, GenerateAssetVariantResult } from './metroforge-api.js';
 import {LocalImageModelPreparation} from './LocalImageModelPreparation.js';
 import {MaterialColorEditor} from './MaterialColorEditor.js';
@@ -65,6 +65,10 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
   const [variants, setVariants] = useState(1);
   const [backgroundDetail, setBackgroundDetail] = useState<'standard' | 'detailed'>('standard');
   const [sourceDetail, setSourceDetail] = useState<'standard' | 'detailed'>('standard');
+  const [customPropCanvas, setCustomPropCanvas] = useState(false);
+  const [propWidth, setPropWidth] = useState('64');
+  const [propHeight, setPropHeight] = useState('96');
+  useEffect(() => { setCustomPropCanvas(false); }, [assetType]);
   const [localStyleId,setLocalStyleId]=useState('');
   const [referenceMode,setReferenceMode]=useState<'ip_adapter'|'img2img'>('ip_adapter');
   const [referenceStrength,setReferenceStrength]=useState('0.55');
@@ -218,6 +222,11 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
     if(localStyleId && ((replace && referenceMode!=='img2img') || localStylesLoading || localStylesError || !localStyles.some(s=>s.id===localStyleId&&s.available))) {
       setError(replace&&referenceMode!=='img2img'?'Choose structure redraw to combine a local style with replacement, or choose None for identity reference.':'Selected local art style is unavailable. Retry loading styles or choose None.');return;
     }
+    const propCanvas = !replace && assetType === 'prop' && customPropCanvas
+      ? { width: Number(propWidth), height: Number(propHeight) } : undefined;
+    if (propCanvas && Object.values(propCanvas).some(value => !Number.isSafeInteger(value) || value < 1 || value > 4096)) {
+      setError('Enter whole prop dimensions from 1 to 4096 pixels.'); return;
+    }
     const strength=Number(referenceStrength);
     if(replace&&(!Number.isFinite(strength)||strength<=0||strength>1)){setError('Reference strength must be greater than 0 and at most 1.');return;}
     const parsedSeed = seed.trim() === '' ? undefined : Number(seed);
@@ -264,6 +273,7 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
         seed: parsedSeed,
         backgroundDetail: !replace && assetType === 'background' ? backgroundDetail : undefined,
         sourceDetail: assetType !== 'background' ? sourceDetail : undefined,
+        ...(propCanvas ? { propCanvas } : {}),
         localStyleId: localStyleId || undefined,
       });
       if (!mounted.current) return;
@@ -328,11 +338,11 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
         </p>
         {mode === 'LOCAL_ONLY' && <LocalImageModelPreparation disabled={busy || inspecting} onBusyChange={setModelPreparing} />}
         <label><span id="asset-style-direction-label">Style direction</span>
-          <TextArea aria-labelledby="asset-style-direction-label" rows={2} maxLength={2000}
+          <TextArea className="resize-none" aria-labelledby="asset-style-direction-label" rows={2} maxLength={2000}
             disabled={busy || styleLoading} value={styleDirection} onChange={e=>setStyleDirection(e.target.value)} /></label>
         <p className="hint">A concise project style for this artwork. Review or edit it before generating; the camera follows your game's genre.</p>
         <label><span id="asset-negative-prompt-label">Exclude</span>
-          <TextArea aria-labelledby="asset-negative-prompt-label" rows={2} maxLength={4000}
+          <TextArea className="resize-none" aria-labelledby="asset-negative-prompt-label" rows={2} maxLength={4000}
             disabled={busy || styleLoading} value={negativePrompt} onChange={e=>setNegativePrompt(e.target.value)} /></label>
         {styleLoading && <p className="hint" role="status">Loading project art direction…</p>}
         {styleError && <div><p className="hint" role="alert">{styleError}</p><Button onClick={()=>void loadStyleDirection()}>Retry art direction</Button></div>}
@@ -434,6 +444,14 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
         {localStylesLoading&&<p role="status">Checking local art styles…</p>}
         {localStylesError&&<div role="alert">{localStylesError} <Button disabled={busy||localStylesLoading} onClick={()=>void loadLocalStyles()}>Retry styles</Button></div>}
         {localStyles.filter(style=>!style.available).map(style=><p key={style.id}>{style.label}: {style.reason}</p>)}
+        {assetType === 'prop' && <>
+          <Checkbox label="Custom prop canvas" checked={customPropCanvas} disabled={busy || modelPreparing || inspecting} onChange={e => setCustomPropCanvas(e.target.checked)} />
+          {customPropCanvas && <>
+            <label><span>Prop width (pixels)</span><Input type="number" min="1" max="4096" step="1" value={propWidth} disabled={busy || modelPreparing || inspecting} onChange={e => setPropWidth(e.target.value)} /></label>
+            <label><span>Prop height (pixels)</span><Input type="number" min="1" max="4096" step="1" value={propHeight} disabled={busy || modelPreparing || inspecting} onChange={e => setPropHeight(e.target.value)} /></label>
+          </>}
+          <small>New prop alternatives only. Replacements keep their saved dimensions. Canvas size does not create support or collision.</small>
+        </>}
         {assetType !== 'background' && (
           <label>
             <span id="asset-source-detail-label">Source detail</span>

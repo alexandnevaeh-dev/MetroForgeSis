@@ -9,6 +9,7 @@ const fixture = vi.hoisted(() => ({ generate: vi.fn(), failManifest: false }));
 vi.mock('@metroforge/assets', async () => ({
   validateLocalStyleAdapter: (await vi.importActual<typeof import('@metroforge/assets')>('@metroforge/assets')).validateLocalStyleAdapter,
   manualReferenceOptions: (await vi.importActual<typeof import('@metroforge/assets')>('@metroforge/assets')).manualReferenceOptions,
+  manualPropCanvasOptions: (await vi.importActual<typeof import('@metroforge/assets')>('@metroforge/assets')).manualPropCanvasOptions,
   localStyleAdapterMatches: (await vi.importActual<typeof import('@metroforge/assets')>('@metroforge/assets')).localStyleAdapterMatches,
   AssetPipeline: class {
     generateManual = fixture.generate;
@@ -45,6 +46,26 @@ const dna = {
   profile: 'TINY_TEST',
 };
 describe('manual artwork promotion', () => {
+  it('forwards a new wide prop canvas without changing registered actor artwork', async () => {
+    const result = await generateManualAsset({...request(), assetType:'prop', operation:'create', assetId:undefined, propCanvas:{width:192,height:64}});
+    expect(result.success).toBe(true);
+    expect(fixture.generate.mock.calls[0][0].propCanvas).toEqual({width:192,height:64});
+    expect(bytes(path)).toBe('original artwork');
+    expect(bytes(source)).toBe('original source');
+  });
+  it.each([
+    {assetType:'prop',operation:'create',assetId:undefined,propCanvas:{width:0,height:64}},
+    {assetType:'prop',operation:'replace',assetId:'player',propCanvas:{width:192,height:64}},
+    {assetType:'enemy',operation:'create',assetId:undefined,propCanvas:{width:192,height:64}},
+  ])('rejects invalid prop resizing before provider or staging writes %j', async options => {
+    const before=bytes('generation_manifest.json');
+    const result=await generateManualAsset({...request(),...options} as any);
+    expect(result.success).toBe(false);
+    expect(fixture.generate).not.toHaveBeenCalled();
+    expect(bytes('generation_manifest.json')).toBe(before);
+    expect(bytes(path)).toBe('original artwork');
+    expect(existsSync(join(project,'.metroforge/manual-art'))).toBe(false);
+  });
   it('forwards explicit styled redraw while preserving previous source in history',async()=>{
     const localStyleAdapter={path:resolve('E:/adapter.safetensors'),sha256:'a'.repeat(64),scale:1};
     fixture.generate.mockImplementation((opts:any)=>({...generated(opts),executionMetadata:{localStyleAdapter,effectiveConditioningMode:'img2img',effectiveConditioningStrength:0.35}}));

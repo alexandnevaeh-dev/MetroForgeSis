@@ -1,6 +1,13 @@
 import { expect, it } from 'vitest';
-import { assetReviewPresentation, manualActorReview } from './asset-review.js';
+import { assetReviewPresentation, manualActorReview, manualPropReview } from './asset-review.js';
 const review = (state: 'pending' | 'passed' | 'rejected') => ({state, scope: 'source-image', humanReviewRequired: true});
+it('shows pending furnishing review independently of deterministic validity and private metadata',()=>{
+  const prop={state:'pending',scope:'source-image-and-native-placement',humanReviewRequired:true};
+  expect(assetReviewPresentation({executionMetadata:{manualPropReview:prop},critiquePassed:false,critiqueScore:0,maturity:'COMPILED'})).toMatchObject({tone:'warning',label:'Visual review pending',score:undefined});
+  expect(manualPropReview({...prop,modelPath:'private'})).toEqual(prop);
+  expect(manualPropReview({...prop,state:'approved'})).toBeUndefined();
+  expect(assetReviewPresentation({manualPropReview:prop,maturity:'REJECTED'}).tone).toBe('danger');
+});
 it('presents pending source review without a false rejection or numeric quality score', () => {
   const asset = {executionMetadata: {manualActorReview: review('pending')}, critiquePassed: false, critiqueScore: 0, maturity: 'COMPILED'};
   expect(assetReviewPresentation(asset)).toMatchObject({label:'Visual review pending', tone:'warning', score:undefined});

@@ -16,4 +16,4 @@ export * from './visual-slice.js';
 
 export * from './resources.js';
 export * from './python.js';
-export { manualActorReview, type ManualActorReview } from './manual-actor-review.js';
+export { manualActorReview, type ManualActorReview, manualPropReview, type ManualPropReview } from './manual-actor-review.js';

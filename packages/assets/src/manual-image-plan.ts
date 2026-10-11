@@ -1,4 +1,5 @@
 import type { ImageGenerationProfile } from './types/vision.js';
+import { manualPropCanvasOptions, type ManualPropCanvas } from './manual-prop-canvas.js';
 import { decodePngRgba, knockoutVfxBackground } from './png.js';
 import { PixelArtProcessor } from './pixel-art-processor.js';
 import { hasRealAlpha } from './pipeline-v2/isolate.js';
@@ -20,7 +21,9 @@ export function manualImagePlan(
   existing?: Buffer,
   backgroundDetail?: 'standard' | 'detailed',
   sourceDetail?: 'standard' | 'detailed',
+  propCanvas?: ManualPropCanvas,
 ): ManualImagePlan {
+  const canvas = manualPropCanvasOptions(propCanvas, type, !!existing);
   if (sourceDetail !== undefined) {
     if (!['standard', 'detailed'].includes(sourceDetail))
       throw new Error('Choose standard or detailed source artwork');
@@ -52,6 +55,7 @@ export function manualImagePlan(
   const role = roles[type];
   if (!role) throw new Error(`Unsupported manual artwork type: ${type}`);
   let [profile, width, height, transparent, grounded] = role;
+  if (canvas) ({ width, height } = canvas);
   if (backgroundDetail === 'detailed') {
     width = 1024;
     height = 576;

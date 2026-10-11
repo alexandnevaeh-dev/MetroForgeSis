@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { AssetPipeline, derivedSourceRelPath, validateLocalStyleAdapter, localStyleAdapterMatches, manualReferenceOptions, type ManualReferenceMode, type GeneratedAsset, type LocalStyleAdapter } from '@metroforge/assets';
+import { AssetPipeline, derivedSourceRelPath, validateLocalStyleAdapter, localStyleAdapterMatches, manualReferenceOptions, manualPropCanvasOptions, type ManualPropCanvas, type ManualReferenceMode, type GeneratedAsset, type LocalStyleAdapter } from '@metroforge/assets';
 import { licenseFieldsForProvider } from '@metroforge/ai';
 import { GameDNASchema, type DesignBible, type StyleBible } from '@metroforge/schemas';
 import { loadConfig, genreSupports } from '@metroforge/shared';
@@ -47,6 +47,7 @@ export interface ManualAssetRequest {
   negativePrompt?: string;
   backgroundDetail?: 'standard' | 'detailed';
   sourceDetail?: 'standard' | 'detailed';
+  propCanvas?: ManualPropCanvas;
   projectPath: string;
   description: string;
   assetType: ManualAssetType;
@@ -136,6 +137,7 @@ export async function generateManualAsset(request: ManualAssetRequest): Promise<
   let release: (() => void) | undefined;
   try {
     const reference = manualReferenceOptions(request.referenceMode, request.referenceStrength, request.operation === 'replace' || !!request.assetId);
+    const propCanvas = manualPropCanvasOptions(request.propCanvas, request.assetType, request.operation === 'replace' || !!request.assetId);
     if (!request.description?.trim() || request.description.length > 8000)
       throw new Error('Enter a prompt of 1–8000 characters');
     if (request.styleDirection !== undefined && (typeof request.styleDirection !== 'string' || !request.styleDirection.trim() || request.styleDirection.length > 2000))
@@ -315,6 +317,7 @@ export async function generateManualAsset(request: ManualAssetRequest): Promise<
       relPath,
       backgroundDetail: request.backgroundDetail,
       sourceDetail: request.sourceDetail,
+      propCanvas,
       localStyleAdapter,
       outputDir: stage,
       seed,

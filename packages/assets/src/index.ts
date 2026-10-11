@@ -597,3 +597,4 @@ export type {
 } from './visual-templates/index.js';
 export {canopyActor,canopyEffect,canopyIcon,canopyPickup,buildCanopyActorFamily,canopyEffectMetadata,CANOPY_ACTION_FRAMES,CANOPY_EFFECT_IDS} from './topdown-canopy-art.js';
 export { manualReferenceOptions, type ManualReferenceMode } from './manual-reference.js';
+export { manualPropCanvasOptions, type ManualPropCanvas } from './manual-prop-canvas.js';
