@@ -192,11 +192,13 @@ func _check_stormglass_level_blueprint() -> void:
 	var rooms: Dictionary = rooms_json.data.get("rooms", {}) if rooms_ok and typeof(rooms_json.data) == TYPE_DICTIONARY else {}
 	var gallery_campaign := FileAccess.file_exists("res://data/visual/stormglass-room-kits.json")
 	var graph: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://world_graph.json"))
+	var record_halls := false
 	var archive_wing := false
 	var expanded_campaign := false
 	if graph is Dictionary:
 		for node in graph.get("nodes", []):
-			if node is Dictionary and node.get("metadata", {}).get("stormglassRegionProfile") == "archive-wing":
+			if node is Dictionary and node.get("metadata", {}).get("stormglassRegionProfile") in ["archive-wing","record-halls"]:
+				record_halls = node.get("metadata", {}).get("stormglassRegionProfile") == "record-halls" or record_halls
 				archive_wing = true
 				expanded_campaign = true
 			if node is Dictionary and node.get("metadata", {}).get("stormglassRegionProfile") == "expanded-region":
@@ -204,10 +206,10 @@ func _check_stormglass_level_blueprint() -> void:
 	_check("stormglass_expanded_profile_has_admitted_room_kits", not expanded_campaign or gallery_campaign)
 	if expanded_campaign and not gallery_campaign:
 		return
-	var expected_count := 48 if archive_wing else 46 if expanded_campaign else 43 if gallery_campaign else 40
+	var expected_count := 50 if record_halls else 48 if archive_wing else 46 if expanded_campaign else 43 if gallery_campaign else 40
 	var gallery_nodes: Dictionary = {}
 	if gallery_campaign:
-		var recipe_id := "stormglass-archive-wing-campaign-v1" if archive_wing else "stormglass-expanded-region-campaign-v1" if expanded_campaign else "stormglass-gallery-campaign-v1"
+		var recipe_id := "stormglass-record-halls-campaign-v1" if record_halls else "stormglass-archive-wing-campaign-v1" if archive_wing else "stormglass-expanded-region-campaign-v1" if expanded_campaign else "stormglass-gallery-campaign-v1"
 		var recipe: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/visual/blueprints/%s.json" % recipe_id))
 		var recipe_valid: bool = recipe is Dictionary and recipe.get("id") == recipe_id and recipe.get("worldGraph") is Dictionary
 		_check("stormglass_gallery_campaign_recipe_valid", recipe_valid)
@@ -217,7 +219,7 @@ func _check_stormglass_level_blueprint() -> void:
 			if node.get("type") == "room":
 				gallery_nodes[String(node.id)] = node
 		_check("stormglass_gallery_recipe_has_%d_unique_rooms" % expected_count, gallery_nodes.size() == expected_count)
-		_check("stormglass_gallery_authored_doors_match_reciprocal_graph", _gallery_doors_match(rooms, recipe.worldGraph.get("edges", []), expanded_campaign, archive_wing))
+		_check("stormglass_gallery_authored_doors_match_reciprocal_graph", _gallery_doors_match(rooms, recipe.worldGraph.get("edges", []), expanded_campaign, archive_wing, record_halls))
 	_check("stormglass_blueprint_has_%d_rooms" % expected_count, rooms.size() == expected_count)
 	var enemies_file := FileAccess.open("res://data/enemies/enemies.json", FileAccess.READ)
 	var enemies_json := JSON.new()
@@ -296,12 +298,14 @@ func _check_stormglass_level_blueprint() -> void:
 	_check("stormglass_blueprint_guardian_arenas_match", arenas_match)
 
 
-func _gallery_doors_match(rooms: Dictionary, edges: Array, expanded_campaign: bool = false, archive_wing: bool = false) -> bool:
+func _gallery_doors_match(rooms: Dictionary, edges: Array, expanded_campaign: bool = false, archive_wing: bool = false, record_halls: bool = false) -> bool:
 	var authored := ["room_000","room_001","room_002","room_003","room_004","room_005","room_006","room_007","room_040","room_041","room_042"]
 	if expanded_campaign:
 		authored.append_array(["room_043", "room_044", "room_045"])
 	if archive_wing:
 		authored.append_array(["room_046", "room_047"])
+	if record_halls:
+		authored.append_array(["room_048","room_049"])
 	var opposite := {"left":"right","right":"left","up":"down","down":"up"}
 	var expected: Dictionary = {}
 	for id in authored:

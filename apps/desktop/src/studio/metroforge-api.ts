@@ -426,7 +426,7 @@ export type MetroforgeBridge = {
     validationInvalidated?: boolean;
   }>;
   generateGame: (opts: {
-    worldLayout?: 'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region' | 'stormglass-archive-wing';
+    worldLayout?: 'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region' | 'stormglass-archive-wing' | 'stormglass-record-halls';
     title?: string;
     prompt: string;
     profile: string;

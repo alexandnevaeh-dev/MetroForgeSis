@@ -469,7 +469,7 @@ export function registerIpcHandlers(cwd: string): void {
       const appendEvent = generationEventStore.createDeferredAppender();
       let generationFailure: string | null = null;
       const payload = job.payload as {
-        worldLayout?: 'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region' | 'stormglass-archive-wing';
+        worldLayout?: 'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region' | 'stormglass-archive-wing' | 'stormglass-record-halls';
         title?: string;
         prompt: string;
         profile: GenerationProfile;
@@ -1297,7 +1297,7 @@ export function registerIpcHandlers(cwd: string): void {
     async (
       event,
       opts: {
-        worldLayout?: 'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region' | 'stormglass-archive-wing';
+        worldLayout?: 'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region' | 'stormglass-archive-wing' | 'stormglass-record-halls';
         title?: string;
         prompt: string;
         profile: GenerationProfile;

@@ -14,7 +14,7 @@ const ARCHIVE_LORE = {
 
 /** Fresh archive generation enriches existing collectibles; saved projects are never migrated. */
 export function bindStormglassArchiveLore(content: GameContent, dna: GameDNA, layout: string | undefined): GameContent {
-  if (layout !== 'stormglass-archive-wing' || dna.archetype !== 'SIDE_VIEW_METROIDVANIA') return content;
+  if (!['stormglass-archive-wing','stormglass-record-halls'].includes(String(layout)) || dna.archetype !== 'SIDE_VIEW_METROIDVANIA') return content;
   return { ...content, items: content.items.map(item => {
     const brief = ARCHIVE_LORE[item.id as keyof typeof ARCHIVE_LORE];
     return brief && item.category === 'collectible' ? { ...item, ...brief } : item;

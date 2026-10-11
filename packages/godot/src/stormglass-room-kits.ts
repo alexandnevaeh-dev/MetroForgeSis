@@ -120,10 +120,11 @@ export function configureStormglassGalleryRoomKits(
   )
     return false;
   const expanded = graph.nodes.some(
-    (node) => node.metadata.stormglassRegionProfile !== undefined && ['expanded-region','archive-wing'].includes(String(node.metadata.stormglassRegionProfile)),
+    (node) => node.metadata.stormglassRegionProfile !== undefined && ['expanded-region','archive-wing','record-halls'].includes(String(node.metadata.stormglassRegionProfile)),
   );
-  const archiveWing=graph.nodes.some(node=>node.metadata.stormglassRegionProfile==='archive-wing');
-  const blueprint = buildStormglassGalleryBlueprint(archiveWing ? 'archive-wing' : expanded ? 'expanded-region' : 'gallery'),
+  const archiveWing=graph.nodes.some(node=>['archive-wing','record-halls'].includes(String(node.metadata.stormglassRegionProfile)));
+  const recordHalls=graph.nodes.some(node=>node.metadata.stormglassRegionProfile==='record-halls');
+  const blueprint = buildStormglassGalleryBlueprint(recordHalls ? 'record-halls' : archiveWing ? 'archive-wing' : expanded ? 'expanded-region' : 'gallery'),
     tileSize = dna.technical.tileSize;
   if (
     !blueprint.rooms.every((room) => {
@@ -205,8 +206,15 @@ export function configureStormglassGalleryRoomKits(
       ]};
       config.rooms.room_044.archiveBays.find((bay:any)=>bay.kind==='ledger-pedestal').x=4720;
     }
+    if(recordHalls){
+      config.rooms.room_048={...structuredClone(config.rooms.room_046),archiveBays:[
+        {id:'IndexReadingDesk',kind:'scribe-desk',x:480,width:192,height:40,floorY:128},
+        {id:'IndexLedger',kind:'ledger-pedestal',x:600,width:96,height:72,floorY:128},
+      ]};
+      config.rooms.room_049={...structuredClone(config.rooms.room_005),props:[]};
+    }
     const fullCampaign =
-      campaignRooms.length === (archiveWing ? 48 : expanded ? 46 : 43) &&
+      campaignRooms.length === (recordHalls ? 50 : archiveWing ? 48 : expanded ? 46 : 43) &&
       campaignRooms.every(
         (node) => node.metadata.stormglassCampaignLayout === 'stormglass-gallery-campaign-v1',
       );

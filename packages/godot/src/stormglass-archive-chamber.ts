@@ -1,6 +1,6 @@
 import {buildStormglassGalleryStairPlatforms,buildStormglassStairFlights} from './stormglass-gallery-blueprint.js';
 /** Original chamber collision; existing earned movement, no actor or pickup grants. */
-export function buildStormglassArchiveChamber(roomId:string){
+export function buildStormglassArchiveChamber(roomId:string,profile:string='archive-wing'){
  if(roomId==='room_044'){
   const platforms=buildStormglassGalleryStairPlatforms(1536).filter(p=>p.y>=704);
   platforms.push({x:96,y:704,width:3168,height:32},{x:3392,y:704,width:1696,height:32});
@@ -11,6 +11,14 @@ export function buildStormglassArchiveChamber(roomId:string){
    platforms.push({x:toX-32,y:704-(i+1)*192,width:128,height:32});
   }
   platforms.push({x:2176,y:128,width:800,height:32});
+  if(profile==='record-halls'){
+   for(let i=0;i<3;i++){
+    const fromX=i%2===0?768:1488,toX=i%2===0?1488:768;
+    flights.push({from:{x:fromX,y:704-i*192},to:{x:toX,y:704-(i+1)*192},thickness:32});
+    platforms.push({x:toX-32,y:704-(i+1)*192,width:128,height:32});
+   }
+   platforms.push({x:736,y:128,width:800,height:32});
+  }
   // A service return joins the vault arrival to the nearby east mezzanine.
   // Keep the established 192/720 flight pitch; the lower room remains connected.
   for(let i=0;i<4;i++){
@@ -20,7 +28,7 @@ export function buildStormglassArchiveChamber(roomId:string){
   }
   return {platforms,flights,lowerFloorY:1472,mezzanineFloorY:704,lowerClearance:736,returnWell:{left:3264,right:3392}};
  }
- if(['room_046','room_047'].includes(roomId)){
+ if(['room_046','room_047','room_048'].includes(roomId)){
   const scale=1.5,well=true;
   const platforms=buildStormglassGalleryStairPlatforms(1536).map(p=>({...p,x:p.x*scale,width:p.width*scale}));
   const flights=buildStormglassStairFlights(1536,false,well).map(f=>({...f,from:{x:f.from.x*scale,y:f.from.y},to:{x:f.to.x*scale,y:f.to.y}}));
