@@ -1,4 +1,5 @@
 import { readTopDownTerrain } from './topdown-terrain.js';
+import {generateLocalAudioAlternative,readLocalAudioConfiguration,listLocalAudioAlternatives,type LocalAudioRequest} from '@metroforge/generation';
 import { manualActorReview, manualPropReview } from '@metroforge/shared';
 import {readActiveRoomKits} from './room-kit-inspector.js';
 import {readRoomFurnishingReviews} from './room-furnishing-review.js';
@@ -1409,12 +1410,14 @@ export function registerIpcHandlers(cwd: string): void {
       };
     });
 
-    const scanAudioDir = (subdir: string, category: string) => {
+    const localAudio=new Map(listLocalAudioAlternatives(projectPath).map(take=>[take.path,take]));
+    const scanAudioDir = (subdir: string, category: string, alternatives=false) => {
       const dir = join(projectPath, subdir);
       if (!existsSync(dir)) return;
       for (const file of readdirSync(dir)) {
         if (!file.endsWith('.wav')) continue;
         const relPath = `${subdir}/${file}`.replace(/\\/g, '/');
+        const take=localAudio.get(relPath);if(alternatives&&!take)continue;
         if (results.some((r) => r.path === relPath)) continue;
         results.push({
           id: file.replace(/\.wav$/, ''),
@@ -1424,17 +1427,17 @@ export function registerIpcHandlers(cwd: string): void {
           manualActorReview: undefined,
           manualPropReview: undefined,
           manualArtDirection: undefined,
-          provider: undefined,
-          modelId: undefined,
+          provider: take?'local':undefined,
+          modelId: take?.model,
           fallbackGenerated: undefined,
           critiquePassed: undefined,
           critiqueScore: undefined,
-          maturity: undefined,
-          productionReady: undefined,
-          sourceType: undefined,
-          manual: undefined,
-          prompt: undefined,
-          seed: undefined,
+          maturity: take?'QA_REVIEW':undefined,
+          productionReady: take?false:undefined,
+          sourceType: take?'LOCAL_AUDIO_ALTERNATIVE':undefined,
+          manual: take?true:undefined,
+          prompt: take?.request.prompt,
+          seed: take?.request.seed,
           dataUrl: undefined,
           isAnimation: false,
           frameCount: undefined,
@@ -1443,6 +1446,8 @@ export function registerIpcHandlers(cwd: string): void {
     };
     scanAudioDir('audio/sfx', 'SFX');
     scanAudioDir('audio/music', 'Music');
+    scanAudioDir('assets/generated/audio/sfx','SFX',true);
+    scanAudioDir('assets/generated/audio/music','Music',true);
 
     return results;
   });
@@ -1902,6 +1907,12 @@ export function registerIpcHandlers(cwd: string): void {
     };
   });
 
+  ipcMain.handle('local-audio-status', (event) => { checkCredentialSender(event); return readLocalAudioConfiguration(); });
+  ipcMain.handle('generate-local-audio', async (event, projectPath: string, request: LocalAudioRequest) => {
+    checkCredentialSender(event);
+    assertProjectPath(projectPath, cwd);
+    return generateLocalAudioAlternative(projectPath, request);
+  });
   ipcMain.handle('get-audio-preview', async (_event, projectPath: string, relPath: string) => {
     assertProjectPath(projectPath, cwd);
     const full = safeProjectRelativePath(projectPath, relPath);

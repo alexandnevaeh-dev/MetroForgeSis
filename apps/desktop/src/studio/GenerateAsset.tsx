@@ -6,10 +6,11 @@ import { ProjectSelect } from './ProjectSelect.js';
 import { NoProjectHint } from './NoProjectHint.js';
 import { useStudio } from './StudioContext.js';
 import { GENERATION_MODES } from './generation-options.js';
-import { Button, Checkbox, Input, Select, TextArea } from './ui/index.js';
+import { Button, Checkbox, Input, Select, TextArea, Tabs } from './ui/index.js';
 import type { GenerateAssetResponse, GenerateAssetVariantResult } from './metroforge-api.js';
 import {LocalImageModelPreparation} from './LocalImageModelPreparation.js';
 import {MaterialColorEditor} from './MaterialColorEditor.js';
+import {LocalAudioWorkshop} from './LocalAudioWorkshop.js';
 
 const ASSET_TYPES = [
   ['character_concept', 'Character concept'],
@@ -35,15 +36,20 @@ function variantsFrom(response: GenerateAssetResponse): GenerateAssetVariantResu
 
 export function GenerateAssetScreen() {
   const { selectedPath, hasActiveProject } = useStudio();
+  const [workshop,setWorkshop]=useState('artwork');
   return (
     <section className="workspace-screen generate-asset-screen">
       <ScreenHeader
         eyebrow="Library"
         title="Asset workshop"
-        description="Create artwork in your game's style. Compare alternatives, inspect usage, and restore previous versions."
+        description="Create artwork and audio in your game's style. Compare alternatives, inspect usage, and restore previous versions."
       />
       <NoProjectHint />
-      {hasActiveProject && <GenerateAssetWorkspace key={selectedPath} projectPath={selectedPath} />}
+      {hasActiveProject && <>
+        <Tabs items={[{id:'artwork',label:'Artwork'},{id:'audio',label:'Audio'}]} value={workshop} onChange={setWorkshop}/>
+        <div className="generate-asset-view" hidden={workshop!=='artwork'}><GenerateAssetWorkspace key={selectedPath} projectPath={selectedPath}/></div>
+        <div className="generate-asset-view local-audio-view" hidden={workshop!=='audio'}><LocalAudioWorkshop key={'audio-'+selectedPath} projectPath={selectedPath}/></div>
+      </>}
     </section>
   );
 }

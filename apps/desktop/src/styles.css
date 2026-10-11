@@ -936,6 +936,7 @@ textarea {
 }
 
 .asset-card img,
+.asset-animation-thumbnail,
 .detail-preview {
   display: block;
   width: 100%;
@@ -944,6 +945,10 @@ textarea {
   image-rendering: pixelated;
   background: var(--bg-root);
 }
+
+.asset-animation-thumbnail { display: grid; place-items: center; font-size: 11px; color: var(--text-muted); }
+.asset-animation-thumbnail canvas { max-width: 100%; max-height: 108px; image-rendering: pixelated; }
+.asset-animation-thumbnail canvas[hidden] { display: none; }
 
 .detail-preview {
   height: 180px;
@@ -2006,6 +2011,7 @@ textarea {
 
 .anim-viewport {
   width: min(100%, 320px);
+  height: 240px;
   overflow: hidden;
   background: var(--bg-root);
 }
@@ -3310,6 +3316,9 @@ textarea {
   gap: 0.55rem;
   min-height: calc(100vh - 11rem);
 }
+.generate-asset-view { flex: 1 0 auto; min-width: 0; }
+.generate-asset-view[hidden] { display: none; }
+.local-audio-view { max-width: 760px; }
 .generate-asset-layout > .panel {
   min-width: 0;
 }
@@ -3480,10 +3489,13 @@ textarea {
   height: 100%;
   overflow: hidden;
   display: flex;
+  flex-direction: column;
   align-items: stretch;
 }
 
 .map-preview-fit .map-preview {
+  flex: 1;
+  min-height: 0;
   width: 100%;
   height: 100%;
   display: block;
@@ -3843,6 +3855,7 @@ select {
 .map-sparse-note {
   margin: 0.35rem 0.5rem 0;
   flex-shrink: 0;
+  overflow-wrap: anywhere;
 }
 
 .editor-tool-btn {

@@ -472,6 +472,8 @@ export type MetroforgeBridge = {
     biomeId: string,
   ) => Promise<{ dataUrl?: string; cells?: unknown; atlasSize?: number; tileSize?: number; roles?: Record<string,[number,number]> }>;
   getAudioPreview: (projectPath: string, relPath: string) => Promise<{ dataUrl?: string }>;
+  getLocalAudioStatus: () => Promise<{musicConfigured:boolean;sfxConfigured:boolean;busy:boolean}>;
+  generateLocalAudio: (projectPath:string,request:import('@metroforge/generation').LocalAudioRequest) => Promise<import('@metroforge/generation').LocalAudioAlternative>;
   generateAsset: (request: {
     referenceMode?: 'ip_adapter' | 'img2img';
     referenceStrength?: number;

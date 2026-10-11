@@ -167,3 +167,5 @@ export { readMaterialArtwork, previewMaterialArtwork, applyMaterialArtwork } fro
 
 export {readArchiveFurnishingReview} from './archive-furnishing-review.js';
 export type {ArchiveFurnishingReview,ArchiveFurnishingReviewRow} from './archive-furnishing-review.js';
+export {generateLocalAudioAlternative,readLocalAudioConfiguration,listLocalAudioAlternatives} from './local-audio-authoring.js';
+export type {LocalAudioRequest,LocalAudioAlternative} from './local-audio-authoring.js';

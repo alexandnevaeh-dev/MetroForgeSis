@@ -81,6 +81,8 @@ contextBridge.exposeInMainWorld('metroforge', {
     ipcRenderer.invoke('get-tileset-preview', projectPath, biomeId),
   getAudioPreview: (projectPath: string, relPath: string) =>
     ipcRenderer.invoke('get-audio-preview', projectPath, relPath),
+  getLocalAudioStatus: () => ipcRenderer.invoke('local-audio-status'),
+  generateLocalAudio: (projectPath: string, request: import('@metroforge/generation').LocalAudioRequest) => ipcRenderer.invoke('generate-local-audio', projectPath, request),
   generateAsset: (request: Record<string, unknown>) => ipcRenderer.invoke('generate-asset', request),
   getManualArtDirection: (projectPath: string) => ipcRenderer.invoke('get-manual-art-direction', projectPath),
   getManualStyleAdapters: (projectPath: string) => ipcRenderer.invoke('get-manual-style-adapters', projectPath),
