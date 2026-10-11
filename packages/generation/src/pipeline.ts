@@ -940,6 +940,7 @@ export class GenerationPipeline {
       profile: options.profile,
       seed: options.seed,
       outputDir: outputPath,
+      enemies: gameContent.enemies.map(({id,name,movement,combat})=>({id,name,movement,combat})),
       bosses: gameContent.bosses.map((b) => ({
         id: b.id,
         name: b.name,
@@ -1113,6 +1114,7 @@ export class GenerationPipeline {
       type: 'texture' as const,
       provider: a.provider,
       modelId: a.modelId,
+      executionMetadata: a.executionMetadata?.enemyVisualIdentity ? {enemyVisualIdentity:a.executionMetadata.enemyVisualIdentity} : undefined,
       fallbackGenerated: a.fallbackGenerated,
       critiquePassed: a.critiquePassed,
       critiqueScore: a.critiqueScore,

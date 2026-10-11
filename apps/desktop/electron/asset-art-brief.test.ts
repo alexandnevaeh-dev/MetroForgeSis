@@ -1,0 +1,6 @@
+import {it,expect} from 'vitest';import {assetArtBrief} from './asset-art-brief.js';
+const artifact={id:'enemy_007',executionMetadata:{enemyVisualIdentity:{id:'enemy_007',subject:'One folio caster holding a brown book.'}}};
+it('keeps authored text and intentional empty prompts ahead of a generated plan',()=>{expect(assetArtBrief({...artifact,prompt:'My original actor brief'})).toBe('My original actor brief');expect(assetArtBrief({...artifact,prompt:''})).toBe('');});
+it('returns the exact saved brief for the same registered asset',()=>{expect(assetArtBrief(artifact)).toBe('One folio caster holding a brown book.');});
+it('does not borrow another asset identity or malformed metadata',()=>{for(const value of [{...artifact,id:'another_actor'},{id:'enemy_007',executionMetadata:null},{id:'enemy_007',executionMetadata:{enemyVisualIdentity:['not a plan']}},{id:'enemy_007',executionMetadata:{enemyVisualIdentity:{id:'enemy_007',subject:42}}}])expect(assetArtBrief(value)).toBeUndefined();});
+it('keeps blank or oversized generated briefs out of the workshop',()=>{for(const subject of ['   ','x'.repeat(8001)])expect(assetArtBrief({id:'enemy_007',executionMetadata:{enemyVisualIdentity:{id:'enemy_007',subject}}})).toBeUndefined();});

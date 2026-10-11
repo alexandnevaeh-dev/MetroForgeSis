@@ -40,7 +40,6 @@ import {
   knockoutVfxBackground,
   decodePngRgba,
   generatePoseStill,
-  pickEnemyArchetype,
   computeFrameQualityMetrics,
   generateProgressionSheet,
   type SpriteSpec,
@@ -96,6 +95,7 @@ import {
   missingRequiredTileRoles,
 } from './tile-roles.js';
 import { createHash } from 'node:crypto';
+import {enemyVisualPlan,type EnemyVisualDefinition} from './enemy-visual-plan.js';
 import { manualReferenceOptions, type ManualReferenceMode } from './manual-reference.js';
 import type { ImageGenerationProfile } from './types/vision.js';
 import type { ImageGenerator, ImageConditioning } from './types/image-gen.js';
@@ -315,6 +315,8 @@ export interface AssetPipelineOptions {
   profile: GenerationProfile;
   seed: number;
   outputDir: string;
+  /** Existing gameplay identities, in author order. Omission retains legacy slot-based artwork. */
+  enemies?: readonly EnemyVisualDefinition[];
   artBible?: ArtBible;
   /** Compact visual spec derived from ArtBible — prepended to image prompts when present. */
   styleBible?: StyleBible;
@@ -1187,6 +1189,8 @@ export class AssetPipeline {
   }
 
   async generate(options: AssetPipelineOptions): Promise<AssetPipelineResult> {
+    const enemyDefinitions=options.enemies;
+    if(enemyDefinitions){const ids=new Set<string>();for(const enemy of enemyDefinitions){if(!/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/.test(enemy.id)||ids.has(enemy.id))throw Error('Enemy artwork identities must be unique safe asset IDs');ids.add(enemy.id);}}
     const assets: GeneratedAsset[] = [];
     const warnings: string[] = [];
     let fakeAnimationDetected = false;
@@ -1721,14 +1725,17 @@ export class AssetPipeline {
     }
 
     }
-    for (let i = 0; i < defaults.enemies; i++) {
+    const enemyCount=enemyDefinitions?.length??defaults.enemies;
+    for (let i = 0; i < enemyCount; i++) {
       checkCancelled();
-      const enemyId = `enemy_${i.toString().padStart(3, '0')}`;
+      const definition=enemyDefinitions?.[i];
+      const enemyId = definition?.id??`enemy_${i.toString().padStart(3, '0')}`;
       if(useCanopyActors) {
         recordAsset(materializeCanopyActor(enemyId,i%7===1?'ranged':'melee','enemies'),'enemy');
         continue;
       }
-      const archetype = pickEnemyArchetype(enemyId);
+      const plan=enemyVisualPlan(enemyId,definition,options.gameDna.archetype==='SIDE_VIEW_METROIDVANIA'||options.gameDna.archetype==='SIDE_VIEW_PLATFORMER');
+      const archetype = plan.archetype;
       const visualTemplate = await resolveEnemyVisualTemplate(
         options.visualReferenceLibrary,
         archetype,
@@ -1755,8 +1762,8 @@ export class AssetPipeline {
       options.onTaskProgress?.(
         'enemy_sprite',
         i + 1,
-        defaults.enemies,
-        `Generating enemy ${i + 1} / ${defaults.enemies}`,
+        enemyCount,
+        `Generating enemy ${i + 1} / ${enemyCount}`,
       );
 
       const authoredEnemy = authoredKit
@@ -1778,7 +1785,8 @@ export class AssetPipeline {
           spec: enemySpec,
           profile: 'ENEMY',
           prompt:
-            visualTemplate?.prompt ??
+            (visualTemplate? [plan.subject,visualTemplate.prompt].filter(Boolean).join(', '):undefined) ??
+            (plan.subject? [plan.subject,applyStylePrompt(options.styleBible,'ENEMY',options.artBible?.characterGuidelines.enemy??'original game enemy')].join(', '):undefined) ??
             applyStylePrompt(
               options.styleBible,
               'ENEMY',
@@ -1789,7 +1797,7 @@ export class AssetPipeline {
           negativePrompt,
           vlm,
           vlmAvailable,
-          artDirection: options.gameDna.identity.visualStyle,
+          artDirection: [options.gameDna.identity.visualStyle,plan.subject?'Required actor identity: '+plan.subject:''].filter(Boolean).join('\n'),
           tileSize,
           seed: options.seed + i,
           outputDir: options.outputDir,
@@ -1802,6 +1810,10 @@ export class AssetPipeline {
           enemyAsset.provider,
           enemyAsset.modelId,
         );
+      if(definition&&plan.subject){
+        enemyAsset.executionMetadata={...enemyAsset.executionMetadata,enemyVisualIdentity:{id:definition.id,name:definition.name,movement:definition.movement,combatType:definition.combat.type,archetype,subject:plan.subject,reviewRequired:true}};
+        if(enemyAsset.fallbackGenerated){enemyAsset.proceduralProduction=false;enemyAsset.maturity='PLACEHOLDER';enemyAsset.productionReady=false;enemyAsset.productionAllowed=false;}
+      }
       recordAsset(enemyAsset, 'enemy');
 
       const enemySource = enemyAsset.fallbackGenerated ? undefined : enemyAsset.buffer;

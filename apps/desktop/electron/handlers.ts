@@ -18,6 +18,7 @@ import { getVersionString } from '@metroforge/core';
 import { loadConfig, resolveGeneratedGamesPath, isPathWithinRoot, type GameArchetype, parseProviderEnabledMap, isProviderEnabledSettingKey } from '@metroforge/shared';
 import { validateTextConnectionSetting, textConnectionValue } from '@metroforge/shared/provider-toggles';
 import {readValidationSnapshot} from './validation-snapshot.js';
+import {assetArtBrief} from './asset-art-brief.js';
 import {
   GenerationPipeline,
   readEditableLoot,
@@ -1399,7 +1400,7 @@ export function registerIpcHandlers(cwd: string): void {
           && typeof (artifact.manualArtDirection as Record<string, unknown>).styleDirection === 'string'
           && typeof (artifact.manualArtDirection as Record<string, unknown>).negativePrompt === 'string'
           ? artifact.manualArtDirection as {styleDirection: string; negativePrompt: string} : undefined,
-        prompt: artifact.prompt as string | undefined,
+        prompt: assetArtBrief(artifact),
         seed: artifact.seed as number | undefined,
         dataUrl: loadAssetThumbnail(projectPath, path),
         ...resolveAssetAnimation(path, { ...artifact, ...meta }, (sidecarPath) =>
