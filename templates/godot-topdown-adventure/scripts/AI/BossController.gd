@@ -31,6 +31,8 @@ var _telegraph_active: bool = false
 var _planned_attack: String = ""
 var _planned_direction := Vector2.RIGHT
 var _warning_line: Line2D
+var _exiting := false
+var _owned_waits: Array[Timer] = []
 ## Real generated tags (content.ts currently only ever produces "dash_through") — previously
 ## generated and stored but never read by anything at runtime.
 var _weaknesses: Array = []
@@ -100,14 +102,14 @@ func _set_telegraph_visual(active: bool) -> void:
 func _start_attack_loop() -> void:
 	# Opening beat before the first telegraph — uses phase-1 recovery so larger profiles feel
 	# less oppressive on spawn while still honoring generated pacing data.
-	await get_tree().create_timer(_get_phase_recovery()).timeout
+	if not await _wait_owned(_get_phase_recovery()): return
 	while is_inside_tree() and health.is_alive():
 		var attacks: Array = _phase_attacks[_phase-1] if _phase-1<_phase_attacks.size() else ["slam"]
 		_planned_attack = String(attacks.pick_random()) if not attacks.is_empty() else "slam"
 		var player := get_tree().get_first_node_in_group("player") as Node2D
 		if player: _planned_direction = (player.global_position-global_position).normalized()
 		_set_telegraph_visual(true)
-		await get_tree().create_timer(_get_phase_telegraph()).timeout
+		if not await _wait_owned(_get_phase_telegraph()): return
 		_set_telegraph_visual(false)
 		if not health.is_alive():
 			break
@@ -117,7 +119,30 @@ func _start_attack_loop() -> void:
 		_attack_busy = false
 		if not health.is_alive():
 			break
-		await get_tree().create_timer(_get_phase_recovery()).timeout
+		if not await _wait_owned(_get_phase_recovery()): return
+
+## Concurrent phase, strike and death waits each belong to this actor. Freeing the
+## actor also frees pending timers rather than leaving a referenced SceneTreeTimer.
+func _wait_owned(seconds: float) -> bool:
+	if _exiting: return false
+	var timer := Timer.new()
+	timer.one_shot = true
+	timer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(timer)
+	_owned_waits.append(timer)
+	timer.start(seconds)
+	await timer.timeout
+	_owned_waits.erase(timer)
+	timer.queue_free()
+	return not _exiting
+
+func _exit_tree() -> void:
+	_exiting = true
+	# Resume cancelled waiters so their nested function states release as well.
+	for timer in _owned_waits.duplicate():
+		if is_instance_valid(timer):
+			timer.stop()
+			timer.timeout.emit()
 
 func _apply_boss_data() -> void:
 	var data := _load_boss_definition(boss_id)
@@ -225,7 +250,7 @@ func _perform_melee_attack() -> void:
 	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("attack"):
 		sprite.play("attack")
 	attack_hitbox.activate()
-	await get_tree().create_timer(0.3).timeout
+	if not await _wait_owned(0.3): return
 	attack_hitbox.deactivate()
 
 func _fire_projectile_attack() -> void:
@@ -260,12 +285,17 @@ func _spawn_projectile(direction: Vector2) -> void:
 ## the player's real dash state rather than adding a new signal parameter to plumb the attacker
 ## through HurtboxComponent, which every other hitbox/hurtbox pair would have had to adopt too.
 func _on_hit_received(damage: float, knockback: Vector2) -> void:
+	if health.invulnerable or not health.is_alive() or not is_finite(damage) or damage <= 0.0:
+		return
 	var final_damage := damage
 	if "dash_through" in _weaknesses:
 		var player := get_tree().get_first_node_in_group("player")
 		if player and player.get("_is_dashing") == true:
 			final_damage *= WEAKNESS_DAMAGE_MULTIPLIER
 	health.take_damage(final_damage)
+	# died emits synchronously and starts the death clip. Do not replace it with hurt.
+	if not health.is_alive():
+		return
 	velocity = knockback
 	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("hurt"):
 		sprite.play("hurt")
@@ -298,7 +328,7 @@ func _on_died() -> void:
 	# PlayerController.gd's own _on_died() history) and isn't trusted here either.
 	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("death"):
 		sprite.play("death")
-		await get_tree().create_timer(DEATH_ANIMATION_DURATION_SEC).timeout
+		if not await _wait_owned(DEATH_ANIMATION_DURATION_SEC): return
 	# Victory (EventBus.boss_defeated -> GameManager.current_state = VICTORY) intentionally waits
 	# until after the death animation has actually played, not simultaneously with it.
 	EventBus.boss_defeated.emit(boss_id)
