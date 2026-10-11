@@ -95,6 +95,8 @@ export type AssetListItem = {
 };
 
 /** Canonical IPC â†’ renderer shape for generateAsset (single or variant). No buffer. */
+export type TopDownPropAuthoring = {sourceSize:[number,number];imageSha256:string;revision:string;anchorPx:[number,number];displayScale:number;hasLayout:boolean;collisionCount:number};
+
 export type GeneratedAssetRef = {
   id?: string;
   path: string;
@@ -449,6 +451,8 @@ export type MetroforgeBridge = {
     worldGraph?: unknown;
   }>;
   listAssets: (projectPath: string) => Promise<AssetListItem[]>;
+  getTopDownPropAuthoring:(projectPath:string,assetPath:string)=>Promise<TopDownPropAuthoring>;
+  saveTopDownPropAnchor:(projectPath:string,assetPath:string,edit:import('@metroforge/generation').TopDownPropAnchor,revision:string)=>Promise<TopDownPropAuthoring & {backupId:string;existingPlacementsUnchanged:true}>;
   getAssetPreview: (projectPath: string, relPath: string) => Promise<{ dataUrl?: string }>;
   readMaterialArtwork: (projectPath: string, assetId: string) => Promise<{inspectionHash:string;sourceHash:string;imageHash:string;width:number;height:number;sourceDataUrl:string;imageDataUrl:string}>;
   previewMaterialArtwork: (projectPath: string, assetId: string, inspectionHash: string, rules: unknown) => Promise<{draftId:string;changedPixels:number;sourceDataUrl:string;imageDataUrl:string;sourceHash:string;imageHash:string}>;

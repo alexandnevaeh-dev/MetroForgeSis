@@ -3,6 +3,7 @@ import { manualActorReview } from '@metroforge/shared';
 import {readActiveRoomKits} from './room-kit-inspector.js';
 import {readRoomFurnishingReviews} from './room-furnishing-review.js';
 import { resolvePropAsset } from './prop-asset.js';
+import {readTopDownPropAuthoring,saveTopDownPropAnchor,type TopDownPropAnchor} from '@metroforge/generation';
 import { topDownRoomRecords } from './topdown-room-records.js';
 import { latestPhases } from './latest-phases.js';
 import { resolveAssetAnimation } from './asset-animation.js';
@@ -2095,6 +2096,14 @@ export function registerIpcHandlers(cwd: string): void {
     if(detectProjectEngine(projectPath)!=='unity')throw new Error('Furnishing editing requires a Unity project');
     if(!Array.isArray(edits)||edits.length>512||!Array.isArray(fingerprints)||fingerprints.length!==2||fingerprints.some(v=>typeof v!=='string'))throw new Error('Invalid furnishing edit request');
     return saveUnityFurnishingEdit(projectPath,roomId,edits,fingerprints);
+  });
+  ipcMain.handle('get-topdown-prop-authoring',(_event,projectPath:string,assetPath:string)=>{
+    assertReadableProjectPath(projectPath,cwd);
+    return readTopDownPropAuthoring(projectPath,assetPath);
+  });
+  ipcMain.handle('save-topdown-prop-anchor',(_event,projectPath:string,assetPath:string,edit:TopDownPropAnchor,revision:string)=>{
+    assertReadableProjectPath(projectPath,cwd);
+    return saveTopDownPropAnchor(projectPath,assetPath,edit,revision);
   });
   ipcMain.handle('restore-unity-room-edit',async(_event,projectPath:string,roomId:string,backupId:string,fingerprints:string[])=>{
     assertReadableProjectPath(projectPath,cwd);

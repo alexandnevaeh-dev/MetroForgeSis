@@ -67,6 +67,8 @@ contextBridge.exposeInMainWorld('metroforge', {
   getProjectDashboard: (projectPath: string) => ipcRenderer.invoke('get-project-dashboard', projectPath),
   getGenerationState: (projectPath: string) => ipcRenderer.invoke('get-generation-state', projectPath),
   listAssets: (projectPath: string) => ipcRenderer.invoke('list-assets', projectPath),
+  getTopDownPropAuthoring:(projectPath:string,assetPath:string)=>ipcRenderer.invoke('get-topdown-prop-authoring',projectPath,assetPath),
+  saveTopDownPropAnchor:(projectPath:string,assetPath:string,edit:import('@metroforge/generation').TopDownPropAnchor,revision:string)=>ipcRenderer.invoke('save-topdown-prop-anchor',projectPath,assetPath,edit,revision),
   getAssetPreview: (projectPath: string, relPath: string) =>
     ipcRenderer.invoke('get-asset-preview', projectPath, relPath),
   getAssetUsages: (projectPath: string, assetId: string) =>
