@@ -449,6 +449,8 @@ export function buildGameplayPack(input: AssemblyInput): GameplayPack {
         if(size)append(`SurfaceFixture_${index}`,'legacy-fixture',asset,bay.x,bay.floorY,size.height*0.85,'floor');
       }
     }
+    room.furnishingRequests=structuredClone(requests);
+    room.furnishingSourceOmissions=structuredClone(missing);
     const furnishingLayout=placeFurnishings(room,requests);
     room.furnishings=furnishingLayout.placements;
     room.furnishingOmissions=[...missing,...furnishingLayout.omissions];

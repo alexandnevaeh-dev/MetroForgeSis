@@ -1,3 +1,4 @@
+import {UnityFurnishingEditor} from './UnityFurnishingEditor.js';
 import { useId } from 'react';
 import type { RoomFurnishingReview, RoomFurnishingEntry } from '@metroforge/engines';
 import { Badge, Select, InspectorSection } from './ui/index.js';
@@ -60,11 +61,12 @@ export function furnishingReason(reason?: string) {
 export function RoomFurnishingInspector({
   review,
   selectedKey,
-  onSelect,
+  onSelect,projectPath,roomId,geometryDirty,onDirtyChange,onSaved,
 }: {
   review: RoomFurnishingReview;
   selectedKey: string;
   onSelect: (key: string) => void;
+  projectPath?:string;roomId?:string;geometryDirty?:boolean;onDirtyChange?:(dirty:boolean)=>void;onSaved?:()=>void;
 }) {
   const controlId = useId(),
     choices = furnishingChoices(review);
@@ -165,11 +167,11 @@ export function RoomFurnishingInspector({
             </>
           )}
           <p className="hint">
-            Dashed outlines are inspection guides, not platforms. This view does not move props,
-            alter geometry or replace atlas files.
+            Dashed outlines are inspection guides, not platforms. Placement saves preserve source artwork and collision. Unsupported requests remain omitted.
           </p>
         </>
       )}
+      {projectPath&&roomId&&onDirtyChange&&onSaved&&<UnityFurnishingEditor key={JSON.stringify([projectPath,roomId])} projectPath={projectPath} roomId={roomId} selectedId={entry?.id} geometryDirty={!!geometryDirty} revision={review.revision} onDirtyChange={onDirtyChange} onSaved={onSaved}/>}
     </InspectorSection>
   );
 }

@@ -120,6 +120,9 @@ export function RoomEditor() {
   const [selectedRoomId, setSelectedRoomId] = useState('');
   const [query, setQuery] = useState('');
   const [selectedFurnishingKey,setSelectedFurnishingKey]=useState('');
+  const [geometryDirty,setGeometryDirty]=useState(false);
+  const [furnishingDirty,setFurnishingDirty]=useState(false);
+  const furnishingSelection=useRef<string>();
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewModeId>('visual');
@@ -207,9 +210,10 @@ export function RoomEditor() {
     if (selected?.editingMode === 'topdown' && viewMode !== 'visual' && viewMode !== 'debug') setViewMode('visual');
   }, [selected?.editingMode, viewMode]);
   useEffect(() => { setSelectedPropId(''); }, [selectedPath, selected?.id]);
-  useEffect(()=>{setSelectedFurnishingKey('');},[selectedPath,selected?.id]);
+  useEffect(()=>{setSelectedFurnishingKey('');furnishingSelection.current=undefined;},[selectedPath,selected?.id]);
   const furnishingItems=furnishingChoices(selected?.nativeFurnishingReview);
-  const activeFurnishing=furnishingItems.find(c=>c.key===selectedFurnishingKey)?.entry??furnishingItems[0]?.entry;
+  const activeFurnishingChoice=furnishingItems.find(c=>c.key===selectedFurnishingKey)??furnishingItems.find(c=>c.entry.id===furnishingSelection.current)??furnishingItems[0];
+  const activeFurnishing=activeFurnishingChoice?.entry;
   const activePropId = selected?.propPlacements?.some(prop => prop.id === selectedPropId) ? selectedPropId : selected?.propPlacements?.[0]?.id;
   const activeBackground = castleBackground?.projectPath === selectedPath && castleBackground.biomeId === selected?.biomeId ? castleBackground : null;
   const hasGeometry = selected ? roomHasGeometry(selected, collision) : false;
@@ -500,7 +504,7 @@ export function RoomEditor() {
               ) : selected.editingMode === 'topdown' ? (
                 <TopDownPropViewport key={`${selectedPath}:${selected.id}`} projectPath={selectedPath} areaId={selected.id} terrainBrush={paintTool==='select'?undefined:paintTool==='erase'?0:terrainMaterial} onPaint={terrainTiles=>{void runRoomAction(()=>window.metroforge!.updateRoom(selectedPath,{roomId:selected.id,terrainTiles}));}} tiles={selected.tiles} tileSize={tileSize} width={selected.width ?? 0} height={selected.height ?? 0} props={selected.propPlacements} zoom={zoom} fit={fitRoom} selectedId={activePropId} onSelect={setSelectedPropId} busy={isSaving} onMove={(id,x,y) => { void runRoomAction(() => window.metroforge!.updateRoom(selectedPath, {roomId:selected.id,propPlacements:(selected.propPlacements ?? []).map(prop => prop.id===id ? {...prop,x,y} : prop)})); }} />
               ) : viewMode === 'visual' && selectedProject?.engine === 'unity' ? (
-                <UnityRoomGeometry key={`${selectedPath}:${selected.id}`} projectPath={selectedPath} roomId={selected.id} width={selected.width ?? 800} height={selected.height ?? 600} zoom={zoom} gridSnap={gridSnap} tileSize={tileSize} furnishing={activeFurnishing} castleMasonry={selected.nativeFurnishingReview?.material==='stormglass-masonry-v1'} />
+                <UnityRoomGeometry key={`${selectedPath}:${selected.id}`} projectPath={selectedPath} roomId={selected.id} width={selected.width ?? 800} height={selected.height ?? 600} zoom={zoom} gridSnap={gridSnap} tileSize={tileSize} furnishing={activeFurnishing} onDirtyChange={setGeometryDirty} externalDraftDirty={furnishingDirty} geometryRevision={selected.nativeFurnishingReview?.revision} onSaved={()=>{void loadRooms(selectedPath);}} castleMasonry={selected.nativeFurnishingReview?.material==='stormglass-masonry-v1'} />
               ) : viewMode === 'visual' ? (
                   <TilePaintEditor
                     key={`${selectedPath}:${selected.id}`}
@@ -616,7 +620,7 @@ export function RoomEditor() {
                       <p className="hint">The canvas shows built geometry. Play Preview shows this room’s architecture, decorations, and lighting.</p>
                     </InspectorSection>
                   ) : <BiomeBackgroundEditor key={JSON.stringify([selectedPath, selected.biomeId])} projectPath={selectedPath} biomeId={selected.biomeId ?? "biome_0"} onPreview={setCastleBackground} />}
-                  {selected.nativeFurnishingReview&&<RoomFurnishingInspector review={selected.nativeFurnishingReview} selectedKey={selectedFurnishingKey} onSelect={setSelectedFurnishingKey}/> }
+                  {selected.nativeFurnishingReview&&<RoomFurnishingInspector review={selected.nativeFurnishingReview} selectedKey={activeFurnishingChoice?.key??''} projectPath={selectedPath} roomId={selected.id} geometryDirty={geometryDirty} onDirtyChange={setFurnishingDirty} onSaved={()=>{void loadRooms(selectedPath);}} onSelect={key=>{furnishingSelection.current=furnishingItems.find(c=>c.key===key)?.entry.id;setSelectedFurnishingKey(key);}}/> }
                   <InspectorSection title="Room">
                     <dl className="settings-dl">
                       <dt>Name</dt>

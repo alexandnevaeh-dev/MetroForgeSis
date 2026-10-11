@@ -9,7 +9,7 @@ export { writeSharedProjectData } from './shared-data.js';
 export { LiveEditSession } from './live-edit-session.js';
 export type { EditableObject, EditableValue, LiveEditOperation, LiveEditTransaction, LiveEditReceipt } from './live-edit-session.js';
 export { roomSolidObjects, withRoomSolids } from './room-solid-edit.js';
-export { readUnityRoomEdit, saveUnityRoomEdit } from './unity-room-edit-store.js';
+export { readUnityRoomEdit, saveUnityRoomEdit,saveUnityFurnishingEdit,restoreUnityRoomEdit } from './unity-room-edit-store.js';
 export { rollLoot, type LootDrop } from './loot.js';
 
 export type { UnityBackgroundFraming, UnityEnemyTiming } from './unity-room-edit-store.js';
@@ -17,3 +17,5 @@ export { parseTerrainPresentation } from './terrain-presentation.js';
 export type { TerrainPresentation } from './terrain-presentation.js';
 
 export {prepareNativeRoomKits} from './prepare-native-room-kit.js';
+
+export type {UnityFurnishingEdit} from './furnishing-edit.js';

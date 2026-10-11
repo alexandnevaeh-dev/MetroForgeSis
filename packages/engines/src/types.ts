@@ -1,5 +1,5 @@
 /** Engine-neutral playable IR. Coordinates are Godot 2D pixels (origin top-left, +Y down). */
-import type {FurnishingPlacement,FurnishingOmission} from './furnishing-layout.js';
+import type {FurnishingPlacement,FurnishingOmission,FurnishingRequest} from './furnishing-layout.js';
 import type { Dialogue } from '@metroforge/schemas';
 
 export interface RoomFurnishingFootprint {x:number;floorY:number;width:number;height:number}
@@ -26,6 +26,8 @@ export interface GameplayNpc {
 }
 
 export interface GameplayRect {
+  /** Stable studio identity; ignored by native collision behavior. */
+  editorId?: string;
   /** Jump-through ledge; omitted retains legacy solid collision. */
   oneWay?: boolean;
   name?: string;
@@ -124,6 +126,8 @@ export interface GameplayRoom {
   /** Explicit authored material, independent of background plate availability. */
   terrainMaterial?: 'stormglass-masonry-v1';
   kitBackdropTint?: number[];
+  furnishingRequests?: FurnishingRequest[];
+  furnishingSourceOmissions?: FurnishingOmission[];
   furnishings?: FurnishingPlacement[];
   furnishingOmissions?: FurnishingOmission[];
   stairFlights?: { from: {x:number;y:number}; to: {x:number;y:number}; thickness: number; oneWay: boolean }[];

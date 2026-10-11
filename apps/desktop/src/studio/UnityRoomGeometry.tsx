@@ -14,7 +14,7 @@ const protectRoomDrafts=(event:BeforeUnloadEvent)=>{
  }
 };
 if(typeof window!=='undefined')window.addEventListener('beforeunload',protectRoomDrafts);
-export function UnityRoomGeometry({projectPath,roomId,width,height,zoom=100,gridSnap=false,tileSize=16,furnishing,castleMasonry=false}: {projectPath:string;roomId:string;width:number;height:number;zoom?:number;gridSnap?:boolean;tileSize?:number;furnishing?:RoomFurnishingEntry;castleMasonry?:boolean}) {
+export function UnityRoomGeometry({projectPath,roomId,width,height,zoom=100,gridSnap=false,tileSize=16,furnishing,castleMasonry=false,onDirtyChange,onSaved,externalDraftDirty=false,geometryRevision}: {projectPath:string;roomId:string;width:number;height:number;zoom?:number;gridSnap?:boolean;tileSize?:number;furnishing?:RoomFurnishingEntry;castleMasonry?:boolean;onDirtyChange?:(dirty:boolean)=>void;onSaved?:()=>void;externalDraftDirty?:boolean;geometryRevision?:string}) {
  const fieldId=useId();
  const scale=Number.isFinite(zoom)?Math.max(0.25,Math.min(4,zoom/100)):1;
  const snapStep=gridSnap&&Number.isFinite(tileSize)&&tileSize>0?tileSize:1;
@@ -52,13 +52,24 @@ export function UnityRoomGeometry({projectPath,roomId,width,height,zoom=100,grid
   return()=>{alive=false;};
  },[projectPath,draft?.farBackground,castleMasonry]);
  const state=draft?.session.snapshot();
+ useEffect(()=>{onDirtyChange?.(!!state?.dirty);return()=>onDirtyChange?.(false);},[state?.dirty,onDirtyChange]);
  const solids=state?.objects.filter(o=>o.id!==framingId&&o.id!==timingId);
  const framing=state?.objects.find(o=>o.id===framingId);
  const timing=state?.objects.find(o=>o.id===timingId);
  const object=solids?.find(o=>o.id===selected);
+ useEffect(()=>{let active=true;if(!draft||draft.session.snapshot().dirty)return;
+  void window.metroforge!.readUnityRoomEdit(projectPath,roomId).then(data=>{
+   if(!active||draft.session.snapshot().dirty)return;
+   const expected=[...data.objects,{id:framingId,roomId,x:0,y:0,properties:{...data.backgroundFraming}},...(data.enemyTiming?[{id:timingId,roomId,x:0,y:0,properties:{...data.enemyTiming}}]:[])];
+   if(JSON.stringify(expected)===JSON.stringify(draft.session.snapshot().objects))draft.fingerprints=data.fingerprints;
+   else setNotice('Saved room geometry changed. Reload saved room before editing.');
+  }).catch(()=>{if(active)setNotice('Saved room data could not be refreshed. Reload before saving geometry.');});
+  return()=>{active=false;};
+ },[geometryRevision,key,draft,projectPath,roomId,framingId,timingId]);
+
  const token=()=>({projectId:projectPath,sessionId:draft!.session.sessionId,baseRevision:draft!.session.snapshot().revision});
- const edit=(operations:LiveEditOperation[])=>{if(!draft||saving)return;try{draft.session.commit({...token(),operations});setError('');setNotice('');refresh(n=>n+1);}catch(e){setError(String(e));}};
- const history=(redo:boolean)=>{if(!draft)return;try{if(redo)draft.session.redo(token());else draft.session.undo(token());refresh(n=>n+1);setNotice('');}catch(e){setError(String(e));}};
+ const edit=(operations:LiveEditOperation[])=>{if(!draft||saving||externalDraftDirty)return;try{draft.session.commit({...token(),operations});setError('');setNotice('');refresh(n=>n+1);}catch(e){setError(String(e));}};
+ const history=(redo:boolean)=>{if(!draft||externalDraftDirty)return;try{if(redo)draft.session.redo(token());else draft.session.undo(token());refresh(n=>n+1);setNotice('');}catch(e){setError(String(e));}};
  const reload=async()=>{
   setSaving(true);setError('');setNotice('');
   try{
@@ -67,23 +78,24 @@ export function UnityRoomGeometry({projectPath,roomId,width,height,zoom=100,grid
    drafts.set(key,next);setDraft(next);setSelected('');cancelDrag();setNotice('Reloaded saved room. Previous draft and undo history discarded.');
   }catch(e){setError(String(e));}finally{setSaving(false);}
  };
- const save=async()=>{if(!draft||!state)return;setSaving(true);setError('');try{const result=await window.metroforge!.saveUnityRoomEdit(projectPath,roomId,solids!,draft.fingerprints,{farCameraRelative:framing?.properties.farCameraRelative===true,farParallax:Number(framing?.properties.farParallax??0.1)},timing?{attackWindupSeconds:Number(timing.properties.attackWindupSeconds),attackRecoverySeconds:Number(timing.properties.attackRecoverySeconds),attackCooldownSeconds:Number(timing.properties.attackCooldownSeconds)}:undefined);draft.fingerprints=result.fingerprints;draft.session.markSaved(state.revision);setNotice('Saved. Restart the Unity game to apply room changes.');refresh(n=>n+1);}catch(e){setError(String(e));}finally{setSaving(false);}};
+ const save=async()=>{if(!draft||!state||externalDraftDirty)return;setSaving(true);setError('');try{const result=await window.metroforge!.saveUnityRoomEdit(projectPath,roomId,solids!,draft.fingerprints,{farCameraRelative:framing?.properties.farCameraRelative===true,farParallax:Number(framing?.properties.farParallax??0.1)},timing?{attackWindupSeconds:Number(timing.properties.attackWindupSeconds),attackRecoverySeconds:Number(timing.properties.attackRecoverySeconds),attackCooldownSeconds:Number(timing.properties.attackCooldownSeconds)}:undefined);draft.fingerprints=result.fingerprints;draft.session.markSaved(state.revision);setNotice('Saved. Restart the Unity game to apply room changes.');refresh(n=>n+1);onSaved?.();}catch(e){setError(String(e));}finally{setSaving(false);}};
  return <div className="unity-room-geometry">
+  {externalDraftDirty&&<p className="hint">Save or discard the furnishing draft before changing geometry.</p>}
   <div className="row">
-   <Button disabled={!draft||saving} onClick={()=>{const id=crypto.randomUUID();edit([{type:'add',object:{id,roomId,x:Math.round(width/2),y:Math.round(height/2),properties:{width:80,height:16,name:'Platform'}}}]);setSelected(id);}}>Add platform</Button>
-   <Button disabled={!object||saving} onClick={()=>edit([{type:'remove',objectId:selected}])}>Remove solid</Button>
-   <Button disabled={!state?.canUndo||saving} onClick={()=>history(false)}>Undo room edit</Button>
-   <Button disabled={!state?.canRedo||saving} onClick={()=>history(true)}>Redo room edit</Button>
-   <Button disabled={!state?.dirty||saving} onClick={()=>void save()}>{saving?'Saving…':'Save room'}</Button>
-   <Button disabled={saving} onClick={()=>void reload()}>{state?.dirty?'Discard draft and reload room':'Reload saved room'}</Button>
+   <Button disabled={!draft||saving||externalDraftDirty} onClick={()=>{const id=crypto.randomUUID();edit([{type:'add',object:{id,roomId,x:Math.round(width/2),y:Math.round(height/2),properties:{width:80,height:16,name:'Platform'}}}]);setSelected(id);}}>Add platform</Button>
+   <Button disabled={!object||saving||externalDraftDirty} onClick={()=>edit([{type:'remove',objectId:selected}])}>Remove solid</Button>
+   <Button disabled={!state?.canUndo||saving||externalDraftDirty} onClick={()=>history(false)}>Undo room edit</Button>
+   <Button disabled={!state?.canRedo||saving||externalDraftDirty} onClick={()=>history(true)}>Redo room edit</Button>
+   <Button disabled={!state?.dirty||saving||externalDraftDirty} onClick={()=>void save()}>{saving?'Saving…':'Save room'}</Button>
+   <Button disabled={saving||externalDraftDirty} onClick={()=>void reload()}>{state?.dirty?'Discard draft and reload room':'Reload saved room'}</Button>
   </div>
   <p className="hint">{state?.dirty?'Unsaved room changes · retained while switching rooms.':'Unity room geometry'} · Drag a solid to move it, or edit its position and size below. Escape cancels a drag. Runtime restart required.</p>
   {error&&<p role="alert">{error}</p>}{notice&&<p role="status">{notice}</p>}
-  {timing&&<details className="room-background-disclosure"><summary>Enemy attack timing</summary><fieldset className="enemy-timing-fields" disabled={saving}><legend>Attack durations in seconds</legend>
+  {timing&&<details className="room-background-disclosure"><summary>Enemy attack timing</summary><fieldset className="enemy-timing-fields" disabled={saving||externalDraftDirty}><legend>Attack durations in seconds</legend>
    {([['attackWindupSeconds','Attack windup'],['attackRecoverySeconds','Attack recovery'],['attackCooldownSeconds','Attack cooldown']] as const).map(([key,label])=><PropertyRow key={key} label={<label htmlFor={`${fieldId}-${key}`}>{label}</label>}><Input id={`${fieldId}-${key}`} aria-label={label} type="number" min={0.01} max={key==='attackCooldownSeconds'?60:10} step={0.01} value={Number(timing.properties[key])} onChange={e=>{const value=e.currentTarget.valueAsNumber;if(Number.isFinite(value))edit([{type:'property',objectId:timingId,key,value}]);}}/></PropertyRow>)}
    <p className="hint">Cooldown must cover windup plus recovery. Save room, then restart Unity preview to apply.</p>
   </fieldset></details>}
-  {framing&&<details className="room-background-disclosure"><summary>Distant background settings</summary><fieldset className="room-background-settings" disabled={saving}><legend>Distant background</legend><div className="room-background-fields">
+  {framing&&<details className="room-background-disclosure"><summary>Distant background settings</summary><fieldset className="room-background-settings" disabled={saving||externalDraftDirty}><legend>Distant background</legend><div className="room-background-fields">
    <label className="room-background-toggle"><Input type="checkbox" aria-label="Frame background to camera" checked={framing.properties.farCameraRelative===true} onChange={e=>edit([{type:'property',objectId:framingId,key:'farCameraRelative',value:e.target.checked}])}/>Frame background to camera</label>
    <label className="room-background-parallax">Parallax amount<Input aria-label="Background parallax" type="number" min={0} max={1} step={0.05} disabled={framing.properties.farCameraRelative!==true} value={Number(framing.properties.farParallax)} onChange={e=>{const value=e.currentTarget.valueAsNumber;if(Number.isFinite(value)&&value>=0&&value<=1)edit([{type:'property',objectId:framingId,key:'farParallax',value}]);}}/></label>
    </div><p className="hint">0 follows the camera; 1 allows the most drift. Save and restart Unity to preview the background.</p>
@@ -97,9 +109,9 @@ export function UnityRoomGeometry({projectPath,roomId,width,height,zoom=100,grid
    <rect width={width} height={height} fill="#171c24" />
    {castleMasonry&&<CastleRegionBackdrop plan={{version:1,width,height,sections:[{id:roomId,name:roomId,x:0,width,floorY:height,ceilingY:0}]}}/>}
    {!castleMasonry&&backgroundUrl&&<image data-room-background="far" href={backgroundUrl} x={-width*0.01} y={-height*0.01} width={width*1.02} height={height*1.02} preserveAspectRatio="xMidYMid slice" pointerEvents="none" />}
-   {solids?.map(o=><rect key={o.id} role="button" tabIndex={0} aria-label={`Select ${o.properties.name??'solid'} ${o.id}`} x={o.x+(drag?.id===o.id?drag.dx:0)} y={o.y+(drag?.id===o.id?drag.dy:0)} width={Number(o.properties.width)} height={Number(o.properties.height)} fill={selected===o.id?'#70b5e8':'#6a5746'} stroke={selected===o.id?'#d9f0ff':'#bd8756'} strokeWidth={2} onPointerDown={e=>{if(saving||e.button!==0)return;const svg=e.currentTarget.ownerSVGElement;if(!svg)return;const p=point(svg,e.clientX,e.clientY);if(!p)return;e.preventDefault();e.currentTarget.focus();svg.setPointerCapture(e.pointerId);setSelected(o.id);const next={id:o.id,pointerId:e.pointerId,startX:p.x,startY:p.y,x:o.x,y:o.y,dx:0,dy:0};dragRef.current=next;setDrag(next);}} onClick={()=>setSelected(o.id)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSelected(o.id);}}}/>)}
+   {solids?.map(o=><rect key={o.id} role="button" tabIndex={0} aria-label={`Select ${o.properties.name??'solid'} ${o.id}`} x={o.x+(drag?.id===o.id?drag.dx:0)} y={o.y+(drag?.id===o.id?drag.dy:0)} width={Number(o.properties.width)} height={Number(o.properties.height)} fill={selected===o.id?'#70b5e8':'#6a5746'} stroke={selected===o.id?'#d9f0ff':'#bd8756'} strokeWidth={2} onPointerDown={e=>{if(saving||externalDraftDirty||e.button!==0)return;const svg=e.currentTarget.ownerSVGElement;if(!svg)return;const p=point(svg,e.clientX,e.clientY);if(!p)return;e.preventDefault();e.currentTarget.focus();svg.setPointerCapture(e.pointerId);setSelected(o.id);const next={id:o.id,pointerId:e.pointerId,startX:p.x,startY:p.y,x:o.x,y:o.y,dx:0,dy:0};dragRef.current=next;setDrag(next);}} onClick={()=>setSelected(o.id)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSelected(o.id);}}}/>)}
    <RoomFurnishingOutline entry={furnishing}/>
   </svg>
-  {object&&<fieldset disabled={saving}><legend>Selected solid</legend><div className="row">{(['x','y','width','height'] as const).map(field=><label key={field}>{field}<input aria-label={`Solid ${field}`} type="number" value={field==='x'||field==='y'?object[field]:Number(object.properties[field])} min={field==='width'||field==='height'?1:undefined} onChange={e=>{const value=e.currentTarget.valueAsNumber;if(!Number.isFinite(value)||((field==='width'||field==='height')&&value<=0))return;edit([field==='x'||field==='y'?{type:'move',objectId:object.id,x:field==='x'?value:object.x,y:field==='y'?value:object.y}:{type:'property',objectId:object.id,key:field,value}]);}} /></label>)}</div></fieldset>}
+  {object&&<fieldset disabled={saving||externalDraftDirty}><legend>Selected solid</legend><div className="row">{(['x','y','width','height'] as const).map(field=><label key={field}>{field}<input aria-label={`Solid ${field}`} type="number" value={field==='x'||field==='y'?object[field]:Number(object.properties[field])} min={field==='width'||field==='height'?1:undefined} onChange={e=>{const value=e.currentTarget.valueAsNumber;if(!Number.isFinite(value)||((field==='width'||field==='height')&&value<=0))return;edit([field==='x'||field==='y'?{type:'move',objectId:object.id,x:field==='x'?value:object.x,y:field==='y'?value:object.y}:{type:'property',objectId:object.id,key:field,value}]);}} /></label>)}</div></fieldset>}
  </div>;
 }

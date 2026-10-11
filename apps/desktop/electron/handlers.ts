@@ -10,7 +10,7 @@ import { launchUnityPreview } from './unity-preview.js';
 import { ipcMain, shell, safeStorage, BrowserWindow } from 'electron';
 import { CredentialStore } from './credentials.js';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { detectProjectEngine, readUnityRoomEdit, saveUnityRoomEdit, type EditableObject } from '@metroforge/engines';
+import { detectProjectEngine, readUnityRoomEdit, saveUnityRoomEdit,saveUnityFurnishingEdit,restoreUnityRoomEdit, type EditableObject } from '@metroforge/engines';
 import { readdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve as resolvePath, basename, dirname } from 'node:path';
 import { getVersionString } from '@metroforge/core';
@@ -2088,6 +2088,18 @@ export function registerIpcHandlers(cwd: string): void {
         fingerprints.length !== 2 || fingerprints.some(value => typeof value !== 'string'))
       throw new Error('Invalid room edit request');
     return saveUnityRoomEdit(projectPath, roomId, objects, fingerprints, backgroundFraming, enemyTiming);
+  });
+
+  ipcMain.handle('save-unity-furnishing-edit',async(_event,projectPath:string,roomId:string,edits:import('@metroforge/engines').UnityFurnishingEdit[],fingerprints:string[])=>{
+    assertReadableProjectPath(projectPath,cwd);
+    if(detectProjectEngine(projectPath)!=='unity')throw new Error('Furnishing editing requires a Unity project');
+    if(!Array.isArray(edits)||edits.length>512||!Array.isArray(fingerprints)||fingerprints.length!==2||fingerprints.some(v=>typeof v!=='string'))throw new Error('Invalid furnishing edit request');
+    return saveUnityFurnishingEdit(projectPath,roomId,edits,fingerprints);
+  });
+  ipcMain.handle('restore-unity-room-edit',async(_event,projectPath:string,roomId:string,backupId:string,fingerprints:string[])=>{
+    assertReadableProjectPath(projectPath,cwd);
+    if(detectProjectEngine(projectPath)!=='unity'||!Array.isArray(fingerprints)||fingerprints.length!==2||fingerprints.some(v=>typeof v!=='string'))throw new Error('Invalid Unity edit history request');
+    return restoreUnityRoomEdit(projectPath,roomId,backupId,fingerprints);
   });
 
   ipcMain.handle('get-room-collision', async (_event, projectPath: string, roomId: string) => {
