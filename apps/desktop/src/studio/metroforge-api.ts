@@ -95,7 +95,7 @@ export type AssetListItem = {
 };
 
 /** Canonical IPC â†’ renderer shape for generateAsset (single or variant). No buffer. */
-export type TopDownPropAuthoring = {sourceSize:[number,number];imageSha256:string;previewDataUrl:string;revision:string;anchorPx:[number,number];displayScale:number;hasLayout:boolean;collisionCount:number};
+export type TopDownPropAuthoring = {sourceSize:[number,number];imageSha256:string;previewDataUrl:string;revision:string;anchorPx:[number,number];displayScale:number;hasLayout:boolean;collisionCount:number;collisionRectsPx:Array<{x:number;y:number;width:number;height:number}>};
 
 export type GeneratedAssetRef = {
   id?: string;

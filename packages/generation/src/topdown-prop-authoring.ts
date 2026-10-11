@@ -2,8 +2,10 @@ import {existsSync,readFileSync,realpathSync,statSync,mkdirSync,writeFileSync,re
 import {join,relative,isAbsolute} from 'node:path';
 import {createHash,randomUUID} from 'node:crypto';
 import {readTopDownPropAsset} from './topdown-prop-asset.js';
+import {validateTopDownProps} from './topdown-area-edit.js';
 
-export type TopDownPropAnchor = {anchorX:number;anchorY:number;displayScale:number;nonCollidingScenery?:boolean};
+export type TopDownPropFootprint = {x:number;y:number;width:number;height:number};
+export type TopDownPropAnchor = {anchorX:number;anchorY:number;displayScale:number;nonCollidingScenery?:boolean;collisionRectsPx?:TopDownPropFootprint[]};
 const hash=(bytes:Buffer)=>createHash('sha256').update(bytes).digest('hex');
 function context(projectPath:string,assetPath:string){
  const root=realpathSync(projectPath);
@@ -20,15 +22,17 @@ function context(projectPath:string,assetPath:string){
 }
 export function readTopDownPropAuthoring(projectPath:string,assetPath:string){
  const c=context(projectPath,assetPath);
- return {sourceSize:c.sourceSize,imageSha256:hash(c.image),previewDataUrl:'data:image/png;base64,'+c.image.toString('base64'),revision:hash(Buffer.concat([c.image,Buffer.from('\0'),c.metadata??Buffer.from('absent')])),anchorPx:(c.layout?.anchorPx??[c.sourceSize[0]/2,c.sourceSize[1]]) as [number,number],displayScale:Number(c.layout?.displayScale??1),hasLayout:!!c.layout,collisionCount:Array.isArray(c.layout?.collisionRectsPx)?c.layout.collisionRectsPx.length:0};
+ return {sourceSize:c.sourceSize,imageSha256:hash(c.image),previewDataUrl:'data:image/png;base64,'+c.image.toString('base64'),revision:hash(Buffer.concat([c.image,Buffer.from('\0'),c.metadata??Buffer.from('absent')])),anchorPx:(c.layout?.anchorPx??[c.sourceSize[0]/2,c.sourceSize[1]]) as [number,number],displayScale:Number(c.layout?.displayScale??1),hasLayout:!!c.layout,collisionCount:Array.isArray(c.layout?.collisionRectsPx)?c.layout.collisionRectsPx.length:0,collisionRectsPx:structuredClone(c.layout?.collisionRectsPx??[]) as TopDownPropFootprint[]};
 }
-/** Explicit scalar editing preserves artwork, layers, footprints and room data. */
+/** Explicit asset editing preserves artwork, layers and room instances; omitted footprints are retained. */
 export function saveTopDownPropAnchor(projectPath:string,assetPath:string,edit:TopDownPropAnchor,revision:string){
  const c=context(projectPath,assetPath),current=readTopDownPropAuthoring(projectPath,assetPath);
  if(revision!==current.revision)throw Error('Prop artwork or placement settings changed. Reload before saving.');
  if(!edit||![edit.anchorX,edit.anchorY,edit.displayScale].every(v=>typeof v==='number'&&Number.isFinite(v))||edit.anchorX<0||edit.anchorX>c.sourceSize[0]||edit.anchorY<0||edit.anchorY>c.sourceSize[1]||edit.displayScale<=0||edit.displayScale>4)throw Error('Enter an anchor inside the image and a scale greater than 0, up to 4.');
- if(!c.layout&&edit.nonCollidingScenery!==true)throw Error('Confirm this new prop is non-colliding scenery.');
- const layout={...(c.layout??{version:1,sourceSize:c.sourceSize,collisionRectsPx:[]}),anchorPx:[edit.anchorX,edit.anchorY],displayScale:edit.displayScale};
+ if(!c.layout&&edit.nonCollidingScenery!==true&&!(Array.isArray(edit.collisionRectsPx)&&edit.collisionRectsPx.length>0))throw Error('Confirm this new prop is non-colliding scenery or author its collision footprints.');
+ const layout:Record<string,unknown>={...(c.layout??{version:1,sourceSize:c.sourceSize,collisionRectsPx:[]}),anchorPx:[edit.anchorX,edit.anchorY],displayScale:edit.displayScale};
+ if(edit.collisionRectsPx!==undefined)layout.collisionRectsPx=structuredClone(edit.collisionRectsPx);
+ validateTopDownProps([{id:'authored-source',image:'res://'+assetPath,x:0,y:0,layout}]);
  const id=randomUUID();let backup=c.root;
  for(const segment of ['.metroforge','prop-layout-backups',id]){backup=join(backup,segment);if(existsSync(backup))c.inside(backup);else mkdirSync(backup);}
  writeFileSync(join(backup,'before.json'),JSON.stringify({assetPath,imageSha256:current.imageSha256,revision,absent:c.metadata===null},null,2));if(c.metadata)writeFileSync(join(backup,'layout.prop.json'),c.metadata);
