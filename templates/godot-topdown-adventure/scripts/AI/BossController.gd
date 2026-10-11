@@ -33,6 +33,7 @@ var _planned_direction := Vector2.RIGHT
 var _warning_line: Line2D
 var _exiting := false
 var _owned_waits: Array[Timer] = []
+var _pose_direction := Vector2.RIGHT
 ## Real generated tags (content.ts currently only ever produces "dash_through") — previously
 ## generated and stored but never read by anything at runtime.
 var _weaknesses: Array = []
@@ -211,18 +212,45 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 	if sprite and sprite.sprite_frames:
-		if _hurt_timer > 0.0 and sprite.sprite_frames.has_animation("hurt"):
+		var current_action := String(sprite.animation).get_slice("_", 0)
+		if _hurt_timer > 0.0 and current_action == "hurt":
 			pass
-		elif sprite.animation == "attack" and sprite.is_playing():
+		elif current_action == "attack" and sprite.is_playing():
 			pass
 		elif _telegraph_active:
-			if sprite.sprite_frames.has_animation("idle"):
-				sprite.play("idle")
+			_play_boss_pose("idle", _planned_direction)
 		else:
-			var locomotion := "idle" if velocity.length() <= 1.0 else "run" if sprite.sprite_frames.has_animation("run") else "walk"
+			var locomotion := "idle" if velocity.length() <= 1.0 else "run"
 			# Preserve the playing frame instead of restarting on every physics tick.
-			if sprite.animation != locomotion:
-				sprite.play(locomotion)
+			_play_boss_pose(locomotion, velocity)
+
+## Select only authored directions. Generic frontal artwork retains its original
+## orientation; choosing a directional strip must not mirror it a second time.
+func _play_boss_pose(action: String, direction: Vector2, restart := false) -> bool:
+	if sprite == null or sprite.sprite_frames == null: return false
+	var previous_action := String(sprite.animation).get_slice("_", 0)
+	if not restart and action in ["attack", "hurt", "death"] and previous_action == action:
+		return true
+	if not direction.is_zero_approx(): _pose_direction = direction.normalized()
+	var facings := ["E", "SE", "S", "SW", "W", "NW", "N", "NE"]
+	var facing: String = facings[posmod(int(round(_pose_direction.angle()/(PI/4.0))),8)]
+	var target: StringName = action
+	if sprite.has_method("resolve_animation"): target = sprite.call("resolve_animation",action,facing)
+	elif action == "run" and not sprite.sprite_frames.has_animation(target): target = &"walk"
+	if not sprite.sprite_frames.has_animation(target): return false
+	if String(target).ends_with("_"+facing): sprite.flip_h = false
+	if sprite.animation == target and not restart: return true
+	var phase := 0.0
+	var preserve_phase := not restart and action in ["walk", "run"] and previous_action in ["walk", "run"]
+	if preserve_phase:
+		var count := sprite.sprite_frames.get_frame_count(sprite.animation)
+		if count > 0: phase = (float(sprite.frame)+sprite.frame_progress)/float(count)
+	if restart: sprite.stop()
+	sprite.play(target)
+	if preserve_phase:
+		var position := phase*sprite.sprite_frames.get_frame_count(target)
+		sprite.set_frame_and_progress(int(position),position-floor(position))
+	return true
 
 func _perform_attack() -> void:
 	_play_attack_animation()
@@ -239,16 +267,14 @@ func _perform_attack() -> void:
 			await _perform_melee_attack()
 
 func _play_attack_animation() -> void:
-	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("attack"):
-		sprite.play("attack")
+	_play_boss_pose("attack",_planned_direction,true)
 
 func _perform_slam_attack() -> void:
 	VFXManager.play("slam_shock", global_position + Vector2(0, 24), 1.5)
 	await _perform_melee_attack()
 
 func _perform_melee_attack() -> void:
-	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("attack"):
-		sprite.play("attack")
+	_play_attack_animation()
 	attack_hitbox.activate()
 	if not await _wait_owned(0.3): return
 	attack_hitbox.deactivate()
@@ -297,8 +323,7 @@ func _on_hit_received(damage: float, knockback: Vector2) -> void:
 	if not health.is_alive():
 		return
 	velocity = knockback
-	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("hurt"):
-		sprite.play("hurt")
+	if _play_boss_pose("hurt",_pose_direction,true):
 		_hurt_timer = HURT_FLASH_DURATION
 
 func _on_health_changed(current: float, max_h: float) -> void:
@@ -326,8 +351,7 @@ func _on_died() -> void:
 	# was destroyed. Real wall-clock wait, not `await sprite.animation_finished`: that signal was
 	# already found unreliable for a death sequence in this exact codebase (see
 	# PlayerController.gd's own _on_died() history) and isn't trusted here either.
-	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("death"):
-		sprite.play("death")
+	if _play_boss_pose("death",_pose_direction,true):
 		if not await _wait_owned(DEATH_ANIMATION_DURATION_SEC): return
 	# Victory (EventBus.boss_defeated -> GameManager.current_state = VICTORY) intentionally waits
 	# until after the death animation has actually played, not simultaneously with it.
