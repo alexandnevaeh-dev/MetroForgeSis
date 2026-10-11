@@ -6,17 +6,18 @@ import { buildStormglassGalleryBlueprint } from './stormglass-gallery-blueprint.
 
 /** Bounds for original archive assemblies; they never occupy doorway thresholds.
  * Existing author-owned kit files are left alone by the admission path. */
-export function validStormglassArchiveBays(value: unknown, roomWidth: number): boolean {
+export function validStormglassArchiveBays(value: unknown, roomWidth: number, roomHeight = Infinity): boolean {
   if (!Number.isFinite(roomWidth) || roomWidth < 512 || !Array.isArray(value) || value.length > 32) return false;
   const ids = new Set<string>();
   return value.every((raw) => {
     if (!raw || typeof raw !== 'object') return false;
-    const bay = raw as { id?: unknown; kind?: unknown; x?: unknown; width?: unknown; height?: unknown };
+    const bay = raw as { id?: unknown; kind?: unknown; x?: unknown; width?: unknown; height?: unknown; floorY?: unknown };
     if (typeof bay.id !== 'string' || !/^[A-Za-z_][A-Za-z0-9_]{0,63}$/.test(bay.id) || ids.has(bay.id) ||
       !['book-recess', 'scribe-desk', 'ledger-pedestal', 'scroll-cabinet'].includes(String(bay.kind))) return false;
     if (typeof bay.x !== 'number' || typeof bay.width !== 'number' || typeof bay.height !== 'number' ||
       ![bay.x, bay.width, bay.height].every(Number.isFinite) || bay.width < 64 || bay.width > 1024 ||
       bay.height < 32 || bay.height > 384 || bay.x - bay.width / 2 < 192 || bay.x + bay.width / 2 > roomWidth - 192) return false;
+    if (bay.floorY !== undefined && (typeof bay.floorY !== "number" || !Number.isFinite(bay.floorY) || bay.floorY < 0 || bay.floorY > roomHeight)) return false;
     ids.add(bay.id);
     return true;
   });
@@ -114,7 +115,7 @@ export function configureStormglassGalleryRoomKits(
 ): boolean {
   if (
     dna.archetype !== 'SIDE_VIEW_METROIDVANIA' ||
-    !dna.identity.title.startsWith('Stormglass Reliquary')
+    !graph.nodes.some(node=>node.metadata.stormglassCampaignLayout === 'stormglass-gallery-campaign-v1' || node.metadata.stormglassRoomTheme)
   )
     return false;
   const expanded = graph.nodes.some(
@@ -192,14 +193,14 @@ export function configureStormglassGalleryRoomKits(
     }
     if(archiveWing){
       config.rooms.room_046={...structuredClone(config.rooms.room_041),props:[],archiveBays:[
-        {id:'RecordsReadingDesk',kind:'scribe-desk',x:512,width:192,height:40},
-        {id:'RecordsLedger',kind:'ledger-pedestal',x:960,width:96,height:72},
-        {id:'RecordsBookRecess',kind:'book-recess',x:1088,width:256,height:128},
+        {id:'RecordsReadingDesk',kind:'scribe-desk',x:480,width:192,height:40,floorY:128},
+        {id:'RecordsLedger',kind:'ledger-pedestal',x:600,width:96,height:72,floorY:128},
+        {id:'RecordsBookRecess',kind:'book-recess',x:320,width:256,height:96,floorY:128},
       ]};
       config.rooms.room_047={...structuredClone(config.rooms.room_041),props:[],archiveBays:[
-        {id:'VaultReadingDesk',kind:'scribe-desk',x:512,width:192,height:40},
-        {id:'VaultLedger',kind:'ledger-pedestal',x:960,width:96,height:72},
-        {id:'VaultScrollCabinet',kind:'scroll-cabinet',x:1152,width:192,height:128},
+        {id:'VaultReadingDesk',kind:'scribe-desk',x:1088,width:192,height:40},
+        {id:'VaultLedger',kind:'ledger-pedestal',x:1280,width:96,height:72},
+        {id:'VaultScrollCabinet',kind:'scroll-cabinet',x:960,width:192,height:128},
       ]};
       config.rooms.room_044.archiveBays.find((bay:any)=>bay.kind==='ledger-pedestal').x=4720;
     }
@@ -244,7 +245,7 @@ export function configureStormglassGalleryRoomKits(
       if (!Array.isArray(room.manifests) || !Array.isArray(room.props)) return false;
       if (room.archiveBays !== undefined) {
         const node = graph.nodes.find((node) => node.id === roomId);
-        if (!validStormglassArchiveBays(room.archiveBays, Number(node?.metadata.targetTileWidth) * tileSize)) return false;
+        if (!validStormglassArchiveBays(room.archiveBays, Number(node?.metadata.targetTileWidth) * tileSize, Number(node?.metadata.targetTileHeight) * tileSize)) return false;
       }
       for (const path of room.manifests) {
         const manifest = JSON.parse(readFileSync(join(outputDir, path), 'utf8'));

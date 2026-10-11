@@ -528,7 +528,7 @@ public class GameBootstrap : MonoBehaviour
                 var tPres = Time.realtimeSinceStartup;
                 BuildBackgrounds(room);
                 PlaceRoomProps(room);
-                PlaceAmbient(room);
+                if(room.kitBackdropTint == null) PlaceAmbient(room);
                 presentationMs = (Time.realtimeSinceStartup - tPres) * 1000f;
 
                 var tCol = Time.realtimeSinceStartup;
@@ -1162,6 +1162,20 @@ public class GameBootstrap : MonoBehaviour
 
     private void BuildBackgrounds(GameplayRoom room)
     {
+        if(room.kitBackdropTint != null && room.kitBackdropTint.Length == 3)
+        {
+            var backing=CastleTerrainPresentation.GetMasonry(_streamingRoot);
+            if(backing!=null)
+            {
+                var rear=new GameObject("CastleKitRearMasonry");rear.transform.SetParent(RoomParent,false);
+                rear.transform.position=Coord.FromGodot(room.width*.5f,room.height*.5f,room.height);
+                var image=rear.AddComponent<SpriteRenderer>();image.sprite=backing;image.drawMode=SpriteDrawMode.Tiled;
+                image.tileMode=SpriteTileMode.Continuous;image.size=new Vector2(room.width,room.height);image.sortingOrder=-60;
+                image.color=new Color(room.kitBackdropTint[0],room.kitBackdropTint[1],room.kitBackdropTint[2],1f);
+                return;
+            }
+        }
+
         if (!string.IsNullOrEmpty(room.backgrounds.interior))
         {
             var plate = StreamingArtCache.GetSprite(_streamingRoot, room.backgrounds.interior,
@@ -1297,7 +1311,9 @@ public class GameBootstrap : MonoBehaviour
             {
                 if(item == null || item.collision != "none" || item.width <= 0 || item.height <= 0)
                     continue;
-                var sprite = LoadStreamingSprite(item.asset, new Vector2(0.5f, 0f));
+                var sprite = item.frameRegion != null
+                    ? StreamingArtCache.GetAtlas(_streamingRoot,item.asset,new[]{item.frameRegion},FilterMode.Bilinear,1f)?[0]
+                    : LoadStreamingSprite(item.asset, new Vector2(0.5f, 0f));
                 if(sprite == null) { Debug.LogWarning("FOUNDRY_FURNISHING_OMITTED artwork-unavailable " + item.id); continue; }
                 var go = new GameObject(item.id);
                 go.transform.SetParent(RoomParent, false);
@@ -1306,6 +1322,7 @@ public class GameBootstrap : MonoBehaviour
                 var sr = go.AddComponent<SpriteRenderer>();
                 sr.sprite = sprite;
                 sr.sortingOrder = item.layer == "rear" ? -1 : 3;
+                if(item.frameRegion != null && item.layer == "rear") sr.color=new Color(.55f,.6f,.7f,1f);
                 // Furniture adds no Collider2D; reward/support collision remains separate.
                 Debug.Log("FOUNDRY_FURNISHING_PLACED " + item.id + " anchor=" + item.anchor);
             }

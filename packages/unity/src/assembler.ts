@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 import { getResourceRoot } from '@metroforge/shared';
 import type { AssemblyInput, AssemblyResult } from '@metroforge/godot';
 import {
+  prepareNativeRoomKits,
   buildGameplayPack,
   writeEngineManifest,
   writeSharedProjectData,
@@ -37,6 +38,7 @@ export class UnityProjectAssembler {
       }
 
       mkdirSync(input.outputDir, { recursive: true });
+      prepareNativeRoomKits(input,REPO_ROOT);
       const pack = buildGameplayPack(input);
       writeSharedProjectData(input, pack);
 
@@ -138,7 +140,7 @@ DefaultImporter:
         }
       }
 
-      const sharedArt = ['assets/characters', 'assets/enemies', 'assets/npcs', 'assets/backgrounds', 'assets/tilesets', 'assets/bosses', 'assets/props', 'assets/vfx', 'assets/ui'];
+      const sharedArt = ['assets/characters', 'assets/enemies', 'assets/npcs', 'assets/backgrounds', 'assets/tilesets', 'assets/bosses', 'assets/props', 'assets/vfx', 'assets/ui','assets/architecture'];
       for (const folder of sharedArt) {
         const src = join(input.outputDir, folder);
         if (!existsSync(src)) continue;

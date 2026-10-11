@@ -99,3 +99,5 @@ export { buildCastleRegionPlan, supportsCastleRegionPlan, type CastleRegionPlan 
 export { applyStormglassGalleryBlueprint } from './stormglass-gallery-graph.js';
 export { generateStormglassGalleryCampaign, applyStormglassGalleryDnaContract } from './stormglass-campaign-recipe.js';
 export {exportedStairApproaches} from './exported-stair-audit.js';
+
+export {configureStormglassGalleryRoomKits,validStormglassKitManifest} from './stormglass-room-kits.js';

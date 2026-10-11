@@ -113,6 +113,7 @@ export interface GameplayRoom {
   solids: GameplayRect[];
   /** Explicit authored material, independent of background plate availability. */
   terrainMaterial?: 'stormglass-masonry-v1';
+  kitBackdropTint?: number[];
   furnishings?: FurnishingPlacement[];
   furnishingOmissions?: FurnishingOmission[];
   stairFlights?: { from: {x:number;y:number}; to: {x:number;y:number}; thickness: number; oneWay: boolean }[];

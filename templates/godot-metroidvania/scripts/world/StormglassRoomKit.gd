@@ -125,6 +125,9 @@ func _spawn_archive_bays(bays: Array, floor_y: float) -> void:
 		var x := float(spec.get("x", NAN))
 		var width := float(spec.get("width", NAN))
 		var height := float(spec.get("height", NAN))
+		var anchor_y := float(spec.get("floorY",floor_y))
+		if not is_finite(anchor_y) or anchor_y < 0.0 or anchor_y > room_height:
+			continue
 		if kind not in ["book-recess", "scribe-desk", "ledger-pedestal", "scroll-cabinet"] or not id.is_valid_identifier():
 			continue
 		if not is_finite(x) or not is_finite(width) or not is_finite(height) or width < 64.0 or width > 1024.0 or height < 32.0 or height > 384.0:
@@ -139,16 +142,16 @@ func _spawn_archive_bays(bays: Array, floor_y: float) -> void:
 				continue
 			var bounds := Rect2(body.position-collision.shape.size*0.5, collision.shape.size)
 			if bounds.position.x < x+width*0.5 and bounds.end.x > x-width*0.5:
-				height = minf(height, floor_y-bounds.end.y-16.0)
+				height = minf(height, anchor_y-bounds.end.y-16.0)
 		if height < 32.0:
 			continue
 		var supported := true
 		for fraction in [-1.0, -0.5, 0.0, 0.5, 1.0]:
 			var sample_x := x+width*0.5*float(fraction)
-			var query := PhysicsRayQueryParameters2D.create(room.to_global(Vector2(sample_x,floor_y-8.0)),room.to_global(Vector2(sample_x,floor_y+8.0)),1)
+			var query := PhysicsRayQueryParameters2D.create(room.to_global(Vector2(sample_x,anchor_y-8.0)),room.to_global(Vector2(sample_x,anchor_y+8.0)),1)
 			query.collide_with_areas = false
 			var hit := get_world_2d().direct_space_state.intersect_ray(query)
-			if hit.is_empty() or not hit.get("collider") is StaticBody2D or absf(room.to_local(hit.position).y-floor_y)>1.0:
+			if hit.is_empty() or not hit.get("collider") is StaticBody2D or absf(room.to_local(hit.position).y-anchor_y)>1.0:
 				supported = false
 				break
 		if not supported:
@@ -156,12 +159,12 @@ func _spawn_archive_bays(bays: Array, floor_y: float) -> void:
 		var assembly := Node2D.new()
 		assembly.set_script(preload("res://scripts/world/StormglassArchiveAssembly.gd"))
 		assembly.name = id
-		assembly.position = Vector2(x,floor_y)
+		assembly.position = Vector2(x,anchor_y)
 		assembly.dimensions = Vector2(width,height)
 		assembly.kind = kind
 		assembly.z_as_relative = false
 		assembly.z_index = -20
-		assembly.set_meta("support_y",floor_y)
+		assembly.set_meta("support_y",anchor_y)
 		assembly.set_meta("support_half_width",width*0.5)
 		assembly.set_meta("chamber_name","High Scriptorium Passage")
 		assembly.set_meta("asset_role",kind)

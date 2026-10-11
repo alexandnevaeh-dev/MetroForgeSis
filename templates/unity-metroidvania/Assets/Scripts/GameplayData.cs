@@ -134,6 +134,7 @@ public class GameplayStairFlight
 public class GameplayFurnishing
 {
     public string id, role, asset, mounting, layer, anchor, collision;
+    public GameplaySpriteRegion frameRegion;
     public float x, floorY, width, height;
 }
 
@@ -149,6 +150,7 @@ public class GameplayRoom
     public float height;
     public string biomeId;
     public string terrainMaterial;
+    public float[] kitBackdropTint;
     public string archetype;
     public float tileSize;
     public float floorTop;

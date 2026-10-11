@@ -1,3 +1,4 @@
+import {readNativeRoomKit} from './native-room-kit.js';
 import {placeFurnishings,surfaceBays,type FurnishingRequest} from './furnishing-layout.js';
 import { parseTerrainPresentation } from './terrain-presentation.js';
 import { readBackgroundFraming } from './background-framing.js';
@@ -435,7 +436,10 @@ export function buildGameplayPack(input: AssemblyInput): GameplayPack {
       if(!size){missing.push({id,reason:'artwork-unavailable'});return;}
       requests.push({id,role,asset,x,floorY,width:size.width*targetHeight/size.height,height:targetHeight,mounting,sectionId});
     };
-    if(opts.castleRegionPlan){
+    const kit=readNativeRoomKit(input.outputDir,room);
+    if(kit){
+      requests.push(...kit.requests);missing.push(...kit.omissions);room.kitBackdropTint=kit.backdropTint;
+    }else if(opts.castleRegionPlan){
       for(const item of opts.castleRegionPlan.furnishings)
         append(item.id,item.role,item.asset,item.x,item.mounting==='rear-wall'?item.floorY-384+item.targetHeight/2:item.floorY,item.targetHeight,item.mounting,item.sectionId);
     }else{

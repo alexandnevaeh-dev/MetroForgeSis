@@ -4,6 +4,8 @@ export interface FurnishingRequest {
   id: string; role: string; asset: string; x: number; floorY: number;
   width: number; height: number; mounting: 'floor' | 'rear-wall';
   sectionId?: string;
+  renderLayer?: 'rear' | 'front';
+  frameRegion?: {x:number;y:number;width:number;height:number;pivotX:number;pivotY:number};
 }
 export interface FurnishingPlacement extends FurnishingRequest {
   /** Decorative only. Rewards keep their separately authored collision and pickup. */
@@ -21,6 +23,16 @@ export function floorSupports(room:Pick<GameplayRoom,'solids'>,floorY:number) {
   return joined;
 }
 
+function stairClearanceOverlap(box:GameplayRect,flight:NonNullable<GameplayRoom['stairFlights']>[number]) {
+  const a=flight.from,b=flight.to;
+  const left=Math.max(Math.min(a.x,b.x),box.x-32),right=Math.min(Math.max(a.x,b.x),box.x+box.width+32);
+  if(left>right)return false;
+  const at=(x:number)=>Math.abs(b.x-a.x)<.001?Math.min(a.y,b.y):a.y+(b.y-a.y)*(x-a.x)/(b.x-a.x);
+  const top=Math.min(at(left),at(right))-64;
+  const bottom=Math.max(at(left),at(right))+flight.thickness+32;
+  return box.y<bottom&&box.y+box.height>top;
+}
+
 /** Authored requests stay at their authored coordinates; unsafe requests are explained, never scattered. */
 export function placeFurnishings(room:GameplayRoom,requests:FurnishingRequest[]) {
   const placements:FurnishingPlacement[]=[],omissions:FurnishingOmission[]=[];
@@ -36,13 +48,13 @@ export function placeFurnishings(room:GameplayRoom,requests:FurnishingRequest[])
     else if(box.x<0||box.x+box.width>room.width||box.y<0||request.floorY>room.height)reason='outside-room';
     else if(request.mounting==='floor'&&!support)reason='unsupported-full-footprint';
     else if(room.doors.some(d=>overlaps(box,{x:d.x-112,y:d.y-32,width:d.width+224,height:d.height+64})))reason='door-arrival-or-return';
-    else if(request.mounting==='floor'&&room.solids.some(s=>overlaps(box,s)))reason='solid-or-overhead-clearance';
-    else if(request.mounting==='floor'&&(room.stairFlights??[]).some(s=>overlaps(box,{x:Math.min(s.from.x,s.to.x)-32,y:Math.min(s.from.y,s.to.y)-64,width:Math.abs(s.from.x-s.to.x)+64,height:Math.abs(s.from.y-s.to.y)+128})))reason='stair-flight-clearance';
+    else if(request.mounting==='floor'&&request.renderLayer!=='rear'&&room.solids.some(s=>overlaps(box,s)))reason='solid-or-overhead-clearance';
+    else if(request.mounting==='floor'&&request.renderLayer!=='rear'&&(room.stairFlights??[]).some(s=>stairClearanceOverlap(box,s)))reason='stair-flight-clearance';
     else if([...(room.npcs??[]),...(room.enemy?[room.enemy]:[]),...(room.checkpoint?[room.checkpoint]:[]),{x:room.spawnX,y:room.spawnY}].some(a=>overlaps(box,{x:a.x-64,y:a.y-112,width:128,height:144})))reason='actor-or-arrival-readability';
     else if(placements.some(p=>overlaps(box,{x:p.x-p.width/2,y:p.floorY-p.height,width:p.width,height:p.height})))reason='furnishing-overlap';
     seen.add(request.id);
     if(reason)omissions.push({id:request.id,reason});
-    else placements.push({...request,collision:'none',layer:request.mounting==='rear-wall'?'rear':'front',anchor:request.mounting==='floor'?support!.names.join('+'):`rear-plane:${request.sectionId??room.id}`});
+    else placements.push({...request,collision:'none',layer:request.renderLayer??(request.mounting==='rear-wall'?'rear':'front'),anchor:request.mounting==='floor'?support!.names.join('+'):`rear-plane:${request.sectionId??room.id}`});
   }
   return {placements,omissions};
 }
