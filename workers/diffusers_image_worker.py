@@ -71,9 +71,21 @@ def _worker_stage(phase, device=None):
 
 
 def _denoising_stage(pipe, step, timestep, values):
-    if step + 1 == len(pipe.scheduler.timesteps):
+    # Img2img slices the schedule according to strength. The pipeline reports
+    # the actual loop length; scheduler.timesteps can still contain every step.
+    count = getattr(pipe, "num_timesteps", None)
+    if count is None:
+        count = len(pipe.scheduler.timesteps)
+    if step + 1 == count:
         _worker_stage("denoising_complete", "cuda" if str(getattr(pipe, "_execution_device", "cpu")).startswith("cuda") else None)
     return values
+
+
+def _stage_generation_options(pipe, options):
+    import inspect
+    if "callback_on_step_end" in inspect.signature(pipe.__call__).parameters:
+        options["callback_on_step_end"] = _denoising_stage
+    return options
 
 
 def read_request() -> dict[str, Any]:
@@ -844,12 +856,17 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
     _worker_stage("runtime_ready", device)
 
     applied_conditioning = None
+    model_acquisition = None  # Adapter loaders own their model acquisition.
     if init_image is not None and conditioning_mode == "controlnet_canny":
         applied_conditioning = "controlnet_canny"
+        _worker_stage("pipeline_loading", device)
         pipe = get_controlnet_pipeline(conditioning_base_model, device)
-        generation_options = configure_sampling(req, pipe, conditioning_base_model)
+        _worker_stage("pipeline_ready", device)
+        generation_options = _stage_generation_options(pipe, configure_sampling(req, pipe, conditioning_base_model))
         control_image = _canny_control_image(init_image)
         _assert_prompt_budget(pipe, full_prompt, negative)
+        _worker_stage("prompt_validated", device)
+        _worker_stage("denoising", device)
         result = pipe(
             prompt=full_prompt,
             negative_prompt=negative,
@@ -863,10 +880,14 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
         )
     elif init_image is not None and conditioning_mode == "ip_adapter":
         applied_conditioning = "ip_adapter"
+        _worker_stage("pipeline_loading", device)
         pipe = get_ip_adapter_pipeline(conditioning_base_model, device)
+        _worker_stage("pipeline_ready", device)
         pipe.set_ip_adapter_scale(strength)
-        generation_options = configure_sampling(req, pipe, conditioning_base_model)
+        generation_options = _stage_generation_options(pipe, configure_sampling(req, pipe, conditioning_base_model))
         _assert_prompt_budget(pipe, full_prompt, negative)
+        _worker_stage("prompt_validated", device)
+        _worker_stage("denoising", device)
         result = pipe(
             prompt=full_prompt,
             negative_prompt=negative,
@@ -880,9 +901,14 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
     elif init_image is not None and conditioning_mode:
         applied_conditioning = "img2img"
         model_acquisition = _ensure_model_available(model_id)
+        _worker_stage("model_ready", device)
+        _worker_stage("pipeline_loading", device)
         pipe = get_img2img_pipeline(model_id, device, style)
-        generation_options = configure_sampling(req, pipe, model_id)
+        _worker_stage("pipeline_ready", device)
+        generation_options = _stage_generation_options(pipe, configure_sampling(req, pipe, model_id))
         _assert_prompt_budget(pipe, full_prompt, negative)
+        _worker_stage("prompt_validated", device)
+        _worker_stage("denoising", device)
         result = pipe(
             prompt=full_prompt,
             negative_prompt=negative,
@@ -911,9 +937,7 @@ def generate_image(req: dict[str, Any]) -> dict[str, Any]:
         # Distilled Turbo models require classifier-free guidance to be disabled.
         generation_options = configure_sampling(req, pipe, model_id)
         _assert_prompt_budget(pipe, full_prompt, negative)
-        import inspect
-        if "callback_on_step_end" in inspect.signature(pipe.__call__).parameters:
-            generation_options["callback_on_step_end"] = _denoising_stage
+        generation_options = _stage_generation_options(pipe, generation_options)
         _worker_stage("denoising", device)
         result = pipe(
             prompt=full_prompt,
