@@ -20,7 +20,7 @@ export function TopDownPropPicker({projectPath,props,width,height,busy,onSave}:{
  return <InspectorSection title="Add prop">
  {loading?<p role="status">Loading placement assets…</p>:error?<p role="alert">{error}</p>:eligible.length===0?<p className="hint">No prop PNGs are registered in this project.</p>:<>
  <label htmlFor={fieldId}>Asset</label><Select id={fieldId} value={selected} disabled={busy} onChange={e=>{setSelected(e.target.value);setAssetNotice('');}}>{eligible.map(asset=><option value={asset.id} key={asset.id}>{asset.id}</option>)}</Select>
- {choice?.dataUrl && <img src={choice.dataUrl} alt={`Preview of ${choice.id}`} style={{width:'100%',maxHeight:140,objectFit:'contain'}}/>}
+ {choice?.dataUrl && <img src={choice.dataUrl} alt={`Preview of ${choice.id}`} style={{width:'100%',maxHeight:140,objectFit:'contain',imageRendering:'pixelated'}}/>}
  {choice&&<TopDownPropAnchorEditor key={choice.path} projectPath={projectPath} assetPath={choice.path} busy={busy} onSaved={()=>{setAssetNotice('Saved asset anchor. Existing room placements and artwork are unchanged.');setAssetRevision(v=>v+1);}}/>}
  {assetNotice&&<p role="status">{assetNotice}</p>}
  {choice&&!choice.propAsset&&<p className="hint">Save this asset's ground anchor before placing it.</p>}

@@ -20,7 +20,7 @@ function context(projectPath:string,assetPath:string){
 }
 export function readTopDownPropAuthoring(projectPath:string,assetPath:string){
  const c=context(projectPath,assetPath);
- return {sourceSize:c.sourceSize,imageSha256:hash(c.image),revision:hash(Buffer.concat([c.image,Buffer.from('\0'),c.metadata??Buffer.from('absent')])),anchorPx:(c.layout?.anchorPx??[c.sourceSize[0]/2,c.sourceSize[1]]) as [number,number],displayScale:Number(c.layout?.displayScale??1),hasLayout:!!c.layout,collisionCount:Array.isArray(c.layout?.collisionRectsPx)?c.layout.collisionRectsPx.length:0};
+ return {sourceSize:c.sourceSize,imageSha256:hash(c.image),previewDataUrl:'data:image/png;base64,'+c.image.toString('base64'),revision:hash(Buffer.concat([c.image,Buffer.from('\0'),c.metadata??Buffer.from('absent')])),anchorPx:(c.layout?.anchorPx??[c.sourceSize[0]/2,c.sourceSize[1]]) as [number,number],displayScale:Number(c.layout?.displayScale??1),hasLayout:!!c.layout,collisionCount:Array.isArray(c.layout?.collisionRectsPx)?c.layout.collisionRectsPx.length:0};
 }
 /** Explicit scalar editing preserves artwork, layers, footprints and room data. */
 export function saveTopDownPropAnchor(projectPath:string,assetPath:string,edit:TopDownPropAnchor,revision:string){
