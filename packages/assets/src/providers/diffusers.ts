@@ -165,7 +165,7 @@ const DEFAULT_VENV_PYTHON = join(
   process.platform === 'win32' ? 'python.exe' : 'python',
 );
 
-const WORKER_PHASES = new Set(['request_received','backend_resolving','runtime_loading','runtime_ready','model_ready','prompt_validated','pipeline_loading','pipeline_ready','denoising','denoising_complete','pipeline_returned','encoding','encoded']);
+const WORKER_PHASES = new Set(['request_received','backend_resolving','health_runtime_loading','health_runtime_ready','prompt_tokenizer_loading','prompt_tokenizer_ready','runtime_loading','runtime_ready','model_ready','prompt_validated','pipeline_loading','pipeline_ready','denoising','denoising_complete','pipeline_returned','encoding','encoded']);
 export type DiffusersWorkerStage = {phase: string; elapsedMs: number; allocatedMb?: number; reservedMb?: number};
 export function parseDiffusersWorkerStage(line: string): DiffusersWorkerStage | undefined {
   if (line.length > 4096) return undefined;
@@ -266,7 +266,7 @@ export class DiffusersProvider implements ImageGenerator {
       config.warmupTimeoutMs ?? Number(process.env.METROFORGE_OPENVINO_WARMUP_TIMEOUT_MS ?? 600000);
     this.generationTimeoutMs = config.generationTimeoutMs ?? this.gpuTimeoutMs;
     this.promptCheckTimeoutMs = config.promptCheckTimeoutMs ?? 120_000;
-    this.backendProbeTimeoutMs = config.backendProbeTimeoutMs ?? 120_000;
+    this.backendProbeTimeoutMs = config.backendProbeTimeoutMs ?? 300_000;
     if (!Number.isFinite(this.backendProbeTimeoutMs) || this.backendProbeTimeoutMs <= 0) {
       throw new RangeError('backendProbeTimeoutMs must be a positive finite number');
     }

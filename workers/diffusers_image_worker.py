@@ -248,10 +248,12 @@ def health_check(req: dict[str, Any]) -> dict[str, Any]:
             "compute_backends": {"local_runtime": {"available": not missing}},
         }
     try:
+        _worker_stage("health_runtime_loading")
         import torch
         import diffusers
         import transformers
         import accelerate
+        _worker_stage("health_runtime_ready")
 
         devices = []
         for index in range(torch.cuda.device_count()):
@@ -989,6 +991,7 @@ def _prompt_budget(tokenizers, prompt: str, negative: str) -> dict:
 
 
 def check_prompt(req: dict) -> dict:
+    _worker_stage("prompt_tokenizer_loading")
     from transformers import AutoTokenizer
     model = req.get("model_id", "stabilityai/sdxl-turbo")
     path = Path(model)
@@ -999,6 +1002,7 @@ def check_prompt(req: dict) -> dict:
     names = [name for name, entry in index.items()
              if name.startswith("tokenizer") and isinstance(entry, list) and entry[-1]]
     tokenizers = [AutoTokenizer.from_pretrained(str(path / name), local_files_only=True) for name in names]
+    _worker_stage("prompt_tokenizer_ready")
     return {**_prompt_budget(tokenizers, req.get("prompt", ""), req.get("negative_prompt", "")), "modelPath": str(path)}
 
 
