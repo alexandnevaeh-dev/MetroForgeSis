@@ -789,8 +789,14 @@ export function buildRoomAssemblyOptions(
     hasAbilityPickup,
     hasSavePoint,
   );
+  const archiveCollectibleId = gameDna.archetype === 'SIDE_VIEW_METROIDVANIA' && nodeMeta.stormglassRegionProfile === 'archive-wing'
+    ? roomId === 'room_046' && nodeMeta.stormglassRoomTheme === 'archive-loft' ? 'lost_echo_001'
+      : roomId === 'room_047' && nodeMeta.stormglassRoomTheme === 'archive-vault' ? 'lost_echo_002' : undefined
+    : undefined;
   const pickupItem = wantsItemPickup
-    ? pickRoomPickupItem(gameContent?.items ?? [], worldGraphArchetype, index)
+    ? (archiveCollectibleId
+      ? gameContent?.items.find(item => item.id === archiveCollectibleId && item.category === 'collectible') ?? pickRoomPickupItem(gameContent?.items ?? [], worldGraphArchetype, index)
+      : pickRoomPickupItem(gameContent?.items ?? [], worldGraphArchetype, index))
     : null;
   const hasItemPickup = pickupItem !== null;
   const hasEnemy = shouldSpawnEnemy(
@@ -2439,6 +2445,11 @@ export function recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult
         },
       );
       const storedPaint = roomsData[roomId];
+      // Fresh archive defaults must not change an author's saved collectible choice/removal.
+      if (existingRecord && ['archive-loft', 'archive-vault'].includes(opts.stormglassRoomTheme ?? '') && Array.isArray(existingRecord.collectibles)) {
+        opts.hasItemPickup = existingRecord.collectibles.length > 0;
+        opts.itemId = existingRecord.collectibles[0] ?? '';
+      }
       const authoredCells = override?.tileCells ?? (storedPaint?.tileCellsAuthored ? storedPaint.tileCells : undefined);
       if (authoredCells !== undefined) {
         // A new paint override invalidates generated geometry. A stored authored

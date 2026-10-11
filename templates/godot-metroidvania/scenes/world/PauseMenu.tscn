@@ -203,10 +203,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -200.0
-offset_top = -180.0
-offset_right = 200.0
-offset_bottom = 180.0
+offset_left = -280.0
+offset_top = -250.0
+offset_right = 280.0
+offset_bottom = 250.0
 
 [node name="VBox" type="VBoxContainer" parent="Panel/InventoryPanel"]
 layout_mode = 2
@@ -218,7 +218,7 @@ text = "Inventory"
 horizontal_alignment = 1
 
 [node name="InventoryView" type="Control" parent="Panel/InventoryPanel/VBox"]
-custom_minimum_size = Vector2(360, 260)
+custom_minimum_size = Vector2(520, 380)
 layout_mode = 2
 script = ExtResource("3_inv")
 

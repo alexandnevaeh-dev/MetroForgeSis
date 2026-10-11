@@ -29,6 +29,7 @@ import {
   engineOutputSlug,
 } from '@metroforge/shared';
 import { remapGameDnaAbilities } from './remap-project-abilities.js';
+import { bindStormglassArchiveLore } from './stormglass-archive-lore.js';
 import { loadStormglassPlayerAssets } from './stormglass-player-assets.js';
 import { createDatabase, type MetroForgeDatabase } from '@metroforge/database';
 import { bootstrapProviders, licenseFieldsForArtifact, OllamaEmbeddingProvider, HardwareProfiler } from '@metroforge/ai';
@@ -854,12 +855,12 @@ export class GenerationPipeline {
 
     report('enemy_families', 'RUNNING');
     const bossRoomId = authoredWorld?.finalBossRoomId ?? roomIds[roomIds.length - 1]!;
-    const gameContent = generateGameContent(gameDna, options.profile, options.seed, bossRoomId, roomIds, authoredWorld ? {
+    const gameContent = bindStormglassArchiveLore(generateGameContent(gameDna, options.profile, options.seed, bossRoomId, roomIds, authoredWorld ? {
       bossRoomIds:authoredWorld.bossRoomIds,
       enemyNames:authoredWorld.enemyNames,
       bossNames:authoredWorld.bossNames,
       biomeCount:authoredWorld.worldGraph.regions.length,
-    } : gameDna.archetype === 'SIDE_VIEW_PLATFORMER' ? {bossRoomIds:[bossRoomId],biomeCount} : undefined);
+    } : gameDna.archetype === 'SIDE_VIEW_PLATFORMER' ? {bossRoomIds:[bossRoomId],biomeCount} : undefined), gameDna, options.worldLayout);
     report('enemy_families', 'PASSED', `${gameContent.enemies.length} enemies`);
     report('bosses', 'PASSED', `${gameContent.bosses.length} bosses`);
     if (!(await maybePause('bosses', 'bosses', 'Review boss encounters before asset generation'))) {

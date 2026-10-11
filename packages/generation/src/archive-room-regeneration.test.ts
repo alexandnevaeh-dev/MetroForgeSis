@@ -37,4 +37,16 @@ it('keeps archive edits and explicit removal in full regeneration; explicit enco
   expect(restored.enemies).toEqual(['room_047_reward_guard']);
   expect(restored.entityPlacements.find((p:{kind:string})=>p.kind==='enemy').x).toBe(1088);
   expect(restored.entityPlacements.find((p:{kind:string})=>p.kind==='item_pickup').x).toBe(1320);
+  const custom=read();custom.rooms.room_047.collectibles=['lost_echo'];
+  custom.rooms.room_047.entityPlacements.find((p:{kind:string})=>p.kind==='item_pickup').id='lost_echo';
+  writeFileSync(file,JSON.stringify(custom));
+  expect(regenerateRoom(root,'room_047','full').success).toBe(true);
+  expect(read().rooms.room_047.collectibles).toEqual(['lost_echo']);
+  expect(read().rooms.room_047.entityPlacements.find((p:{kind:string})=>p.kind==='item_pickup').id).toBe('lost_echo');
+  const omitted=read();omitted.rooms.room_047.collectibles=[];
+  omitted.rooms.room_047.entityPlacements=omitted.rooms.room_047.entityPlacements.filter((p:{kind:string})=>p.kind!=='item_pickup');
+  writeFileSync(file,JSON.stringify(omitted));
+  expect(regenerateRoom(root,'room_047','full').success).toBe(true);
+  expect(read().rooms.room_047.collectibles).toEqual([]);
+  expect(read().rooms.room_047.entityPlacements.some((p:{kind:string})=>p.kind==='item_pickup')).toBe(false);
 });

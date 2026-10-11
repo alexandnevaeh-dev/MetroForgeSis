@@ -345,6 +345,7 @@ function applyRoomEditUnchecked(
         width: existing.width, height: existing.height,
         ...(typeof existing.forceEnemy === 'boolean' ? { forceEnemy: existing.forceEnemy } : {}),
         ...(archive && Array.isArray(existing.entityPlacements) ? { entityPlacements: existing.entityPlacements } : {}),
+        ...(archive && Array.isArray(existing.collectibles) ? { collectibles: existing.collectibles } : {}),
       };
     }
     writeFileSync(join(projectPath, 'data', 'rooms', 'rooms.json'), JSON.stringify({ rooms: roomsData }, null, 2));
