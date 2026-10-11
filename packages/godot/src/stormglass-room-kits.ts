@@ -13,11 +13,12 @@ export function validStormglassArchiveBays(value: unknown, roomWidth: number, ro
     if (!raw || typeof raw !== 'object') return false;
     const bay = raw as { id?: unknown; kind?: unknown; x?: unknown; width?: unknown; height?: unknown; floorY?: unknown };
     if (typeof bay.id !== 'string' || !/^[A-Za-z_][A-Za-z0-9_]{0,63}$/.test(bay.id) || ids.has(bay.id) ||
-      !['book-recess', 'scribe-desk', 'ledger-pedestal', 'scroll-cabinet'].includes(String(bay.kind))) return false;
+      typeof bay.kind !== 'string' || !['book-recess', 'scribe-desk', 'ledger-pedestal', 'scroll-cabinet'].includes(bay.kind)) return false;
     if (typeof bay.x !== 'number' || typeof bay.width !== 'number' || typeof bay.height !== 'number' ||
       ![bay.x, bay.width, bay.height].every(Number.isFinite) || bay.width < 64 || bay.width > 1024 ||
       bay.height < 32 || bay.height > 384 || bay.x - bay.width / 2 < 192 || bay.x + bay.width / 2 > roomWidth - 192) return false;
     if (bay.floorY !== undefined && (typeof bay.floorY !== "number" || !Number.isFinite(bay.floorY) || bay.floorY < 0 || bay.floorY > roomHeight)) return false;
+    if ('preserveSize' in bay && typeof bay.preserveSize !== 'boolean') return false;
     ids.add(bay.id);
     return true;
   });

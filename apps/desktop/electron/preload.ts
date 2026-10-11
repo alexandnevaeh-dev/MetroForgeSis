@@ -56,6 +56,9 @@ contextBridge.exposeInMainWorld('metroforge', {
   readEditableItems: (projectPath: string) => ipcRenderer.invoke('read-editable-items', projectPath),
   saveEditableItem: (projectPath: string, item: unknown, revision: string) => ipcRenderer.invoke('save-editable-item', projectPath, item, revision),
   readUnityRoomEdit: (projectPath: string, roomId: string) => ipcRenderer.invoke('read-unity-room-edit', projectPath, roomId),
+  readArchiveFurnishings:(projectPath:string,roomId:string)=>ipcRenderer.invoke('read-archive-furnishings',projectPath,roomId),
+  saveArchiveFurnishing:(projectPath:string,roomId:string,edit:import('@metroforge/generation').ArchiveFurnishingEdit,revision:string)=>ipcRenderer.invoke('save-archive-furnishing',projectPath,roomId,edit,revision),
+  restoreArchiveFurnishing:(projectPath:string,roomId:string,revision:string,historyToken:string)=>ipcRenderer.invoke('restore-archive-furnishing',projectPath,roomId,revision,historyToken),
   saveUnityRoomEdit: (projectPath: string, roomId: string, objects: import('@metroforge/engines').EditableObject[], fingerprints: string[], backgroundFraming?: import('@metroforge/engines').UnityBackgroundFraming, enemyTiming?: import('@metroforge/engines').UnityEnemyTiming) =>
     ipcRenderer.invoke('save-unity-room-edit', projectPath, roomId, objects, fingerprints, backgroundFraming, enemyTiming),
   saveUnityFurnishingEdit:(projectPath:string,roomId:string,edits:import('@metroforge/engines').UnityFurnishingEdit[],fingerprints:string[])=>ipcRenderer.invoke('save-unity-furnishing-edit',projectPath,roomId,edits,fingerprints),

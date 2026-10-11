@@ -1044,6 +1044,8 @@ function checkpointFullPath(outputDir: string, relPath: string): string {
   return join(outputDir, relPath.replace(/\//g, sep));
 }
 
+const MANUAL_PROP_FRAMING = 'exactly one complete grounded prop, full silhouette with empty margins, no alternate views, isolated on flat magenta';
+
 export function buildManualImagePrompt(description: string, styleHint: string, gameTitle: string, archetype: GameDNA['archetype'] = 'SIDE_VIEW_METROIDVANIA', assetType = 'player_sprite'): string {
   const title = sanitizeImagePromptText(gameTitle) || 'this game';
   const style = sanitizeImagePromptText(styleHint) || 'pixel art';
@@ -1056,7 +1058,7 @@ export function buildManualImagePrompt(description: string, styleHint: string, g
     : assetType === 'background' ? 'Environment matching the game camera and biome architecture.'
       : assetType === 'portrait' ? 'Detailed head and shoulders portrait filling the canvas.'
       : assetType === 'character_concept' ? 'Detailed full-body character concept illustration, no contact sheet.'
-      : assetType === 'prop' ? 'One complete grounded prop, isolated on flat magenta, no surrounding scene.'
+      : assetType === 'prop' ? `${MANUAL_PROP_FRAMING}, no surrounding scene.`
       : ['weapon', 'item', 'ui_icon', 'vfx_texture'].includes(assetType) ? 'One centered isolated asset on flat magenta, no text or surrounding scene.'
       : assetType === 'ui_panel' ? 'One clean interface panel filling the canvas, no text, isolated on flat magenta.'
       : 'Game asset matching the camera, scale and material detail of this project.';
@@ -1073,7 +1075,7 @@ export function buildDirectedManualImagePrompt(description: string, styleDirecti
   const camera = genreSupports(archetype, 'supportsFreePlanarMovement') ? 'Top-down, overhead three-quarter view' : 'Side-view';
   const role = ['player_sprite', 'enemy', 'boss', 'npc'].includes(assetType)
     ? 'full-body sprite, feet grounded, isolated on flat magenta'
-    : assetType === 'prop' ? 'complete grounded prop, isolated on flat magenta'
+    : assetType === 'prop' ? MANUAL_PROP_FRAMING
       : assetType === 'background' ? 'continuous environment, biome architecture'
         : assetType === 'portrait' ? 'head and shoulders portrait'
           : assetType === 'character_concept' ? 'full-body character concept'

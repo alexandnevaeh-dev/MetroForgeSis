@@ -116,6 +116,7 @@ func _ready() -> void:
 func _spawn_archive_bays(bays: Array, floor_y: float) -> void:
 	await get_tree().physics_frame
 	var room := get_parent().get_parent() as Node2D
+	room.set_meta("archive_furnishing_reviews", [])
 	for raw: Variant in bays:
 		if not raw is Dictionary:
 			continue
@@ -125,17 +126,23 @@ func _spawn_archive_bays(bays: Array, floor_y: float) -> void:
 		var x := float(spec.get("x", NAN))
 		var width := float(spec.get("width", NAN))
 		var height := float(spec.get("height", NAN))
+		var requested_height := height
+		var preserve_size: bool = spec.get("preserveSize", false) == true
 		var anchor_y := float(spec.get("floorY",floor_y))
 		if not is_finite(anchor_y) or anchor_y < 0.0 or anchor_y > room_height:
+			_archive_review(room, spec, "omitted", "invalid-floor-anchor")
 			continue
 		if kind not in ["book-recess", "scribe-desk", "ledger-pedestal", "scroll-cabinet"] or not id.is_valid_identifier():
+			_archive_review(room, spec, "omitted", "invalid-request")
 			continue
 		if not is_finite(x) or not is_finite(width) or not is_finite(height) or width < 64.0 or width > 1024.0 or height < 32.0 or height > 384.0:
+			_archive_review(room, spec, "omitted", "invalid-dimensions")
 			continue
 		if x-width*0.5 < 192.0 or x+width*0.5 > room_width-192.0:
+			_archive_review(room, spec, "omitted", "doorway-reservation")
 			continue
 		for body in room.get_children():
-			if not body is StaticBody2D or not String(body.name).begins_with("MasonryRoof_"):
+			if not body is StaticBody2D or not (String(body.name).begins_with("MasonryRoof_") or (preserve_size and String(body.name) == "ShellCeiling")):
 				continue
 			var collision := body.get_node_or_null("CollisionShape2D") as CollisionShape2D
 			if collision == null or not collision.shape is RectangleShape2D:
@@ -143,10 +150,13 @@ func _spawn_archive_bays(bays: Array, floor_y: float) -> void:
 			var bounds := Rect2(body.position-collision.shape.size*0.5, collision.shape.size)
 			if bounds.position.x < x+width*0.5 and bounds.end.x > x-width*0.5:
 				height = minf(height, anchor_y-bounds.end.y-16.0)
-		if height < 32.0:
+		if height < 32.0 or (preserve_size and height < requested_height):
+			_archive_review(room, spec, "omitted", "overhead-clearance")
 			continue
 		var supported := true
-		for fraction in [-1.0, -0.5, 0.0, 0.5, 1.0]:
+		var support_steps: int = maxi(1, int(ceil(width))) if preserve_size else 4
+		for step in range(support_steps+1):
+			var fraction := -1.0+2.0*float(step)/float(support_steps)
 			var sample_x := x+width*0.5*float(fraction)
 			var query := PhysicsRayQueryParameters2D.create(room.to_global(Vector2(sample_x,anchor_y-8.0)),room.to_global(Vector2(sample_x,anchor_y+8.0)),1)
 			query.collide_with_areas = false
@@ -155,6 +165,7 @@ func _spawn_archive_bays(bays: Array, floor_y: float) -> void:
 				supported = false
 				break
 		if not supported:
+			_archive_review(room, spec, "omitted", "unsupported-footprint")
 			continue
 		var assembly := Node2D.new()
 		assembly.set_script(preload("res://scripts/world/StormglassArchiveAssembly.gd"))
@@ -170,6 +181,12 @@ func _spawn_archive_bays(bays: Array, floor_y: float) -> void:
 		assembly.set_meta("asset_role",kind)
 		assembly.set_meta("decorative_only",true)
 		interior_clip.add_child(assembly)
+		_archive_review(room, spec, "placed", "", height)
+
+func _archive_review(room: Node2D, spec: Dictionary, status: String, reason: String, actual_height: float = 0.0) -> void:
+	var rows: Array = room.get_meta("archive_furnishing_reviews", [])
+	rows.append({"id":String(spec.get("id", "")),"status":status,"reason":reason,"requestedHeight":spec.get("height", 0),"actualHeight":actual_height,"visualApproved":false})
+	room.set_meta("archive_furnishing_reviews", rows)
 
 ## Recessed upper courses meet the roof without enlarging facade modules.
 ## Opt-in decoration follows each real roof span and creates no collider.

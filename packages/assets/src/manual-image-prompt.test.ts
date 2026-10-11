@@ -2,6 +2,17 @@ import { describe, expect, it } from 'vitest';
 import { buildManualImagePrompt, buildDirectedManualImagePrompt, manualAssetStyleHint } from './asset-pipeline.js';
 
 describe('manual image camera and style', () => {
+  it.each(['SIDE_VIEW_METROIDVANIA','TOP_DOWN_ACTION_ADVENTURE'] as const)('requests one complete prop without alternate views in both %s prompt paths', archetype => {
+    const description='Dark oak writing table with parchment and ink pot';
+    for(const prompt of [buildManualImagePrompt(description,'pixel art','Archive',archetype,'prop'),buildDirectedManualImagePrompt(description,'pixel art',archetype,'prop')]){
+      expect(prompt).toContain(description);
+      expect(prompt).toContain('exactly one complete grounded prop');
+      expect(prompt).toContain('full silhouette with empty margins');
+      expect(prompt).toContain('no alternate views');
+      expect(prompt).toContain(archetype==='SIDE_VIEW_METROIDVANIA'?'Side-view':'overhead three-quarter');
+      expect(prompt).not.toContain('full-body character');
+    }
+  });
   it('uses the explicit brief without adding scene instructions or a title', () => {
     const subject = 'Ash librarian, charcoal robe, brass book, turquoise eyes';
     const brief = 'HD pixel art, warm upper-left light';

@@ -53,6 +53,8 @@ export { inheritDerivativeLicense } from './derivative-license.js';
 export { scanGodotResourceGraph, assetPathToResPath } from './godot-resource-graph.js';
 export type { GodotResourceGraph, GodotResourceReference } from './godot-resource-graph.js';
 export { EditHistory } from './edit-history.js';
+export {readArchiveFurnishings,saveArchiveFurnishing,restoreArchiveFurnishing} from './archive-furnishing-authoring.js';
+export type {ArchiveFurnishing,ArchiveFurnishingEdit} from './archive-furnishing-authoring.js';
 export {
   applyWorldEditAndRecompile,
   applyRoomEditAndRecompile,

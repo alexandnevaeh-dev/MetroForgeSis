@@ -112,6 +112,8 @@ export type GeneratedAssetRef = {
   sourceType?: string;
 };
 
+export type ArchiveFurnishingState={revision:string;width:number;height:number;bays:import('@metroforge/generation').ArchiveFurnishing[];historyToken?:string};
+
 export type GenerateAssetVariantResult = {
   success: boolean;
   asset?: GeneratedAssetRef;
@@ -299,6 +301,9 @@ export type MetroforgeBridge = {
   readEditableTerrain: (projectPath: string, asset: string) => Promise<{ settings: import('@metroforge/engines').TerrainPresentation; image: {width: number; height: number}; revision: string; restartRequired: true }>;
   saveEditableTerrain: (projectPath: string, asset: string, settings: unknown, revision: string) => Promise<{ settings: import('@metroforge/engines').TerrainPresentation; image: {width: number; height: number}; revision: string; restartRequired: true; backup: string; runtimeSynchronized: boolean }>;
   readEditableItems: (projectPath: string) => Promise<{ items: Record<string, unknown>[]; revision: string; runtimeSupported: boolean }>;
+  readArchiveFurnishings:(projectPath:string,roomId:string)=>Promise<ArchiveFurnishingState>;
+  saveArchiveFurnishing:(projectPath:string,roomId:string,edit:import('@metroforge/generation').ArchiveFurnishingEdit,revision:string)=>Promise<ArchiveFurnishingState>;
+  restoreArchiveFurnishing:(projectPath:string,roomId:string,revision:string,historyToken:string)=>Promise<ArchiveFurnishingState>;
   saveEditableItem: (projectPath: string, item: unknown, revision: string) => Promise<{ revision: string; backup: string; restartRequired: true; runtimeSynchronized: boolean; runtimeSupported: boolean }>;
   readUnityRoomEdit: (projectPath: string, roomId: string) => Promise<{ furnishingRequests:Array<{id:string;role:string;x:number;floorY:number;height:number;width:number}>; objects: import('@metroforge/engines').EditableObject[]; farBackground?: string; enemyTiming?: import('@metroforge/engines').UnityEnemyTiming; backgroundFraming: import('@metroforge/engines').UnityBackgroundFraming; fingerprints: string[] }>;
   saveUnityRoomEdit: (projectPath: string, roomId: string, objects: import('@metroforge/engines').EditableObject[], fingerprints: string[], backgroundFraming?: import('@metroforge/engines').UnityBackgroundFraming, enemyTiming?: import('@metroforge/engines').UnityEnemyTiming) => Promise<{ fingerprints: string[]; backup: string; restartRequired: true }>;

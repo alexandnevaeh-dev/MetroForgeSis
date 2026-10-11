@@ -1,6 +1,6 @@
 import {existsSync,readFileSync,statSync} from 'node:fs';
 import {join} from 'node:path';
-export type RoomKitSummary={wallRole:string;propRoles:string[]};
+export type RoomKitSummary={wallRole:string;propRoles:string[];hasArchiveFurnishings?:boolean};
 /** Inspector metadata only; never mutates authored room or asset records. */
 export function readActiveRoomKits(projectPath:string,roomIds:string[]):Record<string,RoomKitSummary>{
  const result:Record<string,RoomKitSummary>={};
@@ -26,7 +26,7 @@ export function readActiveRoomKits(projectPath:string,roomIds:string[]):Record<s
     return Array.isArray(manifest.entries)&&assetPath(manifest.atlas)&&existsSync(join(projectPath,manifest.atlas));
    });
    if(!complete)continue;
-   result[id]={wallRole:role(kit.wallRole)?kit.wallRole:'marble_wall',propRoles:Array.isArray(kit.props)?[...new Set<string>(kit.props.slice(0,128).map((p:unknown)=>typeof p==='object'&&p!==null?(p as {role?:unknown}).role:undefined).filter(role))]:[]};
+   result[id]={wallRole:role(kit.wallRole)?kit.wallRole:'marble_wall',propRoles:Array.isArray(kit.props)?[...new Set<string>(kit.props.slice(0,128).map((p:unknown)=>typeof p==='object'&&p!==null?(p as {role?:unknown}).role:undefined).filter(role))]:[],...(Array.isArray(kit.archiveBays)&&kit.archiveBays.length>0&&kit.archiveBays.length<=32?{hasArchiveFurnishings:true}:{})};
   }
  }catch{return {};}
  return result;

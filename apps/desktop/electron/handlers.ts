@@ -2082,6 +2082,18 @@ export function registerIpcHandlers(cwd: string): void {
     return { ...result, runtimeSupported: detectProjectEngine(projectPath) === 'godot' };
   });
 
+  ipcMain.handle('read-archive-furnishings',async(_event,projectPath:string,roomId:string)=>{
+    assertProjectPath(projectPath,cwd);
+    return (await import('@metroforge/generation')).readArchiveFurnishings(projectPath,roomId);
+  });
+  ipcMain.handle('save-archive-furnishing',async(_event,projectPath:string,roomId:string,edit:import('@metroforge/generation').ArchiveFurnishingEdit,revision:string)=>{
+    assertProjectPath(projectPath,cwd);
+    return (await import('@metroforge/generation')).saveArchiveFurnishing(projectPath,roomId,edit,revision);
+  });
+  ipcMain.handle('restore-archive-furnishing',async(_event,projectPath:string,roomId:string,revision:string,historyToken:string)=>{
+    assertProjectPath(projectPath,cwd);
+    return (await import('@metroforge/generation')).restoreArchiveFurnishing(projectPath,roomId,revision,historyToken);
+  });
   ipcMain.handle('read-unity-room-edit', async (_event, projectPath: string, roomId: string) => {
     assertReadableProjectPath(projectPath, cwd);
     if (detectProjectEngine(projectPath) !== 'unity') throw new Error('Unity room editing requires a Unity project');

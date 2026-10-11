@@ -1,4 +1,5 @@
 import {RoomFurnishingInspector,furnishingChoices} from './RoomFurnishingInspector.js';
+import {ArchiveFurnishingEditor} from './ArchiveFurnishingEditor.js';
 import type {RoomFurnishingReview} from '@metroforge/engines';
 import { CastleBackdrop } from './CastleBackdrop.js';
 import type {RoomMasonryRect,RoomStairFlight} from './RoomMasonryPreview.js';
@@ -36,7 +37,7 @@ import {
 
 type RoomRecord = {
   nativeFurnishingReview?: RoomFurnishingReview;
-  themedRoomKit?: {wallRole:string;propRoles:string[]};
+  themedRoomKit?: {wallRole:string;propRoles:string[];hasArchiveFurnishings?:boolean};
   masonryRects?: RoomMasonryRect[];
   stairFlights?: RoomStairFlight[];
   castleRegionPlan?: CastleRegionPreview;
@@ -622,6 +623,7 @@ export function RoomEditor() {
                   ) : <BiomeBackgroundEditor key={JSON.stringify([selectedPath, selected.biomeId])} projectPath={selectedPath} biomeId={selected.biomeId ?? "biome_0"} onPreview={setCastleBackground} />}
                   {selected.nativeFurnishingReview&&<RoomFurnishingInspector review={selected.nativeFurnishingReview} selectedKey={activeFurnishingChoice?.key??''} projectPath={selectedPath} roomId={selected.id} geometryDirty={geometryDirty} onDirtyChange={setFurnishingDirty} onSaved={()=>{void loadRooms(selectedPath);}} onSelect={key=>{furnishingSelection.current=furnishingItems.find(c=>c.key===key)?.entry.id;setSelectedFurnishingKey(key);}}/> }
                   <InspectorSection title="Room">
+                    {selected.themedRoomKit?.hasArchiveFurnishings&&<ArchiveFurnishingEditor key={`${selectedPath}:${selected.id}:archive`} projectPath={selectedPath} roomId={selected.id} disabled={isSaving||geometryDirty} onSaved={()=>{void loadRooms(selectedPath);}}/>}
                     <dl className="settings-dl">
                       <dt>Name</dt>
                       <dd>{selected.id}</dd>
