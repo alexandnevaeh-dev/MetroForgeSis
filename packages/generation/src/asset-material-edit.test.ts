@@ -2,7 +2,7 @@ import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { describe, expect, it } from 'vitest';
-import { encodePng } from '@metroforge/assets';
+import { encodePng, decodePngRgba } from '@metroforge/assets';
 import { readMaterialArtwork, previewMaterialArtwork, previewImportedActorSource, applyMaterialArtwork } from './asset-material-edit.js';
 import { restoreAssetVersion } from './asset-history.js';
 
@@ -115,5 +115,32 @@ describe('Guarded material artwork drafts',()=>{
     expect(()=>previewImportedActorSource(f.project,'caster','0'.repeat(64),url,'x.png')).toThrow('changed');
     expect(()=>previewImportedActorSource(f.project,'caster',info.inspectionHash,'data:image/png;base64,'+'A'.repeat(22_369_650),'x.png')).toThrow('16 MiB');
     expect(readFileSync(join(f.project,'assets/enemies/caster_source.png'))).toEqual(f.source);
+  });
+  it('imports only the selected RGBA region, including transparent erasure, then restores the exact source',()=>{
+    const f=fixture(), info=readMaterialArtwork(f.project,'caster'), original=decodePngRgba(f.source), donor=new Uint8Array(original.rgba);
+    donor.set([0,0,0,0],(12*16+6)*4);donor.set([15,30,60,255],(12*16+7)*4);
+    donor.set([255,200,0,255],(3*16+6)*4); // Unrequested change outside the rectangle.
+    const png=encodePng(16,16,donor),r={x:5,y:11,width:6,height:3};
+    const preview=previewImportedActorSource(f.project,'caster',info.inspectionHash,'data:image/png;base64,'+png.toString('base64'),'boots.png',r);
+    expect(readFileSync(join(f.project,'assets/enemies/caster_source.png'))).toEqual(f.source);
+    const result=applyMaterialArtwork(f.project,'caster',preview.draftId),actual=decodePngRgba(readFileSync(join(f.project,'assets/enemies/caster_source.png')));
+    for(let y=0;y<16;y++)for(let x=0;x<16;x++){const i=(y*16+x)*4;expect(Array.from(actual.rgba.subarray(i,i+4))).toEqual(Array.from((x>=5&&x<11&&y>=11&&y<14?donor:original.rgba).subarray(i,i+4)));}
+    const asset=JSON.parse(readFileSync(join(f.project,'generation_manifest.json'),'utf8')).artifacts[0];expect(asset.executionMetadata.sourceImport.region).toEqual(r);expect(asset.executionMetadata.sourceImport.resultSourceHash).toBe(result.sourceHash);
+    restoreAssetVersion(f.project,'caster',result.version);expect(readFileSync(join(f.project,'assets/enemies/caster_source.png'))).toEqual(f.source);
+  });
+  it('rejects invalid, mismatched and empty region imports before saving',()=>{
+    const f=fixture(),info=readMaterialArtwork(f.project,'caster'),url='data:image/png;base64,'+f.source.toString('base64');
+    for(const r of [null,[],{x:-1,y:0,width:1,height:1},{x:0.5,y:0,width:1,height:1},{x:15,y:0,width:2,height:1},{x:0,y:0,width:0,height:1}])expect(()=>previewImportedActorSource(f.project,'caster',info.inspectionHash,url,'boots.png',r)).toThrow();
+    expect(()=>previewImportedActorSource(f.project,'caster',info.inspectionHash,url,'boots.png',{x:0,y:0,width:16,height:16})).toThrow('No source pixels changed');
+    const pixels=new Uint8Array(32*32*4);pixels.set([0,0,0,255],(16*32+16)*4);const png=encodePng(32,32,pixels);
+    expect(()=>previewImportedActorSource(f.project,'caster',info.inspectionHash,'data:image/png;base64,'+png.toString('base64'),'boots.png',{x:0,y:0,width:16,height:16})).toThrow('same source canvas');
+    expect(readFileSync(join(f.project,'assets/enemies/caster_source.png'))).toEqual(f.source);
+  });
+  it('allows transparent region erasure while protecting the complete actor from removal',()=>{
+    const f=fixture(),info=readMaterialArtwork(f.project,'caster'),blank=encodePng(16,16,new Uint8Array(16*16*4)),url='data:image/png;base64,'+blank.toString('base64');
+    expect(()=>previewImportedActorSource(f.project,'caster',info.inspectionHash,url,'erase.png',{x:0,y:0,width:16,height:16})).toThrow('entire actor');
+    const preview=previewImportedActorSource(f.project,'caster',info.inspectionHash,url,'erase.png',{x:5,y:12,width:6,height:2});
+    applyMaterialArtwork(f.project,'caster',preview.draftId);const pixels=decodePngRgba(readFileSync(join(f.project,'assets/enemies/caster_source.png'))).rgba;
+    expect(pixels[(12*16+5)*4+3]).toBe(0);expect(pixels[(11*16+5)*4+3]).toBe(255);
   });
 });

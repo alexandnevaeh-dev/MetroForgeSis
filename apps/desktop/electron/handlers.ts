@@ -1918,9 +1918,9 @@ export function registerIpcHandlers(cwd: string): void {
     assertProjectPath(projectPath, cwd);
     return generateLocalAudioAlternative(projectPath, request);
   });
-  ipcMain.handle('preview-imported-actor-source', async (_event, projectPath: string, assetId: string, inspectionHash: string, pngDataUrl: unknown, name: unknown) => {
+  ipcMain.handle('preview-imported-actor-source', async (_event, projectPath: string, assetId: string, inspectionHash: string, pngDataUrl: unknown, name: unknown, region?: unknown) => {
     assertReadableProjectPath(projectPath, cwd);
-    return previewImportedActorSource(projectPath, assetId, inspectionHash, pngDataUrl, name);
+    return previewImportedActorSource(projectPath, assetId, inspectionHash, pngDataUrl, name, region);
   });
   ipcMain.handle('get-audio-preview', async (_event, projectPath: string, relPath: string) => {
     assertProjectPath(projectPath, cwd);

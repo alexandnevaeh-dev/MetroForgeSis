@@ -2,7 +2,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { inflateSync } from 'node:zlib';
-import { decodePngRgba, applyMaterialColors, validateMaterialColorRules, compileManualImage, isolateManualForeground, DiffusersProvider, type ManualImagePlan, type MaterialColorRule } from '@metroforge/assets';
+import { encodePng, decodePngRgba, applyMaterialColors, validateMaterialColorRules, compileManualImage, isolateManualForeground, DiffusersProvider, type ManualImagePlan, type MaterialColorRule } from '@metroforge/assets';
 import { assertAssetId, assetFile, lockAssetMutation, sameBytes, fileBytes, commitAssetFiles, invalidateAssetValidation } from './asset-files.js';
 import { listAssetHistory, type AssetVersionRecord } from './asset-history.js';
 import { markDescendantsDirty, defaultCharacterLineageEdges } from './artifact-lineage.js';
@@ -18,7 +18,8 @@ interface Snapshot {
   project: string; id: string; manifestBytes: Buffer; dnaBytes: Buffer; manifest: Record<string, any>;
   artifact: Record<string, any>; image: Buffer; source: Buffer; plan: ManualImagePlan;
 }
-interface Draft extends Snapshot { created: number; editedSource: Buffer; editedImage: Buffer; rules: MaterialColorRule[]; changedPixels: number; isolation: Record<string, unknown>; sourceImport?: { name: string; sha256: string; width: number; height: number } }
+interface SourceRegion { x: number; y: number; width: number; height: number }
+interface Draft extends Snapshot { created: number; editedSource: Buffer; editedImage: Buffer; rules: MaterialColorRule[]; changedPixels: number; isolation: Record<string, unknown>; sourceImport?: { name: string; sha256: string; width: number; height: number; region?: SourceRegion; resultSourceHash?: string } }
 
 function dimensions(bytes: Buffer) {
   if (bytes.length < 24 || bytes.length > 16_777_216 || !bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))) throw new Error('Artwork must be a bounded PNG image');
@@ -60,7 +61,7 @@ export function readMaterialArtwork(projectPath: string, assetId: string) {
 }
 
 /** Import source bytes without file-path access or saving before review. */
-export function previewImportedActorSource(projectPath: string, assetId: string, expectedInspectionHash: string, pngDataUrl: unknown, name: unknown) {
+export function previewImportedActorSource(projectPath: string, assetId: string, expectedInspectionHash: string, pngDataUrl: unknown, name: unknown, requestedRegion?: unknown) {
   const release = lockAssetMutation(projectPath);
   try {
     const s = snapshot(projectPath, assetId);
@@ -93,14 +94,30 @@ export function previewImportedActorSource(projectPath: string, assetId: string,
     const decoded = decodePngRgba(imported);
     let visible = 0, transparent = 0;
     for (let i = 3; i < decoded.rgba.length; i += 4) { if (decoded.rgba[i]! >= 128) visible++; if (decoded.rgba[i] === 0) transparent++; }
-    if (!visible || transparent < size.width * size.height * 0.05) throw new Error('Actor source needs a visible figure on a transparent canvas');
-    const plan = { ...s.plan, sourceWidth: size.width, sourceHeight: size.height }, editedImage = compileManualImage(imported, plan);
+    if ((!visible && requestedRegion === undefined) || transparent < size.width * size.height * 0.05) throw new Error('Actor source needs a visible figure on a transparent canvas');
+    let editedSource: Buffer = imported, region: SourceRegion | undefined;
+    if (requestedRegion !== undefined) {
+      if (!requestedRegion || typeof requestedRegion !== 'object' || Array.isArray(requestedRegion)) throw new Error('Choose a valid source rectangle');
+      const r = requestedRegion as SourceRegion;
+      if (![r.x,r.y,r.width,r.height].every(Number.isSafeInteger) || r.x<0 || r.y<0 || r.width<1 || r.height<1 || r.x+r.width>s.plan.sourceWidth || r.y+r.height>s.plan.sourceHeight) throw new Error('Source rectangle must stay inside the original canvas');
+      if (size.width!==s.plan.sourceWidth || size.height!==s.plan.sourceHeight) throw new Error('Region import needs an image with the same source canvas dimensions');
+      region = { x:r.x,y:r.y,width:r.width,height:r.height };
+      const original = decodePngRgba(s.source), combined = new Uint8Array(original.rgba);
+      for (let row=r.y;row<r.y+r.height;row++) {
+        const start=(row*size.width+r.x)*4,end=start+r.width*4;
+        combined.set(decoded.rgba.subarray(start,end),start);
+      }
+      if (!combined.some((value,index)=>value!==original.rgba[index])) throw new Error('No source pixels changed inside this rectangle');
+      if (!combined.some((value,index)=>index%4===3&&value>=128)) throw new Error('Region import would remove the entire actor');
+      editedSource = encodePng(size.width,size.height,combined);
+    }
+    const plan = { ...s.plan, sourceWidth: size.width, sourceHeight: size.height }, editedImage = compileManualImage(editedSource, plan);
     assertCurrent(s);
     for (const [id, draft] of drafts) if (Date.now() - draft.created > lifetime) drafts.delete(id);
     while (drafts.size >= 4) drafts.delete(drafts.keys().next().value!);
-    const draftId = randomUUID(), sourceImport = { name, sha256: sha(imported), ...size };
-    drafts.set(draftId, { ...s, plan, created: Date.now(), editedSource: imported, editedImage, rules: [], changedPixels: visible, isolation: { matteSource: 'imported_alpha' }, sourceImport });
-    return { draftId, sourceDataUrl: dataUrl(imported), imageDataUrl: dataUrl(editedImage), sourceHash: sha(imported), imageHash: sha(editedImage), width: size.width, height: size.height };
+    const draftId = randomUUID(), sourceImport = { name, sha256: sha(imported), ...size, ...(region ? { region, resultSourceHash: sha(editedSource) } : {}) };
+    drafts.set(draftId, { ...s, plan, created: Date.now(), editedSource, editedImage, rules: [], changedPixels: visible, isolation: { matteSource: 'imported_alpha' }, sourceImport });
+    return { draftId, sourceDataUrl: dataUrl(editedSource), imageDataUrl: dataUrl(editedImage), sourceHash: sha(editedSource), imageHash: sha(editedImage), width: size.width, height: size.height, region };
   } finally { release(); }
 }
 

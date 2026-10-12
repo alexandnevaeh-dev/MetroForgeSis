@@ -183,7 +183,7 @@ contextBridge.exposeInMainWorld('metroforge', {
     ipcRenderer.invoke('get-asset-history', projectPath, assetId),
   readMaterialArtwork: (projectPath: string, assetId: string) => ipcRenderer.invoke('read-material-artwork', projectPath, assetId),
   previewMaterialArtwork: (projectPath: string, assetId: string, inspectionHash: string, rules: unknown) => ipcRenderer.invoke('preview-material-artwork', projectPath, assetId, inspectionHash, rules),
-  previewImportedActorSource: (projectPath: string, assetId: string, inspectionHash: string, pngDataUrl: string, name: string) => ipcRenderer.invoke('preview-imported-actor-source', projectPath, assetId, inspectionHash, pngDataUrl, name),
+  previewImportedActorSource: (projectPath: string, assetId: string, inspectionHash: string, pngDataUrl: string, name: string, region?: unknown) => ipcRenderer.invoke('preview-imported-actor-source', projectPath, assetId, inspectionHash, pngDataUrl, name, region),
   applyMaterialArtwork: (projectPath: string, assetId: string, draftId: string) => ipcRenderer.invoke('apply-material-artwork', projectPath, assetId, draftId),
   restoreAssetVersion: (projectPath: string, assetId: string, version: number) =>
     ipcRenderer.invoke('restore-asset-version', projectPath, assetId, version),
