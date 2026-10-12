@@ -1,4 +1,5 @@
 import { TerrainPresentationEditor } from './TerrainPresentationEditor.js';
+import {AudioBindingEditor} from './AudioBindingEditor.js';
 import { assetReviewPresentation } from './asset-review.js';
 import { previewFrameAtTime } from './animation-clock.js';
 import { AnimationPreview } from './AnimationPreview.js';
@@ -436,6 +437,7 @@ function ProjectAssetsGallery() {
             )}
             {(selected.category === 'SFX' || selected.category === 'Music' || selected.category === 'Voice') &&
               selectedPath && <AudioPreview projectPath={selectedPath} relPath={selected.path} />}
+            {selected.sourceType==='LOCAL_AUDIO_ALTERNATIVE'&&<AudioBindingEditor key={selected.path} projectPath={selectedPath} sourcePath={selected.path}/>}
             <div className="asset-inspector-actions">
               <Button
                 variant="primary"

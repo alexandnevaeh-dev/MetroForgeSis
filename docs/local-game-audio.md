@@ -1,6 +1,14 @@
 # Local game audio authoring
 
-The Asset workshop has separate Artwork and Audio tabs. Audio creates new WAV alternatives in the selected side-view or top-down project. It does not replace existing sounds, change gameplay bindings, approve quality, or include a model in the exported game. Quantum projects are outside this workflow.
+The Asset workshop has separate Artwork and Audio tabs. Audio creates new WAV alternatives in the selected side-view or top-down project. Saved takes also remain in the Asset Gallery with Needs Review status. Quantum projects are outside this workflow.
+
+## Assign a reviewed take to a game event
+
+Listen to a saved take in the workshop or library, choose an existing sound-effect or music event, and use **Use this take**. The Godot adapter writes the exact WAV bytes to the event's existing `audio/sfx/` or `audio/music/` slot. The previous WAV and take metadata are retained in `.metroforge/audio-binding-history/` and the binding ledger. Other event files remain unchanged. Restart the game preview to load the new sound, then validate its playback and mix.
+
+**Undo audio change** restores changes in project-wide reverse order. It checks the current audio, take metadata and backup hashes first, preserving later user edits instead of overwriting them. Replacing a previous custom take updates both takes' binding provenance, and Undo restores both preimages. Apply and Undo invalidate game validation; restoring a WAV does not automatically restore acceptance. The selected take remains pending audio review and production readiness.
+
+Only existing events of the same audio type are selectable. Source WAV hashes, captured game DNA, selection revisions and safe project paths are checked before mutation. The current binding adapter supports Godot; Unity and Unreal need their own authoring adapters and native evidence. Local generation and audition remain separate from engine-specific game admission.
 
 Sound effects use `stabilityai/stable-audio-3-small-sfx` through Stability AI's official Stable Audio 3 SDK. Instrumental music uses ACE-Step 1.5's `acestep-v15-turbo` through its local API. These require separate Python environments: their Transformers versions differ. Keep the existing image environment separate too.
 

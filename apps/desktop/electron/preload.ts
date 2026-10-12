@@ -82,6 +82,9 @@ contextBridge.exposeInMainWorld('metroforge', {
   getAudioPreview: (projectPath: string, relPath: string) =>
     ipcRenderer.invoke('get-audio-preview', projectPath, relPath),
   getLocalAudioStatus: () => ipcRenderer.invoke('local-audio-status'),
+  readAudioBindings:(projectPath:string,sourcePath?:string)=>ipcRenderer.invoke('read-audio-bindings',projectPath,sourcePath),
+  applyAudioBinding:(projectPath:string,sourcePath:string,targetPath:string,revision:string)=>ipcRenderer.invoke('apply-audio-binding',projectPath,sourcePath,targetPath,revision),
+  undoAudioBinding:(projectPath:string,sourcePath:string|undefined,revision:string)=>ipcRenderer.invoke('undo-audio-binding',projectPath,sourcePath,revision),
   generateLocalAudio: (projectPath: string, request: import('@metroforge/generation').LocalAudioRequest) => ipcRenderer.invoke('generate-local-audio', projectPath, request),
   generateAsset: (request: Record<string, unknown>) => ipcRenderer.invoke('generate-asset', request),
   getManualArtDirection: (projectPath: string) => ipcRenderer.invoke('get-manual-art-direction', projectPath),

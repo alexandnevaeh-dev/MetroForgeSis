@@ -473,6 +473,9 @@ export type MetroforgeBridge = {
   ) => Promise<{ dataUrl?: string; cells?: unknown; atlasSize?: number; tileSize?: number; roles?: Record<string,[number,number]> }>;
   getAudioPreview: (projectPath: string, relPath: string) => Promise<{ dataUrl?: string }>;
   getLocalAudioStatus: () => Promise<{musicConfigured:boolean;sfxConfigured:boolean;busy:boolean}>;
+  readAudioBindings:(projectPath:string,sourcePath?:string)=>Promise<import('@metroforge/generation').AudioBindingSnapshot>;
+  applyAudioBinding:(projectPath:string,sourcePath:string,targetPath:string,revision:string)=>Promise<import('@metroforge/generation').AudioBindingSnapshot>;
+  undoAudioBinding:(projectPath:string,sourcePath:string|undefined,revision:string)=>Promise<import('@metroforge/generation').AudioBindingSnapshot>;
   generateLocalAudio: (projectPath:string,request:import('@metroforge/generation').LocalAudioRequest) => Promise<import('@metroforge/generation').LocalAudioAlternative>;
   generateAsset: (request: {
     referenceMode?: 'ip_adapter' | 'img2img';

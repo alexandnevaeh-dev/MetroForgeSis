@@ -1,5 +1,6 @@
 import { readTopDownTerrain } from './topdown-terrain.js';
 import {generateLocalAudioAlternative,readLocalAudioConfiguration,listLocalAudioAlternatives,type LocalAudioRequest} from '@metroforge/generation';
+import {readAudioBindings,applyAudioBinding,undoAudioBinding} from '@metroforge/generation';
 import { manualActorReview, manualPropReview } from '@metroforge/shared';
 import {readActiveRoomKits} from './room-kit-inspector.js';
 import {readRoomFurnishingReviews} from './room-furnishing-review.js';
@@ -1908,6 +1909,9 @@ export function registerIpcHandlers(cwd: string): void {
   });
 
   ipcMain.handle('local-audio-status', (event) => { checkCredentialSender(event); return readLocalAudioConfiguration(); });
+  ipcMain.handle('read-audio-bindings', (event, projectPath:string,sourcePath?:string)=>{checkCredentialSender(event);assertProjectPath(projectPath,cwd);return readAudioBindings(projectPath,sourcePath);});
+  ipcMain.handle('apply-audio-binding', (event, projectPath:string,sourcePath:string,targetPath:string,revision:string)=>{checkCredentialSender(event);assertProjectPath(projectPath,cwd);return applyAudioBinding(projectPath,sourcePath,targetPath,revision);});
+  ipcMain.handle('undo-audio-binding', (event, projectPath:string,sourcePath:string|undefined,revision:string)=>{checkCredentialSender(event);assertProjectPath(projectPath,cwd);return undoAudioBinding(projectPath,sourcePath,revision);});
   ipcMain.handle('generate-local-audio', async (event, projectPath: string, request: LocalAudioRequest) => {
     checkCredentialSender(event);
     assertProjectPath(projectPath, cwd);

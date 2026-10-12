@@ -1,6 +1,7 @@
 import {useEffect,useRef,useState} from 'react';
 import {Button,Input,Select,TextArea} from './ui/index.js';
 import type {LocalAudioAlternative,LocalAudioRequest} from '@metroforge/generation';
+import {AudioBindingEditor} from './AudioBindingEditor.js';
 
 export function LocalAudioWorkshop({projectPath}:{projectPath:string}) {
  const [kind,setKind]=useState<LocalAudioRequest['kind']>('sfx');
@@ -36,6 +37,6 @@ export function LocalAudioWorkshop({projectPath}:{projectPath:string}) {
   {configured&&!ready&&<p className="hint">This audio model needs local runtime setup before generation.</p>}
   {busy&&<p className="hint" role="status">The local model is working. Loading weights can take several minutes.</p>}
   {error&&<p role="alert">{error}</p>}
-  {result&&<div><p role="status">Saved a new take · {result.duration.toFixed(1)} seconds. Awaiting audio review.</p>{preview&&<audio aria-label="Generated audio audition" controls src={preview} preload="metadata"/>}<p className="hint">{result.path}</p></div>}
+  {result&&<div><p role="status">Saved a new take · {result.duration.toFixed(1)} seconds. Awaiting audio review.</p>{preview&&<audio aria-label="Generated audio audition" controls src={preview} preload="metadata"/>}<p className="hint">{result.path}</p><AudioBindingEditor projectPath={projectPath} sourcePath={result.path}/></div>}
  </section>;
 }
