@@ -58,6 +58,7 @@ import {
   restoreAssetVersion,
   readMaterialArtwork,
   previewMaterialArtwork,
+  previewImportedActorSource,
   applyMaterialArtwork,
   assessPreviewReadiness,
   createProjectCheckpoint,
@@ -1916,6 +1917,10 @@ export function registerIpcHandlers(cwd: string): void {
     checkCredentialSender(event);
     assertProjectPath(projectPath, cwd);
     return generateLocalAudioAlternative(projectPath, request);
+  });
+  ipcMain.handle('preview-imported-actor-source', async (_event, projectPath: string, assetId: string, inspectionHash: string, pngDataUrl: unknown, name: unknown) => {
+    assertReadableProjectPath(projectPath, cwd);
+    return previewImportedActorSource(projectPath, assetId, inspectionHash, pngDataUrl, name);
   });
   ipcMain.handle('get-audio-preview', async (_event, projectPath: string, relPath: string) => {
     assertProjectPath(projectPath, cwd);

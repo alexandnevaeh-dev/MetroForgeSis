@@ -1,7 +1,8 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
-import { applyMaterialColors, validateMaterialColorRules, compileManualImage, isolateManualForeground, DiffusersProvider, type ManualImagePlan, type MaterialColorRule } from '@metroforge/assets';
+import { inflateSync } from 'node:zlib';
+import { decodePngRgba, applyMaterialColors, validateMaterialColorRules, compileManualImage, isolateManualForeground, DiffusersProvider, type ManualImagePlan, type MaterialColorRule } from '@metroforge/assets';
 import { assertAssetId, assetFile, lockAssetMutation, sameBytes, fileBytes, commitAssetFiles, invalidateAssetValidation } from './asset-files.js';
 import { listAssetHistory, type AssetVersionRecord } from './asset-history.js';
 import { markDescendantsDirty, defaultCharacterLineageEdges } from './artifact-lineage.js';
@@ -11,11 +12,13 @@ const dataUrl = (bytes: Buffer) => 'data:image/png;base64,' + bytes.toString('ba
 const inspectionHash = (s: Snapshot) => sha(Buffer.from(sha(s.source) + sha(s.image) + sha(s.manifestBytes) + sha(s.dnaBytes)));
 const drafts = new Map<string, Draft>();
 const lifetime = 10 * 60_000;
+const crcTable = Uint32Array.from({ length: 256 }, (_, value) => { let n = value; for (let bit = 0; bit < 8; bit++) n = (n >>> 1) ^ (n & 1 ? 0xedb88320 : 0); return n >>> 0; });
+function pngCrc(bytes: Buffer) { let value = 0xffffffff; for (const byte of bytes) value = (value >>> 8) ^ crcTable[(value ^ byte) & 255]!; return (value ^ 0xffffffff) >>> 0; }
 interface Snapshot {
   project: string; id: string; manifestBytes: Buffer; dnaBytes: Buffer; manifest: Record<string, any>;
   artifact: Record<string, any>; image: Buffer; source: Buffer; plan: ManualImagePlan;
 }
-interface Draft extends Snapshot { created: number; editedSource: Buffer; editedImage: Buffer; rules: MaterialColorRule[]; changedPixels: number; isolation: Record<string, unknown> }
+interface Draft extends Snapshot { created: number; editedSource: Buffer; editedImage: Buffer; rules: MaterialColorRule[]; changedPixels: number; isolation: Record<string, unknown>; sourceImport?: { name: string; sha256: string; width: number; height: number } }
 
 function dimensions(bytes: Buffer) {
   if (bytes.length < 24 || bytes.length > 16_777_216 || !bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))) throw new Error('Artwork must be a bounded PNG image');
@@ -56,6 +59,51 @@ export function readMaterialArtwork(projectPath: string, assetId: string) {
   return { inspectionHash: inspectionHash(s), sourceHash: sha(s.source), imageHash: sha(s.image), width: s.plan.sourceWidth, height: s.plan.sourceHeight, sourceDataUrl: dataUrl(s.source), imageDataUrl: dataUrl(s.image) };
 }
 
+/** Import source bytes without file-path access or saving before review. */
+export function previewImportedActorSource(projectPath: string, assetId: string, expectedInspectionHash: string, pngDataUrl: unknown, name: unknown) {
+  const release = lockAssetMutation(projectPath);
+  try {
+    const s = snapshot(projectPath, assetId);
+    if (inspectionHash(s) !== expectedInspectionHash) throw new Error('Artwork changed after inspection. Reload the source and preview your changes again.');
+    if (typeof name !== 'string' || !name.length || name.length > 160 || /[\x00-\x1f/\\]/.test(name)) throw new Error('Choose a PNG file with a plain filename');
+    if (typeof pngDataUrl !== 'string' || pngDataUrl.length > 22_369_648 || !pngDataUrl.startsWith('data:image/png;base64,')) throw new Error('Import a PNG source no larger than 16 MiB');
+    const encoded = pngDataUrl.slice(22), imported = Buffer.from(encoded, 'base64');
+    if (imported.toString('base64') !== encoded) throw new Error('Imported PNG encoding is invalid');
+    const size = dimensions(imported), chunks: Buffer[] = [];
+    let offset = 8, count = 0, ended = false, header = false;
+    while (offset + 12 <= imported.length && ++count <= 1024) {
+      const length = imported.readUInt32BE(offset), type = imported.toString('ascii', offset + 4, offset + 8);
+      if (offset + 12 + length > imported.length) throw new Error('Imported PNG is truncated');
+      if (pngCrc(imported.subarray(offset + 4, offset + 8 + length)) !== imported.readUInt32BE(offset + 8 + length)) throw new Error('Imported PNG checksum is invalid');
+      if (!header && (type !== 'IHDR' || length !== 13)) throw new Error('Imported PNG header is invalid');
+      if (type === 'IHDR') {
+        if (header || imported[offset + 16] !== 8 || imported[offset + 17] !== 6 || imported[offset + 18] !== 0 || imported[offset + 19] !== 0 || imported[offset + 20] !== 0) throw new Error('Use a non-interlaced 8-bit RGBA PNG source');
+        header = true;
+      }
+      if (type === 'acTL' || type === 'fcTL') throw new Error('Import a single static actor source, not an animation');
+      if (type === 'IDAT') chunks.push(imported.subarray(offset + 8, offset + 8 + length));
+      offset += 12 + length;
+      if (type === 'IEND') { ended = length === 0; break; }
+    }
+    if (!ended || offset !== imported.length || !chunks.length) throw new Error('Imported PNG structure is invalid');
+    const expected = (size.width * 4 + 1) * size.height;
+    const scanlines = inflateSync(Buffer.concat(chunks), { maxOutputLength: expected });
+    if (scanlines.length !== expected) throw new Error('Imported PNG scanlines are invalid');
+    for (let row = 0; row < size.height; row++) if (scanlines[row * (size.width * 4 + 1)]! > 4) throw new Error('Imported PNG filter is invalid');
+    const decoded = decodePngRgba(imported);
+    let visible = 0, transparent = 0;
+    for (let i = 3; i < decoded.rgba.length; i += 4) { if (decoded.rgba[i]! >= 128) visible++; if (decoded.rgba[i] === 0) transparent++; }
+    if (!visible || transparent < size.width * size.height * 0.05) throw new Error('Actor source needs a visible figure on a transparent canvas');
+    const plan = { ...s.plan, sourceWidth: size.width, sourceHeight: size.height }, editedImage = compileManualImage(imported, plan);
+    assertCurrent(s);
+    for (const [id, draft] of drafts) if (Date.now() - draft.created > lifetime) drafts.delete(id);
+    while (drafts.size >= 4) drafts.delete(drafts.keys().next().value!);
+    const draftId = randomUUID(), sourceImport = { name, sha256: sha(imported), ...size };
+    drafts.set(draftId, { ...s, plan, created: Date.now(), editedSource: imported, editedImage, rules: [], changedPixels: visible, isolation: { matteSource: 'imported_alpha' }, sourceImport });
+    return { draftId, sourceDataUrl: dataUrl(imported), imageDataUrl: dataUrl(editedImage), sourceHash: sha(imported), imageHash: sha(editedImage), width: size.width, height: size.height };
+  } finally { release(); }
+}
+
 /** A preview does not mutate project files. The immutable draft contains exactly the reviewed PNGs. */
 export async function previewMaterialArtwork(projectPath: string, assetId: string, expectedInspectionHash: string, requested: unknown,
   isolationProvider: { segmentForeground(png: Buffer): Promise<{ok: boolean; buffer?: Buffer; model?: string; modelVersion?: string}> } = new DiffusersProvider()) {
@@ -82,7 +130,7 @@ export function applyMaterialArtwork(projectPath: string, assetId: string, draft
   try {
     const draft = drafts.get(draftId);
     if (!draft || draft.project.toLowerCase() !== resolve(projectPath).toLowerCase() || draft.id !== assetId || Date.now() - draft.created > lifetime)
-      throw new Error('This color preview expired or belongs to another image. Preview the colors again.');
+      throw new Error('This artwork preview expired or belongs to another image. Preview it again.');
     assertCurrent(draft);
     const versions = listAssetHistory(draft.project, assetId), version = Math.max(0, ...versions.map(v => v.version)) + 1;
     if (!Number.isSafeInteger(version)) throw new Error('Asset history is invalid');
@@ -96,8 +144,22 @@ export function applyMaterialArtwork(projectPath: string, assetId: string, draft
       if (existsSync(mirror)) writes.set(mirror, after);
     }
     const record: AssetVersionRecord = { version, path: draft.artifact.path, sourcePath: draft.artifact.sourcePath, backupPath, sourceBackupPath, timestamp: new Date().toISOString(), artifact: { ...draft.artifact }, provider: draft.artifact.provider, prompt: draft.artifact.prompt, seed: draft.artifact.seed, manual: true };
-    const edited: Record<string, any> = { ...draft.artifact, provider: 'manual-source-edit', selectedProvider: 'manual-source-edit', requestedProvider: 'manual-source-edit', modelId: undefined, selectedModel: undefined, requestedCapability: 'manual_color_correction', sourceType: 'manual', generationBackend: 'manual_source_edit', critiquePassed: false, critiqueScore: 0, productionAllowed: false, productionReady: false, maturity: 'COMPILED', manual: true,
+    const provider = draft.sourceImport ? 'manual-source-import' : 'manual-source-edit';
+    const edited: Record<string, any> = { ...draft.artifact, imagePlan: { ...draft.plan }, provider, selectedProvider: provider, requestedProvider: provider, modelId: undefined, selectedModel: undefined, requestedCapability: draft.sourceImport ? 'manual_source_import' : 'manual_color_correction', sourceType: 'manual', generationBackend: draft.sourceImport ? 'manual_source_import' : 'manual_source_edit', critiquePassed: false, critiqueScore: 0, productionAllowed: false, productionReady: false, maturity: 'COMPILED', manual: true,
       executionMetadata: { originalExecutionMetadata: draft.artifact.executionMetadata, materialColorEdit: { editedAt: new Date().toISOString(), rules: draft.rules, originalSourceHash: sha(draft.source), originalImageHash: sha(draft.image), sourceHash: sha(draft.editedSource), imageHash: sha(draft.editedImage), foregroundIsolation: draft.isolation }, manualActorReview: { state: 'pending', scope: 'source-image', humanReviewRequired: true } } };
+    if (draft.sourceImport) {
+      delete edited.requestedModel;
+      delete edited.seed;
+      delete edited.promptHash;
+      delete edited.generationTimestamp;
+      delete edited.restoredFromVersion;
+      edited.fallbackGenerated = false;
+      edited.fallbackDepth = 0;
+      edited.license = 'Imported artwork — license unverified';
+      edited.commercialUse = 'unknown';
+      delete edited.executionMetadata.materialColorEdit;
+      edited.executionMetadata.sourceImport = { ...draft.sourceImport, importedAt: new Date().toISOString(), originalSourceHash: sha(draft.source), originalImageHash: sha(draft.image), imageHash: sha(draft.editedImage) };
+    }
     draft.manifest.artifacts = draft.manifest.artifacts.map((a: Record<string, unknown>) => a.id === assetId ? edited : a);
     draft.manifest.assetHistory = { ...draft.manifest.assetHistory, [assetId]: [...versions, record] };
     const edges = draft.manifest.artifacts.flatMap((row: Record<string, unknown>) => Array.isArray(row.parentArtifactIds) ? row.parentArtifactIds.filter((id): id is string => typeof id === 'string').map(parentId => ({ parentId, childId: String(row.id), reason: 'derived_artwork' })) : []);

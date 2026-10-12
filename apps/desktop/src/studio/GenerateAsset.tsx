@@ -10,6 +10,7 @@ import { Button, Checkbox, Input, Select, TextArea, Tabs } from './ui/index.js';
 import type { GenerateAssetResponse, GenerateAssetVariantResult } from './metroforge-api.js';
 import {LocalImageModelPreparation} from './LocalImageModelPreparation.js';
 import {MaterialColorEditor} from './MaterialColorEditor.js';
+import {ActorSourceImporter} from './ActorSourceImporter.js';
 import {LocalAudioWorkshop} from './LocalAudioWorkshop.js';
 
 const ASSET_TYPES = [
@@ -578,6 +579,7 @@ function GenerateAssetWorkspace({ projectPath }: { projectPath: string }) {
       <aside className="panel form-stack">
         <h3>Selected artwork</h3>
         {selected && <MaterialColorEditor key={`${selected.id}:${artworkRevision}`} projectPath={projectPath} assetId={selected.id} disabled={busy||inspecting||modelPreparing} open={materialEditorOpen} onOpenChange={setMaterialEditorOpen} onBusy={setBusy} onSaved={async()=>{await inspectAsset(selected.path,selected.id);setStatus('Colors saved. Restart the game preview and inspect the artwork. Visual review is still required.');}} />}
+        {selected && <ActorSourceImporter key={`import:${selected.id}:${artworkRevision}`} projectPath={projectPath} assetId={selected.id} disabled={busy||inspecting||modelPreparing} onBusy={setBusy} onSaved={async()=>{await inspectAsset(selected.path,selected.id);setStatus('Actor source imported. Restart the game preview and inspect the artwork. Visual review is still required.');}} />}
         <dl className="settings-dl">
           <dt>Asset</dt>
           <dd>{selected?.id ?? 'Select an alternative'}</dd>

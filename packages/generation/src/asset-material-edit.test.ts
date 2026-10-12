@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { describe, expect, it } from 'vitest';
 import { encodePng } from '@metroforge/assets';
-import { readMaterialArtwork, previewMaterialArtwork, applyMaterialArtwork } from './asset-material-edit.js';
+import { readMaterialArtwork, previewMaterialArtwork, previewImportedActorSource, applyMaterialArtwork } from './asset-material-edit.js';
 import { restoreAssetVersion } from './asset-history.js';
 
 function fixture() {
@@ -84,5 +84,36 @@ describe('Guarded material artwork drafts',()=>{
     await expect(previewMaterialArtwork(f.project,'caster',info.inspectionHash,[{...rules[0],from:'#ffffff'}])).rejects.toThrow('No source colors matched');
     const path=join(f.project,'generation_manifest.json'), m=JSON.parse(readFileSync(path,'utf8'));m.artifacts[0].frameCount=4;writeFileSync(path,JSON.stringify(m));
     expect(()=>readMaterialArtwork(f.project,'caster')).toThrow('static Workshop');
+  });
+  it('previews imported source without saving and restores original source dimensions and provenance',()=>{
+    const f=fixture(), info=readMaterialArtwork(f.project,'caster'), pixels=new Uint8Array(32*32*4);
+    for(let y=4;y<30;y++)for(let x=12;x<20;x++)pixels.set([40,40,48,255],(y*32+x)*4);
+    const imported=encodePng(32,32,pixels), url='data:image/png;base64,'+imported.toString('base64');
+    const preview=previewImportedActorSource(f.project,'caster',info.inspectionHash,url,'corrected.png');
+    expect(readFileSync(join(f.project,'assets/enemies/caster_source.png'))).toEqual(f.source);
+    const applied=applyMaterialArtwork(f.project,'caster',preview.draftId);
+    expect(readFileSync(join(f.project,'assets/enemies/caster_source.png'))).toEqual(imported);
+    const manifest=JSON.parse(readFileSync(join(f.project,'generation_manifest.json'),'utf8'));
+    expect(manifest.artifacts[0]).toMatchObject({provider:'manual-source-import',productionReady:false,imagePlan:{sourceWidth:32,sourceHeight:32}});
+    expect(manifest.artifacts[0].executionMetadata.sourceImport.name).toBe('corrected.png');
+    expect(manifest.artifacts[0].seed).toBeUndefined();
+    expect(manifest.artifacts[0].requestedModel).toBeUndefined();
+    expect(manifest.artifacts[0]).toMatchObject({commercialUse:'unknown',license:'Imported artwork — license unverified'});
+    expect(manifest.artifacts[1].dirty).toBe(true);
+    restoreAssetVersion(f.project,'caster',applied.version);
+    expect(readFileSync(join(f.project,'assets/enemies/caster_source.png'))).toEqual(f.source);
+    expect(readMaterialArtwork(f.project,'caster').width).toBe(16);
+  });
+  it('rejects malformed, opaque, oversized and stale source imports without saving',()=>{
+    const f=fixture(), info=readMaterialArtwork(f.project,'caster'), url='data:image/png;base64,'+f.source.toString('base64');
+    expect(()=>previewImportedActorSource(f.project,'caster',info.inspectionHash,'file:///outside.png','x.png')).toThrow('PNG');
+    expect(()=>previewImportedActorSource(f.project,'caster',info.inspectionHash,url,'../x.png')).toThrow('filename');
+    const broken=Buffer.from(f.source);broken[29]^=1;
+    expect(()=>previewImportedActorSource(f.project,'caster',info.inspectionHash,'data:image/png;base64,'+broken.toString('base64'),'x.png')).toThrow('checksum');
+    const opaque=encodePng(16,16,new Uint8Array(16*16*4).fill(255));
+    expect(()=>previewImportedActorSource(f.project,'caster',info.inspectionHash,'data:image/png;base64,'+opaque.toString('base64'),'x.png')).toThrow('transparent canvas');
+    expect(()=>previewImportedActorSource(f.project,'caster','0'.repeat(64),url,'x.png')).toThrow('changed');
+    expect(()=>previewImportedActorSource(f.project,'caster',info.inspectionHash,'data:image/png;base64,'+'A'.repeat(22_369_650),'x.png')).toThrow('16 MiB');
+    expect(readFileSync(join(f.project,'assets/enemies/caster_source.png'))).toEqual(f.source);
   });
 });
