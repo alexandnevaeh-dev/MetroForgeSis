@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { generateGameContent, enemyCombatTypeForIndex, enemyMovementForIndex, collectibleCountForProfile } from '../src/content.js';
 import { GameDNASchema } from '@metroforge/schemas';
+import {generateTopDownWorld} from './topdown/world.js';
 
 const testDna = GameDNASchema.parse({
   version: '0.1.0',
@@ -32,6 +33,15 @@ const testDna = GameDNASchema.parse({
 const testRoomIds = Array.from({ length: 8 }, (_, i) => `room_${i.toString().padStart(3, '0')}`);
 
 describe('generateGameContent', () => {
+  it('binds every medium top-down boss definition to its actual authored arena and ID',()=>{
+    const world=generateTopDownWorld({seed:20261012,profile:'MEDIUM',tileSize:32});
+    const arenas=world.overworld.areas.flatMap(area=>area.pois.filter(poi=>poi.kind==='boss').map(poi=>({room:area.id,id:String(poi.metadata.bossId)})));
+    const dna=GameDNASchema.parse({...testDna,archetype:'TOP_DOWN_ACTION_ADVENTURE',technical:{...testDna.technical,tileSize:32},profile:'MEDIUM'});
+    const content=generateGameContent(dna,'MEDIUM',20261012,arenas.at(-1)!.room,world.roomIds,{bossRoomIds:arenas.map(a=>a.room),bossIds:arenas.map(a=>a.id)});
+    expect(arenas).toHaveLength(6);expect(content.bosses.map(b=>({room:b.arenaRoomId,id:b.id}))).toEqual(arenas);
+    expect(content.bosses.filter(b=>b.id==='boss_final')).toHaveLength(1);
+    expect(()=>generateGameContent(dna,'MEDIUM',1,arenas.at(-1)!.room,world.roomIds,{bossRoomIds:arenas.map(a=>a.room),bossIds:arenas.map(()=> 'boss_final')})).toThrow('boss IDs');
+  });
   it('generates tiny test content counts', () => {
     const content = generateGameContent(testDna, 'TINY_TEST', 42, 'room_007', testRoomIds);
     expect(content.enemies).toHaveLength(2);

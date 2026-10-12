@@ -1,9 +1,9 @@
 /** Original Stormglass topology inspired by the supplied regional cutaway references.
  * World coordinates describe how separate playable rooms fit inside one place.
  * Reference PNGs are study material and are not copied into generated game art. */
-export type StormglassRegionProfile = 'gallery' | 'expanded-region' | 'archive-wing' | 'record-halls';
+export type StormglassRegionProfile = 'gallery' | 'expanded-region' | 'archive-wing' | 'record-halls' | 'great-archive';
 export function buildStormglassGalleryBlueprint(profile: StormglassRegionProfile = 'gallery') {
-  if (!['gallery', 'expanded-region', 'archive-wing', 'record-halls'].includes(profile)) throw new Error('Unknown Stormglass region profile');
+  if (!['gallery', 'expanded-region', 'archive-wing', 'record-halls', 'great-archive'].includes(profile)) throw new Error('Unknown Stormglass region profile');
   const rooms = [
     {id:'room_000',name:'West Arrival Gallery',x:0,y:0,width:3072,height:768,theme:'arrival',purpose:'Readable entrance and first view of the processional gallery'},
     {id:'room_001',name:'Stormglass Processional Gallery',x:3072,y:0,width:4096,height:768,theme:'gallery',purpose:'Long architectural spine with a descending exploration branch'},
@@ -56,7 +56,7 @@ export function buildStormglassGalleryBlueprint(profile: StormglassRegionProfile
       {from:'room_045',to:'room_006',direction:'down',requirements:[],optional:true},
     );
   }
-  if ((profile === 'archive-wing' || profile === 'record-halls')) {
+  if ((profile === 'archive-wing' || profile === 'record-halls' || profile === 'great-archive')) {
     const landing = rooms.find(room=>room.id==='room_044')!;
     landing.name="Scribe's Landing";landing.height=1536;
     landing.purpose='Two-storey archive with a clear lower reading lane, upper crosswalk, enclosed upper records chamber and lower branch';
@@ -69,7 +69,7 @@ export function buildStormglassGalleryBlueprint(profile: StormglassRegionProfile
       {from:'room_044',to:'room_047',direction:'down',requirements:[],optional:true},
     );
   }
-  if (profile === 'record-halls') {
+  if (profile === 'record-halls' || profile === 'great-archive') {
     rooms.push(
       {id:'room_048',name:'Indexers Reading Court',x:4608,y:-4608,width:1536,height:1536,theme:'archive-loft',purpose:'Enclosed upstairs index chamber connecting the records loft back to the landing by a second route'},
       {id:'room_049',name:'Ledger Service Return',x:8192,y:-1536,width:1024,height:1536,theme:'stairwell',purpose:'Lower vault service chamber reconnecting to the lantern descent without retracing the vault ceiling exit'},
@@ -81,7 +81,20 @@ export function buildStormglassGalleryBlueprint(profile: StormglassRegionProfile
       {from:'room_049',to:'room_045',direction:'right',requirements:[],optional:true},
     );
   }
-  return {version:1,id:profile === 'record-halls' ? 'stormglass-record-halls-candidate-v1' : profile === 'gallery' ? 'stormglass-gallery-world-within-world-v1' : profile==='archive-wing' ? 'stormglass-archive-wing-candidate-v1' : 'stormglass-expanded-region-candidate-v1',profile,rooms,links,
+  if (profile === 'great-archive') {
+    rooms.push(
+      {id:'room_050',name:'West Catalog Promenade',x:-2048,y:-3072,width:5120,height:768,theme:'archive',purpose:'Long upper hall with catalog recesses, a sheltered reading stop and a readable west stair landmark'},
+      {id:'room_051',name:'Binders Service Stair',x:-3072,y:-3072,width:1024,height:3072,theme:'stairwell',purpose:'Deep descent from the catalog promenade to the lower delivery hall; ordinary stairs support both directions'},
+      {id:'room_052',name:'Lower Dispatch Hall',x:-2048,y:-768,width:5120,height:768,theme:'undercroft',purpose:'Enclosed lower delivery route with separated combat and storage bays, reconnecting to the familiar archive stair'},
+    );
+    links.push(
+      {from:'room_043',to:'room_050',direction:'left',requirements:[],optional:true},
+      {from:'room_050',to:'room_051',direction:'left',requirements:[],optional:true},
+      {from:'room_051',to:'room_052',direction:'right',requirements:[],optional:true},
+      {from:'room_052',to:'room_043',direction:'right',requirements:[],optional:true},
+    );
+  }
+  return {version:1,id:profile === 'great-archive' ? 'stormglass-great-archive-candidate-v1' : profile === 'record-halls' ? 'stormglass-record-halls-candidate-v1' : profile === 'gallery' ? 'stormglass-gallery-world-within-world-v1' : profile==='archive-wing' ? 'stormglass-archive-wing-candidate-v1' : 'stormglass-expanded-region-candidate-v1',profile,rooms,links,
     abilityRoom:'room_003',checkpointRoom:'room_006',externalBossRoom:'room_008',
     references:'User supplied Marble Gallery topology and regional cutaways; original geometry and Stormglass materials',
     productionReady:false};
@@ -139,7 +152,7 @@ export function stormglassGalleryPort(roomId:string,targetId:string,direction:st
   if(direction==='left'||direction==='right'){
     const top=Math.max(room.y,target.y),bottom=Math.min(room.y+room.height,target.y+target.height);
     if(bottom-top<128)throw new Error(`Stormglass portal ${roomId} ${direction} ${targetId}: opening has less than 128px shared height`);
-    const floorY=['archive-wing','record-halls'].includes(profile)&&[roomId,targetId].every(id=>['room_044','room_045'].includes(id)) ? 704 : bottom-room.y-64;
+    const floorY=['archive-wing','record-halls','great-archive'].includes(profile)&&[roomId,targetId].every(id=>['room_044','room_045'].includes(id)) ? 704 : bottom-room.y-64;
     return {x:direction==='left'?48:room.width-72,y:floorY-32,floorY,direction,targetRoomId:targetId};
   }
   const left=Math.max(room.x,target.x),right=Math.min(room.x+room.width,target.x+target.width);

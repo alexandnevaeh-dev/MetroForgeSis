@@ -11,7 +11,7 @@ export function buildStormglassArchiveChamber(roomId:string,profile:string='arch
    platforms.push({x:toX-32,y:704-(i+1)*192,width:128,height:32});
   }
   platforms.push({x:2176,y:128,width:800,height:32});
-  if(profile==='record-halls'){
+  if((profile==='record-halls'||profile==='great-archive')){
    for(let i=0;i<3;i++){
     const fromX=i%2===0?768:1488,toX=i%2===0?1488:768;
     flights.push({from:{x:fromX,y:704-i*192},to:{x:toX,y:704-(i+1)*192},thickness:32});

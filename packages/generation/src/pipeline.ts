@@ -484,7 +484,7 @@ export class GenerationPipeline {
     // (packages/generation/src/remap-project-abilities.ts) for why.
     const abilityRemap = remapGameDnaAbilities(gameDna);
     gameDna = abilityRemap.dna;
-    if (options.worldLayout === 'stormglass-gallery' || options.worldLayout === 'stormglass-expanded-region' || options.worldLayout === 'stormglass-archive-wing' || options.worldLayout === 'stormglass-record-halls') {
+    if (options.worldLayout === 'stormglass-gallery' || options.worldLayout === 'stormglass-expanded-region' || options.worldLayout === 'stormglass-archive-wing' || options.worldLayout === 'stormglass-record-halls' || options.worldLayout === 'stormglass-great-archive') {
       gameDna = applyStormglassGalleryDnaContract(gameDna);
       writeFileSync(gameDnaCheckpointPath, JSON.stringify(gameDna, null, 2));
     }
@@ -855,12 +855,13 @@ export class GenerationPipeline {
 
     report('enemy_families', 'RUNNING');
     const bossRoomId = authoredWorld?.finalBossRoomId ?? roomIds[roomIds.length - 1]!;
+    const topDownBossArenas = topDownWorld?.overworld.areas.flatMap(area=>area.pois.filter(poi=>poi.kind==='boss').map(poi=>({roomId:area.id,bossId:String(poi.metadata.bossId??'')})));
     const gameContent = bindStormglassArchiveLore(generateGameContent(gameDna, options.profile, options.seed, bossRoomId, roomIds, authoredWorld ? {
       bossRoomIds:authoredWorld.bossRoomIds,
       enemyNames:authoredWorld.enemyNames,
       bossNames:authoredWorld.bossNames,
       biomeCount:authoredWorld.worldGraph.regions.length,
-    } : gameDna.archetype === 'SIDE_VIEW_PLATFORMER' ? {bossRoomIds:[bossRoomId],biomeCount} : undefined), gameDna, options.worldLayout);
+    } : topDownBossArenas ? {bossRoomIds:topDownBossArenas.map(arena=>arena.roomId),bossIds:topDownBossArenas.map(arena=>arena.bossId)} : gameDna.archetype === 'SIDE_VIEW_PLATFORMER' ? {bossRoomIds:[bossRoomId],biomeCount} : undefined), gameDna, options.worldLayout);
     report('enemy_families', 'PASSED', `${gameContent.enemies.length} enemies`);
     report('bosses', 'PASSED', `${gameContent.bosses.length} bosses`);
     if (!(await maybePause('bosses', 'bosses', 'Review boss encounters before asset generation'))) {
@@ -1190,7 +1191,7 @@ export class GenerationPipeline {
       }
       warnings.push(`EXTERNAL_VISUAL_PACK_ACTIVE: ${pack.id} (${pack.assets.length} authored assets)`);
     }
-    if (options.worldLayout === 'stormglass-gallery' || options.worldLayout === 'stormglass-expanded-region' || options.worldLayout === 'stormglass-archive-wing' || options.worldLayout === 'stormglass-record-halls') {
+    if (options.worldLayout === 'stormglass-gallery' || options.worldLayout === 'stormglass-expanded-region' || options.worldLayout === 'stormglass-archive-wing' || options.worldLayout === 'stormglass-record-halls' || options.worldLayout === 'stormglass-great-archive') {
       const generatedSidecarPath = join(outputPath, 'assets/characters/player_animations.json');
       const generatedSidecar = textureFiles.get('assets/characters/player_animations.json')
         ?? (existsSync(generatedSidecarPath) ? readFileSync(generatedSidecarPath) : undefined);

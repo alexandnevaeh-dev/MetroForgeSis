@@ -120,11 +120,12 @@ export function configureStormglassGalleryRoomKits(
   )
     return false;
   const expanded = graph.nodes.some(
-    (node) => node.metadata.stormglassRegionProfile !== undefined && ['expanded-region','archive-wing','record-halls'].includes(String(node.metadata.stormglassRegionProfile)),
+    (node) => node.metadata.stormglassRegionProfile !== undefined && ['expanded-region','archive-wing','record-halls','great-archive'].includes(String(node.metadata.stormglassRegionProfile)),
   );
-  const archiveWing=graph.nodes.some(node=>['archive-wing','record-halls'].includes(String(node.metadata.stormglassRegionProfile)));
-  const recordHalls=graph.nodes.some(node=>node.metadata.stormglassRegionProfile==='record-halls');
-  const blueprint = buildStormglassGalleryBlueprint(recordHalls ? 'record-halls' : archiveWing ? 'archive-wing' : expanded ? 'expanded-region' : 'gallery'),
+  const archiveWing=graph.nodes.some(node=>['archive-wing','record-halls','great-archive'].includes(String(node.metadata.stormglassRegionProfile)));
+  const greatArchive=graph.nodes.some(node=>node.metadata.stormglassRegionProfile==='great-archive');
+  const recordHalls=greatArchive||graph.nodes.some(node=>node.metadata.stormglassRegionProfile==='record-halls');
+  const blueprint = buildStormglassGalleryBlueprint(greatArchive ? 'great-archive' : recordHalls ? 'record-halls' : archiveWing ? 'archive-wing' : expanded ? 'expanded-region' : 'gallery'),
     tileSize = dna.technical.tileSize;
   if (
     !blueprint.rooms.every((room) => {
@@ -213,8 +214,21 @@ export function configureStormglassGalleryRoomKits(
       ]};
       config.rooms.room_049={...structuredClone(config.rooms.room_005),props:[]};
     }
+    if(greatArchive){
+      config.rooms.room_050={...structuredClone(config.rooms.room_041),props:[],archiveBays:[
+        {id:'CatalogWestRecess',kind:'book-recess',x:768,width:512,height:288},
+        {id:'CatalogReadingDesk',kind:'scribe-desk',x:2016,width:192,height:40},
+        {id:'CatalogEastRecess',kind:'book-recess',x:4096,width:512,height:288},
+      ]};
+      config.rooms.room_051={...structuredClone(config.rooms.room_002),props:[]};
+      config.rooms.room_052={...structuredClone(config.rooms.room_041),props:[],archiveBays:[
+        {id:'DispatchWestCabinet',kind:'scroll-cabinet',x:768,width:256,height:160},
+        {id:'DispatchLedger',kind:'ledger-pedestal',x:2016,width:96,height:72},
+        {id:'DispatchEastCabinet',kind:'scroll-cabinet',x:4096,width:256,height:160},
+      ]};
+    }
     const fullCampaign =
-      campaignRooms.length === (recordHalls ? 50 : archiveWing ? 48 : expanded ? 46 : 43) &&
+      campaignRooms.length === (greatArchive ? 53 : recordHalls ? 50 : archiveWing ? 48 : expanded ? 46 : 43) &&
       campaignRooms.every(
         (node) => node.metadata.stormglassCampaignLayout === 'stormglass-gallery-campaign-v1',
       );

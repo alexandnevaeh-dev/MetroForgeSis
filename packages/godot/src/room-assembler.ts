@@ -373,7 +373,7 @@ export function buildRoomConnections(
     const isAbilityGated = requirements.length > 0;
     // Explicit spatial rooms can place separate same-facing sensors at different elevations.
     // Their physical edge/port checks below must validate the authored direction.
-    const fixedSpatialDirection = edge.metadata?.authoredRegion === 'stormglass-record-halls-candidate-v1';
+    const fixedSpatialDirection = ['stormglass-record-halls-candidate-v1','stormglass-great-archive-candidate-v1'].includes(String(edge.metadata?.authoredRegion));
     const inferredOutDirection =
       fromIdx !== undefined && toIdx !== undefined ? inferHorizontalDirection(fromIdx, toIdx) : 'right';
     const preferredOutDirection = edge.transition ?? inferredOutDirection;
@@ -792,7 +792,7 @@ export function buildRoomAssemblyOptions(
     hasAbilityPickup,
     hasSavePoint,
   );
-  const archiveCollectibleId = gameDna.archetype === 'SIDE_VIEW_METROIDVANIA' && ['archive-wing','record-halls'].includes(String(nodeMeta.stormglassRegionProfile))
+  const archiveCollectibleId = gameDna.archetype === 'SIDE_VIEW_METROIDVANIA' && ['archive-wing','record-halls','great-archive'].includes(String(nodeMeta.stormglassRegionProfile))
     ? roomId === 'room_046' && nodeMeta.stormglassRoomTheme === 'archive-loft' ? 'lost_echo_001'
       : roomId === 'room_047' && nodeMeta.stormglassRoomTheme === 'archive-vault' ? 'lost_echo_002' : undefined
     : undefined;
@@ -823,7 +823,7 @@ export function buildRoomAssemblyOptions(
     typeof nodeMeta.targetTileWidth === 'number' ? nodeMeta.targetTileWidth * tileSize : undefined;
   const targetH =
     typeof nodeMeta.targetTileHeight === 'number' ? nodeMeta.targetTileHeight * tileSize : undefined;
-  const regionProfile:StormglassRegionProfile=nodeMeta.stormglassRegionProfile==='record-halls'?'record-halls':nodeMeta.stormglassRegionProfile==='archive-wing'?'archive-wing':nodeMeta.stormglassRegionProfile==='expanded-region'?'expanded-region':'gallery';
+  const regionProfile:StormglassRegionProfile=nodeMeta.stormglassRegionProfile==='great-archive'?'great-archive':nodeMeta.stormglassRegionProfile==='record-halls'?'record-halls':nodeMeta.stormglassRegionProfile==='archive-wing'?'archive-wing':nodeMeta.stormglassRegionProfile==='expanded-region'?'expanded-region':'gallery';
   const galleryRoom = cleanStormglassRooms && gameDna.archetype === 'SIDE_VIEW_METROIDVANIA'
     ? buildStormglassGalleryBlueprint(regionProfile).rooms.find(room=>room.id===roomId && room.theme===nodeMeta.stormglassRoomTheme && room.width===targetW && room.height===targetH)
     : undefined;
@@ -965,9 +965,9 @@ export function buildRoomAssemblyOptions(
         rect.width > 512 && castleRegionPlan.floors.includes(rect.y))];
     }
   }
-  if(['archive-wing','record-halls'].includes(regionProfile)&&['room_044','room_046','room_047','room_048'].includes(roomId)&&galleryRoom&&(width!==galleryRoom.width||height!==galleryRoom.height))
+  if(['archive-wing','record-halls','great-archive'].includes(regionProfile)&&['room_044','room_046','room_047','room_048'].includes(roomId)&&galleryRoom&&(width!==galleryRoom.width||height!==galleryRoom.height))
     throw new Error('Archive chamber bounds belong to the connected wing plan; update the plan before resizing');
-  const archiveChamber=['archive-wing','record-halls'].includes(regionProfile)?buildStormglassArchiveChamber(roomId,regionProfile):undefined;
+  const archiveChamber=['archive-wing','record-halls','great-archive'].includes(regionProfile)?buildStormglassArchiveChamber(roomId,regionProfile):undefined;
   if(archiveChamber)layout.platforms.splice(0,layout.platforms.length,...archiveChamber.platforms);
   const foundryKit = overrides?.visualKit === 'foundry';
   const authoredParallax = overrides?.authoredParallax === true;
@@ -2472,7 +2472,7 @@ export function recompileRooms(input: RecompileRoomsInput): RecompileRoomsResult
         // mandatory descent. Re-derive these graph-owned ports after saved geometry.
         if (input.gameDna.identity?.title?.startsWith('Stormglass Reliquary') && input.gameDna.archetype === 'SIDE_VIEW_METROIDVANIA') {
           const meta=ctx.worldGraphNodesById.get(roomId)?.metadata;
-          const doorPits = stormglassGalleryDescentPits(opts.width, opts.tileSize, opts.connections, meta?.stormglassRoomTheme,opts.spatialPorts?.length?roomId:undefined,meta?.stormglassRegionProfile==='record-halls'?'record-halls':meta?.stormglassRegionProfile==='archive-wing'?'archive-wing':meta?.stormglassRegionProfile==='expanded-region'?'expanded-region':'gallery');
+          const doorPits = stormglassGalleryDescentPits(opts.width, opts.tileSize, opts.connections, meta?.stormglassRoomTheme,opts.spatialPorts?.length?roomId:undefined,meta?.stormglassRegionProfile==='great-archive'?'great-archive':meta?.stormglassRegionProfile==='record-halls'?'record-halls':meta?.stormglassRegionProfile==='archive-wing'?'archive-wing':meta?.stormglassRegionProfile==='expanded-region'?'expanded-region':'gallery');
           opts.pits = [...opts.pits, ...doorPits.filter(pit => !opts.pits!.some(saved => saved.x <= pit.x && saved.x + saved.width >= pit.x + pit.width))];
           const floorRow = Math.floor(opts.height / opts.tileSize) - 2;
           opts.tileCells = opts.tileCells.filter(cell => cell.y < floorRow || !doorPits.some(pit => cell.x * opts.tileSize >= pit.x && cell.x * opts.tileSize < pit.x + pit.width));

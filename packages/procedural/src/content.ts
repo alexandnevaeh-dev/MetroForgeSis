@@ -263,10 +263,13 @@ export function generateGameContent(
   seed: number,
   bossRoomId: string,
   roomIds: string[],
-  options?: { bossRoomIds?: readonly string[]; enemyNames?: readonly string[]; bossNames?: readonly string[]; biomeCount?: number },
+  options?: { bossRoomIds?: readonly string[]; bossIds?: readonly string[]; enemyNames?: readonly string[]; bossNames?: readonly string[]; biomeCount?: number },
 ): GameContent {
   const rng = new SeededRNG(seed);
   const authoredBossRooms = options?.bossRoomIds;
+  if (options?.bossIds && (!authoredBossRooms || options.bossIds.length !== authoredBossRooms.length || new Set(options.bossIds).size !== options.bossIds.length || options.bossIds.some(id=>typeof id!=='string'||!/^[a-zA-Z0-9_-]+$/.test(id)) || options.bossIds.at(-1)!=='boss_final' || options.bossIds.slice(0,-1).some(id=>id==='boss_final'||/^final/i.test(id)))) {
+    throw new Error('Authored boss IDs must uniquely match arena rooms, with only the last boss final');
+  }
   if (authoredBossRooms && (authoredBossRooms.length === 0 || new Set(authoredBossRooms).size !== authoredBossRooms.length || authoredBossRooms.some(id => !roomIds.includes(id)) || authoredBossRooms[authoredBossRooms.length - 1] !== bossRoomId)) {
     throw new Error('Authored boss rooms must be unique campaign rooms ending at the final boss');
   }
@@ -310,7 +313,7 @@ export function generateGameContent(
     const attacks = ['slam', 'projectile'] as string[];
     bosses.push(
       BossSchema.parse({
-        id: isFinal ? 'boss_final' : `boss_${i.toString().padStart(3, '0')}`,
+        id: options?.bossIds?.[i] ?? (isFinal ? 'boss_final' : `boss_${i.toString().padStart(3, '0')}`),
         name,
         lore,
         visualPrompt: buildBossVisualPrompt(name, lore, gameDna, {

@@ -142,7 +142,7 @@ contextBridge.exposeInMainWorld('metroforge', {
   undoRoomEdit: (projectPath: string) => ipcRenderer.invoke('undo-room-edit', projectPath),
   redoRoomEdit: (projectPath: string) => ipcRenderer.invoke('redo-room-edit', projectPath),
   generateGame: (opts: {
-    worldLayout?: 'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region';
+    worldLayout?: 'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region' | 'stormglass-archive-wing' | 'stormglass-record-halls' | 'stormglass-great-archive';
     title?: string;
     prompt: string;
     profile: string;

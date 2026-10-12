@@ -41,7 +41,7 @@ export function CreateScreen({
   const [targetEngine, setTargetEngine] = useState<'godot'|'unity'|'unreal'>('godot');
   const [resultEngine, setResultEngine] = useState<'godot'|'unity'|'unreal'>('godot');
   const [worldLayout, setWorldLayout] = useState<
-    'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region' | 'stormglass-archive-wing' | 'stormglass-record-halls'
+    'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region' | 'stormglass-archive-wing' | 'stormglass-record-halls' | 'stormglass-great-archive'
   >('procedural');
   const [generating, setGenerating] = useState(false);
   const [scaffolding, setScaffolding] = useState(false);
@@ -326,7 +326,7 @@ export function CreateScreen({
                 disabled={busy}
                 onChange={(event) => {
                   const choice = event.target.value as
-                    'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region' | 'stormglass-archive-wing' | 'stormglass-record-halls';
+                    'procedural' | 'stormglass-gallery' | 'stormglass-expanded-region' | 'stormglass-archive-wing' | 'stormglass-record-halls' | 'stormglass-great-archive';
                   setWorldLayout(choice);
                   if (choice !== 'procedural') {
                     setProfile('MEDIUM');
@@ -340,6 +340,7 @@ export function CreateScreen({
               >
                 <option value="procedural">Procedural world</option>
                 <option value="stormglass-gallery">Stormglass Gallery — 43 rooms</option>
+                <option value="stormglass-great-archive">Stormglass Great Archive — 53 rooms with a west hall loop (candidate)</option>
                 <option value="stormglass-record-halls">Stormglass Record Halls — 50 rooms with upper/lower loops (candidate)</option>
                 <option value="stormglass-archive-wing">Stormglass Archive Wing — 48 rooms (candidate)</option>
                 <option value="stormglass-expanded-region">
@@ -348,7 +349,7 @@ export function CreateScreen({
               </Select>
               {stormglassGallery && (
                 <span className="hint">
-                  {worldLayout === 'stormglass-expanded-region' || worldLayout === 'stormglass-archive-wing' || worldLayout === 'stormglass-record-halls'
+                  {worldLayout === 'stormglass-expanded-region' || worldLayout === 'stormglass-archive-wing' || worldLayout === 'stormglass-record-halls' || worldLayout === 'stormglass-great-archive'
                     ? 'Long galleries, deep stairs and an upstairs return route. Layout preview; full traversal and artwork review are still in progress.'
                     : 'Connected galleries, service stairs and archive backrooms.'}{' '}
                   Six movement abilities and four bosses. {targetEngine === 'godot' ? 'Godot campaign.' : 'Native source campaign; engine traversal remains unverified.'}
